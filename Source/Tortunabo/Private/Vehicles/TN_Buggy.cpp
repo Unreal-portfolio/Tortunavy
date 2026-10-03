@@ -13,6 +13,7 @@
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_BuggyWheel.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
+#include "VR/TN_VRSeatComponent.h"
 #include "Camera/CameraComponent.h"
 #include "ChaosVehicleWheel.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
@@ -191,6 +192,11 @@ ATN_Buggy::ATN_Buggy()
 	TurretMount = MakeTurretPart(TEXT("TurretMount"), Chassis, TurretPivot);
 	TurretRing = MakeTurretPart(TEXT("TurretRing"), Chassis, TurretPivot);
 	Turret->SetYawFollower(TurretMount);
+
+	// Asiento VR de la conductora: los ojos de su tortuga sentada (con gafas, el origen del seguimiento).
+	DriverVRSeat = CreateDefaultSubobject<UTN_VRSeatComponent>(TEXT("DriverVRSeat"));
+	DriverVRSeat->SetupAttachment(Chassis);
+	DriverVRSeat->SetRelativeLocation(DriverSeatLocal + UTN_VRSeatComponent::EyeAboveHip);
 
 	const TCHAR* const SeatNames[] = { TEXT("DriverTurtle"), TEXT("GunnerTurtle") };
 	const FVector SeatLocations[] = { DriverSeatLocal, GunnerSeatLocal };
@@ -375,10 +381,24 @@ void ATN_Buggy::Tick(float DeltaSeconds)
 		UpdateBoost(DeltaSeconds);
 	}
 
-	TickDrivePhysics();
-	if (IsLocallyControlled() && IsPlayerControlled())
+	const bool bLocalPlayer = IsLocallyControlled() && IsPlayerControlled();
+	if (bLocalPlayer)
 	{
-		UpdateCamera(DeltaSeconds);
+		// Con gafas, las manos de la conductora para los demás.
+		UpdateVRDriving(DeltaSeconds);
+	}
+	TickDrivePhysics();
+	if (bLocalPlayer)
+	{
+		// Con la vista sentada no hay cámara de persecución: ni brazo, ni FOV dinámico, ni balanceo ni temblor.
+		if (DriverVRSeat && DriverVRSeat->IsVRView())
+		{
+			PendingCameraTrauma = 0.f;
+		}
+		else
+		{
+			UpdateCamera(DeltaSeconds);
+		}
 		if (bSelfRightHeld && TNBuggy::AdvanceHold(RespawnHold, true, DeltaSeconds, GetData()->RespawnHoldSeconds))
 		{
 			ServerRequestRespawn();
@@ -389,6 +409,7 @@ void ATN_Buggy::Tick(float DeltaSeconds)
 	{
 		UpdateGunnerKnockPose(DeltaSeconds);
 		UpdateWheelVisuals();
+		UpdateVRVisuals();
 	}
 
 	SeatLookCheckAccumulator += DeltaSeconds;

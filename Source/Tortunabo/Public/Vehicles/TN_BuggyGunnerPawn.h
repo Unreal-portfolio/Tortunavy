@@ -1,6 +1,8 @@
 // Peón de la artillera del buggy biplaza: sin movimiento, sujeto al asiento trasero (Seat_Gunner), con cámara propia
 // (por encima del hombro o en primera persona desde el cañón, alternable con V o el clic del stick derecho) y apuntado,
 // disparo y cambio de munición por RPC validada (la artillera no es dueña del buggy: sus RPC salen de este peón).
+// Con gafas (Docs/Modo_VR.md, «Vehículos»; TN_BuggyGunnerPawn_VR.cpp): vista en los ojos de su tortuga (VRSeat) y brazos
+// que siguen a sus manos.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -15,6 +17,7 @@ class UInputAction;
 class UInputMappingContext;
 class USpringArmComponent;
 class UTN_BuggyInputSet;
+class UTN_VRSeatComponent;
 struct FInputActionValue;
 
 UCLASS()
@@ -62,6 +65,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Torreta")
 	bool IsFirstPerson() const { return bFirstPerson; }
 
+	/** Asiento VR de la artillera, en los ojos de su tortuga (UTN_VRSeatComponent). */
+	UTN_VRSeatComponent* GetVRSeat() const { return VRSeat; }
+
+
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void NotifyControllerChanged() override;
@@ -104,6 +111,8 @@ private:
 	void OnRep_Buggy();
 	void AttachToBuggy();
 	void UpdateCamera(float DeltaSeconds);
+	/** Artillera local con la vista sentada: manos que ven los demás y cámara del asiento (en vez de UpdateCamera). */
+	void UpdateVRGunner(float DeltaSeconds);
 	void ApplyCameraMode();
 	void WatchKnock();
 
@@ -167,6 +176,10 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UCameraComponent> Camera;
 
+	/** Asiento VR (con gafas, el origen del seguimiento; su cámara sustituye a la del hombro). */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UTN_VRSeatComponent> VRSeat;
+
 	UPROPERTY(ReplicatedUsing = OnRep_Buggy)
 	TObjectPtr<ATN_Buggy> Buggy;
 
@@ -196,6 +209,7 @@ private:
 	bool bMainFireLatched = false;
 	bool bFirstPerson = false;
 	bool bWasKnocked = false;
+
 	float KickPitchDeg = 0.f;
 	float KickRollDeg = 0.f;
 	float KickBackCm = 0.f;

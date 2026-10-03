@@ -4,6 +4,8 @@
 // hace un gesto al cambiar de munición, se agarra encogida en los saltos y se inclina en las curvas.
 // Cosmético y local en cada máquina: solo lee datos que ya están replicados (velocidad del chasis, contacto de las
 // ruedas, estado de la torreta). Sin RPC. Lógica pura (muelle-amortiguador y reacciones) en TNRiderAnim.
+// Con gafas (#529), los brazos van a las manos del asiento VR de su plaza (UTN_VRSeatComponent::GetDisplayHands: el
+// volante, las asas o los mandos), también en las máquinas de los demás.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -14,6 +16,7 @@ class UChaosWheeledVehicleMovementComponent;
 class USkeletalMeshComponent;
 class UTN_BuggyTurretComponent;
 class UTN_ProcAnimInstance;
+class UTN_VRSeatComponent;
 
 /** Plaza que ocupa la tortuga animada. */
 UENUM(BlueprintType)
@@ -414,6 +417,10 @@ private:
 	/** Disparos y cambios de munición por el estado replicado de la torreta. */
 	void UpdateTurretSignals();
 	void UpdateChannels(const FVehicleSample& Sample, float DeltaTime);
+	/** Asiento VR de esta plaza (el del buggy para la conductora; el del peón de la artillera para ella) o nullptr. */
+	const UTN_VRSeatComponent* FindVRSeat() const;
+	/** Manos VR de esta plaza en el espacio de la malla y el peso de cada brazo (0 sin gafas). */
+	void UpdateVRArms(float DeltaTime);
 	void UpdateGunnerAim(float DeltaTime);
 	void UpdateCrouch(const FVehicleSample& Sample, float DeltaTime);
 	void ApplyImpactKicks(const FVector& AccelMesh);
@@ -471,4 +478,8 @@ private:
 	uint8 PrevAmmo = 0;
 	uint8 PrevSelectedAmmo = 0;
 	bool bHasTurretSample = false;
+
+	/** Con gafas: dónde va cada mano (espacio de la malla) y cuánto la sigue su brazo (0..1). */
+	FVector VRHandMesh[2] = { FVector::ZeroVector, FVector::ZeroVector };
+	float VRArmWeight[2] = { 0.f, 0.f };
 };

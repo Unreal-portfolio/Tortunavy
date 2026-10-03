@@ -28,6 +28,7 @@ class UTN_BuggyEngineAudioComponent;
 class UTN_BuggyInputSet;
 class UTN_BuggyLookComponent;
 class UTN_BuggyTurretComponent;
+class UTN_VRSeatComponent;
 struct FInputActionValue;
 
 /**
@@ -40,6 +41,9 @@ struct FInputActionValue;
  * Red: el servidor tiene la autoridad (movimiento replicado de Chaos con PredictiveInterpolation). Los clientes solo
  * mandan entradas: conducción por el movimiento de Chaos, y enderezado, reaparición y disparo por RPC validada. Los
  * impactos (coco, charco, mortero, tinta, escudo) los decide el servidor y los replica como estado con hora de fin.
+ *
+ * Gafas (Docs/Modo_VR.md, «Vehículos»; TN_Buggy_VR.cpp): la conductora se sienta en DriverVRSeat (vista en los ojos de su
+ * tortuga, sin la cámara de persecución) y los demás ven sus brazos con sus manos. Las subclases (los karts) lo heredan.
  */
 UCLASS()
 class TORTUNABO_API ATN_Buggy : public AWheeledVehiclePawn, public ITN_RallyVehicle
@@ -163,6 +167,12 @@ public:
 
 	/** Hora del servidor (vale en cualquier máquina). */
 	double GetServerNow() const;
+
+	// ── Gafas (TN_Buggy_VR.cpp) ─────────────────────────────────────────────────
+
+	/** Asiento VR de una plaza: el de la conductora es de este buggy; el de la artillera, de su peón (nullptr sin él). */
+	UTN_VRSeatComponent* GetVRSeat(ETNRallySeat Seat) const;
+
 
 	// ── Pruebas de la torreta (TN_Buggy_TurretFit.cpp; sin efecto en Shipping) ──
 
@@ -316,6 +326,12 @@ private:
 	void UpdateCamera(float DeltaSeconds);
 	void UpdateServerTimers();
 
+	// ── Gafas (TN_Buggy_VR.cpp) ────────────────────────────────────────────────
+	/** Conductora local con la vista sentada: las manos que ven los demás (antes de la física). */
+	void UpdateVRDriving(float DeltaSeconds);
+	/** Cabeza propia oculta en la vista sentada (máquinas con pantalla). */
+	void UpdateVRVisuals();
+
 	// ── Estabilidad y turbo (TN_Buggy_Drive.cpp) ───────────────────────────────
 	/** Recalcula bAirborne (ninguna rueda en contacto) en cada máquina. */
 	void UpdateAirborne();
@@ -460,6 +476,10 @@ private:
 	/** Aro fijo sobre las barandillas en el que gira el carro. */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> TurretRing;
+
+	/** Asiento VR de la conductora, en los ojos de su tortuga (UTN_VRSeatComponent). */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UTN_VRSeatComponent> DriverVRSeat;
 
 	/** Tortugas visuales: 0 = conductora, 1 = artillera. */
 	UPROPERTY(VisibleAnywhere, Category = "Components")

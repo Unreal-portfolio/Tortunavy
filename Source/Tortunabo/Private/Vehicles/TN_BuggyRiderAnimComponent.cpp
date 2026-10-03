@@ -2,7 +2,9 @@
 
 #include "Vehicles/TN_BuggyRiderAnimComponent.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
+#include "Vehicles/TN_Buggy.h"
 #include "Player/TN_ProcAnimInstance.h"
+#include "VR/TN_VRSeatComponent.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -198,6 +200,64 @@ namespace TNRiderAnimPose
 			Rotate(Arm, Axis.IsNearlyZero(1e-3) ? MeshLeft : Axis, Degrees);
 		}
 
+		/** Gira el hueso y sus hijos con Turn (giro en el espacio de la malla) por su articulación. */
+		void RotateBy(int32 Bone, const FQuat& Turn)
+		{
+			if (!Space.IsValidIndex(Bone))
+			{
+				return;
+			}
+			const FVector Pivot = Space[Bone].GetLocation();
+			ForSubtree(Bone, [&Turn, &Pivot](FTransform& T)
+			{
+				T.SetLocation(Pivot + Turn.RotateVector(T.GetLocation() - Pivot));
+				T.SetRotation((Turn * T.GetRotation()).GetNormalized());
+			});
+		}
+
+		/**
+		 * Con gafas (#529): IK de dos huesos, el brazo y el antebrazo, para que la mano llegue a Target (espacio de la malla)
+		 * o se estire hacia él. El codo se dobla en el plano en el que ya estaba (con el brazo recto, hacia abajo y atrás),
+		 * como ReachArm de UTN_TurtleAnimInstance. Weight mezcla con la pose que hay.
+		 */
+		void ReachArm(int32 Arm, int32 ForeArm, int32 Hand, const FVector& Target, float Weight)
+		{
+			if (!Space.IsValidIndex(Arm) || !Space.IsValidIndex(ForeArm) || !Space.IsValidIndex(Hand) || Weight < 0.01f)
+			{
+				return;
+			}
+			const FVector A = Space[Arm].GetLocation();
+			const FVector Elbow = Space[ForeArm].GetLocation();
+			const FVector Wrist = Space[Hand].GetLocation();
+			const double L1 = (Elbow - A).Size();
+			const double L2 = (Wrist - Elbow).Size();
+			const FVector ToTarget = Target - A;
+			double Reach = ToTarget.Size();
+			if (L1 < 1e-3 || L2 < 1e-3 || Reach < 1e-3)
+			{
+				return;
+			}
+			const FVector Dir = ToTarget / Reach;
+			Reach = FMath::Clamp(Reach, FMath::Abs(L1 - L2) + 0.01, (L1 + L2) * 0.999);
+			FVector Bend = (Elbow - A) - Dir * FVector::DotProduct(Elbow - A, Dir);
+			if (Bend.SizeSquared() < 1e-4)
+			{
+				const FVector Down = -MeshForward * 0.5 - MeshUp;
+				Bend = Down - Dir * FVector::DotProduct(Down, Dir);
+			}
+			Bend = Bend.GetSafeNormal();
+			const double CosA = FMath::Clamp((L1 * L1 + Reach * Reach - L2 * L2) / (2.0 * L1 * Reach), -1.0, 1.0);
+			const double SinA = FMath::Sqrt(FMath::Max(0.0, 1.0 - CosA * CosA));
+			const FVector NewElbow = A + (Dir * CosA + Bend * SinA) * L1;
+			const float Alpha = FMath::Clamp(Weight, 0.f, 1.f);
+			RotateBy(Arm, FQuat::Slerp(FQuat::Identity, FQuat::FindBetweenNormals((Elbow - A).GetSafeNormal(), (NewElbow - A).GetSafeNormal()), Alpha));
+			const FVector ElbowNow = Space[ForeArm].GetLocation();
+			const FVector WristNow = Space[Hand].GetLocation();
+			const FVector WristWanted = A + Dir * Reach;
+			RotateBy(ForeArm, FQuat::Slerp(FQuat::Identity,
+				FQuat::FindBetweenNormals((WristNow - ElbowNow).GetSafeNormal(), (WristWanted - ElbowNow).GetSafeNormal()), Alpha));
+		}
+
 		/**
 		 * Postura sentada de turtle_pose.py (giros en los ejes de la malla, en el mismo orden): muslos hacia delante y
 		 * espinillas hacia abajo; la conductora con las manos al volante y la artillera con el brazo derecho arriba.
@@ -304,7 +364,34 @@ void UTN_BuggyRiderAnimComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	}
 	UpdateTurretSignals();
 	UpdateChannels(Sample, DeltaTime);
+	UpdateVRArms(DeltaTime);
 	ApplyPose();
+}
+
+const UTN_VRSeatComponent* UTN_BuggyRiderAnimComponent::FindVRSeat() const
+{
+	const ATN_Buggy* Buggy = Cast<ATN_Buggy>(GetOwner());
+	return Buggy ? Buggy->GetVRSeat(Role == ETNBuggyRiderRole::Driver ? ETNRallySeat::Driver : ETNRallySeat::Gunner) : nullptr;
+}
+
+void UTN_BuggyRiderAnimComponent::UpdateVRArms(float DeltaTime)
+{
+	const UTN_VRSeatComponent* Seat = FindVRSeat();
+	FVector World[2] = { FVector::ZeroVector, FVector::ZeroVector };
+	bool bHand[2] = { false, false };
+	const bool bAny = Seat && RiderMesh && Seat->GetDisplayHands(World[0], World[1], bHand[0], bHand[1]);
+	// Las del dueño, tal cual (sin retraso en las gafas); las de los demás llegan a saltos, unas 15 veces por segundo: suaves.
+	const bool bSmooth = !(Seat && Seat->IsVRView());
+	for (int32 Hand = 0; Hand < 2; ++Hand)
+	{
+		const bool bOn = bAny && bHand[Hand];
+		VRArmWeight[Hand] = FMath::FInterpConstantTo(VRArmWeight[Hand], bOn ? 1.f : 0.f, DeltaTime, 6.f);
+		if (bOn)
+		{
+			const FVector Target = RiderMesh->GetComponentTransform().InverseTransformPosition(World[Hand]);
+			VRHandMesh[Hand] = bSmooth && VRArmWeight[Hand] > 0.05f ? FMath::VInterpTo(VRHandMesh[Hand], Target, DeltaTime, 18.f) : Target;
+		}
+	}
 }
 
 bool UTN_BuggyRiderAnimComponent::IsRiderActive() const
@@ -633,6 +720,9 @@ void UTN_BuggyRiderAnimComponent::ApplyBonePose(UTN_ProcAnimInstance& Anim)
 	const float SwapDeg = bDriver ? 0.f : Swap.Value * SwapArmDeg;
 	Pose.RaiseArm(B.LeftArm, B.LeftHand, SteerDeg - Down + SwapDeg);
 	Pose.RaiseArm(B.RightArm, B.RightHand, -SteerDeg - Down);
+	// Con gafas, las manos van a las del asiento VR (el volante, las asas o los mandos), encima de todo lo anterior.
+	Pose.ReachArm(B.LeftArm, B.LeftForeArm, B.LeftHand, VRHandMesh[0], VRArmWeight[0]);
+	Pose.ReachArm(B.RightArm, B.RightForeArm, B.RightHand, VRHandMesh[1], VRArmWeight[1]);
 
 	TSet<FName> Written;
 	for (int32 Bone = 0; Bone < Pose.Space.Num(); ++Bone)
