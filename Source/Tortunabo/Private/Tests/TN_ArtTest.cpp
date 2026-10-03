@@ -6,6 +6,7 @@
 #include "Art/TN_Art.h"
 #include "Art/TN_ArtCatalog.h"
 #include "Art/TN_ArtMeshComponent.h"
+#include "Art/TN_ArtSettings.h"
 #include "../Art/TN_ArtPieces.h"
 #include "../Art/TN_ArtSlots.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -18,8 +19,11 @@
 #include "HAL/IConsoleManager.h"
 #include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
 #include "Misc/Paths.h"
+#include "Misc/ScopeExit.h"
 #include "ProceduralMeshComponent.h"
+#include "UObject/StrongObjectPtr.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -41,12 +45,15 @@ namespace TNArtTestDetail
 		return Cat;
 	}
 
-	/** Mundo de juego vacío para los componentes de la prueba. */
+	/** Mundo de juego vacío para los componentes de la prueba (crearlo es como empezar una partida o el PIE). */
 	struct FTestWorld
 	{
 		UWorld* World = nullptr;
+		/** Al cerrarlo vuelve a los catálogos de los ajustes (SetCatalogsForTest({}), que también vacía la caché). */
+		bool bResetCatalogsOnExit = true;
 
-		FTestWorld()
+		explicit FTestWorld(bool bInResetCatalogsOnExit = true)
+			: bResetCatalogsOnExit(bInResetCatalogsOnExit)
 		{
 			World = UWorld::CreateWorld(EWorldType::Game, false, TEXT("TNArtTestWorld"));
 			FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
@@ -57,7 +64,10 @@ namespace TNArtTestDetail
 		{
 			GEngine->DestroyWorldContext(World);
 			World->DestroyWorld(false);
-			TNArt::SetCatalogsForTest({});
+			if (bResetCatalogsOnExit)
+			{
+				TNArt::SetCatalogsForTest({});
+			}
 		}
 	};
 
@@ -92,7 +102,9 @@ bool FTNArtSlotTableTest::RunTest(const FString& Parameters)
 		Seen.Add(Name);
 		const FString Kind(Info.Kind);
 		TestTrue(FString::Printf(TEXT("%s: tipo conocido"), *Name),
-			Kind == TNArt::SlotKind::Piece || Kind == TNArt::SlotKind::Component || Kind == TNArt::SlotKind::Instances);
+			Kind == TNArt::SlotKind::Piece || Kind == TNArt::SlotKind::Component || Kind == TNArt::SlotKind::Instances || Kind == TNArt::SlotKind::Bone);
+		TestEqual(FString::Printf(TEXT("%s: las piezas de la tortuga (y solo ellas) van pegadas a un hueso"), *Name),
+			Kind == TNArt::SlotKind::Bone, TNArt::ZoneOf(Name) == TEXT("Turtle"));
 		TestTrue(FString::Printf(TEXT("%s: existe su fichero %s"), *Name, Info.Source),
 			FPaths::FileExists(FPaths::Combine(PrivateDir, Info.Source)));
 		TestTrue(FString::Printf(TEXT("%s: dice qué es, su tamaño y su pivote"), *Name),
@@ -101,6 +113,7 @@ bool FTNArtSlotTableTest::RunTest(const FString& Parameters)
 	}
 
 	TestTrue(TEXT("Nombre válido"), TNArt::IsValidSlotName(TEXT("ProcMap.Rock.Boulder2")));
+	TestTrue(TEXT("Pieza de la tortuga"), TNArt::IsValidSlotName(TEXT("Turtle.Shell")));
 	TestFalse(TEXT("Sin zona conocida"), TNArt::IsValidSlotName(TEXT("Menu.Logo")));
 	TestFalse(TEXT("Solo la zona"), TNArt::IsValidSlotName(TEXT("Lobby")));
 	TestFalse(TEXT("Parte en minúscula"), TNArt::IsValidSlotName(TEXT("Lobby.castle")));
@@ -396,6 +409,102 @@ bool FTNArtApplyInWorldTest::RunTest(const FString& Parameters)
 	int32 ArtCount = 0;
 	for (USceneComponent* Child : Pmc->GetAttachChildren()) { ArtCount += (Cast<UTN_ArtMeshComponent>(Child) && IsValid(Child)) ? 1 : 0; }
 	TestEqual(TEXT("Al reconstruir no se duplica"), ArtCount, 1);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNArtCatalogSeenByNextWorldTest,
+	"Tortunabo.Art.CatalogSeenByNextWorld",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNArtCatalogSeenByNextWorldTest::RunTest(const FString& Parameters)
+{
+	// #319: Arte pone la malla de una pieza en el catálogo y le da al Play, y el PIE dibujaba la generada: la caché de TNArt
+	// dura todo el proceso y seguía con lo que leyó al abrir el editor, porque el cambio no pasó por PostEditChangeProperty
+	// (Python escribe directamente en el asset; un paquete recargado de git es otro objeto). Cada mundo que empieza tiene que
+	// leer el catálogo tal como está en ese momento.
+	using namespace TNArtTestDetail;
+	UStaticMesh* Cube = EngineMesh(TEXT("Cube"));
+	UStaticMesh* Sphere = EngineMesh(TEXT("Sphere"));
+	if (!TestNotNull(TEXT("Mallas del motor"), Cube && Sphere ? Cube : nullptr)) { return false; }
+	const FName Slot(TEXT("Lobby.Castle.Tower"));
+
+	// Por los catálogos de los ajustes (el camino del juego), no por los de los tests.
+	UTN_ArtSettings* Settings = GetMutableDefault<UTN_ArtSettings>();
+	const TArray<TSoftObjectPtr<UTN_ArtCatalog>> SavedCatalogs = Settings->Catalogs;
+	TStrongObjectPtr<UTN_ArtCatalog> Catalog(MakeCatalog(Slot, nullptr));
+	TStrongObjectPtr<UTN_ArtCatalog> Reloaded(MakeCatalog(Slot, Sphere));
+	TNArt::SetCatalogsForTest({});
+	Settings->Catalogs = { TSoftObjectPtr<UTN_ArtCatalog>(Catalog.Get()) };
+	TNArt::InvalidateCache();
+	ON_SCOPE_EXIT
+	{
+		Settings->Catalogs = SavedCatalogs;
+		TNArt::InvalidateCache();
+	};
+
+	{
+		FTestWorld Opened(false);
+		TestNull(TEXT("Al abrir, sin malla en el catálogo: la generada"), TNArt::Find(Slot));
+	}
+
+	// Arte pone la malla sin pasar por el panel de detalles (como un script de Python) y le da al Play.
+	Catalog->Pieces.FindChecked(Slot).Mesh = Cube;
+	{
+		FTestWorld Play(false);
+		const TNArt::FResolved* R = TNArt::Find(Slot);
+		TestTrue(TEXT("La partida siguiente ve la malla nueva del catálogo"), R && R->Mesh == Cube);
+	}
+
+	// El catálogo de los ajustes pasa a ser otro objeto (asset recargado) y se juega otra vez.
+	Settings->Catalogs = { TSoftObjectPtr<UTN_ArtCatalog>(Reloaded.Get()) };
+	{
+		FTestWorld Play(false);
+		const TNArt::FResolved* R = TNArt::Find(Slot);
+		TestTrue(TEXT("La partida siguiente lee el catálogo recargado"), R && R->Mesh == Sphere);
+	}
+
+	// Empezar un mundo no cambia la versión de los catálogos (el valle no se rehace de más); «Aplicar cambios», sí.
+	const uint32 Version = TNArt::GetCatalogVersion();
+	{
+		FTestWorld Play(false);
+	}
+	TestEqual(TEXT("Empezar un mundo no cambia la versión de los catálogos"), TNArt::GetCatalogVersion(), Version);
+	Reloaded->ApplyChanges();
+	TestNotEqual(TEXT("«Aplicar cambios» sube la versión de los catálogos"), TNArt::GetCatalogVersion(), Version);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNArtUnknownPiecesTest,
+	"Tortunabo.Art.UnknownPieces",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNArtUnknownPiecesTest::RunTest(const FString& Parameters)
+{
+	// Una entrada con malla cuyo nombre no es de ninguna pieza no cambia nada: se avisa (FindUnknownPieces).
+	using namespace TNArtTestDetail;
+	UStaticMesh* Cube = EngineMesh(TEXT("Cube"));
+	if (!TestNotNull(TEXT("Malla del motor Cube"), Cube)) { return false; }
+	UTN_ArtCatalog* Cat = MakeCatalog(TEXT("Lobby.Castle.Tower"), Cube);
+	Cat->Pieces.Add(TEXT("Lobby.Castle.Towers")).Mesh = Cube;
+	Cat->Pieces.Add(TEXT("Lobby.Castle.Gatehouse"));
+	Cat->Pieces.Add(TEXT("Lobby.Castle.Old"));
+	const TArray<FName> Unknown = TNArt::FindUnknownPieces(Cat);
+	TestEqual(TEXT("Solo la que tiene malla y no existe"), Unknown.Num(), 1);
+	TestTrue(TEXT("La mal escrita"), Unknown.Contains(FName(TEXT("Lobby.Castle.Towers"))));
+	TestEqual(TEXT("Sin catálogo, nada"), TNArt::FindUnknownPieces(nullptr).Num(), 0);
+
+	// Los catálogos del proyecto (los que ya existen) no tienen ninguna.
+	for (const TSoftObjectPtr<UTN_ArtCatalog>& Soft : GetDefault<UTN_ArtSettings>()->Catalogs)
+	{
+		if (!FPackageName::DoesPackageExist(Soft.ToSoftObjectPath().GetLongPackageName())) { continue; }
+		if (const UTN_ArtCatalog* Project = Soft.LoadSynchronous())
+		{
+			for (const FName& Name : TNArt::FindUnknownPieces(Project))
+			{
+				AddError(FString::Printf(TEXT("%s: la pieza %s tiene malla pero no existe en la tabla de piezas."), *Project->GetName(), *Name.ToString()));
+			}
+		}
+	}
 	return true;
 }
 

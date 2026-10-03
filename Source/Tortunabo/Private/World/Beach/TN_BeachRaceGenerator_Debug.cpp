@@ -30,6 +30,9 @@
 
 namespace TNBeachGoConsole
 {
+	/** Centímetros por metro: las posiciones van en cm y los mensajes en m. */
+	constexpr double CmPerMeter = 100.0;
+
 	/** El mundo con autoridad del mismo proceso: el propio si no es un cliente; en el PIE, el del servidor del mismo mapa. */
 	UWorld* AuthorityWorldOf(UWorld* InWorld)
 	{
@@ -300,7 +303,7 @@ namespace TNBeachGoConsole
 				// Delante de su puerta de la salida (-X local), mirándola.
 				Want = Fort->Pos - Fort->Axis() * (Fort->Radius + 1500.0);
 				Yaw = Fort->Yaw;
-				OutWhat = FString::Printf(TEXT("la fortaleza %s a %.0f m"), *UEnum::GetValueAsString(Fort->Element), Fort->Pos.X / 100.0);
+				OutWhat = FString::Printf(TEXT("la fortaleza %s a %.0f m"), *UEnum::GetValueAsString(Fort->Element), Fort->Pos.X / CmPerMeter);
 				break;
 			}
 			case EGoTarget::Trench:
@@ -313,7 +316,7 @@ namespace TNBeachGoConsole
 					return false;
 				}
 				Want = FVector2D(Line->Min.X - 1200.0, FMath::Clamp(FromY, Line->Min.Y + 500.0, Line->Max.Y - 500.0));
-				OutWhat = FString::Printf(TEXT("la trinchera de los %.0f m"), Line->Min.X / 100.0);
+				OutWhat = FString::Printf(TEXT("la trinchera de los %.0f m"), Line->Min.X / CmPerMeter);
 				break;
 			}
 			case EGoTarget::Pool:
@@ -326,7 +329,7 @@ namespace TNBeachGoConsole
 					return false;
 				}
 				Want = Pool->Center - FVector2D(Pool->OuterR() + 800.0, 0.0);
-				OutWhat = FString::Printf(TEXT("la poza de los %.0f m"), Pool->Center.X / 100.0);
+				OutWhat = FString::Printf(TEXT("la poza de los %.0f m"), Pool->Center.X / CmPerMeter);
 				break;
 			}
 			case EGoTarget::Ridge:
@@ -345,7 +348,7 @@ namespace TNBeachGoConsole
 				const double Slip = TNBeachLayout::RidgeSlipWidth(TNBeachLayout::RidgeCrestHeight(*Ridge, 0.0));
 				Want = TNBeachLayout::RidgeCrestPoint(*Ridge, 0.0) - Ridge->Windward * (Slip + 900.0);
 				Yaw = FMath::RadiansToDegrees(FMath::Atan2(Ridge->Windward.Y, Ridge->Windward.X));
-				OutWhat = FString::Printf(TEXT("la cresta con cornisa de los %.0f m"), Ridge->Center.X / 100.0);
+				OutWhat = FString::Printf(TEXT("la cresta con cornisa de los %.0f m"), Ridge->Center.X / CmPerMeter);
 				break;
 			}
 			case EGoTarget::Cliff:
@@ -359,9 +362,9 @@ namespace TNBeachGoConsole
 			case EGoTarget::Meters:
 			default:
 			{
-				const double X = FMath::Clamp(Meters * 100.0, -500.0, TNBeachLayout::EdgeX(FromY) - 200.0);
+				const double X = FMath::Clamp(Meters * CmPerMeter, -500.0, TNBeachLayout::EdgeX(FromY) - 200.0);
 				Want = FVector2D(X, FromY);
-				OutWhat = FString::Printf(TEXT("los %.0f m del recorrido"), X / 100.0);
+				OutWhat = FString::Printf(TEXT("los %.0f m del recorrido"), X / CmPerMeter);
 				break;
 			}
 		}
@@ -446,8 +449,8 @@ namespace TNBeachGoConsole
 			TeleportTurtle(*Pawn, Where, true);
 			if (LocalCopy) { TeleportTurtle(*LocalCopy, Where, false); }
 			UE_LOG(LogTortunabo, Log, TEXT("[Playa] TN.Beach.Go: %s va a %s (%.0f m, %.0f m a lo ancho)."), *Pawn->GetName(), *What,
-				ReadyGen.GetActorTransform().InverseTransformPosition(Where.GetLocation()).X / 100.0,
-				ReadyGen.GetActorTransform().InverseTransformPosition(Where.GetLocation()).Y / 100.0);
+				ReadyGen.GetActorTransform().InverseTransformPosition(Where.GetLocation()).X / CmPerMeter,
+				ReadyGen.GetActorTransform().InverseTransformPosition(Where.GetLocation()).Y / CmPerMeter);
 		});
 	}
 

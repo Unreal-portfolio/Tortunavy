@@ -230,38 +230,33 @@ FVector UTN_StressSubsystem::PickSpot(float MinRadius, float MaxRadius)
 	return At;
 }
 
-int32 UTN_StressSubsystem::SpawnEnemies(TNStress::EGroup Group, int32 Count)
+bool UTN_StressSubsystem::SpawnEnemy(TNStress::EGroup Group, int32 Index)
 {
-	UWorld* World = GetWorld();
-	int32 Made = 0;
-	for (int32 Index = 0; Index < Count; ++Index)
+	FTNBeachElementSpec Spec;
+	Spec.Seed = Stream.RandRange(1, 1000000);
+	Spec.SizeScale = 1.f;
+	switch (Group)
 	{
-		FTNBeachElementSpec Spec;
-		Spec.Seed = Stream.RandRange(1, 1000000);
-		Spec.SizeScale = 1.f;
-		switch (Group)
-		{
-			case TNStress::EGroup::Crabs:
-				Spec.Element = Index % 2 == 0 ? ETNBeachElement::GiantCrab : ETNBeachElement::HermitCrab;
-				Spec.Extent = Spec.Element == ETNBeachElement::HermitCrab ? 4000.f : 0.f;
-				break;
-			case TNStress::EGroup::Gulls:
-				Spec.Element = ETNBeachElement::GullZone;
-				break;
-			default:
-				Spec.Element = ETNBeachElement::ToyTank;
-				Spec.Extent = 3000.f;
-				break;
-		}
-		const FVector At = PickSpot(1500.f, 14000.f);
-		const FRotator Facing(0.0, Stream.FRandRange(0.f, 360.f), 0.0);
-		if (ATN_BeachElement* Element = ATN_BeachElement::SpawnElement(World, FTransform(Facing, At), Spec))
-		{
-			Spawned.Add(Element);
-			++Made;
-		}
+		case TNStress::EGroup::Crabs:
+			Spec.Element = Index % 2 == 0 ? ETNBeachElement::GiantCrab : ETNBeachElement::HermitCrab;
+			Spec.Extent = Spec.Element == ETNBeachElement::HermitCrab ? 4000.f : 0.f;
+			break;
+		case TNStress::EGroup::Gulls:
+			Spec.Element = ETNBeachElement::GullZone;
+			break;
+		default:
+			Spec.Element = ETNBeachElement::ToyTank;
+			Spec.Extent = 3000.f;
+			break;
 	}
-	return Made;
+	const FVector At = PickSpot(1500.f, 14000.f);
+	const FRotator Facing(0.0, Stream.FRandRange(0.f, 360.f), 0.0);
+	ATN_BeachElement* Element = ATN_BeachElement::SpawnElement(GetWorld(), FTransform(Facing, At), Spec);
+	if (Element)
+	{
+		Spawned.Add(Element);
+	}
+	return Element != nullptr;
 }
 
 int32 UTN_StressSubsystem::SpawnThrowables(int32 Count)
@@ -298,35 +293,48 @@ int32 UTN_StressSubsystem::SpawnThrowables(int32 Count)
 	return Made;
 }
 
-int32 UTN_StressSubsystem::SpawnItemBoxes(int32 Count)
+bool UTN_StressSubsystem::SpawnItemBox()
 {
-	UWorld* World = GetWorld();
-	int32 Made = 0;
-	for (int32 Index = 0; Index < Count; ++Index)
+	const FVector At = PickSpot(800.f, 12000.f) + FVector(0.0, 0.0, 3.0);
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ATN_RaceItemBox* Box = GetWorld()->SpawnActor<ATN_RaceItemBox>(ATN_RaceItemBox::StaticClass(), At, FRotator(0.0, Stream.FRandRange(0.f, 360.f), 0.0), Params);
+	if (Box)
 	{
-		const FVector At = PickSpot(800.f, 12000.f) + FVector(0.0, 0.0, 3.0);
-		FActorSpawnParameters Params;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		if (ATN_RaceItemBox* Box = World->SpawnActor<ATN_RaceItemBox>(ATN_RaceItemBox::StaticClass(), At, FRotator(0.0, Stream.FRandRange(0.f, 360.f), 0.0), Params))
-		{
-			Spawned.Add(Box);
-			++Made;
-		}
+		Spawned.Add(Box);
 	}
-	return Made;
+	return Box != nullptr;
+}
+
+void UTN_StressSubsystem::SpawnPending(FPhaseData& Phase)
+{
+	if (Phase.PendingSpawn <= 0)
+	{
+		return;
+	}
+	const double Start = FPlatformTime::Seconds();
+	int32 MadeThisFrame = 0;
+	while (TNStress::ShouldSpawnMore(Phase.PendingSpawn, MadeThisFrame, (FPlatformTime::Seconds() - Start) * 1000.0))
+	{
+		const bool bMade = Phase.Plan.Group == TNStress::EGroup::Items ? SpawnItemBox() : SpawnEnemy(Phase.Plan.Group, Phase.Attempted);
+		Phase.Spawned += bMade ? 1 : 0;
+		++Phase.Attempted;
+		--Phase.PendingSpawn;
+		++MadeThisFrame;
+	}
+	Phase.SpawnMaxFrameMs = FMath::Max(Phase.SpawnMaxFrameMs, static_cast<float>((FPlatformTime::Seconds() - Start) * 1000.0));
+	++Phase.SpawnFrames;
+	if (Phase.PendingSpawn <= 0)
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Estrés] «%s»: %d de %d creados en %d fotogramas (máx. %.1f ms de creación en uno)."),
+			TNStress::GroupName(Phase.Plan.Group), Phase.Spawned, Phase.Plan.Count, Phase.SpawnFrames, Phase.SpawnMaxFrameMs);
+	}
 }
 
 int32 UTN_StressSubsystem::SpawnGroup(TNStress::EGroup Group, int32 Count)
 {
-	switch (Group)
-	{
-		case TNStress::EGroup::Crabs:
-		case TNStress::EGroup::Gulls:
-		case TNStress::EGroup::Tanks:      return SpawnEnemies(Group, Count);
-		case TNStress::EGroup::Throwables: return SpawnThrowables(Count);
-		case TNStress::EGroup::Items:      return SpawnItemBoxes(Count);
-		default:                           return 0;
-	}
+	// Enemigos y cajas van repartidos (SpawnPending); de golpe solo quedan los lanzables.
+	return Group == TNStress::EGroup::Throwables ? SpawnThrowables(Count) : 0;
 }
 
 void UTN_StressSubsystem::BeginPhase(int32 Index)
@@ -342,6 +350,15 @@ void UTN_StressSubsystem::BeginPhase(int32 Index)
 		{
 			CenterAtStart = Pawn->GetActorLocation();
 		}
+	}
+	if (TNStress::IsSpreadGroup(Phase.Plan.Group))
+	{
+		// Repartidos en varios fotogramas, como el generador de la playa (SpawnPending en cada Tick).
+		Phase.PendingSpawn = Phase.Plan.Count;
+		UE_LOG(LogTortunabo, Log, TEXT("[Estrés] Fase %d/%d «%s»: %d por crear (%.0f ms por fotograma)."), Index + 1, Phases.Num(),
+			TNStress::GroupName(Phase.Plan.Group), Phase.Plan.Count, TNStress::SPAWN_BUDGET_MS);
+		SpawnPending(Phase);
+		return;
 	}
 	Phase.Spawned = SpawnGroup(Phase.Plan.Group, Phase.Plan.Count);
 	UE_LOG(LogTortunabo, Log, TEXT("[Estrés] Fase %d/%d «%s»: %d de %d creados."), Index + 1, Phases.Num(), TNStress::GroupName(Phase.Plan.Group), Phase.Spawned,
@@ -472,6 +489,7 @@ void UTN_StressSubsystem::Tick(float DeltaTime)
 	}
 	FPhaseData& Phase = Phases[CurrentPhase];
 	SampleFrame(Phase);
+	SpawnPending(Phase);
 	if (Phase.Plan.Group == TNStress::EGroup::Throwables && Now - LastRefill >= 0.5)
 	{
 		// Cada clase de lanzable tiene un tope en el mundo: se reponen los que caducan hasta llegar a lo pedido.
@@ -534,6 +552,8 @@ TSharedRef<FJsonObject> UTN_StressSubsystem::BuildReport(const TCHAR* Reason) co
 		Item->SetNumberField(TEXT("frame_p99_ms"), Frame.P99);
 		Item->SetNumberField(TEXT("frame_max_ms"), Frame.Max);
 		Item->SetNumberField(TEXT("spawn_hitch_ms"), Phase.HitchMs);
+		Item->SetNumberField(TEXT("spawn_frames"), Phase.SpawnFrames);
+		Item->SetNumberField(TEXT("spawn_max_frame_ms"), Phase.SpawnMaxFrameMs);
 		int32 Spikes = 0;
 		float SpikePeriod = 0.f;
 		TNMonkey::FindSpikePeriod(Phase.FrameMs, Phase.FrameStampMs, 1.8f, Spikes, SpikePeriod);

@@ -1,4 +1,5 @@
 #pragma once
+#include "Multiplayer/TN_LocalViews.h"
 
 #include "CoreMinimal.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -456,8 +457,9 @@ namespace TNAmbientFX
 		FOwnerFX* FX = Registry().Find(Owner);
 		if (!FX) { return; }
 		UWorld* World = Owner->GetWorld();
-		const APlayerCameraManager* Cam = World ? UGameplayStatics::GetPlayerCameraManager(World, 0) : nullptr;
-		const FVector View = Cam ? Cam->GetCameraLocation() : Owner->GetActorLocation();
+		// Con la pantalla partida (#311), la cámara local más cercana.
+		FVector View = Owner->GetActorLocation();
+		TNLocalViews::ClosestCamera(World, Owner->GetActorLocation(), View);
 		for (FEmitter& E : FX->Emitters) { TickEmitter(E, Dt, View); }
 		for (FFlock& F : FX->Flocks) { TickFlock(F, Dt); }
 	}

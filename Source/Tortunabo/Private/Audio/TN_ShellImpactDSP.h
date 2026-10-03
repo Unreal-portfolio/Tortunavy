@@ -169,7 +169,6 @@ namespace TNShellImpact
 		float ResAmp[3] = {};
 		FOnePole Lp;
 		FOnePole Hp;
-		FOnePole Hp2;
 		/** Segundo momento (eco del crujido de la roca, segunda burbuja, gotas): instante en s y contador. */
 		float NextEventAt = 1.0e9f;
 		int32_t Events = 0;

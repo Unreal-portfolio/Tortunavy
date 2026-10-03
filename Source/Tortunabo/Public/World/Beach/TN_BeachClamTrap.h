@@ -219,6 +219,9 @@ private:
 	float StruggleAt(double Now, int32& OutPulse) const;
 
 	/** Radio normalizado en la elipse de la valva y altura de los pies sobre el suelo de la valva. */
+	/** Personajes al alcance de la valva (en planta): los únicos que pueden pisar el manto o quedar dentro al cerrarse. */
+	void GatherNearValve(TArray<ACharacter*>& Out) const;
+
 	bool IsInBowl(const ACharacter* Character, double RhoMax, double& OutRho) const;
 
 	FVector HoldPointWorld(const ACharacter* Character) const;

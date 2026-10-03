@@ -1,6 +1,8 @@
 #include "Lobby/TN_GeneralBriefing.h"
 #include "Core/TN_ProjectMaterials.h"
 #include "Art/TN_Art.h"
+#include "Multiplayer/TN_LocalViews.h"
+#include "Art/TN_TurtleArt.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Core/TN_Log.h"
 #include "Lobby/TN_LobbyMission.h"
@@ -152,8 +154,7 @@ ATN_GeneralBriefing::ATN_GeneralBriefing()
 	General->SetRelativeScale3D(FVector(GeneralScale));
 	General->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	General->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> TurtleMesh(TEXT("/Game/Meshses/Characters/Player/TotugaDemo_Rig.TotugaDemo_Rig"));
-	if (TurtleMesh.Succeeded()) { General->SetSkeletalMeshAsset(TurtleMesh.Object); }
+	// La malla es la del personaje de la tortuga (TNTurtleArt::ApplyBody en DressGeneral), no una ruta fija.
 
 	GeneralHat = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GeneralHat"));
 	GeneralHat->SetupAttachment(General);
@@ -207,17 +208,29 @@ ATN_GeneralBriefing::ATN_GeneralBriefing()
 	TentLight->SetAttenuationRadius(430.f);
 	TentLight->SetLightColor(FLinearColor(1.f, 0.78f, 0.5f));
 	TentLight->SetCastShadows(true);
+}
 
-	static ConstructorHelpers::FObjectFinder<UAnimationAsset> Idle(TEXT("/Game/Animations/Character/TortugaDemo/Anim/Old_Man_Idle.Old_Man_Idle"));
-	static ConstructorHelpers::FObjectFinder<UAnimationAsset> Salute(TEXT("/Game/Animations/Character/TortugaDemo/Anim/Salute.Salute"));
-	IdleAnim = Idle.Succeeded() ? Idle.Object : nullptr;
-	SaluteAnim = Salute.Succeeded() ? Salute.Object : nullptr;
+FTransform ATN_GeneralBriefing::GeneralTransform() const
+{
+	// Como en BP_TortugaCharacter: la malla de demo mira a su +Y; girada -90 mira a los reclutas (+X), y se gira hacia el
+	// jugador. Con otra malla en el personaje, la misma diferencia (TNTurtleArt::GetCopyCorrection).
+	return GeneralCorrection * FTransform(FRotator(0.f, -90.f + LookYaw, 0.f), FVector::ZeroVector, FVector(GeneralScale));
+}
+
+void ATN_GeneralBriefing::DressGeneral()
+{
+	// La tortuga del personaje (malla, materiales y escala) y sus animaciones de los ajustes de arte.
+	GeneralCorrection = FTransform::Identity;
+	if (TNTurtleArt::ApplyBody(General, GeneralTransform())) { GeneralDefaults.Reset(); }
+	GeneralCorrection = TNTurtleArt::GetCopyCorrection();
+	IdleAnim = TNTurtleArt::GetClip(ETNTurtleClip::Idle);
+	SaluteAnim = TNTurtleArt::GetClip(ETNTurtleClip::Salute);
 }
 
 void ATN_GeneralBriefing::BeginPlay()
 {
 	Super::BeginPlay();
-	General->SetRelativeScale3D(FVector(GeneralScale));
+	DressGeneral();
 	FitSignText();
 	// Espera en bucle con el saludo militar fundido encima (sin cortes al empezar y acabar el gesto).
 	UTN_NpcAnimInstance::SetupOn(General, IdleAnim);
@@ -317,7 +330,7 @@ void ATN_GeneralBriefing::FitSignText()
 void ATN_GeneralBriefing::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	General->SetRelativeScale3D(FVector(GeneralScale));
+	DressGeneral();
 	FitSignText();
 	RefreshMissionBoard();
 	UTN_CosmeticLook::ApplyLook(this, General, GeneralHat, GeneralLook, GeneralDefaults);
@@ -333,6 +346,7 @@ void ATN_GeneralBriefing::PostRegisterAllComponents()
 	// Al abrir el nivel en el editor, la tienda y la mesa (malla transitoria) llegan vacías: se rehacen.
 	if (!IsTemplate() && GetWorld() && GetWorld()->WorldType == EWorldType::Editor && Table && !Table->GetStaticMesh())
 	{
+		DressGeneral();
 		UTN_CosmeticLook::ApplyLook(this, General, GeneralHat, GeneralLook, GeneralDefaults);
 		UTN_NpcAnimInstance::PreviewInEditor(General, IdleAnim);
 		BuildTable();
@@ -619,7 +633,7 @@ void ATN_GeneralBriefing::HideBlockout()
 		ASkeletalMeshActor* Blockout = *It;
 		const USkeletalMeshComponent* Comp = Blockout ? Blockout->GetSkeletalMeshComponent() : nullptr;
 		const USkinnedAsset* Asset = Comp ? Comp->GetSkinnedAsset() : nullptr;
-		if (Asset && Asset->GetName().Contains(TEXT("TotugaDemo")) && FVector::Dist2D(Blockout->GetActorLocation(), GetActorLocation()) < 150.0)
+		if (TNTurtleArt::IsTurtleMesh(Asset) && FVector::Dist2D(Blockout->GetActorLocation(), GetActorLocation()) < 150.0)
 		{
 			Blockout->SetActorHiddenInGame(true);
 			Blockout->SetActorEnableCollision(false);
@@ -656,8 +670,8 @@ void ATN_GeneralBriefing::Tick(float DeltaSeconds)
 	if (GetNetMode() == NM_DedicatedServer) { return; }
 
 	// Se gira hacia el jugador local si está cerca y le saluda de vez en cuando (a lo militar).
-	const APlayerController* LocalPC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
-	const APawn* LocalPawn = LocalPC ? LocalPC->GetPawn() : nullptr;
+	// Con la pantalla partida (#311), a la tortuga local más cercana.
+	const APawn* LocalPawn = TNLocalViews::ClosestLocalPawn(GetWorld(), GetActorLocation());
 	float TargetYaw = 0.f;
 	if (LocalPawn)
 	{
@@ -675,7 +689,7 @@ void ATN_GeneralBriefing::Tick(float DeltaSeconds)
 		}
 	}
 	LookYaw = FMath::FInterpTo(LookYaw, TargetYaw, DeltaSeconds, 3.f);
-	General->SetRelativeRotation(FRotator(0.f, -90.f + LookYaw, 0.f));
+	General->SetRelativeTransform(GeneralTransform());
 	SaluteCooldown -= DeltaSeconds;
 	if (SaluteTimeLeft > 0.f)
 	{

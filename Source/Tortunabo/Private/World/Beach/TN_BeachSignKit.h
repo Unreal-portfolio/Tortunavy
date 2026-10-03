@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "TN_BeachBoostKit.h"
 #include "TN_BeachTrapKit.h"
 
@@ -222,11 +223,10 @@ namespace TNBeachSignKit
 		}
 	}
 
-	/** Distancia en planta (cm) de la tortuga que se controla en esta máquina a At (enorme si no hay). */
+	/** Distancia en planta (cm) de la tortuga local más cercana a At (con la pantalla partida, cualquiera; enorme si no hay). */
 	inline double LocalPawnDistance(const UWorld* World, const FVector& At)
 	{
-		const APlayerController* Viewer = World ? World->GetFirstPlayerController() : nullptr;
-		const APawn* Pawn = Viewer && Viewer->IsLocalController() ? Viewer->GetPawn() : nullptr;
+		const APawn* Pawn = TNLocalViews::ClosestLocalPawn(World, At);
 		return Pawn ? FVector::Dist2D(Pawn->GetActorLocation(), At) : 1e9;
 	}
 

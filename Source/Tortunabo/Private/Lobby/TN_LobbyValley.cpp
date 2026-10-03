@@ -754,7 +754,9 @@ void ATN_LobbyValley::BuildAll()
 {
 	// Nada que ver en un servidor dedicado ni al cocinar; en el editor y en cada cliente, igual con la misma semilla.
 	if (IsTemplate() || !GetWorld() || IsRunningCommandlet() || IsRunningDedicatedServer()) { return; }
-	const uint32 Key = HashCombine(HashCombine(GetTypeHash(Seed), GetTypeHash(FloraDensity)), HashCombine(GetTypeHash(MaxAnimals), TNValleyBuild::BuildVersion));
+	// Con la versión de los catálogos de arte: al cambiar uno, el valle del editor se rehace con los sustitutos nuevos.
+	const uint32 Key = HashCombine(HashCombine(HashCombine(GetTypeHash(Seed), GetTypeHash(FloraDensity)), HashCombine(GetTypeHash(MaxAnimals), TNValleyBuild::BuildVersion)),
+		TNArt::GetCatalogVersion());
 	// Hecho y con todo en su sitio (si el editor quitara los componentes creados, se rehacen).
 	bool bAlive = bBuilt && Key == BuiltKey && TerrainMesh && TerrainMesh->GetNumSections() > 0;
 	for (int32 i = 0; bAlive && i < GeneratedComps.Num(); ++i)

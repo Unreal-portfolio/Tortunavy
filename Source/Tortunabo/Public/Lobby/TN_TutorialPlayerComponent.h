@@ -76,6 +76,13 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientTutorialFinished(bool bSkipped);
 
+	/**
+	 * Repetir el tutorial estando ya dentro (volver a la salida): el HUD empieza de cero. bInTutorial no cambia, así que
+	 * no hay nada que replicar y el cliente no se enteraría (ShouldResetProgress, #85).
+	 */
+	UFUNCTION(Client, Reliable)
+	void ClientResetProgress();
+
 protected:
 	UFUNCTION(Server, Reliable)
 	void ServerRequestTutorial(bool bForce);

@@ -51,6 +51,11 @@ private:
 		/** 1 si el hilo de juego estaba en un núcleo de eficiencia (CPU híbrida) al empezar o al acabar el fotograma de FrameMs. */
 		TArray<uint8> FrameOnECore;
 		float HitchMs = 0.f;
+		/** Grupos repartidos (TNStress::IsSpreadGroup): los que faltan por intentar, cuántos se han intentado y el mayor tiempo de creación en un fotograma. */
+		int32 PendingSpawn = 0;
+		int32 Attempted = 0;
+		float SpawnMaxFrameMs = 0.f;
+		int32 SpawnFrames = 0;
 		double MemoryMB = 0.0;
 		int32 Actors = 0;
 		int32 ReplicatedActors = 0;
@@ -69,9 +74,11 @@ private:
 	void SampleFrame(FPhaseData& Phase);
 	void SampleNet(FPhaseData& Phase);
 	int32 SpawnGroup(TNStress::EGroup Group, int32 Count);
-	int32 SpawnEnemies(TNStress::EGroup Group, int32 Count);
+	bool SpawnEnemy(TNStress::EGroup Group, int32 Index);
 	int32 SpawnThrowables(int32 Count);
-	int32 SpawnItemBoxes(int32 Count);
+	bool SpawnItemBox();
+	/** Crea los pendientes de un grupo repartido sin pasar de TNStress::SPAWN_BUDGET_MS en este fotograma. */
+	void SpawnPending(FPhaseData& Phase);
 	FVector PickSpot(float MinRadius, float MaxRadius);
 	double GroundAt(const FVector& At, double Fallback) const;
 	void Finish(const TCHAR* Reason);

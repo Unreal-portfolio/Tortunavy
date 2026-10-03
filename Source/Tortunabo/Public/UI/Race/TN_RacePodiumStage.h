@@ -24,8 +24,8 @@ class UTextureRenderTarget2D;
  * lata tumbada, conchas y una estrella de mar en la arena; detrás, la orilla con espuma que va y viene, el mar hasta el
  * horizonte e islas con palmeras de 280 m. El cielo no se captura (queda transparente): lo pinta la pantalla detrás.
  *
- * Las tortugas son mallas esqueléticas de TotugaDemo_Rig con su aspecto (UTN_CosmeticLook: casco, caparazón, piel y
- * ojos) y la animación del jugador (UTN_TurtleAnimInstance) con las poses de celebración: Trofeo (la primera, que
+ * Las tortugas llevan la malla del personaje de la tortuga (TNTurtleArt::ApplyBody, la de BP_TortugaCharacter) con su
+ * aspecto (UTN_CosmeticLook: casco, caparazón, piel, ojos y las piezas de Arte) y la animación del jugador (UTN_TurtleAnimInstance) con las poses de celebración: Trofeo (la primera, que
  * levanta la concha con las dos manos: la concha va entre sus manos), Decepcionada (la segunda) y Pataleta (la tercera,
  * sentada). La cara (boca, ojos y colorete de M_TurtleBody) acompaña a cada pose.
  *

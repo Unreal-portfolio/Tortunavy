@@ -89,6 +89,14 @@ namespace TNBeachLayout
 	constexpr double EggLaunchUp = 650.0;
 	/** Se lanza a quien esté en la salida al abrirse (por delante del muro de detrás y hasta aquí, a lo largo). */
 	constexpr double EggLaunchReachX = 1500.0;
+	/** Margen (cm) del nido del sprint que se despeja alrededor de los huevos (el SprintClearMargin del GameMode). */
+	constexpr double SprintNestClear = 1500.0;
+	/**
+	 * En una ronda de sprint, la huella del castillo con salas principal queda fuera de [SprintLineX − SprintCastleBehind,
+	 * SprintLineX + SprintCastleAhead]: ni el castillo ni sus alas tocan el nido de los huevos.
+	 */
+	constexpr double SprintCastleBehind = 8000.0;
+	constexpr double SprintCastleAhead = 3000.0;
 
 	// ── Reparto ──
 	/** Nada a menos de 15 m por delante de la línea de salida (23 m de los huevos; el salto de los huevos cae a ~7 m). */
@@ -1201,6 +1209,21 @@ namespace TNBeachLayout
 		return FVector(X, Y, GroundZ(X, Y));
 	}
 
+	/**
+	 * Nido del sprint en planta: el centro de sus MaxStartEggs huevos y el radio que despeja el GameMode al poner a las
+	 * finalistas (ATN_BeachRaceGameMode::PlaceSprintFinalists: el huevo más lejano más SprintNestClear, su
+	 * SprintClearMargin). El reparto de una ronda de sprint lo deja vacío: así ese despeje no quita nada.
+	 */
+	inline void SprintNestCircle(FVector2D& OutCenter, double& OutRadius)
+	{
+		FVector2D Sum = FVector2D::ZeroVector;
+		for (int32 Index = 0; Index < MaxStartEggs; ++Index) { Sum += FVector2D(SprintSpot(Index)); }
+		OutCenter = Sum / static_cast<double>(MaxStartEggs);
+		double Reach = 0.0;
+		for (int32 Index = 0; Index < MaxStartEggs; ++Index) { Reach = FMath::Max(Reach, FVector2D::Distance(FVector2D(SprintSpot(Index)), OutCenter)); }
+		OutRadius = Reach + SprintNestClear;
+	}
+
 	/** Agua de meta (P local, los pies de la tortuga): más allá del filo y a ras del agua o por debajo. */
 	inline bool IsFinishWaterLocal(const FVector& P)
 	{
@@ -2210,12 +2233,19 @@ namespace TNBeachLayout
 		double Height = 0.0;
 		/** El elemento que lo crea (Count si es del terreno fijo). */
 		ETNBeachElement Source = ETNBeachElement::Count;
+		/**
+		 * Índice en FRoundLayout::Items del elemento que lo crea (INDEX_NONE si es del terreno fijo o de un muro): si ese
+		 * elemento se quita durante el reparto, el punto se va con él.
+		 */
+		int32 OwnerItem = INDEX_NONE;
 	};
 
 	/** El reparto de una ronda. */
 	struct FRoundLayout
 	{
 		int32 Seed = 0;
+		/** Ronda del sprint final: el nido de los huevos (SprintNestCircle) vacío y el castillo principal lejos de él. */
+		bool bSprint = false;
 		/** Dificultad con la que se ha repartido (va replicada con la semilla) y sus multiplicadores. */
 		ETNProcDifficulty Difficulty = ETNProcDifficulty::Normal;
 		FDifficultyProfile Profile;
@@ -2270,7 +2300,7 @@ namespace TNBeachLayout
 				Bands += FString::Printf(TEXT("%s%.0f"), Bands.IsEmpty() ? TEXT("") : TEXT(" "), Cover * 100.0f);
 			}
 			const TCHAR* DifficultyName = Difficulty == ETNProcDifficulty::Easy ? TEXT("fácil") : (Difficulty == ETNProcDifficulty::Hard ? TEXT("difícil") : TEXT("normal"));
-			return FString::Printf(TEXT("semilla %d, dificultad %s (ayudas x%.1f, trampas x%.1f, enemigos x%.1f) · %d elementos (%d decorado, %d trampas —%d de ellas ayudas—, %d enemigos: %d cangrejos, %d erizos, %d lagartos, %d ermitaños, %d pulpos, %d enjambres de pulgas, %d tanques, %d pasos de quads, %d zonas de gaviotas) · %d castillos con salas y %d enormes · %d fortalezas (%d colosales) · %d cofres · %d filas · %d piezas militares · %d lanzadores · %d rincones · %d tapones · %d asientos · %d puntos interesantes · %d tramos de pasarela guía · castillo principal a %.0f m (se rodea por %s) · paso libre de %.0f m %s · ocupación por banda de 50 m desde %.0f m (%%): %s · media %.0f %%, primer tercio %.0f %%"),
+			return FString(bSprint ? TEXT("sprint final (nido vacío), ") : TEXT("")) + FString::Printf(TEXT("semilla %d, dificultad %s (ayudas x%.1f, trampas x%.1f, enemigos x%.1f) · %d elementos (%d decorado, %d trampas —%d de ellas ayudas—, %d enemigos: %d cangrejos, %d erizos, %d lagartos, %d ermitaños, %d pulpos, %d enjambres de pulgas, %d tanques, %d pasos de quads, %d zonas de gaviotas) · %d castillos con salas y %d enormes · %d fortalezas (%d colosales) · %d cofres · %d filas · %d piezas militares · %d lanzadores · %d rincones · %d tapones · %d asientos · %d puntos interesantes · %d tramos de pasarela guía · castillo principal a %.0f m (se rodea por %s) · paso libre de %.0f m %s · ocupación por banda de 50 m desde %.0f m (%%): %s · media %.0f %%, primer tercio %.0f %%"),
 				Seed, DifficultyName, Profile.Aids, Profile.Traps, Profile.Enemies, Items.Num(), NumDecor, NumTraps, NumAids, NumEnemies, NumCrabs, NumUrchins, NumLizards,
 				NumHermitCrabs, NumOctopuses, NumSandFleas, NumToyTanks, NumQuadLanes, NumGullZones, NumDungeons, NumCastles, NumFortresses, NumColossal, NumChests, NumRows,
 				NumMilitary, NumLaunchers, NumNooks, NumPlugs, Stamps.Num(), Interest.Num(), NumGuidePaths, DungeonPos.X / 100.0,
@@ -2486,8 +2516,29 @@ namespace TNBeachLayout
 		TArray<int32> Caps;
 		/** 1 = sigue puesto; 0 = quitado (se compacta al final). */
 		TArray<uint8> Alive;
+		/** Qué cuelga de cada elemento (TieOwns: zonas reservadas o puntos interesantes; TieTarget: lo salta un lanzador). */
+		TArray<uint8> Ties;
+		static constexpr uint8 TieOwns = 1;
+		static constexpr uint8 TieTarget = 2;
 		/** Arcos de salto, huecos de los rincones y claros de las pulgas: nada se pone encima. */
 		TArray<FItem> Reserved;
+		/** Elemento que ha reservado cada zona (INDEX_NONE: nadie) y si sigue reservada (al quitar a su dueño, se libera). */
+		TArray<int32> ReservedOwner;
+		TArray<uint8> ReservedAlive;
+		/**
+		 * Lanzador de PlaceLauncherBefore y lo que salta: los elementos que pisa su arco de salto (ninguno si salta algo del
+		 * terreno fijo, una cresta o una poza) y el otro lado (Beyond, el fin de su atajo).
+		 */
+		struct FAimRecord
+		{
+			int32 Launcher = INDEX_NONE;
+			TArray<int32, TInlineAllocator<4>> Targets;
+			FVector2D Beyond = FVector2D::ZeroVector;
+			/** Lo que podía saltar al ponerlo: los elementos FirstTarget..LastTarget (INDEX_NONE: el terreno fijo). */
+			int32 FirstTarget = INDEX_NONE;
+			int32 LastTarget = INDEX_NONE;
+		};
+		TArray<FAimRecord> Aims;
 		/** Cubos de BucketSize con los índices de lo que toca cada uno (para no mirar todos los elementos). */
 		TArray<TArray<int32>> Buckets;
 		/** Lo mismo con lo reservado. */
@@ -2501,6 +2552,10 @@ namespace TNBeachLayout
 		int32 BucketsY = 0;
 		/** Centros de los campos de minas (en medio de cada uno, a veces, un cofre). */
 		TArray<FVector2D> MinefieldCenters;
+		/** Ronda de sprint: nada toca el nido de los huevos (SprintNestCircle), ni lo que va por encima. */
+		bool bSprint = false;
+		FVector2D SprintNestCenter = FVector2D::ZeroVector;
+		double SprintNestRadius = 0.0;
 		/** Lo ocupado por casillas de 1 m (el relleno prueba en las libres). */
 		FOccupancy Occupancy;
 		static constexpr double BucketSize = 2500.0;
@@ -2570,9 +2625,12 @@ namespace TNBeachLayout
 		}
 
 		/** Deja Zone libre de todo lo que se ponga después (menos lo que va por encima y los pulpos). */
-		void AddReserved(const FItem& Zone)
+		void AddReserved(const FItem& Zone, int32 Owner = INDEX_NONE)
 		{
 			const int32 Index = Reserved.Add(Zone);
+			ReservedOwner.Add(Owner);
+			ReservedAlive.Add(static_cast<uint8>(1));
+			if (Owner != INDEX_NONE) { Ties[Owner] |= TieOwns; }
 			ReservedVisit.Add(0);
 			int32 BX0 = 0, BX1 = 0, BY0 = 0, BY1 = 0;
 			BucketRange(Zone, 0.0, BX0, BX1, BY0, BY1);
@@ -2587,7 +2645,7 @@ namespace TNBeachLayout
 		 * ellas; el pulpo, en el agua, no mira lo reservado: por encima de una poza pasa algún arco de salto; los pasos de
 		 * quads tampoco: cruzan las franjas de caída de las fortalezas). bIgnoreLanes: los pasos de quads no cuentan.
 		 */
-		bool Fits(const FItem& New, double Pad, bool bIgnoreLanes = false)
+		bool Fits(const FItem& New, double Pad, bool bIgnoreLanes = false, TConstArrayView<int32> Ignore = {})
 		{
 			int32 BX0 = 0, BX1 = 0, BY0 = 0, BY1 = 0;
 			BucketRange(New, Pad, BX0, BX1, BY0, BY1);
@@ -2601,7 +2659,7 @@ namespace TNBeachLayout
 					{
 						if (VisitMark[Index] == VisitStamp) { continue; }
 						VisitMark[Index] = VisitStamp;
-						if (!Alive[Index]) { continue; }
+						if (!Alive[Index] || (Ignore.Num() > 0 && Ignore.Contains(Index))) { continue; }
 						const FItem& Old = Out.Items[Index];
 						if (Old.bOverlay != New.bOverlay || (bIgnoreLanes && Old.Element == ETNBeachElement::QuadLane)) { continue; }
 						// Entre dos piezas de decorado pequeño basta SmallDecorPad (se pasa entre ellas igual).
@@ -2621,7 +2679,7 @@ namespace TNBeachLayout
 						{
 							if (ReservedVisit[Index] == VisitStamp) { continue; }
 							ReservedVisit[Index] = VisitStamp;
-							if (Clearance(Reserved[Index], New) < 0.0) { return false; }
+							if (ReservedAlive[Index] && Clearance(Reserved[Index], New) < 0.0) { return false; }
 						}
 					}
 				}
@@ -2636,9 +2694,10 @@ namespace TNBeachLayout
 		bool TryAdd(const FItem& Item, double Pad)
 		{
 			// De lo más barato y lo que más falla (pisar algo, con la playa llena) a lo más caro.
-			if (!InBounds(Item) || !Fits(Item, Pad) || !TerrainAllows(Item) || !SeatIsGentle(Item)) { return false; }
+			if (!InBounds(Item) || TouchesSprintNest(Item) || !Fits(Item, Pad) || !TerrainAllows(Item) || !SeatIsGentle(Item)) { return false; }
 			const int32 Index = Out.Items.Add(Item);
 			Alive.Add(static_cast<uint8>(1));
+			Ties.Add(0);
 			VisitMark.Add(0);
 			int32 BX0 = 0, BX1 = 0, BY0 = 0, BY1 = 0;
 			BucketRange(Item, 0.0, BX0, BX1, BY0, BY1);
@@ -2662,6 +2721,21 @@ namespace TNBeachLayout
 			return true;
 		}
 
+		/**
+		 * En una ronda de sprint, si la huella entera de Item (con ItemPad de margen) toca el nido de los huevos: el GameMode
+		 * lo despeja al poner a las finalistas y lo cortaría (con lo que lleve encima flotando).
+		 */
+		bool TouchesSprintNest(const FItem& Item) const
+		{
+			if (!bSprint) { return false; }
+			double T = 0.0;
+			return TNProcMap::DistPointSegment(SprintNestCenter, Item.EndA(), Item.EndB(), T) < SprintNestRadius + Item.Radius + ItemPad;
+		}
+
+		/**
+		 * Quita un elemento ya puesto con lo que es suyo: sus zonas reservadas (arco de salto, franja de caída, claro), sus
+		 * puntos interesantes y los lanzadores que se quedan sin nada que saltar (no quedan lanzadores huérfanos).
+		 */
 		void Remove(int32 Index)
 		{
 			if (!Alive.IsValidIndex(Index) || !Alive[Index]) { return; }
@@ -2670,6 +2744,29 @@ namespace TNBeachLayout
 			Grid.Stamp(Item, -1);
 			if (!Item.bOverlay) { Occupancy.Mark(Item.EndA(), Item.EndB(), Item.Core, -1); }
 			--Counts[static_cast<int32>(Item.Element)];
+			if (Ties[Index] & TieOwns)
+			{
+				for (int32 r = 0; r < Reserved.Num(); ++r)
+				{
+					if (ReservedOwner[r] == Index) { ReservedAlive[r] = 0; }
+				}
+				Out.Interest.RemoveAll([Index](const FInterestPoint& Point) { return Point.OwnerItem == Index; });
+			}
+			if (!(Ties[Index] & TieTarget)) { return; }
+			for (int32 a = 0; a < Aims.Num(); ++a)
+			{
+				const FAimRecord& Aim = Aims[a];
+				if (!Alive[Aim.Launcher] || !Aim.Targets.Contains(Index)) { continue; }
+				bool bAnyTarget = false;
+				for (const int32 Target : Aim.Targets) { bAnyTarget |= Alive[Target] != 0; }
+				if (!bAnyTarget) { Remove(Aim.Launcher); }
+			}
+		}
+
+		/** Lo que salta el lanzador Launcher de PlaceLauncherBefore (null si es de otra pasada). */
+		const FAimRecord* AimOf(int32 Launcher) const
+		{
+			return Aims.FindByPredicate([Launcher](const FAimRecord& Aim) { return Aim.Launcher == Launcher; });
 		}
 
 		/** Quita lo que cierra el paso añadido desde From (lo último primero) hasta que vuelva a haber paso. */
@@ -2700,38 +2797,89 @@ namespace TNBeachLayout
 			return Zone;
 		}
 
-		/** Deja libre el arco de salto de un lanzador (desde su borde hacia delante) y lo apunta como punto interesante. */
-		void ReserveJumpArc(const FItem& Launcher, EItemRole Why)
+		/**
+		 * Deja libre el arco de salto del lanzador LauncherIndex (desde su borde hacia delante) y lo apunta como punto
+		 * interesante: las dos cosas son suyas (se van con él). Si salta algo (Aim, o un lanzador de su pasada), también su
+		 * atajo: hasta el otro lado de lo que salta o, sin Aim, hasta donde cae.
+		 */
+		void ReserveJumpArc(const FItem& Launcher, int32 LauncherIndex, const FAimRecord* Aim)
 		{
 			const double Reach = Launcher.Element == ETNBeachElement::Catapult ? CatapultArc : TrampolineArc;
 			const FVector2D Dir = Launcher.Axis();
-			AddReserved(JumpArcZone(Launcher));
+			AddReserved(JumpArcZone(Launcher), LauncherIndex);
 			FInterestPoint Arc;
 			Arc.Kind = EInterestKind::JumpArc;
 			Arc.Pos = Launcher.Pos;
 			Arc.To = Launcher.Pos + Dir * (Launcher.Radius + 100.0 + Reach);
 			Arc.Source = Launcher.Element;
+			Arc.OwnerItem = LauncherIndex;
+			Ties[LauncherIndex] |= TieOwns;
 			Out.Interest.Add(Arc);
-			if (Why == EItemRole::Launcher)
+			if (Aim || Launcher.Role == EItemRole::Launcher)
 			{
 				FInterestPoint Cut = Arc;
 				Cut.Kind = EInterestKind::Shortcut;
+				if (Aim) { Cut.To = Aim->Beyond; }
 				Out.Interest.Add(Cut);
 			}
 		}
 
-		/** TryAdd y, si es un lanzador, con su arco de salto libre de todo (si no lo está, no se pone). */
-		bool TryAddWithArc(const FItem& Item, double Pad)
+		/**
+		 * TryAdd y, si es un lanzador, con su arco de salto libre de todo (si no lo está, no se pone) y reservado. Con Aim
+		 * (PlaceLauncherBefore), el arco puede pisar lo que salta (Aim->Targets) y nada más, y el lanzador queda apuntado a
+		 * ello: si se quita todo lo que salta, se quita también el lanzador (Remove).
+		 */
+		bool TryAddWithArc(const FItem& Item, double Pad, const FAimRecord* Aim = nullptr)
 		{
 			const bool bLauncher = CachedRule(Item.Element).bLauncher;
 			if (bLauncher)
 			{
 				const FItem Zone = JumpArcZone(Item);
-				if (!InBounds(Zone) || !Fits(Zone, 0.0)) { return false; }
+				const TConstArrayView<int32> Targets = Aim ? TConstArrayView<int32>(Aim->Targets) : TConstArrayView<int32>();
+				if (!InBounds(Zone) || !Fits(Zone, 0.0, false, Targets)) { return false; }
 			}
 			if (!TryAdd(Item, Pad)) { return false; }
-			if (bLauncher) { ReserveJumpArc(Item, Item.Role); }
+			const int32 Index = Out.Items.Num() - 1;
+			if (Aim)
+			{
+				FAimRecord& Record = Aims.Add_GetRef(*Aim);
+				Record.Launcher = Index;
+				for (const int32 Target : Record.Targets) { Ties[Target] |= TieTarget; }
+			}
+			if (bLauncher) { ReserveJumpArc(Item, Index, Aim); }
 			return true;
+		}
+
+		/**
+		 * Lo que pisaría el arco de salto de Launcher, en OutAim.Targets: todo tiene que estar entre FirstTarget y LastTarget
+		 * (lo que se quiere saltar) y, si se quiere saltar algún elemento, al menos uno. Con FirstTarget = INDEX_NONE (salta el
+		 * terreno fijo: una cresta o una poza), nada. Lo reservado y los límites los mira luego TryAddWithArc.
+		 */
+		bool AimAt(const FItem& Launcher, int32 FirstTarget, int32 LastTarget, FAimRecord& OutAim)
+		{
+			OutAim.Targets.Reset();
+			OutAim.FirstTarget = FirstTarget;
+			OutAim.LastTarget = LastTarget;
+			const FItem Zone = JumpArcZone(Launcher);
+			int32 BX0 = 0, BX1 = 0, BY0 = 0, BY1 = 0;
+			BucketRange(Zone, 0.0, BX0, BX1, BY0, BY1);
+			++VisitStamp;
+			for (int32 BY = BY0; BY <= BY1; ++BY)
+			{
+				for (int32 BX = BX0; BX <= BX1; ++BX)
+				{
+					for (const int32 Index : Buckets[BY * BucketsX + BX])
+					{
+						if (VisitMark[Index] == VisitStamp) { continue; }
+						VisitMark[Index] = VisitStamp;
+						const FItem& Old = Out.Items[Index];
+						if (!Alive[Index] || Old.bOverlay || Clearance(Zone, Old) >= 0.0) { continue; }
+						if (FirstTarget == INDEX_NONE || Index < FirstTarget || Index > LastTarget) { return false; }
+						OutAim.Targets.Add(Index);
+					}
+				}
+			}
+			return FirstTarget == INDEX_NONE || OutAim.Targets.Num() > 0;
 		}
 
 		/** Un elemento cualquiera de la regla de E con tamaño al azar, en Pos (sin ponerlo). */
@@ -2746,29 +2894,28 @@ namespace TNBeachLayout
 			return Item;
 		}
 
-		/** Trampolín (o catapulta) justo delante (hacia la salida) de Target, apuntando a él: salta encima o por encima. */
-		bool PlaceLauncherBefore(const FVector2D& Target, double TargetReach, ETNBeachElement E, double Along = 0.0)
+		/**
+		 * Trampolín (o catapulta) justo delante (hacia la salida) de Target, apuntando a él: salta encima o por encima. Lo que
+		 * salta son los elementos FirstTarget..LastTarget (LastTarget = INDEX_NONE: solo FirstTarget; FirstTarget = INDEX_NONE:
+		 * algo del terreno fijo, una cresta o una poza). Su arco de salto solo pisa eso, queda reservado libre de lo demás y,
+		 * si se quita todo lo que salta, el lanzador se va con ello.
+		 */
+		bool PlaceLauncherBefore(const FVector2D& Target, double TargetReach, ETNBeachElement E, double Along = 0.0,
+			int32 FirstTarget = INDEX_NONE, int32 LastTarget = INDEX_NONE)
 		{
 			FItem Item = Make(E, FVector2D::ZeroVector, EItemRole::Launcher, 1.0);
 			Item.Yaw = Rng.Range(-8.0, 8.0);
 			const FVector2D Dir = Item.Axis();
 			const FVector2D Side(-Dir.Y, Dir.X);
+			FAimRecord Aim;
+			Aim.Beyond = Target + Dir * TargetReach;
+			const int32 Last = LastTarget == INDEX_NONE ? FirstTarget : LastTarget;
 			for (int32 Try = 0; Try < 4; ++Try)
 			{
 				const double Back = TargetReach + Item.Radius + Rng.Range(150.0, 700.0);
 				const double Lateral = Along + Rng.Range(-400.0, 400.0);
 				Item.Pos = Target - Dir * Back + Side * Lateral;
-				if (!TryAdd(Item, ItemPad)) { continue; }
-				FInterestPoint Cut;
-				Cut.Kind = EInterestKind::Shortcut;
-				Cut.Pos = Item.Pos;
-				Cut.To = Target + Dir * TargetReach;
-				Cut.Source = E;
-				Out.Interest.Add(Cut);
-				FInterestPoint Arc = Cut;
-				Arc.Kind = EInterestKind::JumpArc;
-				Out.Interest.Add(Arc);
-				return true;
+				if (AimAt(Item, FirstTarget, Last, Aim) && TryAddWithArc(Item, ItemPad, &Aim)) { return true; }
 			}
 			return false;
 		}
@@ -2893,15 +3040,24 @@ namespace TNBeachLayout
 			const FElementRule& Rule = CachedRule(ETNBeachElement::SandDungeon);
 			FItem Castle;
 			bool bPlaced = false;
-			for (int32 Try = 0; Try < 24 && !bPlaced; ++Try)
+			const int32 Tries = bSprint ? SprintCastleTriesAhead + SprintCastleTriesBehind : 24;
+			for (int32 Try = 0; Try < Tries && !bPlaced; ++Try)
 			{
 				Castle = MakeItem(Rng, ETNBeachElement::SandDungeon, Rule, Rng.Range(Rule.SizeMin, Rule.SizeMax), 0.0);
 				Castle.Role = EItemRole::Dungeon;
-				const double CastleX = XOfProgress(Rng.Range(0.42, 0.58));
-				Castle.Pos = FVector2D(CastleX, Rng.Range(-1.0, 1.0) * HalfWidth * 0.28);
+				if (bSprint)
+				{
+					Castle.Pos = SprintCastleSpot(Try, Castle.Radius);
+				}
+				else
+				{
+					const double CastleX = XOfProgress(Rng.Range(0.42, 0.58));
+					Castle.Pos = FVector2D(CastleX, Rng.Range(-1.0, 1.0) * HalfWidth * 0.28);
+				}
 				bPlaced = TryAdd(Castle, ItemPad);
 			}
 			if (!bPlaced) { return; }
+			const int32 CastleIndex = Out.Items.Num() - 1;
 			Out.DungeonPos = Castle.Pos;
 			const int32 GapSide = Rng.Chance(0.5) ? 1 : -1;
 			Out.DungeonGapSide = GapSide;
@@ -2934,7 +3090,26 @@ namespace TNBeachLayout
 				}
 			}
 			RestorePassage(WallStart);
-			AddSummit(Castle, 1150.0 * Castle.Spec.SizeScale);
+			AddSummit(Castle, 1150.0 * Castle.Spec.SizeScale, CastleIndex);
+		}
+
+		/** Intentos del castillo principal en una ronda de sprint: primero por delante del nido y, si no cabe, por detrás. */
+		static constexpr int32 SprintCastleTriesAhead = 60;
+		static constexpr int32 SprintCastleTriesBehind = 40;
+
+		/**
+		 * Sitio del castillo principal (de huella Radius) en una ronda de sprint, intento Try: con su huella fuera de
+		 * [SprintLineX − SprintCastleBehind, SprintLineX + SprintCastleAhead]. El terreno fijo solo le deja sitio hacia los
+		 * 335-450 m (donde está la línea del sprint), los 565-720 m y los 100-160 m: primero por delante (lo corren las
+		 * finalistas; a lo ancho hasta el 70 % del semiancho, que ahí los huecos son pocos) y luego por detrás. Sus alas bajan
+		 * hacia la salida desde el castillo: por delante tampoco llegan al nido.
+		 */
+		FVector2D SprintCastleSpot(int32 Try, double Radius)
+		{
+			const bool bAhead = Try < SprintCastleTriesAhead;
+			const double X = bAhead ? Rng.Range(SprintLineX() + SprintCastleAhead + Radius, XOfProgress(0.95))
+				: Rng.Range(ItemsStartX + Radius, SprintLineX() - SprintCastleBehind - Radius);
+			return FVector2D(X, Rng.Range(-0.7, 0.7) * HalfWidth);
 		}
 
 		/** Otro castillo con salas (sin alas) entre T0 y T1. */
@@ -2949,7 +3124,7 @@ namespace TNBeachLayout
 				Castle.Pos = FVector2D(CastleX, Rng.Range(-1.0, 1.0) * HalfWidth * 0.55);
 				if (TryAdd(Castle, ItemPad))
 				{
-					AddSummit(Castle, 1150.0 * Castle.Spec.SizeScale);
+					AddSummit(Castle, 1150.0 * Castle.Spec.SizeScale, Out.Items.Num() - 1);
 					return true;
 				}
 			}
@@ -2968,7 +3143,8 @@ namespace TNBeachLayout
 			if (Rng.Chance(0.5 * LengthScale)) { PlaceExtraDungeon(0.62, 0.9); }
 		}
 
-		void AddSummit(const FItem& Item, double Height)
+		/** La cima de Item (el elemento Owner del reparto: se va con él). */
+		void AddSummit(const FItem& Item, double Height, int32 Owner)
 		{
 			FInterestPoint Top;
 			Top.Kind = EInterestKind::Summit;
@@ -2976,6 +3152,8 @@ namespace TNBeachLayout
 			Top.To = Item.Pos;
 			Top.Height = Height;
 			Top.Source = Item.Element;
+			Top.OwnerItem = Owner;
+			if (Owner != INDEX_NONE) { Ties[Owner] |= TieOwns; }
 			Out.Interest.Add(Top);
 		}
 
@@ -3067,12 +3245,15 @@ namespace TNBeachLayout
 		{
 			const FItem Zone = FortressLandingZone(Fort);
 			if (!Fits(Zone, 0.0, true) || !TryAdd(Fort, FortressPad)) { return false; }
-			AddReserved(Zone);
+			const int32 FortIndex = Out.Items.Num() - 1;
+			AddReserved(Zone, FortIndex);
 			FInterestPoint Arc;
 			Arc.Kind = EInterestKind::JumpArc;
 			Arc.Pos = Fort.Pos + Fort.Axis() * Fort.Radius;
 			Arc.To = Fort.Pos + Fort.Axis() * FortressLandingAt;
 			Arc.Source = Fort.Element;
+			Arc.OwnerItem = FortIndex;
+			Ties[FortIndex] |= TieOwns;
 			Out.Interest.Add(Arc);
 			return true;
 		}
@@ -3254,7 +3435,8 @@ namespace TNBeachLayout
 					// Delante de la fila de verdad (inclinada y combada, o en embudo), no de su X de partida.
 					const double RowX = Kind < 2 ? X + Tilt * Y + Bow * (1.0 - FMath::Square(Y / Edge))
 						: X - FunnelSweep * FMath::Max(0.0, FMath::Abs(Y - FunnelY) - 0.5 * Gap);
-					PlaceLauncherBefore(FVector2D(RowX, Y), 900.0, Rng.Chance(0.5) ? ETNBeachElement::Catapult : ETNBeachElement::Trampoline);
+					PlaceLauncherBefore(FVector2D(RowX, Y), 900.0, Rng.Chance(0.5) ? ETNBeachElement::Catapult : ETNBeachElement::Trampoline, 0.0,
+						RowStart, Out.Items.Num() - 1);
 				}
 			}
 		}
@@ -3481,8 +3663,9 @@ namespace TNBeachLayout
 				FItem Castle = Make(ETNBeachElement::SandCastleHuge, FVector2D(XOfProgress(Progress), CastleY), EItemRole::Castle);
 				if (!TryAdd(Castle, ItemPad)) { return false; }
 				++Made;
-				AddSummit(Castle, 880.0 * Castle.Spec.SizeScale);
-				if (Rng.Chance(LauncherOdds)) { PlaceLauncherBefore(Castle.Pos, Castle.Radius, ETNBeachElement::Trampoline); }
+				const int32 CastleIndex = Out.Items.Num() - 1;
+				AddSummit(Castle, 880.0 * Castle.Spec.SizeScale, CastleIndex);
+				if (Rng.Chance(LauncherOdds)) { PlaceLauncherBefore(Castle.Pos, Castle.Radius, ETNBeachElement::Trampoline, 0.0, CastleIndex); }
 				return true;
 			};
 			for (int32 Slot = 0; Slot < Wanted; ++Slot)
@@ -3513,7 +3696,7 @@ namespace TNBeachLayout
 				const int32 Wanted = Scaled(Rng.RangeInt(1, 2), Profile.Aids);
 				for (int32 k = 0; k < Wanted; ++k)
 				{
-					PlaceLauncherBefore(Castle.Pos, Castle.Radius, ETNBeachElement::Trampoline, Rng.Range(-0.5, 0.5) * Castle.Radius);
+					PlaceLauncherBefore(Castle.Pos, Castle.Radius, ETNBeachElement::Trampoline, Rng.Range(-0.5, 0.5) * Castle.Radius, i);
 				}
 			}
 			// Al pie de la cara empinada de las crestas con cornisa: un bote y se pasa por encima.
@@ -3615,7 +3798,8 @@ namespace TNBeachLayout
 		/**
 		 * Catapultas garantizadas: si con todo el reparto hay menos de Minimum, los trampolines de delante de un obstáculo
 		 * (castillos, crestas, pozas y filas) pasan a ser catapultas, en el mismo sitio y un poco más atrás (son más grandes):
-		 * saltan lo mismo, más lejos.
+		 * saltan lo mismo, más lejos. La catapulta entra como el trampolín (AimAt y TryAddWithArc): su arco de 30 m, más
+		 * largo que el de 22 m del trampolín, solo puede pisar lo que salta, y su arco y su atajo son los suyos.
 		 */
 		void EnsureCatapults(int32 Minimum)
 		{
@@ -3624,29 +3808,26 @@ namespace TNBeachLayout
 			for (int32 i = 0; i < NumBefore && Counts[CatapultIndex] < Minimum; ++i)
 			{
 				if (!Alive[i] || Out.Items[i].Element != ETNBeachElement::Trampoline || Out.Items[i].Role != EItemRole::Launcher) { continue; }
+				const FAimRecord* Found = AimOf(i);
+				if (!Found) { continue; }
+				const FAimRecord Was = *Found;
 				const FItem Tramp = Out.Items[i];
 				FItem Cat = Make(ETNBeachElement::Catapult, FVector2D::ZeroVector, EItemRole::Launcher, 1.0);
 				Cat.Yaw = Tramp.Yaw;
 				const double Back = Cat.Radius - Tramp.Radius + 50.0;
 				Cat.Pos = Tramp.Pos - Cat.Axis() * Back;
+				// Fuera el trampolín con su arco y sus puntos; si la catapulta no cabe, vuelve (cabía antes y no cierra el paso).
 				Remove(i);
-				if (TryAdd(Cat, ItemPad))
-				{
-					for (FInterestPoint& Point : Out.Interest)
-					{
-						if (Point.Source == ETNBeachElement::Trampoline && Point.Pos.Equals(Tramp.Pos, 0.01))
-						{
-							Point.Pos = Cat.Pos;
-							Point.Source = ETNBeachElement::Catapult;
-						}
-					}
-				}
-				else
-				{
-					// No cabe: vuelve el trampolín (cabía antes y no cierra el paso).
-					TryAdd(Tramp, ItemPad);
-				}
+				if (!ReAim(Cat, Was)) { ReAim(Tramp, Was); }
 			}
+		}
+
+		/** Pone Launcher apuntando a lo mismo que Was (lo que siga puesto de lo que podía saltar), con su arco validado. */
+		bool ReAim(const FItem& Launcher, const FAimRecord& Was)
+		{
+			FAimRecord Aim;
+			Aim.Beyond = Was.Beyond;
+			return AimAt(Launcher, Was.FirstTarget, Was.LastTarget, Aim) && TryAddWithArc(Launcher, ItemPad, &Aim);
 		}
 
 		/**
@@ -3790,7 +3971,7 @@ namespace TNBeachLayout
 				Clearing.bBlocking = false;
 				if (!TerrainAllows(Clearing) || !Fits(Clearing, ItemPad)) { continue; }
 				if (!TryAdd(Fleas, ItemPad)) { continue; }
-				AddReserved(Clearing);
+				AddReserved(Clearing, Out.Items.Num() - 1);
 				++Made;
 			}
 		}
@@ -3934,7 +4115,7 @@ namespace TNBeachLayout
 					}
 					for (const int32 Index : ReservedBuckets[BY * BucketsX + BX])
 					{
-						if (ReservedVisit[Index] == VisitStamp) { continue; }
+						if (ReservedVisit[Index] == VisitStamp || !ReservedAlive[Index]) { continue; }
 						ReservedVisit[Index] = VisitStamp;
 						const FItem& Zone = Reserved[Index];
 						double T = 0.0;
@@ -4008,6 +4189,7 @@ namespace TNBeachLayout
 			const double Size = FMath::Min(Rng.Range(Rule.SizeMin, Rule.SizeMax), Room / (TNBeach::FootprintRadius(E) * CoreFractionOf(E)));
 			FItem Item = Make(E, Pos, Role, Size);
 			if (!TryAddWithArc(Item, ItemPad)) { return 0; }
+			const int32 ItemIndex = Out.Items.Num() - 1;
 			int32 Placed = 1;
 			double Area = Item.CoreArea();
 			if (!bLitterPool && Rule.ClusterChance > 0.0 && Rng.Chance(Rule.ClusterChance))
@@ -4031,7 +4213,7 @@ namespace TNBeachLayout
 			if ((E == ETNBeachElement::WobblyPlatform || E == ETNBeachElement::MovingPlatform || E == ETNBeachElement::SandCastleHuge)
 				&& Rng.Chance(FMath::Min(0.95, 0.4 * Profile.Aids)))
 			{
-				if (PlaceLauncherBefore(Item.Pos, Item.Radius, ETNBeachElement::Trampoline)) { ++Placed; }
+				if (PlaceLauncherBefore(Item.Pos, Item.Radius, ETNBeachElement::Trampoline, 0.0, ItemIndex)) { ++Placed; }
 			}
 			if (OutArea) { *OutArea = Area; }
 			return Placed;
@@ -4265,11 +4447,18 @@ namespace TNBeachLayout
 			// Fuera lo quitado (el orden se conserva: el mismo en todas las máquinas).
 			TArray<FItem> Kept;
 			Kept.Reserve(Out.Items.Num());
+			TArray<int32> NewIndex;
+			NewIndex.Init(INDEX_NONE, Out.Items.Num());
 			for (int32 i = 0; i < Out.Items.Num(); ++i)
 			{
-				if (Alive[i]) { Kept.Add(Out.Items[i]); }
+				if (Alive[i]) { NewIndex[i] = Kept.Add(Out.Items[i]); }
 			}
 			Out.Items = MoveTemp(Kept);
+			// Los puntos de lo quitado ya se fueron con ello (Remove); los demás, al índice nuevo de su elemento.
+			for (FInterestPoint& Point : Out.Interest)
+			{
+				if (NewIndex.IsValidIndex(Point.OwnerItem)) { Point.OwnerItem = NewIndex[Point.OwnerItem]; }
+			}
 			Out.Stamps.Reserve(Out.Items.Num());
 			for (const FItem& Item : Out.Items)
 			{
@@ -4342,14 +4531,23 @@ namespace TNBeachLayout
 	 * catapultas que falten y tapones de las líneas rectas. Lo que cierra
 	 * el paso se comprueba al ponerlo (en una ventana de ±60 m; los tapones, en toda la playa) y, en toda la playa, tras
 	 * cada fila, cada banda y cada pasada que cierra.
+	 * bSprint: ronda del sprint final. Nada toca el nido de los huevos de la línea del sprint (SprintNestCircle, lo que el
+	 * GameMode despeja al poner a las finalistas) y el castillo principal va por delante del nido o, si no cabe, por detrás
+	 * (SprintCastleSpot). Sin bSprint, el reparto es el mismo de siempre (la misma secuencia de la semilla).
 	 */
-	inline void GenerateRound(int32 Seed, ETNProcDifficulty Difficulty, FRoundLayout& Out)
+	inline void GenerateRound(int32 Seed, ETNProcDifficulty Difficulty, FRoundLayout& Out, bool bSprint = false)
 	{
 		Out = FRoundLayout();
 		Out.Seed = Seed;
+		Out.bSprint = bSprint;
 		Out.Difficulty = Difficulty;
 		Out.Profile = DifficultyProfileOf(Difficulty);
 		FBuilder Builder(Out, Seed, Out.Profile);
+		if (bSprint)
+		{
+			Builder.bSprint = true;
+			SprintNestCircle(Builder.SprintNestCenter, Builder.SprintNestRadius);
+		}
 		Builder.PlaceMainDungeon();
 		Builder.PlaceColossalFortresses();
 		Builder.PlaceExtraDungeons();

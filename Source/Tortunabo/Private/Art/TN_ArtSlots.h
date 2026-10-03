@@ -4,7 +4,8 @@
 
 /**
  * Tabla de todas las piezas de arte sustituibles (Docs/Arte_Assets.md). Se escribe en TN_ArtSlots_<Parte>.inl (Lobby:
- * castillo; LobbyValley: valle y tutorial; LobbyPlayground: parque y puestos; ProcMap; Beach), una pieza por
+ * castillo; LobbyValley: valle y tutorial; LobbyPlayground: parque y puestos; ProcMap; Beach; Turtle: piezas pegadas a la
+ * tortuga), una pieza por
  * TN_ART_SLOT(...). La leen TN.Art.Slots, los tests
  * (Tortunabo.Art.*) y Scripts/arte/rellenar_catalogos.py (que mete cada pieza vacía en su catálogo y genera la lista del
  * documento), así que cada campo es una cadena entre comillas dobles, sin comillas dentro.
@@ -20,6 +21,8 @@ namespace TNArt
 		inline const TCHAR* Component = TEXT("Componente");
 		/** Malla de un ISM/HISM: cambia la de todas sus instancias. */
 		inline const TCHAR* Instances = TEXT("Instancias");
+		/** Malla estática nueva pegada a un hueso de la tortuga (TNTurtleArt): sigue su animación; sin ella no hay nada. */
+		inline const TCHAR* Bone = TEXT("Hueso");
 	}
 
 	struct FSlotInfo
@@ -38,7 +41,7 @@ namespace TNArt
 		const TCHAR* Pivot;
 	};
 
-	/** Todas las piezas, en el orden de los .inl (Lobby, ProcMap, Beach). */
+	/** Todas las piezas, en el orden de los .inl (Lobby, ProcMap, Beach, Turtle). */
 	TArrayView<const FSlotInfo> GetSlotTable();
 
 	/** La pieza de la tabla o nullptr. */

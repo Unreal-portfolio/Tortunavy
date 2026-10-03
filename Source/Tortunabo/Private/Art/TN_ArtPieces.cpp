@@ -10,6 +10,7 @@
 namespace TNArtDetail
 {
 	bool CanModify(const UActorComponent* Comp);
+	void NoteEditorOwner(const UActorComponent* Comp);
 	void ApplyMaterials(UMeshComponent* Comp, const TNArt::FResolved& R);
 	void CopyCollision(const UPrimitiveComponent* From, UPrimitiveComponent* To);
 }
@@ -152,6 +153,7 @@ void TNArt::UploadSection(UProceduralMeshComponent* Comp, int32 Section, const F
 	const FPieceLog* Log, bool bSRGBConversion)
 {
 	if (!Comp) { return; }
+	TNArtDetail::NoteEditorOwner(Comp);
 	const TArray<FProcMeshTangent> NoTangents;
 	TArray<FPieceRange> Removed;
 	if (Log && TNArtDetail::CanModify(Comp))
@@ -201,6 +203,7 @@ void TNArt::ClearPieceArt(AActor* Owner, FName Group)
 void TNArt::SpawnPieceArt(USceneComponent* AttachTo, const FPieceLog& Log)
 {
 	if (!AttachTo) { return; }
+	TNArtDetail::NoteEditorOwner(AttachTo);
 	AActor* Owner = AttachTo->GetOwner();
 	ClearPieceArt(Owner, Log.GetGroup());
 	if (!TNArtDetail::CanModify(AttachTo)) { return; }

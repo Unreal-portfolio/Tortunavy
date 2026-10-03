@@ -9,7 +9,6 @@
 #include "Player/TortugaCharacter.h"
 #include "Core/TN_Log.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Core/TN_CosmeticsTypes.h"
 #include "Core/TN_CoopPlayerState.h"

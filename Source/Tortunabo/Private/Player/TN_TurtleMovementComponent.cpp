@@ -1,6 +1,7 @@
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Core/TN_Log.h"
 #include "Player/TortugaCharacter.h"
+#include "World/Beach/TN_BeachTrampoline.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "CollisionQueryParams.h"
 #include "Components/CapsuleComponent.h"
@@ -254,6 +255,8 @@ void UTN_TurtleMovementComponent::UpdateCharacterStateBeforeMovement(float Delta
 	bHasPreJumpBelly = false;
 	if (SimulatesBelly())
 	{
+		// Antes que el panzazo: si rebota, el arrastre no empieza en este paso (lo mira PendingLaunchVelocity).
+		TickTrampolineBounce();
 		TickBellyPhase(DeltaSeconds);
 		// Fuera del panzazo con la cápsula aún encogida (se acabó sin levantarse, o el fin llegó con el movimiento parado):
 		// de pie con los pies en su sitio, dentro del movimiento (el servidor y el dueño igual). Si ya está de pie, nada.
@@ -262,6 +265,40 @@ void UTN_TurtleMovementComponent::UpdateCharacterStateBeforeMovement(float Delta
 		{
 			RestoreStandingCapsule();
 		}
+	}
+}
+
+void UTN_TurtleMovementComponent::TickTrampolineBounce()
+{
+	ATortugaCharacter* Turtle = GetTurtle();
+	// Metida en el caparazón es una caja con física (la lanza el trampolín desde el servidor); otro lanzamiento pendiente
+	// manda en este paso.
+	if (!Turtle || !UpdatedPrimitive || MovementMode == MOVE_None || !PendingLaunchVelocity.IsZero() || Turtle->IsDead()
+		|| Turtle->IsInShell() || !TNTrampolineRules::CanBounce(Velocity))
+	{
+		return;
+	}
+	// Lo que toca la cápsula al acabar el paso anterior (también tras la corrección que se está repitiendo).
+	for (const FOverlapInfo& Overlap : UpdatedPrimitive->GetOverlapInfos())
+	{
+		const UPrimitiveComponent* Touched = Overlap.OverlapInfo.GetComponent();
+		ATN_BeachTrampoline* Trampoline = Touched ? Cast<ATN_BeachTrampoline>(Touched->GetOwner()) : nullptr;
+		FVector BounceVelocity = FVector::ZeroVector;
+		float Strength = 0.f;
+		if (!Trampoline || !Trampoline->IsBounceSensor(Touched) || !Trampoline->ComputeTurtleBounce(Velocity, BounceVelocity, Strength))
+		{
+			continue;
+		}
+		Launch(BounceVelocity);
+		// El vuelo pasa de 5 m: que no se meta sola en el caparazón al caer.
+		Turtle->SetFallImmuneUntilLanded();
+		if (!CharacterOwner->bClientUpdating)
+		{
+			Trampoline->NotifyTurtleBounced(Turtle, Strength);
+			UE_LOG(LogTortunabo, Verbose, TEXT("[Trampolín] %s rebota en %s a (%.0f, %.0f, %.0f) cm/s."), *GetNameSafe(Turtle), *GetNameSafe(Trampoline),
+				BounceVelocity.X, BounceVelocity.Y, BounceVelocity.Z);
+		}
+		return;
 	}
 }
 

@@ -22,6 +22,8 @@ class UTN_FpsCounterWidget;
 class UTN_PauseMenuWidget;
 class UTN_TalkersWidget;
 class UTN_GameSettingsSubsystem;
+class UTN_LocalPlayerProfile;
+class ULocalPlayer;
 
 /** Grupos de ajustes que se pueden restablecer por separado (cada pestaña del menú de pausa). */
 enum class ETNSettingsGroup : uint8
@@ -50,7 +52,8 @@ enum class ETNRebindResult : uint8
  */
 struct FTNKeyBinding
 {
-	/** «IA_Jump», «IA_Move:Y+» (una dirección) o las del juego: «Talk» (pulsar para hablar) y «Pause» (menú de pausa). */
+	/** «IA_Jump», «IA_Move:Y+» (una dirección) o las del juego: «Talk» (pulsar para hablar), «Pause» (menú de pausa) y
+	 *  «Camera» (cambiar de cámara). */
 	FString Id;
 
 	/** Nombre para el jugador («Saltar», «Avanzar»...). */
@@ -72,6 +75,38 @@ struct FTNKeyBinding
 
 	/** Orden en la lista. */
 	int32 Order = 0;
+};
+
+/**
+ * Lo que el subsistema de ajustes pone en cada jugador local: su copia de IMC_Player con sus teclas (y las viejas por
+ * quitar), la entrada de su menú de pausa y los temblores de cámara que le ha apagado. Uno para el jugador 1 y uno por
+ * invitado de la partida local (#311).
+ */
+USTRUCT()
+struct FTNPlayerInputState
+{
+	GENERATED_BODY()
+
+	/** El jugador local de este estado (los invitados; el del jugador 1 no lo necesita). */
+	TWeakObjectPtr<ULocalPlayer> Player;
+
+	/** Copia de IMC_Player con las teclas del jugador (null sin cambios) y copias viejas por quitar. */
+	UPROPERTY(Transient)
+	TObjectPtr<UInputMappingContext> RemappedMapping;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UInputMappingContext>> RetiredMappings;
+
+	/** Entrada del menú de pausa, metida en la pila de su PlayerController, y las teclas que lleva. */
+	UPROPERTY(Transient)
+	TObjectPtr<UInputComponent> PauseInput;
+
+	TWeakObjectPtr<APlayerController> PauseInputOwner;
+	FName BoundPauseKey;
+	FName BoundPausePadKey;
+
+	/** Modificadores de temblor apagados por el ajuste (para volver a encenderlos). */
+	TArray<TWeakObjectPtr<UCameraModifier>> DisabledShakes;
 };
 
 /**
@@ -118,6 +153,12 @@ struct FTNKeyBinding
  * Lo que es de todo el proceso (gamma, escala de la interfaz, filtro de color y, en el editor, calidad gráfica, límite de
  * fotogramas y sincronización vertical) se apunta antes del primer subsistema y se devuelve al quitarse el último (en PIE
  * con varios jugadores hay uno por jugador).
+ *
+ * Partida local (#311): cada jugador tiene sus ajustes de jugador (cámara, controles, tecla del menú, temblor y campo de
+ * visión: TNLocalPlay::CopyPerPlayerSettings); el resto es del PC y lo decide el jugador 1. Los del jugador 1 son los de
+ * siempre y se guardan; los de un invitado viven en su UTN_LocalPlayerProfile y duran la partida. El menú de pausa lo abre
+ * cualquiera, a pantalla completa, y para la partida de todos (SetGamePaused); solo lo maneja quien lo abrió y lo que cambia
+ * es suyo (GetEditedSettings). La escala de la interfaz se multiplica por la de la pantalla partida.
  */
 UCLASS()
 class TORTUNABO_API UTN_GameSettingsSubsystem : public UGameInstanceSubsystem, public FTickableGameObject
@@ -143,9 +184,25 @@ public:
 
 	// ── Ajustes ──────────────────────────────────────────────────────────────
 
+	/** Los ajustes de siempre: los del jugador 1 (los que se guardan; en red, los únicos). */
 	const FTNGameSettings& GetSettings() const { return Settings; }
 
-	/** Cambia los ajustes y los aplica en el acto; se guardan al cerrar el menú (o a los pocos segundos). */
+	/**
+	 * Los que enseña y cambia el menú de pausa: los de quien lo tiene abierto. Un invitado de la partida local (#311) ve los
+	 * suyos (solo cuentan sus ajustes de jugador y no se guardan); si no, los de siempre.
+	 */
+	const FTNGameSettings& GetEditedSettings() const;
+
+	/** true si el menú de pausa lo maneja un invitado de la partida local (solo sus ajustes de jugador; no se guardan). */
+	bool IsEditingGuest() const;
+
+	/** Ajustes con los que juega PC: los del PC con su cámara y sus controles encima (TNLocalPlay::EffectiveSettings). */
+	FTNGameSettings GetSettingsFor(const APlayerController* PC) const;
+
+	/**
+	 * Cambia los ajustes que enseña el menú (GetEditedSettings) y los aplica en el acto; los del jugador 1 se guardan al cerrar
+	 * el menú (o a los pocos segundos); los de un invitado, solo sus ajustes de jugador y sin guardar.
+	 */
 	void EditSettings(TFunctionRef<void(FTNGameSettings&)> Edit);
 
 	/** Vuelve a los valores de serie de una pestaña (en la gráfica, solo el brillo y el contador de FPS). */
@@ -206,6 +263,10 @@ public:
 	float GetLookSensitivity(bool bGamepad) const;
 	bool IsLookYInverted(bool bGamepad) const;
 
+	/** Lo mismo con los de PC (con la pantalla partida, cada jugador los suyos). */
+	float GetLookSensitivityFor(const APlayerController* PC, bool bGamepad) const;
+	bool IsLookYInvertedFor(const APlayerController* PC, bool bGamepad) const;
+
 	/** true si el último aparato que ha tocado el jugador de PC es un mando (así se elige la sensibilidad). */
 	static bool IsUsingGamepad(const APlayerController* PC);
 
@@ -224,10 +285,16 @@ public:
 	 */
 	float GetFieldOfViewOffset() const { return Settings.FieldOfViewOffset; }
 
+	/** El de PC (con la pantalla partida, cada jugador el suyo). */
+	float GetFieldOfViewOffsetFor(const APlayerController* PC) const;
+
 	// ── Teclas y botones ─────────────────────────────────────────────────────
 
-	/** Filas de controles que se pueden cambiar, en el orden de la lista, con la tecla de ahora de cada aparato. */
+	/** Filas de controles que se pueden cambiar, en el orden de la lista, con la tecla de ahora de cada aparato (las del menú: GetEditedSettings). */
 	TArray<FTNKeyBinding> GetKeyBindings() const;
+
+	/** Las mismas filas con las teclas de PC (el tutorial y los carteles las enseñan a cada jugador). */
+	TArray<FTNKeyBinding> GetKeyBindingsFor(const APlayerController* PC) const;
 
 	/** Acciones de IMC_Player que no se cambian (van con el ratón o los sticks, como mirar): solo para enseñarlas. */
 	const TArray<FTNKeyBinding>& GetFixedControls() const { return FixedControls; }
@@ -246,6 +313,12 @@ public:
 
 	/** true si alguna fila no va con su tecla de serie. */
 	bool HasCustomKeys() const;
+
+	/**
+	 * Tecla (bGamepad false) o botón del mando de «Cambiar de cámara» (tercera o primera persona sin gafas); inválida si esa
+	 * fila no tiene. Nunca es la de hablar.
+	 */
+	FKey GetCameraToggleKey(bool bGamepad) const;
 
 	/** Tecla que se puede poner en una fila (no Escape, la consola, los sticks, la rueda, el Tabulador en el editor...). */
 	static bool IsBindableKey(const FKey& Key);
@@ -315,6 +388,9 @@ public:
 	void ClosePauseMenu();
 	bool IsPauseMenuOpen() const;
 
+	/** El jugador que tiene abierto el menú de pausa (null si está cerrado). Con la pantalla partida, solo él lo maneja. */
+	APlayerController* GetPauseMenuOwner() const;
+
 	/** true si ahora se puede abrir el menú de pausa para PC. */
 	bool CanOpenPauseMenu(const APlayerController* PC) const;
 
@@ -365,13 +441,16 @@ private:
 	float AppliedMasterVolume = -1.f;
 	float AppliedEffectsVolume = -1.f;
 
-	/** Entrada del menú de pausa, metida en la pila del PlayerController local, y las teclas elegidas que lleva. */
+	/** Lo que se pone en el jugador 1 (su copia de IMC_Player, la entrada del menú, los temblores apagados). */
 	UPROPERTY(Transient)
-	TObjectPtr<UInputComponent> PauseInput;
+	FTNPlayerInputState PrimaryInput;
 
-	TWeakObjectPtr<APlayerController> PauseInputOwner;
-	FName BoundPauseKey;
-	FName BoundPausePadKey;
+	/** Lo mismo de cada invitado de la partida local (#311). */
+	UPROPERTY(Transient)
+	TArray<FTNPlayerInputState> GuestInputs;
+
+	/** El menú de pausa de la partida local para el mundo (SetGamePaused): se quita al cerrarlo. */
+	TWeakObjectPtr<UWorld> PausedWorld;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_PauseMenuWidget> PauseMenu;
@@ -382,15 +461,9 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_TalkersWidget> TalkersWidget;
 
-	/** Controles: IMC_Player, su copia con las teclas del jugador (null sin cambios) y copias viejas por quitar. */
+	/** Controles: IMC_Player tal cual (las copias con las teclas de cada jugador van en FTNPlayerInputState). */
 	UPROPERTY(Transient)
 	TObjectPtr<UInputMappingContext> OriginalMapping;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UInputMappingContext> RemappedMapping;
-
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<UInputMappingContext>> RetiredMappings;
 
 	/** Filas de controles con sus teclas de serie (de IMC_Player, más hablar y el menú) y las que no se cambian. */
 	TArray<FTNKeyBinding> DefaultBindings;
@@ -407,9 +480,6 @@ private:
 		FKey Key;
 	};
 	TArray<FCodeDefaultKey> PendingCodeDefaults;
-
-	/** Modificadores de temblor apagados por el ajuste (para volver a encenderlos). */
-	TArray<TWeakObjectPtr<UCameraModifier>> DisabledShakes;
 
 	/** Voz propia: si sale (último cálculo). */
 	bool bTransmitAllowed = true;
@@ -448,12 +518,11 @@ private:
 	void ApplyGlobalSettings();
 	void ApplyAudioVolumes(UWorld* World, bool bForce);
 
-	void EnsurePauseInput(APlayerController* PC);
-	void HandlePauseKey(FKey Key);
+	void EnsurePauseInput(APlayerController* PC, FTNPlayerInputState& State, const FTNGameSettings& Own);
 
 	void UpdateSounds(UWorld* World);
 	void UpdateLocalVoice(APlayerController* PC);
-	void UpdateCamera(APlayerController* PC);
+	void UpdateCamera(APlayerController* PC, FTNPlayerInputState& State, const FTNGameSettings& Own);
 	void UpdateFisheye(APlayerController* PC, float DeltaTime);
 	void UpdateFpsCounter(APlayerController* PC);
 	void UpdateTalkers(APlayerController* PC);
@@ -466,15 +535,35 @@ private:
 	/** Pone el idioma de los ajustes si ha cambiado (la lista de idiomas, el del sistema y el nativo se resuelven en TNLanguage). */
 	void ApplyLanguage();
 
+	/** Tamaño de la interfaz: el del jugador 1 por la escala de la pantalla partida (UTN_LocalPlaySubsystem::GetSplitUIScale). */
+	void ApplyUIScale();
+
+	// Jugadores locales (#311)
+	/** El perfil del invitado que tiene abierto el menú de pausa (null si lo tiene el jugador 1 o está cerrado). */
+	UTN_LocalPlayerProfile* GetEditedGuest() const;
+	/** Los ajustes que cambia el menú: los del invitado que lo tiene abierto o los del jugador 1. */
+	FTNGameSettings& EditTarget();
+	/** El estado de PC (jugador 1 o invitado; null para cualquier otro PlayerController). */
+	FTNPlayerInputState* StateFor(const APlayerController* PC);
+	const FTNPlayerInputState* StateFor(const APlayerController* PC) const;
+	/** Los ajustes propios de PC (los del jugador 1 o los del invitado; null para cualquier otro). */
+	const FTNGameSettings* OwnSettingsFor(const APlayerController* PC) const;
+	/** Para (o deja seguir) la partida de todos con el menú de pausa de la partida local. */
+	void SetWorldPaused(APlayerController* PC, bool bPause);
+
 	// Controles
 	void BuildDefaultBindings();
-	void RebuildRemappedMapping();
-	void UpdateInputMapping();
+	void RebuildRemappedMapping(FTNPlayerInputState& State, const FTNGameSettings& Own);
+	void UpdateInputMapping(const ULocalPlayer* Player, FTNPlayerInputState& State);
 	const FTNKeyBinding* FindDefaultBinding(const FString& Id) const;
-	FKey GetBindingKey(const FTNKeyBinding& Row, int32 Device) const;
-	void SetBindingKey(const FTNKeyBinding& Row, int32 Device, const FKey& Key);
-	ETNRebindResult AssignKey(const FTNKeyBinding& Row, int32 Device, const FKey& Key, bool bValidate, FText& OutMessage);
+	FKey GetBindingKey(const FTNGameSettings& Own, const FTNKeyBinding& Row, int32 Device) const;
+	void SetBindingKey(FTNGameSettings& Own, const FTNKeyBinding& Row, int32 Device, const FKey& Key);
+	ETNRebindResult AssignKey(FTNGameSettings& Own, const FTNKeyBinding& Row, int32 Device, const FKey& Key, bool bValidate, FText& OutMessage);
+	TArray<FTNKeyBinding> BuildKeyBindings(const FTNGameSettings& Own) const;
+	/** Las teclas del menú han cambiado: se rehace la copia de IMC_Player de quien lo maneja (y se guarda si es el jugador 1). */
 	void OnKeyBindingsChanged();
+	/** Al cargar: si otra fila ya va con la tecla de «Cambiar de cámara» (ajustes de antes de esa fila), la cámara se queda sin ella. */
+	void FreeCameraKeyConflicts();
 };
 
 /**

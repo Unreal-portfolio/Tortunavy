@@ -7,7 +7,6 @@
 #include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
-#include "Particles/ParticleSystem.h"
 #include "TimerManager.h"
 
 ATN_TotemInteractable::ATN_TotemInteractable()
