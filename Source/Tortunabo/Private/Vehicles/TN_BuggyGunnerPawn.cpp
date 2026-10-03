@@ -280,6 +280,8 @@ void ATN_BuggyGunnerPawn::NotifyControllerChanged()
 	bSelfRightHeld = false;
 	bMainFireLatched = false;
 	RespawnHold = TNBuggy::FHold();
+	bVRHandle[0] = false;
+	bVRHandle[1] = false;
 	Super::NotifyControllerChanged();
 }
 

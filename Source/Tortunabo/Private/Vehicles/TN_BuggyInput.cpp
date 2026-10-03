@@ -7,6 +7,9 @@
 #include "InputCoreTypes.h"
 #include "InputMappingContext.h"
 #include "InputModifiers.h"
+#include "InputTriggers.h"
+#include "VR/TN_VRMath.h"
+#include "VR/TN_VRMode.h"
 
 namespace
 {
@@ -36,6 +39,9 @@ namespace
 		Context->MapKey(Action, EKeys::Gamepad_DPad_Right);
 		MapNegated(Context, Action, EKeys::Gamepad_DPad_Left);
 	}
+
+	/** Stick empujado a partir de aquí cuenta como pulsado (dirección del stick como botón). */
+	constexpr float StickPressThreshold = 0.6f;
 
 	UEnhancedInputLocalPlayerSubsystem* SubsystemOf(const APlayerController* PC)
 	{
@@ -87,6 +93,18 @@ UTN_BuggyInputSet* UTN_BuggyInputSet::Create(UObject* Outer)
 	Driver->MapKey(Set->FireBack, EKeys::Q);
 	Driver->MapKey(Set->FireBack, EKeys::Gamepad_FaceButton_Right);
 	MapCycleAmmo(Driver, Set->CycleAmmo);
+	// Con gafas (Docs/Modo_VR.md, «Vehículos»): gatillos de pedales, el volante con los agarres (ATN_Buggy, no es una
+	// asignación) y, sin agarrarlo, el stick izquierdo; A turbo, X freno de mano, Y enderezar (mantener: reaparecer); stick
+	// derecho hacia delante, disparar sola, y cualquiera de los dos hacia atrás, disparar atrás.
+	MapTouchAxis(Driver, Set->Throttle, FTNVRKeys::RightTriggerAxis);
+	MapTouchAxis(Driver, Set->Brake, FTNVRKeys::LeftTriggerAxis);
+	MapTouchAxis(Driver, Set->Steer, FTNVRKeys::LeftStickX);
+	MapTouchButton(Driver, Set->Boost, FTNVRKeys::A);
+	MapTouchButton(Driver, Set->Handbrake, FTNVRKeys::X);
+	MapTouchButton(Driver, Set->SelfRight, FTNVRKeys::Y);
+	MapTouchStickDirection(Driver, Set->FireCoco, FTNVRKeys::RightStickY, false);
+	MapTouchStickDirection(Driver, Set->FireBack, FTNVRKeys::RightStickY, true);
+	MapTouchStickDirection(Driver, Set->FireBack, FTNVRKeys::LeftStickY, true);
 	Set->DriverContext = Driver;
 
 	UInputMappingContext* Gunner = NewObject<UInputMappingContext>(Set, TEXT("IMC_BuggyGunner"), RF_Transient);
@@ -106,6 +124,13 @@ UTN_BuggyInputSet* UTN_BuggyInputSet::Create(UObject* Outer)
 	Gunner->MapKey(Set->QuickCall, EKeys::Gamepad_DPad_Up);
 	MapNegated(Gunner, Set->QuickCall, EKeys::Two);
 	MapNegated(Gunner, Set->QuickCall, EKeys::Gamepad_FaceButton_Right);
+	// Con gafas: las asas (los agarres, ATN_BuggyGunnerPawn) apuntan con la mano y, sin ellas, el stick derecho; gatillo
+	// derecho, disparar; gatillo izquierdo, la especial (en los karts, el objeto); Y, enderezar (mantener: reaparecer).
+	MapTouchTrigger(Gunner, Set->FireCoco, FTNVRKeys::RightTriggerAxis);
+	MapTouchTrigger(Gunner, Set->FireSpecial, FTNVRKeys::LeftTriggerAxis);
+	MapTouchAxis(Gunner, Set->AimStick, FTNVRKeys::RightStickX);
+	MapTouchAxis(Gunner, Set->AimStick, FTNVRKeys::RightStickY, true);
+	MapTouchButton(Gunner, Set->SelfRight, FTNVRKeys::Y);
 	Set->GunnerContext = Gunner;
 	return Set;
 }
@@ -114,6 +139,64 @@ int32 UTN_BuggyInputSet::CycleDirection(const FInputActionValue& Value)
 {
 	const float Axis = Value.Get<float>();
 	return FMath::IsNearlyZero(Axis) ? 0 : (Axis > 0.f ? 1 : -1);
+}
+
+void UTN_BuggyInputSet::MapTouchTrigger(UInputMappingContext* Context, const UInputAction* Action, const FKey& AxisKey)
+{
+	if (!Context || !Action || !AxisKey.IsValid())
+	{
+		return;
+	}
+	// OpenXR solo da el valor del gatillo: cuenta como pulsado a partir del 55 %, como en la tortuga (ATN_VRRig).
+	FEnhancedActionKeyMapping& Mapping = Context->MapKey(Action, AxisKey);
+	UInputTriggerDown* Down = NewObject<UInputTriggerDown>(Context);
+	Down->ActuationThreshold = TNVRMath::AnalogPressThreshold;
+	Mapping.Triggers.Add(Down);
+}
+
+void UTN_BuggyInputSet::MapTouchAxis(UInputMappingContext* Context, const UInputAction* Action, const FKey& AxisKey, bool bSwizzleToY)
+{
+	if (!Context || !Action || !AxisKey.IsValid())
+	{
+		return;
+	}
+	FEnhancedActionKeyMapping& Mapping = Context->MapKey(Action, AxisKey);
+	Mapping.Modifiers.Add(NewObject<UInputModifierDeadZone>(Context));
+	if (bSwizzleToY)
+	{
+		Mapping.Modifiers.Add(NewObject<UInputModifierSwizzleAxis>(Context));
+	}
+}
+
+void UTN_BuggyInputSet::MapTouchStickDirection(UInputMappingContext* Context, const UInputAction* Action, const FKey& AxisKey, bool bNegative)
+{
+	if (!Context || !Action || !AxisKey.IsValid())
+	{
+		return;
+	}
+	FEnhancedActionKeyMapping& Mapping = Context->MapKey(Action, AxisKey);
+	UTN_InputModifierHalfAxis* Half = NewObject<UTN_InputModifierHalfAxis>(Context);
+	Half->bNegative = bNegative;
+	Mapping.Modifiers.Add(Half);
+	UInputTriggerDown* Down = NewObject<UInputTriggerDown>(Context);
+	Down->ActuationThreshold = StickPressThreshold;
+	Mapping.Triggers.Add(Down);
+}
+
+void UTN_BuggyInputSet::MapTouchButton(UInputMappingContext* Context, const UInputAction* Action, const FKey& Key)
+{
+	if (Context && Action && Key.IsValid())
+	{
+		Context->MapKey(Action, Key);
+	}
+}
+
+FInputActionValue UTN_InputModifierHalfAxis::ModifyRaw_Implementation(const UEnhancedPlayerInput* PlayerInput, FInputActionValue CurrentValue,
+	float DeltaTime)
+{
+	const float Axis = CurrentValue.Get<float>();
+	const float Kept = bNegative ? FMath::Max(0.f, -Axis) : FMath::Max(0.f, Axis);
+	return FInputActionValue(CurrentValue.GetValueType(), FVector(Kept, 0.0, 0.0));
 }
 
 void UTN_BuggyInputSet::AddContext(const APlayerController* PC, const UInputMappingContext* Context)

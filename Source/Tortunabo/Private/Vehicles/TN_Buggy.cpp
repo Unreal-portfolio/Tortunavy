@@ -192,6 +192,9 @@ ATN_Buggy::ATN_Buggy()
 	TurretMount = MakeTurretPart(TEXT("TurretMount"), Chassis, TurretPivot);
 	TurretRing = MakeTurretPart(TEXT("TurretRing"), Chassis, TurretPivot);
 	Turret->SetYawFollower(TurretMount);
+	// Asas de la artillera con gafas: van con el carro (solo guiñada) y se ven solo con ella (UpdateVRVisuals).
+	TurretHandles = MakeTurretPart(TEXT("TurretHandles"), TurretMount, FVector::ZeroVector);
+	TurretHandles->SetVisibility(false);
 
 	// Asiento VR de la conductora: los ojos de su tortuga sentada (con gafas, el origen del seguimiento).
 	DriverVRSeat = CreateDefaultSubobject<UTN_VRSeatComponent>(TEXT("DriverVRSeat"));
@@ -384,7 +387,7 @@ void ATN_Buggy::Tick(float DeltaSeconds)
 	const bool bLocalPlayer = IsLocallyControlled() && IsPlayerControlled();
 	if (bLocalPlayer)
 	{
-		// Con gafas, las manos de la conductora para los demás.
+		// Con gafas, el volante de las manos pone la dirección antes de que la física la lea.
 		UpdateVRDriving(DeltaSeconds);
 	}
 	TickDrivePhysics();

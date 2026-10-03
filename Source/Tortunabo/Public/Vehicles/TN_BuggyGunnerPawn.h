@@ -1,8 +1,8 @@
 // Peón de la artillera del buggy biplaza: sin movimiento, sujeto al asiento trasero (Seat_Gunner), con cámara propia
 // (por encima del hombro o en primera persona desde el cañón, alternable con V o el clic del stick derecho) y apuntado,
 // disparo y cambio de munición por RPC validada (la artillera no es dueña del buggy: sus RPC salen de este peón).
-// Con gafas (Docs/Modo_VR.md, «Vehículos»; TN_BuggyGunnerPawn_VR.cpp): vista en los ojos de su tortuga (VRSeat) y brazos
-// que siguen a sus manos.
+// Con gafas (Docs/Modo_VR.md, «Vehículos»; TN_BuggyGunnerPawn_VR.cpp): vista en los ojos de su tortuga (VRSeat) y, con las
+// asas de la torreta cogidas, el apuntado sale de hacia dónde apuntan las manos.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -68,6 +68,22 @@ public:
 	/** Asiento VR de la artillera, en los ojos de su tortuga (UTN_VRSeatComponent). */
 	UTN_VRSeatComponent* GetVRSeat() const { return VRSeat; }
 
+	/** Artillera local con gafas: si alguna mano tiene cogidas las asas de la torreta. */
+	bool IsVRHandleHeld() const { return bVRHandle[0] || bVRHandle[1]; }
+
+	/**
+	 * Pruebas (TN.VR.SeatPose): la artillera local con la vista sentada coge el asa derecha apuntando con (YawDeg, PitchDeg)
+	 * respecto del buggy; a los Seconds escribe en el registro su apuntado y el de la torreta.
+	 */
+	void DebugVRAimPose(float YawDeg, float PitchDeg, float Seconds);
+
+	/** Una mano coge las asas si al cerrarla está a menos de esto (cm) de un puño. */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Torreta")
+	float VRHandleGrabReachCm = 30.f;
+
+	/** Suavizado del apuntado con las manos (1/s): el temblor del seguimiento no llega al cañón. */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Torreta")
+	float VRAimSmoothing = 20.f;
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -111,7 +127,7 @@ private:
 	void OnRep_Buggy();
 	void AttachToBuggy();
 	void UpdateCamera(float DeltaSeconds);
-	/** Artillera local con la vista sentada: manos que ven los demás y cámara del asiento (en vez de UpdateCamera). */
+	/** Artillera local con la vista sentada: asas, apuntado con las manos y manos que ven los demás (en vez de UpdateCamera). */
 	void UpdateVRGunner(float DeltaSeconds);
 	void ApplyCameraMode();
 	void WatchKnock();
@@ -209,7 +225,8 @@ private:
 	bool bMainFireLatched = false;
 	bool bFirstPerson = false;
 	bool bWasKnocked = false;
-
+	/** Qué manos tienen cogidas las asas (artillera local con gafas). */
+	bool bVRHandle[2] = { false, false };
 	float KickPitchDeg = 0.f;
 	float KickRollDeg = 0.f;
 	float KickBackCm = 0.f;

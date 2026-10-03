@@ -83,6 +83,31 @@ namespace TNBuggyTurretMesh
 		return FVector(Radius * FMath::Cos(Angle), Radius * FMath::Sin(Angle), Z);
 	}
 
+	FVector HandleGripPoint(bool bRight)
+	{
+		return FVector(HandleX, bRight ? HandleHalfSpan : -HandleHalfSpan, HandleZ);
+	}
+
+	void BuildHandles(FTNProcMeshBuffers& Out)
+	{
+		// Manillar de lado a lado delante del pecho de la artillera, con dos puños oscuros y un tope en cada punta.
+		const FVector BarLeft(HandleX, -HandleBarHalf, HandleZ);
+		const FVector BarRight(HandleX, HandleBarHalf, HandleZ);
+		TNProcMesh::TNProcAddCylinder(Out, BarLeft, BarRight, 1.6, 1.6, 8, Trim);
+		for (const bool bRight : { false, true })
+		{
+			const FVector Grip = HandleGripPoint(bRight);
+			const FVector Half(0.0, HandleGripLength * 0.5, 0.0);
+			TNProcMesh::TNProcAddCylinder(Out, Grip - Half, Grip + Half, 2.4, 2.4, 10, Dark);
+			const FVector End = bRight ? BarRight : BarLeft;
+			Out.AddBox(End, AxisX, FVector(2.6, 1.2, 2.6), Paint);
+		}
+		// Brazo del cubo del eje de cabeceo (a la derecha, por encima de la cabeza) al extremo derecho del manillar.
+		const FVector Hub(0.0, (HubInnerY + HubOuterY) * 0.5, -HubRadius);
+		TNProcMesh::TNProcAddCylinder(Out, Hub, BarRight, PostHalf, PostHalf, 8, Yellow);
+		Out.AddBox(BarRight, AxisX, FVector(PostHalf + 0.8, PostHalf + 0.8, PostHalf + 0.8), Dark);
+	}
+
 	void BuildRing(FTNProcMeshBuffers& Out)
 	{
 		AddTorus(Out, FVector(0.0, 0.0, RingZ), RingRadius, RingTube, Trim);

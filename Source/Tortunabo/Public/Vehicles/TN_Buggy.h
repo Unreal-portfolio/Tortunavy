@@ -5,6 +5,7 @@
 #include "WheeledVehiclePawn.h"
 #include "Rally/TN_RallyVehicle.h"
 #include "Vehicles/TN_BuggyMath.h"
+#include "VR/TN_VRVehicleMath.h"
 #include "TN_Buggy.generated.h"
 
 class APlayerState;
@@ -43,7 +44,8 @@ struct FInputActionValue;
  * impactos (coco, charco, mortero, tinta, escudo) los decide el servidor y los replica como estado con hora de fin.
  *
  * Gafas (Docs/Modo_VR.md, «Vehículos»; TN_Buggy_VR.cpp): la conductora se sienta en DriverVRSeat (vista en los ojos de su
- * tortuga, sin la cámara de persecución) y los demás ven sus brazos con sus manos. Las subclases (los karts) lo heredan.
+ * tortuga, sin la cámara de persecución), gira el volante con una o dos manos (agarres) y acelera y frena con los gatillos.
+ * Las asas de la torreta (TurretHandles) solo se ven con una artillera con gafas. Las subclases (los karts) lo heredan.
  */
 UCLASS()
 class TORTUNABO_API ATN_Buggy : public AWheeledVehiclePawn, public ITN_RallyVehicle
@@ -173,6 +175,21 @@ public:
 	/** Asiento VR de una plaza: el de la conductora es de este buggy; el de la artillera, de su peón (nullptr sin él). */
 	UTN_VRSeatComponent* GetVRSeat(ETNRallySeat Seat) const;
 
+	/** Volante de la conductora en los ejes del chasis (el de SM_TN_BuggyBody y las carrocerías tortuga). */
+	static TNVRVehicle::FWheelFrame GetWheelFrame();
+
+	/** Centro del puño izquierdo o derecho de las asas de la torreta, en mundo (giran con el carro). */
+	FVector GetTurretHandleWorld(bool bRight) const;
+
+	/** Conductora local con gafas: giro del volante (grados) y si alguna mano lo tiene cogido. */
+	float GetVRWheelDeg() const { return static_cast<float>(VRWheel.WheelDeg); }
+	bool IsVRWheelHeld() const { return VRWheel.Mask != 0; }
+
+	/**
+	 * Pruebas (TN.VR.SeatPose): la conductora local con la vista sentada coge el volante con las dos manos, lo gira WheelDeg
+	 * y lo mantiene; a los Seconds escribe en el registro el giro del volante, la dirección y el de las ruedas.
+	 */
+	void DebugVRWheelPose(float WheelDeg, float Seconds);
 
 	// ── Pruebas de la torreta (TN_Buggy_TurretFit.cpp; sin efecto en Shipping) ──
 
@@ -327,10 +344,12 @@ private:
 	void UpdateServerTimers();
 
 	// ── Gafas (TN_Buggy_VR.cpp) ────────────────────────────────────────────────
-	/** Conductora local con la vista sentada: las manos que ven los demás (antes de la física). */
+	/** Conductora local con la vista sentada: el volante con las manos (antes de la física, que lee SteerRequest). */
 	void UpdateVRDriving(float DeltaSeconds);
-	/** Cabeza propia oculta en la vista sentada (máquinas con pantalla). */
+	/** Cabeza propia oculta en la vista sentada y asas de la torreta solo con una artillera con gafas (máquinas con pantalla). */
 	void UpdateVRVisuals();
+	/** Vuelve a dejar el volante VR recto y sin manos. */
+	void ResetVRDriving();
 
 	// ── Estabilidad y turbo (TN_Buggy_Drive.cpp) ───────────────────────────────
 	/** Recalcula bAirborne (ninguna rueda en contacto) en cada máquina. */
@@ -477,6 +496,10 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> TurretRing;
 
+	/** Asas de la artillera con gafas (TNBuggyTurretMesh::BuildHandles): cuelgan del carro; ocultas sin una artillera con gafas. */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> TurretHandles;
+
 	/** Asiento VR de la conductora, en los ojos de su tortuga (UTN_VRSeatComponent). */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UTN_VRSeatComponent> DriverVRSeat;
@@ -610,6 +633,14 @@ private:
 	float GunnerKnockLean01 = 0.f;
 
 	float SteerRequest = 0.f;
+	/** Lo que pide el stick o el teclado; con el volante VR en las manos manda el volante. */
+	float StickSteer = 0.f;
+	/** Volante VR de la conductora local y qué manos lo tienen cogido. */
+	TNVRVehicle::FWheelState VRWheel;
+	bool bVRWheelHand[2] = { false, false };
+	/** El volante VR manda en la dirección (cogido o volviendo solo al centro). */
+	bool bVRSteering = false;
+	bool bTurretHandlesShown = false;
 	float FlippedSeconds = 0.f;
 	TNBuggy::FHold RespawnHold;
 	bool bSelfRightHeld = false;

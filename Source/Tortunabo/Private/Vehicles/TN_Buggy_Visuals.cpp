@@ -190,6 +190,7 @@ void ATN_Buggy::BuildTurretVisuals()
 	SetTurretMesh(TurretMount, &TNBuggyTurretMesh::BuildMount, VertexColor);
 	SetTurretMesh(TurretGun, &TNBuggyTurretMesh::BuildGun, VertexColor);
 	SetTurretMesh(TurretBarrel, &TNBuggyTurretMesh::BuildBarrel, Tintable);
+	SetTurretMesh(TurretHandles, &TNBuggyTurretMesh::BuildHandles, VertexColor);
 	// La caña ya tiene malla y material: toma el color de la munición seleccionada.
 	if (Turret)
 	{

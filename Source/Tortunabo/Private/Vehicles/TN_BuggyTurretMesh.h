@@ -78,8 +78,26 @@ namespace TNBuggyTurretMesh
 	constexpr double BellStartX = 56.0;
 	constexpr double MouthRadius = 7.5;
 
+	/**
+	 * Asas para la artillera con gafas (#529, Docs/Modo_VR.md «Vehículos»): un manillar delante de ella, colgado del cubo
+	 * del eje de cabeceo, que gira con el carro (solo en guiñada) y no cabecea, para que siempre quede a mano. Puños a
+	 * HandleHalfSpan a cada lado del eje, HandleX por delante del pivote y a la altura de su pecho (26 cm por debajo de los
+	 * ojos, que van 55 cm sobre el asiento).
+	 */
+	constexpr double HandleX = 50.0;
+	constexpr double HandleHalfSpan = 20.0;
+	constexpr double HandleZ = SeatZ + 29.0;
+	constexpr double HandleBarHalf = 26.0;
+	constexpr double HandleGripLength = 12.0;
+
 	/** Punto del poste del carro (ejes de la torreta sin cabeceo) a Radius del eje y altura Z. */
 	FVector PostPoint(double Radius, double Z);
+
+	/** Centro del puño izquierdo o derecho de las asas (ejes del carro: la torreta sin cabeceo). */
+	FVector HandleGripPoint(bool bRight);
+
+	/** Manillar de las asas con sus puños y el brazo que lo cuelga del cubo: gira con el carro (solo en guiñada). */
+	void BuildHandles(TNProcMesh::FTNProcMeshBuffers& Out);
 
 	/** Aro y sus dos patas al suelo: va fijo en el chasis, no gira. */
 	void BuildRing(TNProcMesh::FTNProcMeshBuffers& Out);

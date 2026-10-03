@@ -1,6 +1,7 @@
 // Artillera de los karts (#295): la del buggy (ATN_BuggyGunnerPawn: cámara, torreta, disparo, cantos del copiloto) más los
 // objetos (#304: los usa ella, con E, clic derecho o LT; con Q o LB, hacia atrás) y la inclinación (A/D o el stick
-// izquierdo), que cambia cuánto gira el kart (ATN_KartBuggy::SetGunnerLean). Las peticiones salen de este peón por RPC
+// izquierdo), que cambia cuánto gira el kart (ATN_KartBuggy::SetGunnerLean). Con gafas (#529) se inclina también con el
+// cuerpo: la cabeza apartada a un lado del asiento (TNVRVehicle::LeanFromHead). Las peticiones salen de este peón por RPC
 // validada (la artillera no es dueña del kart).
 #pragma once
 

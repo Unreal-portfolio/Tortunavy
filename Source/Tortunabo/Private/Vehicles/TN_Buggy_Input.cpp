@@ -66,6 +66,7 @@ void ATN_Buggy::NotifyControllerChanged()
 	bSelfRightHeld = false;
 	bAimBackward = false;
 	bDriverFireLatched = false;
+	ResetVRDriving();
 	// También en el servidor (PossessedBy y UnPossessed pasan por aquí): una conductora que sale no deja el turbo pisado.
 	bBoostHeld = false;
 	RespawnHold = TNBuggy::FHold();
@@ -91,8 +92,12 @@ void ATN_Buggy::OnBrake(const FInputActionValue& Value)
 
 void ATN_Buggy::OnSteer(const FInputActionValue& Value)
 {
-	// Tick añade el contravolante y el bamboleo antes de mandarlo al movimiento.
-	SteerRequest = FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
+	// Tick añade el contravolante y el bamboleo antes de mandarlo al movimiento. Con el volante VR en las manos, manda él.
+	StickSteer = FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
+	if (!bVRSteering)
+	{
+		SteerRequest = StickSteer;
+	}
 }
 
 void ATN_Buggy::OnHandbrakePressed(const FInputActionValue& Value)

@@ -7,6 +7,8 @@
 #include "InputCoreTypes.h"
 #include "InputMappingContext.h"
 #include "InputModifiers.h"
+#include "Vehicles/TN_BuggyInput.h"
+#include "VR/TN_VRMode.h"
 
 namespace
 {
@@ -60,6 +62,12 @@ UTN_KartInputSet* UTN_KartInputSet::Create(UObject* Outer)
 	Driver->MapKey(Set->Fire, EKeys::Gamepad_RightShoulder);
 	Driver->MapKey(Set->LookMouse, EKeys::Mouse2D);
 	MapKartDeadZone(Driver, Set->LookStick, EKeys::Gamepad_Right2D);
+	// Con gafas (Docs/Modo_VR.md, «Vehículos»): B usa el objeto, el stick derecho hacia delante dispara sola (mira con la
+	// cabeza, ATN_KartBuggy) y cualquiera de los dos sticks hacia atrás es «hacia atrás».
+	UTN_BuggyInputSet::MapTouchButton(Driver, Set->UseItem, FTNVRKeys::B);
+	UTN_BuggyInputSet::MapTouchStickDirection(Driver, Set->Fire, FTNVRKeys::RightStickY, false);
+	UTN_BuggyInputSet::MapTouchStickDirection(Driver, Set->Backward, FTNVRKeys::RightStickY, true);
+	UTN_BuggyInputSet::MapTouchStickDirection(Driver, Set->Backward, FTNVRKeys::LeftStickY, true);
 	Set->DriverContext = Driver;
 
 	UInputMappingContext* Gunner = NewObject<UInputMappingContext>(Set, TEXT("IMC_KartGunner"), RF_Transient);
@@ -71,6 +79,12 @@ UTN_KartInputSet* UTN_KartInputSet::Create(UObject* Outer)
 	Gunner->MapKey(Set->Lean, EKeys::D);
 	MapKartNegated(Gunner, Set->Lean, EKeys::A);
 	MapKartDeadZone(Gunner, Set->Lean, EKeys::Gamepad_LeftX);
+	// Con gafas: gatillo izquierdo, usar el objeto; B o el stick izquierdo hacia atrás, «hacia atrás»; el peso, con el stick
+	// izquierdo a los lados y con la cabeza (ATN_KartGunnerPawn).
+	UTN_BuggyInputSet::MapTouchTrigger(Gunner, Set->UseItem, FTNVRKeys::LeftTriggerAxis);
+	UTN_BuggyInputSet::MapTouchButton(Gunner, Set->Backward, FTNVRKeys::B);
+	UTN_BuggyInputSet::MapTouchStickDirection(Gunner, Set->Backward, FTNVRKeys::LeftStickY, true);
+	UTN_BuggyInputSet::MapTouchAxis(Gunner, Set->Lean, FTNVRKeys::LeftStickX);
 	Set->GunnerContext = Gunner;
 	return Set;
 }
