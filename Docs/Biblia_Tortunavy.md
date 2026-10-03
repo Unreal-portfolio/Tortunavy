@@ -1014,6 +1014,14 @@ Lo que pasó y cómo se arregló ([`Docs/Modo_Carrera.md`](Modo_Carrera.md), «S
   1,6 m (2,6 m en trincheras) por debajo de la arena **y** de la malla del terreno, o cae más de 0,6 s sin suelo, la devuelve
   encima, en tres niveles para no entrar nunca en bucle (mismo punto → su último sitio seguro → arena abierta lejos), con 1,5 s de gracia y
   3 s sin patadas de la tormenta. Consola: `TN.Race.Bury`, `TN.Race.SafetyNet 0|1`.
+- **Red de seguridad bajo el terreno en Coop y Clásico** (#633, `UTN_UnderTerrainGuardComponent` de `ATN_RunGameMode` y, con él, de
+  `ATN_ProcMapGameMode`; servidor, 10 veces por segundo): la misma regla de confirmación que la de la playa (`TNUnderTerrain::RegisterLook`:
+  dos miradas seguidas a más de 1,6 m bajo la superficie, o una a más de 4 m) y el mismo punto que se mira (`TNUnderTerrain::BodyProbe`).
+  Sin generador de arena, la superficie se busca con trazas (hasta 30 m por encima) y solo cuenta si debajo no hay suelo (bajo un puente o
+  en una cueva no se toca). No salva a quien nada, está en una zona de muerte o cae al vacío sin nada encima. La pone de pie en la
+  superficie más cercana por encima (o alrededor, hasta 10 m) con `TNBeach::RelocateTurtle`, sin caída ni daño; si se vuelve a hundir en
+  5 s, en su último sitio seguro. Registro: `[Red de seguridad]`. Consola: `TN.SafetyNet.Bury`, `TN.SafetyNet.UnderTerrain 0|1`. Pruebas:
+  `Tortunabo.SafetyNet.UnderTerrain.*`.
 - **Tormenta de bañistas**: su patada busca siempre arena abierta ~20 m por delante del frente; no puede dejar a nadie atrás.
 - **Bola del caparazón**: réplica predictiva, aristas suavizadas, giro máximo de 900 °/s, rebote 0,2.
 - **Recolocar ya no deja una caída vieja** (ronda 4): `TNBeach::RelocateTurtle` pasa por `MOVE_None` antes de `MOVE_Falling` si la tortuga

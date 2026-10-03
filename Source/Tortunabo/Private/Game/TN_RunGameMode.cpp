@@ -1,5 +1,6 @@
 #include "Game/TN_RunGameMode.h"
 #include "Game/TN_MatchStartRules.h"
+#include "Game/TN_UnderTerrainGuard.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -32,6 +33,7 @@ ATN_RunGameMode::ATN_RunGameMode()
 	PlayerControllerClass = AMP_GamePlayerController::StaticClass();
 	DefaultPawnClass = ATortugaCharacter::StaticClass();
 	bUseSeamlessTravel = true;
+	UnderTerrainGuard = CreateDefaultSubobject<UTN_UnderTerrainGuardComponent>(TEXT("UnderTerrainGuard"));
 }
 
 void ATN_RunGameMode::BeginPlay()
