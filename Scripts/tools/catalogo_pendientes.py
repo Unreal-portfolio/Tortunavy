@@ -27,6 +27,8 @@ PENDING = (
     ("/Game/Art/IA/rally/caja_items/", 304),
     ("/Game/Art/IA/rally/", 602),
     ("/Game/Art/Source/Vehicles/Buggy/", 290),
+    # Carrocería de HellYeah que sustituyó SM_TN_BuggyBody (#290): no está en dev; se borra antes de fusionar el lote.
+    ("/Game/Generated/Meshes/Buggy/SM_BuggyBody", 290),
     ("/Game/Audio/Rally/", 603),
     ("/Game/Audio/EffectSounds/FootstepsMiniPack/", 604),
     ("/Game/Audio/EffectSounds/", 348),

@@ -5,8 +5,9 @@
 //     la guiñada (TNBuggy::TurnRadiusFromYawRate), de media entre 0,5 y 1,5 s de giro. Resultado: LogTNBuggy "[Giro] ...".
 //   TN.Rally.RampHold [grados = 15] [cerrar 0|1]
 //     Parrilla en cuesta (#611): crea una rampa y un buggy apoyado en ella con el motor cortado y el freno de carrera (como
-//     en la espera y la cuenta atrás), mide cuánto se desplaza en 5 s (objetivo: < 5 cm) y, de control, cuánto rueda en 2 s
-//     al soltarlo. Resultado: LogTNBuggy "[Rampa] ...". Lejos de la pista (a 2 km de altura) para no tocar nada.
+//     en la espera y la cuenta atrás), mide cuánto se desplaza por la rampa en 5 s (objetivo: < 5 cm; aparte, lo que sube y
+//     baja la suspensión) y, de control, cuánto rueda en 2 s al soltarlo. Resultado: LogTNBuggy "[Rampa] ...". Lejos de la
+//     pista (a 2 km de altura) para no tocar nada. Sin ventana: Tortunabo.Rally.Measure.RampHold.
 
 #include "Vehicles/TN_Buggy.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -208,7 +209,8 @@ namespace TNBuggyProbes
 	constexpr double RampWidthCm = 1200.0;
 	constexpr double RampThicknessCm = 100.0;
 	constexpr double RampHeightCm = 200000.0;
-	constexpr double RampSettleSeconds = 1.5;
+	/** La suspensión (amortiguación 0,25) tarda unos 3 s en asentarse tras la caída: con 1,5 s su rebote contaba como deriva. */
+	constexpr double RampSettleSeconds = 3.0;
 	constexpr double RampHoldSeconds = 5.0;
 	constexpr double RampReleaseSeconds = 2.0;
 	constexpr double RampMaxDriftCm = 5.0;
@@ -224,8 +226,17 @@ namespace TNBuggyProbes
 		bool bMeasuring = false;
 		bool bReleased = false;
 		FVector HoldFrom = FVector::ZeroVector;
+		/** Normal de la rampa: la deriva se mide en su plano (rodar), sin el sube y baja de la suspensión. */
+		FVector RampUp = FVector::UpVector;
 		double HeldDriftCm = -1.0;
+		double HeldNormalCm = 0.0;
 	};
+
+	/** Desplazamiento en el plano de la rampa (cm). */
+	double InPlaneCm(const FVector& Delta, const FVector& Up)
+	{
+		return (Delta - Up * (Delta | Up)).Size();
+	}
 
 	void FinishRamp(TSharedRef<FRampRun> Run, double RolledCm)
 	{
@@ -234,8 +245,9 @@ namespace TNBuggyProbes
 			World->GetTimerManager().ClearTimer(Run->Timer);
 		}
 		const bool bPass = Run->HeldDriftCm >= 0.0 && Run->HeldDriftCm < RampMaxDriftCm;
-		UE_LOG(LogTNBuggy, Display, TEXT("[Rampa] %s: frenado se desplaza %.2f cm en %.0f s (objetivo < %.0f); suelto rueda %.0f cm en %.0f s"),
-			bPass ? TEXT("BIEN") : TEXT("FALLA"), Run->HeldDriftCm, RampHoldSeconds, RampMaxDriftCm, RolledCm, RampReleaseSeconds);
+		UE_LOG(LogTNBuggy, Display,
+			TEXT("[Rampa] %s: frenado se desplaza %.2f cm por la rampa en %.0f s (objetivo < %.0f; la suspensión, %.2f cm en la normal); suelto rueda %.0f cm en %.0f s"),
+			bPass ? TEXT("BIEN") : TEXT("FALLA"), Run->HeldDriftCm, RampHoldSeconds, RampMaxDriftCm, Run->HeldNormalCm, RolledCm, RampReleaseSeconds);
 		if (ATN_Buggy* Buggy = Run->Buggy.Get())
 		{
 			Buggy->Destroy();
@@ -272,15 +284,18 @@ namespace TNBuggyProbes
 		}
 		if (Run->bMeasuring && !Run->bReleased && Elapsed >= RampSettleSeconds + RampHoldSeconds)
 		{
-			Run->HeldDriftCm = FVector::Dist(Location, Run->HoldFrom);
+			Run->HeldDriftCm = InPlaneCm(Location - Run->HoldFrom, Run->RampUp);
+			Run->HeldNormalCm = FMath::Abs((Location - Run->HoldFrom) | Run->RampUp);
 			Run->bReleased = true;
 			Run->HoldFrom = Location;
-			// Como el verde de StartRacing: fuera el freno de carrera (el motor sigue cortado: solo rueda por la cuesta).
+			// Como el verde de StartRacing: fuera el freno de carrera (el motor sigue cortado: solo rueda por la cuesta). Parado y sin
+			// acelerador en una cuesta de menos de 30°, el reposo de Chaos (SleepSlopeLimit) lo duerme y no rueda: en carrera lo
+			// despierta el acelerador.
 			Buggy->SetRaceBrakeHeld(false);
 		}
 		if (Run->bReleased && Elapsed >= RampSettleSeconds + RampHoldSeconds + RampReleaseSeconds)
 		{
-			FinishRamp(Run, FVector::Dist(Location, Run->HoldFrom));
+			FinishRamp(Run, InPlaneCm(Location - Run->HoldFrom, Run->RampUp));
 		}
 	}
 
@@ -331,6 +346,7 @@ namespace TNBuggyProbes
 		Run->World = World;
 		Run->Buggy = Buggy;
 		Run->Ramp = Ramp;
+		Run->RampUp = Up;
 		Run->Start = World->GetTimeSeconds();
 		Run->bQuitWhenDone = Args.IsValidIndex(1) && FCString::Atoi(*Args[1]) != 0;
 		World->GetTimerManager().SetTimer(Run->Timer, FTimerDelegate::CreateLambda([Run]() { StepRamp(Run); }), ProbeTickSeconds, true);
