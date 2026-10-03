@@ -162,12 +162,19 @@ bool ATN_KartBuggy::MayUseItems(const AController* Requester) const
 	{
 		return false;
 	}
-	const AController* Gunner = GetSeatController(ETNRallySeat::Gunner);
 	// Con una tortuga de artillera, los objetos son suyos; sin ella (o con el piloto IA de la artillera), de la conductora.
-	if (Gunner && Gunner->IsPlayerController())
+	// Se decide por los PlayerState de las plazas, que se replican: los controladores de los asientos solo existen en el
+	// servidor, y en un cliente la conductora sin artillera nunca pedía usar el objeto (#295, #304).
+	const APlayerState* Requesting = Requester->PlayerState;
+	if (const APlayerState* Gunner = GetSeatPlayerState(ETNRallySeat::Gunner))
 	{
-		return Requester == Gunner;
+		return Requesting && Requesting == Gunner;
 	}
+	if (const APlayerState* Driver = GetSeatPlayerState(ETNRallySeat::Driver))
+	{
+		return Requesting && Requesting == Driver;
+	}
+	// Sin jugadoras sentadas (kart de la IA): solo el servidor sabe quién conduce.
 	return Requester == GetSeatController(ETNRallySeat::Driver);
 }
 
