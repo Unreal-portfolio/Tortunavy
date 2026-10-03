@@ -139,6 +139,17 @@ cambia. Las cuentas están en `TNDiveLogic` (`Player/TN_DiveDecisions.h`) y las 
 del movimiento (el tiempo cuesta abajo viaja en el movimiento guardado), así que el cliente lo predice igual que el
 servidor. `TN.Dive.SlopeFall 0` lo apaga.
 
+### Rebote en el vuelo del panzazo (#63)
+
+Volando de tripa (antes de tocar el suelo) contra una pared, rebota: de la velocidad horizontal contra la pared vuelve el
+45 % (`DiveWallRestitution`) y de la de a lo largo queda el 60 % (`DiveWallTangentKeep`); la vertical sigue cayendo. Cuenta
+como pared una normal con Z por debajo de 0,35 (`DiveWallMaxNormalZ`): el suelo y las pendientes no rebotan. Desde
+`BellyBounceMinSpeed` (120 cm/s) de velocidad contra la pared, relativa a lo que se toca (un objeto que se aleja igual de
+deprisa no la hace rebotar); otras tortugas y cuerpos con física no cuentan. Lo detectan el choque de la cápsula y el del
+cuerpo tumbado (la cabeza llega antes), y se aplica al final del movimiento, igual en el servidor y en el dueño. El rebote
+arrastrándose en el suelo no cambia (0,35 y 75 %). Pruebas: `Tortunabo.Dive.Wall.*`. `TN.Dive.WallBounce 0` lo apaga. El
+estampado contra la pared (desde 650 cm/s, E9-03) aún no está.
+
 ### Pose
 
 - `PoseBellySlide` (sobre la tripa en el suelo, `SlideW`): cabeza levantada mirando adelante y a los lados, brazos
@@ -172,6 +183,7 @@ solo se mueven con partículas vivas; nada a más de 50 m de la cámara. Ajustes
 | `TN.Dive.Friction <x>` | Multiplica el rozamiento en todas las superficies (0,5 = resbala el doble; 2 = se para antes) |
 | `TN.Dive.Slope <x>` | Multiplica cuánto tiran las pendientes (0 = como en llano) |
 | `TN.Dive.SlopeFall 0\|1` | 0 = cuesta abajo frena como en llano, como antes de #62 |
+| `TN.Dive.WallBounce 0\|1` | 0 = en el vuelo del panzazo resbala por las paredes, como antes de #63 |
 | `TN.Dive.MaxTime <s>` | Tope de segundos arrastrándose (0 = el del componente, 2,6 s) |
 | `TN.Dive.Body 0\|1` | 0 = solo choca la cápsula (la cabeza y las patas vuelven a meterse en las paredes), como antes |
 | `TN.Dive.Debug 1` | Por cada tortuga simulada en esta máquina: fase, tiempo, velocidad, superficie y rozamiento; flecha verde de la velocidad y naranja de la pendiente; el cuerpo tumbado que choca (celeste, rojo al apartarse) |
@@ -188,7 +200,8 @@ salida, rebote y giro; `Belly Slide|Body`: medidas del cuerpo tumbado) y del per
    tablones de un puente y agua poco profunda de la orilla: más o menos arrastre, otro sonido y otro polvo.
 3. Panzazo cuesta abajo de 15° o más (dunas, laderas de arena): sigue cayendo hasta el llano (con `TN.Dive.Debug 1`,
    «bajando» y los segundos cuesta abajo); cuesta arriba frena antes que en llano. En una cuesta suave se queda quieta.
-4. Panzazo contra una pared: rebota un poco hacia atrás con un «tonc» y una bocanada, **con la cabeza tocando la
+4. Panzazo en el aire contra una pared (saltar a 2-3 m de ella y lanzarse): rebota hacia atrás antes de caer (con
+   `TN.Dive.Debug 1`, «rebote en vuelo a … cm/s»); contra una cuesta, no. Panzazo arrastrándose contra una pared: rebota un poco hacia atrás con un «tonc» y una bocanada, **con la cabeza tocando la
    pared, sin meterse** (antes entraba medio cuerpo). Lo mismo contra una muralla de fortaleza de la playa, contra una
    roca y de lado, a lo largo de una pared (el cuerpo resbala por ella sin que la cabeza entre). Empezar el panzazo de
    espaldas a una pared: las patas no se meten, la tortuga sale un poco hacia delante. `TN.Dive.Body 0` para comparar.

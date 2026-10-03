@@ -65,7 +65,7 @@ private:
  * (KeepBellyBodyOutOfWalls).
  *
  * Consola (igual en todas las máquinas; en PIE es una sola): TN.Dive.Slide, TN.Dive.Friction, TN.Dive.Slope,
- * TN.Dive.SlopeFall, TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
+ * TN.Dive.SlopeFall, TN.Dive.WallBounce, TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
  */
 UCLASS()
 class TORTUNABO_API UTN_TurtleMovementComponent : public UCharacterMovementComponent
@@ -287,9 +287,35 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Bounce", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float BellyBounceTangentKeep = 0.75f;
 
-	/** Velocidad contra la pared (cm/s) por debajo de la cual no rebota: se queda pegada, como andando. */
+	/** Velocidad contra la pared (cm/s) por debajo de la cual no rebota: se queda pegada, como andando. También en el vuelo. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Bounce", meta = (ClampMin = "0.0"))
 	float BellyBounceMinSpeed = 120.f;
+
+	// ── Rebote en el vuelo del panzazo (E9-02, #63) ──────────────────────────
+	// Volando de tripa (antes de tocar el suelo) contra una pared (normal con Z por debajo de DiveWallMaxNormalZ; lo demás
+	// es suelo o pendiente) a BellyBounceMinSpeed o más (velocidad relativa a lo que toca), la velocidad horizontal contra la
+	// pared vuelve con DiveWallRestitution y la de a lo largo se queda con DiveWallTangentKeep; la vertical sigue. Lo
+	// detectan el choque de la cápsula (HandleImpact) y el del cuerpo tumbado (KeepBellyBodyOutOfWalls), y se aplica al
+	// final del movimiento: igual en el servidor y en el dueño, también al repetir. No cuentan otras tortugas ni cuerpos con
+	// física. El rebote arrastrándose en el suelo no cambia. TN.Dive.WallBounce 0 lo apaga.
+
+	/** Pared en vuelo: normal con Z por debajo de esto. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
+	float DiveWallMaxNormalZ = 0.35f;
+
+	/** Rebote en vuelo: fracción de la velocidad contra la pared que devuelve. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float DiveWallRestitution = 0.45f;
+
+	/** Rebote en vuelo: fracción de la velocidad horizontal a lo largo de la pared que conserva. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float DiveWallTangentKeep = 0.6f;
+
+	/** Ajustes del rebote en vuelo (TNDiveLogic). */
+	TNDiveLogic::FDiveWallParams GetDiveWallParams() const;
+
+	/** Ajustes del rebote arrastrándose en el suelo (los de siempre, BellyBounce*), con la misma cuenta. */
+	TNDiveLogic::FDiveWallParams GetBellyBounceParams() const;
 
 	/** El cuerpo gira hacia donde se desliza (grados/s) si va a más de BellyTurnMinSpeed y la diferencia es menor que BellyTurnMaxAngle. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Turn", meta = (ClampMin = "0.0"))
@@ -447,6 +473,22 @@ private:
 
 	/** Último apartón del cuerpo tumbado contra una pared (TN.Dive.Debug). */
 	FVector LastBodyPush = FVector::ZeroVector;
+
+	// Rebote en el vuelo del panzazo (#63): la pared más de frente con que ha chocado en este movimiento.
+	bool bPendingAirBounce = false;
+	FVector AirBounceNormal = FVector::ZeroVector;
+	FVector AirImpactVelocity = FVector::ZeroVector;
+	FVector AirImpactOtherVelocity = FVector::ZeroVector;
+	float AirImpactSpeed = 0.f;
+	/** Último rebote en vuelo (TN.Dive.Debug): velocidad contra la pared y hora del mundo. */
+	float LastAirBounceSpeed = 0.f;
+	double LastAirBounceTime = -1.0;
+
+	/** Volando de tripa en el panzazo (aún sin tocar el suelo) en una máquina que simula el movimiento. */
+	bool IsDiveFlight() const;
+
+	/** En el vuelo del panzazo, Hit es una pared contra la que rebotar (yendo a ImpactVelocity): se apunta la más de frente. */
+	void NoteAirImpact(const FHitResult& Hit, const FVector& ImpactVelocity);
 
 	/** Estado de antes del brinco que la levantó de la tripa en el movimiento que se está guardando (ver ConsumeMoveStartBellyState). */
 	bool bHasPreJumpBelly = false;

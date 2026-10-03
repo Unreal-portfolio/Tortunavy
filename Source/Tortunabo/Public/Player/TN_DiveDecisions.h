@@ -9,6 +9,9 @@
  *
  * - Pendiente (E9-01, #62): desde BellySlopeMinAngle, cuesta abajo, menos rozamiento y menos freno; el tiempo del arrastre
  *   no corre en bajada.
+ * - Rebote en vuelo (E9-02, #63): contra una pared (normal con Z < 0,35), la velocidad horizontal contra ella vuelve con
+ *   la restitución y la de a lo largo se queda con una parte. Velocidad relativa a lo que se toca. El del arrastre en el
+ *   suelo usa la misma cuenta con sus ajustes de siempre.
  */
 namespace TNDiveLogic
 {
@@ -162,5 +165,76 @@ namespace TNDiveLogic
 		const double Speed = bDownhill ? Along.Size() : Flat.Size();
 		const double NewSpeed = FMath::Min(Speed * static_cast<double>(Keep), static_cast<double>(bDownhill ? DownhillCap : Cap));
 		return Flat.GetSafeNormal() * NewSpeed;
+	}
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Rebote en vuelo (#63)
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/** Ajustes del rebote en el vuelo del panzazo (UTN_TurtleMovementComponent, Dive|Wall). */
+	struct FDiveWallParams
+	{
+		/** Pared: normal con Z por debajo de esto (más es suelo o pendiente: nada). */
+		float MaxNormalZ = 0.35f;
+		/** Velocidad contra la pared (relativa, cm/s) desde la que rebota; por debajo resbala como siempre. */
+		float MinSpeed = 120.f;
+		/** Lo que vuelve de la velocidad contra la pared. */
+		float Restitution = 0.45f;
+		/** Lo que conserva de la velocidad horizontal a lo largo de la pared. */
+		float TangentKeep = 0.6f;
+	};
+
+	enum class EDiveImpact : uint8
+	{
+		/** Suelo, pendiente, techo, roce lento u objeto que se aleja: el movimiento de siempre. */
+		None,
+		Bounce,
+	};
+
+	/** Normal horizontal (unitaria) de una pared con normal HitNormal; cero si no es pared (suelo, pendiente o techo). */
+	inline FVector WallNormal(const FVector& HitNormal, float MaxNormalZ)
+	{
+		if (HitNormal.Z >= static_cast<double>(MaxNormalZ))
+		{
+			return FVector::ZeroVector;
+		}
+		const FVector Flat(HitNormal.X, HitNormal.Y, 0.0);
+		// Casi horizontal (un techo o el canto de abajo de algo): no es pared.
+		if (Flat.SizeSquared() < 0.25)
+		{
+			return FVector::ZeroVector;
+		}
+		return Flat.GetSafeNormal();
+	}
+
+	/** Velocidad horizontal (cm/s) con que V va contra la pared de normal WallN, relativa a lo que se toca (OtherV). */
+	inline float WallImpactSpeed(const FVector& V, const FVector& OtherV, const FVector& WallN)
+	{
+		const FVector Rel = V - OtherV;
+		return static_cast<float>(-(Rel.X * WallN.X + Rel.Y * WallN.Y));
+	}
+
+	/** Qué pasa al chocar en el vuelo del panzazo con algo de normal HitNormal yendo a V (lo tocado va a OtherV). */
+	inline EDiveImpact ClassifyDiveImpact(const FVector& HitNormal, const FVector& V, const FVector& OtherV, const FDiveWallParams& P)
+	{
+		const FVector WallN = WallNormal(HitNormal, P.MaxNormalZ);
+		if (WallN.IsZero())
+		{
+			return EDiveImpact::None;
+		}
+		return WallImpactSpeed(V, OtherV, WallN) >= P.MinSpeed ? EDiveImpact::Bounce : EDiveImpact::None;
+	}
+
+	/**
+	 * Rebote contra la pared de normal horizontal WallN: de la velocidad horizontal relativa, lo que iba contra la pared
+	 * vuelve con Restitution y lo de a lo largo se queda con TangentKeep. La vertical no cambia (sigue la caída).
+	 */
+	inline FVector ReflectDiveVelocity(const FVector& V, const FVector& OtherV, const FVector& WallN, const FDiveWallParams& P)
+	{
+		const FVector Rel(V.X - OtherV.X, V.Y - OtherV.Y, 0.0);
+		const double Into = FVector::DotProduct(Rel, WallN);
+		const FVector Tangent = Rel - WallN * Into;
+		const FVector Out = Tangent * static_cast<double>(P.TangentKeep) - WallN * (Into * static_cast<double>(P.Restitution));
+		return FVector(Out.X + OtherV.X, Out.Y + OtherV.Y, V.Z);
 	}
 }

@@ -47,6 +47,13 @@ namespace TNBellySlide
 		TEXT("1 = cuesta abajo (desde BellySlopeMinAngle, 12°) el arrastre del panzazo sigue cayendo: menos rozamiento y freno, y su tiempo no corre (#62); 0 = como antes. Igual en el servidor y los clientes."),
 		ECVF_Cheat);
 
+	static int32 GWallBounce = 1;
+	static FAutoConsoleVariableRef CVarWallBounce(
+		TEXT("TN.Dive.WallBounce"),
+		GWallBounce,
+		TEXT("1 = en el vuelo del panzazo rebota contra las paredes (restitución 0,45, 60 % a lo largo; #63); 0 = resbala por ellas, como antes. Igual en el servidor y los clientes."),
+		ECVF_Cheat);
+
 	static float GMaxSeconds = 0.f;
 	static FAutoConsoleVariableRef CVarMaxSeconds(
 		TEXT("TN.Dive.MaxTime"),
@@ -266,6 +273,7 @@ void UTN_TurtleMovementComponent::UpdateCharacterStateBeforeMovement(float Delta
 {
 	Super::UpdateCharacterStateBeforeMovement(DeltaSeconds);
 	bPendingBounce = false;
+	bPendingAirBounce = false;
 	// El movimiento ya se ha guardado (el cliente guarda antes de simular): lo de antes del brinco ya no sirve.
 	bHasPreJumpBelly = false;
 	if (SimulatesBelly())
@@ -663,6 +671,7 @@ void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
 
 	FVector Push = FVector::ZeroVector;
 	FVector MainNormal = FVector::ZeroVector;
+	FHitResult MainHit;
 	double MainDepth = 0.0;
 	for (int32 Side = 0; Side < 2; ++Side)
 	{
@@ -707,6 +716,7 @@ void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
 		{
 			MainDepth = Depth;
 			MainNormal = WallNormal;
+			MainHit = Hit;
 		}
 	}
 	if (Push.IsNearlyZero() || MainNormal.IsNearlyZero())
@@ -724,6 +734,13 @@ void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
 	}
 	bForceNextFloorCheck = true;
 	LastBodyPush = Push;
+
+	// En el vuelo del panzazo la cabeza suele llegar a la pared antes que la cápsula: rebota como si hubiera chocado ella
+	// (#63), con la velocidad de antes de apartarse.
+	if (IsDiveFlight())
+	{
+		NoteAirImpact(MainHit, Velocity);
+	}
 
 	// Deja de ir contra la pared; arrastrándose, además rebota como si hubiera chocado la cápsula (en OnMovementUpdated).
 	const double Into = FVector::DotProduct(Velocity, MainNormal);
@@ -756,7 +773,70 @@ void UTN_TurtleMovementComponent::HandleImpact(const FHitResult& Hit, float Time
 			}
 		}
 	}
+	else if (Hit.bBlockingHit && IsDiveFlight())
+	{
+		// Volando de tripa contra una pared (#63): la velocidad de este subpaso, antes de resbalar por ella.
+		NoteAirImpact(Hit, Velocity);
+	}
 	Super::HandleImpact(Hit, TimeSlice, MoveDelta);
+}
+
+TNDiveLogic::FDiveWallParams UTN_TurtleMovementComponent::GetDiveWallParams() const
+{
+	TNDiveLogic::FDiveWallParams Params;
+	Params.MaxNormalZ = DiveWallMaxNormalZ;
+	Params.MinSpeed = BellyBounceMinSpeed;
+	Params.Restitution = DiveWallRestitution;
+	Params.TangentKeep = DiveWallTangentKeep;
+	return Params;
+}
+
+TNDiveLogic::FDiveWallParams UTN_TurtleMovementComponent::GetBellyBounceParams() const
+{
+	TNDiveLogic::FDiveWallParams Params;
+	Params.MinSpeed = BellyBounceMinSpeed;
+	Params.Restitution = BellyBounceRestitution;
+	Params.TangentKeep = BellyBounceTangentKeep;
+	return Params;
+}
+
+bool UTN_TurtleMovementComponent::IsDiveFlight() const
+{
+	if (TNBellySlide::GWallBounce == 0 || BellyPhase != ETNBellyPhase::None || !IsFalling() || !SimulatesBelly())
+	{
+		return false;
+	}
+	// En un panzazo que aún no se ha arrastrado (tras levantarse, un brinco con el panzazo sin acabar no cuenta).
+	const ATortugaCharacter* Turtle = GetTurtle();
+	return Turtle && Turtle->IsDiving() && Turtle->GetDiveSerial() != 0 && Turtle->GetDiveSerial() != SlideSerial;
+}
+
+void UTN_TurtleMovementComponent::NoteAirImpact(const FHitResult& Hit, const FVector& ImpactVelocity)
+{
+	const UPrimitiveComponent* Other = Hit.GetComponent();
+	// Otras tortugas y cuerpos con física se mueven distinto en cada máquina: no rebota en ellos.
+	if (Other && (Other->IsSimulatingPhysics() || Other->GetCollisionObjectType() == ECC_Pawn
+		|| Other->GetCollisionObjectType() == ECC_PhysicsBody || Cast<APawn>(Other->GetOwner())))
+	{
+		return;
+	}
+	const FVector OtherVelocity = Other ? Other->GetComponentVelocity() : FVector::ZeroVector;
+	const TNDiveLogic::FDiveWallParams Params = GetDiveWallParams();
+	if (TNDiveLogic::ClassifyDiveImpact(Hit.Normal, ImpactVelocity, OtherVelocity, Params) != TNDiveLogic::EDiveImpact::Bounce)
+	{
+		return;
+	}
+	const FVector WallN = TNDiveLogic::WallNormal(Hit.Normal, Params.MaxNormalZ);
+	const float Speed = TNDiveLogic::WallImpactSpeed(ImpactVelocity, OtherVelocity, WallN);
+	// Si choca con varias cosas en el mismo movimiento, manda la que más de frente se lleva.
+	if (!bPendingAirBounce || Speed > AirImpactSpeed)
+	{
+		bPendingAirBounce = true;
+		AirBounceNormal = WallN;
+		AirImpactVelocity = ImpactVelocity;
+		AirImpactOtherVelocity = OtherVelocity;
+		AirImpactSpeed = Speed;
+	}
 }
 
 void UTN_TurtleMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity)
@@ -772,18 +852,36 @@ void UTN_TurtleMovementComponent::OnMovementUpdated(float DeltaSeconds, const FV
 		bPendingBounce = false;
 		if (BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround())
 		{
-			const double Into = FVector::DotProduct(SlideIntentVelocity, PendingBounceNormal);
-			if (-Into >= static_cast<double>(BellyBounceMinSpeed))
+			const TNDiveLogic::FDiveWallParams Params = GetBellyBounceParams();
+			if (TNDiveLogic::WallImpactSpeed(SlideIntentVelocity, FVector::ZeroVector, PendingBounceNormal) >= Params.MinSpeed)
 			{
-				const FVector Tangent = SlideIntentVelocity - PendingBounceNormal * Into;
-				const FVector Bounced = Tangent * static_cast<double>(BellyBounceTangentKeep)
-					- PendingBounceNormal * (Into * static_cast<double>(BellyBounceRestitution));
+				const FVector Bounced = TNDiveLogic::ReflectDiveVelocity(SlideIntentVelocity, FVector::ZeroVector, PendingBounceNormal, Params);
 				Velocity.X = Bounced.X;
 				Velocity.Y = Bounced.Y;
 				if (CharacterOwner && !CharacterOwner->bClientUpdating)
 				{
 					UE_LOG(LogTortunabo, Verbose, TEXT("[Panzazo] %s rebota a %.0f cm/s."), *GetNameSafe(CharacterOwner), Bounced.Size2D());
 				}
+			}
+		}
+	}
+
+	// Rebote en el vuelo del panzazo (#63): la velocidad horizontal sale reflejada de la pared más de frente; la vertical,
+	// la de ahora (sigue cayendo). Si en este mismo movimiento ha caído de tripa, ya manda el arrastre.
+	if (bPendingAirBounce)
+	{
+		bPendingAirBounce = false;
+		if (IsDiveFlight())
+		{
+			const FVector Bounced = TNDiveLogic::ReflectDiveVelocity(AirImpactVelocity, AirImpactOtherVelocity, AirBounceNormal, GetDiveWallParams());
+			Velocity.X = Bounced.X;
+			Velocity.Y = Bounced.Y;
+			if (CharacterOwner && !CharacterOwner->bClientUpdating)
+			{
+				LastAirBounceSpeed = AirImpactSpeed;
+				LastAirBounceTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+				UE_LOG(LogTortunabo, Log, TEXT("[Panzazo] %s rebota en vuelo: %.0f cm/s contra la pared, sale a %.0f cm/s."),
+					*GetNameSafe(CharacterOwner), AirImpactSpeed, Bounced.Size2D());
 			}
 		}
 	}
@@ -1071,9 +1169,14 @@ void UTN_TurtleMovementComponent::ShowBellyDebug() const
 		return;
 	}
 	const bool bLocal = CharacterOwner->IsLocallyControlled();
-	const FString SlopeText = BellySlopeTime > 0.f || bLastSlideDownhill
+	FString SlopeText = BellySlopeTime > 0.f || bLastSlideDownhill
 		? FString::Printf(TEXT(" (%s, %.2f s cuesta abajo)"), bLastSlideDownhill ? TEXT("bajando") : TEXT("ya no baja"), BellySlopeTime)
 		: FString();
+	const UWorld* DebugWorld = GetWorld();
+	if (DebugWorld && LastAirBounceTime >= 0.0 && DebugWorld->GetTimeSeconds() - LastAirBounceTime < 1.5)
+	{
+		SlopeText += FString::Printf(TEXT(" · rebote en vuelo a %.0f cm/s"), LastAirBounceSpeed);
+	}
 	const FString Text = FString::Printf(TEXT("[Panzazo] %s (%s) · %s %.2f s · %.0f cm/s · %s· roce %.0f cm/s² · pendiente %.0f cm/s²%s · panzazo %s nº %d (arrastre del nº %d)"),
 		*GetNameSafe(CharacterOwner), bLocal ? TEXT("local") : TEXT("servidor"), TNBellySlide::PhaseName(BellyPhase), BellyTime,
 		Velocity.Size2D(), *SurfaceText, LastSlideFriction, LastSlopeAccel.Size(), *SlopeText,

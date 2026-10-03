@@ -203,4 +203,73 @@ bool FTNDiveSlopeRulesTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveWallBounceTest,
+	"Tortunabo.Dive.Wall.Bounce",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveWallBounceTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	const FDiveWallParams Air = GetDefault<UTN_TurtleMovementComponent>()->GetDiveWallParams();
+	TestEqual(TEXT("Restitución en vuelo 0,45"), Air.Restitution, 0.45f);
+	TestEqual(TEXT("60 % a lo largo"), Air.TangentKeep, 0.6f);
+
+	// Pared que mira hacia -X; el panzazo va hacia +X a 400 cm/s, algo de lado y cayendo.
+	const FVector Wall(-1.0, 0.0, 0.0);
+	const FVector V(400.0, 100.0, -250.0);
+	TestTrue(TEXT("Pared a 400 cm/s: rebota"), ClassifyDiveImpact(Wall, V, FVector::ZeroVector, Air) == EDiveImpact::Bounce);
+	const FVector Out = ReflectDiveVelocity(V, FVector::ZeroVector, WallNormal(Wall, Air.MaxNormalZ), Air);
+	TestTrue(FString::Printf(TEXT("Sale hacia atrás con el 45 %% (%.0f)"), Out.X), FMath::IsNearlyEqual(Out.X, -180.0, 0.01));
+	TestTrue(TEXT("Conserva el 60 % a lo largo de la pared"), FMath::IsNearlyEqual(Out.Y, 60.0, 0.01));
+	TestEqual(TEXT("La vertical no cambia"), Out.Z, V.Z);
+	AddInfo(FString::Printf(TEXT("Pared a 400 cm/s en vuelo: sale a (%.0f, %.0f) cm/s"), Out.X, Out.Y));
+
+	// Lo que no es pared en vuelo: suelo, pendiente andable, techo; roce lento; objeto que se aleja igual de deprisa.
+	TestTrue(TEXT("Suelo: nada"), ClassifyDiveImpact(FVector::UpVector, FVector(400.0, 0.0, -600.0), FVector::ZeroVector, Air) == EDiveImpact::None);
+	const FVector Slope30(-0.5, 0.0, 0.866);
+	TestTrue(TEXT("Pendiente de 30°: nada"), ClassifyDiveImpact(Slope30, V, FVector::ZeroVector, Air) == EDiveImpact::None);
+	TestTrue(TEXT("Muy empinada (normal Z 0,3): pared"), ClassifyDiveImpact(FVector(-0.954, 0.0, 0.3), V, FVector::ZeroVector, Air) == EDiveImpact::Bounce);
+	TestTrue(TEXT("Techo: nada"), ClassifyDiveImpact(FVector(-0.2, 0.0, -0.98), V, FVector::ZeroVector, Air) == EDiveImpact::None);
+	TestTrue(TEXT("Roce a 100 cm/s: nada"), ClassifyDiveImpact(Wall, FVector(100.0, 400.0, 0.0), FVector::ZeroVector, Air) == EDiveImpact::None);
+	TestTrue(TEXT("Objeto que se aleja a la misma velocidad: nada"), ClassifyDiveImpact(Wall, V, FVector(400.0, 0.0, 0.0), Air) == EDiveImpact::None);
+	TestTrue(TEXT("Objeto que viene hacia ella: cuenta la relativa"), ClassifyDiveImpact(Wall, FVector(60.0, 0.0, 0.0), FVector(-200.0, 0.0, 0.0), Air) == EDiveImpact::Bounce);
+	const FVector OutMoving = ReflectDiveVelocity(FVector(60.0, 0.0, 0.0), FVector(-200.0, 0.0, 0.0), Wall, Air);
+	TestTrue(TEXT("Relativa: sale con el objeto más el 45 % de la relativa"), FMath::IsNearlyEqual(OutMoving.X, -200.0 - 0.45 * 260.0, 0.01));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveWallGroundTest,
+	"Tortunabo.Dive.Wall.GroundUnchanged",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveWallGroundTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	// El rebote arrastrándose en el suelo sigue con sus ajustes (0,35 y 75 %) y da lo mismo que la cuenta de antes de #63.
+	const UTN_TurtleMovementComponent* Defaults = GetDefault<UTN_TurtleMovementComponent>();
+	const FDiveWallParams Ground = Defaults->GetBellyBounceParams();
+	TestEqual(TEXT("Restitución en el suelo: la de siempre"), Ground.Restitution, Defaults->BellyBounceRestitution);
+	TestEqual(TEXT("0,35"), Ground.Restitution, 0.35f);
+	TestEqual(TEXT("75 % a lo largo"), Ground.TangentKeep, 0.75f);
+	TestEqual(TEXT("Desde 120 cm/s"), Ground.MinSpeed, 120.f);
+
+	const FVector N(-0.6, 0.8, 0.0);
+	for (const FVector& Intent : { FVector(500.0, -100.0, 0.0), FVector(300.0, 0.0, 0.0), FVector(130.0, -60.0, 0.0) })
+	{
+		// La cuenta de antes (UTN_TurtleMovementComponent::OnMovementUpdated hasta #62).
+		const double Into = FVector::DotProduct(Intent, N);
+		const bool bOldBounces = -Into >= static_cast<double>(Defaults->BellyBounceMinSpeed);
+		const FVector OldBounced = (Intent - N * Into) * static_cast<double>(Defaults->BellyBounceTangentKeep)
+			- N * (Into * static_cast<double>(Defaults->BellyBounceRestitution));
+		const bool bNewBounces = WallImpactSpeed(Intent, FVector::ZeroVector, N) >= Ground.MinSpeed;
+		TestEqual(TEXT("Rebota en los mismos casos"), bNewBounces, bOldBounces);
+		if (bOldBounces)
+		{
+			const FVector NewBounced = ReflectDiveVelocity(Intent, FVector::ZeroVector, N, Ground);
+			TestTrue(TEXT("Con la misma velocidad"), FVector(NewBounced.X, NewBounced.Y, 0.0).Equals(FVector(OldBounced.X, OldBounced.Y, 0.0), 1e-6));
+		}
+	}
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS
