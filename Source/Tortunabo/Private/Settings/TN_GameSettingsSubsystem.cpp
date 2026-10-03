@@ -884,6 +884,7 @@ void UTN_GameSettingsSubsystem::ResetGroup(ETNSettingsGroup Group)
 		Target.GamepadSensitivity = Defaults.GamepadSensitivity;
 		Target.bInvertMouseY = Defaults.bInvertMouseY;
 		Target.bInvertGamepadY = Defaults.bInvertGamepadY;
+		Target.bGamepadVibration = Defaults.bGamepadVibration;
 		break;
 	case ETNSettingsGroup::Game:
 		Target.bCameraShake = Defaults.bCameraShake;

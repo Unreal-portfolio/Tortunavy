@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-03 19:01\n"
-"PO-Revision-Date: 2026-10-03 19:01\n"
+"POT-Creation-Date: 2026-10-03 22:36\n"
+"PO-Revision-Date: 2026-10-03 22:36\n"
 "Language-Team: \n"
 "Language: zh-Hans\n"
 "MIME-Version: 1.0\n"
@@ -3542,484 +3542,484 @@ msgid "FRASES"
 msgstr "快捷语"
 
 #. Key:	NoKey
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1582)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1582)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1583)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1583)
 msgctxt "TNSettings,NoKey"
 msgid "—"
 msgstr "—"
 
 #. Key:	Space
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1587)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1587)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1588)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1588)
 msgctxt "TNKeys,Space"
 msgid "Espacio"
 msgstr "空格键"
 
 #. Key:	LeftShift
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1588)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1588)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
 msgctxt "TNKeys,LeftShift"
 msgid "Mayús izq."
 msgstr "左Shift"
 
 #. Key:	RightShift
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1588)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1588)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
 msgctxt "TNKeys,RightShift"
 msgid "Mayús der."
 msgstr "右Shift"
 
 #. Key:	LeftCtrl
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
 msgctxt "TNKeys,LeftCtrl"
 msgid "Ctrl izq."
 msgstr "左Ctrl"
 
 #. Key:	RightCtrl
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1589)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
 msgctxt "TNKeys,RightCtrl"
 msgid "Ctrl der."
 msgstr "右Ctrl"
 
 #. Key:	Alt
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
 msgctxt "TNKeys,Alt"
 msgid "Alt"
 msgstr "Alt"
 
 #. Key:	AltGr
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1590)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
 msgctxt "TNKeys,AltGr"
 msgid "Alt Gr"
 msgstr "AltGr"
 
 #. Key:	Backspace
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
 msgctxt "TNKeys,Backspace"
 msgid "Retroceso"
 msgstr "Backspace"
 
 #. Key:	Escape
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1591)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
 msgctxt "TNKeys,Escape"
 msgid "Esc"
 msgstr "Esc"
 
 #. Key:	Enter
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1593)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1593)
 msgctxt "TNKeys,Enter"
 msgid "Intro"
 msgstr "Enter"
 
 #. Key:	Tab
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1592)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1593)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1593)
 msgctxt "TNKeys,Tab"
 msgid "Tab"
 msgstr "Tab"
 
 #. Key:	CapsLock
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1593)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1593)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1594)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1594)
 msgctxt "TNKeys,CapsLock"
 msgid "Bloq Mayús"
 msgstr "Caps Lock"
 
 #. Key:	PageDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1594)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1594)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
 msgctxt "TNKeys,PageDown"
 msgid "Av Pág"
 msgstr "Page Down"
 
 #. Key:	PageUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1594)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1594)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
 msgctxt "TNKeys,PageUp"
 msgid "Re Pág"
 msgstr "Page Up"
 
 #. Key:	Delete
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
 msgctxt "TNKeys,Delete"
 msgid "Supr"
 msgstr "Delete"
 
 #. Key:	Insert
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1595)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
 msgctxt "TNKeys,Insert"
 msgid "Insert"
 msgstr "Insert"
 
 #. Key:	End
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
 msgctxt "TNKeys,End"
 msgid "Fin"
 msgstr "End"
 
 #. Key:	Home
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1596)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
 msgctxt "TNKeys,Home"
 msgid "Inicio"
 msgstr "Home"
 
 #. Key:	ArrowDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
 msgctxt "TNKeys,ArrowDown"
 msgid "Flecha abajo"
 msgstr "下方向键"
 
 #. Key:	ArrowUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
 msgctxt "TNKeys,ArrowUp"
 msgid "Flecha arriba"
 msgstr "上方向键"
 
 #. Key:	ArrowLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1599)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1599)
 msgctxt "TNKeys,ArrowLeft"
 msgid "Flecha izquierda"
 msgstr "左方向键"
 
 #. Key:	ArrowRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1598)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1599)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1599)
 msgctxt "TNKeys,ArrowRight"
 msgid "Flecha derecha"
 msgstr "右方向键"
 
 #. Key:	Mouse
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1599)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1599)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1600)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1600)
 msgctxt "TNKeys,Mouse"
 msgid "Ratón"
 msgstr "鼠标"
 
 #. Key:	MouseLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1601)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1601)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1602)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1602)
 msgctxt "TNKeys,MouseLeft"
 msgid "Clic izquierdo"
 msgstr "鼠标左键"
 
 #. Key:	MouseRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1601)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1601)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1602)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1602)
 msgctxt "TNKeys,MouseRight"
 msgid "Clic derecho"
 msgstr "鼠标右键"
 
 #. Key:	MouseMiddle
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1602)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1602)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
 msgctxt "TNKeys,MouseMiddle"
 msgid "Clic de la rueda"
 msgstr "鼠标中键"
 
 #. Key:	MouseSide1
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1604)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1604)
 msgctxt "TNKeys,MouseSide1"
 msgid "Botón lateral 1"
 msgstr "鼠标侧键 1"
 
 #. Key:	MouseSide2
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1604)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1604)
 msgctxt "TNKeys,MouseSide2"
 msgid "Botón lateral 2"
 msgstr "鼠标侧键 2"
 
 #. Key:	Wheel
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1604)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1604)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1605)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1605)
 msgctxt "TNKeys,Wheel"
 msgid "Rueda"
 msgstr "滚轮"
 
 #. Key:	PadLeftStick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1606)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1606)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1607)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1607)
 msgctxt "TNKeys,PadLeftStick"
 msgid "Stick izquierdo"
 msgstr "左摇杆"
 
 #. Key:	PadRightStick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1606)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1606)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1607)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1607)
 msgctxt "TNKeys,PadRightStick"
 msgid "Stick derecho"
 msgstr "右摇杆"
 
 #. Key:	PadFaceBottom
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1609)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1609)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
 msgctxt "TNKeys,PadFaceBottom"
 msgid "A / Cruz"
 msgstr "A / 叉键"
 
 #. Key:	PadFaceRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1609)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1609)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
 msgctxt "TNKeys,PadFaceRight"
 msgid "B / Círculo"
 msgstr "B / 圆圈键"
 
 #. Key:	PadFaceLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
 msgctxt "TNKeys,PadFaceLeft"
 msgid "X / Cuadrado"
 msgstr "X / 方块键"
 
 #. Key:	PadFaceTop
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1610)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
 msgctxt "TNKeys,PadFaceTop"
 msgid "Y / Triángulo"
 msgstr "Y / 三角键"
 
 #. Key:	PadLeftShoulder
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
 msgctxt "TNKeys,PadLeftShoulder"
 msgid "LB / L1"
 msgstr "LB / L1"
 
 #. Key:	PadRightShoulder
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1611)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
 msgctxt "TNKeys,PadRightShoulder"
 msgid "RB / R1"
 msgstr "RB / R1"
 
 #. Key:	PadLeftTrigger
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1613)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1613)
 msgctxt "TNKeys,PadLeftTrigger"
 msgid "LT / L2"
 msgstr "LT / L2"
 
 #. Key:	PadRightTrigger
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1612)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1613)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1613)
 msgctxt "TNKeys,PadRightTrigger"
 msgid "RT / R2"
 msgstr "RT / R2"
 
 #. Key:	PadDpadDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1614)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1614)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
 msgctxt "TNKeys,PadDpadDown"
 msgid "Cruceta abajo"
 msgstr "十字键下"
 
 #. Key:	PadDpadUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1614)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1614)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
 msgctxt "TNKeys,PadDpadUp"
 msgid "Cruceta arriba"
 msgstr "十字键上"
 
 #. Key:	PadDpadLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1616)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1616)
 msgctxt "TNKeys,PadDpadLeft"
 msgid "Cruceta izquierda"
 msgstr "十字键左"
 
 #. Key:	PadDpadRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1615)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1616)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1616)
 msgctxt "TNKeys,PadDpadRight"
 msgid "Cruceta derecha"
 msgstr "十字键右"
 
 #. Key:	PadLeftStickClick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1616)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1616)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1617)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1617)
 msgctxt "TNKeys,PadLeftStickClick"
 msgid "Clic stick izquierdo"
 msgstr "按下左摇杆"
 
 #. Key:	PadRightStickClick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1617)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1617)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1618)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1618)
 msgctxt "TNKeys,PadRightStickClick"
 msgid "Clic stick derecho"
 msgstr "按下右摇杆"
 
 #. Key:	PadSelect
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1618)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1618)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1619)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1619)
 msgctxt "TNKeys,PadSelect"
 msgid "Select / Vista"
 msgstr "Select / 视图"
 
 #. Key:	PadStart
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1618)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1618)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1619)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1619)
 msgctxt "TNKeys,PadStart"
 msgid "Start / Menú"
 msgstr "Start / 菜单"
 
 #. Key:	ActMove
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1631)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1631)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1632)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1632)
 msgctxt "TNSettings,ActMove"
 msgid "Moverse"
 msgstr "移动"
 
 #. Key:	ActLook
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1632)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1632)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1633)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1633)
 msgctxt "TNSettings,ActLook"
 msgid "Mover la cámara"
 msgstr "转动镜头"
 
 #. Key:	ActJump
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1633)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1633)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1634)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1634)
 msgctxt "TNSettings,ActJump"
 msgid "Saltar"
 msgstr "跳跃"
 
 #. Key:	ActSprint
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1634)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1634)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1635)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1635)
 msgctxt "TNSettings,ActSprint"
 msgid "Correr"
 msgstr "奔跑"
 
 #. Key:	ActInteract
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1635)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1635)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1636)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1636)
 msgctxt "TNSettings,ActInteract"
 msgid "Usar, coger y lanzar"
 msgstr "使用、拾取和投掷"
 
 #. Key:	ActShell
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1636)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1636)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1637)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1637)
 msgctxt "TNSettings,ActShell"
 msgid "Meterse en el caparazón"
 msgstr "缩进龟壳"
 
 #. Key:	ActDrop
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1637)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1637)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1638)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1638)
 msgctxt "TNSettings,ActDrop"
 msgid "Soltar el objeto"
 msgstr "放下物品"
 
 #. Key:	ActRotate
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1638)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1638)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1639)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1639)
 msgctxt "TNSettings,ActRotate"
 msgid "Cambiar de objeto"
 msgstr "切换物品"
 
 #. Key:	ActEmotes
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1639)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1639)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1640)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1640)
 msgctxt "TNSettings,ActEmotes"
 msgid "Rueda de bailes"
 msgstr "舞蹈轮盘"
 
 #. Key:	ActChat
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1640)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1640)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1641)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1641)
 msgctxt "TNSettings,ActChat"
 msgid "Frases rápidas"
 msgstr "快捷语"
 
 #. Key:	ActWheelPick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1641)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1641)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1642)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1642)
 msgctxt "TNSettings,ActWheelPick"
 msgid "Elegir en la rueda"
 msgstr "在轮盘中选择"
 
 #. Key:	CameraRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1773)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1773)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1774)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1774)
 msgctxt "TNSettings,CameraRow"
 msgid "Cambiar de cámara"
 msgstr "切换镜头"
 
 #. Key:	TalkRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1779)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1779)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1780)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1780)
 msgctxt "TNSettings,TalkRow"
 msgid "Hablar (pulsar para hablar)"
 msgstr "说话（按键说话）"
 
 #. Key:	PauseRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1785)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1785)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1786)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1786)
 msgctxt "TNSettings,PauseRow"
 msgid "Abrir y cerrar este menú"
 msgstr "打开和关闭此菜单"
 
 #. Key:	NotEditable
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1891)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1891)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1892)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1892)
 msgctxt "TNSettings,NotEditable"
 msgid "«{0}» no se cambia con {1}: va con {2}."
 msgstr "「{0}」不能用{1}更改：固定使用 {2}。"
 
 #. Key:	Reserved
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1897)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1897)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1898)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1898)
 msgctxt "TNSettings,Reserved"
 msgid "{0} está reservada (menú, consola o editor). Prueba con otra."
 msgstr "{0} 已被保留（菜单、控制台或编辑器使用）。换一个吧。"
 
 #. Key:	Unchanged
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1904)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1904)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1905)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1905)
 msgctxt "TNSettings,Unchanged"
 msgid "«{0}» ya iba con {1}."
 msgstr "「{0}」本来就用 {1}。"
 
 #. Key:	Swapped
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1921)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1921)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1922)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1922)
 msgctxt "TNSettings,Swapped"
 msgid "{0} estaba en «{1}»: ahora «{1}» va con {2}."
 msgstr "{0} 原本用于「{1}」：现在「{1}」改用 {2}。"
 
 #. Key:	Emptied
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1923)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1923)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1924)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1924)
 msgctxt "TNSettings,Emptied"
 msgid "{0} estaba en «{1}», que se queda sin tecla en {2}."
 msgstr "{0} 原本用于「{1}」，所以它在{2}上现在没有按键。"
 
 #. Key:	Assigned
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1930)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1930)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1931)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1931)
 msgctxt "TNSettings,Assigned"
 msgid "«{0}»: {1}."
 msgstr "「{0}」：{1}。"
 
 #. Key:	AlreadyDefault
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1996)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1996)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1997)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1997)
 msgctxt "TNSettings,AlreadyDefault"
 msgid "«{0}» ya iba con las de serie."
 msgstr "「{0}」本来就是默认按键。"
@@ -6943,485 +6943,499 @@ msgctxt "TNPause,InvertPadDesc"
 msgid "Subir el stick derecho mira hacia abajo."
 msgstr "右摇杆往上推，视角向下看。"
 
-#. Key:	DeviceNote
+#. Key:	PadVibration
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2471)
 #: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2471)
+msgctxt "TNPause,PadVibration"
+msgid "Vibración del mando"
+msgstr "手柄振动"
+
+#. Key:	PadVibrationDesc
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2472)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2472)
+msgctxt "TNPause,PadVibrationDesc"
+msgid "El mando vibra al recibir un golpe, más fuerte cuanto más fuerte es."
+msgstr "受到撞击时手柄会振动，撞击越重，振动越强。"
+
+#. Key:	DeviceNote
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2477)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2477)
 msgctxt "TNPause,DeviceNote"
 msgid "La cámara usa la sensibilidad del último aparato que hayas tocado: ratón o mando."
 msgstr "镜头使用你最后操作的设备的灵敏度：鼠标或手柄。"
 
 #. Key:	SeeControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2474)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2474)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2480)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2480)
 msgctxt "TNPause,SeeControls"
 msgid "Cambiar teclas y botones"
 msgstr "更改按键和按钮"
 
 #. Key:	SeeAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2477)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2477)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2483)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2483)
 msgctxt "TNPause,SeeAction"
 msgid "Abrir"
 msgstr "打开"
 
 #. Key:	SeeControlsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2478)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2478)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2484)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2484)
 msgctxt "TNPause,SeeControlsDesc"
 msgid "Todas las teclas y los botones del mando del juego: se cambian ahí mismo."
 msgstr "游戏里的所有按键和手柄按钮，直接在那里更改。"
 
 #. Key:	ResetControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2482)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2482)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2488)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2488)
 msgctxt "TNPause,ResetControls"
 msgid "Restablecer los controles"
 msgstr "重置操作"
 
 #. Key:	ResetControlsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2487)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2487)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2493)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2493)
 msgctxt "TNPause,ResetControlsDesc"
 msgid "Sensibilidad al 100 % y sin invertir (las teclas se restablecen en su página)."
 msgstr "灵敏度恢复 100%，不反转（按键请在「操作」页里重置）。"
 
 #. Key:	HeadLanguage
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2507)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2507)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2513)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2513)
 msgctxt "TNPause,HeadLanguage"
 msgid "IDIOMA / LANGUAGE"
 msgstr "IDIOMA / LANGUAGE"
 
 #. Key:	Language
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2519)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2519)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2525)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2525)
 msgctxt "TNPause,Language"
 msgid "Idioma / Language"
 msgstr "Idioma / Language"
 
 #. Key:	LanguageDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2530)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2530)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2536)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2536)
 msgctxt "TNPause,LanguageDesc"
 msgid "El idioma de todo el juego, al momento. Sin elegir, el de tu sistema. «Restablecer esta pestaña» lo vuelve a poner así."
 msgstr "整个游戏的语言，立即生效。不选择时使用系统语言。「重置此页」会把它恢复成这样。"
 
 #. Key:	Shake
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2535)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2535)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2541)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2541)
 msgctxt "TNPause,Shake"
 msgid "Temblor de cámara"
 msgstr "镜头晃动"
 
 #. Key:	ShakeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2536)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2536)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2542)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2542)
 msgctxt "TNPause,ShakeDesc"
 msgid "Golpes, quads de la carrera, tormenta... Apágalo si te marea."
 msgstr "撞击、竞速里的四轮沙滩车、风暴……晕的话就关掉它。"
 
 #. Key:	Fov
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2555)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2555)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2561)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2561)
 msgctxt "TNPause,Fov"
 msgid "Campo de visión"
 msgstr "视野"
 
 #. Key:	FovFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2556)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2556)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2562)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2562)
 msgctxt "TNPause,FovFmt"
 msgid "{0}°"
 msgstr "{0}°"
 
 #. Key:	FovDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2558)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2558)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2564)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2564)
 msgctxt "TNPause,FovDesc"
 msgid "Cuánto se ve a los lados. Al correr se abre un poco más, como siempre."
 msgstr "左右能看到多宽。奔跑时会稍微再拉宽一点，和以前一样。"
 
 #. Key:	Fisheye
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2563)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2563)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2569)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2569)
 msgctxt "TNPause,Fisheye"
 msgid "Ojo de pez leve"
 msgstr "轻微鱼眼"
 
 #. Key:	FisheyeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2564)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2564)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2570)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2570)
 msgctxt "TNPause,FisheyeDesc"
 msgid "Curva un poco los bordes de la imagen para que todo se vea aún más inmenso. No toca el HUD. Apágalo si te marea."
 msgstr "让画面边缘稍微弯曲，让一切显得更加巨大。不影响界面。晕的话就关掉它。"
 
 #. Key:	HeadInterface
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2570)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2570)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2576)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2576)
 msgctxt "TNPause,HeadInterface"
 msgid "INTERFAZ"
 msgstr "界面"
 
 #. Key:	UIScale
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2573)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2573)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2579)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2579)
 msgctxt "TNPause,UIScale"
 msgid "Tamaño de la interfaz"
 msgstr "界面大小"
 
 #. Key:	UIScaleDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2576)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2576)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2582)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2582)
 msgctxt "TNPause,UIScaleDesc"
 msgid "Agranda o achica el HUD y los menús del juego (el editor no cambia). Este menú se encoge si no cabe."
 msgstr "放大或缩小游戏的界面和菜单（编辑器不受影响）。如果放不下，这个菜单会自动缩小。"
 
 #. Key:	HeadAccess
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2579)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2579)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2585)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2585)
 msgctxt "TNPause,HeadAccess"
 msgid "ACCESIBILIDAD"
 msgstr "无障碍"
 
 #. Key:	FilterDeuter
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2582)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2582)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2588)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2588)
 msgctxt "TNPause,FilterDeuter"
 msgid "Deuteranopía (verde)"
 msgstr "绿色盲（绿）"
 
 #. Key:	FilterNone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2582)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2582)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2588)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2588)
 msgctxt "TNPause,FilterNone"
 msgid "No"
 msgstr "无"
 
 #. Key:	FilterProtan
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2583)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2583)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2589)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2589)
 msgctxt "TNPause,FilterProtan"
 msgid "Protanopía (rojo)"
 msgstr "红色盲（红）"
 
 #. Key:	FilterTritan
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2583)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2583)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2589)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2589)
 msgctxt "TNPause,FilterTritan"
 msgid "Tritanopía (azul)"
 msgstr "蓝色盲（蓝）"
 
 #. Key:	ColorFilter
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2584)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2584)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2590)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2590)
 msgctxt "TNPause,ColorFilter"
 msgid "Filtro para daltónicos"
 msgstr "色盲滤镜"
 
 #. Key:	ColorFilterDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2588)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2588)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2594)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2594)
 msgctxt "TNPause,ColorFilterDesc"
 msgid "Corrige los colores de toda la imagen para distinguirlos mejor: el mapa, el HUD y sus marcadores."
 msgstr "校正整个画面的颜色，让它们更容易分辨：地图、界面和标记。"
 
 #. Key:	FilterStrength
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2592)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2592)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2598)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2598)
 msgctxt "TNPause,FilterStrength"
 msgid "Intensidad del filtro"
 msgstr "滤镜强度"
 
 #. Key:	FilterStrengthDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2595)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2595)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2601)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2601)
 msgctxt "TNPause,FilterStrengthDesc"
 msgid "Cuánto corrige el filtro para daltónicos."
 msgstr "色盲滤镜的校正力度。"
 
 #. Key:	Talkers
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2597)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2597)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2603)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2603)
 msgctxt "TNPause,Talkers"
 msgid "Quién habla (texto)"
 msgstr "谁在说话（文字）"
 
 #. Key:	TalkersDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2598)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2598)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2604)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2604)
 msgctxt "TNPause,TalkersDesc"
 msgid "A la derecha de la pantalla, el nombre de quien está hablando por voz. Para jugar sin sonido o si oyes mal."
 msgstr "在屏幕右侧显示正在语音说话的人的名字。适合静音游玩，或者听力不好的时候。"
 
 #. Key:	CameraFirst
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2608)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2608)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2614)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2614)
 msgctxt "TNPause,CameraFirst"
 msgid "Primera persona"
 msgstr "第一人称"
 
 #. Key:	CameraThird
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2608)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2608)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2614)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2614)
 msgctxt "TNPause,CameraThird"
 msgid "Tercera persona"
 msgstr "第三人称"
 
 #. Key:	CameraView
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2609)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2609)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2615)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2615)
 msgctxt "TNPause,CameraView"
 msgid "Cámara"
 msgstr "镜头"
 
 #. Key:	CameraViewDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2614)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2614)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2620)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2620)
 msgctxt "TNPause,CameraViewDesc"
 msgid "Primera persona: la vista va en la cabeza de tu tortuga (también tumbada) y al mirar abajo ves tu cuerpo, tus aletas y tu lengua. Dentro del caparazón se ve desde dentro, a oscuras. También se cambia jugando con {0} o, con el mando, con {1} (en Controles, «Cambiar de cámara»)."
 msgstr "第一人称：视角在小龟的头上（躺着时也是），往下看能看到自己的身体、鳍和舌头。缩进龟壳里时，从里面往外看，一片漆黑。游戏中也可以用 {0} 切换，手柄则用 {1}（在“操作”中的“切换镜头”）。"
 
 #. Key:	HeadVR
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2620)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2620)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2626)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2626)
 msgctxt "TNPause,HeadVR"
 msgid "REALIDAD VIRTUAL"
 msgstr "虚拟现实"
 
 #. Key:	VRModeAuto
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2629)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2629)
 msgctxt "TNPause,VRModeAuto"
 msgid "Automático"
 msgstr "自动"
 
 #. Key:	VRModeOff
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2629)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2629)
 msgctxt "TNPause,VRModeOff"
 msgid "Desactivado"
 msgstr "关闭"
 
 #. Key:	VRModeSim
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2624)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2624)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2630)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2630)
 msgctxt "TNPause,VRModeSim"
 msgid "Simulado sin gafas"
 msgstr "无头显模拟"
 
 #. Key:	VRMode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2625)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2625)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2631)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2631)
 msgctxt "TNPause,VRMode"
 msgid "Modo VR"
 msgstr "VR 模式"
 
 #. Key:	VRModeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2629)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2629)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2635)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2635)
 msgctxt "TNPause,VRModeDesc"
 msgid "Automático: en primera persona con las gafas si el juego arranca con ellas (-vr o «VR Preview»). Desactivado: con gafas, la pantalla plana de siempre. Simulado: el modo VR sin gafas, con el ratón como aleta, para probarlo en el PC."
 msgstr "自动：如果游戏带着头显启动（-vr 或“VR Preview”），就用头显以第一人称游玩。关闭：即使有头显，也用一贯的平面屏幕。模拟：没有头显的 VR 模式，把鼠标当作鳍，方便在电脑上试玩。"
 
 #. Key:	VRTurn30
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2634)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2634)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2640)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2640)
 msgctxt "TNPause,VRTurn30"
 msgid "Por pasos de 30°"
 msgstr "每次转 30°"
 
 #. Key:	VRTurn45
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2634)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2634)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2640)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2640)
 msgctxt "TNPause,VRTurn45"
 msgid "Por pasos de 45°"
 msgstr "每次转 45°"
 
 #. Key:	VRTurnSmooth
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2635)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2635)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2641)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2641)
 msgctxt "TNPause,VRTurnSmooth"
 msgid "Suave"
 msgstr "平滑"
 
 #. Key:	VRTurn
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2636)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2636)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2642)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2642)
 msgctxt "TNPause,VRTurn"
 msgid "Giro en VR"
 msgstr "VR 转向"
 
 #. Key:	VRTurnDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2640)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2640)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2646)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2646)
 msgctxt "TNPause,VRTurnDesc"
 msgid "Cómo gira la tortuga con el stick derecho. A pasos marea mucho menos; suave, para quien ya está acostumbrado."
 msgstr "乌龟用右摇杆转向的方式。分步转向晕得少得多；平滑适合已经习惯的人。"
 
 #. Key:	ResetGame
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2647)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2647)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2653)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2653)
 msgctxt "TNPause,ResetGame"
 msgid "Restablecer esta pestaña"
 msgstr "重置此页"
 
 #. Key:	ResetGameGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2652)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2652)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2658)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2658)
 msgctxt "TNLocal,ResetGameGuestDesc"
 msgid "Temblor de cámara encendido y campo de visión de siempre (solo los tuyos)."
 msgstr "开启镜头抖动，视野恢复一贯的设置（仅限你自己的）。"
 
 #. Key:	ResetGameDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2653)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2653)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2659)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2659)
 msgctxt "TNPause,ResetGameDesc"
 msgid "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla», el idioma de tu sistema, la cámara en tercera persona y el modo VR automático con giro a pasos de 30°."
 msgstr "镜头晃动和鱼眼开启，视野和界面大小恢复默认，关闭色盲滤镜和「谁在说话」，语言跟随你的系统，镜头为第三人称，VR 模式为自动、转向每次 30°。"
 
 #. Key:	ResetAll
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2657)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2657)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2663)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2663)
 msgctxt "TNPause,ResetAll"
 msgid "Restablecer todos los ajustes"
 msgstr "重置所有设置"
 
 #. Key:	ResetAllTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2664)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2664)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
 msgctxt "TNPause,ResetAllTitle"
 msgid "¿Restablecer todos los ajustes?"
 msgstr "要重置所有设置吗？"
 
 #. Key:	ResetAllGuestText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2665)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2665)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
 msgctxt "TNLocal,ResetAllGuestText"
 msgid "Tu cámara, tus controles (teclas y botones incluidos), el temblor y el campo de visión vuelven a los de serie."
 msgstr "你的镜头、操作（包括按键和按钮）、抖动和视野都会恢复默认。"
 
 #. Key:	ResetAllText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2666)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2666)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2672)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2672)
 msgctxt "TNPause,ResetAllText"
 msgid "Sonido, voz, micrófono, controles (teclas incluidas), juego (idioma incluido), brillo y FPS vuelven a los de serie. La calidad gráfica y la pantalla no se tocan."
 msgstr "声音、语音、麦克风、操作（包括按键）、游戏（包括语言）、亮度和 FPS 都会恢复默认值。画质和屏幕设置不受影响。"
 
 #. Key:	ResetAllYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2667)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2667)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2673)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2673)
 msgctxt "TNPause,ResetAllYes"
 msgid "Restablecer"
 msgstr "重置"
 
 #. Key:	ResetAllDone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2673)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2673)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2679)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2679)
 msgctxt "TNPause,ResetAllDone"
 msgid "Todo como recién instalado (menos los gráficos)."
 msgstr "一切都像刚安装时一样（画面设置除外）。"
 
 #. Key:	ResetAllGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2677)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2677)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2683)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2683)
 msgctxt "TNLocal,ResetAllGuestDesc"
 msgid "Todos tus ajustes de jugador a los de serie. Pide confirmación."
 msgstr "你的所有玩家设置都会恢复默认值。会先请你确认。"
 
 #. Key:	ResetAllDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2678)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2678)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2684)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2684)
 msgctxt "TNPause,ResetAllDesc"
 msgid "Todo lo del menú a los valores de serie, menos la calidad gráfica y la pantalla. Pide confirmación."
 msgstr "把菜单里的所有选项恢复为默认值，画质和屏幕设置除外。会先请你确认。"
 
 #. Key:	KeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2703)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2703)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2709)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2709)
 msgctxt "TNPause,KeyRowDesc"
 msgid "Intro, A o clic: cambiar (pulsa luego la tecla o el botón). Supr, Y o clic derecho: la de serie."
 msgstr "Enter、A 或点击：更改（然后按下想用的键或按钮）。Delete、Y 或右键：恢复默认。"
 
 #. Key:	HeadPlay
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2706)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2706)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2712)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2712)
 msgctxt "TNPause,HeadPlay"
 msgid "JUGANDO"
 msgstr "游戏中"
 
 #. Key:	KeyRowPadFixed
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2715)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2715)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
 msgctxt "TNPause,KeyRowPadFixed"
 msgid "{0} Con el mando va con {1}."
 msgstr "{0} 使用手柄时固定为 {1}。"
 
 #. Key:	CameraKeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2718)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2718)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2724)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2724)
 msgctxt "TNPause,CameraKeyRowDesc"
 msgid "Tercera o primera persona, sin gafas (como Ajustes > Juego > Cámara). {0}"
 msgstr "不戴头显时的第三人称或第一人称（同 设置 > 游戏 > 镜头）。{0}"
 
 #. Key:	NoMapping
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2725)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2725)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2731)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2731)
 msgctxt "TNPause,NoMapping"
 msgid "No se ha podido leer la lista de controles (IMC_Player)."
 msgstr "无法读取操作列表（IMC_Player）。"
 
 #. Key:	HeadMenu
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2731)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2731)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2737)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2737)
 msgctxt "TNLocal,HeadMenu"
 msgid "MENÚ"
 msgstr "菜单"
 
 #. Key:	HeadVoiceMenu
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2735)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2735)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2741)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2741)
 msgctxt "TNPause,HeadVoiceMenu"
 msgid "VOZ Y MENÚ"
 msgstr "语音和菜单"
 
 #. Key:	TalkKeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2736)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2736)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2742)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2742)
 msgctxt "TNPause,TalkKeyRowDesc"
 msgid "Solo con el modo pulsar para hablar (Ajustes > Voz). {0}"
 msgstr "仅在「按键说话」模式下有效（设置 > 语音）。{0}"
 
 #. Key:	PauseKeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2738)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2738)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2744)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2744)
 msgctxt "TNPause,PauseKeyRowDesc"
 msgid "Esc lo abre y lo cierra siempre (en el editor, Tab). {0}"
 msgstr "Esc 始终可以打开和关闭它（在编辑器里是 Tab）。{0}"
 
 #. Key:	ResetKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2742)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2742)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2748)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2748)
 msgctxt "TNPause,ResetKeys"
 msgid "Restablecer todos los controles"
 msgstr "重置所有操作"
 
 #. Key:	ResetKeysTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2749)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2749)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2755)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2755)
 msgctxt "TNPause,ResetKeysTitle"
 msgid "¿Restablecer los controles?"
 msgstr "要重置操作吗？"
 
 #. Key:	ResetKeysText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2750)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2750)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2756)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2756)
 msgctxt "TNPause,ResetKeysText"
 msgid "Todas las teclas y los botones vuelven a los de serie (hablar y el menú incluidos)."
 msgstr "所有按键和按钮都会恢复默认（包括说话和菜单）。"
 
 #. Key:	ResetKeysYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2751)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2751)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2757)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2757)
 msgctxt "TNPause,ResetKeysYes"
 msgid "Restablecer"
 msgstr "重置"
@@ -7441,102 +7455,39 @@ msgid "Calidad y alcance de las sombras. Es de lo que más pesa."
 msgstr "阴影的质量和范围。它是最吃性能的选项之一。"
 
 #. Key:	ResetKeysDone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2760)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2760)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2766)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2766)
 msgctxt "TNPause,ResetKeysDone"
 msgid "Controles de serie."
 msgstr "已恢复默认操作。"
 
 #. Key:	ResetKeysDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2764)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2764)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2770)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2770)
 msgctxt "TNPause,ResetKeysDesc"
 msgid "Todas las teclas y los botones a los de serie. Pide confirmación."
 msgstr "把所有按键和按钮恢复为默认设置。会先请你确认。"
 
 #. Key:	ResetKeysDescNone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2765)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2765)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2771)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2771)
 msgctxt "TNPause,ResetKeysDescNone"
 msgid "Ahora mismo ya van todos con los de serie."
 msgstr "目前全部都是默认设置。"
 
 #. Key:	HeadFixed
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2769)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2769)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
 msgctxt "TNPause,HeadFixed"
 msgid "SIEMPRE IGUAL"
 msgstr "固定不变"
 
 #. Key:	FixedDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2773)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2773)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2779)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2779)
 msgctxt "TNPause,FixedDesc"
 msgid "Va con el ratón y los sticks: su sensibilidad está en Ajustes > Controles."
 msgstr "使用鼠标和摇杆：灵敏度在「设置 > 操作」里调整。"
-
-#. Key:	SpectateKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
-msgctxt "TNPause,SpectateKeys"
-msgid "← → · Re Pág · Av Pág · rueda"
-msgstr "← → · Page Up · Page Down · 滚轮"
-
-#. Key:	SpectateRow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
-msgctxt "TNPause,SpectateRow"
-msgid "Espectador: cambiar de tortuga"
-msgstr "观战：切换小龟"
-
-#. Key:	SpectateDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2776)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2776)
-msgctxt "TNPause,SpectateDesc"
-msgid "Cuando miras a los demás tras caer o llegar a la meta (la rueda, con la cámara fija)."
-msgstr "倒下或到达终点后观看其他人时使用（滚轮，固定视角下）。"
-
-#. Key:	SpectatePad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2776)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2776)
-msgctxt "TNPause,SpectatePad"
-msgid "LB · RB · cruceta ← →"
-msgstr "LB · RB · 十字键 ← →"
-
-#. Key:	SpectateCamKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2777)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2777)
-msgctxt "TNPause,SpectateCamKeys"
-msgid "C"
-msgstr "C"
-
-#. Key:	SpectateCamRow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2777)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2777)
-msgctxt "TNPause,SpectateCamRow"
-msgid "Espectador: cámara libre o fija"
-msgstr "观战：自由或固定视角"
-
-#. Key:	SpectateCamDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2778)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2778)
-msgctxt "TNPause,SpectateCamDesc"
-msgid "La libre gira con el ratón o el stick derecho, con tu sensibilidad."
-msgstr "自由视角用鼠标或右摇杆转动，使用你的灵敏度。"
-
-#. Key:	SpectateZoomKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2779)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2779)
-msgctxt "TNPause,SpectateZoomKeys"
-msgid "Rueda"
-msgstr "滚轮"
-
-#. Key:	SpectateZoomRow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2779)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2779)
-msgctxt "TNPause,SpectateZoomRow"
-msgid "Espectador: acercar y alejar"
-msgstr "观战：拉近和拉远"
 
 #. Key:	QEffects
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(278)
@@ -7552,37 +7503,100 @@ msgctxt "TNPause,QEffectsDesc"
 msgid "Partículas: polvo, espuma, chispas, confeti..."
 msgstr "粒子：灰尘、泡沫、火花、彩纸屑……"
 
+#. Key:	SpectateKeys
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
+msgctxt "TNPause,SpectateKeys"
+msgid "← → · Re Pág · Av Pág · rueda"
+msgstr "← → · Page Up · Page Down · 滚轮"
+
+#. Key:	SpectateRow
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
+msgctxt "TNPause,SpectateRow"
+msgid "Espectador: cambiar de tortuga"
+msgstr "观战：切换小龟"
+
+#. Key:	SpectateDesc
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2782)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2782)
+msgctxt "TNPause,SpectateDesc"
+msgid "Cuando miras a los demás tras caer o llegar a la meta (la rueda, con la cámara fija)."
+msgstr "倒下或到达终点后观看其他人时使用（滚轮，固定视角下）。"
+
+#. Key:	SpectatePad
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2782)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2782)
+msgctxt "TNPause,SpectatePad"
+msgid "LB · RB · cruceta ← →"
+msgstr "LB · RB · 十字键 ← →"
+
+#. Key:	SpectateCamKeys
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2783)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2783)
+msgctxt "TNPause,SpectateCamKeys"
+msgid "C"
+msgstr "C"
+
+#. Key:	SpectateCamRow
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2783)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2783)
+msgctxt "TNPause,SpectateCamRow"
+msgid "Espectador: cámara libre o fija"
+msgstr "观战：自由或固定视角"
+
+#. Key:	SpectateCamDesc
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2784)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2784)
+msgctxt "TNPause,SpectateCamDesc"
+msgid "La libre gira con el ratón o el stick derecho, con tu sensibilidad."
+msgstr "自由视角用鼠标或右摇杆转动，使用你的灵敏度。"
+
+#. Key:	SpectateZoomKeys
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2785)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2785)
+msgctxt "TNPause,SpectateZoomKeys"
+msgid "Rueda"
+msgstr "滚轮"
+
+#. Key:	SpectateZoomRow
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2785)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2785)
+msgctxt "TNPause,SpectateZoomRow"
+msgid "Espectador: acercar y alejar"
+msgstr "观战：拉近和拉远"
+
 #. Key:	SpectateZoomDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2780)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2780)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2786)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2786)
 msgctxt "TNPause,SpectateZoomDesc"
 msgid "Con la cámara libre."
 msgstr "自由视角下可用。"
 
 #. Key:	SpectateZoomPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2780)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2780)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2786)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2786)
 msgctxt "TNPause,SpectateZoomPad"
 msgid "Gatillos"
 msgstr "扳机"
 
 #. Key:	MenuNav
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2787)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2787)
 msgctxt "TNPause,MenuNav"
 msgid "Moverse por los menús"
 msgstr "在菜单中移动"
 
 #. Key:	MenuNavKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2781)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2787)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2787)
 msgctxt "TNPause,MenuNavKeys"
 msgid "Flechas · WASD · Intro · Esc"
 msgstr "方向键 · WASD · Enter · Esc"
 
 #. Key:	MenuNavPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2782)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2782)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2788)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2788)
 msgctxt "TNPause,MenuNavPad"
 msgid "Stick · cruceta · A · B"
 msgstr "摇杆 · 十字键 · A · B"
@@ -7616,25 +7630,18 @@ msgid "Hasta dónde se ven los detalles del mapa."
 msgstr "地图细节能看到多远。"
 
 #. Key:	RoomPlaces
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2829)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2829)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2835)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2835)
 msgctxt "TNPause,RoomPlaces"
 msgid "{0}/{1} tortugas"
 msgstr "{0}/{1} 只小龟"
 
 #. Key:	HeadRoom
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2832)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2832)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2838)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2838)
 msgctxt "TNPause,HeadRoom"
 msgid "LA SALA"
 msgstr "房间"
-
-#. Key:	RoomUnknown
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2835)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2835)
-msgctxt "TNPause,RoomUnknown"
-msgid "Aún no ha llegado la información de la sala: un momento..."
-msgstr "房间信息还没传过来，请稍等……"
 
 #. Key:	QAA
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(284)
@@ -7650,54 +7657,47 @@ msgctxt "TNPause,QAADesc"
 msgid "Suaviza los bordes de sierra de los objetos."
 msgstr "让物体边缘的锯齿变得平滑。"
 
-#. Key:	RoomName
+#. Key:	RoomUnknown
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2841)
 #: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2841)
+msgctxt "TNPause,RoomUnknown"
+msgid "Aún no ha llegado la información de la sala: un momento..."
+msgstr "房间信息还没传过来，请稍等……"
+
+#. Key:	RoomName
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2847)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2847)
 msgctxt "TNPause,RoomName"
 msgid "Nombre"
 msgstr "名称"
 
 #. Key:	RoomNamePrivateDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2843)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2843)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
 msgctxt "TNPause,RoomNamePrivateDesc"
 msgid "Sala privada: no sale en la lista de partidas; se entra con el código o por invitación de Steam."
 msgstr "私人房间：不会出现在房间列表里，需要代码或 Steam 邀请才能进入。"
 
 #. Key:	RoomNamePublicDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2844)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2844)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2850)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2850)
 msgctxt "TNPause,RoomNamePublicDesc"
 msgid "Sala pública: sale en la lista de partidas del menú principal («Unirse»)."
 msgstr "公开房间：会出现在主菜单的房间列表里（「加入」）。"
 
 #. Key:	RoomCode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2855)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2855)
 msgctxt "TNPause,RoomCode"
 msgid "Código de la sala"
 msgstr "房间代码"
 
 #. Key:	RoomCopy
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2855)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2855)
 msgctxt "TNPause,RoomCopy"
 msgid "Copiar"
 msgstr "复制"
-
-#. Key:	RoomCopied
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2855)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2855)
-msgctxt "TNPause,RoomCopied"
-msgid "Código {0} copiado: pégalo donde quieras (Ctrl+V)."
-msgstr "代码 {0} 已复制：想贴哪儿就贴哪儿（Ctrl+V）。"
-
-#. Key:	RoomCodeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2858)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2858)
-msgctxt "TNPause,RoomCodeDesc"
-msgid "Con este código se entra en la sala desde el menú principal («Unirse» y escribirlo). Intro, A o clic: copiarlo."
-msgstr "凭这个代码可以从主菜单进入房间（点「加入」再输入）。Enter、A 或点击：复制。"
 
 #. Key:	QTextures
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(286)
@@ -7713,47 +7713,54 @@ msgctxt "TNPause,QTexturesDesc"
 msgid "Nitidez de las texturas (usa memoria de vídeo)."
 msgstr "纹理的清晰度（占用显存）。"
 
+#. Key:	RoomCopied
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2861)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2861)
+msgctxt "TNPause,RoomCopied"
+msgid "Código {0} copiado: pégalo donde quieras (Ctrl+V)."
+msgstr "代码 {0} 已复制：想贴哪儿就贴哪儿（Ctrl+V）。"
+
+#. Key:	RoomCodeDesc
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2864)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2864)
+msgctxt "TNPause,RoomCodeDesc"
+msgid "Con este código se entra en la sala desde el menú principal («Unirse» y escribirlo). Intro, A o clic: copiarlo."
+msgstr "凭这个代码可以从主菜单进入房间（点「加入」再输入）。Enter、A 或点击：复制。"
+
 #. Key:	RoomClosed
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2872)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2872)
 msgctxt "TNPause,RoomClosed"
 msgid "Cerrada"
 msgstr "已关闭"
 
 #. Key:	RoomOpen
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2872)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2872)
 msgctxt "TNPause,RoomOpen"
 msgid "Abierta"
 msgstr "开放中"
 
 #. Key:	RoomDoor
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
 msgctxt "TNPause,RoomDoor"
 msgid "Entrada"
 msgstr "入口"
 
 #. Key:	RoomLockedNotice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2872)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2872)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2878)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2878)
 msgctxt "TNPause,RoomLockedNotice"
 msgid "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
 msgstr "房间已关闭：不再接纳新人（已经在里面的人可以重新进入）。"
 
 #. Key:	RoomUnlockedNotice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2879)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2879)
 msgctxt "TNPause,RoomUnlockedNotice"
 msgid "Sala abierta: puede entrar gente otra vez."
 msgstr "房间已开放：又可以进人了。"
-
-#. Key:	RoomDoorDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2876)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2876)
-msgctxt "TNPause,RoomDoorDesc"
-msgid "Cerrada: no entra nadie nuevo, ni por la lista, ni con el código ni por invitación. Los que ya están siguen y pueden volver si se les cae la conexión."
-msgstr "关闭后不再接纳新人，无论通过列表、代码还是邀请。已经在里面的人可以继续玩，掉线后也能重新进入。"
 
 #. Key:	QPost
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(288)
@@ -7769,33 +7776,33 @@ msgctxt "TNPause,QPostDesc"
 msgid "Brillos, desenfoque de movimiento y otros acabados de la imagen."
 msgstr "泛光、动态模糊和其他画面润色效果。"
 
+#. Key:	RoomDoorDesc
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2882)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2882)
+msgctxt "TNPause,RoomDoorDesc"
+msgid "Cerrada: no entra nadie nuevo, ni por la lista, ni con el código ni por invitación. Los que ya están siguen y pueden volver si se les cae la conexión."
+msgstr "关闭后不再接纳新人，无论通过列表、代码还是邀请。已经在里面的人可以继续玩，掉线后也能重新进入。"
+
 #. Key:	RoomDoorGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2884)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2884)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2890)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2890)
 msgctxt "TNPause,RoomDoorGuestDesc"
 msgid "Solo el anfitrión puede cerrar la sala o expulsar a alguien."
 msgstr "只有房主能关闭房间或踢人。"
 
 #. Key:	RoomInvite
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2890)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2890)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2896)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2896)
 msgctxt "TNPause,RoomInvite"
 msgid "Invitar a amigos de Steam"
 msgstr "邀请 Steam 好友"
 
 #. Key:	RoomInviteAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2893)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2893)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2899)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2899)
 msgctxt "TNPause,RoomInviteAction"
 msgid "Abrir Steam"
 msgstr "打开 Steam"
-
-#. Key:	RoomInviteDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2894)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2894)
-msgctxt "TNPause,RoomInviteDesc"
-msgid "La lista de amigos de Steam, para invitarles (la invitación también vale en las salas privadas)."
-msgstr "打开 Steam 好友列表来邀请他们（私人房间也可以邀请）。"
 
 #. Key:	QGI
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(290)
@@ -7811,9 +7818,16 @@ msgctxt "TNPause,QGIDesc"
 msgid "Luz que rebota en el entorno. En Baja, el mapa se ve más plano."
 msgstr "光线在环境中的反弹效果。设为「低」时，地图会显得更平淡。"
 
-#. Key:	HeadRoomPlayers
+#. Key:	RoomInviteDesc
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2900)
 #: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2900)
+msgctxt "TNPause,RoomInviteDesc"
+msgid "La lista de amigos de Steam, para invitarles (la invitación también vale en las salas privadas)."
+msgstr "打开 Steam 好友列表来邀请他们（私人房间也可以邀请）。"
+
+#. Key:	HeadRoomPlayers
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2906)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2906)
 msgctxt "TNPause,HeadRoomPlayers"
 msgid "TORTUGAS EN LA SALA · {0}"
 msgstr "房间里的小龟 · {0}"
@@ -7833,71 +7847,71 @@ msgid "Reflejos del agua y de las superficies brillantes."
 msgstr "水面和光亮表面的反射。"
 
 #. Key:	PlayerRowHostDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2930)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2930)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2936)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2936)
 msgctxt "TNPause,PlayerRowHostDesc"
 msgid "Intro, A o clic: opciones de esta tortuga (expulsarla de la sala)."
 msgstr "Enter、A 或点击：这只小龟的选项（把它踢出房间）。"
 
 #. Key:	PlayerRowGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2931)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2931)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2937)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2937)
 msgctxt "TNPause,PlayerRowGuestDesc"
 msgid "Solo el anfitrión puede expulsar a alguien."
 msgstr "只有房主能踢人。"
 
 #. Key:	PlayerRowMeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2931)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2931)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2937)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2937)
 msgctxt "TNPause,PlayerRowMeDesc"
 msgid "Tu tortuga."
 msgstr "你的小龟。"
 
 #. Key:	PlayerOptionsText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2963)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2963)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2969)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2969)
 msgctxt "TNPause,PlayerOptionsText"
 msgid "Opciones del anfitrión para {0}."
 msgstr "房主对 {0} 的操作选项。"
 
 #. Key:	PlayerKick
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2964)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2964)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2970)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2970)
 msgctxt "TNPause,PlayerKick"
 msgid "Expulsar"
 msgstr "踢出"
 
 #. Key:	KickTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2971)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2971)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2977)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2977)
 msgctxt "TNPause,KickTitle"
 msgid "¿Expulsar a {0}?"
 msgstr "要踢出 {0} 吗？"
 
 #. Key:	KickText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2972)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2972)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2978)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2978)
 msgctxt "TNPause,KickText"
 msgid "Sale de la partida y vuelve al menú principal. No podrá volver a entrar en esta sala mientras dure."
 msgstr "对方会离开游戏，回到主菜单，并且在这个房间存在期间无法再次进入。"
 
 #. Key:	KickYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2973)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2973)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2979)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2979)
 msgctxt "TNPause,KickYes"
 msgid "Sí, expulsar"
 msgstr "是，踢出"
 
 #. Key:	KickDone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2983)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2983)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2989)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2989)
 msgctxt "TNPause,KickDone"
 msgid "{0} ha sido expulsado de la sala."
 msgstr "{0} 已被踢出房间。"
 
 #. Key:	KickGone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2984)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2984)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2990)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2990)
 msgctxt "TNPause,KickGone"
 msgid "{0} ya no está en la sala."
 msgstr "{0} 已不在房间里了。"
@@ -7931,64 +7945,64 @@ msgid "Alta"
 msgstr "高"
 
 #. Key:	LobbyGuestTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3026)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3026)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3032)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3032)
 msgctxt "TNPause,LobbyGuestTitle"
 msgid "¿Salir de la partida?"
 msgstr "要离开游戏吗？"
 
 #. Key:	LobbyGuestText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3027)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3027)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3033)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3033)
 msgctxt "TNPause,LobbyGuestText"
 msgid "Solo el anfitrión puede llevar al grupo al lobby. Tú vuelves al menú principal y los demás siguen jugando."
 msgstr "只有房主能带大家回大厅。你会回到主菜单，其他人继续玩。"
 
 #. Key:	LobbyTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3041)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3041)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3047)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3047)
 msgctxt "TNPause,LobbyTitle"
 msgid "¿Volver al lobby?"
 msgstr "要返回大厅吗？"
 
 #. Key:	LobbyText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3042)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3042)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3048)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3048)
 msgctxt "TNPause,LobbyText"
 msgid "La ronda se acaba para todos y el grupo vuelve al lobby del castillo."
 msgstr "本轮对所有人结束，全队回到城堡大厅。"
 
 #. Key:	LobbyYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3043)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3043)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3049)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3049)
 msgctxt "TNPause,LobbyYes"
 msgid "Al lobby"
 msgstr "回大厅"
 
 #. Key:	LeaveTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3062)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3062)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3068)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3068)
 msgctxt "TNPause,LeaveTitle"
 msgid "¿Salir de la partida?"
 msgstr "要离开游戏吗？"
 
 #. Key:	MenuTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3062)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3062)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3068)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3068)
 msgctxt "TNPause,MenuTitle"
 msgid "¿Volver al menú principal?"
 msgstr "要返回主菜单吗？"
 
 #. Key:	LeaveText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3063)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3063)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3069)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3069)
 msgctxt "TNPause,LeaveText"
 msgid "Vuelves al menú principal. Los demás siguen jugando sin ti."
 msgstr "你会回到主菜单，其他人会继续玩，不带你。"
 
 #. Key:	MenuText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3064)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3064)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3070)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3070)
 msgctxt "TNPause,MenuText"
 msgid "La partida se cierra para todos: tus compañeros también vuelven al menú."
 msgstr "游戏将为所有人关闭：你的队友也会回到菜单。"
@@ -8000,34 +8014,6 @@ msgctxt "TNPause,QCustom"
 msgid "Personalizada"
 msgstr "自定义"
 
-#. Key:	QuitTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3084)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3084)
-msgctxt "TNPause,QuitTitle"
-msgid "¿Salir al escritorio?"
-msgstr "要退出到桌面吗？"
-
-#. Key:	QuitTextHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3085)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3085)
-msgctxt "TNPause,QuitTextHost"
-msgid "Se cierra Tortunavy y, como eres el anfitrión, la partida se acaba para todos."
-msgstr "Tortunavy 将关闭，而且因为你是房主，游戏会为所有人结束。"
-
-#. Key:	QuitText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3086)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3086)
-msgctxt "TNPause,QuitText"
-msgid "Se cierra Tortunavy."
-msgstr "Tortunavy 将关闭。"
-
-#. Key:	QuitYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3087)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3087)
-msgctxt "TNPause,QuitYes"
-msgid "Salir"
-msgstr "退出"
-
 #. Key:	QCine
 #. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
 #: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
@@ -8035,37 +8021,65 @@ msgctxt "TNPause,QCine"
 msgid "Cine"
 msgstr "电影"
 
+#. Key:	QuitTitle
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3090)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3090)
+msgctxt "TNPause,QuitTitle"
+msgid "¿Salir al escritorio?"
+msgstr "要退出到桌面吗？"
+
+#. Key:	QuitTextHost
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3091)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3091)
+msgctxt "TNPause,QuitTextHost"
+msgid "Se cierra Tortunavy y, como eres el anfitrión, la partida se acaba para todos."
+msgstr "Tortunavy 将关闭，而且因为你是房主，游戏会为所有人结束。"
+
+#. Key:	QuitText
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3092)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3092)
+msgctxt "TNPause,QuitText"
+msgid "Se cierra Tortunavy."
+msgstr "Tortunavy 将关闭。"
+
+#. Key:	QuitYes
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3093)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3093)
+msgctxt "TNPause,QuitYes"
+msgid "Salir"
+msgstr "退出"
+
 #. Key:	VideoTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3160)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3160)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3166)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3166)
 msgctxt "TNPause,VideoTitle"
 msgid "¿Mantener esta pantalla?"
 msgstr "保留这个显示设置吗？"
 
 #. Key:	VideoText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3161)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3161)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3167)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3167)
 msgctxt "TNPause,VideoText"
 msgid "Si algo no se ve bien, no toques nada: se deshace sola en {0} s."
 msgstr "如果画面显示不正常，什么都不用点：{0} 秒后会自动还原。"
 
 #. Key:	VideoKeep
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3162)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3162)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3168)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3168)
 msgctxt "TNPause,VideoKeep"
 msgid "Mantener"
 msgstr "保留"
 
 #. Key:	CaptureNotice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3199)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3199)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3205)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3205)
 msgctxt "TNPause,CaptureNotice"
 msgid "Pulsa la tecla o el botón del mando para «{0}». Esc o Select/Vista: dejarlo como está."
 msgstr "请按下要用于「{0}」的键或手柄按钮。Esc 或 Select/视图：保持不变。"
 
 #. Key:	CaptureCancelled
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3237)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3237)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3243)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3243)
 msgctxt "TNPause,CaptureCancelled"
 msgid "Sin cambios."
 msgstr "未作更改。"
@@ -8099,29 +8113,29 @@ msgid "{0} ms"
 msgstr "{0} ms"
 
 #. Key:	HintSettings
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3476)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3476)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3482)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3482)
 msgctxt "TNPause,HintSettings"
 msgid "← →  Cambiar      Q E · LB RB  Pestañas      Esc · B  Volver      Tab · Start  Cerrar"
 msgstr "← →  更改      Q E · LB RB  页面      Esc · B  返回      Tab · Start  关闭"
 
 #. Key:	HintControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3479)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3479)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3485)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3485)
 msgctxt "TNPause,HintControls"
 msgid "Intro · A  Cambiar      Supr · Y  De serie      Esc · B  Volver      Tab · Start  Cerrar"
 msgstr "Enter · A  更改      Delete · Y  默认      Esc · B  返回      Tab · Start  关闭"
 
 #. Key:	HintRoom
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3482)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3482)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3488)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3488)
 msgctxt "TNPause,HintRoom"
 msgid "Intro · A  Elegir      ← →  Cambiar      Esc · B  Volver      Tab · Start  Cerrar"
 msgstr "Enter · A  选择      ← →  更改      Esc · B  返回      Tab · Start  关闭"
 
 #. Key:	HintHome
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3485)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3485)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3491)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3491)
 msgctxt "TNPause,HintHome"
 msgid "Intro · A  Elegir      Esc · B  Continuar      Tab · Start  Cerrar"
 msgstr "Enter · A  选择      Esc · B  继续      Tab · Start  关闭"

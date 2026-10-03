@@ -8,11 +8,15 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
+#include "Player/TN_TurtleActionSfx.h"
 
 UTN_CarryComponent::UTN_CarryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
+	// Sonidos de serie de coger y lanzar a otra tortuga (#348); el Blueprint puede cambiarlos.
+	GrabSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Pickup);
+	ThrowSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Throw);
 }
 
 void UTN_CarryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

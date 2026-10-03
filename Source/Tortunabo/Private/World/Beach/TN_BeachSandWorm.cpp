@@ -634,7 +634,7 @@ void ATN_BeachSandWorm::ServerCalmVictim()
 		}
 		if (Tortuga->IsKnockedDown())
 		{
-			Tortuga->RecoverFromKnockdown();
+			Tortuga->RecoverFromKnockdownSilently();
 		}
 		if (UTN_BeachStunComponent* Stun = UTN_BeachStunComponent::FindOn(Tortuga))
 		{
