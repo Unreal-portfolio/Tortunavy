@@ -3,7 +3,10 @@
 #include "Core/TN_Log.h"
 #include "UI/Voice/VoiceIndicatorWidget.h"
 #include "Player/MP_GamePlayerController.h"
+#include "Settings/TN_GameSettingsSubsystem.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "Blueprint/UserWidget.h"
@@ -645,6 +648,24 @@ bool UProximityVoiceComponent::IsHeardSpeaking() const
 	return World && LastRemoteVoiceTime >= 0.0 && World->GetRealTimeSeconds() - LastRemoteVoiceTime < 0.35;
 }
 
+const APlayerState* UProximityVoiceComponent::GetSpeakerState() const
+{
+	const APawn* Pawn = Cast<APawn>(GetOwner());
+	if (const APlayerState* Live = Pawn ? Pawn->GetPlayerState() : nullptr)
+	{
+		LastSpeakerState = Live;
+		return Live;
+	}
+	return LastSpeakerState.Get();
+}
+
+bool UProximityVoiceComponent::IsMutedByListener() const
+{
+	const APlayerState* Speaker = GetSpeakerState();
+	const UTN_GameSettingsSubsystem* Settings = Speaker ? UTN_GameSettingsSubsystem::Get(this) : nullptr;
+	return Settings && Settings->IsPlayerMuted(UTN_GameSettingsSubsystem::PlayerKey(Speaker));
+}
+
 void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate)
 {
 	if (bIsShuttingDown || (GetWorld() && GetWorld()->bIsTearingDown) || IsLocallyOwned())
@@ -657,6 +678,20 @@ void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedDa
 	// Defensa en el consumidor: acotar el sample rate recibido por red al rango
 	// humano antes de configurar el playback.
 	SenderSampleRate = FMath::Clamp(SenderSampleRate <= 0 ? 48000 : SenderSampleRate, 8000, 96000);
+
+	// Si quien escucha lo tiene silenciado, ni se descodifica ni se reproduce. Bajarle el volumen a 0 cada fotograma
+	// (UTN_GameSettingsSubsystem::UpdateSounds) no basta por sí solo: un componente de reproducción recién creado suena a
+	// volumen pleno hasta el siguiente fotograma, y sin PlayerState en el peón no se sabría a quién silenciar (#248).
+	if (IsMutedByListener())
+	{
+		return;
+	}
+	if (!bWarnedNoSpeakerState && !GetSpeakerState())
+	{
+		bWarnedNoSpeakerState = true;
+		UE_LOG(LogTortunabo, Warning, TEXT("[Voice] Llega voz de %s sin saber de qué jugador es (peón sin PlayerState): no se puede aplicar su silencio."),
+			*GetNameSafe(GetOwner()));
+	}
 
 	if (!ProceduralSoundWave || !PlaybackAudioComponent)
 	{

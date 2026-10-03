@@ -1,4 +1,5 @@
 #include "World/TN_ScorePickupWakeSubsystem.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "World/TN_ScorePickup.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Engine/World.h"
@@ -28,8 +29,11 @@ void UTN_ScorePickupWakeSubsystem::Evaluate(FEntry& Entry, bool bHasView, const 
 	{
 		return;
 	}
+	// Con la pantalla partida (#311), la cámara local más cercana a esta concha.
+	FVector View = ViewLocation;
+	if (bHasView) { TNLocalViews::ClosestCamera(GetWorld(), Pickup->GetActorLocation(), View); }
 	const bool bAwake = !bHasView || TNScorePickupWake::ShouldBeAwake(
-		FVector::DistSquared(ViewLocation, Pickup->GetActorLocation()), Pickup->GetWakeDistance(), Entry.bAwake);
+		FVector::DistSquared(View, Pickup->GetActorLocation()), Pickup->GetWakeDistance(), Entry.bAwake);
 	if (bAwake != Entry.bAwake)
 	{
 		Entry.bAwake = bAwake;

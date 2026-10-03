@@ -248,8 +248,38 @@ void ATN_PhysicsObjectActor::OnMeshHit(UPrimitiveComponent* HitComp, AActor* Oth
 	}
 }
 
+void ATN_PhysicsObjectActor::SetExternallyHeld(bool bHeld)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	ExternalHolds = FMath::Max(0, ExternalHolds + (bHeld ? 1 : -1));
+	if (bHeld)
+	{
+		// Despierto ya (Flush antes: con DORM_Awake ya no hace nada) y sin dormirse mientras lo lleven: los clientes lo ven
+		// moverse con la mano.
+		FlushNetDormancy();
+		SetNetDormancy(DORM_Awake);
+		return;
+	}
+	if (ExternalHolds == 0 && !GetWorldTimerManager().IsTimerActive(DormancyCheckTimer))
+	{
+		// Suelto: se vuelve a dormir cuando se pare, como tras un golpe.
+		GetWorldTimerManager().SetTimer(
+			DormancyCheckTimer, this,
+			&ATN_PhysicsObjectActor::TryEnterDormancy,
+			DormancyCheckInterval, /*bLoop=*/true);
+	}
+}
+
 void ATN_PhysicsObjectActor::TryEnterDormancy()
 {
+	// En la mano de alguien (VR): despierto hasta que lo suelten (SetExternallyHeld vuelve a poner el temporizador).
+	if (ExternalHolds > 0)
+	{
+		return;
+	}
 	const float SpeedSq = Mesh->GetComponentVelocity().SizeSquared();
 	if (SpeedSq > SleepVelocityThreshold * SleepVelocityThreshold)
 	{

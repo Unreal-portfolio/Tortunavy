@@ -217,6 +217,15 @@ despacio por la arena no debe sonar; un bote de más de 2,6 m/s, sí.
 Escape en el juego y Tabulador en el editor (PIE); Start en el mando. No tiene comandos. La lista de pruebas está en
 `Docs/Menu_Pausa.md`.
 
+Prueba automática con mando, teclado y pantalla partida: pulsa la cruceta, el stick, las flechas, A, B y RB como los
+manda el motor sobre el menú de pausa (los ajustes del menú principal), «Crear partida» y «Unirse», y el menú de un
+invitado de la partida local. Necesita el juego con su ventana, así que no sale en el editor:
+
+```
+UnrealEditor-Win64-DebugGame.exe <uproject> -game -RenderOffScreen -NoSteam -ResX=1280 -ResY=720 -unattended -nosound
+    -ExecCmds="Automation RunTests Tortunabo.UI.PausePad; Quit"
+```
+
 ## Modo VR
 
 Detalle, controles y pruebas en `Docs/Modo_VR.md`. Se escriben en la ventana de **quien lo prueba** (el modo VR es de cada
@@ -229,10 +238,14 @@ máquina).
 | `TN.VR 0` / `TN.VR -1` | Apagado a la fuerza / lo que diga el ajuste (Automático: gafas solo si el motor pinta en estéreo). |
 | `TN.VR.Status` | Escribe el modo, si hay OpenXR, gafas y estéreo, el dispositivo, el rig y si hay un menú delante. |
 | `TN.VR.Recenter` | Recentra la vista (con gafas) y vuelve a poner delante el HUD o el menú. Con los mandos, clic del stick derecho. |
-| `TN.VR.HudDistance 140` / `TN.VR.HudFov 50` | Distancia (cm) y ancho (grados) del HUD. |
-| `TN.VR.MenuDistance 160` / `TN.VR.MenuFov 58` | Lo mismo para los menús. |
+| `TN.VR.HudDistance 150` / `TN.VR.HudFov 80` | Distancia (cm) y arco (grados) del HUD curvo anclado a la cámara. |
+| `TN.VR.HudFollow 1` | HUD suelto delante que sigue a la cabeza con retraso (de serie `0`: anclado a la cámara, fijo en la vista). |
+| `TN.VR.MenuDistance 160` / `TN.VR.MenuFov 100` | Distancia y arco de los menús (curvos, quietos en el mundo). |
+| `TN.VR.LoadingDomeRadius 300` | Radio (cm) de la playa en 360 de la pantalla de carga (`0` la quita). |
 | `TN.VR.SmoothTurnSpeed 120` | Grados por segundo del giro suave. |
-| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, HUD, giro, panel, botones de los menús). |
+| `TN.Camera 1` / `TN.Camera 0` / `TN.Camera -1` | Sin gafas: primera persona / tercera persona / la del ajuste «Cámara». También con T o el clic del stick derecho (fila «Cambiar de cámara» de Controles). |
+| `TN.FirstPerson.ShellLight 0.2` | Luz que queda dentro del caparazón en primera persona y en VR (0 negro, 1 como fuera). |
+| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara). |
 
 ## Pantalla de carga del huevo
 
@@ -255,6 +268,17 @@ No existen en la build Shipping.
 | `TN.Rooms.FakeError <joinfull\|gone\|noaddress>` | Simula que falla la entrada en la sesión (llena, ya no existe, sin dirección del anfitrión): el aviso sale en el menú de salas sin recargarlo. |
 | `TN.Travel.Fail [/Game/Ruta/Mapa \| motor] [segundos]` | Solo en el anfitrión: pide un `ServerTravel` a un mapa que no existe (por defecto `/Game/Maps/TN_MapaQueNoExiste`), que `CanServerTravel` para sin mandar a los invitados; con `motor`, simula un fallo de `UEngine::OnTravelFailure` (un mapa que existe pero no carga), con la desconexión que pide el motor. Con segundos, lo hace pasado ese tiempo (para que entren invitados en una prueba sin ventana con `-ExecCmds`). En los dos casos, el registro debe dar un solo `Fallo de viaje ... (fallo 1 seguido)` y el anfitrión debe seguir en el lobby (o recargarlo) con su sesión. Antes `net.AllowPIESeamlessTravel 1` si se prueba en PIE el viaje sin cortes. Ver [Salas](Salas.md#viaje-de-mapa-fallido). |
 | `Automation RunTests Tortunabo.Net.TravelFailure` | Prueba automática de lo que se hace ante un viaje fallido (anfitrión, invitado, menú, lobby en pie, segundo fallo) y de si el `ServerTravel` ha arrancado de verdad. |
+
+## Partida local (pantalla partida)
+
+En una partida local (menú principal > «Local», Standalone). No existen en la build Shipping. Detalle en
+[Modo_Local.md](Modo_Local.md).
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Local.AddGuest [N]` | En el lobby, añade N invitados (1 a 3, hasta 4 jugadores) sin mando: su tortuga aparece y la pantalla se reparte, pero no los mueve nadie. Para ver el reparto con 2, 3 y 4 sin tener cuatro mandos. |
+| `TN.Local.RemoveGuest [N]` | Saca al último invitado (o al jugador N, de 2 a 4): su tortuga y su vista desaparecen. |
+| `TN.Local.Info` | Escribe si la partida es local y, de cada jugador local, su usuario de la plataforma y sus aparatos (qué mando es de quién). |
 
 ## Cooperativo (mapa procedural y lobby)
 

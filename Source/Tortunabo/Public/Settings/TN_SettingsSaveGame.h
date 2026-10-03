@@ -111,6 +111,16 @@ struct FTNGameSettings
 	UPROPERTY()
 	FName PausePadKey = TEXT("Gamepad_Special_Right");
 
+	/**
+	 * Tecla y botón de «Cambiar de cámara» (tercera o primera persona sin gafas; Docs/Modo_VR.md, «Primera persona»): T y el
+	 * clic del stick derecho de serie, que no usa ninguna otra fila. Nunca la de hablar: si coincidieran, esta se queda sin.
+	 */
+	UPROPERTY()
+	FName CameraKey = TEXT("T");
+
+	UPROPERTY()
+	FName CameraPadKey = TEXT("Gamepad_RightThumbstick");
+
 	// ── Juego y accesibilidad ────────────────────────────────────────────────
 
 	/** Temblor de cámara (golpes, quads de la carrera, tormenta...). */
@@ -163,6 +173,13 @@ struct FTNGameSettings
 	/** Giro con el stick derecho en VR: 0 a pasos de 30°, 1 a pasos de 45°, 2 suave. */
 	UPROPERTY()
 	uint8 VRTurn = 0;
+
+	/**
+	 * Cámara sin gafas (Docs/Modo_VR.md, «Primera persona»): 0 tercera persona (la de siempre), 1 primera persona (en la
+	 * cabeza, viendo el cuerpo propio sin la cabeza). Se cambia también con CameraKey / CameraPadKey; TN.Camera manda.
+	 */
+	UPROPERTY()
+	uint8 CameraView = 0;
 
 	// ── Pantalla (lo que no guarda UGameUserSettings) ────────────────────────
 

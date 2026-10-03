@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachTrapCommon.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -288,9 +289,10 @@ bool FTNTrapPopText::Tick(float DeltaSeconds, const UWorld* World)
 	const float Shrink = FMath::Clamp((Life - Age) / 0.2f, 0.f, 1.f);
 	const FVector At = Start + FVector(0.0, 0.0, 110.0 * (1.0 - FMath::Exp(-Age * 3.0)));
 	FRotator Facing = FRotator::ZeroRotator;
-	if (const APlayerCameraManager* Cam = World ? UGameplayStatics::GetPlayerCameraManager(World, 0) : nullptr)
+	FVector CameraAt = At;
+	if (TNLocalViews::ClosestCamera(World, At, CameraAt))
 	{
-		Facing = (Cam->GetCameraLocation() - At).Rotation();
+		Facing = (CameraAt - At).Rotation();
 	}
 	Facing.Roll = 8.f * FMath::Sin(Age * 22.f) * FMath::Exp(-Age * 3.f);
 	Text->SetWorldLocationAndRotation(At, Facing);
