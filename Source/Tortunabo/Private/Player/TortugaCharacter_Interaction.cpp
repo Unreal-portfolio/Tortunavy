@@ -18,6 +18,7 @@
 #include "World/TN_ThrowableItemActor.h"
 #include "World/TN_ConchPickup.h"
 #include "World/TN_InkProjectile.h"
+#include "Game/TN_TctItems.h"
 #include "World/Beach/TN_RaceItems.h"
 #include "Game/TN_BeachRaceGameState.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -321,6 +322,13 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 	if (EquippedItem.UseType == ETN_ItemUseType::RaceItem)
 	{
 		TNRaceItems::ServerUse(this, EquippedItem);
+		return;
+	}
+
+	// ── Objetos de combate de Todos contra Todos (pistola de noqueo, garfio, pala...): Game/TN_TctItems.h ──
+	if (EquippedItem.UseType == ETN_ItemUseType::TctItem)
+	{
+		TNTctItems::ServerUse(this, EquippedItem);
 		return;
 	}
 }

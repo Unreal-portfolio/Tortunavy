@@ -64,6 +64,9 @@ public:
 	 */
 	TArray<FTransform> PickSpawnTransforms(int32 Count, float CapsuleLift) const;
 
+	/** Puntos de suelo pisable lejos de los bordes (de la última medición): de aquí salen las salidas y los puntos de objetos. */
+	const TArray<FVector>& GetSpawnCandidates() const { return SpawnCandidates; }
+
 protected:
 	/** Variante elegida por el servidor (la de Variant del nivel hasta que la cambie). */
 	UPROPERTY(ReplicatedUsing = OnRep_ArenaVariant)

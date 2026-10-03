@@ -150,6 +150,7 @@ void ATN_TctGameMode::SetUpArena()
 	ArenaBounds.WadeDepth = WadeDepth;
 	BuildFloodPlan();
 	CreateSpawnPoints();
+	CreateItemPads();
 	HoldWater(FloodPlan.BaseZ);
 }
 
@@ -448,6 +449,8 @@ void ATN_TctGameMode::PlaceForRound(APlayerController* PlayerController, const F
 		// Teletransporte limpio: fuera del caparazón, del derribo, de lo que lleve y de quien la lleve.
 		TNBeach::RelocateTurtle(Character, Spawn);
 	}
+	// Cada ronda se empieza con las manos vacías y sin lastre.
+	ResetItemsForRound(PlayerController->GetPawn());
 	PlayerController->ClientSetRotation(Spawn.Rotator(), true);
 	FreezePlayer(PlayerController);
 }

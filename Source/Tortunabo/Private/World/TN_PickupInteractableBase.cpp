@@ -29,9 +29,9 @@ void ATN_PickupInteractableBase::BeginPlay()
 		PickupGlow->SetFloatTarget(Mesh, static_cast<float>(Mesh->GetRelativeLocation().Z));
 	}
 
-	// Objetos de carrera definidos en código (la caja de objetos lleva su fila en el valor por defecto de la clase, que no
-	// se replica): malla y tamaño en cada máquina a partir del ItemId.
-	if (PickupItem.UseType == ETN_ItemUseType::RaceItem)
+	// Objetos de carrera y de Todos contra Todos definidos en código (la caja de objetos lleva su fila en el valor por
+	// defecto de la clase, que no se replica): malla y tamaño en cada máquina a partir del ItemId.
+	if (PickupItem.UseType == ETN_ItemUseType::RaceItem || PickupItem.UseType == ETN_ItemUseType::TctItem)
 	{
 		TNRaceItems::ResolveVisuals(PickupItem);
 		if (Mesh && PickupItem.EquippedMesh)

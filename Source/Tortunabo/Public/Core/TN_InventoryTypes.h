@@ -44,6 +44,11 @@ enum class ETN_ItemUseType : uint8
 	 * concreto sale del ItemId («Race_Coconut», «Race_PelicanTaxi»...). No tiene fila en DT_Items.
 	 */
 	RaceItem         UMETA(DisplayName = "Race Item"),
+	/**
+	 * Objeto de combate de Todos contra Todos definido solo desde código (TNTctItems, Game/TN_TctItems.h): el objeto y las
+	 * cargas que le quedan salen del ItemId («Tct_Shovel_4», «Tct_Grapple_2»...). No tiene fila en DT_Items.
+	 */
+	TctItem          UMETA(DisplayName = "Tct Item"),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

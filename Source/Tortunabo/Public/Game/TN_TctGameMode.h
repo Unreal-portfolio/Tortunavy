@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Game/TN_RunGameMode.h"
 #include "Game/TN_ChampionChoiceHandler.h"
+#include "Game/TN_TctItemRules.h"
 #include "Game/TN_TctRules.h"
 #include "TN_TctGameMode.generated.h"
 
@@ -10,6 +11,7 @@ class APlayerStart;
 class ATN_CoopPlayerState;
 class ATN_TctArena;
 class ATN_TctGameState;
+class ATN_TctItemPad;
 
 /**
  * @brief Todos contra Todos (#651, plan maestro §3.4 y F7): rondas de supervivencia de 2 a 8 tortugas en una arena inventada.
@@ -24,8 +26,10 @@ class ATN_TctGameState;
  *    entre rondas, el recuento de la carrera; al final, la pantalla de la campeona con su podio (UTN_RaceScreensSubsystem).
  *  - Desconexión: quien se va deja de contar; si en la ronda solo queda una en pie, gana; si en la partida solo queda una,
  *    es la campeona.
- * Las reglas están en TN_TctRules.h (tests Tortunabo.Tct). Comandos de prueba: TN.Tct.Eliminate, TN.Tct.WinRound y
- * TN.Tct.Flood.
+ *  - Objetos: puntos de objetos (ATN_TctItemPad) repartidos por la arena, con un objeto de combate que reaparece al rato de
+ *    cogerlo (TN_TctItems.h); cada ronda se empieza con las manos vacías.
+ * Las reglas están en TN_TctRules.h y TN_TctItemRules.h (tests Tortunabo.Tct). Comandos de prueba: TN.Tct.Eliminate,
+ * TN.Tct.WinRound, TN.Tct.Flood, TN.Tct.Item y TN.Tct.Items.
  */
 UCLASS()
 class TORTUNABO_API ATN_TctGameMode : public ATN_RunGameMode, public ITN_ChampionChoiceHandler
@@ -63,6 +67,10 @@ public:
 	void DebugWinRound(int32 PlayerIndex);
 	/** El agua empieza ya su siguiente subida. */
 	void DebugFloodNow();
+	/** Da el objeto Kind a la tortuga PlayerIndex. */
+	void DebugGiveItem(int32 PlayerIndex, ETNTctItem Kind);
+	/** Todos los puntos de objetos sacan ya uno nuevo. */
+	void DebugRespawnItems();
 
 protected:
 	virtual void OnWaitingTimeout() override;
@@ -154,6 +162,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "0.0"))
 	float SuddenDeathMargin = 300.f;
 
+	/** Puntos de objetos que se crean en la arena (si el nivel no trae ninguno); en cada ronda se usan según cuántas juegan. */
+	UPROPERTY(EditDefaultsOnly, Category = "Tct|Items", meta = (ClampMin = "0"))
+	int32 ItemPadCount = 10;
+
+	/** Ningún punto de objetos a menos de esto de una salida (uu), si caben. */
+	UPROPERTY(EditDefaultsOnly, Category = "Tct|Items", meta = (ClampMin = "0.0"))
+	float ItemPadMinFromSpawn = 700.f;
+
 private:
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_TctArena> Arena;
@@ -161,6 +177,10 @@ private:
 	/** Sitios de salida creados al medir la arena (uno por jugadora posible). */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<APlayerStart>> SpawnPoints;
+
+	/** Puntos de objetos (los del nivel o los creados al medir la arena), el del centro primero. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<ATN_TctItemPad>> ItemPads;
 
 	FTNTctFloodPlan FloodPlan;
 	FTNTctArenaBounds ArenaBounds;
@@ -200,6 +220,14 @@ private:
 	/** Todas a sus salidas de esta ronda (rotan cada ronda). */
 	void PlaceAllForRound();
 	void ResetMatchScores() const;
+
+	// ── Objetos (TN_TctGameMode_Items.cpp) ──
+	void CreateItemPads();
+	/** Empieza la ronda en los puntos de objetos que tocan según cuántas juegan; los demás, parados. */
+	void StartItemPads();
+	void StopItemPads();
+	/** Manos vacías y sin lastre para la ronda nueva. */
+	void ResetItemsForRound(APawn* Pawn) const;
 
 	// ── Rondas (TN_TctGameMode_Round.cpp) ──
 	void PrepareRound();

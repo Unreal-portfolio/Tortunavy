@@ -61,6 +61,7 @@ void ATN_TctGameMode::PrepareRound()
 		State->PhaseSecondsLeft = 0.f;
 	}
 	HoldWater(FloodPlan.BaseZ);
+	StopItemPads();
 	// Waiting con el reloj a 0: las pantallas cierran la cáscara con «RONDA N» y esperan al 3, 2, 1.
 	SetPhase(ETNBeachRacePhase::Waiting);
 	SyncRoundInfo();
@@ -132,6 +133,7 @@ void ATN_TctGameMode::BeginRound(bool bFromLoading)
 	bRoundLive = true;
 	bTimeUp = false;
 	UnfreezePlayers();
+	StartItemPads();
 
 	if (State)
 	{
@@ -264,6 +266,7 @@ void ATN_TctGameMode::EndRound(ATN_CoopPlayerState* Winner)
 	GetWorldTimerManager().ClearTimer(DecisionHandle);
 	GetWorldTimerManager().ClearTimer(RoundLimitHandle);
 
+	StopItemPads();
 	ATN_TctGameState* State = GetTctState();
 	// El agua se queda donde está durante el recuento.
 	HoldWater(State ? State->GetWaterZ() : FloodPlan.BaseZ);

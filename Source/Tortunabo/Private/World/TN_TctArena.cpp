@@ -1,6 +1,7 @@
 #include "World/TN_TctArena.h"
 #include "Core/TN_Log.h"
 #include "Game/TN_TctGameState.h"
+#include "Game/TN_TctItems.h"
 #include "Game/TN_TctRules.h"
 
 #include "Components/StaticMeshComponent.h"
@@ -92,6 +93,8 @@ void ATN_TctArena::BeginPlay()
 	// La base construye la malla si hace falta y, en el servidor, pone las zonas de muerte del manifest.
 	Super::BeginPlay();
 	FitWaterPlane();
+	// Las mallas de los objetos, ya al cargar la arena (en cada máquina): sin tirones al salir el primero de cada uno.
+	TNTctItems::PreloadMeshes();
 }
 
 void ATN_TctArena::ServerSetArenaVariant(FName NewVariant)
