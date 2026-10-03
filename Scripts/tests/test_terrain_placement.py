@@ -232,6 +232,18 @@ def test_el_bloque_va_y_vuelve_y_respeta_el_resto_del_manifest(site):
     assert projected.line == 0 and projected.s == pytest.approx(749.0, abs=1.5) and projected.q == pytest.approx(1.0, abs=0.1)
 
 
+def test_los_tramos_llevan_su_polilinea_y_el_geiser_su_destino(site):
+    ln = site.line(0)
+    puzzle = to_json(site, Placement("pz", "puzzle", "throw_chain", 0, 300.0, length=24.0))
+    path = np.asarray(puzzle["path_uu"]) / 100.0
+    assert len(path) == 13
+    assert np.allclose(path[0], ln.at(288.0), atol=0.01) and np.allclose(path[-1], ln.at(312.0), atol=0.01)
+    assert "path_uu" not in to_json(site, Placement("en", "enemy", "SeaUrchin", 0, 300.0))
+    assert "target_uu" not in to_json(site, Placement("tr", "mechanic", "Trampoline", 0, 300.0))
+    geyser = to_json(site, Placement("gy", "mechanic", "Geyser", 0, 300.0))
+    assert np.allclose(np.asarray(geyser["target_uu"]) / 100.0, ln.at(314.0), atol=0.01)
+
+
 def test_regenerar_el_terreno_conserva_lo_colocado(tmp_path):
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps({"seed": 7, "placements": {"map_seed": 7, "manual": [{"id": "m"}], "auto": []}}))
