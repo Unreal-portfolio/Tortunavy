@@ -139,7 +139,8 @@ void ATN_TctArena::Tick(float DeltaSeconds)
 	}
 	const UWorld* World = GetWorld();
 	const ATN_TctGameState* State = World ? World->GetGameState<ATN_TctGameState>() : nullptr;
-	const float WaterZ = State ? State->GetWaterZ() : BaseWaterZ;
+	// Nunca por debajo del mar de la variante (antes de que llegue el estado del servidor, el GameState lo da muy abajo).
+	const float WaterZ = FMath::Max(State ? State->GetWaterZ() : BaseWaterZ, BaseWaterZ);
 	FVector Location = WaterPlane->GetComponentLocation();
 	if (!FMath::IsNearlyEqual(Location.Z, static_cast<double>(WaterZ), 0.5))
 	{

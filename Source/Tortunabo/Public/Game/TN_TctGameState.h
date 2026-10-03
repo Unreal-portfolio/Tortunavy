@@ -18,9 +18,12 @@ struct FTNTctFloodState
 	UPROPERTY(BlueprintReadOnly, Category = "Tct")
 	float StartServerTime = -1.f;
 
-	/** Altura del agua cuando no sube (preparación, recuento, podio). */
+	/**
+	 * Altura del agua cuando no sube (preparación, recuento, podio). Hasta que el servidor la fija, muy abajo: el mar de la arena
+	 * (ATN_TctArena) se queda en el de la variante y no tapa los primeros anillos mientras llega la réplica.
+	 */
 	UPROPERTY(BlueprintReadOnly, Category = "Tct")
-	float HoldZ = 0.f;
+	float HoldZ = -1.e6f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Tct")
 	float BaseZ = 0.f;
