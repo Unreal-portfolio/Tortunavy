@@ -79,6 +79,10 @@ namespace TNBellySlide
 	// Movimientos guardados del cliente: el estado del arrastre viaja con cada uno para repetirlo tras una corrección
 	// ─────────────────────────────────────────────────────────────────────────
 
+	// La petición del panzazo va en la marca FLAG_Custom_2 (#24). FLAG_Custom_0 y FLAG_Custom_1 las usan el sprint (#250) y
+	// el turbo de carrera (#22) en sus ramas.
+	static_assert(TNDiveLogic::DiveRequestFlag == FSavedMove_Character::FLAG_Custom_2, "El panzazo pedido va en FLAG_Custom_2");
+
 	class FTNSavedMove_Turtle : public FSavedMove_Character
 	{
 	public:
@@ -92,6 +96,9 @@ namespace TNBellySlide
 			SavedSlideSerial = 0;
 			SavedCapsuleHalfHeight = 0.f;
 			SavedBellySlopeTime = 0.f;
+			bSavedWantsDive = false;
+			SavedDiveYaw = 0;
+			SavedJumpStartVelocity = FVector::ZeroVector;
 		}
 
 		virtual void SetInitialPosition(ACharacter* C) override
@@ -102,7 +109,14 @@ namespace TNBellySlide
 			if (UTN_TurtleMovementComponent* TurtleMove = C ? Cast<UTN_TurtleMovementComponent>(C->GetCharacterMovement()) : nullptr)
 			{
 				TurtleMove->ConsumeMoveStartBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
+				TurtleMove->CaptureMoveStartDive(bSavedWantsDive, SavedDiveYaw, SavedJumpStartVelocity);
 			}
+		}
+
+		virtual uint8 GetCompressedFlags() const override
+		{
+			// El panzazo pedido viaja con el movimiento: el servidor lo empieza en el mismo que el dueño (#24).
+			return Super::GetCompressedFlags() | (bSavedWantsDive ? TNDiveLogic::DiveRequestFlag : 0);
 		}
 
 		virtual bool CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* InCharacter, float MaxDelta) const override
@@ -122,6 +136,7 @@ namespace TNBellySlide
 			if (UTN_TurtleMovementComponent* TurtleMove = C ? Cast<UTN_TurtleMovementComponent>(C->GetCharacterMovement()) : nullptr)
 			{
 				TurtleMove->RestoreBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
+				TurtleMove->RestoreMoveStartDive(SavedDiveYaw, SavedJumpStartVelocity);
 			}
 		}
 
@@ -143,6 +158,11 @@ namespace TNBellySlide
 		float SavedCapsuleHalfHeight = 0.f;
 		/** Tiempo del arrastre cuesta abajo al empezar el movimiento (#62). */
 		float SavedBellySlopeTime = 0.f;
+		/** Este movimiento pide el panzazo, hacia este giro (#24). */
+		bool bSavedWantsDive = false;
+		uint16 SavedDiveYaw = 0;
+		/** Velocidad horizontal del último salto al empezar el movimiento (la inercia del panzazo). */
+		FVector SavedJumpStartVelocity = FVector::ZeroVector;
 	};
 
 	class FTNNetworkPredictionData_Client_Turtle : public FNetworkPredictionData_Client_Character
@@ -185,6 +205,8 @@ UTN_TurtleMovementComponent::UTN_TurtleMovementComponent()
 {
 	// Movimientos del cliente sin bases que el servidor no encuentra por red (FTNTurtleNetworkMoveDataContainer).
 	SetNetworkMoveDataContainer(TurtleNetworkMoveData);
+	// Correcciones con el estado del panzazo del servidor (FTNTurtleMoveResponseDataContainer, #24).
+	SetMoveResponseDataContainer(TurtleMoveResponseData);
 	// Para el RPC de los lanzamientos que concede el servidor (LaunchFromServer).
 	SetIsReplicatedByDefault(true);
 }
@@ -276,8 +298,23 @@ void UTN_TurtleMovementComponent::UpdateCharacterStateBeforeMovement(float Delta
 	bPendingAirBounce = false;
 	// El movimiento ya se ha guardado (el cliente guarda antes de simular): lo de antes del brinco ya no sirve.
 	bHasPreJumpBelly = false;
+	// El panzazo pedido (#24): quien la controla, el que acaba de pedir (ya está en el movimiento guardado); el servidor y
+	// la repetición en el dueño, el de las marcas del movimiento (UpdateFromCompressedFlags).
+	if (CharacterOwner && CharacterOwner->IsLocallyControlled() && !CharacterOwner->bClientUpdating)
+	{
+		bMoveWantsDive = bDiveRequested;
+		MoveDiveYaw = DiveRequestYaw;
+		bDiveRequested = false;
+	}
+	const bool bMoveDive = bMoveWantsDive;
+	bMoveWantsDive = false;
 	if (SimulatesBelly())
 	{
+		// Lo primero: el panzazo pedido, si empieza, lanza en este paso (otro lanzamiento ya pendiente manda).
+		if (bMoveDive)
+		{
+			TickDiveStart();
+		}
 		// Antes que el panzazo: si rebota, el arrastre no empieza en este paso (lo mira PendingLaunchVelocity).
 		TickTrampolineBounce();
 		TickBellyPhase(DeltaSeconds);
@@ -896,6 +933,16 @@ FRotator UTN_TurtleMovementComponent::ComputeOrientToMovementRotation(const FRot
 {
 	if (BellyPhase != ETNBellyPhase::Slide)
 	{
+		// En el vuelo del panzazo, el cuerpo gira hacia su dirección dentro del movimiento: igual en el dueño y el servidor
+		// (#24). Desde que cae de tripa, como siempre.
+		float DiveYaw = 0.f;
+		float DiveTurnRate = 0.f;
+		const ATortugaCharacter* Turtle = GetTurtle();
+		if (Turtle && BellyPhase == ETNBellyPhase::None && Turtle->GetDiveSerial() != SlideSerial && Turtle->GetDiveYawTurn(DiveYaw, DiveTurnRate))
+		{
+			DeltaRotation = FRotator(0.f, DiveTurnRate * DeltaTime, 0.f);
+			return FRotator(0.f, DiveYaw, 0.f);
+		}
 		return Super::ComputeOrientToMovementRotation(CurrentRotation, DeltaTime, DeltaRotation);
 	}
 	// Sobre la tripa el cuerpo sigue despacio hacia donde se desliza (curvas por la pendiente o a lo largo de una pared);
@@ -989,6 +1036,67 @@ FNetworkPredictionData_Client* UTN_TurtleMovementComponent::GetPredictionData_Cl
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Panzazo pedido dentro del movimiento (#24)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void UTN_TurtleMovementComponent::RequestDive(const FVector& DiveDir)
+{
+	bDiveRequested = true;
+	DiveRequestYaw = TNDiveLogic::CompressDiveYaw(DiveDir);
+}
+
+void UTN_TurtleMovementComponent::CaptureMoveStartDive(bool& bOutWantsDive, uint16& OutYaw, FVector& OutJumpStartVelocity) const
+{
+	bOutWantsDive = bDiveRequested;
+	OutYaw = bDiveRequested ? DiveRequestYaw : 0;
+	const ATortugaCharacter* Turtle = GetTurtle();
+	OutJumpStartVelocity = Turtle ? Turtle->GetJumpStartHorizontalVelocity() : FVector::ZeroVector;
+}
+
+void UTN_TurtleMovementComponent::RestoreMoveStartDive(uint16 InYaw, const FVector& InJumpStartVelocity)
+{
+	// La marca la lee después UpdateFromCompressedFlags; aquí, el giro y la inercia del salto de entonces.
+	MoveDiveYaw = InYaw;
+	if (ATortugaCharacter* Turtle = GetTurtle())
+	{
+		Turtle->SetJumpStartHorizontalVelocity(InJumpStartVelocity);
+	}
+}
+
+uint16 UTN_TurtleMovementComponent::GetSavedMoveDiveYaw(const FSavedMove_Character& Move)
+{
+	// Todos los movimientos guardados de la tortuga son FTNSavedMove_Turtle (FTNNetworkPredictionData_Client_Turtle).
+	return static_cast<const TNBellySlide::FTNSavedMove_Turtle&>(Move).SavedDiveYaw;
+}
+
+void UTN_TurtleMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
+{
+	Super::UpdateFromCompressedFlags(Flags);
+	bMoveWantsDive = (Flags & TNDiveLogic::DiveRequestFlag) != 0;
+	// Servidor: el giro viene en los datos del movimiento del cliente; al repetir en el dueño, ya lo puso PrepMoveFor.
+	if (bMoveWantsDive && CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority)
+	{
+		MoveDiveYaw = TurtleNetworkMoveData.GetDiveYaw(GetCurrentNetworkMoveData());
+	}
+}
+
+void UTN_TurtleMovementComponent::TickDiveStart()
+{
+	ATortugaCharacter* Turtle = GetTurtle();
+	if (!Turtle || !CharacterOwner)
+	{
+		return;
+	}
+	// Las mismas reglas en el servidor y en el dueño, con el estado de este paso: en el aire, sin otro panzazo, sin otro
+	// lanzamiento en este paso (el que concede el servidor ya está en PendingLaunchVelocity)...
+	FVector LaunchVelocity = FVector::ZeroVector;
+	if (Turtle->StartDiveFromMove(MoveDiveYaw, IsFalling(), !PendingLaunchVelocity.IsZero(), CharacterOwner->bClientUpdating, Velocity, LaunchVelocity))
+	{
+		Launch(LaunchVelocity);
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Red: bases de movimiento que no se encuentran por red
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1056,6 +1164,16 @@ void UTN_TurtleMovementComponent::ServerMoveHandleClientError(float ClientTimeSt
 		return;
 	}
 	FClientAdjustment& Adjustment = ServerData->PendingAdjustment;
+	// Corrige este movimiento: el estado del panzazo tras él va con la corrección (#24, FTNTurtleMoveResponseDataContainer).
+	if (!Adjustment.bAckGoodMove && Adjustment.TimeStamp == ClientTimeStamp)
+	{
+		const ATortugaCharacter* Turtle = GetTurtle();
+		const UCapsuleComponent* Capsule = CharacterOwner ? CharacterOwner->GetCapsuleComponent() : nullptr;
+		CorrectionDiveState.bDiving = Turtle && Turtle->IsDiving();
+		CorrectionDiveState.Serial = Turtle ? Turtle->GetDiveSerial() : 0;
+		CorrectionDiveState.CapsuleHalfHeight = Capsule ? Capsule->GetUnscaledCapsuleHalfHeight() : 0.f;
+		CorrectionDiveState.TimeStamp = ClientTimeStamp;
+	}
 	UPrimitiveComponent* AdjustBase = Adjustment.NewBase;
 	if (Adjustment.bAckGoodMove || Adjustment.TimeStamp != ClientTimeStamp || !AdjustBase || IsNetResolvableBase(AdjustBase))
 	{
@@ -1089,9 +1207,43 @@ void UTN_TurtleMovementComponent::ServerMoveHandleClientError(float ClientTimeSt
 	Adjustment.NewBaseBoneName = NAME_None;
 }
 
+void UTN_TurtleMovementComponent::ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse)
+{
+	// Una corrección de un movimiento que aún se guarda (si no, el motor la ignora): el panzazo y la cápsula del servidor
+	// en ese movimiento, antes de colocarla y de repetir los siguientes (que vuelven a pedir el panzazo si lo pedían).
+	const FNetworkPredictionData_Client_Character* ClientData = MoveResponse.IsCorrection() ? GetPredictionData_Client_Character() : nullptr;
+	if (ClientData && &MoveResponse == &TurtleMoveResponseData && ClientData->GetSavedMoveIndex(MoveResponse.ClientAdjustment.TimeStamp) != INDEX_NONE)
+	{
+		const FTNDiveNetState& Server = TurtleMoveResponseData.DiveState;
+		if (ATortugaCharacter* Turtle = GetTurtle())
+		{
+			Turtle->ApplyServerDiveCorrection(Server.bDiving, Server.Serial);
+		}
+		UCapsuleComponent* Capsule = CharacterOwner ? CharacterOwner->GetCapsuleComponent() : nullptr;
+		if (Capsule && Server.CapsuleHalfHeight > 1.f && !FMath::IsNearlyEqual(Capsule->GetUnscaledCapsuleHalfHeight(), Server.CapsuleHalfHeight, 0.01f))
+		{
+			// En su sitio: la posición de la corrección es la del centro de esa cápsula en el servidor.
+			Capsule->SetCapsuleHalfHeight(Server.CapsuleHalfHeight);
+		}
+	}
+	Super::ClientHandleMoveResponse(MoveResponse);
+}
+
 void UTN_TurtleMovementComponent::ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase,
 	FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation)
 {
+	// TN.Dive.Debug: cuántas correcciones y de cuánto (la posición guardada de ese movimiento frente a la del servidor).
+	if (const FNetworkPredictionData_Client_Character* ClientData = GetPredictionData_Client_Character())
+	{
+		const int32 MoveIndex = ClientData->GetSavedMoveIndex(TimeStamp);
+		if (MoveIndex != INDEX_NONE && !bBaseRelativePosition && ClientData->SavedMoves.IsValidIndex(MoveIndex) && ClientData->SavedMoves[MoveIndex].IsValid())
+		{
+			++ClientCorrectionCount;
+			LastClientCorrectionCm = static_cast<float>(FVector::Dist(ClientData->SavedMoves[MoveIndex]->SavedLocation,
+				FRepMovement::RebaseOntoLocalOrigin(NewLoc, this)));
+		}
+	}
+
 	Super::ClientAdjustPosition_Implementation(TimeStamp, NewLoc, NewVel, NewBase, NewBaseBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode,
 		OptionalRotation);
 
@@ -1176,6 +1328,11 @@ void UTN_TurtleMovementComponent::ShowBellyDebug() const
 	if (DebugWorld && LastAirBounceTime >= 0.0 && DebugWorld->GetTimeSeconds() - LastAirBounceTime < 1.5)
 	{
 		SlopeText += FString::Printf(TEXT(" · rebote en vuelo a %.0f cm/s"), LastAirBounceSpeed);
+	}
+	if (CharacterOwner->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		// El dueño en un cliente: las correcciones del servidor (con el panzazo predicho no debe sumar al empezar).
+		SlopeText += FString::Printf(TEXT(" · correcciones %d (última %.0f cm)"), ClientCorrectionCount, LastClientCorrectionCm);
 	}
 	const FString Text = FString::Printf(TEXT("[Panzazo] %s (%s) · %s %.2f s · %.0f cm/s · %s· roce %.0f cm/s² · pendiente %.0f cm/s²%s · panzazo %s nº %d (arrastre del nº %d)"),
 		*GetNameSafe(CharacterOwner), bLocal ? TEXT("local") : TEXT("servidor"), TNBellySlide::PhaseName(BellyPhase), BellyTime,

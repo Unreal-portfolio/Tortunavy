@@ -1,10 +1,16 @@
 // Doble salto físico (plan maestro §3.5): las cuentas del panzazo de TNDiveLogic (TN_DiveDecisions.h) con los ajustes por
-// defecto de UTN_TurtleMovementComponent. Headless:
+// defecto de UTN_TurtleMovementComponent, y el inicio del panzazo en el movimiento guardado (#24). Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Dive; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
+#include "Components/CapsuleComponent.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "Player/TN_DiveDecisions.h"
 #include "Player/TN_TurtleMovementComponent.h"
+#include "Player/TortugaCharacter.h"
+#include "Serialization/BitReader.h"
+#include "Serialization/BitWriter.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -83,6 +89,32 @@ namespace TNDiveDecisionsTestDetail
 
 	/** Velocidad típica al empezar a arrastrarse: panzazo andando, 350 + 450 cm/s, un 90 % tras el golpe. */
 	const FVector EntryVelocity(720.0, 0.0, 0.0);
+
+	/** Mundo de juego sin empezar (nada recibe BeginPlay) para tortugas del personaje de C++. */
+	struct FTestWorld
+	{
+		UWorld* World = nullptr;
+
+		FTestWorld()
+		{
+			World = UWorld::CreateWorld(EWorldType::Game, false, TEXT("TNDiveTestWorld"));
+			FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
+			Context.SetCurrentWorld(World);
+		}
+
+		~FTestWorld()
+		{
+			GEngine->DestroyWorldContext(World);
+			World->DestroyWorld(false);
+		}
+
+		ATortugaCharacter* SpawnTurtle() const
+		{
+			FActorSpawnParameters Params;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			return World->SpawnActor<ATortugaCharacter>(FVector(0.0, 0.0, 500.0), FRotator::ZeroRotator, Params);
+		}
+	};
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveSlopeFlatTest,
@@ -269,6 +301,186 @@ bool FTNDiveWallGroundTest::RunTest(const FString& Parameters)
 			TestTrue(TEXT("Con la misma velocidad"), FVector(NewBounced.X, NewBounced.Y, 0.0).Equals(FVector(OldBounced.X, OldBounced.Y, 0.0), 1e-6));
 		}
 	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveStartRulesTest,
+	"Tortunabo.Dive.Start.Rules",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveStartRulesTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	// Las reglas con que deciden el servidor y el dueño, en el mismo movimiento: solo en el aire, sin otro panzazo, libre,
+	// sin otro lanzamiento en el paso y con velocidad.
+	FDiveStartContext Air;
+	Air.bInAir = true;
+	Air.ForwardSpeed = 420.f;
+	Air.MinSpeed = 80.f;
+	TestTrue(TEXT("En el aire: empieza"), DecideDiveStart(Air) == EDiveStart::Accept);
+
+	FDiveStartContext Ground = Air;
+	Ground.bInAir = false;
+	TestTrue(TEXT("En el suelo (o nadando): no"), DecideDiveStart(Ground) == EDiveStart::NotInAir);
+	FDiveStartContext Again = Air;
+	Again.bAlreadyDiving = true;
+	TestTrue(TEXT("Ya en un panzazo (en el aire): no"), DecideDiveStart(Again) == EDiveStart::AlreadyDiving);
+	FDiveStartContext Blocked = Air;
+	Blocked.bBlocked = true;
+	TestTrue(TEXT("Derribada, en el caparazón o en brazos: no"), DecideDiveStart(Blocked) == EDiveStart::Blocked);
+	FDiveStartContext Launch = Air;
+	Launch.bLaunchPending = true;
+	TestTrue(TEXT("Otro lanzamiento en el paso: no"), DecideDiveStart(Launch) == EDiveStart::LaunchPending);
+	FDiveStartContext Slow = Air;
+	Slow.ForwardSpeed = 50.f;
+	TestTrue(TEXT("Sin velocidad: no"), DecideDiveStart(Slow) == EDiveStart::TooSlow);
+	FDiveStartContext Backwards = Air;
+	Backwards.ForwardSpeed = -300.f;
+	TestTrue(TEXT("Hacia atrás con velocidad: sí"), DecideDiveStart(Backwards) == EDiveStart::Accept);
+
+	// Velocidad: la base más la inercia del salto según la dirección (la cuenta de Server_StartDive hasta #24).
+	FDiveMomentumParams P;
+	const FVector Jump(600.0, 0.0, 0.0);
+	TestEqual(TEXT("Sin salto: la base"), DiveForwardSpeed(FVector::ForwardVector, FVector::ZeroVector, P), 420.f);
+	TestEqual(TEXT("A favor del salto: base + salto"), DiveForwardSpeed(FVector::ForwardVector, Jump, P), 1020.f);
+	TestEqual(TEXT("De lado: la base"), DiveForwardSpeed(FVector::RightVector, Jump, P), 420.f);
+	TestEqual(TEXT("Contra el salto: base - la mitad"), DiveForwardSpeed(-FVector::ForwardVector, Jump, P), 120.f);
+	TestEqual(TEXT("Con tope"), DiveForwardSpeed(FVector::ForwardVector, FVector(2000.0, 0.0, 0.0), P), 1500.f);
+	const FVector Launched = DiveLaunchVelocity(FVector::ForwardVector, 1020.f, 200.f);
+	TestTrue(TEXT("Sale hacia delante y hacia abajo"), Launched.Equals(FVector(1020.0, 0.0, -200.0), 1e-3));
+
+	// Con los ajustes del personaje: corriendo a 840 cm/s y lanzándose hacia atrás, la inercia anula la base: no empieza.
+	const ATortugaCharacter* Defaults = GetDefault<ATortugaCharacter>();
+	FDiveStartContext Cancelled = Air;
+	Cancelled.ForwardSpeed = DiveForwardSpeed(-FVector::ForwardVector, FVector(840.0, 0.0, 0.0), Defaults->GetDiveMomentumParams());
+	Cancelled.MinSpeed = 80.f;
+	TestTrue(FString::Printf(TEXT("Inercia que anula el panzazo (%.0f cm/s): no empieza"), Cancelled.ForwardSpeed), DecideDiveStart(Cancelled) == EDiveStart::TooSlow);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveStartNetTest,
+	"Tortunabo.Dive.Start.NetData",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveStartNetTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	// El giro en 16 bits: la dirección que usan el dueño y el servidor es la misma (la del giro comprimido).
+	for (const float Yaw : { 0.f, 37.f, -120.5f, 179.9f, 271.f })
+	{
+		const FVector Dir = FRotator(0.f, Yaw, 0.f).Vector();
+		const FVector Back = DiveDirFromYaw(CompressDiveYaw(Dir));
+		TestTrue(FString::Printf(TEXT("Giro %.1f: misma dirección"), Yaw), Back.Equals(Dir, 1e-3));
+		TestTrue(TEXT("Horizontal y unitaria"), FMath::IsNearlyZero(Back.Z) && FMath::IsNearlyEqual(Back.Size(), 1.0, 1e-4));
+		TestEqual(TEXT("Comprimir lo ya comprimido no cambia"), CompressDiveYaw(Back), CompressDiveYaw(Dir));
+	}
+
+	// En los datos del movimiento: con la marca, 16 bits de giro; sin ella, nada.
+	const uint16 Sent = CompressDiveYaw(FRotator(0.f, 37.f, 0.f).Vector());
+	FBitWriter Writer(64, true);
+	uint16 WithFlag = Sent;
+	SerializeDiveRequest(Writer, DiveRequestFlag, WithFlag);
+	TestEqual(TEXT("Con la marca: 16 bits"), static_cast<int32>(Writer.GetNumBits()), 16);
+	uint16 WithoutFlag = Sent;
+	SerializeDiveRequest(Writer, 0, WithoutFlag);
+	TestEqual(TEXT("Sin la marca: nada"), static_cast<int32>(Writer.GetNumBits()), 16);
+	TestEqual(TEXT("Sin la marca, sin giro"), static_cast<int32>(WithoutFlag), 0);
+	FBitReader Reader(Writer.GetData(), Writer.GetNumBits());
+	uint16 Received = 0;
+	SerializeDiveRequest(Reader, DiveRequestFlag, Received);
+	TestEqual(TEXT("Llega el mismo giro"), Received, Sent);
+	TestFalse(TEXT("Sin errores"), Reader.IsError());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveStartSavedMoveTest,
+	"Tortunabo.Dive.Start.SavedMove",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveStartSavedMoveTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	// Falla si el panzazo deja de ir en el movimiento guardado: su marca, su giro, lo que viaja por red y su repetición.
+	TNDiveDecisionsTestDetail::FTestWorld TestWorld;
+	ATortugaCharacter* Turtle = TestWorld.SpawnTurtle();
+	UTN_TurtleMovementComponent* Move = Turtle ? Turtle->GetTurtleMovement() : nullptr;
+	FNetworkPredictionData_Client_Character* Data = Move ? Move->GetPredictionData_Client_Character() : nullptr;
+	if (!TestNotNull(TEXT("Tortuga con su movimiento"), Data))
+	{
+		return false;
+	}
+	constexpr float Dt = 1.f / 60.f;
+
+	FSavedMovePtr Plain = Data->CreateSavedMove();
+	Plain->SetMoveFor(Turtle, Dt, FVector::ZeroVector, *Data);
+	TestEqual(TEXT("Sin pedirlo: sin marca"), Plain->GetCompressedFlags() & DiveRequestFlag, 0);
+
+	const FVector DiveDir = FRotator(0.f, 37.f, 0.f).Vector();
+	const uint16 Yaw = CompressDiveYaw(DiveDir);
+	Move->RequestDive(DiveDir);
+	TestTrue(TEXT("Pedido"), Move->HasDiveRequest());
+	FSavedMovePtr DiveMove = Data->CreateSavedMove();
+	DiveMove->SetMoveFor(Turtle, Dt, FVector::ZeroVector, *Data);
+	TestEqual(TEXT("El movimiento guardado lleva la marca FLAG_Custom_2"), DiveMove->GetCompressedFlags() & DiveRequestFlag, static_cast<int32>(DiveRequestFlag));
+	TestEqual(TEXT("Y el giro"), UTN_TurtleMovementComponent::GetSavedMoveDiveYaw(*DiveMove), Yaw);
+	TestTrue(TEXT("Es importante (se reenvía si se pierde)"), DiveMove->IsImportantMove(Plain));
+	TestFalse(TEXT("No se junta con uno sin panzazo"), Plain->CanCombineWith(DiveMove, Turtle, 1.f));
+
+	// Lo que viaja al servidor.
+	FTNTurtleNetworkMoveData NetData;
+	NetData.ClientFillNetworkMoveData(*DiveMove, FCharacterNetworkMoveData::ENetworkMoveType::NewMove);
+	TestEqual(TEXT("Por red va la marca"), NetData.CompressedMoveFlags & DiveRequestFlag, static_cast<int32>(DiveRequestFlag));
+	TestEqual(TEXT("Por red va el giro"), NetData.DiveYaw, Yaw);
+	FTNTurtleNetworkMoveData PlainNet;
+	PlainNet.ClientFillNetworkMoveData(*Plain, FCharacterNetworkMoveData::ENetworkMoveType::NewMove);
+	TestEqual(TEXT("Sin panzazo, sin giro"), static_cast<int32>(PlainNet.DiveYaw), 0);
+
+	// Al repetirlo tras una corrección vuelve el giro que se pidió (la marca la leen las del movimiento).
+	Move->RequestDive(-DiveDir);
+	DiveMove->PrepMoveFor(Turtle);
+	TestEqual(TEXT("Al repetir: el giro de entonces"), Move->GetMoveDiveYaw(), Yaw);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveStartMoveTest,
+	"Tortunabo.Dive.Start.InMove",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveStartMoveTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	// Lo que hacen el servidor y el dueño en el movimiento con la petición (ATortugaCharacter::StartDiveFromMove): la misma
+	// decisión, la misma velocidad, el mismo número y la cápsula tumbada. En el suelo, nada.
+	TNDiveDecisionsTestDetail::FTestWorld TestWorld;
+	ATortugaCharacter* Turtle = TestWorld.SpawnTurtle();
+	if (!TestNotNull(TEXT("Tortuga"), Turtle))
+	{
+		return false;
+	}
+	const ATortugaCharacter* Defaults = GetDefault<ATortugaCharacter>();
+	const uint16 Yaw = CompressDiveYaw(FVector::ForwardVector);
+	const float StandHalf = Turtle->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+	FVector Launch = FVector::ZeroVector;
+
+	TestFalse(TEXT("En el suelo no empieza"), Turtle->StartDiveFromMove(Yaw, false, false, true, FVector::ZeroVector, Launch));
+	TestFalse(TEXT("Ni cuenta"), Turtle->IsDiving() || Turtle->GetDiveSerial() != 0);
+	TestFalse(TEXT("Con otro lanzamiento en el paso tampoco"), Turtle->StartDiveFromMove(Yaw, true, true, true, FVector::ZeroVector, Launch));
+
+	// Desde un salto hacia delante a 300 cm/s.
+	Turtle->SetJumpStartHorizontalVelocity(FVector(300.0, 0.0, 0.0));
+	TestTrue(TEXT("En el aire empieza"), Turtle->StartDiveFromMove(Yaw, true, false, true, FVector(300.0, 0.0, 400.0), Launch));
+	const float Forward = DiveForwardSpeed(DiveDirFromYaw(Yaw), FVector(300.0, 0.0, 0.0), Defaults->GetDiveMomentumParams());
+	const FVector Expected = DiveLaunchVelocity(DiveDirFromYaw(Yaw), Forward, static_cast<float>(-Launch.Z));
+	TestTrue(FString::Printf(TEXT("Con la velocidad de las reglas (%s)"), *Launch.ToString()), Launch.Equals(Expected, 1e-3) && Launch.Z < 0.0);
+	TestTrue(TEXT("En panzazo, el nº 1"), Turtle->IsDiving() && Turtle->GetDiveSerial() == 1);
+	TestTrue(TEXT("Cápsula tumbada"), Turtle->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() < StandHalf - 1.f);
+	TestFalse(TEXT("Otro en el mismo vuelo: no"), Turtle->StartDiveFromMove(Yaw, true, false, true, FVector::ZeroVector, Launch));
+
+	// La corrección del servidor manda: si él no lo empezó, el dueño vuelve a su estado y lo repite desde ahí.
+	Turtle->ApplyServerDiveCorrection(false, 0);
+	TestTrue(TEXT("Sin panzazo tras la corrección"), !Turtle->IsDiving() && Turtle->GetDiveSerial() == 0);
+	TestTrue(TEXT("Al repetir el movimiento vuelve a empezar igual"), Turtle->StartDiveFromMove(Yaw, true, false, true, FVector::ZeroVector, Launch));
+	TestEqual(TEXT("Con el mismo número"), static_cast<int32>(Turtle->GetDiveSerial()), 1);
 	return true;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Serialization/Archive.h"
 
 /**
  * Lógica pura del panzazo (doble salto físico, plan maestro §3.5; Docs/Analisis/2026-09-29/G_doble_salto_fisico.md §2).
@@ -12,6 +13,8 @@
  * - Rebote en vuelo (E9-02, #63): contra una pared (normal con Z < 0,35), la velocidad horizontal contra ella vuelve con
  *   la restitución y la de a lo largo se queda con una parte. Velocidad relativa a lo que se toca. El del arrastre en el
  *   suelo usa la misma cuenta con sus ajustes de siempre.
+ * - Inicio del panzazo (E9-04, #24): la petición viaja en el movimiento guardado (marca FLAG_Custom_2 y giro en 16 bits);
+ *   el servidor y el dueño deciden con las mismas reglas si empieza y con qué velocidad, en ese mismo movimiento.
  */
 namespace TNDiveLogic
 {
@@ -236,5 +239,151 @@ namespace TNDiveLogic
 		const FVector Tangent = Rel - WallN * Into;
 		const FVector Out = Tangent * static_cast<double>(P.TangentKeep) - WallN * (Into * static_cast<double>(P.Restitution));
 		return FVector(Out.X + OtherV.X, Out.Y + OtherV.Y, V.Z);
+	}
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Inicio del panzazo (#24)
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/** Marca del movimiento guardado que pide el panzazo: FSavedMove_Character::FLAG_Custom_2 (comprobado en el .cpp). */
+	constexpr uint8 DiveRequestFlag = 0x40;
+
+	/** Ajustes de la velocidad del panzazo (ATortugaCharacter, Dive y Dive|Momentum). */
+	struct FDiveMomentumParams
+	{
+		float BaseSpeed = 420.f;
+		float ForwardFactor = 1.f;
+		float LateralFactor = 0.f;
+		float BackwardFactor = -0.5f;
+		float MaxTotalSpeed = 1500.f;
+	};
+
+	/**
+	 * Velocidad hacia DiveDir: la base más la inercia del salto según cómo se alinee la dirección del panzazo con la del salto
+	 * (de frente, ForwardFactor; de lado, LateralFactor; hacia atrás, BackwardFactor, que puede restar). Con tope simétrico:
+	 * negativa, el panzazo va hacia atrás.
+	 */
+	inline float DiveForwardSpeed(const FVector& DiveDir, const FVector& JumpStartHorizontalVelocity, const FDiveMomentumParams& P)
+	{
+		float MomentumBonus = 0.f;
+		const FVector JumpFlat(JumpStartHorizontalVelocity.X, JumpStartHorizontalVelocity.Y, 0.0);
+		const float JumpStartSpeed = static_cast<float>(JumpFlat.Size());
+		if (JumpStartSpeed > 1.f)
+		{
+			const FVector JumpStartDir = JumpFlat / static_cast<double>(JumpStartSpeed);
+			const float Alignment = static_cast<float>(FVector::DotProduct(DiveDir, JumpStartDir));
+			const float Factor = Alignment >= 0.f
+				? FMath::Lerp(P.LateralFactor, P.ForwardFactor, Alignment)
+				: FMath::Lerp(P.LateralFactor, P.BackwardFactor, -Alignment);
+			MomentumBonus = JumpStartSpeed * Factor;
+		}
+		return FMath::Clamp(P.BaseSpeed + MomentumBonus, -P.MaxTotalSpeed, P.MaxTotalSpeed);
+	}
+
+	/** Velocidad con que sale el panzazo: ForwardSpeed hacia DiveDir y DownwardSpeed hacia abajo. */
+	inline FVector DiveLaunchVelocity(const FVector& DiveDir, float ForwardSpeed, float DownwardSpeed)
+	{
+		return DiveDir * static_cast<double>(ForwardSpeed) + FVector(0.0, 0.0, -static_cast<double>(DownwardSpeed));
+	}
+
+	/** Dirección del panzazo tal como viaja por red: el giro en 16 bits. */
+	inline uint16 CompressDiveYaw(const FVector& DiveDir)
+	{
+		const FVector Flat(DiveDir.X, DiveDir.Y, 0.0);
+		return FRotator::CompressAxisToShort(Flat.IsNearlyZero() ? 0.f : static_cast<float>(Flat.Rotation().Yaw));
+	}
+
+	/** Dirección horizontal unitaria del giro comprimido (la misma en el servidor y en el dueño). */
+	inline FVector DiveDirFromYaw(uint16 CompressedYaw)
+	{
+		return FRotator(0.f, FRotator::DecompressAxisFromShort(CompressedYaw), 0.f).Vector();
+	}
+
+	/** Datos del movimiento: con la marca del panzazo, el giro (16 bits); sin ella, nada. */
+	inline void SerializeDiveRequest(FArchive& Ar, uint8 CompressedFlags, uint16& CompressedYaw)
+	{
+		if ((CompressedFlags & DiveRequestFlag) != 0)
+		{
+			Ar << CompressedYaw;
+		}
+		else
+		{
+			CompressedYaw = 0;
+		}
+	}
+
+	/** Por qué empieza o no un panzazo pedido. */
+	enum class EDiveStart : uint8
+	{
+		Accept,
+		/** Derribada, muerta, en el caparazón o en brazos de otra. */
+		Blocked,
+		/** Ya está en un panzazo. */
+		AlreadyDiving,
+		/** El panzazo es el segundo salto: solo en el aire (en el suelo, nadando o sin movimiento, no). */
+		NotInAir,
+		/** Otro lanzamiento (el del servidor, un trampolín) manda en este paso. */
+		LaunchPending,
+		/** La inercia hacia atrás la deja casi sin velocidad: no sería un panzazo. */
+		TooSlow,
+	};
+
+	/** Lo que decide si un panzazo pedido empieza en este paso del movimiento. */
+	struct FDiveStartContext
+	{
+		bool bBlocked = false;
+		bool bAlreadyDiving = false;
+		bool bInAir = false;
+		bool bLaunchPending = false;
+		/** Velocidad hacia la dirección del panzazo (DiveForwardSpeed). */
+		float ForwardSpeed = 0.f;
+		/** Por debajo de esto (en valor absoluto) no empieza (DiveStopSpeedThreshold: lo que ya lo acabaría en el aire). */
+		float MinSpeed = 0.f;
+	};
+
+	/** Las mismas reglas en el servidor y en el dueño, dentro del movimiento que lleva la petición. */
+	inline EDiveStart DecideDiveStart(const FDiveStartContext& C)
+	{
+		if (C.bBlocked)
+		{
+			return EDiveStart::Blocked;
+		}
+		if (C.bAlreadyDiving)
+		{
+			return EDiveStart::AlreadyDiving;
+		}
+		if (!C.bInAir)
+		{
+			return EDiveStart::NotInAir;
+		}
+		if (C.bLaunchPending)
+		{
+			return EDiveStart::LaunchPending;
+		}
+		if (FMath::Abs(C.ForwardSpeed) < C.MinSpeed)
+		{
+			return EDiveStart::TooSlow;
+		}
+		return EDiveStart::Accept;
+	}
+
+	inline const TCHAR* DiveStartName(EDiveStart Result)
+	{
+		switch (Result)
+		{
+		case EDiveStart::Accept: return TEXT("empieza");
+		case EDiveStart::Blocked: return TEXT("bloqueada");
+		case EDiveStart::AlreadyDiving: return TEXT("ya en un panzazo");
+		case EDiveStart::NotInAir: return TEXT("no está en el aire");
+		case EDiveStart::LaunchPending: return TEXT("otro lanzamiento en este paso");
+		case EDiveStart::TooSlow: return TEXT("sin velocidad");
+		default: return TEXT("?");
+		}
+	}
+
+	/** Número del panzazo siguiente (1-255; al dar la vuelta se salta el 0, que significa «ninguno»). */
+	inline uint8 NextDiveSerial(uint8 Serial)
+	{
+		return Serial >= 255 ? static_cast<uint8>(1) : static_cast<uint8>(Serial + 1);
 	}
 }

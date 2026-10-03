@@ -38,11 +38,42 @@ struct FTNTurtleNetworkMoveDataContainer : public FCharacterNetworkMoveDataConta
 	/** Número del lanzamiento concedido que lleva Data, si es uno de estos datos (0 si no). */
 	uint8 GetLaunchId(const FCharacterNetworkMoveData* Data) const;
 
+	/** Giro del panzazo que pide Data, si es uno de estos datos (0 si no). */
+	uint16 GetDiveYaw(const FCharacterNetworkMoveData* Data) const;
+
 	virtual void ClientFillNetworkMoveData(const FSavedMove_Character* ClientNewMove, const FSavedMove_Character* ClientPendingMove,
 		const FSavedMove_Character* ClientOldMove) override;
 
 private:
+	const FTNTurtleNetworkMoveData* FindTurtleData(const FCharacterNetworkMoveData* Data) const;
+
 	FTNTurtleNetworkMoveData TurtleMoveData[3];
+};
+
+/**
+ * Estado del panzazo del servidor tras el movimiento que corrige (#24): si estaba en un panzazo, su número y la semialtura
+ * sin escalar de la cápsula. Con él, el dueño repite sus movimientos desde lo mismo que el servidor.
+ */
+struct FTNDiveNetState
+{
+	bool bDiving = false;
+	uint8 Serial = 0;
+	float CapsuleHalfHeight = 0.f;
+	/** Movimiento del cliente tras el que se tomó (el de la corrección). */
+	float TimeStamp = -1.f;
+};
+
+/**
+ * Respuesta del servidor a los movimientos del cliente: la de serie y, en las correcciones, el estado del panzazo del
+ * servidor en el movimiento corregido (FTNDiveNetState, 6 bytes). El panzazo empieza dentro del movimiento (predicho): si el
+ * servidor no lo empezó (o sí y el dueño no), la corrección lleva también eso y el dueño lo repite desde ahí.
+ */
+struct FTNTurtleMoveResponseDataContainer : public FCharacterMoveResponseDataContainer
+{
+	virtual void ServerFillResponseData(const UCharacterMovementComponent& CharacterMovement, const FClientAdjustment& PendingAdjustment) override;
+	virtual bool Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap) override;
+
+	FTNDiveNetState DiveState;
 };
 
 /**
@@ -115,6 +146,15 @@ public:
 	 */
 	void ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight, float& OutSlopeTime);
 
+	/**
+	 * Lo del panzazo que guarda el movimiento nuevo (FTNSavedMove_Turtle::SetInitialPosition, #24): si pide el panzazo, su
+	 * giro, y la velocidad horizontal del último salto (la inercia del panzazo sale de ella).
+	 */
+	void CaptureMoveStartDive(bool& bOutWantsDive, uint16& OutYaw, FVector& OutJumpStartVelocity) const;
+
+	/** Repetición de movimientos (FTNSavedMove_Turtle::PrepMoveFor): el giro pedido y la velocidad del salto de entonces. */
+	void RestoreMoveStartDive(uint16 InYaw, const FVector& InJumpStartVelocity);
+
 	// ── UCharacterMovementComponent ──────────────────────────────────────────
 
 	virtual void UpdateCharacterStateBeforeMovement(float DeltaSeconds) override;
@@ -156,6 +196,35 @@ public:
 	static void LaunchFromServer(ACharacter* Character, const FVector& LaunchVelocity);
 
 	const FTNServerLaunch& GetServerLaunch() const { return ServerLaunch; }
+
+	// ── Red: el panzazo empieza dentro del movimiento (E9-04, #24) ───────────
+	// Antes el dueño mandaba Server_StartDive y el servidor lanzaba a la tortuga (LaunchCharacter): el dueño lo recibía como
+	// corrección una ida y vuelta después (el tirón al empezar). Ahora quien la controla pide el panzazo (RequestDive) y la
+	// petición va en su siguiente movimiento guardado: marca FSavedMove_Character::FLAG_Custom_2 (TNDiveLogic::
+	// DiveRequestFlag) y el giro en 16 bits en FTNTurtleNetworkMoveData. En ese movimiento, el dueño y el servidor deciden
+	// con las mismas reglas (ATortugaCharacter::StartDiveFromMove: en el aire, sin otro panzazo ni otro lanzamiento...) y,
+	// si empieza, los dos lanzan, encogen la cápsula y cuentan el panzazo igual; al repetir movimientos tras una
+	// corrección, otra vez. Si el servidor decide otra cosa, su corrección lleva su estado del panzazo
+	// (FTNTurtleMoveResponseDataContainer) y el dueño repite desde él. TN.Net.DivePredict 0 vuelve a Server_StartDive.
+
+	/** Quien la controla: el panzazo hacia DiveDir (horizontal) en el siguiente movimiento. */
+	void RequestDive(const FVector& DiveDir);
+
+	/** Hay un panzazo pedido que aún no ha entrado en un movimiento. */
+	bool HasDiveRequest() const { return bDiveRequested; }
+
+	/** Giro (comprimido) del panzazo que pide el movimiento que se simula o se repite. */
+	uint16 GetMoveDiveYaw() const { return MoveDiveYaw; }
+
+	/** Giro del panzazo que pide el movimiento guardado Move (0 si no lo pide: mirar su marca). */
+	static uint16 GetSavedMoveDiveYaw(const FSavedMove_Character& Move);
+
+	/** Servidor: el estado del panzazo tras el último movimiento corregido (lo que manda la corrección). */
+	const FTNDiveNetState& GetCorrectionDiveState() const { return CorrectionDiveState; }
+
+	/** Cliente dueño: correcciones recibidas y tamaño de la última (cm), para TN.Dive.Debug. */
+	int32 GetClientCorrectionCount() const { return ClientCorrectionCount; }
+	float GetLastClientCorrectionCm() const { return LastClientCorrectionCm; }
 
 	// ── Cápsula ─────────────────────────────────────────────────────────────
 
@@ -376,6 +445,12 @@ protected:
 	/** Cliente dueño: apunta en qué movimiento ha entrado el lanzamiento concedido. */
 	virtual bool HandlePendingLaunch() override;
 
+	/** Servidor y repetición en el dueño: la petición de panzazo del movimiento (TNDiveLogic::DiveRequestFlag, #24). */
+	virtual void UpdateFromCompressedFlags(uint8 Flags) override;
+
+	/** Cliente dueño: en una corrección, el estado del panzazo del servidor (cápsula incluida) antes de repetir movimientos. */
+	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
+
 	/**
 	 * Servidor: mientras la mueve su caja del caparazón (UTN_ShellComponent::HasLocalBody), los pasos que el dueño aún manda
 	 * andando hasta que le llega la bola no se corrigen: la bola replicada ya lo coloca.
@@ -503,4 +578,27 @@ private:
 
 	/** Lo que el cliente manda al servidor en cada movimiento (SetNetworkMoveDataContainer en el constructor). */
 	FTNTurtleNetworkMoveDataContainer TurtleNetworkMoveData;
+
+	/** Lo que el servidor contesta (SetMoveResponseDataContainer en el constructor): en las correcciones, su panzazo. */
+	FTNTurtleMoveResponseDataContainer TurtleMoveResponseData;
+
+	// ── Panzazo pedido (#24) ─────────────────────────────────────────────────
+
+	/** Al empezar el movimiento: si pide el panzazo, que lo decida el personaje y, si empieza, el lanzamiento. */
+	void TickDiveStart();
+
+	/** Pedido por el jugador y aún sin movimiento (lo guarda el siguiente). */
+	bool bDiveRequested = false;
+	uint16 DiveRequestYaw = 0;
+
+	/** El movimiento que se simula pide el panzazo (del jugador, de las marcas del cliente o del movimiento repetido). */
+	bool bMoveWantsDive = false;
+	uint16 MoveDiveYaw = 0;
+
+	/** Servidor: estado del panzazo tras el último movimiento corregido. */
+	FTNDiveNetState CorrectionDiveState;
+
+	/** Cliente dueño: correcciones recibidas (TN.Dive.Debug). */
+	int32 ClientCorrectionCount = 0;
+	float LastClientCorrectionCm = 0.f;
 };

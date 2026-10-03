@@ -150,6 +150,21 @@ cuerpo tumbado (la cabeza llega antes), y se aplica al final del movimiento, igu
 arrastrándose en el suelo no cambia (0,35 y 75 %). Pruebas: `Tortunabo.Dive.Wall.*`. `TN.Dive.WallBounce 0` lo apaga. El
 estampado contra la pared (desde 650 cm/s, E9-03) aún no está.
 
+### Inicio del panzazo predicho (#24)
+
+Antes el dueño mandaba `Server_StartDive` y el servidor lanzaba a la tortuga: el dueño lo recibía como corrección una ida y
+vuelta después (el tirón al empezar, de 50 a 110 cm con 150 ms de latencia). Ahora el segundo salto pide el panzazo
+(`UTN_TurtleMovementComponent::RequestDive`) y la petición va en el siguiente movimiento guardado: la marca
+`FSavedMove_Character::FLAG_Custom_2` y el giro en 16 bits en los datos del movimiento (`FTNTurtleNetworkMoveData`). En ese
+movimiento, el dueño y el servidor deciden con las mismas reglas (`TNDiveLogic::DecideDiveStart`: solo en el aire, sin otro
+panzazo, libre, sin otro lanzamiento en el paso y con velocidad) y, si empieza, los dos lanzan con la misma velocidad
+(`TNDiveLogic::DiveForwardSpeed`, la inercia del salto viaja en el movimiento guardado), encogen la cápsula y cuentan el
+panzazo; al repetir movimientos tras una corrección, otra vez. El giro hacia la dirección del panzazo también va dentro del
+movimiento. Si el servidor decide otra cosa, su corrección lleva su estado del panzazo y su cápsula
+(`FTNTurtleMoveResponseDataContainer`) y el dueño repite desde ahí. Lo que no es movimiento lo hace solo el servidor: cancelar
+el emote, el aviso a todos y lanzar a quien lleve en brazos (en el siguiente `TickDive`: nada se crea dentro del movimiento
+del cliente). Pruebas: `Tortunabo.Dive.Start.*` (`SavedMove` falla si la petición deja de ir en el movimiento guardado).
+
 ### Pose
 
 - `PoseBellySlide` (sobre la tripa en el suelo, `SlideW`): cabeza levantada mirando adelante y a los lados, brazos
@@ -184,6 +199,7 @@ solo se mueven con partículas vivas; nada a más de 50 m de la cámara. Ajustes
 | `TN.Dive.Slope <x>` | Multiplica cuánto tiran las pendientes (0 = como en llano) |
 | `TN.Dive.SlopeFall 0\|1` | 0 = cuesta abajo frena como en llano, como antes de #62 |
 | `TN.Dive.WallBounce 0\|1` | 0 = en el vuelo del panzazo resbala por las paredes, como antes de #63 |
+| `TN.Net.DivePredict 0\|1` | En quien la controla. 0 = el panzazo lo pide `Server_StartDive` y lo lanza el servidor (tirón al empezar), como antes de #24 |
 | `TN.Dive.MaxTime <s>` | Tope de segundos arrastrándose (0 = el del componente, 2,6 s) |
 | `TN.Dive.Body 0\|1` | 0 = solo choca la cápsula (la cabeza y las patas vuelven a meterse en las paredes), como antes |
 | `TN.Dive.Debug 1` | Por cada tortuga simulada en esta máquina: fase, tiempo, velocidad, superficie y rozamiento; flecha verde de la velocidad y naranja de la pendiente; el cuerpo tumbado que choca (celeste, rojo al apartarse) |
@@ -208,8 +224,8 @@ salida, rebote y giro; `Belly Slide|Body`: medidas del cuerpo tumbado) y del per
 5. Saltar o moverse casi parada: sale antes (el salto, con brinco). Deprisa, ni lo uno ni lo otro.
 6. Panzazo que acabe bajo algo bajo (un tablón, una rampa): repta hasta salir y se levanta sin atravesar nada.
 7. En el cliente: lo mismo sin tirones al caer ni al levantarse (con `TN.Dive.Debug 1`, la fase del cliente y la del
-   servidor van a la par). Con latencia (`NetEmulation.PktLag 120`), el inicio del panzazo sigue teniendo el tirón de
-   siempre (lo lanza el servidor), pero el arrastre y el levantarse no.
+   servidor van a la par). Con latencia (`NetEmulation.PktLag 150`) tampoco al empezar el panzazo (#24): el contador de
+   correcciones de `TN.Dive.Debug 1` no sube. `TN.Net.DivePredict 0` en el cliente vuelve al tirón de antes.
 8. `TN.Dive.Friction 0.5` y `2`, `TN.Dive.Slide 0` para comparar con lo de antes.
 
 ## Caparazón con física propia
