@@ -22,6 +22,9 @@ class ATortugaCharacter;
  *  - Animación squish (aplanar/rebotar la esfera): local en cada máquina,
  *    disparada por el mismo Multicast.
  *
+ * Arte: si HeadMesh no lleva una malla del proyecto (las del motor son marcadores), se monta la medusa de la playa
+ * (TNBeachProp::BuildJellyfish) bajo HeadMesh y se ocultan los marcadores (#49).
+ *
  * Uso: colocar BP_JellyfishActor en un nivel o chunk. Ajustar HeadMesh y asignar
  *      el BounceSound / BounceVFX en los Class Defaults del BP.
  *
@@ -117,6 +120,19 @@ protected:
 		meta = (ClampMin = "0.1", ClampMax = "0.95"))
 	float SquishZScale = 0.6f;
 
+	// ── Arte de código ───────────────────────────────────────────────────────────
+
+	/**
+	 * Medusa de la playa (TNBeachProp::BuildJellyfish) que se monta si HeadMesh no lleva una malla del proyecto: 0
+	 * aurelia, 1 aguamala, 2 acalefo, 3 clavel. Con una malla propia en HeadMesh no se monta nada.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Jellyfish|Art", meta = (ClampMin = "0", ClampMax = "3"))
+	int32 CodeArtVariant = 0;
+
+	/** Diámetro de la campana respecto al de la zona de rebote (más de 1: el borde sobresale un poco). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jellyfish|Art", meta = (ClampMin = "0.5", ClampMax = "3.0"))
+	float CodeArtSizeFactor = 1.25f;
+
 private:
 	// ── Overlap ──────────────────────────────────────────────────────────────────
 
@@ -168,6 +184,17 @@ private:
 
 	/** Aplica la escala del HeadMesh según SquishAlpha. */
 	void ApplySquishScale() const;
+
+	/** Monta la medusa de código bajo HeadMesh (hereda el squish) y oculta los marcadores del motor (#49). */
+	void BuildCodeArt();
+
+	/** Brazos y filamentos de la medusa de código (null si el Blueprint trae su propia malla). */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> CodeArtBody;
+
+	/** Campana de la medusa de código. */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> CodeArtBell;
 
 	// ── Cooldown por jugador ──────────────────────────────────────────────────────
 

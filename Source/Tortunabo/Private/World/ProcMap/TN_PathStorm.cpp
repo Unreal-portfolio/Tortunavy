@@ -1,4 +1,5 @@
 #include "World/ProcMap/TN_PathStorm.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
 #include "World/ProcMap/TN_StormCough.h"
@@ -196,12 +197,14 @@ void ATN_PathStorm::UpdateVisual(float DeltaTime)
 	{
 		FrontLoc = Generator->GetPathLocationAtProgress(FMath::Max(0.f, FrontProgress), Dir);
 		SetActorLocationAndRotation(FrontLoc, FRotator(0.f, Dir.Rotation().Yaw, 0.f));
-		// Efecto de dentro solo para el jugador local.
-		if (const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
+		// Efecto de dentro solo para los jugadores locales (con la pantalla partida, si alguno está dentro).
+		TArray<APlayerController*> LocalControllers;
+		TNLocalViews::GetLocalControllers(GetWorld(), LocalControllers);
+		for (const APlayerController* PC : LocalControllers)
 		{
 			if (const APawn* Pawn = PC->GetPawn())
 			{
-				bLocalInside = IsLocationInside(Pawn->GetActorLocation());
+				bLocalInside = bLocalInside || IsLocationInside(Pawn->GetActorLocation());
 			}
 		}
 	}
@@ -316,16 +319,13 @@ void ATN_PathStorm::TickFX(float DeltaTime, bool bFrontVisible, bool bLocalInsid
 	if (!bFXReady) { SetupFX(); }
 	FXTime += DeltaTime;
 
-	// Cámara local.
+	// Cámara local (con la pantalla partida, la más cercana al frente).
 	FVector View = FrontLoc;
 	FVector ViewFwd = Dir;
-	if (const APlayerController* PC = World->GetFirstPlayerController())
+	FRotator ViewRot;
+	if (TNLocalViews::ClosestCamera(World, FrontLoc, View, &ViewRot))
 	{
-		if (PC->PlayerCameraManager)
-		{
-			View = PC->PlayerCameraManager->GetCameraLocation();
-			ViewFwd = PC->PlayerCameraManager->GetCameraRotation().Vector();
-		}
+		ViewFwd = ViewRot.Vector();
 	}
 
 	// Pesos de bioma suavizados (~1,5 s): al cambiar de bioma, el efecto cambia en degradado.

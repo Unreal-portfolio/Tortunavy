@@ -125,6 +125,85 @@ struct TORTUNABO_API FTNRoomSnapshot
 	int32 MaxPlayers = 0;
 };
 
+/** Para qué es la búsqueda de sesiones en marcha (UMP_GameInstance). */
+enum class ETNRoomSearch : uint8
+{
+	None,
+	/** Lista de salas públicas. */
+	List,
+	/** Sala de un código. */
+	Code,
+	/** «Unirse a la primera» (FindAndJoinSession). */
+	QuickJoin,
+};
+
+/** Cuál de las búsquedas que esperan turno se queda con él (UMP_GameInstance::StartRoomSearch). */
+namespace TNRoomSearchRules
+{
+	/**
+	 * Importancia de una búsqueda cuando solo hay sitio para una en la cola. «Unirse a la primera» tapa el menú con la
+	 * pantalla de carga y solo se destapa al contestar; el código tiene el aviso «Buscando la sala X...» esperando
+	 * respuesta; la lista se repite sola cada pocos segundos y no se echa en falta.
+	 */
+	inline int32 Priority(ETNRoomSearch Purpose)
+	{
+		switch (Purpose)
+		{
+		case ETNRoomSearch::QuickJoin: return 3;
+		case ETNRoomSearch::Code: return 2;
+		case ETNRoomSearch::List: return 1;
+		default: return 0;
+		}
+	}
+
+	/** true si Incoming puede ocupar el turno de Queued (el vacío lo ocupa cualquiera): igual o más importante, nunca menos. */
+	inline bool CanTakeQueue(ETNRoomSearch Queued, ETNRoomSearch Incoming)
+	{
+		return Incoming != ETNRoomSearch::None && Priority(Incoming) >= Priority(Queued);
+	}
+}
+
+/**
+ * Qué está haciendo UMP_GameInstance con la sesión de la sala: cerrar la que quedaba, crear la nueva, entrar en otra o viajar
+ * al mapa. Mientras algo esté en marcha, otro «Crear» o «Unirse» sobra: destruiría la sesión que se está creando.
+ */
+struct FTNRoomOpState
+{
+	/** Cerrando la sesión vieja; al acabar se crea la sala o se entra en otra. */
+	bool bHostAfterDestroy = false;
+	bool bJoinAfterDestroy = false;
+	/** CreateSession o JoinSession lanzado y sin respuesta del subsistema online. */
+	bool bCreating = false;
+	bool bJoining = false;
+	/** Sesión creada o unida: falta el viaje (hasta que carga el mapa de la partida o vuelve el menú). */
+	bool bTravelling = false;
+
+	/** true mientras haya algo en marcha. */
+	bool IsBusy() const { return IsWaitingOnline() || bTravelling; }
+
+	/** true si espera la respuesta del subsistema online (cerrar, crear o entrar), no solo el viaje. */
+	bool IsWaitingOnline() const { return bHostAfterDestroy || bJoinAfterDestroy || bCreating || bJoining; }
+};
+
+namespace TNRoomOpRules
+{
+	/** Segundos que se espera la respuesta de Steam al cerrar, crear o entrar antes de darlo por fallido. */
+	inline constexpr double OnlineTimeoutSeconds = 30.0;
+
+	/** Segundos que se espera a que cargue el mapa tras crear o entrar (la conexión tiene sus propios plazos en el motor). */
+	inline constexpr double TravelTimeoutSeconds = 120.0;
+
+	/** true si la operación lleva Elapsed segundos sin acabar y ya no hay que esperarla. */
+	inline bool HasTimedOut(const FTNRoomOpState& State, double Elapsed)
+	{
+		if (!State.IsBusy())
+		{
+			return false;
+		}
+		return Elapsed > (State.IsWaitingOnline() ? OnlineTimeoutSeconds : TravelTimeoutSeconds);
+	}
+}
+
 /** Textos de las salas en el idioma del que mira. */
 namespace TNRoomText
 {

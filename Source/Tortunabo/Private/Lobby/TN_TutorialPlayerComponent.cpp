@@ -8,6 +8,7 @@
 #include "Player/TN_DebugRpcDecisions.h"
 #include "Core/TN_InventoryTypes.h"
 #include "Multiplayer/MP_GameInstance.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
@@ -292,6 +293,14 @@ void UTN_TutorialPlayerComponent::ClientTaskDone_Implementation(uint8 StationInd
 	RefreshWidget();
 }
 
+void UTN_TutorialPlayerComponent::ClientResetProgress_Implementation()
+{
+	// Las tareas tachadas, la estación y las medidas son locales: se vacían como al entrar de nuevas (HandleInTutorialChanged).
+	ResetProgress();
+	FinalMessageSeconds = 0.f;
+	RefreshWidget();
+}
+
 void UTN_TutorialPlayerComponent::StartLocalFall(ATortugaCharacter* Turtle)
 {
 	APlayerController* PC = GetPC();
@@ -343,6 +352,12 @@ void UTN_TutorialPlayerComponent::SaveCompleted(bool bSkipped)
 	UMP_GameInstance* GI = World ? World->GetGameInstance<UMP_GameInstance>() : nullptr;
 	if (!GI)
 	{
+		return;
+	}
+	// Partida local (#311): el guardado es del jugador 1; lo que haga un invitado dura la partida.
+	if (!UTN_LocalPlaySubsystem::ShouldSaveFor(GetPC()))
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Tutorial] %s (invitado de la partida local): sin guardar."), *GetNameSafe(GetPC()));
 		return;
 	}
 	GI->SetTutorialCompleted();
@@ -451,7 +466,8 @@ void UTN_TutorialPlayerComponent::TickLocal(float DeltaTime)
 		{
 			CheckedWorld = World;
 			const UMP_GameInstance* GI = World->GetGameInstance<UMP_GameInstance>();
-			if (GI && !GI->HasCompletedTutorial() && !bInTutorial)
+			// En la partida local (#311) no sale solo: se hace desde el menú de pausa del lobby («Hacer el tutorial»).
+			if (GI && !GI->HasCompletedTutorial() && !bInTutorial && !UTN_LocalPlaySubsystem::IsLocalGame(this))
 			{
 				UE_LOG(LogTortunabo, Log, TEXT("[Tutorial] Primera partida en esta máquina (%s): se pide el tutorial."), *GI->GetTutorialSlotName());
 				Course->EnsureBuilt();
@@ -727,7 +743,7 @@ void UTN_TutorialPlayerComponent::TickTasks(float DeltaTime, ATortugaCharacter* 
 		case EStation::PauseMenu:
 			if (const UTN_GameSettingsSubsystem* Settings = UTN_GameSettingsSubsystem::Get(this))
 			{
-				if (Settings->IsPauseMenuOpen()) { MarkTask(Here, 0); }
+				if (Settings->GetPauseMenuOwner() == PC) { MarkTask(Here, 0); }
 			}
 			break;
 		default:
@@ -758,7 +774,7 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 	TArray<FTNKeyBinding> Rows;
 	if (Settings)
 	{
-		Rows = Settings->GetKeyBindings();
+		Rows = Settings->GetKeyBindingsFor(PC);
 	}
 	auto FindRow = [&Rows](const FString& Id) -> const FTNKeyBinding*
 	{

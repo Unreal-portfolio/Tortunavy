@@ -11,9 +11,13 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 
 /**
- * Viste a una tortuga con un FTN_TurtleLook. El personaje, el tendero y las vistas previas de la tienda y el probador
- * usan esto mismo, así que se ven igual en todas partes.
+ * Viste a una tortuga con un FTN_TurtleLook. El personaje, el tendero, el general, el podio y las vistas previas de la
+ * tienda y el probador usan esto mismo, así que se ven igual en todas partes. También le pega las piezas de Arte de la
+ * tortuga (TNTurtleArt::ApplyPieces: caparazón, casco de serie, ojos y lengua del catálogo); el casco de la tienda esconde
+ * el casco de serie de Arte.
  *
+ * Las ranuras que se pintan van por nombre y se configuran en UTN_ArtSettings («Tortuga|Cosméticos»); una malla sin ellas
+ * (la de Arte) se queda con sus materiales, sin casco pintado, sin cara animada y sin colores de la tienda.
  * Malla de demo (TotugaDemo_Rig, 2 ranuras): "lambert2" = casco rojo de serie + lengua; "lambert4" = cuerpo, ojos y
  * caparazón. La ranura del casco es siempre una instancia de M_TurtleHelmetSlot: pinta el casco de serie (o lo recorta
  * si se lleva uno de la tienda) y esconde la lengua rígida de la malla, que no tiene hueso (la del jugador la dibuja
@@ -56,7 +60,10 @@ public:
 	 */
 	static UMaterialInstanceDynamic* GetBodyMaterial(USkeletalMeshComponent* Body);
 
-	/** La malla es la de demo (dos ranuras: casco y lengua; cuerpo, ojos y caparazón), con la boca que conoce la cara. */
+	/**
+	 * La malla tiene las dos ranuras de la de demo (casco y lengua; cuerpo, ojos y caparazón; nombres en UTN_ArtSettings),
+	 * con la boca que conoce la cara.
+	 */
 	static bool IsDemoTurtle(const USkeletalMeshComponent* Body);
 
 	/** Nombre para la tienda y el probador (NAME_None = el de serie). */

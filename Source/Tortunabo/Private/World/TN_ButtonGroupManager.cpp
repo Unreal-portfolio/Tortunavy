@@ -1,5 +1,6 @@
 #include "World/TN_ButtonGroupManager.h"
 #include "World/TN_ButtonInteractable.h"
+#include "Core/TN_Log.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -22,14 +23,14 @@ void FTN_TransformAction::ApplyAll(TArray<FTN_TransformAction>& Actions, bool bF
 				if (It->ActorHasTag(Action.TargetActorTag))
 				{
 					Action.TargetActor = *It;
-					UE_LOG(LogTemp, Log, TEXT("[TransformAction] Resolved tag '%s' → '%s'"),
+					UE_LOG(LogTortunabo, Log, TEXT("[TransformAction] Resolved tag '%s' → '%s'"),
 						*Action.TargetActorTag.ToString(), *GetNameSafe(*It));
 					break;
 				}
 			}
 			if (!Action.TargetActor)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("[TransformAction] No actor found with tag '%s'"),
+				UE_LOG(LogTortunabo, Warning, TEXT("[TransformAction] No actor found with tag '%s'"),
 					*Action.TargetActorTag.ToString());
 			}
 		}
@@ -177,7 +178,7 @@ void ATN_ButtonGroupManager::RegisterButton(ATN_ButtonInteractable* Button)
 	ManagedButtons.Add(Button);
 	Button->OnActivationChanged.AddUObject(this, &ATN_ButtonGroupManager::OnButtonActivationChanged);
 
-	UE_LOG(LogTemp, Log, TEXT("[ButtonGroupManager] '%s' registró botón '%s' en runtime."),
+	UE_LOG(LogTortunabo, Log, TEXT("[ButtonGroupManager] '%s' registró botón '%s' en runtime."),
 		*GetName(), *GetNameSafe(Button));
 
 	// Re-evaluar inmediatamente por si el botón ya estaba activado

@@ -12,6 +12,7 @@
 #include "Components/PostProcessComponent.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Core/TN_CosmeticLook.h"
+#include "Art/TN_TurtleArt.h"
 #include "Player/TN_ShellBody.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TN_ShellImpactFXComponent.h"
@@ -20,12 +21,14 @@
 #include "Player/TN_TurtleFaceComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_WadingComponent.h"
+#include "VR/TN_VRGrabComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TN_TurtleDustComponent.h"
 #include "Player/TN_TurtleFoleyComponent.h"
 #include "Player/TN_TurtleMovementComponent.h"
 #include "World/TN_InteractableBase.h"
+#include "World/Beach/TN_BeachTrampoline.h"
 #include "GameFramework/PlayerState.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -147,6 +150,8 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	DizzyBirds->SetupAttachment(RootComponent);
 	// Lengua, caras de cansancio, sudor y boca (se engancha sola a la cabeza de la malla en su primer fotograma).
 	TurtleFace = CreateDefaultSubobject<UTN_TurtleFaceComponent>(TEXT("TurtleFace"));
+	// Coger objetos con física con las aletas en VR (Docs/Modo_VR.md).
+	VRGrabComponent = CreateDefaultSubobject<UTN_VRGrabComponent>(TEXT("VRGrab"));
 
 	// Casco cosmético: adjunto directamente a GetMesh() (SkeletalMeshComponent).
 	// Al estar en el árbol del mesh, recibe el network smoothing del CMC → sin lag.
@@ -302,6 +307,10 @@ void ATortugaCharacter::BeginPlay()
 	}
 
 	CacheDefaultSkelMeshMaterials();
+
+	// Piezas de Arte de la tortuga (caparazón, casco de serie, ojos, lengua) aunque no llegue a vestirse con los cosméticos
+	// de un jugador (las tortugas de práctica del tutorial no tienen PlayerState). Al vestirse se vuelven a poner.
+	TNTurtleArt::ApplyPieces(GetMesh(), HelmetMeshComp && HelmetMeshComp->GetStaticMesh());
 
 	StartCosmeticRetryTimer();
 
@@ -566,6 +575,7 @@ void ATortugaCharacter::Tick(float DeltaTime)
 	TickLegAnimation(DeltaTime);   // normal locomotion (suppressed during emotes/dive/jump)
 	TickCameraInterp(DeltaTime);   // cinematic camera zoom/FOV interpolation
 	TickVRView(DeltaTime);         // VR con gafas: el giro del mando sigue a la cabeza (TortugaCharacter_VR.cpp)
+	TickFirstPersonView(DeltaTime); // primera persona (con o sin gafas): ojos en la cabeza y cuerpo sin cabeza (TortugaCharacter_FirstPerson.cpp)
 	TickHeadLook(DeltaTime);       // head tracks camera direction, replicated a todos los clientes
 	TickFallRules(DeltaTime);      // caída larga → caparazón (servidor)
 	TickShellVisual(DeltaTime);    // encoger/estirar extremidades al entrar/salir del caparazón
@@ -671,8 +681,8 @@ void ATortugaCharacter::TickCameraInterp(float DeltaTime)
 	// Solo aplica en el cliente local que controla este pawn.
 	if (!IsLocallyControlled()) { return; }
 	if (!CameraBoom || !FollowCamera) { return; }
-	// En primera persona VR la cámara es otra (TortugaCharacter_VR.cpp).
-	if (bVRViewActive) { return; }
+	// En primera persona (VR o sin gafas) la cámara es otra (TortugaCharacter_VR.cpp, TortugaCharacter_FirstPerson.cpp).
+	if (bVRViewActive || bFirstPersonActive) { return; }
 
 	const bool bSprinting = StaminaComponent && StaminaComponent->IsSprinting();
 
@@ -1589,6 +1599,11 @@ void ATortugaCharacter::TickFallRules(float /*DeltaTime*/)
 	}
 	if (FallApexZ - Z > AutoShellFallHeight)
 	{
+		// Sobre un trampolín, sin bola: rebota como tortuga en el mismo paso aquí y en el cliente dueño (#21).
+		if (TNTrampolineRules::HoldsAutoShell(ATN_BeachTrampoline::DropOntoTrampoline(*this, TNTrampolineRules::AutoShellLookDown)))
+		{
+			return;
+		}
 		bAutoShelledThisFall = true;
 		if (!IsInShell())
 		{
@@ -1653,8 +1668,15 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Head look — SkipOwner: el owner aplica la rotación localmente sin pasar por la red
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReplicatedHeadYaw,   COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReplicatedHeadPitch, COND_SkipOwner);
-	// Modo VR del dueño: la tortuga gira con la cabeza (Docs/Modo_VR.md).
-	DOREPLIFETIME(ATortugaCharacter, bVRPlayer);
+	// Modo VR del dueño: la tortuga gira con la cabeza (Docs/Modo_VR.md). SkipOwner: el dueño lo pone él mismo al momento
+	// (SetVRView) y un valor viejo del servidor, al alternar deprisa, pisaría el suyo.
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, bVRPlayer, COND_SkipOwner);
+	// Primera persona sin gafas: igual, la tortuga gira con la cámara (también SkipOwner, por lo mismo).
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, bFirstPersonPlayer, COND_SkipOwner);
+	// Manos VR del dueño (los demás ven los brazos siguiéndolas; el dueño usa las suyas).
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandLeft, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRight, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandsValid, COND_SkipOwner);
 }
 
 void ATortugaCharacter::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)

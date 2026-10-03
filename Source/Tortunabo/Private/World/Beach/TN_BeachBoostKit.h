@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "UI/Race/TN_RaceCueSynthComponent.h"
 #include "TN_BeachTrapKit.h"
 
@@ -178,14 +179,13 @@ namespace TNBeachBoostKit
 		{
 			return;
 		}
-		APlayerController* Viewer = World->GetFirstPlayerController();
-		if (!Viewer || !Viewer->IsLocalController())
+		// La cámara local más cercana (con la pantalla partida, la de quien lo tiene más cerca; suena una vez).
+		APlayerController* Viewer = nullptr;
+		FVector ViewAt;
+		if (!TNLocalViews::ClosestCamera(World, At, ViewAt, nullptr, &Viewer) || !Viewer)
 		{
 			return;
 		}
-		FVector ViewAt;
-		FRotator ViewRot;
-		Viewer->GetPlayerViewPoint(ViewAt, ViewRot);
 		const float Dist = static_cast<float>(FVector::Dist(ViewAt, At));
 		if (Dist >= Radius)
 		{

@@ -9,6 +9,9 @@
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "World/TN_PlaceholderArt.h"
+#include "World/TN_PlaceholderArtMeshes.h"
+#include "Lobby/TN_CastleKit.h"
 
 ATN_RescuePickup::ATN_RescuePickup()
 {
@@ -26,9 +29,56 @@ ATN_RescuePickup::ATN_RescuePickup()
 	InteractionDistance = ATortugaCharacter::DefaultInteractionDistance;
 }
 
+void ATN_RescuePickup::BeginPlay()
+{
+	Super::BeginPlay();
+	BuildCodeArt();
+}
+
+void ATN_RescuePickup::BuildCodeArt()
+{
+	if (GetNetMode() == NM_DedicatedServer || !Mesh || !TNPlaceholderArt::NeedsCodeArt(Mesh))
+	{
+		return;
+	}
+	// El huevo entero (base y tapa en una pieza) con las bandas de color de los huevos de la salida.
+	UStaticMesh* Egg = TNPlaceholderArt::CachedArtMesh(TEXT("Rescue.Egg"), [](TNProcMesh::FTNProcMeshBuffers& B)
+	{
+		const TArray<double> Zs(TNCastleKit::EggZ(), TNCastleKit::EggProfileNum);
+		const TArray<double> Rs(TNCastleKit::EggR(), TNCastleKit::EggProfileNum);
+		constexpr int32 Segments = 16;
+		constexpr int32 AccentEvery = 3;
+		TNCastleKit::AddRevolution(B, FVector::ZeroVector, Zs, Rs, Segments, TNCastleKit::Pal(0xFFF3DC), true,
+			TNCastleKit::Pal(TNCastleKit::EggAccent(0)), AccentEvery);
+	}, TNPlaceholderArt::MatteAlpha);
+	if (!Egg)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Rescue] %s: no se ha podido construir el huevo; se queda el marcador."), *GetName());
+		return;
+	}
+	USceneComponent* Anchor = GetRootComponent();
+	const FTransform Relative(FRotator::ZeroRotator, FVector(0.0, 0.0, CodeArtLift), FVector(CodeArtEggScale));
+	CodeArtEgg = TNPlaceholderArt::AddArtPart(this, Anchor, Egg, Relative);
+	// El cubo conserva su colisión: es lo que encuentra el escaneo de interacción de la tortuga.
+	TNPlaceholderArt::HidePlaceholders(this, false);
+}
+
+void ATN_RescuePickup::AnimateCodeArt(float DeltaSeconds)
+{
+	if (!CodeArtEgg)
+	{
+		return;
+	}
+	CodeArtClock += DeltaSeconds;
+	const float Bob = CodeArtBobAmplitude * FMath::Sin(CodeArtClock * UE_TWO_PI * CodeArtBobHz);
+	const float Yaw = FMath::Fmod(CodeArtClock * CodeArtSpinDegreesPerSecond, 360.f);
+	CodeArtEgg->SetRelativeLocationAndRotation(FVector(0.f, 0.f, CodeArtLift + Bob), FRotator(0.f, Yaw, 0.f));
+}
+
 void ATN_RescuePickup::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	AnimateCodeArt(DeltaSeconds);
 
 	if (!HasAuthority() || !FollowedDeadPawn.IsValid())
 	{

@@ -5,6 +5,9 @@ carrera de la playa) se dibujan con mallas que el código genera al montar el ni
 estable** (`Lobby.Castle.Tower`, `ProcMap.Rock.RoundBoulder`...) y Arte la puede cambiar por su malla final **sin tocar código**,
 desde un data asset. Lo que no se cambia sigue generándose como siempre.
 
+La tortuga es aparte (§10): su cuerpo es la malla esquelética de `BP_TortugaCharacter` y las piezas que se le pegan a los
+huesos (caparazón, casco, ojos, lengua) van en su propio catálogo, `DA_Arte_Tortuga`.
+
 Lo funcional no cambia: la colisión generada se queda (invisible), y los activadores, las zonas de listo, la interacción,
 las animaciones por código (puertas, tapas, el muelle de la medusa, el bamboleo del puente) y la colocación procedural
 (dónde, cuántas, escala y semilla) siguen igual. Solo cambia lo que se dibuja.
@@ -14,8 +17,9 @@ las animaciones por código (puertas, tapas, el muelle de la medusa, el bamboleo
 1. **Abre el catálogo de la zona** en `/Game/Art`:
    - `DA_Arte_Lobby`: piezas `Lobby.*`.
    - `DA_Arte_ProcMap`: piezas `ProcMap.*` (mapa procedural del cooperativo) y `Beach.*` (carrera de la playa).
+   - `DA_Arte_Tortuga`: piezas `Turtle.*`, pegadas a los huesos de la tortuga (§10).
 
-   Si no existen, o si el código ha añadido piezas nuevas, ejecuta `Scripts/arte/rellenar_catalogos.py` (§6): crea los dos
+   Si no existen, o si el código ha añadido piezas nuevas, ejecuta `Scripts/arte/rellenar_catalogos.py` (§6): crea los tres
    catálogos y mete todas las piezas vacías. No pisa nada de lo que ya hayas puesto.
 2. **Busca la pieza** en `Pieces` por su nombre (lista completa en §4). Su campo `Info` dice qué es, su tamaño, su pivote y
    el fichero de C++ que la genera. En el juego, `TN.Art.Slots` (o `TN.Art.Slots Lobby.Castle`) lista las piezas, si se han
@@ -28,10 +32,14 @@ las animaciones por código (puertas, tapas, el muelle de la medusa, el bamboleo
 6. **bUseArtCollision**: déjalo en falso. La pieza conserva la colisión generada, invisible, y se juega exactamente igual.
    Ponlo en cierto solo si tu malla trae su propia colisión simple y quieres que se choque con ella: entonces la generada
    se quita para esa pieza y cambia cómo se juega (pruébalo y avisa a programación).
-7. **Comprueba**: dale al Play (o vuelve a cargar el nivel). Las piezas del castillo y del valle se ven también en el
-   editor al volver a construirlos (mover el actor un poco); las de los mapas procedurales, solo al jugar (se generan al
-   empezar). `TN.Art.Enabled 0` y recargar el nivel enseña lo generado
-   para comparar; `TN.Art.Reload` vuelve a leer los catálogos.
+7. **Comprueba**: dale al Play. Cada partida (también el PIE y cada viaje) vuelve a leer los catálogos tal como estén en
+   ese momento. En el editor, sin jugar, el castillo y el valle se rehacen solos con cada cambio que hagas en el panel del
+   catálogo; las piezas de los mapas procedurales, del tutorial y los componentes que se guardan con el nivel solo se ven
+   al jugar (§2). Si cambias el catálogo con Python o lo recargas (un catálogo traído de git con el editor abierto no se ve
+   hasta recargarlo, Asset Actions > Reload, o reiniciar el editor, como cualquier asset), el Play ya lo ve; para verlo en
+   el editor sin jugar, pulsa **Aplicar cambios** en el catálogo (o `TN.Art.Reload`). `TN.Art.Enabled 0` y recargar el
+   nivel enseña lo generado para comparar. Si una pieza con malla no sale, mira el log: `[Arte]` avisa de las mallas que
+   no cargan y de los nombres de pieza que no existen.
 8. **Sube** el catálogo y tus mallas. Son binarios: antes de tocar un asset, comprueba que ninguna issue en curso lo nombra
    y escribe en tu issue qué assets cambias (CLAUDE.md, «Reglas»).
 
@@ -52,6 +60,8 @@ La columna «Tipo» de la lista dice cómo se pone tu malla:
   viendo generados: la malla de arte sale al darle al Play.
 - **Instancias**: la malla de un grupo de instancias (flora, objetos, fauna). Cambia la malla de todas; el ajuste se aplica
   a cada instancia. La fauna se anima por partes (cuerpo, cola, aletas...): cada parte es una pieza.
+- **Hueso**: una malla que no existe sin Arte y que va pegada a un hueso de la tortuga (`Turtle.*`, §10): sigue su
+  animación en el jugador y en todas sus copias. `Bone` cambia el hueso.
 
 ## 3. Reglas para las mallas finales
 
@@ -66,8 +76,8 @@ La columna «Tipo» de la lista dice cómo se pone tu malla:
 
 ## 4. Lista de piezas
 
-844 piezas a 01-10-2026: 234 del lobby (castillo 21, valle 85, tutorial 106, parque y puestos 22), 414 del mapa
-procedural y 196 de la carrera de la playa. Generada desde la tabla del código (`Source/Tortunabo/Private/Art/TN_ArtSlots_*.inl`)
+848 piezas a 03-10-2026: 234 del lobby (castillo 21, valle 85, tutorial 106, parque y puestos 22), 414 del mapa
+procedural, 196 de la carrera de la playa y 4 de la tortuga. Generada desde la tabla del código (`Source/Tortunabo/Private/Art/TN_ArtSlots_*.inl`)
 con `uv run python Scripts/arte/rellenar_catalogos.py --doc`. El fichero es relativo a `Source/Tortunabo/Private/`; «Escala 1»
 quiere decir que cada copia se estira a su tamaño respecto a ese (§2).
 
@@ -672,8 +682,8 @@ quiere decir que cada copia se estira a su tamaño respecto a ese (§2).
 
 | Pieza | Tipo | Qué es | Tamaño (cm) | Pivote | Fichero |
 |---|---|---|---|---|---|
-| `ProcMap.Nest.Base` | Componente | Base del nido de huevos (punto de reaparición); hoy el cilindro del motor teñido de marrón | Cilindro de 100 x 100 con escala 2,2 x 2,2 x 0,25 (220 de diámetro y 25 de alto): la malla de arte hereda esa escala, compénsala con el ajuste | Centro del cilindro, 10 sobre el suelo del nido | `World/ProcMap/TN_ProcEggNest.cpp` |
-| `ProcMap.Nest.Egg` | Componente | Huevo del nido (8 en pila); hoy esferas del motor que cambian de color al activarse el nido (el tinte no llega a la malla de arte) | Esfera de 100 con escala 0,55 x 0,55 x 0,72: la malla de arte hereda esa escala | Centro del huevo | `World/ProcMap/TN_ProcEggNest.cpp` |
+| `ProcMap.Nest.Base` | Componente | Base del nido de huevos (punto de reaparición); hoy un nido de arena de código con el hueco oscuro, dos vueltas de paja y dos estrellas y dos vieiras alrededor (la colisión es un cilindro invisible aparte) | Montículo de radio 155 y unos 40 de alto con la paja; con las estrellas y las vieiras, unos 420 de ancho. Escala 1 | Centro del nido en el suelo (origen del actor) | `World/ProcMap/TN_ProcEggNest.cpp` |
+| `ProcMap.Nest.Egg` | Componente | Huevo del nido (8 en pila); hoy el huevo de código del lobby con su banda de color, que cambia de cáscara al activarse el nido (el cambio no llega a la malla de arte) | Huevo de radio 97 y 241 de alto con escala 0,3 (CodeArtEggScale; unos 58 x 72): la malla de arte hereda esa escala | Centro de la base del huevo | `World/ProcMap/TN_ProcEggNest.cpp` |
 
 #### ProcMap.Puzzle
 
@@ -1258,6 +1268,17 @@ quiere decir que cada copia se estira a su tamaño respecto a ese (§2).
 | `Beach.SandWorm.Segment` | Componente | Anillo del cuerpo (13) | 300 de largo | Centro del anillo; +X a lo largo del cuerpo | `World/Beach/TN_BeachSandWormMeshes.h` |
 | `Beach.SandWorm.Crater` | Componente | Cráter de arena por donde sale el gusano | Radio de unos 500 | Centro del cráter en la arena | `World/Beach/TN_BeachSandWormMeshes.h` |
 
+### Piezas de la tortuga (DA_Arte_Tortuga) — 4 piezas
+
+#### Turtle
+
+| Pieza | Tipo | Qué es | Tamaño (cm) | Pivote | Fichero |
+|---|---|---|---|---|---|
+| `Turtle.Shell` | Hueso | Caparazón de la tortuga; sigue al hueso Spine1 (la mitad de la espalda). No lleva los colores ni el dibujo de los caparazones de la tienda | El de la malla del personaje: la de demo mide 53 de alto (133 cm en el juego, que la escala x2,5); su caparazón va de Z = 22 a 38 y de Y = -9 a 3 | El origen de la malla del personaje (entre los pies, +Z arriba, mira a +Y como la de demo): exporta la pieza junto al cuerpo, sin mover el pivote | `Art/TN_TurtleArt.cpp` |
+| `Turtle.Helmet` | Hueso | Casco de serie; sigue al hueso Head. Sustituye al casco rojo pintado en la malla de demo y se esconde mientras se lleva un casco de la tienda | El de la malla del personaje: en la de demo la coronilla está a Z = 51 | El origen de la malla del personaje, como Turtle.Shell | `Art/TN_TurtleArt.cpp` |
+| `Turtle.Eyes` | Hueso | Ojos; siguen al hueso Head. Fijos: no parpadean ni cambian con los ojos de la tienda (eso solo lo hace la malla de demo, que los lleva pintados) | El de la malla del personaje: en la de demo los ojos van de Z = 42 a 50 | El origen de la malla del personaje, como Turtle.Shell | `Art/TN_TurtleArt.cpp` |
+| `Turtle.Tongue` | Hueso | Lengua fija; sigue al hueso Head. Con la malla de demo la cara dibuja además su lengua animada | El de la malla del personaje: en la de demo la boca está en Z = 41 a 44, delante en Y = 10 a 14 | El origen de la malla del personaje, como Turtle.Shell | `Art/TN_TurtleArt.cpp` |
+
 <!-- piezas: fin -->
 
 ## 5. Materiales, texturas y assets que ya usa la generación
@@ -1284,7 +1305,10 @@ Assets binarios que ya existen y usa la generación:
   carrera y 2 contra 2 por dificultad) y las clases de los elementos (géiser, nido de huevos, muros, interruptores...).
   Las capas de dispersión de los biomas (`Scatter`) y `WaterBouncerMesh` ya son mallas de asset: se cambian ahí, no en el
   catálogo de arte.
-- `/Game/Art/DA_Arte_Lobby` y `/Game/Art/DA_Arte_ProcMap` (`UTN_ArtCatalog`): los catálogos de este documento.
+- `/Game/Art/DA_Arte_Lobby`, `/Game/Art/DA_Arte_ProcMap` y `/Game/Art/DA_Arte_Tortuga` (`UTN_ArtCatalog`): los catálogos de
+  este documento. `DA_Arte_Tortuga` no existe hasta que se ejecuta `rellenar_catalogos.py`; mientras, la tortuga va sin
+  piezas (y sin avisos).
+- `/Game/Blueprints/Characters/BP_TortugaCharacter`: la malla de la tortuga (§10).
 
 ## 6. Herramientas
 
@@ -1292,10 +1316,13 @@ Assets binarios que ya existen y usa la generación:
 |---|---|
 | Crear los catálogos y meter todas las piezas vacías | En el editor: `exec(open(r"<repo>/Scripts/arte/rellenar_catalogos.py", encoding="utf-8").read())`. Sin interfaz, con el editor cerrado: `UnrealEditor-Cmd.exe "<repo>/Tortunabo.uproject" -run=pythonscript -script="<repo>/Scripts/arte/rellenar_catalogos.py"` (rutas con `/`). |
 | Lista de piezas en el juego | `TN.Art.Slots [prefijo] [segundos]`: nombre, tipo, si se ha visto en esta sesión (y cuántas copias), lo que dibuja y su sustituto; con segundos, sale pasado ese tiempo (para lo que se construye al empezar). Avisa si el código usa una pieza que no está en la tabla. Ejemplo: `TN.Art.Slots Lobby.Castle`. |
-| Volver a leer los catálogos | `TN.Art.Reload` (lo ya construido cambia al volver a cargar el nivel). |
+| Volver a leer los catálogos | Botón **Aplicar cambios** del catálogo (desde Python, `catalog.apply_changes()`) o `TN.Art.Reload`: vuelven a leerlos, avisan de las piezas con malla que no existen y rehacen en el editor el castillo y el valle del nivel abierto. En una partida, lo ya construido cambia al volver a cargar el nivel. No hace falta para el Play: cada partida los vuelve a leer. |
+| Cambiar el catálogo con Python | `catalog.get_editor_property("pieces")` y cada `pieces[nombre]` escriben directamente en el asset, sin avisar al editor (volver a asignar el mapa con `set_editor_property` tampoco avisa: el valor ya es el mismo). Guarda con `unreal.EditorAssetLibrary.save_loaded_asset(catalog)` y llama a `catalog.apply_changes()` para verlo en el editor sin jugar. |
+| Fotos del lobby sin abrir el editor | `UnrealEditor-Win64-DebugGame.exe <uproject> /Game/Maps/Lobby/LVL_Lobby -game -RenderOffScreen -ResX=1600 -ResY=900 -NoSteam -ExecCmds="TN.Art.Shots C:/ruta"`: fotos desde puntos fijos alrededor del castillo (entrada, plaza, puestos, patio, valle), `TN.Art.Slots Lobby` en el log y cierra el juego. También vale en el PIE. Fuera de Shipping. |
 | Comparar con lo generado | `TN.Art.Enabled 0` y recargar el nivel; `TN.Art.Enabled 1` para volver. |
 | Lista de piezas en Markdown | `uv run python Scripts/arte/rellenar_catalogos.py --markdown`, o `--doc` para poner al día §4. |
-| Dónde están los catálogos | Ajustes del proyecto > Tortunavy > Arte (`[/Script/Tortunabo.TN_ArtSettings]` de `Config/DefaultGame.ini`). |
+| Fotos de la tortuga sin abrir el editor | `UnrealEditor-Win64-DebugGame.exe <uproject> /Game/Maps/Lobby/LVL_Lobby -game -RenderOffScreen -ResX=1600 -ResY=900 -NoSteam -UseFixedTimeStep -FPS=30 -ExecCmds="TN.Art.TurtleShots C:/ruta"`: el jugador de frente, de espaldas y con la pataleta del podio en dos momentos, el tendero y el general (sin su puesto delante), lo que dibujan el escaparate de cosméticos (y dos miniaturas) y el podio; en el log, `TN.Art.Slots Turtle` y qué malla, escala y piezas lleva cada tortuga. Cierra el juego. También vale en el PIE. Fuera de Shipping. |
+| Dónde están los catálogos | Ajustes del proyecto > Tortunavy > Arte (`[/Script/Tortunabo.TN_ArtSettings]` de `Config/DefaultGame.ini`). Ahí también la tortuga: su Blueprint, sus animaciones y las ranuras que pintan los cosméticos (§10). |
 
 ## 7. Qué no se puede cambiar desde el catálogo
 
@@ -1308,7 +1335,8 @@ Assets binarios que ya existen y usa la generación:
 | Barreras y colisiones invisibles | No se ven: son la colisión del juego. | Programación. |
 | Textos (carteles con nombre), luces y sonidos | No son mallas: `TextRender`, luces y síntesis de sonido en código. | Programación. |
 | Capas de dispersión de los biomas y criatura flotante del agua | Ya son assets: se cambian en `DA_Biome_*`. | `DA_Biome_*` (§5). |
-| Tortugas, cosméticos, objetos de juego comunes (conchas de puntos, huevos de eclosión, objetos de la carrera) | Tienen sus propios assets o su propio sistema (cosméticos). | Sus Blueprints y assets. |
+| El cuerpo de la tortuga | Es una malla esquelética (huesos y animación), no una pieza generada. | El componente Mesh de `BP_TortugaCharacter` (§10); las piezas rígidas que van encima, sí, en `DA_Arte_Tortuga`. |
+| Cosméticos, objetos de juego comunes (conchas de puntos, huevos de eclosión, objetos de la carrera) | Tienen sus propios assets o su propio sistema (cosméticos). | Sus Blueprints y assets. |
 
 Notas por zona (lo que no sale en la lista y lo que conviene saber al sustituir):
 
@@ -1350,7 +1378,12 @@ una malla no carga, esa pieza se dibuja generada (y el log lo dice una vez con u
 ## 9. Para programación: añadir una pieza
 
 - Nombre con `TN_ART("Zona.Grupo.Pieza")` (zona `Lobby`, `ProcMap` o `Beach`, partes en PascalCase), siempre con el
-  literal dentro de la macro.
+  literal dentro de la macro. Las de la tortuga son `Turtle.Pieza`, tipo `Hueso`, y se añaden a `TNTurtleArt::GetPieces`
+  (`Private/Art/TN_TurtleArt.cpp`) con su hueso por defecto.
+- Una tortuga nueva que no sea el personaje (otra copia como el tendero) no carga la malla por su ruta:
+  `TNTurtleArt::ApplyBody` (malla, materiales y escala del personaje), `TNTurtleArt::GetClip` (animaciones de los ajustes) y
+  `UTN_CosmeticLook::ApplyLook` (aspecto y piezas). Si la dibuja un captor con lista, añade `TNTurtleArt::GetPieceComponents`.
+  Para reconocer tortugas de maqueta, `TNTurtleArt::IsTurtleMesh`.
 - Según cómo se genera (`Public/Art/TN_Art.h`, `Private/Art/TN_ArtPieces.h`):
   - pieza dentro de buffers combinados: `TNArt::FPieceScope` alrededor de lo que la dibuja, `TNArt::UploadSection` en vez
     de `CreateMeshSection_LinearColor` y `TNArt::SpawnPieceArt` al final;
@@ -1360,3 +1393,93 @@ una malla no carga, esa pieza se dibuja generada (y el log lo dice una vez con u
 - `Tortunabo.Art.SlotsInCode` falla si un `TN_ART` no está en la tabla o si una entrada de la tabla no la usa el código;
   `Tortunabo.Art.SlotTable`, si un nombre se repite, no es válido o su fichero no existe.
 - Ejecuta `rellenar_catalogos.py` (añade la pieza vacía a su catálogo) y `--doc` (la añade aquí).
+
+## 10. La tortuga
+
+Issue #581. La tortuga no se genera desde C++: su cuerpo es una malla esquelética (con huesos y animación) y lo que Arte
+quiera añadirle por encima (caparazón, casco, ojos, lengua) son mallas estáticas pegadas a sus huesos.
+
+### Por qué `Tortuga_V1` no sirve tal cual
+
+`Tortuga_V1` y las mallas de `PartesTortuga_V1` (rama `ArteDev`) se importaron como **Static Mesh**: no tienen huesos ni
+pesos, así que no se pueden animar y el componente Mesh de `BP_TortugaCharacter` (un Skeletal Mesh Component) no las
+acepta. Por eso, al cambiarla, «se quedaba la misma». En su importación guardan el esqueleto `TotugaDemo_Rig_Skeleton`: se
+intentó importar con él, pero el FBX no traía pesos (o se importó forzando «Static Mesh») y salieron estáticas. Además
+miden unos 280 cm de alto con el origen a la altura del pecho, y la de demo mide 53 unidades con el origen entre los pies
+(el Blueprint la escala x2,5 hasta 133 cm). Hay que volver a exportarla desde el programa 3D; desde Unreal no se arregla.
+
+### Cambiar el cuerpo
+
+1. **En el programa 3D**, une el cuerpo al rig de `TotugaDemo_Rig` (esqueleto Mixamo: mismos huesos y mismos nombres, lista
+   abajo) con pesos (skinning), a la misma escala que el rig: unas 53 unidades de alto, el origen entre los pies, +Z arriba y
+   mirando a +Y, como la de demo. Exporta en FBX la malla con su esqueleto.
+2. **En Unreal**, importa el FBX como **Skeletal Mesh** (no Static Mesh) y en *Skeleton* elige `TotugaDemo_Rig_Skeleton`
+   (sin importar animaciones). Si Unreal avisa de que los huesos no coinciden, el rig no es el mismo. Con ese esqueleto valen
+   tal cual las animaciones de la tortuga y su Physics Asset (`TotugaDemo_Rig_PhysicsAsset`, el del ragdoll: pónselo a la
+   malla nueva o hazle uno).
+3. Abre **`BP_TortugaCharacter` > componente Mesh > Skeletal Mesh Asset** y pon tu malla. Compila y guarda. Es la única
+   fuente de la tortuga: el jugador y todas sus copias (el tendero, el general, el escaparate de cosméticos de la tienda y
+   del probador, el podio de la carrera y las tortugas de práctica del tutorial) la usan. Ninguna carga ya la malla por su
+   ruta, así que también se puede mover la carpeta.
+4. Si tu malla tiene otro pivote, otra orientación u otra escala, corrígelo en ese mismo componente (la de demo va en
+   `(0, 0, -70)`, giro `-90` y escala `2,5`): las copias aplican la misma diferencia. Los materiales que le pongas al
+   componente (*Override Materials*) también los copian.
+5. **Comprueba** con `TN.Art.TurtleShots` (§6): fotos del jugador, el tendero, el general, el escaparate y el podio, y en el
+   log qué malla y qué escala lleva cada uno.
+
+Qué cambia sin la malla de demo:
+
+- **Cosméticos.** Los colores, el dibujo del caparazón, los ojos de la tienda, el parpadeo y la boca se pintan con
+  `M_TurtleBody` y `M_TurtleHelmetSlot`, medidos sobre la malla de demo, en las ranuras de material `lambert4` (cuerpo) y
+  `lambert2` (casco de serie y lengua). Si tu malla no tiene ranuras con esos nombres, se queda con sus propios materiales:
+  no se rompe nada, pero no lleva los colores de la tienda ni la cara animada. Los nombres se cambian en Ajustes del
+  proyecto > Tortunavy > Arte > Tortuga > Cosméticos. Los cascos de la tienda van al socket `Sombrero` de la malla (o del
+  esqueleto) si existe; si no, a la coronilla de la de demo sobre el hueso `Head`: con otra cabeza, añade ese socket.
+- **Animaciones.** Las de la tortuga (espera, andar, celebrar, saludar) se configuran en Ajustes del proyecto > Tortunavy >
+  Arte > Tortuga > Animaciones (`[/Script/Tortunabo.TN_ArtSettings]` de `Config/DefaultGame.ini`). Encima, el código mueve los
+  huesos de la lista de abajo (correr, panzazo, caparazón, lanzar, poses del podio...).
+- **Otro esqueleto.** Si no se puede usar el rig de `TotugaDemo_Rig`, el esqueleto nuevo tiene que tener los mismos nombres
+  de hueso (si no, esas partes se quedan quietas) y hay que cambiar las cuatro animaciones de los ajustes por unas suyas:
+  retargetiza las de `/Game/Animations/Character/TortugaDemo/Anim` (IK Retargeter) o haz otras. Avisa a programación: las
+  poses en código están pensadas para las proporciones del rig de demo.
+
+### Huesos que usa el código
+
+| Hueso | Para qué |
+|---|---|
+| `Hips`, `Spine`, `Spine1`, `Spine2`, `Neck`, `Head` | Animación en C++ (`UTN_TurtleAnimInstance`): andar, correr, saltar, panzazo, nado, caparazón, llevar y lanzar, poses y emotes. |
+| `LeftShoulder`, `RightShoulder`, `LeftArm`, `RightArm`, `LeftForeArm`, `RightForeArm` | Animación en C++ y brazos que sujetan lo que lleva. |
+| `LeftUpLeg`, `RightUpLeg`, `LeftLeg`, `RightLeg`, `LeftFoot`, `RightFoot` | Animación en C++ (zancada, sentarse, patalear). |
+| `LeftHand`, `RightHand` | Lo que lleva en las aletas (`UTN_InventoryComponent`), el trofeo del podio y las manos en VR. |
+| `Spine2` | El pecho (lo que lleva abrazado) y la espalda: la gaviota y los enemigos de la playa la agarran por ahí y ahí va la mancha. |
+| `Head`, `HeadTop_End` | La cara (lengua y sudor, `UTN_TurtleFaceComponent`), el casco de la tienda, los pájaros del mareo y la etiqueta del podio. |
+| `LeftFoot`/`RightFoot` o `LeftToeBase`/`RightToeBase` | Pasos (`UTN_TurtleFoleyComponent`). |
+| `Spine1`, `Head` | Huesos por defecto de las piezas `Turtle.*` (abajo). |
+| Socket `Sombrero` (opcional) | Dónde va el casco de la tienda. |
+
+El hueso que sigue el ragdoll de muerte es `RagdollTrackingBone` en `BP_TortugaCharacter` (Knockdown).
+
+### Piezas sueltas: caparazón, casco, ojos, lengua
+
+Si el cuerpo va por un lado y las piezas rígidas por otro (como en `PartesTortuga_V1`), las piezas no hace falta pesarlas:
+se ponen como mallas estáticas en el catálogo `DA_Arte_Tortuga` y van pegadas a un hueso, siguiendo su animación.
+
+1. Importa cada pieza como **Static Mesh** exportada **en el mismo espacio que el cuerpo**: misma escala, mismo origen (entre
+   los pies) y misma orientación, sin mover el pivote. Así queda en su sitio sin tocar nada.
+2. Si `DA_Arte_Tortuga` no existe, ejecuta `Scripts/arte/rellenar_catalogos.py` (§6): lo crea con sus piezas vacías.
+3. En `Pieces`, pon la malla en `Turtle.Shell` (caparazón), `Turtle.Helmet` (casco de serie), `Turtle.Eyes` (ojos) o
+   `Turtle.Tongue` (lengua) (lista en §4). Opcional: `Materials`, y `Adjust` si la pieza no está en el espacio del cuerpo
+   (desplazamiento, giro y escala en unidades de la malla; para `PartesTortuga_V1` sobre la de demo, escala 0,205 y
+   subirla 23). `Bone` cambia el hueso o socket que sigue (por defecto, `Spine1` el caparazón y `Head` lo demás): la pieza
+   se coloca igual, solo cambia a qué parte del cuerpo acompaña.
+4. Dale al Play: van en el jugador y en todas sus copias, siguen la animación y el ragdoll, se esconden con la tortuga y no
+   chocan con nada. `TN.Art.TurtleShots` las enseña (también la pataleta en dos momentos, para ver que siguen los huesos).
+
+Reglas de las piezas:
+
+- El casco de la tienda manda: con uno puesto, `Turtle.Helmet` se esconde. Sin él, `Turtle.Helmet` es el casco de serie y
+  quita el rojo pintado de la malla de demo.
+- Los colores y dibujos de la tienda no llegan a las piezas (el caparazón de Arte lleva sus materiales) y los ojos de Arte
+  no parpadean. Con la malla de demo, la cara sigue dibujando su lengua animada aunque haya `Turtle.Tongue`.
+- Son visuales y locales: cada máquina las pone igual a partir del catálogo (se cocina) y del aspecto ya replicado. No hay
+  nada que replicar ni cambia cómo se juega.

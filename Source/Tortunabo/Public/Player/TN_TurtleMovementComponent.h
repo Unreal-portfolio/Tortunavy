@@ -376,6 +376,14 @@ private:
 	/** TN.Dive.Debug: línea en pantalla y flechas. */
 	void ShowBellyDebug() const;
 
+	/**
+	 * Trampolines de la playa (#21), al empezar cada paso: si la cápsula toca el sensor de uno (ATN_BeachTrampoline) y no
+	 * sube (TNTrampolineRules::CanBounce), el rebote entra en este mismo paso (HandlePendingLaunch va justo después). Lo
+	 * hacen igual el servidor y el cliente dueño, también al repetir pasos tras una corrección: solo depende del estado del
+	 * paso. El boing y la deformación, solo en un paso nuevo.
+	 */
+	void TickTrampolineBounce();
+
 	ETNBellyPhase BellyPhase = ETNBellyPhase::None;
 	float BellyTime = 0.f;
 	uint8 SlideSerial = 0;

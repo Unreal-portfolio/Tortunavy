@@ -91,9 +91,36 @@ protected:
 		meta = (ClampMin = "20.0"))
 	float WheelCapsuleHalfHeight = 55.f;
 
+	/**
+	 * Colores del quad de la playa (TNBeachMeshes::QuadPalette, 0-4) que se monta si QuadMesh no lleva una malla del
+	 * proyecto. Se escala para que sus ruedas caigan sobre las de matar (WheelLateralOffset) y se apoya en el suelo de
+	 * las cápsulas. Con una malla propia no se monta nada.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quad|Art", meta = (ClampMin = "0", ClampMax = "4"))
+	int32 CodeArtPalette = 0;
+
 private:
 	FVector EndLocation;
 	bool bTraveling = false;
+
+	// ── Arte de código (#50; local en cada máquina) ───────────────────────────
+
+	UPROPERTY(Transient)
+	TObjectPtr<USceneComponent> CodeArtRoot;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> CodeArtWheels;
+
+	TArray<FVector> CodeArtWheelPivots;
+	FVector CodeArtLastLocation = FVector::ZeroVector;
+	float CodeArtWheelRadius = 0.f;
+	float CodeArtWheelAngle = 0.f;
+
+	/** Monta el quad de la playa (cuerpo con piloto y cuatro ruedas) y oculta los marcadores del motor. */
+	void BuildCodeArt();
+
+	/** Las ruedas giran con lo que avanza el quad (también en los clientes, con el movimiento replicado). */
+	void AnimateCodeArt();
 
 	UFUNCTION()
 	void OnWheelOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,

@@ -129,6 +129,11 @@ bool FTNVRInputProcessor::HandleKeyDownEvent(FSlateApplication& SlateApp, const 
 	{
 		LastDigitalStickTime = FPlatformTime::Seconds();
 	}
+	// Los agarres cambian de pestaña por su eje (HandleAnalogInputEvent) si llega: el botón no lo repite.
+	if ((Key == FTNVRKeys::LeftGrip || Key == FTNVRKeys::RightGrip) && FPlatformTime::Seconds() - LastGripAxisTime < 1.0)
+	{
+		return true;
+	}
 	const FKey Mapped = TNVRMath::MenuKeyFor(Key);
 	if (Mapped.IsValid())
 	{
@@ -165,6 +170,51 @@ bool FTNVRInputProcessor::HandleAnalogInputEvent(FSlateApplication& SlateApp, co
 {
 	const FKey Key = InAnalogInputEvent.GetKey();
 	const float Value = InAnalogInputEvent.GetAnalogValue();
+	const bool bTriggerAxis = Key == FTNVRKeys::LeftTriggerAxis || Key == FTNVRKeys::RightTriggerAxis;
+	const bool bGripAxis = Key == FTNVRKeys::LeftGripAxis || Key == FTNVRKeys::RightGripAxis;
+	if (bTriggerAxis || bGripAxis)
+	{
+		const int32 Side = (Key == FTNVRKeys::RightTriggerAxis || Key == FTNVRKeys::RightGripAxis) ? 1 : 0;
+		// Se lleva la cuenta de si está apretado también jugando, sin hacer nada: al abrir un menú con el gatillo o el agarre
+		// ya apretados (el menú se abrió con ellos), no cuentan como un clic o un cambio de pestaña hasta soltarlos (por
+		// debajo del 35 %) y volver a apretar.
+		const int32 Edge = TNVRMath::AnalogButton(Value, bTriggerAxis ? bTriggerAxisHeld[Side] : bGripAxisHeld[Side]);
+		if (!IsMenuUp() || !TNVR::IsHeadset())
+		{
+			// Jugando no se toca nada (el juego los lee por Enhanced Input y ATN_VRRig); solo se suelta la pestaña que quedó
+			// pulsada en un menú que se cerró con el agarre apretado.
+			if (bGripAxis && Edge < 0 && bGripKeySent[Side])
+			{
+				bGripKeySent[Side] = false;
+				const FKey Mapped = TNVRMath::MenuKeyFor(Side == 1 ? FTNVRKeys::RightGrip : FTNVRKeys::LeftGrip);
+				if (Mapped.IsValid()) { SendKey(SlateApp, Mapped, false, false); }
+			}
+			return false;
+		}
+		UserIndex = InAnalogInputEvent.GetUserIndex();
+		if (bTriggerAxis)
+		{
+			// Gatillo = clic del láser (soltar sin haber pulsado en el menú no hace nada: PointerRelease lo mira).
+			if (ATN_VRRig* Rig = GetRig())
+			{
+				if (Edge > 0) { Rig->PointerPress(); }
+				else if (Edge < 0) { Rig->PointerRelease(); }
+			}
+		}
+		else
+		{
+			// Agarre = pestaña anterior (izquierdo) o siguiente (derecho). El «soltar», solo si su pulsación fue en el menú.
+			LastGripAxisTime = FPlatformTime::Seconds();
+			const FKey Mapped = TNVRMath::MenuKeyFor(Side == 1 ? FTNVRKeys::RightGrip : FTNVRKeys::LeftGrip);
+			if (Mapped.IsValid() && (Edge > 0 || (Edge < 0 && bGripKeySent[Side])))
+			{
+				bGripKeySent[Side] = Edge > 0;
+				SendKey(SlateApp, Mapped, Edge > 0, false);
+			}
+		}
+		// Con un menú delante, los gatillos y los agarres no llegan al juego.
+		return true;
+	}
 	if (Key == FTNVRKeys::LeftStickX) { Sticks[0].X = Value; }
 	else if (Key == FTNVRKeys::LeftStickY) { Sticks[0].Y = Value; }
 	else if (Key == FTNVRKeys::RightStickX) { Sticks[1].X = Value; }

@@ -92,6 +92,24 @@ namespace TNStress
 		return Out;
 	}
 
+	/**
+	 * Presupuesto (ms) para crear enemigos y cajas en un fotograma: el mismo que usa el generador de la playa al montar una
+	 * ronda (TN.Beach.BuildBudgetMs). Crearlos todos de golpe daba tirones de 30-96 ms que en el juego no existen (#79).
+	 */
+	constexpr double SPAWN_BUDGET_MS = 6.0;
+
+	/** Grupos que se crean repartidos en varios fotogramas (los lanzables ya se reponen de 25 en 25 cada 0,5 s). */
+	inline bool IsSpreadGroup(EGroup Group)
+	{
+		return Group == EGroup::Crabs || Group == EGroup::Gulls || Group == EGroup::Tanks || Group == EGroup::Items;
+	}
+
+	/** Se crea uno más en este fotograma: quedan por crear y es el primero del fotograma o aún queda presupuesto. */
+	inline bool ShouldSpawnMore(int32 Left, int32 MadeThisFrame, double ElapsedMs, double BudgetMs = SPAWN_BUDGET_MS)
+	{
+		return Left > 0 && (MadeThisFrame == 0 || ElapsedMs < BudgetMs);
+	}
+
 	struct FPhase
 	{
 		EGroup Group = EGroup::Baseline;

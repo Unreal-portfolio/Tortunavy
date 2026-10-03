@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachClamTrap.h"
+#include "World/Beach/TN_BeachNearby.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachTrapSynthComponent.h"
 #include "Core/TN_Log.h"
@@ -25,6 +26,8 @@
  */
 namespace TNBeachClamDetail
 {
+	/** Margen (cm) del radio en el que se busca a quién pisa la valva: la cápsula y los pies por fuera del borde. */
+	constexpr double GatherMargin = 150.0;
 	using FBuffers = TNBeachTrapKit::FBuffers;
 	using FHulls = TNBeachTrapKit::FHulls;
 
@@ -591,6 +594,14 @@ ACharacter* ATN_BeachClamTrap::GetCaptive() const
 	return State.Captive.Get();
 }
 
+void ATN_BeachClamTrap::GatherNearValve(TArray<ACharacter*>& Out) const
+{
+	// La valva más grande que se mira (Rho 1,05) cabe en el semieje mayor; más el margen, con la escala de la valva.
+	const FTransform FrameXf = Frame->GetComponentTransform();
+	const double Radius = (FMath::Max(HalfX, HalfY) * 1.1 + TNBeachClamDetail::GatherMargin) * FrameXf.GetMaximumAxisScale();
+	TNBeachNearby::Gather(GetWorld(), FrameXf.GetLocation(), Radius, Out);
+}
+
 bool ATN_BeachClamTrap::IsInBowl(const ACharacter* Character, double RhoMax, double& OutRho) const
 {
 	OutRho = 10.0;
@@ -776,10 +787,11 @@ void ATN_BeachClamTrap::ServerTick(double Now)
 			It.RemoveCurrent();
 		}
 	}
-	// ¿Alguien pisa el manto?
-	for (TActorIterator<ACharacter> It(World); It; ++It)
+	// ¿Alguien pisa el manto? (solo quien está al alcance de la valva)
+	TArray<ACharacter*> Near;
+	GatherNearValve(Near);
+	for (ACharacter* Walker : Near)
 	{
-		ACharacter* Walker = *It;
 		double Rho = 0.0;
 		if (!TNBeachRideKit::IsFreeRider(Walker) || !IsInBowl(Walker, 0.72, Rho) || ImmuneUntil.Contains(Walker))
 		{
@@ -813,9 +825,10 @@ void ATN_BeachClamTrap::Slam(double Now)
 	TArray<ACharacter*> InValve;
 	if (TNBeachRideKit::IsRaceLive(this))
 	{
-		for (TActorIterator<ACharacter> It(World); It; ++It)
+		TArray<ACharacter*> Near;
+		GatherNearValve(Near);
+		for (ACharacter* Walker : Near)
 		{
-			ACharacter* Walker = *It;
 			double Rho = 0.0;
 			if (!TNBeachRideKit::IsFreeRider(Walker) || !IsInBowl(Walker, 1.05, Rho))
 			{

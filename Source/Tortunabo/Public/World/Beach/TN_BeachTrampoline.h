@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachTrapCommon.h"
+#include "World/Beach/TN_BeachTrampolineRules.h"
 #include "TN_BeachTrampoline.generated.h"
 
 class AActor;
@@ -39,10 +40,12 @@ class UTN_PlaygroundSynthComponent;
  * y por fuera del cuerpo (de cara a quien llega), con una flecha que baja y rebota hacia arriba pintada y el rótulo
  * «¡BOING!» (dorada y con estrella en el potenciado). Rebota y brilla al acercarse la tortuga local.
  *
- * Red (como la medusa del lobby): el rebote lo aplican a la vez el servidor y el cliente dueño dentro del mismo
- * movimiento (golpe con la colisión o solape con el sensor), así que la predicción cuadra; el resto ve la deformación y
- * oye el boing por un multicast no fiable. Los caparazones con física rebotan también (los lanza el servidor). Lo
- * potenciado sale de Spec (replicado): servidor y cliente dueño aplican el mismo impulso.
+ * Red (#21): el rebote de una tortuga lo decide su movimiento (UTN_TurtleMovementComponent) al empezar cada paso en que
+ * su cápsula toca el sensor, con las reglas puras de TN_BeachTrampolineRules.h. Así cae en el mismo paso en el servidor y
+ * en el cliente dueño, también al repetir pasos tras una corrección, y la predicción cuadra (antes llegaba por el golpe o
+ * el solape, un paso después o fuera del paso, con una espera según la hora del mundo de cada máquina). El resto ve la
+ * deformación y oye el boing por un multicast no fiable. Los caparazones con física rebotan también (los lanza el
+ * servidor). Lo potenciado sale de Spec (replicado): servidor y cliente dueño aplican el mismo impulso.
  */
 UCLASS()
 class TORTUNABO_API ATN_BeachTrampoline : public ATN_BeachElement
@@ -78,7 +81,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Trampolín", meta = (ClampMin = "0.0"))
 	float MaxHorizontal = 1100.f;
 
-	/** Segundos mínimos entre dos rebotes de la misma tortuga. */
+	/**
+	 * Segundos mínimos entre dos boings y deformaciones por la misma tortuga y, con 0,2 s más, entre dos rebotes del mismo
+	 * caparazón con física. El rebote de una tortuga no espera: lo decide su paso del movimiento (TNTrampolineRules).
+	 */
 	UPROPERTY(EditAnywhere, Category = "Trampolín", meta = (ClampMin = "0.1", ClampMax = "2.0"))
 	float BounceCooldown = 0.3f;
 
@@ -103,6 +109,26 @@ public:
 
 	/** Potenciado (Spec.Flags & TNBeach::FlagBoosted). */
 	bool IsBoosted() const { return bBoosted; }
+
+	/** true si Component es el sensor de rebote de este trampolín. */
+	bool IsBounceSensor(const UPrimitiveComponent* Component) const;
+
+	/**
+	 * Rebote de una tortuga cuya cápsula toca el sensor, con la velocidad con la que empieza su paso del movimiento (lo pide
+	 * UTN_TurtleMovementComponent, en el servidor y en el cliente dueño). false si aún sube (TNTrampolineRules::CanBounce);
+	 * si no, la velocidad con la que sale y la fuerza del efecto.
+	 */
+	bool ComputeTurtleBounce(const FVector& Velocity, FVector& OutLaunch, float& OutStrength) const;
+
+	/** Rebote nuevo (no al repetir pasos tras una corrección): deformación y boing (no más de uno por BounceCooldown). */
+	void NotifyTurtleBounced(ACharacter* Turtle, float Strength);
+
+	/**
+	 * Distancia (cm) que le queda a la cápsula de Character para tocar un trampolín si cae en vertical, o
+	 * TNTrampolineRules::NoTrampolineBelow si lo primero que hay debajo (a menos de MaxDrop, sin contar personajes) no es
+	 * un trampolín. Lo pide la caída larga para no meterla en el caparazón (TNTrampolineRules::HoldsAutoShell).
+	 */
+	static double DropOntoTrampoline(const ACharacter& Character, double MaxDrop);
 
 protected:
 	virtual void BeginPlay() override;
@@ -152,16 +178,6 @@ protected:
 	TObjectPtr<UTN_PlaygroundSynthComponent> Toy;
 
 private:
-	UFUNCTION()
-	void OnBodyHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-	UFUNCTION()
-	void OnSensorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-		bool bFromSweep, const FHitResult& SweepResult);
-
-	/** Rebota al personaje si lo simula esta máquina (servidor o cliente dueño); true si ha rebotado. */
-	bool TryBounce(ACharacter* Character);
-
 	/** Servidor: caparazones con física que tocan el cuerpo. */
 	void BounceShells(double Now);
 
@@ -176,6 +192,9 @@ private:
 	float EffectivePush() const { return bBoosted ? BoostedForwardPush : ForwardPush; }
 	float EffectiveMaxHorizontal() const { return bBoosted ? BoostedMaxHorizontal : MaxHorizontal; }
 	float EffectiveMaxUp() const { return FMath::Max(bBoosted ? FMath::Max(BoostedMaxUp, MaxUp) : MaxUp, BaseUp); }
+
+	/** Ajustes del rebote de una tortuga en este trampolín (variante y potenciado incluidos). */
+	TNTrampolineRules::FBounceTuning TurtleTuning() const;
 
 	/** Coloca el cartel por fuera del cuerpo (en ApplySpec, con las medidas de la variante ya puestas). */
 	void PlaceSign(double Fit, uint32 Seed);
@@ -216,7 +235,7 @@ private:
 	double AnimClock = 0.0;
 	float BreathPhase = 0.f;
 
-	/** Último rebote de cada personaje (tiempo del mundo), en cada máquina. */
+	/** Último rebote nuevo de cada tortuga (tiempo del mundo), en cada máquina: el efecto y el vuelo sin caparazón automático. */
 	TMap<TWeakObjectPtr<ACharacter>, double> LastBounceTime;
 
 	/** Servidor: último rebote de cada caparazón con física. */

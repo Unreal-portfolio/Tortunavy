@@ -485,15 +485,28 @@ private:
 
 	/** Lo grande del reparto alrededor de su sitio (se coge una vez, cuando el reparto ya está). */
 	TArray<FObstacle> Obstacles;
+
+	/**
+	 * Lo grande de todo el reparto del generador, en el mundo: se calcula una vez por ronda y lo comparten todos los
+	 * enemigos (cada uno pasaba las ~2900 piezas del reparto a coordenadas del mundo al aparecer: 0,5 ms por enemigo).
+	 */
+	static const TArray<FObstacle>& SharedObstacles(const ATN_BeachRaceGenerator& Gen);
 	bool bObstaclesCached = false;
 
 	/** Generador de la playa (para el suelo sin trazas y el reparto); se busca una vez. */
 	mutable TWeakObjectPtr<ATN_BeachRaceGenerator> Generator;
 	mutable bool bGeneratorLooked = false;
 
-	/** Nivel de detalle: cada cuánto se revisa y si ahora va despacio. */
+	/** Nivel de detalle: cada cuánto se revisa y si ahora va despacio (TN_BeachEnemyLod.h). */
 	float LodTimer = 0.f;
 	bool bThrottled = false;
+
+	/** Para el tope de ritmo completo: si lo pediría por sí solo y su prioridad (cm, menor = más cerca). */
+	bool bLodWantsFull = false;
+	float LodPriority = 1.0e9f;
+
+	/** Cuántos enemigos numerosos de este mundo piden ritmo completo y están más cerca que este. */
+	int32 CountCloserFullRate() const;
 
 	FTNBeachRagdollPushes RagdollPushes;
 
