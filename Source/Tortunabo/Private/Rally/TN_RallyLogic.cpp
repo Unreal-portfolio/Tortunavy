@@ -107,6 +107,11 @@ namespace TNRally
 			Out.RoadWidthCm = FMath::Max(0.0, RoadWidthM * 100.0);
 		}
 
+		if (!TNRallyCircuit::ReadCircuitFields(*Root, Out.Road.Num(), Out.RoadBankDeg, Out.Elements, OutError))
+		{
+			return false;
+		}
+
 		if (Out.Checkpoints.Num() == 0 && !Out.bHasStart)
 		{
 			OutError = TEXT("el manifest no trae checkpoints_uu ni start_uu");

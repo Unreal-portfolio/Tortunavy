@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Rally/TN_RallyCircuit.h"
 #include "Rally/TN_RallyVehicle.h"
 
 TORTUNABO_API DECLARE_LOG_CATEGORY_EXTERN(LogTNRally, Log, All);
@@ -75,14 +76,18 @@ namespace TNRally
 		double StartYawDeg = 0.0;
 		/** road_width_m en cm (0 = no viene). */
 		double RoadWidthCm = 0.0;
+		/** bank_deg: peralte de cada punto de Road (grados; positivo, la derecha más baja). Vacío si no viene. */
+		TArray<double> RoadBankDeg;
+		/** elements: saltos, rasantes, horquillas... de los circuitos generados (#622). Vacío si no viene. */
+		TArray<TNRallyCircuit::FElement> Elements;
 	};
 
 	/** Ruta del manifest de una variante (solo editor y PIE: Scripts/ no se empaqueta). */
 	TORTUNABO_API FString VariantManifestPath(FName Variant);
 
 	/**
-	 * Lee checkpoints_uu, start_uu, end_uu, water_uu y, si vienen, road_uu, closed, laps, start_yaw y road_width_m. False (con
-	 * OutError) si el JSON no vale o no hay ni puertas ni salida.
+	 * Lee checkpoints_uu, start_uu, end_uu, water_uu y, si vienen, road_uu, closed, laps, start_yaw, road_width_m, bank_deg y
+	 * elements. False (con OutError) si el JSON no vale o no hay ni puertas ni salida.
 	 */
 	TORTUNABO_API bool ParseTrackManifest(const FString& JsonText, FTrackSource& Out, FString& OutError);
 

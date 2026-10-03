@@ -142,7 +142,16 @@ bool ATN_RallyTrack::BuildFromManifestFile(const FString& ManifestPath)
 	}
 	bool bCircuit = false;
 	const TArray<TNRally::FGateDef> GateDefs = TNRally::BuildGateList(Source, bCircuit);
-	const bool bOk = BuildFromGates(GateDefs, bCircuit, Source.Road, Source.RoadWidthCm);
+	const bool bOk = BuildFromGates(GateDefs, bCircuit, Source.Road, Source.RoadWidthCm, Source.RoadBankDeg);
+	if (bOk && RoadLengthCm > 0.0)
+	{
+		Features = TNRallyCircuit::ToFeatureArcs(Source.Elements, RoadLengthCm, GetTrackLengthCm(), bClosed);
+	}
+	if (bOk && (Features.Num() > 0 || BankSampleDeg.Num() > 0))
+	{
+		UE_LOG(LogTNRally, Log, TEXT("[RallyTrack] Manifest de circuito: %d elementos y peralte en %d puntos del eje."), Features.Num(),
+			BankSampleDeg.Num());
+	}
 	bHasWater = Source.bHasWater;
 	WaterZ = Source.WaterZ;
 	ManifestLaps = Source.Laps;
@@ -178,7 +187,7 @@ bool ATN_RallyTrack::BuildFromPlacedCheckpoints()
 }
 
 bool ATN_RallyTrack::BuildFromGates(const TArray<TNRally::FGateDef>& GateDefs, bool bCircuit, const TArray<FVector>& RoadAxis,
-	double RoadWidthCm)
+	double RoadWidthCm, TConstArrayView<double> RoadBankDeg)
 {
 	ClearTrack();
 	if (GateDefs.Num() < 2)
@@ -191,6 +200,12 @@ bool ATN_RallyTrack::BuildFromGates(const TArray<TNRally::FGateDef>& GateDefs, b
 	if (RoadAxis.Num() >= 2)
 	{
 		BuildSplineFromRoad(RoadAxis, GateDefs);
+		const TArray<double> PointArcs = TNRallyCircuit::RoadPointArcs(RoadAxis, bClosed, GetTrackLengthCm(), RoadLengthCm);
+		if (RoadBankDeg.Num() == RoadAxis.Num())
+		{
+			BankSampleArcs = PointArcs;
+			BankSampleDeg = TArray<double>(RoadBankDeg);
+		}
 	}
 	else
 	{
@@ -226,6 +241,10 @@ void ATN_RallyTrack::ClearTrack()
 	AmmoBoxes.Reset();
 	GateArcs.Reset();
 	AmmoRowArcs.Reset();
+	BankSampleArcs.Reset();
+	BankSampleDeg.Reset();
+	Features.Reset();
+	RoadLengthCm = 0.0;
 	if (Borders) { Borders->ClearInstances(); }
 	if (Spline) { Spline->ClearSplinePoints(true); }
 	bBuilt = false;
@@ -303,7 +322,10 @@ void ATN_RallyTrack::SpawnGates(const TArray<TNRally::FGateDef>& GateDefs)
 		Params.Owner = this;
 		Params.ObjectFlags |= RF_Transient;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		const FRotator Rotation(0.0, GetDirectionAtArc(GateArcs[Index]).Rotation().Yaw, 0.0);
+		// Con peralte, la puerta se inclina con la calzada: si no, quien va por el lado bajo de la curva pasa por debajo de su
+		// volumen y la puerta no cuenta (#622).
+		const FRotator Rotation = TNRallyCircuit::GateRotation(GetDirectionAtArc(GateArcs[Index]).Rotation().Yaw,
+			GetBankDegAtArc(GateArcs[Index]));
 		ATN_RallyGate* Gate = World->SpawnActor<ATN_RallyGate>(Class, GateDefs[Index].Location, Rotation, Params);
 		if (!Gate)
 		{
@@ -401,12 +423,18 @@ FTransform ATN_RallyTrack::GetGateCrossingTransform(int32 GateIndex) const
 		return Gates[GateIndex]->GetCrossingTransform();
 	}
 	const double Arc = GetGateArc(GateIndex);
-	return FTransform(GetDirectionAtArc(Arc).Rotation(), GetLocationAtArc(Arc) + FVector(0.0, 0.0, ATN_RallyGate::HeightCm * 0.5));
+	const FQuat Rotation = TNRallyCircuit::GateRotation(GetDirectionAtArc(Arc).Rotation().Yaw, GetBankDegAtArc(Arc)).Quaternion();
+	return FTransform(Rotation, GetLocationAtArc(Arc) + Rotation.RotateVector(ATN_RallyGate::CrossingCenterOffset()));
+}
+
+double ATN_RallyTrack::GetBankDegAtArc(double Arc) const
+{
+	return TNRallyCircuit::BankAtArc(BankSampleArcs, BankSampleDeg, Arc, GetTrackLengthCm(), bClosed);
 }
 
 FVector ATN_RallyTrack::GetGateHalfExtent() const
 {
-	return FVector(ATN_RallyGate::DepthCm, ATN_RallyGate::WidthCm, ATN_RallyGate::HeightCm) * 0.5;
+	return ATN_RallyGate::CrossingHalfExtent();
 }
 
 FTransform ATN_RallyTrack::GetGridSlotTransform(int32 Slot, double LiftCm) const

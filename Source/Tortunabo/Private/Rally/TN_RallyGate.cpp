@@ -16,8 +16,8 @@ ATN_RallyGate::ATN_RallyGate()
 
 	Volume = CreateDefaultSubobject<UBoxComponent>(TEXT("Volume"));
 	Volume->SetupAttachment(Root);
-	Volume->SetBoxExtent(FVector(DepthCm, WidthCm, HeightCm) * 0.5);
-	Volume->SetRelativeLocation(FVector(0.0, 0.0, HeightCm * 0.5));
+	Volume->SetBoxExtent(CrossingHalfExtent());
+	Volume->SetRelativeLocation(CrossingCenterOffset());
 	Volume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Volume->SetHiddenInGame(true);
 
@@ -62,10 +62,10 @@ void ATN_RallyGate::LayoutArch()
 
 FTransform ATN_RallyGate::GetCrossingTransform() const
 {
-	return FTransform(GetActorQuat(), GetActorLocation() + GetActorQuat().RotateVector(FVector(0.0, 0.0, HeightCm * 0.5)));
+	return FTransform(GetActorQuat(), GetActorLocation() + GetActorQuat().RotateVector(CrossingCenterOffset()));
 }
 
 FVector ATN_RallyGate::GetHalfExtent() const
 {
-	return FVector(DepthCm, WidthCm, HeightCm) * 0.5;
+	return CrossingHalfExtent();
 }

@@ -31,10 +31,19 @@ public:
 	FTransform GetCrossingTransform() const;
 	FVector GetHalfExtent() const;
 
-	/** Ancho, alto y fondo del volumen (cm): 24 × 10 × 4 m (Docs/superpowers/specs/modos/03-Rally.md §5.2). */
+	/** Ancho, alto (sobre la calzada) y fondo del volumen (cm): 24 × 10 × 4 m (Docs/superpowers/specs/modos/03-Rally.md §5.2). */
 	static constexpr double WidthCm = 2400.0;
 	static constexpr double HeightCm = 1000.0;
 	static constexpr double DepthCm = 400.0;
+	/**
+	 * El volumen baja también esto por debajo de la cota del eje (cm): un buggy con la suspensión hundida en una vaguada o por
+	 * el lado bajo de un peralte pasaba por debajo y la puerta no contaba (#622, R01).
+	 */
+	static constexpr double BelowRoadCm = 300.0;
+
+	/** Centro del volumen respecto al pie de la puerta (en sus ejes) y semiextensiones: de -BelowRoadCm a HeightCm. */
+	static FVector CrossingCenterOffset() { return FVector(0.0, 0.0, (HeightCm - BelowRoadCm) * 0.5); }
+	static FVector CrossingHalfExtent() { return FVector(DepthCm, WidthCm, HeightCm + BelowRoadCm) * 0.5; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Rally")
