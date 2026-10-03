@@ -16,6 +16,7 @@ class UTN_ShellComponent;
 class UTN_CarryComponent;
 class UTN_DizzyBirdsComponent;
 class UTN_TurtleFaceComponent;
+class UTN_SlopeTiltComponent;
 class UTN_StaminaComponent;
 class UTN_WadingComponent;
 class UTN_TurtleMovementComponent;
@@ -315,6 +316,10 @@ protected:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Face")
 	TObjectPtr<UTN_TurtleFaceComponent> TurtleFace;
+
+	/** Inclinación visual de la malla con la pendiente del suelo (local y cosmética, #586). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Slope Tilt")
+	TObjectPtr<UTN_SlopeTiltComponent> SlopeTilt;
 
 	// ── Nado ─────────────────────────────────────────────────────────────────
 

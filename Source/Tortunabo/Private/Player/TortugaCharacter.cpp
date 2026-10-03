@@ -18,6 +18,7 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
 #include "Player/TN_TurtleFaceComponent.h"
+#include "Player/TN_SlopeTiltComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_WadingComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
@@ -144,6 +145,8 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	WadingComponent = CreateDefaultSubobject<UTN_WadingComponent>(TEXT("WadingComponent"));
 	ShellComponent = CreateDefaultSubobject<UTN_ShellComponent>(TEXT("ShellComponent"));
 	CarryComponent = CreateDefaultSubobject<UTN_CarryComponent>(TEXT("CarryComponent"));
+	// La malla se inclina con la pendiente (solo visual; ver UTN_SlopeTiltComponent).
+	SlopeTilt = CreateDefaultSubobject<UTN_SlopeTiltComponent>(TEXT("SlopeTilt"));
 	DizzyBirds = CreateDefaultSubobject<UTN_DizzyBirdsComponent>(TEXT("DizzyBirds"));
 	DizzyBirds->SetupAttachment(RootComponent);
 	// Lengua, caras de cansancio, sudor y boca (se engancha sola a la cabeza de la malla en su primer fotograma).
