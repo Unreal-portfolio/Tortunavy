@@ -5,6 +5,7 @@
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyData.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
+#include "TN_BuggyFlameMesh.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AudioComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -161,26 +162,47 @@ void ATN_Buggy::RefreshBoostEffects()
 	}
 }
 
+bool ATN_Buggy::HasBoostVisual() const
+{
+	return BoostEffect != nullptr || (GetBoostFlameMesh() != nullptr && GetBoostFlameMaterial() != nullptr);
+}
+
+UStaticMesh* ATN_Buggy::GetBoostFlameMesh() const
+{
+	return BoostFlameMesh ? BoostFlameMesh.Get() : TNBuggyFlameMesh::GlowCone(BoostFlameColor);
+}
+
+UMaterialInterface* ATN_Buggy::GetBoostFlameMaterial() const
+{
+	return BoostFlameMesh ? BoostFlameMaterial.Get() : TNBuggyFlameMesh::GlowMaterial();
+}
+
 void ATN_Buggy::ShowBoostFlames(bool bShow)
 {
-	if (bShow && BoostFlames.IsEmpty() && BoostFlameMesh && Body)
+	UStaticMesh* FlameMesh = bShow && BoostFlames.IsEmpty() ? GetBoostFlameMesh() : nullptr;
+	if (FlameMesh && Body)
 	{
+		UMaterialInterface* FlameMaterial = GetBoostFlameMaterial();
 		for (int32 Index = 0; Index < 2; ++Index)
 		{
 			UStaticMeshComponent* Flame = NewObject<UStaticMeshComponent>(this);
-			Flame->SetStaticMesh(BoostFlameMesh);
-			if (BoostFlameMaterial)
+			Flame->SetStaticMesh(FlameMesh);
+			if (FlameMaterial)
 			{
-				Flame->SetMaterial(0, BoostFlameMaterial);
+				Flame->SetMaterial(0, FlameMaterial);
 			}
 			Flame->SetCollisionProfileName(TEXT("NoCollision"));
 			Flame->SetGenerateOverlapEvents(false);
 			Flame->SetCastShadow(false);
 			Flame->SetupAttachment(Body);
 			Flame->RegisterComponent();
-			if (UMaterialInstanceDynamic* Mid = Flame->CreateDynamicMaterialInstance(0))
+			// El cono propio lleva el color en los vértices; una malla asignada se tiñe con el parámetro «Color».
+			if (BoostFlameMesh)
 			{
-				Mid->SetVectorParameterValue(TEXT("Color"), BoostFlameColor);
+				if (UMaterialInstanceDynamic* Mid = Flame->CreateDynamicMaterialInstance(0))
+				{
+					Mid->SetVectorParameterValue(TEXT("Color"), BoostFlameColor);
+				}
 			}
 			BoostFlames.Add(Flame);
 		}

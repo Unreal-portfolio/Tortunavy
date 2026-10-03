@@ -14,11 +14,20 @@ class TORTUNABO_API UTN_BuggyData : public UPrimaryDataAsset
 
 public:
 	/**
-	 * Par máximo del motor (N·m). 1275 = 1,5 × 850: 0-60 km/h en ~2 s en vez de ~3 s (el arranque va entero en la parte
-	 * plana de TNBuggy::TorqueCurveKeys). La curva conserva el par absoluto antiguo desde el 80 % de MaxRPM: misma punta.
+	 * Par máximo del motor (N·m), unas 1,65 veces los 850 de HellYeah: con DriveRearShare, 0-60 km/h en 1,9 s en llano sin
+	 * turbo (#294, Tortunabo.Rally.Measure.ZeroToSixtyFlat; el arranque va entero en la parte plana de
+	 * TNBuggy::TorqueCurveKeys). La curva conserva el par absoluto antiguo desde el 80 % de MaxRPM: misma punta.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buggy")
-	float MaxTorque = 1275.f;
+	float MaxTorque = 1400.f;
+
+	/**
+	 * Parte del par que va al eje trasero (tracción total; 1 = solo trasera). Con solo tracción trasera el arranque patinaba
+	 * (unos 0,77 g de tope) y más par no bajaba el 0-60 de 2,2 s; con el 70 % detrás tiene la tracción de las cuatro ruedas,
+	 * sigue derrapando con el freno de mano y gira algo más cerrado a mucha velocidad (#294).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buggy", meta = (ClampMin = "0.5", ClampMax = "1"))
+	float DriveRearShare = 0.7f;
 
 	/** Régimen máximo (rpm): fija la punta, unos 110 km/h con la relación final 2,0 (el cambio no pasa de 1.ª). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buggy")

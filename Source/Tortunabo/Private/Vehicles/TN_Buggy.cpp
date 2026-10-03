@@ -95,6 +95,17 @@ namespace TNBuggyDetail
 		FillLinearCurve(*Steering.SteeringCurve.GetRichCurve(), TNBuggy::SteerCurveKeys(), CmsToMph, 1.f);
 	}
 
+	/**
+	 * Reparto del par (#294): tracción total con UTN_BuggyData::DriveRearShare al eje trasero; con 1, solo trasera. Se lee al
+	 * crear la simulación.
+	 */
+	void ApplyDifferential(FVehicleDifferentialConfig& Differential, const UTN_BuggyData& Tuning)
+	{
+		const float RearShare = FMath::Clamp(Tuning.DriveRearShare, 0.5f, 1.f);
+		Differential.DifferentialType = RearShare >= 0.999f ? EVehicleDifferential::RearWheelDrive : EVehicleDifferential::AllWheelDrive;
+		Differential.FrontRearSplit = RearShare;
+	}
+
 	/** Rapidez y respuesta del volante de Chaos (#606): se usan en el hilo de juego al procesar la entrada. */
 	void ApplySteeringResponse(UChaosWheeledVehicleMovementComponent& Move, const UTN_BuggyData& Tuning)
 	{
@@ -158,11 +169,7 @@ ATN_Buggy::ATN_Buggy()
 	static ConstructorHelpers::FObjectFinder<USoundBase> BoostStartFinder(TEXT("/Game/Audio/Rally/SFX_Buggy_Turbo_Start.SFX_Buggy_Turbo_Start"));
 	BoostSound = BoostLoopFinder.Object;
 	BoostStartSound = BoostStartFinder.Object;
-	// Llama del turbo sin Niagara (#294): cono básico tintado, como las ráfagas del Rally (ATN_RallyBurstFX).
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> FlameMeshFinder(TEXT("/Engine/BasicShapes/Cone.Cone"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> FlameMaterialFinder(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
-	BoostFlameMesh = FlameMeshFinder.Object;
-	BoostFlameMaterial = FlameMaterialFinder.Object;
+	// Llama del turbo sin Niagara (#294): BoostFlameMesh vacía = cono emisivo construido en ejecución (GetBoostFlameMesh).
 	Turret = CreateDefaultSubobject<UTN_BuggyTurretComponent>(TEXT("Turret"));
 	Turret->SetupAttachment(Chassis);
 	// Pivote PivotRaiseCm por encima de Muzzle_Gunner: el cañón pasa sobre la cabeza de la artillera y el arco trasero.
@@ -253,7 +260,7 @@ ATN_Buggy::ATN_Buggy()
 	Move->EngineSetup.MaxTorque = Defaults->MaxTorque;
 	Move->EngineSetup.MaxRPM = Defaults->MaxRPM;
 	BuildTorqueCurve(Move->EngineSetup, Defaults->MaxRPM, Defaults->MaxTorque);
-	Move->DifferentialSetup.DifferentialType = EVehicleDifferential::RearWheelDrive;
+	ApplyDifferential(Move->DifferentialSetup, *Defaults);
 	Move->SteeringSetup.SteeringType = ESteeringType::AngleRatio;
 	Move->SteeringSetup.AngleRatio = TNBuggy::SteerAngleRatio;
 	BuildSteeringCurve(Move->SteeringSetup);
@@ -303,6 +310,7 @@ void ATN_Buggy::PostInitializeComponents()
 	TNBuggyDetail::BuildSteeringCurve(Move->SteeringSetup);
 	TNBuggyDetail::ApplySteeringResponse(*Move, *Tuning);
 	Move->TransmissionSetup.FinalRatio = Tuning->FinalDriveRatio;
+	TNBuggyDetail::ApplyDifferential(Move->DifferentialSetup, *Tuning);
 	Move->RecreatePhysicsState();
 	ApplyWheelFriction();
 }

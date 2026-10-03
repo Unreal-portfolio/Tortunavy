@@ -145,7 +145,10 @@ bool FTNRallyDriveTorqueCurveTest::RunTest(const FString& Parameters)
 {
 	using namespace TNBuggy;
 	const float MaxTorque = GetDefault<UTN_BuggyData>()->MaxTorque;
-	TestEqual(TEXT("el par máximo por defecto es 1,5 veces el antiguo (0-60 en ~2 s en vez de ~3 s)"), MaxTorque, 1.5f * LegacyMaxTorque);
+	// El 0-60 lo mide Tortunabo.Rally.Measure.ZeroToSixtyFlat con física; aquí, que el arranque tiene más par que antes.
+	TestTrue(TEXT("el par máximo por defecto es al menos 1,5 veces el antiguo"), MaxTorque >= 1.5f * LegacyMaxTorque);
+	const float RearShare = GetDefault<UTN_BuggyData>()->DriveRearShare;
+	TestTrue(TEXT("tracción total con más par detrás (el arranque solo con la trasera patinaba)"), RearShare > 0.5f && RearShare < 1.f);
 
 	const TArray<FCurveKey> Keys = TorqueCurveKeys(MaxTorque);
 	float CurveMax = 0.f;

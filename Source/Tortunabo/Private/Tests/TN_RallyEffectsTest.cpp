@@ -1,5 +1,5 @@
-// Efectos del buggy del Rally sin Niagara: la llama del turbo (#294) y el humo a media vida (#296) son mallas propias
-// (cono y esferas tintadas, como ATN_RallyBurstFX) cuando no hay sistema asignado. Headless:
+// Efectos del buggy del Rally sin Niagara: la llama del turbo (#294, cono emisivo construido en ejecución) y el humo a media
+// vida (#296, esferas tintadas, como ATN_RallyBurstFX) son mallas propias cuando no hay sistema asignado. Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Effects; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
@@ -11,6 +11,7 @@
 #include "Engine/Engine.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "Materials/Material.h"
 #include "Materials/MaterialInterface.h"
 #if WITH_EDITORONLY_DATA
 #include "MeshDescription.h"
@@ -88,6 +89,20 @@ bool FTNRallyEffectsBoostFlameTest::RunTest(const FString& Parameters)
 	{
 		return false;
 	}
+	// La llama brilla (revisión de #294): su material tiene emisivo; BasicShapeMaterial, el de antes, no.
+	const UMaterialInterface* FlameMaterial = Defaults->GetBoostFlameMaterial();
+	if (!TestNotNull(TEXT("material de la llama"), FlameMaterial) || !TestNotNull(TEXT("material base"), FlameMaterial->GetMaterial()))
+	{
+		return false;
+	}
+#if WITH_EDITORONLY_DATA
+	TestTrue(TEXT("el material de la llama es emisivo"), FlameMaterial->GetMaterial()->GetEditorOnlyData()->EmissiveColor.IsConnected());
+	const UMaterialInterface* Basic = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+	if (TestNotNull(TEXT("BasicShapeMaterial"), Basic))
+	{
+		TestFalse(TEXT("caso negativo: BasicShapeMaterial no es emisivo"), Basic->GetMaterial()->GetEditorOnlyData()->EmissiveColor.IsConnected());
+	}
+#endif
 	const FBox Bounds = FlameMesh->GetBoundingBox();
 	TestTrue(TEXT("el cono mide 100 cm y está centrado"), Bounds.Min.Equals(FVector(-HalfCone), 0.5f) && Bounds.Max.Equals(FVector(HalfCone), 0.5f));
 #if WITH_EDITORONLY_DATA

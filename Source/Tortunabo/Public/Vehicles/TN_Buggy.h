@@ -106,8 +106,11 @@ public:
 	ATN_BuggyGunnerPawn* GetGunnerPawn() const { return GunnerPawn; }
 	UStaticMeshComponent* GetBody() const { return Body; }
 	/** Si el turbo se ve: con Niagara (BoostEffect) o con la llama de malla propia (#294). */
-	bool HasBoostVisual() const { return BoostEffect != nullptr || (BoostFlameMesh != nullptr && BoostFlameMaterial != nullptr); }
-	const UStaticMesh* GetBoostFlameMesh() const { return BoostFlameMesh; }
+	bool HasBoostVisual() const;
+	/** Malla de la llama: BoostFlameMesh si se asigna; si no, el cono emisivo construido en ejecución (TNBuggyFlameMesh). */
+	UStaticMesh* GetBoostFlameMesh() const;
+	/** Material de la llama: BoostFlameMaterial si se asigna; si no, el emisivo del cono (M_ProcGlow). */
+	UMaterialInterface* GetBoostFlameMaterial() const;
 	UChaosWheeledVehicleMovementComponent* GetWheeledMovement() const;
 
 	/** Segundos de tinta en pantalla que quedan (0 = limpia). Vale en cualquier máquina. */
@@ -256,13 +259,14 @@ protected:
 	FVector BoostEffectOffset = FVector(-200.f, 0.f, 111.f);
 
 	/**
-	 * Llama de malla propia (#294) cuando no hay BoostEffect: un cono tintado de BoostFlameColor en cada tubo de escape,
-	 * que parpadea mientras el turbo empuja. Vacío = sin llama.
+	 * Llama de malla propia (#294) cuando no hay BoostEffect: un cono en cada tubo de escape que parpadea mientras el turbo
+	 * empuja. Vacío = el cono emisivo de BoostFlameColor construido en ejecución (TNBuggyFlameMesh); asignada, esta malla
+	 * con BoostFlameMaterial.
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Turbo")
 	TObjectPtr<UStaticMesh> BoostFlameMesh;
 
-	/** Material de la llama, con el parámetro vectorial «Color» (el de las ráfagas del Rally). */
+	/** Material de BoostFlameMesh, con el parámetro vectorial «Color»; sin BoostFlameMesh no se usa. */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Turbo")
 	TObjectPtr<UMaterialInterface> BoostFlameMaterial;
 
