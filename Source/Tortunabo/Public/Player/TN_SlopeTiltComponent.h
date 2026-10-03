@@ -9,9 +9,10 @@ class ACharacter;
 class USceneComponent;
 
 /**
- * Inclina la malla de la tortuga con la pendiente (#586): al andar, deslizar de tripa o aterrizar en una cuesta, el
- * modelo cabecea y alabea hasta quedar paralelo al suelo (con tope); en llano, en el aire, en la bola, llevada,
- * derribada o en ragdoll vuelve a su orientación normal. Solo visual: la cápsula y el movimiento no cambian y no se
+ * Inclina la malla de la tortuga con la pendiente (#586) solo de tripa en el suelo: al deslizarse en el panzazo o caer de
+ * tripa en una cuesta, el modelo cabecea y alabea hasta quedar paralelo al suelo (con tope). Andando y corriendo va recta,
+ * como una persona (decisión del director, 04-10); en llano, en el aire, en la bola, llevada, derribada o en ragdoll
+ * vuelve a su orientación normal. Solo visual: la cápsula y el movimiento no cambian y no se
  * replica nada; cada máquina lo calcula con el suelo que ve (el del movimiento en el dueño y el servidor; en los
  * proxies simulados, una traza corta hacia abajo como mucho por fotograma).
  *

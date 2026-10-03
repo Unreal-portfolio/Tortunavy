@@ -17,6 +17,11 @@ namespace TNSlopeTilt
 	struct FTiltGate
 	{
 		bool bOnGround = false;
+		/**
+		 * De tripa en el suelo (panzazo arrastrándose, ATortugaCharacter::IsBellyOnGround). Andando y corriendo va recta, como
+		 * una persona: solo el deslizamiento sigue la pendiente (decisión del director en #586, 04-10).
+		 */
+		bool bBellySlide = false;
 		bool bInShell = false;
 		bool bCarried = false;
 		bool bKnockedDown = false;
@@ -46,10 +51,13 @@ namespace TNSlopeTilt
 		return Gate.bRagdoll || Gate.bHatching;
 	}
 
-	/** Solo en el suelo y de pie o de tripa: en el aire, en la bola, llevada, derribada, muerta o en ragdoll, no. */
+	/**
+	 * Solo de tripa en el suelo (el arrastre del panzazo): andando o corriendo, en el aire, en la bola, llevada, derribada,
+	 * muerta o en ragdoll, recta.
+	 */
 	inline bool ShouldTilt(const FTiltGate& Gate)
 	{
-		return Gate.bOnGround && !IsTakenOver(Gate);
+		return Gate.bOnGround && Gate.bBellySlide && !IsTakenOver(Gate);
 	}
 
 	/**
