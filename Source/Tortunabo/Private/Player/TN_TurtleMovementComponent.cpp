@@ -54,6 +54,13 @@ namespace TNBellySlide
 		TEXT("1 = en el vuelo del panzazo rebota contra las paredes (restitución 0,45, 60 % a lo largo; #63); 0 = resbala por ellas, como antes. Igual en el servidor y los clientes."),
 		ECVF_Cheat);
 
+	static int32 GSplat = 1;
+	static FAutoConsoleVariableRef CVarSplat(
+		TEXT("TN.Dive.Splat"),
+		GSplat,
+		TEXT("1 = en el vuelo del panzazo, contra una pared a DiveSplatMinSpeed (650 cm/s) o más se estampa: acaba el panzazo y sale rodando como bola, con polvo y pajaritos (#355); 0 = solo rebota. Igual en el servidor y los clientes."),
+		ECVF_Cheat);
+
 	static float GMaxSeconds = 0.f;
 	static FAutoConsoleVariableRef CVarMaxSeconds(
 		TEXT("TN.Dive.MaxTime"),
@@ -825,6 +832,7 @@ TNDiveLogic::FDiveWallParams UTN_TurtleMovementComponent::GetDiveWallParams() co
 	Params.MinSpeed = BellyBounceMinSpeed;
 	Params.Restitution = DiveWallRestitution;
 	Params.TangentKeep = DiveWallTangentKeep;
+	Params.SplatMinSpeed = TNBellySlide::GSplat != 0 ? DiveSplatMinSpeed : 0.f;
 	return Params;
 }
 
@@ -859,7 +867,8 @@ void UTN_TurtleMovementComponent::NoteAirImpact(const FHitResult& Hit, const FVe
 	}
 	const FVector OtherVelocity = Other ? Other->GetComponentVelocity() : FVector::ZeroVector;
 	const TNDiveLogic::FDiveWallParams Params = GetDiveWallParams();
-	if (TNDiveLogic::ClassifyDiveImpact(Hit.Normal, ImpactVelocity, OtherVelocity, Params) != TNDiveLogic::EDiveImpact::Bounce)
+	// Rebote o estampado (#355): la velocidad sale igual; lo que cambia, lo hace el servidor fuera del movimiento.
+	if (TNDiveLogic::ClassifyDiveImpact(Hit.Normal, ImpactVelocity, OtherVelocity, Params) == TNDiveLogic::EDiveImpact::None)
 	{
 		return;
 	}
@@ -872,6 +881,7 @@ void UTN_TurtleMovementComponent::NoteAirImpact(const FHitResult& Hit, const FVe
 		AirBounceNormal = WallN;
 		AirImpactVelocity = ImpactVelocity;
 		AirImpactOtherVelocity = OtherVelocity;
+		AirImpactPoint = Hit.ImpactPoint.IsNearlyZero() ? FVector(Hit.Location) : FVector(Hit.ImpactPoint);
 		AirImpactSpeed = Speed;
 	}
 }
@@ -910,15 +920,27 @@ void UTN_TurtleMovementComponent::OnMovementUpdated(float DeltaSeconds, const FV
 		bPendingAirBounce = false;
 		if (IsDiveFlight())
 		{
-			const FVector Bounced = TNDiveLogic::ReflectDiveVelocity(AirImpactVelocity, AirImpactOtherVelocity, AirBounceNormal, GetDiveWallParams());
+			const TNDiveLogic::FDiveWallParams Params = GetDiveWallParams();
+			const FVector Bounced = TNDiveLogic::ReflectDiveVelocity(AirImpactVelocity, AirImpactOtherVelocity, AirBounceNormal, Params);
 			Velocity.X = Bounced.X;
 			Velocity.Y = Bounced.Y;
+			const bool bSplat = TNDiveLogic::IsSplatSpeed(AirImpactSpeed, Params);
 			if (CharacterOwner && !CharacterOwner->bClientUpdating)
 			{
 				LastAirBounceSpeed = AirImpactSpeed;
 				LastAirBounceTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
-				UE_LOG(LogTortunabo, Log, TEXT("[Panzazo] %s rebota en vuelo: %.0f cm/s contra la pared, sale a %.0f cm/s."),
-					*GetNameSafe(CharacterOwner), AirImpactSpeed, Bounced.Size2D());
+				UE_LOG(LogTortunabo, Log, TEXT("[Panzazo] %s %s en vuelo: %.0f cm/s contra la pared, sale a %.0f cm/s."),
+					*GetNameSafe(CharacterOwner), bSplat ? TEXT("se estampa") : TEXT("rebota"), AirImpactSpeed, Bounced.Size2D());
+				// Estampado (#355): el servidor lo apunta y lo hace en el siguiente Tick del personaje (la bola es un actor
+				// nuevo: nada se crea dentro del movimiento). El dueño sigue con el rebote hasta que le llega la bola.
+				if (bSplat && CharacterOwner->HasAuthority())
+				{
+					if (ATortugaCharacter* Turtle = GetTurtle())
+					{
+						Turtle->NoteDiveSplat(FVector(Bounced.X, Bounced.Y, Velocity.Z), AirImpactPoint, AirBounceNormal,
+							TNDiveLogic::SplatStrength(AirImpactSpeed, Params));
+					}
+				}
 			}
 		}
 	}

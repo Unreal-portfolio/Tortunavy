@@ -13,6 +13,8 @@
  * - Rebote en vuelo (E9-02, #63): contra una pared (normal con Z < 0,35), la velocidad horizontal contra ella vuelve con
  *   la restitución y la de a lo largo se queda con una parte. Velocidad relativa a lo que se toca. El del arrastre en el
  *   suelo usa la misma cuenta con sus ajustes de siempre.
+ * - Estampado (#355): desde SplatMinSpeed (650 cm/s) contra la pared, rebota igual y el servidor acaba el panzazo y la lanza
+ *   como bola con la velocidad reflejada (fuera del movimiento).
  * - Inicio del panzazo (E9-04, #24): la petición viaja en el movimiento guardado (marca FLAG_Custom_2 y giro en 16 bits);
  *   el servidor y el dueño deciden con las mismas reglas si empieza y con qué velocidad, en ese mismo movimiento.
  */
@@ -185,6 +187,11 @@ namespace TNDiveLogic
 		float Restitution = 0.45f;
 		/** Lo que conserva de la velocidad horizontal a lo largo de la pared. */
 		float TangentKeep = 0.6f;
+		/**
+		 * Velocidad contra la pared (relativa, cm/s) desde la que se estampa (#355): termina el panzazo y sale rodando como
+		 * bola. 0 o menos: nunca (el arrastre en el suelo y TN.Dive.Splat 0).
+		 */
+		float SplatMinSpeed = 0.f;
 	};
 
 	enum class EDiveImpact : uint8
@@ -192,7 +199,15 @@ namespace TNDiveLogic
 		/** Suelo, pendiente, techo, roce lento u objeto que se aleja: el movimiento de siempre. */
 		None,
 		Bounce,
+		/** Tan deprisa que se estampa (#355): rebota igual y, en el servidor, sale como bola. */
+		Splat,
 	};
+
+	/** A Speed (cm/s contra la pared) se estampa en vez de solo rebotar. */
+	inline bool IsSplatSpeed(float Speed, const FDiveWallParams& P)
+	{
+		return P.SplatMinSpeed > 0.f && Speed >= P.SplatMinSpeed;
+	}
 
 	/** Normal horizontal (unitaria) de una pared con normal HitNormal; cero si no es pared (suelo, pendiente o techo). */
 	inline FVector WallNormal(const FVector& HitNormal, float MaxNormalZ)
@@ -225,7 +240,25 @@ namespace TNDiveLogic
 		{
 			return EDiveImpact::None;
 		}
-		return WallImpactSpeed(V, OtherV, WallN) >= P.MinSpeed ? EDiveImpact::Bounce : EDiveImpact::None;
+		const float Speed = WallImpactSpeed(V, OtherV, WallN);
+		if (IsSplatSpeed(Speed, P))
+		{
+			return EDiveImpact::Splat;
+		}
+		return Speed >= P.MinSpeed ? EDiveImpact::Bounce : EDiveImpact::None;
+	}
+
+	/**
+	 * Fuerza (0..1) del golpe de un estampado a Speed cm/s para el sonido y el polvo: 0,55 justo en el umbral y 1 al doble
+	 * del umbral o más.
+	 */
+	inline float SplatStrength(float Speed, const FDiveWallParams& P)
+	{
+		if (P.SplatMinSpeed <= 0.f)
+		{
+			return 1.f;
+		}
+		return FMath::Clamp(0.55f + 0.45f * (Speed - P.SplatMinSpeed) / P.SplatMinSpeed, 0.55f, 1.f);
 	}
 
 	/**

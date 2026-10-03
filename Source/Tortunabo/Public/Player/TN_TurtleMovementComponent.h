@@ -96,7 +96,7 @@ struct FTNTurtleMoveResponseDataContainer : public FCharacterMoveResponseDataCon
  * (KeepBellyBodyOutOfWalls).
  *
  * Consola (igual en todas las máquinas; en PIE es una sola): TN.Dive.Slide, TN.Dive.Friction, TN.Dive.Slope,
- * TN.Dive.SlopeFall, TN.Dive.WallBounce, TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
+ * TN.Dive.SlopeFall, TN.Dive.WallBounce, TN.Dive.Splat, TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
  */
 UCLASS()
 class TORTUNABO_API UTN_TurtleMovementComponent : public UCharacterMovementComponent
@@ -380,6 +380,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float DiveWallTangentKeep = 0.6f;
 
+	/**
+	 * Estampado (#355): desde esta velocidad contra la pared (cm/s) rebota igual, pero el servidor acaba el panzazo y la
+	 * lanza como bola de caparazón con la velocidad reflejada (ATortugaCharacter::ServerDiveSplat, fuera del movimiento),
+	 * con polvo, pajaritos y el golpe sintetizado. 0 = nunca. TN.Dive.Splat 0 lo apaga.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "0.0"))
+	float DiveSplatMinSpeed = 650.f;
+
 	/** Ajustes del rebote en vuelo (TNDiveLogic). */
 	TNDiveLogic::FDiveWallParams GetDiveWallParams() const;
 
@@ -554,6 +562,8 @@ private:
 	FVector AirBounceNormal = FVector::ZeroVector;
 	FVector AirImpactVelocity = FVector::ZeroVector;
 	FVector AirImpactOtherVelocity = FVector::ZeroVector;
+	/** Punto del choque (para el polvo del estampado, #355). */
+	FVector AirImpactPoint = FVector::ZeroVector;
 	float AirImpactSpeed = 0.f;
 	/** Último rebote en vuelo (TN.Dive.Debug): velocidad contra la pared y hora del mundo. */
 	float LastAirBounceSpeed = 0.f;

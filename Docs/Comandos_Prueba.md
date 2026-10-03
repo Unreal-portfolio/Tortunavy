@@ -335,6 +335,7 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo (en el dueño de un cliente, también cuántas correcciones ha recibido y la última). |
 | `TN.Net.DivePredict 0` | En quien la controla: el panzazo vuelve a pedirse por `Server_StartDive` y lo lanza el servidor, como antes de #24 (para comparar el tirón al empezar con `p.NetShowCorrections 1`). |
 | `TN.Dive.SlopeFall 0` / `TN.Dive.WallBounce 0` | Cuesta abajo frena como en llano (antes de #62) / en el vuelo del panzazo resbala por las paredes (antes de #63). Igual en todas las máquinas. |
+| `TN.Dive.Splat 0` | En el vuelo del panzazo, contra una pared a 650 cm/s o más solo rebota: sin estampado, bola ni pajaritos (#355). `1` (lo normal) lo vuelve a encender. Igual en todas las máquinas. |
 | `TN.Music.Play Victoria` | Hace sonar una pista: `Victoria`, `Derrota`, `Eliminado`, `Tienda`, `Probador` o `Silencio`. |
 
 ### Panzazo en red sin editor (#24, #62, #63)
