@@ -1,4 +1,5 @@
 #include "World/ProcMap/TN_ProcSearchSpot.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "TN_ProcMapAmbientFX.h"
 #include "../TN_LootGlowKit.h"
@@ -1322,8 +1323,9 @@ void ATN_ProcSearchSpot::TickLocalFX(float DeltaSeconds)
 	{
 		return;
 	}
-	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
-	const FVector View = Camera ? Camera->GetCameraLocation() : GetActorLocation();
+	// Con la pantalla partida (#311), la cámara local más cercana.
+	FVector View = GetActorLocation();
+	TNLocalViews::ClosestCamera(World, GetActorLocation(), View);
 	bNearView = FVector::Dist2D(View, RimPointToward(View, 0.f)) < static_cast<double>(HintDistance)
 		&& FMath::Abs(View.Z - GetActorLocation().Z) < 3000.0;
 
@@ -1585,8 +1587,7 @@ void ATN_ProcSearchSpot::DrawDebugSpot(float DeltaSeconds)
 	}
 	DebugClock = 0.3f;
 	const UWorld* World = GetWorld();
-	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
-	if (!World || (Camera && FVector::Dist(Camera->GetCameraLocation(), GetActorLocation()) > 30000.0))
+	if (!World || TNLocalViews::ClosestCameraDistance(World, GetActorLocation()) > 30000.0)
 	{
 		return;
 	}
@@ -1700,11 +1701,11 @@ void ATN_ProcSearchSpot::TickMarker(float DeltaSeconds)
 	bool bPending = false;
 	const float RingRadius = GetMarkerRing(Center, bPending);
 
-	// Se ve mientras quede por buscar y la cámara local esté a menos de MarkerDrawDistance de su borde, igual en todas las
-	// máquinas con pantalla (no depende de dónde esté ninguna tortuga).
-	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
-	const double ViewDistance = Camera
-		? FMath::Max(0.0, FVector::Dist(Camera->GetCameraLocation(), Center) - static_cast<double>(RingRadius)) : 0.0;
+	// Se ve mientras quede por buscar y alguna cámara local (con la pantalla partida, la más cercana) esté a menos de
+	// MarkerDrawDistance de su borde, igual en todas las máquinas con pantalla (no depende de dónde esté ninguna tortuga).
+	const double CameraDistance = TNLocalViews::ClosestCameraDistance(World, Center);
+	const double ViewDistance = CameraDistance < 1e8
+		? FMath::Max(0.0, CameraDistance - static_cast<double>(RingRadius)) : 0.0;
 	const bool bWant = !bPending && !IsSpent() && ViewDistance < static_cast<double>(MarkerDrawDistance);
 	MarkerAppear = bWant ? FMath::Min(1.f, MarkerAppear + TNSearchSpotDetail::MarkerAppearSpeed * DeltaSeconds)
 		: FMath::Max(0.f, MarkerAppear - TNSearchSpotDetail::MarkerHideSpeed * DeltaSeconds);

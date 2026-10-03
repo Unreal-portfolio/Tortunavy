@@ -97,6 +97,10 @@ struct FTNGameSettings
 	UPROPERTY()
 	bool bInvertGamepadY = false;
 
+	/** Vibración del mando al recibir un golpe (derribo, aturdimiento, impacto de un lanzable). Desde la versión 4. */
+	UPROPERTY()
+	bool bGamepadVibration = true;
+
 	/**
 	 * Teclas y botones reasignados, por fila de controles y aparato: «IA_Jump#0» (teclado y ratón) o «IA_Move:Y+#1»
 	 * (mando) → tecla nueva. Lo que no está aquí va con la tecla de serie de IMC_Player.
@@ -110,6 +114,16 @@ struct FTNGameSettings
 
 	UPROPERTY()
 	FName PausePadKey = TEXT("Gamepad_Special_Right");
+
+	/**
+	 * Tecla y botón de «Cambiar de cámara» (tercera o primera persona sin gafas; Docs/Modo_VR.md, «Primera persona»): T y el
+	 * clic del stick derecho de serie, que no usa ninguna otra fila. Nunca la de hablar: si coincidieran, esta se queda sin.
+	 */
+	UPROPERTY()
+	FName CameraKey = TEXT("T");
+
+	UPROPERTY()
+	FName CameraPadKey = TEXT("Gamepad_RightThumbstick");
 
 	// ── Juego y accesibilidad ────────────────────────────────────────────────
 
@@ -164,6 +178,13 @@ struct FTNGameSettings
 	UPROPERTY()
 	uint8 VRTurn = 0;
 
+	/**
+	 * Cámara sin gafas (Docs/Modo_VR.md, «Primera persona»): 0 tercera persona (la de siempre), 1 primera persona (en la
+	 * cabeza, viendo el cuerpo propio sin la cabeza). Se cambia también con CameraKey / CameraPadKey; TN.Camera manda.
+	 */
+	UPROPERTY()
+	uint8 CameraView = 0;
+
 	// ── Pantalla (lo que no guarda UGameUserSettings) ────────────────────────
 
 	/** Brillo (0..1; 0,5 = el de siempre): cambia la gamma de salida del motor. */
@@ -183,9 +204,9 @@ class TORTUNABO_API UTN_SettingsSaveGame : public USaveGame
 
 public:
 	/**
-	 * Versión del formato (TNSaveLogic::SETTINGS_SAVE_VERSION); al cargar, TNSettingsMigration la lleva a la actual.
-	 * 0 = sin número. UE solo escribe en el fichero lo que difiere del valor por defecto de la clase: cuando este valía la
-	 * versión de entonces (1, 2 o 3), no se escribía nunca y no se podía saber de qué versión era un guardado. Por eso el
+	 * Versión del formato (TNSaveLogic::SETTINGS_SAVE_VERSION; la 4 añade la vibración del mando); al cargar,
+	 * TNSettingsMigration la lleva a la actual. 0 = sin número. UE solo escribe en el fichero lo que difiere del valor
+	 * por defecto de la clase: cuando este valía la versión de entonces (1, 2 o 3), no se escribía nunca y no se podía saber de qué versión era un guardado. Por eso el
 	 * valor por defecto es 0 y se sella al guardar (StampCurrentVersion), como el perfil cosmético y el tutorial.
 	 * Siempre se sella con la versión de esta build, también si el fichero venía de una más nueva: el número dice cómo
 	 * es el contenido escrito (solo los campos que esta build conoce), y así la build nueva vuelve a migrarlo. Lo que

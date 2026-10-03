@@ -523,8 +523,6 @@ void ATN_HQGameMode::PostSeamlessTravel()
 
 		if (ATN_CoopPlayerState* TNPS = PC->GetPlayerState<ATN_CoopPlayerState>())
 		{
-			const FName SavedHelmet = TNPS->EquippedHelmetId;
-			const FName SavedSkin   = TNPS->EquippedSkinId;
 
 			TNPS->bIsAlive = true;
 			TNPS->bHasFinishedRun = false;
@@ -541,7 +539,7 @@ void ATN_HQGameMode::PostSeamlessTravel()
 			// HQ-WARN-01: salvaguarda contra "Attempting to move a fully simulated
 			// skeletal mesh". Si el pawn recién spawneado llega con el SkM simulando
 			// (edge case: OnRep_IsDead llegó antes de BeginPlay, ragdoll sobrevive
-			// un tick, etc.), el MulticastForceApplyHelmet/Skin que sigue puede
+			// un tick, etc.), la aplicación del casco y la skin que sigue puede
 			// mover el mesh y disparar el warning. Reset defensivo aquí.
 			if (APawn* FreshPawn = PC->GetPawn())
 			{
@@ -560,15 +558,12 @@ void ATN_HQGameMode::PostSeamlessTravel()
 				}
 			}
 
-			// Forzar aplicación del helmet y skin en todos los clientes.
-			// El Multicast incluye un retry deferred para cubrir la race condition
-			// donde el pawn aún no ha replicado en los clientes cuando el RPC llega.
-			if (SavedHelmet != NAME_None)
+			// Casco y skin llegan a los clientes por OnRep_Equipped* y el pawn nuevo los aplica desde el PlayerState
+			// (BeginPlay, PawnClientRestart y OnRep_PlayerState); en el anfitrión, aquí (#78: sin multicast fiable).
+			if (ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn()))
 			{
-				TNPS->MulticastForceApplyHelmet(SavedHelmet);
+				Turtle->ApplyCosmeticsFromPlayerState();
 			}
-			// Skin siempre se fuerza (NAME_None = sin skin, también válido de restaurar)
-			TNPS->MulticastForceApplySkin(SavedSkin);
 		}
 		else
 		{

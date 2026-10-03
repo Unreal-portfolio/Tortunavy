@@ -606,6 +606,8 @@ UTN_ScoreShellSynthComponent* UTN_ScoreShellSynthComponent::Attach2D(AActor* InO
 
 	UTN_ScoreShellSynthComponent* Comp = NewObject<UTN_ScoreShellSynthComponent>(InOwner, NAME_None, RF_Transient);
 	Comp->bSpatial = false;
+	// Sonidos de la interfaz: también con la partida parada (el menú de pausa de la partida local para el mundo).
+	Comp->bIsUISound = true;
 	if (USceneComponent* RootComp = InOwner->GetRootComponent())
 	{
 		Comp->SetupAttachment(RootComp);

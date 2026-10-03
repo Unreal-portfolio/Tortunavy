@@ -1,6 +1,10 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Core/TN_Log.h"
 #include "Menu/MP_MenuPlayerController.h"
+#include "Multiplayer/TN_LocalPlayRules.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
+#include "Multiplayer/TN_LocalPlayerProfile.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Multiplayer/TN_SaveGameIO.h"
 #include "Settings/TN_SettingsMigration.h"
 #include "Audio/TN_AmbientSoundscape.h"
@@ -130,6 +134,8 @@ namespace TNGameSettingsDetail
 	/** Filas de controles del propio juego (no están en IMC_Player). */
 	const TCHAR* const TalkId = TEXT("Talk");
 	const TCHAR* const PauseId = TEXT("Pause");
+	/** «Cambiar de cámara» (tercera o primera persona sin gafas; la lee ATortugaCharacter cada fotograma). */
+	const TCHAR* const CameraId = TEXT("Camera");
 
 	/**
 	 * Lo que había en el proceso antes del primer subsistema: en PIE con varios jugadores hay un subsistema por jugador y
@@ -175,6 +181,7 @@ namespace TNGameSettingsDetail
 		S.UIScale = FMath::Clamp(S.UIScale, MinUIScale, MaxUIScale);
 		S.VRMode = static_cast<uint8>(FMath::Clamp<int32>(S.VRMode, 0, 2));
 		S.VRTurn = static_cast<uint8>(FMath::Clamp<int32>(S.VRTurn, 0, 2));
+		S.CameraView = static_cast<uint8>(FMath::Clamp<int32>(S.CameraView, 0, 1));
 		// Un idioma que ya no está en la lista (se quitó de la configuración): sin elegir, que toca el del sistema.
 		if (!S.Language.IsEmpty() && TNLanguage::IndexOf(S.Language) == INDEX_NONE)
 		{
@@ -190,6 +197,12 @@ namespace TNGameSettingsDetail
 		FixKey(S.PushToTalkPadKey, Defaults.PushToTalkPadKey);
 		FixKey(S.PauseKey, Defaults.PauseKey);
 		FixKey(S.PausePadKey, Defaults.PausePadKey);
+		FixKey(S.CameraKey, Defaults.CameraKey);
+		FixKey(S.CameraPadKey, Defaults.CameraPadKey);
+		// «Cambiar de cámara» nunca va con la tecla de hablar (con pulsar para hablar, hablar cambiaría la cámara): si
+		// coinciden, la cámara se queda sin ella (se le pone otra en Controles).
+		if (!S.CameraKey.IsNone() && S.CameraKey == S.PushToTalkKey) { S.CameraKey = NAME_None; }
+		if (!S.CameraPadKey.IsNone() && S.CameraPadKey == S.PushToTalkPadKey) { S.CameraPadKey = NAME_None; }
 		for (auto It = S.KeyOverrides.CreateIterator(); It; ++It)
 		{
 			if (!It.Value().IsNone() && !FKey(It.Value()).IsValid()) { It.RemoveCurrent(); }
@@ -233,7 +246,7 @@ namespace TNGameSettingsDetail
 
 	bool IsGameRow(const FTNKeyBinding& Row)
 	{
-		return Row.Id == TalkId || Row.Id == PauseId;
+		return Row.Id == TalkId || Row.Id == PauseId || Row.Id == CameraId;
 	}
 
 	/** Tecla que forma fila (teclas, botones y gatillos); los ejes (stick, ratón, rueda) no se cambian. */
@@ -462,7 +475,8 @@ void UTN_GameSettingsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	CreateSoundClasses();
 	OriginalMapping = LoadObject<UInputMappingContext>(nullptr, TNGameSettingsDetail::PlayerMappingPath);
 	BuildDefaultBindings();
-	RebuildRemappedMapping();
+	FreeCameraKeyConflicts();
+	RebuildRemappedMapping(PrimaryInput, Settings);
 	// El idioma va lo primero: antes de que salga ningún menú, ni siquiera el de carga.
 	SystemLanguage = TNLanguage::FindSystemLanguage();
 	ApplyLanguage();
@@ -502,21 +516,28 @@ void UTN_GameSettingsSubsystem::Deinitialize()
 		TalkersWidget->RemoveFromParent();
 		TalkersWidget = nullptr;
 	}
-	if (APlayerController* Owner = PauseInputOwner.Get())
+	SetWorldPaused(nullptr, false);
+	auto ReleaseState = [](FTNPlayerInputState& State)
 	{
-		if (PauseInput) { Owner->PopInputComponent(PauseInput); }
-		if (APlayerCameraManager* Camera = Owner->PlayerCameraManager)
+		if (APlayerController* Owner = State.PauseInputOwner.Get())
 		{
-			if (UCameraModifier* Fov = Camera->FindCameraModifierByClass(UTN_SettingsFovModifier::StaticClass())) { Camera->RemoveCameraModifier(Fov); }
+			if (State.PauseInput) { Owner->PopInputComponent(State.PauseInput); }
+			if (APlayerCameraManager* Camera = Owner->PlayerCameraManager)
+			{
+				if (UCameraModifier* Fov = Camera->FindCameraModifierByClass(UTN_SettingsFovModifier::StaticClass())) { Camera->RemoveCameraModifier(Fov); }
+			}
 		}
-	}
-	PauseInput = nullptr;
-	PauseInputOwner.Reset();
-	for (const TWeakObjectPtr<UCameraModifier>& Shake : DisabledShakes)
-	{
-		if (UCameraModifier* Modifier = Shake.Get()) { Modifier->EnableModifier(); }
-	}
-	DisabledShakes.Reset();
+		State.PauseInput = nullptr;
+		State.PauseInputOwner.Reset();
+		for (const TWeakObjectPtr<UCameraModifier>& Shake : State.DisabledShakes)
+		{
+			if (UCameraModifier* Modifier = Shake.Get()) { Modifier->EnableModifier(); }
+		}
+		State.DisabledShakes.Reset();
+	};
+	ReleaseState(PrimaryInput);
+	for (FTNPlayerInputState& Guest : GuestInputs) { ReleaseState(Guest); }
+	GuestInputs.Reset();
 
 	// Lo que es de todo el proceso vuelve a como estaba al quitarse el último subsistema (en el juego da igual, se cierra
 	// con él; en el editor, no).
@@ -579,8 +600,26 @@ void UTN_GameSettingsSubsystem::Tick(float DeltaTime)
 	}
 	ApplyAudioVolumes(World, false);
 	UpdateSounds(World);
-	// Teclas del jugador: la tortuga vuelve a poner IMC_Player al poseerse (ClearAllMappings) y aquí se cambia por la copia.
-	UpdateInputMapping();
+	// La interfaz, con la escala de la pantalla partida (cambia al entrar o salir un jugador local).
+	ApplyUIScale();
+
+	// Cada jugador local (en red, uno; en la partida local, hasta cuatro): sus teclas, su entrada del menú y su cámara. Las
+	// teclas: la tortuga vuelve a poner IMC_Player al poseerse (ClearAllMappings) y aquí se cambia por la copia.
+	GuestInputs.RemoveAll([](const FTNPlayerInputState& Guest) { return !Guest.Player.IsValid(); });
+	TArray<APlayerController*> LocalControllers;
+	TNLocalViews::GetLocalControllers(World, LocalControllers);
+	for (APlayerController* LocalPC : LocalControllers)
+	{
+		FTNPlayerInputState* State = StateFor(LocalPC);
+		const FTNGameSettings* Own = OwnSettingsFor(LocalPC);
+		if (!State || !Own)
+		{
+			continue;
+		}
+		UpdateInputMapping(LocalPC->GetLocalPlayer(), *State);
+		EnsurePauseInput(LocalPC, *State, *Own);
+		UpdateCamera(LocalPC, *State, *Own);
+	}
 
 	APlayerController* PC = GameInstance->GetFirstLocalPlayerController(World);
 	UpdateFisheye(PC, DeltaTime);
@@ -590,9 +629,7 @@ void UTN_GameSettingsSubsystem::Tick(float DeltaTime)
 	{
 		if (!Soundscape->SoundClassOverride) { Soundscape->SoundClassOverride = AmbientClass; }
 	}
-	EnsurePauseInput(PC);
 	UpdateLocalVoice(PC);
-	UpdateCamera(PC);
 	UpdateFpsCounter(PC);
 	UpdateTalkers(PC);
 
@@ -718,59 +755,160 @@ void UTN_GameSettingsSubsystem::MarkDirty(bool bGraphics)
 
 void UTN_GameSettingsSubsystem::EditSettings(TFunctionRef<void(FTNGameSettings&)> Edit)
 {
+	// Un invitado de la partida local: solo sus ajustes de jugador, en memoria (se aplican cada fotograma a su cámara).
+	if (UTN_LocalPlayerProfile* Guest = GetEditedGuest())
+	{
+		FTNGameSettings& Own = Guest->GetGuestSettings();
+		FTNGameSettings Edited = Own;
+		Edit(Edited);
+		TNGameSettingsDetail::ClampSettings(Edited);
+		TNLocalPlay::CopyPerPlayerSettings(Edited, Own);
+		return;
+	}
 	Edit(Settings);
 	TNGameSettingsDetail::ClampSettings(Settings);
 	MarkDirty(false);
 	ApplyGlobalSettings();
 }
 
+const FTNGameSettings& UTN_GameSettingsSubsystem::GetEditedSettings() const
+{
+	if (const UTN_LocalPlayerProfile* Guest = GetEditedGuest())
+	{
+		return Guest->GetGuestSettings();
+	}
+	return Settings;
+}
+
+bool UTN_GameSettingsSubsystem::IsEditingGuest() const
+{
+	return GetEditedGuest() != nullptr;
+}
+
+FTNGameSettings UTN_GameSettingsSubsystem::GetSettingsFor(const APlayerController* PC) const
+{
+	const FTNGameSettings* Own = OwnSettingsFor(PC);
+	return Own && Own != &Settings ? TNLocalPlay::EffectiveSettings(Settings, *Own) : Settings;
+}
+
+UTN_LocalPlayerProfile* UTN_GameSettingsSubsystem::GetEditedGuest() const
+{
+	APlayerController* Owner = GetPauseMenuOwner();
+	return Owner && UTN_LocalPlaySubsystem::IsGuest(Owner) ? UTN_LocalPlayerProfile::Get(Owner) : nullptr;
+}
+
+FTNGameSettings& UTN_GameSettingsSubsystem::EditTarget()
+{
+	if (UTN_LocalPlayerProfile* Guest = GetEditedGuest())
+	{
+		return Guest->GetGuestSettings();
+	}
+	return Settings;
+}
+
+const FTNGameSettings* UTN_GameSettingsSubsystem::OwnSettingsFor(const APlayerController* PC) const
+{
+	if (!PC || !PC->IsLocalController())
+	{
+		return nullptr;
+	}
+	if (UTN_LocalPlaySubsystem::IsGuest(PC))
+	{
+		const UTN_LocalPlayerProfile* Guest = UTN_LocalPlayerProfile::Get(PC);
+		return Guest ? &Guest->GetGuestSettings() : nullptr;
+	}
+	// El jugador 1 (en red, el único de la máquina). Otros jugadores locales fuera de la partida local (pruebas del
+	// monkey): sin ajustes propios, como antes.
+	return UTN_LocalPlaySubsystem::IsPrimaryPlayer(PC) ? &Settings : nullptr;
+}
+
+FTNPlayerInputState* UTN_GameSettingsSubsystem::StateFor(const APlayerController* PC)
+{
+	return const_cast<FTNPlayerInputState*>(static_cast<const UTN_GameSettingsSubsystem*>(this)->StateFor(PC));
+}
+
+const FTNPlayerInputState* UTN_GameSettingsSubsystem::StateFor(const APlayerController* PC) const
+{
+	if (!PC || !PC->IsLocalController())
+	{
+		return nullptr;
+	}
+	if (UTN_LocalPlaySubsystem::IsGuest(PC))
+	{
+		const ULocalPlayer* Player = PC->GetLocalPlayer();
+		if (const FTNPlayerInputState* Found = GuestInputs.FindByPredicate([Player](const FTNPlayerInputState& Guest) { return Guest.Player.Get() == Player; }))
+		{
+			return Found;
+		}
+		// Primera vez que se ve a este invitado: su estado, con la copia de IMC_Player de sus teclas.
+		UTN_GameSettingsSubsystem* Self = const_cast<UTN_GameSettingsSubsystem*>(this);
+		FTNPlayerInputState& Added = Self->GuestInputs.AddDefaulted_GetRef();
+		Added.Player = const_cast<ULocalPlayer*>(Player);
+		if (const FTNGameSettings* Own = OwnSettingsFor(PC))
+		{
+			Self->RebuildRemappedMapping(Added, *Own);
+		}
+		return &Self->GuestInputs.Last();
+	}
+	return UTN_LocalPlaySubsystem::IsPrimaryPlayer(PC) ? &PrimaryInput : nullptr;
+}
+
 void UTN_GameSettingsSubsystem::ResetGroup(ETNSettingsGroup Group)
 {
 	const FTNGameSettings Defaults;
+	// Los del menú: los del jugador 1 o, con un invitado de la partida local, los suyos (solo cuentan sus ajustes de jugador).
+	const bool bGuest = IsEditingGuest();
+	FTNGameSettings& Target = EditTarget();
 	switch (Group)
 	{
 	case ETNSettingsGroup::Sound:
-		Settings.MasterVolume = Defaults.MasterVolume;
-		Settings.MusicVolume = Defaults.MusicVolume;
-		Settings.EffectsVolume = Defaults.EffectsVolume;
-		Settings.AmbientVolume = Defaults.AmbientVolume;
-		Settings.bMuteInBackground = Defaults.bMuteInBackground;
+		Target.MasterVolume = Defaults.MasterVolume;
+		Target.MusicVolume = Defaults.MusicVolume;
+		Target.EffectsVolume = Defaults.EffectsVolume;
+		Target.AmbientVolume = Defaults.AmbientVolume;
+		Target.bMuteInBackground = Defaults.bMuteInBackground;
 		break;
 	case ETNSettingsGroup::Voice:
-		Settings.VoiceVolume = Defaults.VoiceVolume;
-		Settings.PlayerVoiceVolumes.Reset();
-		Settings.MutedPlayers.Reset();
-		Settings.bPushToTalk = Defaults.bPushToTalk;
-		Settings.bMicMuted = Defaults.bMicMuted;
-		Settings.MicSensitivity = Defaults.MicSensitivity;
-		Settings.MicGain = Defaults.MicGain;
-		Settings.CaptureDeviceId = Defaults.CaptureDeviceId;
+		Target.VoiceVolume = Defaults.VoiceVolume;
+		Target.PlayerVoiceVolumes.Reset();
+		Target.MutedPlayers.Reset();
+		Target.bPushToTalk = Defaults.bPushToTalk;
+		Target.bMicMuted = Defaults.bMicMuted;
+		Target.MicSensitivity = Defaults.MicSensitivity;
+		Target.MicGain = Defaults.MicGain;
+		Target.CaptureDeviceId = Defaults.CaptureDeviceId;
 		break;
 	case ETNSettingsGroup::Controls:
 		// Las teclas tienen su propio «Restablecer» (página de controles).
-		Settings.MouseSensitivity = Defaults.MouseSensitivity;
-		Settings.GamepadSensitivity = Defaults.GamepadSensitivity;
-		Settings.bInvertMouseY = Defaults.bInvertMouseY;
-		Settings.bInvertGamepadY = Defaults.bInvertGamepadY;
+		Target.MouseSensitivity = Defaults.MouseSensitivity;
+		Target.GamepadSensitivity = Defaults.GamepadSensitivity;
+		Target.bInvertMouseY = Defaults.bInvertMouseY;
+		Target.bInvertGamepadY = Defaults.bInvertGamepadY;
+		Target.bGamepadVibration = Defaults.bGamepadVibration;
 		break;
 	case ETNSettingsGroup::Game:
-		Settings.bCameraShake = Defaults.bCameraShake;
-		Settings.FieldOfViewOffset = Defaults.FieldOfViewOffset;
-		Settings.ColorFilter = Defaults.ColorFilter;
-		Settings.ColorFilterStrength = Defaults.ColorFilterStrength;
-		Settings.UIScale = Defaults.UIScale;
-		Settings.bShowTalkers = Defaults.bShowTalkers;
+		Target.bCameraShake = Defaults.bCameraShake;
+		Target.FieldOfViewOffset = Defaults.FieldOfViewOffset;
+		Target.ColorFilter = Defaults.ColorFilter;
+		Target.ColorFilterStrength = Defaults.ColorFilterStrength;
+		Target.UIScale = Defaults.UIScale;
+		Target.bShowTalkers = Defaults.bShowTalkers;
 		// Idioma sin elegir (el del sistema, o el español) y el ojo de pez de serie.
-		Settings.Language = Defaults.Language;
-		Settings.bFisheye = Defaults.bFisheye;
-		Settings.VRMode = Defaults.VRMode;
-		Settings.VRTurn = Defaults.VRTurn;
+		Target.Language = Defaults.Language;
+		Target.bFisheye = Defaults.bFisheye;
+		Target.VRMode = Defaults.VRMode;
+		Target.VRTurn = Defaults.VRTurn;
+		Target.CameraView = Defaults.CameraView;
 		break;
 	default:
 		// Gráficos: el brillo y el contador; la calidad se elige con «Calidad recomendada» (UGameUserSettings).
-		Settings.Brightness = Defaults.Brightness;
-		Settings.bShowFps = Defaults.bShowFps;
+		Target.Brightness = Defaults.Brightness;
+		Target.bShowFps = Defaults.bShowFps;
 		break;
+	}
+	if (bGuest)
+	{
+		return;
 	}
 	MarkDirty(false);
 	ApplyGlobalSettings();
@@ -778,6 +916,13 @@ void UTN_GameSettingsSubsystem::ResetGroup(ETNSettingsGroup Group)
 
 void UTN_GameSettingsSubsystem::ResetAll()
 {
+	// Un invitado de la partida local: sus ajustes de jugador de serie.
+	if (UTN_LocalPlayerProfile* Guest = GetEditedGuest())
+	{
+		Guest->GetGuestSettings() = FTNGameSettings();
+		OnKeyBindingsChanged();
+		return;
+	}
 	Settings = FTNGameSettings();
 	UE_LOG(LogTortunabo, Log, TEXT("[Ajustes] Todos los ajustes propios, a los de serie."));
 	// Teclas (y copia de IMC_Player), guardado y el resto aplicado.
@@ -952,11 +1097,31 @@ bool UTN_GameSettingsSubsystem::IsUsingGamepad(const APlayerController* PC)
 	return Devices->GetMostRecentlyUsedHardwareDevice(PC->GetPlatformUserId()).PrimaryDeviceType == EHardwareDevicePrimaryType::Gamepad;
 }
 
+float UTN_GameSettingsSubsystem::GetLookSensitivityFor(const APlayerController* PC, bool bGamepad) const
+{
+	const FTNGameSettings* Own = OwnSettingsFor(PC);
+	const FTNGameSettings& Use = Own ? *Own : Settings;
+	return bGamepad ? Use.GamepadSensitivity : Use.MouseSensitivity;
+}
+
+bool UTN_GameSettingsSubsystem::IsLookYInvertedFor(const APlayerController* PC, bool bGamepad) const
+{
+	const FTNGameSettings* Own = OwnSettingsFor(PC);
+	const FTNGameSettings& Use = Own ? *Own : Settings;
+	return bGamepad ? Use.bInvertGamepadY : Use.bInvertMouseY;
+}
+
+float UTN_GameSettingsSubsystem::GetFieldOfViewOffsetFor(const APlayerController* PC) const
+{
+	const FTNGameSettings* Own = OwnSettingsFor(PC);
+	return Own ? Own->FieldOfViewOffset : Settings.FieldOfViewOffset;
+}
+
 FVector2D UTN_GameSettingsSubsystem::ApplyLookSettings(const APlayerController* PC, const FVector2D& RawLook) const
 {
 	const bool bPad = IsUsingGamepad(PC);
-	const float Sensitivity = GetLookSensitivity(bPad);
-	return FVector2D(RawLook.X * Sensitivity, RawLook.Y * Sensitivity * (IsLookYInverted(bPad) ? -1.f : 1.f));
+	const float Sensitivity = GetLookSensitivityFor(PC, bPad);
+	return FVector2D(RawLook.X * Sensitivity, RawLook.Y * Sensitivity * (IsLookYInvertedFor(PC, bPad) ? -1.f : 1.f));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1016,17 +1181,25 @@ void UTN_GameSettingsSubsystem::ApplyGlobalSettings()
 			Type != EColorVisionDeficiency::NormalVision, false);
 	}
 
+	ApplyUIScale();
+
+	// Micrófono elegido: lo abre la voz al empezar (reaparecer, cambiar de mapa).
+	UProximityVoiceComponent::SetPreferredCaptureDevice(Settings.CaptureDeviceId);
+}
+
+void UTN_GameSettingsSubsystem::ApplyUIScale()
+{
 	// Tamaño de la interfaz: la escala extra de UUserInterfaceSettings, que solo multiplica la escala DPI del viewport del
-	// juego (la interfaz del editor tiene la suya). Se lee cada fotograma: cambia al momento.
-	const float WantedScale = TNGameSettingsDetail::Baseline().ApplicationScale * Settings.UIScale;
+	// juego (la interfaz del editor tiene la suya). Se lee cada fotograma: cambia al momento. Con la pantalla partida de la
+	// partida local, más pequeña (TNLocalPlay::UIScaleForViews): el HUD de cada jugador cabe en su trozo.
+	const UTN_LocalPlaySubsystem* LocalPlay = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTN_LocalPlaySubsystem>() : nullptr;
+	const float Split = LocalPlay ? LocalPlay->GetSplitUIScale() : 1.f;
+	const float WantedScale = TNGameSettingsDetail::Baseline().ApplicationScale * Settings.UIScale * Split;
 	if (!FMath::IsNearlyEqual(AppliedUIScale, WantedScale))
 	{
 		GetMutableDefault<UUserInterfaceSettings>()->ApplicationScale = WantedScale;
 		AppliedUIScale = WantedScale;
 	}
-
-	// Micrófono elegido: lo abre la voz al empezar (reaparecer, cambiar de mapa).
-	UProximityVoiceComponent::SetPreferredCaptureDevice(Settings.CaptureDeviceId);
 }
 
 void UTN_GameSettingsSubsystem::ApplyAudioVolumes(UWorld* World, bool bForce)
@@ -1142,7 +1315,9 @@ void UTN_GameSettingsSubsystem::UpdateSounds(UWorld* World)
 			{
 				return;
 			}
-			const FString Key = PlayerKey(Speaker->GetPlayerState());
+			// El jugador de esa voz: el del peón o, si el peón ya no tiene (sin poseer, o aún sin replicar), el último que tuvo;
+			// con la clave vacía la voz saldría sin silenciar a volumen pleno (#248).
+			const FString Key = PlayerKey(Voice->GetSpeakerState());
 			const float Target = Voice->PlaybackVolume * (IsPlayerMuted(Key) ? 0.f : GetPlayerVoiceVolume(Key));
 			if (!FMath::IsNearlyEqual(Component->VolumeMultiplier, Target, 0.001f))
 			{
@@ -1272,7 +1447,7 @@ void UTN_GameSettingsSubsystem::UpdateLocalVoice(APlayerController* PC)
 // Cámara, contador de FPS y quién habla
 // ─────────────────────────────────────────────────────────────────────────────
 
-void UTN_GameSettingsSubsystem::UpdateCamera(APlayerController* PC)
+void UTN_GameSettingsSubsystem::UpdateCamera(APlayerController* PC, FTNPlayerInputState& State, const FTNGameSettings& Own)
 {
 	if (!PC || !PC->IsLocalController())
 	{
@@ -1282,18 +1457,20 @@ void UTN_GameSettingsSubsystem::UpdateCamera(APlayerController* PC)
 	// Sensibilidad e inversión: escalas de giro del PlayerController (UInputSettings::bEnableLegacyInputScales está
 	// activo en DefaultInput.ini), con los valores del último aparato usado. Valen para la tortuga y para cualquier
 	// cámara que gire con AddControllerYawInput/AddControllerPitchInput (la cámara libre del fantasma lee los getters).
+	// Con la pantalla partida, cada jugador los suyos (Own).
 	const bool bPad = IsUsingGamepad(PC);
 	const APlayerController* Defaults = PC->GetClass()->GetDefaultObject<APlayerController>();
-	const float Sensitivity = GetLookSensitivity(bPad);
+	const float Sensitivity = bPad ? Own.GamepadSensitivity : Own.MouseSensitivity;
+	const bool bInvert = bPad ? Own.bInvertGamepadY : Own.bInvertMouseY;
 	PC->InputYawScale_DEPRECATED = Defaults->InputYawScale_DEPRECATED * Sensitivity;
-	PC->InputPitchScale_DEPRECATED = Defaults->InputPitchScale_DEPRECATED * Sensitivity * (IsLookYInverted(bPad) ? -1.f : 1.f);
+	PC->InputPitchScale_DEPRECATED = Defaults->InputPitchScale_DEPRECATED * Sensitivity * (bInvert ? -1.f : 1.f);
 
 	// Campo de visión: el de la clase de la tortuga más el desplazamiento (en reposo y al correr).
 	if (ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn()))
 	{
 		const ATortugaCharacter* TurtleDefaults = Turtle->GetClass()->GetDefaultObject<ATortugaCharacter>();
-		Turtle->SetCameraFOVs(FMath::Clamp(TurtleDefaults->GetCameraFOVDefault() + Settings.FieldOfViewOffset, 40.f, 120.f),
-			FMath::Clamp(TurtleDefaults->GetCameraFOVSprint() + Settings.FieldOfViewOffset, 40.f, 120.f));
+		Turtle->SetCameraFOVs(FMath::Clamp(TurtleDefaults->GetCameraFOVDefault() + Own.FieldOfViewOffset, 40.f, 120.f),
+			FMath::Clamp(TurtleDefaults->GetCameraFOVSprint() + Own.FieldOfViewOffset, 40.f, 120.f));
 	}
 
 	APlayerCameraManager* Camera = PC->PlayerCameraManager;
@@ -1312,25 +1489,25 @@ void UTN_GameSettingsSubsystem::UpdateCamera(APlayerController* PC)
 
 	// Temblor de cámara: los modificadores que tiemblan, apagados (o encendidos otra vez los que se apagaron aquí). En VR,
 	// siempre apagados: mover la vista sin mover la cabeza marea.
-	if (!Settings.bCameraShake || TNVR::IsEnabled())
+	if (!Own.bCameraShake || TNVR::IsEnabled())
 	{
-		Camera->ForEachCameraModifier([this](UCameraModifier* Modifier)
+		Camera->ForEachCameraModifier([&State](UCameraModifier* Modifier)
 		{
 			if (TNGameSettingsDetail::IsShakeModifier(Modifier) && !Modifier->IsDisabled())
 			{
 				Modifier->DisableModifier(true);
-				DisabledShakes.AddUnique(TWeakObjectPtr<UCameraModifier>(Modifier));
+				State.DisabledShakes.AddUnique(TWeakObjectPtr<UCameraModifier>(Modifier));
 			}
 			return true;
 		});
 	}
-	else if (DisabledShakes.Num() > 0)
+	else if (State.DisabledShakes.Num() > 0)
 	{
-		for (const TWeakObjectPtr<UCameraModifier>& Shake : DisabledShakes)
+		for (const TWeakObjectPtr<UCameraModifier>& Shake : State.DisabledShakes)
 		{
 			if (UCameraModifier* Modifier = Shake.Get()) { Modifier->EnableModifier(); }
 		}
-		DisabledShakes.Reset();
+		State.DisabledShakes.Reset();
 	}
 }
 
@@ -1348,7 +1525,7 @@ void UTN_GameSettingsSubsystem::UpdateFpsCounter(APlayerController* PC)
 	// Tras un viaje el mundo quita todos los widgets: se vuelve a poner.
 	if (FpsWidget && !TNVR::IsOnScreen(FpsWidget))
 	{
-		TNVR::AddToScreen(FpsWidget, TNGameSettingsDetail::FpsZOrder);
+		TNVR::AddToFullScreen(FpsWidget, TNGameSettingsDetail::FpsZOrder);
 	}
 }
 
@@ -1366,7 +1543,7 @@ void UTN_GameSettingsSubsystem::UpdateTalkers(APlayerController* PC)
 	}
 	if (TalkersWidget && !TNVR::IsOnScreen(TalkersWidget))
 	{
-		TNVR::AddToScreen(TalkersWidget, TNGameSettingsDetail::TalkersZOrder);
+		TNVR::AddToFullScreen(TalkersWidget, TNGameSettingsDetail::TalkersZOrder);
 	}
 }
 
@@ -1387,7 +1564,7 @@ bool UTN_SettingsFovModifier::ModifyCamera(float DeltaTime, FMinimalViewInfo& In
 	}
 	// Solo la tortuga de otro jugador: la propia (también su cuerpo tras caer) ya lleva el desplazamiento en su cámara.
 	const APlayerState* WatchedState = Watched->GetPlayerState();
-	const float Offset = Owner->GetFieldOfViewOffset();
+	const float Offset = Owner->GetFieldOfViewOffsetFor(PC);
 	if (WatchedState && WatchedState != PC->PlayerState && !FMath::IsNearlyZero(Offset))
 	{
 		InOutPOV.FOV = FMath::Clamp(InOutPOV.FOV + Offset, 40.f, 130.f);
@@ -1589,8 +1766,15 @@ void UTN_GameSettingsSubsystem::BuildDefaultBindings()
 		UE_LOG(LogTortunabo, Warning, TEXT("[Ajustes] No se pudo cargar IMC_Player: no se pueden cambiar las teclas."));
 	}
 
-	// Las del propio juego: hablar (con pulsar para hablar) y el menú de pausa.
+	// Las del propio juego: cambiar de cámara (en «Jugando», detrás de las de IMC_Player), hablar (con pulsar para hablar)
+	// y el menú de pausa.
 	const FTNGameSettings Defaults;
+	FTNKeyBinding& Camera = DefaultBindings.AddDefaulted_GetRef();
+	Camera.Id = CameraId;
+	Camera.Label = NSLOCTEXT("TNSettings", "CameraRow", "Cambiar de cámara");
+	Camera.Defaults[0] = FKey(Defaults.CameraKey);
+	Camera.Defaults[1] = FKey(Defaults.CameraPadKey);
+	Camera.Order = 15000;
 	FTNKeyBinding& Talk = DefaultBindings.AddDefaulted_GetRef();
 	Talk.Id = TalkId;
 	Talk.Label = NSLOCTEXT("TNSettings", "TalkRow", "Hablar (pulsar para hablar)");
@@ -1646,46 +1830,52 @@ const FTNKeyBinding* UTN_GameSettingsSubsystem::FindDefaultBinding(const FString
 	return DefaultBindings.FindByPredicate([&Id](const FTNKeyBinding& Row) { return Row.Id == Id; });
 }
 
-FKey UTN_GameSettingsSubsystem::GetBindingKey(const FTNKeyBinding& Row, int32 Device) const
+FKey UTN_GameSettingsSubsystem::GetBindingKey(const FTNGameSettings& Own, const FTNKeyBinding& Row, int32 Device) const
 {
 	using namespace TNGameSettingsDetail;
 	const int32 Slot = FMath::Clamp(Device, 0, 1);
-	if (Row.Id == TalkId) { return FKey(Slot == 0 ? Settings.PushToTalkKey : Settings.PushToTalkPadKey); }
-	if (Row.Id == PauseId) { return FKey(Slot == 0 ? Settings.PauseKey : Settings.PausePadKey); }
-	if (const FName* Override = Settings.KeyOverrides.Find(OverrideName(Row.Id, Slot)))
+	if (Row.Id == TalkId) { return FKey(Slot == 0 ? Own.PushToTalkKey : Own.PushToTalkPadKey); }
+	if (Row.Id == PauseId) { return FKey(Slot == 0 ? Own.PauseKey : Own.PausePadKey); }
+	if (Row.Id == CameraId) { return FKey(Slot == 0 ? Own.CameraKey : Own.CameraPadKey); }
+	if (const FName* Override = Own.KeyOverrides.Find(OverrideName(Row.Id, Slot)))
 	{
 		return FKey(*Override);
 	}
 	return Row.Defaults[Slot];
 }
 
-void UTN_GameSettingsSubsystem::SetBindingKey(const FTNKeyBinding& Row, int32 Device, const FKey& Key)
+void UTN_GameSettingsSubsystem::SetBindingKey(FTNGameSettings& Own, const FTNKeyBinding& Row, int32 Device, const FKey& Key)
 {
 	using namespace TNGameSettingsDetail;
 	const int32 Slot = FMath::Clamp(Device, 0, 1);
 	const FName NewName = Key.IsValid() ? Key.GetFName() : NAME_None;
 	if (Row.Id == TalkId)
 	{
-		(Slot == 0 ? Settings.PushToTalkKey : Settings.PushToTalkPadKey) = NewName;
+		(Slot == 0 ? Own.PushToTalkKey : Own.PushToTalkPadKey) = NewName;
 		return;
 	}
 	if (Row.Id == PauseId)
 	{
-		(Slot == 0 ? Settings.PauseKey : Settings.PausePadKey) = NewName;
+		(Slot == 0 ? Own.PauseKey : Own.PausePadKey) = NewName;
+		return;
+	}
+	if (Row.Id == CameraId)
+	{
+		(Slot == 0 ? Own.CameraKey : Own.CameraPadKey) = NewName;
 		return;
 	}
 	const FString OverrideKey = OverrideName(Row.Id, Slot);
 	if (SamePhysicalKey(Key, Row.Defaults[Slot]))
 	{
-		Settings.KeyOverrides.Remove(OverrideKey);
+		Own.KeyOverrides.Remove(OverrideKey);
 	}
 	else
 	{
-		Settings.KeyOverrides.Add(OverrideKey, NewName);
+		Own.KeyOverrides.Add(OverrideKey, NewName);
 	}
 }
 
-ETNRebindResult UTN_GameSettingsSubsystem::AssignKey(const FTNKeyBinding& Row, int32 Device, const FKey& InKey, bool bValidate, FText& OutMessage)
+ETNRebindResult UTN_GameSettingsSubsystem::AssignKey(FTNGameSettings& Own, const FTNKeyBinding& Row, int32 Device, const FKey& InKey, bool bValidate, FText& OutMessage)
 {
 	using namespace TNGameSettingsDetail;
 	const int32 Slot = FMath::Clamp(Device, 0, 1);
@@ -1709,7 +1899,7 @@ ETNRebindResult UTN_GameSettingsSubsystem::AssignKey(const FTNKeyBinding& Row, i
 			return ETNRebindResult::Refused;
 		}
 	}
-	const FKey OldKey = GetBindingKey(Row, Slot);
+	const FKey OldKey = GetBindingKey(Own, Row, Slot);
 	if (SamePhysicalKey(OldKey, NewKey))
 	{
 		OutMessage = FText::Format(NSLOCTEXT("TNSettings", "Unchanged", "«{0}» ya iba con {1}."), Row.Label, KeyDisplayName(NewKey));
@@ -1722,12 +1912,12 @@ ETNRebindResult UTN_GameSettingsSubsystem::AssignKey(const FTNKeyBinding& Row, i
 	{
 		for (const FTNKeyBinding& Other : DefaultBindings)
 		{
-			if (Other.Id == Row.Id || !SamePhysicalKey(GetBindingKey(Other, Slot), NewKey))
+			if (Other.Id == Row.Id || !SamePhysicalKey(GetBindingKey(Own, Other, Slot), NewKey))
 			{
 				continue;
 			}
 			const FKey GiveBack = OldKey.IsValid() && IsBindableKey(OldKey) && Other.bEditable[Slot] ? ForRow(Other, OldKey) : FKey();
-			SetBindingKey(Other, Slot, GiveBack);
+			SetBindingKey(Own, Other, Slot, GiveBack);
 			OutMessage = GiveBack.IsValid()
 				? FText::Format(NSLOCTEXT("TNSettings", "Swapped", "{0} estaba en «{1}»: ahora «{1}» va con {2}."), KeyDisplayName(NewKey), Other.Label,
 					KeyDisplayName(GiveBack))
@@ -1735,7 +1925,7 @@ ETNRebindResult UTN_GameSettingsSubsystem::AssignKey(const FTNKeyBinding& Row, i
 					DeviceWord(Slot));
 		}
 	}
-	SetBindingKey(Row, Slot, NewKey);
+	SetBindingKey(Own, Row, Slot, NewKey);
 	if (OutMessage.IsEmpty())
 	{
 		OutMessage = FText::Format(NSLOCTEXT("TNSettings", "Assigned", "«{0}»: {1}."), Row.Label, KeyDisplayName(NewKey));
@@ -1745,15 +1935,26 @@ ETNRebindResult UTN_GameSettingsSubsystem::AssignKey(const FTNKeyBinding& Row, i
 	return ETNRebindResult::Changed;
 }
 
-TArray<FTNKeyBinding> UTN_GameSettingsSubsystem::GetKeyBindings() const
+TArray<FTNKeyBinding> UTN_GameSettingsSubsystem::BuildKeyBindings(const FTNGameSettings& Own) const
 {
 	TArray<FTNKeyBinding> Out = DefaultBindings;
 	for (FTNKeyBinding& Row : Out)
 	{
-		Row.Keys[0] = GetBindingKey(Row, 0);
-		Row.Keys[1] = GetBindingKey(Row, 1);
+		Row.Keys[0] = GetBindingKey(Own, Row, 0);
+		Row.Keys[1] = GetBindingKey(Own, Row, 1);
 	}
 	return Out;
+}
+
+TArray<FTNKeyBinding> UTN_GameSettingsSubsystem::GetKeyBindings() const
+{
+	return BuildKeyBindings(GetEditedSettings());
+}
+
+TArray<FTNKeyBinding> UTN_GameSettingsSubsystem::GetKeyBindingsFor(const APlayerController* PC) const
+{
+	const FTNGameSettings* Own = OwnSettingsFor(PC);
+	return BuildKeyBindings(Own ? *Own : Settings);
 }
 
 ETNRebindResult UTN_GameSettingsSubsystem::RebindKey(const FString& Id, const FKey& Key, FText& OutMessage)
@@ -1763,7 +1964,7 @@ ETNRebindResult UTN_GameSettingsSubsystem::RebindKey(const FString& Id, const FK
 	{
 		return ETNRebindResult::Refused;
 	}
-	const ETNRebindResult Result = AssignKey(*Row, TNGameSettingsDetail::DeviceOf(Key), Key, true, OutMessage);
+	const ETNRebindResult Result = AssignKey(EditTarget(), *Row, TNGameSettingsDetail::DeviceOf(Key), Key, true, OutMessage);
 	if (Result == ETNRebindResult::Changed)
 	{
 		OnKeyBindingsChanged();
@@ -1785,7 +1986,7 @@ void UTN_GameSettingsSubsystem::ResetKeyBinding(const FString& Id, FText& OutMes
 	{
 		FText Message;
 		// Sin validar: la de serie vale siempre (el menú va con Escape, que no se puede elegir).
-		if (AssignKey(*Row, Device, Row->Defaults[Device], false, Message) == ETNRebindResult::Changed)
+		if (AssignKey(EditTarget(), *Row, Device, Row->Defaults[Device], false, Message) == ETNRebindResult::Changed)
 		{
 			bChanged = true;
 			Messages.Add(Message);
@@ -1803,36 +2004,89 @@ void UTN_GameSettingsSubsystem::ResetKeyBinding(const FString& Id, FText& OutMes
 void UTN_GameSettingsSubsystem::ResetAllKeyBindings()
 {
 	const FTNGameSettings Defaults;
-	Settings.KeyOverrides.Reset();
-	Settings.PushToTalkKey = Defaults.PushToTalkKey;
-	Settings.PushToTalkPadKey = Defaults.PushToTalkPadKey;
-	Settings.PauseKey = Defaults.PauseKey;
-	Settings.PausePadKey = Defaults.PausePadKey;
+	FTNGameSettings& Target = EditTarget();
+	Target.KeyOverrides.Reset();
+	Target.PushToTalkKey = Defaults.PushToTalkKey;
+	Target.PushToTalkPadKey = Defaults.PushToTalkPadKey;
+	Target.PauseKey = Defaults.PauseKey;
+	Target.PausePadKey = Defaults.PausePadKey;
+	Target.CameraKey = Defaults.CameraKey;
+	Target.CameraPadKey = Defaults.CameraPadKey;
 	OnKeyBindingsChanged();
 }
 
 bool UTN_GameSettingsSubsystem::HasCustomKeys() const
 {
 	const FTNGameSettings Defaults;
-	return Settings.KeyOverrides.Num() > 0 || Settings.PushToTalkKey != Defaults.PushToTalkKey || Settings.PushToTalkPadKey != Defaults.PushToTalkPadKey
-		|| Settings.PauseKey != Defaults.PauseKey || Settings.PausePadKey != Defaults.PausePadKey;
+	const FTNGameSettings& Target = GetEditedSettings();
+	return Target.KeyOverrides.Num() > 0 || Target.PushToTalkKey != Defaults.PushToTalkKey || Target.PushToTalkPadKey != Defaults.PushToTalkPadKey
+		|| Target.PauseKey != Defaults.PauseKey || Target.PausePadKey != Defaults.PausePadKey
+		|| Target.CameraKey != Defaults.CameraKey || Target.CameraPadKey != Defaults.CameraPadKey;
+}
+
+FKey UTN_GameSettingsSubsystem::GetCameraToggleKey(bool bGamepad) const
+{
+	return FKey(bGamepad ? Settings.CameraPadKey : Settings.CameraKey);
+}
+
+void UTN_GameSettingsSubsystem::FreeCameraKeyConflicts()
+{
+	using namespace TNGameSettingsDetail;
+	const FTNKeyBinding* Camera = FindDefaultBinding(CameraId);
+	if (!Camera)
+	{
+		return;
+	}
+	for (int32 Device = 0; Device < 2; ++Device)
+	{
+		const FKey Key = GetBindingKey(Settings, *Camera, Device);
+		if (!Key.IsValid())
+		{
+			continue;
+		}
+		for (const FTNKeyBinding& Other : DefaultBindings)
+		{
+			if (Other.Id != Camera->Id && SamePhysicalKey(GetBindingKey(Settings, Other, Device), Key))
+			{
+				// Ajustes de antes de que existiera esta fila: otra ya iba con esa tecla, y esa manda. La cámara se queda sin
+				// ella en ese aparato (se le pone otra en Controles).
+				SetBindingKey(Settings, *Camera, Device, FKey());
+				UE_LOG(LogTortunabo, Log, TEXT("[Ajustes] Controles: %s ya es de %s; «Cambiar de cámara» se queda sin tecla en el %s."),
+					*Key.ToString(), *Other.Id, Device == 0 ? TEXT("teclado") : TEXT("mando"));
+				break;
+			}
+		}
+	}
 }
 
 void UTN_GameSettingsSubsystem::OnKeyBindingsChanged()
 {
+	// Las de un invitado de la partida local: su copia de IMC_Player, sin guardar (la pone el siguiente fotograma).
+	if (UTN_LocalPlayerProfile* Guest = GetEditedGuest())
+	{
+		FTNGameSettings& Own = Guest->GetGuestSettings();
+		TNGameSettingsDetail::ClampSettings(Own);
+		if (FTNPlayerInputState* State = StateFor(GetPauseMenuOwner()))
+		{
+			RebuildRemappedMapping(*State, Own);
+			UpdateInputMapping(State->Player.Get(), *State);
+		}
+		return;
+	}
 	TNGameSettingsDetail::ClampSettings(Settings);
 	MarkDirty(false);
-	RebuildRemappedMapping();
+	RebuildRemappedMapping(PrimaryInput, Settings);
 	// En el acto (sin esperar al siguiente fotograma); la entrada del menú se rehace sola con sus teclas nuevas.
-	UpdateInputMapping();
+	const UGameInstance* GameInstance = GetGameInstance();
+	UpdateInputMapping(GameInstance ? GameInstance->GetFirstGamePlayer() : nullptr, PrimaryInput);
 }
 
-void UTN_GameSettingsSubsystem::RebuildRemappedMapping()
+void UTN_GameSettingsSubsystem::RebuildRemappedMapping(FTNPlayerInputState& State, const FTNGameSettings& Own)
 {
 	using namespace TNGameSettingsDetail;
-	UInputMappingContext* Previous = RemappedMapping;
-	RemappedMapping = nullptr;
-	if (OriginalMapping && (Settings.KeyOverrides.Num() > 0 || PendingCodeDefaults.Num() > 0))
+	UInputMappingContext* Previous = State.RemappedMapping;
+	State.RemappedMapping = nullptr;
+	if (OriginalMapping && (Own.KeyOverrides.Num() > 0 || PendingCodeDefaults.Num() > 0))
 	{
 		// Copia transitoria de IMC_Player (con sus modificadores y disparadores) con las teclas del jugador.
 		UInputMappingContext* Copy = DuplicateObject<UInputMappingContext>(OriginalMapping, this,
@@ -1842,7 +2096,7 @@ void UTN_GameSettingsSubsystem::RebuildRemappedMapping()
 		for (const FCodeDefaultKey& Pending : PendingCodeDefaults)
 		{
 			const FTNKeyBinding* Row = FindDefaultBinding(Pending.RowId);
-			if (Row && Row->Action.Get() && !Settings.KeyOverrides.Contains(OverrideName(Pending.RowId, Pending.Device)))
+			if (Row && Row->Action.Get() && !Own.KeyOverrides.Contains(OverrideName(Pending.RowId, Pending.Device)))
 			{
 				Copy->MapKey(Row->Action.Get(), Pending.Key);
 			}
@@ -1856,7 +2110,7 @@ void UTN_GameSettingsSubsystem::RebuildRemappedMapping()
 			}
 			for (int32 Device = 0; Device < 2; ++Device)
 			{
-				const FName* Override = Settings.KeyOverrides.Find(OverrideName(Row.Id, Device));
+				const FName* Override = Own.KeyOverrides.Find(OverrideName(Row.Id, Device));
 				if (!Override)
 				{
 					continue;
@@ -1885,18 +2139,16 @@ void UTN_GameSettingsSubsystem::RebuildRemappedMapping()
 				for (const FKey& Gone : ToRemove) { Copy->UnmapKey(Action, Gone); }
 			}
 		}
-		RemappedMapping = Copy;
+		State.RemappedMapping = Copy;
 	}
-	if (Previous && Previous != RemappedMapping)
+	if (Previous && Previous != State.RemappedMapping)
 	{
-		RetiredMappings.AddUnique(Previous);
+		State.RetiredMappings.AddUnique(Previous);
 	}
 }
 
-void UTN_GameSettingsSubsystem::UpdateInputMapping()
+void UTN_GameSettingsSubsystem::UpdateInputMapping(const ULocalPlayer* Player, FTNPlayerInputState& State)
 {
-	const UGameInstance* GameInstance = GetGameInstance();
-	const ULocalPlayer* Player = GameInstance ? GameInstance->GetFirstGamePlayer() : nullptr;
 	UEnhancedInputLocalPlayerSubsystem* Input = Player ? Player->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>() : nullptr;
 	if (!Input || !OriginalMapping)
 	{
@@ -1904,7 +2156,7 @@ void UTN_GameSettingsSubsystem::UpdateInputMapping()
 	}
 	// Donde esté puesto IMC_Player (la tortuga lo pone al poseerse, en el lobby y en la partida) o una copia vieja, la
 	// copia de ahora con la misma prioridad. Sin esperar a soltar las teclas: lo que se tenga pulsado sigue valiendo.
-	const UInputMappingContext* Wanted = RemappedMapping ? RemappedMapping.Get() : OriginalMapping.Get();
+	const UInputMappingContext* Wanted = State.RemappedMapping ? State.RemappedMapping.Get() : OriginalMapping.Get();
 	FModifyContextOptions Options;
 	Options.bIgnoreAllPressedKeysUntilRelease = false;
 	auto Replace = [Input, Wanted, &Options](const UInputMappingContext* Stale)
@@ -1921,36 +2173,56 @@ void UTN_GameSettingsSubsystem::UpdateInputMapping()
 		}
 	};
 	Replace(OriginalMapping);
-	for (const TObjectPtr<UInputMappingContext>& Old : RetiredMappings)
+	for (const TObjectPtr<UInputMappingContext>& Old : State.RetiredMappings)
 	{
 		Replace(Old);
 	}
-	RetiredMappings.RemoveAll([Input](const TObjectPtr<UInputMappingContext>& Old) { return !Old || !Input->HasMappingContext(Old); });
+	State.RetiredMappings.RemoveAll([Input](const TObjectPtr<UInputMappingContext>& Old) { return !Old || !Input->HasMappingContext(Old); });
 }
 
 const UInputMappingContext* UTN_GameSettingsSubsystem::ResolveMappingContext(const UObject* WorldContext, const UInputMappingContext* Mapping)
 {
 	const UTN_GameSettingsSubsystem* Subsystem = Get(WorldContext);
-	if (Subsystem && Mapping && Mapping == Subsystem->OriginalMapping && Subsystem->RemappedMapping)
+	if (!Subsystem || !Mapping || Mapping != Subsystem->OriginalMapping)
 	{
-		return Subsystem->RemappedMapping;
+		return Mapping;
 	}
-	return Mapping;
+	// La copia del jugador de WorldContext (un peón o un PlayerController); si no se sabe de quién es, la del jugador 1.
+	const APlayerController* PC = Cast<APlayerController>(WorldContext);
+	if (!PC)
+	{
+		if (const APawn* Pawn = Cast<APawn>(WorldContext)) { PC = Cast<APlayerController>(Pawn->GetController()); }
+	}
+	const FTNPlayerInputState* State = PC ? Subsystem->StateFor(PC) : nullptr;
+	if (!State) { State = &Subsystem->PrimaryInput; }
+	return State->RemappedMapping ? State->RemappedMapping.Get() : Mapping;
 }
 
 bool UTN_GameSettingsSubsystem::IsGameplayKey(const FKey& Key) const
 {
-	const UInputMappingContext* Mapping = RemappedMapping ? RemappedMapping.Get() : OriginalMapping.Get();
-	if (!Mapping)
+	// Una tecla del juego de cualquier jugador local (el teclado es del jugador 1; los mandos, de quien los lleve).
+	auto InMapping = [&Key](const UInputMappingContext* Mapping)
 	{
-		return false;
-	}
-	for (const FEnhancedActionKeyMapping& Entry : Mapping->GetMappings())
-	{
-		if (Entry.Action && TNGameSettingsDetail::SamePhysicalKey(Entry.Key, Key))
+		if (!Mapping)
 		{
-			return true;
+			return false;
 		}
+		for (const FEnhancedActionKeyMapping& Entry : Mapping->GetMappings())
+		{
+			if (Entry.Action && TNGameSettingsDetail::SamePhysicalKey(Entry.Key, Key))
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+	if (InMapping(PrimaryInput.RemappedMapping ? PrimaryInput.RemappedMapping.Get() : OriginalMapping.Get()))
+	{
+		return true;
+	}
+	for (const FTNPlayerInputState& Guest : GuestInputs)
+	{
+		if (Guest.RemappedMapping && InMapping(Guest.RemappedMapping)) { return true; }
 	}
 	return false;
 }
@@ -1965,14 +2237,23 @@ bool UTN_GameSettingsSubsystem::IsMenuUp() const
 	{
 		return true;
 	}
-	// Otra interfaz que se pulsa (tienda, probador, resumen de la carrera...): el juego enseña el cursor.
+	// Otra interfaz que se pulsa (tienda, probador, resumen de la carrera...): el juego enseña el cursor. Con la pantalla
+	// partida, la de cualquier jugador local.
 	const UGameInstance* GameInstance = GetGameInstance();
 	const UWorld* World = GameInstance ? GameInstance->GetWorld() : nullptr;
-	const APlayerController* PC = World ? GameInstance->GetFirstLocalPlayerController(World) : nullptr;
-	return PC && PC->ShouldShowMouseCursor();
+	TArray<APlayerController*> LocalControllers;
+	TNLocalViews::GetLocalControllers(World, LocalControllers);
+	for (const APlayerController* PC : LocalControllers)
+	{
+		if (PC->ShouldShowMouseCursor())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
-void UTN_GameSettingsSubsystem::EnsurePauseInput(APlayerController* PC)
+void UTN_GameSettingsSubsystem::EnsurePauseInput(APlayerController* PC, FTNPlayerInputState& State, const FTNGameSettings& Own)
 {
 	// Solo el PlayerController de la partida (no el del menú principal) y el local.
 	AMP_GamePlayerController* GamePC = Cast<AMP_GamePlayerController>(PC);
@@ -1980,27 +2261,27 @@ void UTN_GameSettingsSubsystem::EnsurePauseInput(APlayerController* PC)
 	{
 		return;
 	}
-	const bool bKeysChanged = BoundPauseKey != Settings.PauseKey || BoundPausePadKey != Settings.PausePadKey;
-	if (PauseInput && PauseInputOwner.Get() == GamePC && !bKeysChanged)
+	const bool bKeysChanged = State.BoundPauseKey != Own.PauseKey || State.BoundPausePadKey != Own.PausePadKey;
+	if (State.PauseInput && State.PauseInputOwner.Get() == GamePC && !bKeysChanged)
 	{
 		// Por si algo vació la pila del PlayerController.
-		if (!GamePC->IsInputComponentInStack(PauseInput)) { GamePC->PushInputComponent(PauseInput); }
+		if (!GamePC->IsInputComponentInStack(State.PauseInput)) { GamePC->PushInputComponent(State.PauseInput); }
 		return;
 	}
-	if (APlayerController* Old = PauseInputOwner.Get())
+	if (APlayerController* Old = State.PauseInputOwner.Get())
 	{
-		if (PauseInput) { Old->PopInputComponent(PauseInput); }
+		if (State.PauseInput) { Old->PopInputComponent(State.PauseInput); }
 	}
 	// Un UInputComponent propio en lo alto de la pila del PlayerController: sirve jugando y de espectador, sin tocar el
 	// PlayerController. Los viajes sin cortes conservan el PlayerController y su pila; tras uno con corte hay otro y se
-	// vuelve a meter (y también si el jugador cambia la tecla).
-	PauseInput = NewObject<UInputComponent>(GamePC, UInputComponent::StaticClass(), NAME_None, RF_Transient);
-	PauseInput->Priority = TNGameSettingsDetail::PauseInputPriority;
+	// vuelve a meter (y también si el jugador cambia la tecla). Con la pantalla partida, uno por jugador con sus teclas.
+	State.PauseInput = NewObject<UInputComponent>(GamePC, UInputComponent::StaticClass(), NAME_None, RF_Transient);
+	State.PauseInput->Priority = TNGameSettingsDetail::PauseInputPriority;
 	// Escape siempre; la tecla y el botón elegidos (Start de serie); en el editor, donde Escape corta la partida
 	// (atajo del editor), también el Tabulador. Sin repetir: una tecla atada dos veces abriría y cerraría a la vez.
 	TArray<FKey> Keys;
 	Keys.Add(EKeys::Escape);
-	for (const FName KeyName : { Settings.PauseKey, Settings.PausePadKey })
+	for (const FName KeyName : { Own.PauseKey, Own.PausePadKey })
 	{
 		const FKey Key(KeyName);
 		if (Key.IsValid()) { Keys.AddUnique(Key); }
@@ -2008,22 +2289,22 @@ void UTN_GameSettingsSubsystem::EnsurePauseInput(APlayerController* PC)
 	if (GIsEditor) { Keys.AddUnique(EKeys::Tab); }
 	// El botón de menú del mando izquierdo de las gafas (si el motor tiene los mandos de Meta; sin OpenXR no existe).
 	if (FTNVRKeys::Menu.IsValid()) { Keys.AddUnique(FTNVRKeys::Menu); }
+	TWeakObjectPtr<APlayerController> WeakPC(GamePC);
 	for (const FKey& Key : Keys)
 	{
-		PauseInput->BindKey(Key, IE_Pressed, this, &UTN_GameSettingsSubsystem::HandlePauseKey);
+		// Cada tecla abre o cierra el menú de su jugador; también con la partida parada (la pausa de la partida local).
+		FInputKeyBinding Binding(FInputChord(Key), IE_Pressed);
+		Binding.bExecuteWhenPaused = true;
+		Binding.KeyDelegate.GetDelegateForManualSet().BindWeakLambda(this, [this, WeakPC]()
+		{
+			if (APlayerController* Owner = WeakPC.Get()) { TogglePauseMenu(Owner); }
+		});
+		State.PauseInput->KeyBindings.Add(MoveTemp(Binding));
 	}
-	GamePC->PushInputComponent(PauseInput);
-	PauseInputOwner = GamePC;
-	BoundPauseKey = Settings.PauseKey;
-	BoundPausePadKey = Settings.PausePadKey;
-}
-
-void UTN_GameSettingsSubsystem::HandlePauseKey(FKey Key)
-{
-	if (APlayerController* PC = PauseInputOwner.Get())
-	{
-		TogglePauseMenu(PC);
-	}
+	GamePC->PushInputComponent(State.PauseInput);
+	State.PauseInputOwner = GamePC;
+	State.BoundPauseKey = Own.PauseKey;
+	State.BoundPausePadKey = Own.PausePadKey;
 }
 
 bool UTN_GameSettingsSubsystem::CanOpenPauseMenu(const APlayerController* PC) const
@@ -2054,7 +2335,11 @@ void UTN_GameSettingsSubsystem::TogglePauseMenu(APlayerController* PC)
 {
 	if (IsPauseMenuOpen())
 	{
-		ClosePauseMenu();
+		// Con la pantalla partida, solo lo cierra quien lo abrió (los demás esperan con la partida parada).
+		if (GetPauseMenuOwner() == PC)
+		{
+			ClosePauseMenu();
+		}
 	}
 	else
 	{
@@ -2074,9 +2359,35 @@ void UTN_GameSettingsSubsystem::OpenPauseMenu(APlayerController* PC)
 		return;
 	}
 	PauseMenu = Menu;
-	TNVR::AddToScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
+	// A toda la pantalla, por encima de las vistas de la pantalla partida.
+	TNVR::AddToFullScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
 	Menu->TakeInput();
-	UE_LOG(LogTortunabo, Log, TEXT("[Pausa] Menú abierto (%s)."), *GetNameSafe(PC->GetWorld()));
+	// Partida local: la partida se para para todos mientras está abierto.
+	if (UTN_LocalPlaySubsystem::IsLocalGame(PC))
+	{
+		SetWorldPaused(PC, true);
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Pausa] Menú abierto (%s%s)."), *GetNameSafe(PC->GetWorld()),
+		UTN_LocalPlaySubsystem::IsLocalGame(PC) ? *FString::Printf(TEXT(", jugador %d"), UTN_LocalPlaySubsystem::GetPlayerNumber(PC)) : TEXT(""));
+}
+
+void UTN_GameSettingsSubsystem::SetWorldPaused(APlayerController* PC, bool bPause)
+{
+	if (bPause)
+	{
+		UWorld* World = PC ? PC->GetWorld() : nullptr;
+		if (World && !World->IsPaused() && UGameplayStatics::SetGamePaused(PC, true))
+		{
+			PausedWorld = World;
+		}
+		return;
+	}
+	UWorld* World = PausedWorld.Get();
+	PausedWorld.Reset();
+	if (World && !World->bIsTearingDown && World->IsPaused())
+	{
+		UGameplayStatics::SetGamePaused(World, false);
+	}
 }
 
 void UTN_GameSettingsSubsystem::OpenMainMenuSettings(APlayerController* PC)
@@ -2092,7 +2403,7 @@ void UTN_GameSettingsSubsystem::OpenMainMenuSettings(APlayerController* PC)
 		return;
 	}
 	PauseMenu = Menu;
-	TNVR::AddToScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
+	TNVR::AddToFullScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
 	Menu->TakeInput();
 	UE_LOG(LogTortunabo, Log, TEXT("[Pausa] Ajustes abiertos desde el menú principal."));
 }
@@ -2105,11 +2416,17 @@ void UTN_GameSettingsSubsystem::ClosePauseMenu()
 		// Al quitarse, el menú devuelve la entrada (NativeDestruct) y avisa (NotifyPauseMenuClosed).
 		Menu->RemoveFromParent();
 	}
+	SetWorldPaused(nullptr, false);
 }
 
 bool UTN_GameSettingsSubsystem::IsPauseMenuOpen() const
 {
 	return PauseMenu && TNVR::IsOnScreen(PauseMenu);
+}
+
+APlayerController* UTN_GameSettingsSubsystem::GetPauseMenuOwner() const
+{
+	return IsPauseMenuOpen() ? PauseMenu->GetOwningPlayer() : nullptr;
 }
 
 void UTN_GameSettingsSubsystem::NotifyPauseMenuClosed(UTN_PauseMenuWidget* Menu)
@@ -2118,6 +2435,8 @@ void UTN_GameSettingsSubsystem::NotifyPauseMenuClosed(UTN_PauseMenuWidget* Menu)
 	{
 		PauseMenu = nullptr;
 	}
+	// La partida local sigue (también si el menú se va por un viaje).
+	SetWorldPaused(nullptr, false);
 	// Ajustes abiertos desde el menú principal: al cerrarse, la entrada vuelve a ser la de ese menú (solo interfaz, con el cursor a
 	// la vista), no la de una partida.
 	APlayerController* MenuPC = Menu ? Menu->GetOwningPlayer() : nullptr;

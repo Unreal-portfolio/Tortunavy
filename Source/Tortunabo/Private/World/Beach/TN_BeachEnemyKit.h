@@ -12,6 +12,7 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "UObject/Package.h"
@@ -381,16 +382,13 @@ namespace TNBeachKit
 		return D;
 	}
 
-	/** Cámara local (la primera): posición. Falso sin jugador local. */
-	inline bool LocalCamera(const UWorld* World, FVector& OutLoc)
+	/**
+	 * Cámara local: posición. InOutLoc entra con el sitio de lo que se mira: con la pantalla partida (#311), la cámara local
+	 * más cercana a él. Falso (y InOutLoc sin tocar) sin jugador local.
+	 */
+	inline bool LocalCamera(const UWorld* World, FVector& InOutLoc)
 	{
-		const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
-		if (!PC || !PC->PlayerCameraManager)
-		{
-			return false;
-		}
-		OutLoc = PC->PlayerCameraManager->GetCameraLocation();
-		return true;
+		return TNLocalViews::ClosestCamera(World, InOutLoc, InOutLoc);
 	}
 
 	/**

@@ -85,7 +85,9 @@ PreLogin) y, si no, el tope de `DefaultGame.ini`.
   pantalla, cada 20 s mientras está abierta y con «Actualizar» (F5 o Y del mando). Intro, A o clic en una sala: entrar.
 
 Búsquedas (`StartRoomSearch`; solo una a la vez, la siguiente espera su turno y a los 25 s sin respuesta se da por
-fallida):
+fallida). En la cola solo cabe una y la ocupa la más importante (`TNRoomSearchRules`): «unirse a la primera», después
+el código y, por último, la lista, que se repite sola y no pisa a un código que espera respuesta (#73). Mientras se crea
+una sala o se entra en otra no se busca nada más:
 
 | Búsqueda | Filtros en el servidor de Steam | Filtro aquí (también con el NULL) |
 |---|---|---|
@@ -194,6 +196,11 @@ La regla es pura (`TNTravel::DecideTravelFailure`, tests `Tortunabo.Net.TravelFa
 
 - **Sala por defecto**: un servidor escucha sin sala elegida (p. ej. «Play As Listen Server» del editor) usa una pública
   con nombre y código al azar y 8 plazas (`EnsureActiveRoom`), así que cerrar y expulsar también se prueban en el editor.
+- **Una operación a la vez** (#73): crear la sala, entrar en otra, cerrar la sesión vieja para hacerlo o viajar al mapa
+  (`FTNRoomOpState`, `UMP_GameInstance::RoomOp`). Mientras dura, otro «Crear», «Unirse», código, «unirse a la primera» o
+  invitación de Steam no hace nada (antes destruía la sesión que se estaba creando). Si Steam no contesta en 30 s se
+  deshace con el aviso de siempre («No se ha podido crear la sala…» o el de entrar); el viaje tiene 120 s. Se libera al
+  contestar Steam, al rechazar el servidor o al cargar el mapa.
 - **Al volver al menú** (`HandlePostLoadMap` en `LVL_Menu`) se olvida la sala (`ResetRoomState`).
 - **El anfitrión se va**: los invitados vuelven al menú con «Se ha acabado la partida: el anfitrión se ha ido o se ha
   perdido la conexión.».

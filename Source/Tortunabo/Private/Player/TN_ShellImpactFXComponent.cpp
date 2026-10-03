@@ -1,4 +1,5 @@
 #include "Player/TN_ShellImpactFXComponent.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Audio/TN_ShellImpactSynth.h"
 #include "Core/TN_Log.h"
 #include "Player/TN_ShellBody.h"
@@ -639,9 +640,9 @@ void UTN_ShellImpactFXComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		}
 	}
 
-	// Solo se mueven los emisores con partículas vivas.
-	const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(World, 0);
-	const FVector View = Cam ? Cam->GetCameraLocation() : Turtle->GetActorLocation();
+	// Solo se mueven los emisores con partículas vivas (con la pantalla partida, hacia la cámara local más cercana).
+	FVector View = Turtle->GetActorLocation();
+	TNLocalViews::ClosestCamera(World, Turtle->GetActorLocation(), View);
 	for (FSlot& Slot : S.Slots)
 	{
 		if (!Slot.bAlive) { continue; }
@@ -762,8 +763,8 @@ void UTN_ShellImpactFXComponent::EmitImpact(ETNShellImpactSound InSound, float I
 	// Efecto visual, cerca de la cámara local.
 	if (FXAmount > 0.f && FApp::CanEverRender())
 	{
-		const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(World, 0);
-		const FVector View = Cam ? Cam->GetCameraLocation() : InWhere;
+		FVector View = InWhere;
+		TNLocalViews::ClosestCamera(World, InWhere, View);
 		if (FVector::DistSquared(View, InWhere) > FMath::Square(static_cast<double>(MaxViewDistance)))
 		{
 			return;
