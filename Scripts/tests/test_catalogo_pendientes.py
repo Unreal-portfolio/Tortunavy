@@ -53,3 +53,30 @@ def test_el_catalogo_versionado_no_tiene_assets_sin_usar_sin_issue():
     for r in rows:
         if r["uso"] == cp.UNUSED:
             assert f"{cp.NOTE_MARK}{cp.issue_for(r['ruta'])}" in r["nota"], r["ruta"]
+
+
+def test_los_restos_sin_usar_van_a_la_limpieza():
+    assert cp.issue_for("/Game/Blueprints/Characters/SKM_Tortuga_Merged") == cp.CLEANUP_ISSUE
+    assert cp.issue_for("/Game/Blueprints/Gameplay/GridMap/MI_Grid_Rock") == cp.CLEANUP_ISSUE
+    assert cp.issue_for("/Game/Generated/Meshes/Buggy/SM_BuggyBody") == 290
+    assert cp.issue_for("/Game/Maps/Dev/LVL_GaleriaAssets") == 312
+
+
+# #126: categoría y estado (final, placeholder o deprecado) en cada fila. Que cubre todo Content/ salvo _Deprecado lo
+# comprueba catalogo_assets.py al generarlo (aquí fallaría en cuanto alguien añade un asset sin abrir Unreal).
+ESTADOS = {"final", "placeholder", "deprecado"}
+
+
+def test_el_catalogo_versionado_tiene_categoria_y_estado():
+    fields, rows = cp.read_rows()
+    for field in ("nombre", "ruta", "tipo", "categoria", "estado", "motivo_estado"):
+        assert field in fields
+    assert not any(r["ruta"].startswith("/Game/_Deprecado/") for r in rows)
+    assert {r["categoria"] for r in rows} >= {"Malla", "Sonido", "Blueprint", "Mapa", "Material", "Textura", "Animación"}
+    for r in rows:
+        assert r["categoria"], r["ruta"]
+        assert r["estado"] in ESTADOS, r["ruta"]
+        if r["estado"] != "final":
+            assert r["motivo_estado"], r["ruta"]
+        if r["tipo"] == "ObjectRedirector" or (r["uso"] == cp.UNUSED and cp.issue_for(r["ruta"]) == cp.CLEANUP_ISSUE):
+            assert r["estado"] == "deprecado", r["ruta"]

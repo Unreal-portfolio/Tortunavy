@@ -2,7 +2,7 @@
 
 Importa los FBX de Art/Source y Art/Library/IA en /Game/Art/... (solo si faltan) y genera
 /Game/Maps/Dev/LVL_GaleriaAssets con cada StaticMesh y SkeletalMesh de /Game, ordenados como el catálogo
-(catalogo_assets.py): por origen (Humano, IA, Script-Blender, Motor o plantilla) y dentro por carpeta. Cada origen
+(catalogo_assets.py): por origen (Humano, IA, Script, Motor o plantilla) y dentro por carpeta. Cada origen
 lleva un cartel grande con sus autores y cada pieza su nombre en el suelo, delante. Las piezas enormes o diminutas se
 escalan para que quepan entre MIN_PIECE_CM y MAX_PIECE_CM y la escala va en su cartel. Al final van los Blueprints de
 actor con presencia en el mundo. Comprueba que hay un actor por malla del catálogo presente en la rama.

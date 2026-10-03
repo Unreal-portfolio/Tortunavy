@@ -18,6 +18,8 @@ from pathlib import Path
 UNUSED = "sin usar"
 NOTE_MARK = "Pendiente: #"
 NOTE_SEPARATOR = " · "
+# Limpieza de basura del repo por lotes: lo que la tiene pendiente se borra (en el catálogo, estado «deprecado»).
+CLEANUP_ISSUE = 31
 
 # (prefijo de la ruta /Game, issue que lo aplica). Gana el primero que encaja: lo concreto va antes.
 PENDING = (
@@ -27,15 +29,35 @@ PENDING = (
     ("/Game/Art/IA/rally/caja_items/", 304),
     ("/Game/Art/IA/rally/", 602),
     ("/Game/Art/Source/Vehicles/Buggy/", 290),
-    # Carrocería de HellYeah que sustituyó SM_TN_BuggyBody (#290): no está en dev; se borra antes de fusionar el lote.
-    ("/Game/Generated/Meshes/Buggy/SM_BuggyBody", 290),
+    # El buggy de HellYeah (no está en dev; se borra antes de fusionar el lote) y la plantilla Vehicle: los sustituye el
+    # modelo de Art/Source (SM_TN_BuggyBody).
+    ("/Game/Generated/", 290),
+    ("/Game/Vehicles/", 290),
     ("/Game/Audio/Rally/", 603),
     ("/Game/Audio/EffectSounds/FootstepsMiniPack/", 604),
     ("/Game/Audio/EffectSounds/", 348),
-    ("/Game/Blueprints/Characters/SKM_Tortuga_Merged", 581),
-    # Restos del Modeling Mode en las carpetas _GENERATED de los mapas: se borran en la limpieza por lotes.
-    ("/Game/Maps/_GENERATED/", 31),
-    ("/Game/Maps/Lobby/_GENERATED/", 31),
+    # La galería de assets es una herramienta: la abre y la rehace su issue.
+    ("/Game/Maps/Dev/", 312),
+    # Restos sin referencias en mapas, Blueprints ni código: la limpieza por lotes decide si se borran.
+    # Modeling Mode en las carpetas _GENERATED de los mapas y piezas del blockout del lobby que no se colocaron.
+    ("/Game/Maps/_GENERATED/", CLEANUP_ISSUE),
+    ("/Game/Maps/Lobby/_GENERATED/", CLEANUP_ISSUE),
+    ("/Game/Blueprints/Builder/", CLEANUP_ISSUE),
+    ("/Game/Materials/Grid/", CLEANUP_ISSUE),
+    # Tortuga fusionada antigua: la del jugador sale de BP_TortugaCharacter (#581, cerrada) y no la usa.
+    ("/Game/Blueprints/Characters/SKM_Tortuga_Merged", CLEANUP_ISSUE),
+    ("/Game/Blueprints/Characters/SK_Tortuga_Merged", CLEANUP_ISSUE),
+    ("/Game/Blueprints/Characters/Textures/gorro", CLEANUP_ISSUE),
+    # Materiales de LVL_ProcGenDemo, que ya no existe (M_GridTerrain y M_GridTerrainWet sí se usan).
+    ("/Game/Blueprints/Gameplay/GridMap/M", CLEANUP_ISSUE),
+    ("/Game/Blueprints/Gameplay/Chunks/BP_Chunk_Medium_Personaliced", CLEANUP_ISSUE),
+    ("/Game/Blueprints/Gameplay/Interaction/BP_CollectionZone", CLEANUP_ISSUE),
+    ("/Game/ProcMap/Materials/MI_ProcSlideWater", CLEANUP_ISSUE),
+    ("/Game/Maps/LVL_LevelMetrics", CLEANUP_ISSUE),
+    # Redirectores de assets movidos (Fix Up Redirectors).
+    ("/Game/Animations/Character/TortugaDemo/Salute", CLEANUP_ISSUE),
+    ("/Game/Animations/Character/TortugaDemo/Yelling", CLEANUP_ISSUE),
+    ("/Game/Blueprints/BP_Net", CLEANUP_ISSUE),
 )
 
 ROOT = Path(__file__).resolve().parents[2]
