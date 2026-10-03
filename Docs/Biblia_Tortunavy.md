@@ -1066,9 +1066,9 @@ asset (no de un documento); el menú de pausa las lista siempre desde el `IMC_Pl
 - En la carrera, «usar el objeto» es la misma tecla que interactuar (E); si hay algo que coger cerca, coge.
 - **Reanimar no va con E.** A una tortuga derribada la levanta una compañera **haciendo un emote** a menos de 300 cm durante 3 s (§20.3); a
   una eliminada, el rescate del cooperativo se hace con E **sin mantener** sobre su cuerpo (§22.3).
-- **B / Círculo mete y saca del caparazón** (ronda 4). B no hacía nada en juego (en los menús es «volver»). El asset `IMC_Player` todavía no
-  la trae: `UTN_GameSettingsSubsystem` la añade como tecla de serie de `IA_Shell` mientras tanto (`PendingCodeDefaults`), y
-  `Scripts/imc_player_shell_b.py` (se ejecuta una vez con el editor abierto) la mete en el asset; con el asset al día esa lista queda vacía.
+- **B / Círculo mete y saca del caparazón** (ronda 4). B no hacía nada en juego (en los menús es «volver»). El asset `IMC_Player` la trae
+  desde #637 (`Scripts/imc_player_shell_b.py`, ejecutado en el editor sin ventana; el test `Tortunabo.Settings.PlayerInputMapping` lo
+  comprueba). `UTN_GameSettingsSubsystem` la añadía como tecla de serie de `IA_Shell` (`PendingCodeDefaults`); con el asset al día esa lista queda vacía.
   La lista de controles del menú la enseña sola, porque sale del `IMC_Player` en ejecución.
 - **Una tecla mantenida al cerrar un menú no se repite en el juego** (ronda 4). Con el menú a la vista, el menú se come la pulsación; si la
   tecla sigue apretada cuando desaparece, el motor manda repeticiones y Enhanced Input las toma por una pulsación nueva (B metería en el
@@ -4979,7 +4979,7 @@ Dónde una fuente dice una cosa y el código otra. **Manda el código**; la colu
 | 15 | Comentario de `TortugaCharacter.h` | Las teclas 0–9 deberían mapearse a los emotes | No están en `IMC_Player`; los bailes solo salen por la rueda |
 | 16 | Pestaña «Reglas» del general (`TN_BriefingWidget.cpp`) | «Cada ronda dura como mucho 6 minutos»; reaparición «en Carrera y 2 vs 2, la tuya» | 9 min (`RoundTimeLimitSeconds` 540); en la playa no se muere |
 | 17 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 10 | Ojo de pez con `r.Upscale.Panini.D` y `.S` | En UE 5.6 los cvars son `r.LensDistortion.Panini.*` ([`Docs/Menu_Pausa.md`](Menu_Pausa.md)) |
-| 18 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 11 | Círculo/B «de serie» en `IMC_Player` | El asset todavía no la trae: la pone el código (`PendingCodeDefaults`) hasta que se ejecute `Scripts/imc_player_shell_b.py` (§6.1) |
+| 18 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 11 | Círculo/B «de serie» en `IMC_Player` | Resuelto en #637: el asset ya la trae (`Scripts/imc_player_shell_b.py`, §6.1) |
 | 19 | [`Docs/Modo_Carrera.md`](Modo_Carrera.md), «Algas» | «Hasta 4 a la vez» | `MaxCatches = 8` (y el propio documento, en «Hecho para 8 jugadores», dice 8) |
 | 20 | `TN_CrabSpawnZone.h` (comentario) | «Default 3» | `SpawnCountOnEnter = 5` |
 | 21 | LDD | Gaviota con «bombardeo en zona aleatoria cada ~8 s» y «agarra si quieto más de 2 s» | `ATN_EnemySeagull` tiene cronómetro de 8 s y círculo que se encoge; no hay regla de «quieto 2 s» |
@@ -5024,8 +5024,8 @@ Lo que no se ha podido comprobar en el código, en un documento o en pantalla. N
    velocidades y la plancha están confirmadas por los registros; el resto (salto, cámara, sensibilidades…) se leyó del `.uasset` sin verlo en pantalla.
 10. **Contenido de las ruedas**: los bailes y las frases están en assets de datos (`DA_EmoteWheelCatalog`, `DA_QuickChatWheelCatalog`); las
     probabilidades de los objetos suponen que `DT_Items` tiene solo las siete filas leídas (archivo de 27-04-2026, sin cambios en HEAD).
-11. **`IMC_Player` en disco**: no se ha abierto el asset para ver si ya trae B / Círculo para el caparazón (la pone el código mientras tanto;
-    `Scripts/imc_player_shell_b.py` está pendiente de ejecutarse).
+11. **`IMC_Player` en disco**: trae B / Círculo para el caparazón desde #637 (`Scripts/imc_player_shell_b.py`, comprobado por
+    `Tortunabo.Settings.PlayerInputMapping`).
 12. **Nombre visible de los objetos de siempre**: `FTN_InventoryItem` no lo tiene; los de las tablas son los de trabajo de los comentarios y los
     documentos. Cuántos objetos puede abrazar o llevar por un extremo cada malla concreta depende del tamaño de cada una.
 13. **Clases del clásico**: el LDD describe erizos venenosos, arenas movedizas y cangrejo enterrado; en C++ solo hay `ATN_SlowZoneVolume` y el

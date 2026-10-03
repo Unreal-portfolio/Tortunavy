@@ -324,7 +324,7 @@ Meterse o salir del caparazón (`IA_Shell`) solo iba con Ctrl izquierdo. Ahora t
   los sticks) y ningún otro asset ni código de juego la lee; B solo era «volver» en los menús (pausa, tienda, briefing, salas,
   campeón de la carrera). No había un choque de acciones.
 - **Dónde se pone**: en `IMC_Player`, con `Scripts/imc_player_shell_b.py` (se ejecuta una vez desde el editor abierto: mira lo que
-  hay, se niega si B es de otra acción y guarda el asset). Mientras el asset no la traiga, `UTN_GameSettingsSubsystem` la pone como
+  hay, se niega si B es de otra acción y guarda el asset). Ejecutado en #637: el asset ya la trae. Mientras el asset no la traiga, `UTN_GameSettingsSubsystem` la pone como
   tecla de serie de `IA_Shell` (`PendingCodeDefaults`: la copia transitoria de `IMC_Player` la añade), así que ya vale sin ejecutar
   el script; con el asset al día esa lista queda vacía y manda el asset. La lista de controles («Meterse en el caparazón») y el
   cambio de teclas la enseñan sola en la columna del mando: sale de `IMC_Player` en ejecución.
