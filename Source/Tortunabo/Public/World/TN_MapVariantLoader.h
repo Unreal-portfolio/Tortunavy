@@ -8,6 +8,7 @@ class UMaterialInterface;
 class UProceduralMeshComponent;
 class FJsonObject;
 class ATN_DeathZoneVolume;
+class ATN_MapPlacementSpawner;
 
 /**
  * Herramienta de disenadores: carga en el nivel abierto una de las variantes de mapa que genera
@@ -39,6 +40,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = "MapVariant")
 	TObjectPtr<UMaterialInterface> TerrainMaterial;
 
+	/**
+	 * Al empezar la partida, coloca el bloque "placements" del manifest (puzles, enemigos, mecánicas, botín, nidos,
+	 * decorado y vegetación de Scripts/place_terrain_path.py, #652) con ATN_MapPlacementSpawner. Lo puesto a mano en el
+	 * nivel en su sitio manda: esa entrada no se coloca.
+	 */
+	UPROPERTY(EditAnywhere, Category = "MapVariant")
+	bool bSpawnPlacements = true;
+
 	/** Campo "description" del manifest de la variante cargada. Solo lectura. */
 	UPROPERTY(VisibleAnywhere, Category = "MapVariant")
 	FString VariantDescription;
@@ -60,6 +69,8 @@ private:
 	TSharedPtr<FJsonObject> ReadManifest() const;
 	/** Pone un ATN_DeathZoneVolume por cada caja de "kill_boxes_uu" (fondo de los barrancos). */
 	void SpawnKillZones();
+	/** Coloca el bloque "placements" del manifest (ATN_MapPlacementSpawner, en cada máquina). */
+	void SpawnPlacements();
 	static FString VariantsDir();
 
 	/** Un UProceduralMeshComponent por trozo del manifest ("cells"). Transitorios: no se guardan en
@@ -70,6 +81,10 @@ private:
 
 	/** Zonas de muerte creadas en BeginPlay; se destruyen en EndPlay. */
 	TArray<TWeakObjectPtr<ATN_DeathZoneVolume>> SpawnedKillZones;
+
+	/** Lo colocado del bloque "placements" en esta máquina; se destruye en EndPlay. */
+	UPROPERTY(Transient)
+	TObjectPtr<ATN_MapPlacementSpawner> PlacementSpawner;
 
 	/** Variante con la que se construyeron ChunkMeshes, para no reconstruir en balde. */
 	UPROPERTY(Transient)

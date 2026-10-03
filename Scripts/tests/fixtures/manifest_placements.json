@@ -1,0 +1,569 @@
+{
+ "name": "fixture_placements",
+ "description": "Manifest de prueba de TN_MapPlacementsTest (#652): una entrada de cada pieza que coloca el cargador.",
+ "placements": {
+  "format": 1,
+  "generator": "a mano",
+  "seed": 652,
+  "map_seed": 1,
+  "include_pending": false,
+  "auto": [
+   {
+    "id": "t-enemy-SeaUrchin-0",
+    "category": "enemy",
+    "kind": "SeaUrchin",
+    "location_uu": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-obstacle-BarbedWire-1",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "location_uu": [
+     3000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 1500.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-mechanic-Trampoline-2",
+    "category": "mechanic",
+    "kind": "Trampoline",
+    "location_uu": [
+     6000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-mechanic-Catapult-3",
+    "category": "mechanic",
+    "kind": "Catapult",
+    "location_uu": [
+     9000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {
+     "puzzle_id": "t-puzzle-catapult_gap-18"
+    },
+    "source": "auto"
+   },
+   {
+    "id": "t-mechanic-Geyser-4",
+    "category": "mechanic",
+    "kind": "Geyser",
+    "location_uu": [
+     12000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto",
+    "target_uu": [
+     13400.0,
+     0.0,
+     0.0
+    ]
+   },
+   {
+    "id": "t-mechanic-Boardwalk-5",
+    "category": "mechanic",
+    "kind": "Boardwalk",
+    "location_uu": [
+     15000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 20.0,
+    "extent_uu": 2000.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto",
+    "path_uu": [
+     [
+      14000.0,
+      0.0,
+      0.0
+     ],
+     [
+      15000.0,
+      300.0,
+      0.0
+     ],
+     [
+      16000.0,
+      0.0,
+      0.0
+     ]
+    ]
+   },
+   {
+    "id": "t-loot-ItemBox-6",
+    "category": "loot",
+    "kind": "ItemBox",
+    "location_uu": [
+     18000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-loot-ScoreShell-7",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "location_uu": [
+     21000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-loot-ScoreShell-8",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "location_uu": [
+     24000.0,
+     500.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-loot-SearchSpot-9",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "location_uu": [
+     27000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-loot-TreasureChest-10",
+    "category": "loot",
+    "kind": "TreasureChest",
+    "location_uu": [
+     30000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-nido-lejos",
+    "category": "nest",
+    "kind": "EggNest",
+    "location_uu": [
+     33000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto",
+    "line": 0,
+    "s_m": 300.0
+   },
+   {
+    "id": "t-nido-cerca",
+    "category": "nest",
+    "kind": "EggNest",
+    "location_uu": [
+     36000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto",
+    "line": 0,
+    "s_m": 100.0
+   },
+   {
+    "id": "t-puzzle-throw_chain-13",
+    "category": "puzzle",
+    "kind": "throw_chain",
+    "location_uu": [
+     39000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 24.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {
+     "walls": 1,
+     "wall_height_m": 4.8,
+     "ramp_run_m": 7.5,
+     "effect_s": 8
+    },
+    "source": "auto",
+    "path_uu": [
+     [
+      37800.0,
+      0.0,
+      0.0
+     ],
+     [
+      39000.0,
+      300.0,
+      0.0
+     ],
+     [
+      40200.0,
+      0.0,
+      0.0
+     ]
+    ]
+   },
+   {
+    "id": "t-puzzle-plate_balance-14",
+    "category": "puzzle",
+    "kind": "plate_balance",
+    "location_uu": [
+     42000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 26.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {
+     "plates": 3,
+     "spacing_m": 6,
+     "hold_s": 2,
+     "ball_counts_double": true,
+     "latch": false
+    },
+    "source": "auto"
+   },
+   {
+    "id": "t-puzzle-breakable_chain-15",
+    "category": "puzzle",
+    "kind": "breakable_chain",
+    "location_uu": [
+     45000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 26.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {
+     "platforms": 6,
+     "respawn_s": 6,
+     "trampoline": true
+    },
+    "source": "auto",
+    "path_uu": [
+     [
+      43700.0,
+      0.0,
+      0.0
+     ],
+     [
+      45000.0,
+      300.0,
+      0.0
+     ],
+     [
+      46300.0,
+      0.0,
+      0.0
+     ]
+    ]
+   },
+   {
+    "id": "t-puzzle-shell_gauntlet-16",
+    "category": "puzzle",
+    "kind": "shell_gauntlet",
+    "location_uu": [
+     48000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 34.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {
+     "gates": 3,
+     "spacing_m": 10,
+     "open_hold_s": 3
+    },
+    "source": "auto"
+   },
+   {
+    "id": "t-puzzle-wobbly_run-17",
+    "category": "puzzle",
+    "kind": "wobbly_run",
+    "location_uu": [
+     51000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 28.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {
+     "platforms": 5,
+     "gap_m": 2.5,
+     "long_gap_m": 4.5
+    },
+    "source": "auto"
+   },
+   {
+    "id": "t-puzzle-catapult_gap-18",
+    "category": "puzzle",
+    "kind": "catapult_gap",
+    "location_uu": [
+     54000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 8.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {
+     "long_way": true,
+     "landing": "trampoline"
+    },
+    "source": "auto"
+   },
+   {
+    "id": "t-puzzle-basket_hold-19",
+    "category": "puzzle",
+    "kind": "basket_hold",
+    "location_uu": [
+     57000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 30.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-decor-Rock-20",
+    "category": "decor",
+    "kind": "Rock",
+    "location_uu": [
+     60000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-decor-Starfish-21",
+    "category": "decor",
+    "kind": "Starfish",
+    "location_uu": [
+     63000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-vegetation-Palm-22",
+    "category": "vegetation",
+    "kind": "Palm",
+    "location_uu": [
+     66000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-vegetation-Grass-23",
+    "category": "vegetation",
+    "kind": "Grass",
+    "location_uu": [
+     69000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-vegetation-Shrub-24",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "location_uu": [
+     72000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-enemy-Dragon-25",
+    "category": "enemy",
+    "kind": "Dragon",
+    "location_uu": [
+     75000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-borrado",
+    "category": "decor",
+    "kind": "Rock",
+    "location_uu": [
+     78000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-tapado",
+    "category": "enemy",
+    "kind": "GiantCrab",
+    "location_uu": [
+     81000.0,
+     0.0,
+     0.0
+    ],
+    "yaw_deg": 0.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "params": {},
+    "source": "auto"
+   },
+   {
+    "id": "t-sin-sitio",
+    "category": "enemy",
+    "kind": "SeaUrchin"
+   }
+  ],
+  "manual": [
+   {
+    "category": "enemy",
+    "kind": "Lizard",
+    "location_uu": [
+     87000.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "suppressed": [
+   "t-borrado"
+  ],
+  "summary": {}
+ }
+}
