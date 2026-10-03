@@ -110,3 +110,18 @@ dificultades) por lo que más destaca de cada uno dentro de su dificultad; la ta
   imprime la huella nueva de cada mapa que cambia: hay que mirar esos mapas (export y `bench --hojas`) y, si siguen
   valiendo para su tipo y sus trampas, poner las huellas nuevas; si no, elegir otra semilla.
 - Las trampas las colocan #516 y #517; el nivel N juega un mapa del catálogo de su dificultad sin repetir (#518).
+
+### Trampas sobre el mapa (#516)
+
+`TNSurvivalCatalog::PlaceLooseTraps` (`TN_SurvivalTrapPlacement.h`) pasa el % de cada trampa a un punto del camino
+principal: nada en huecos, salida, meta ni uniones de ramas; ninguna zona lenta en los 30 m anteriores a un hueco; y
+los obstáculos (cáscaras, medusas y sombrillas) dejan siempre 3 m de paso libre. Lo comprueba
+`Tortunabo.Survival.Catalogo.Colocacion` sobre los 50 mapas. El generador crea los Blueprints del Clásico
+(`TN_ProcMapGenerator_Survival.cpp`): cáscaras, medusas, sombrillas y las zonas de cangrejos y gaviotas en el
+servidor; las zonas lentas en cada máquina, que frena a su propia tortuga.
+
+Para verlas: en el editor, `Generate In Editor` con una semilla del catálogo y su dificultad y **Debug Draw** dibuja
+los marcadores (cáscaras en verde, zonas lentas en azul, medusas en magenta, cangrejos en rojo, la zona de gaviotas en
+blanco y sus sombrillas en cian). Los actores solo se crean en partida (PIE): p. ej.
+`ServerTravel /Game/Maps/Run/LVL_ProcMap?ProcMode=Survival?ProcSeed=63?ProcDifficulty=Easy`. Una semilla fuera del
+catálogo sale sin trampas.

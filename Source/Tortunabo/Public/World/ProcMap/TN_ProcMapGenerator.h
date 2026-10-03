@@ -7,6 +7,7 @@
 #include "World/ProcMap/TN_ProcMapLayout.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
 #include "World/ProcMap/TN_ProcMapTerrainDetail.h"
+#include "World/ProcMap/TN_SurvivalTrapPlacement.h"
 #include "TN_ProcMapGenerator.generated.h"
 
 class UProceduralMeshComponent;
@@ -254,6 +255,12 @@ private:
 	/** Servidor: decorados del camino que se pueden rebuscar (ATN_ProcSearchSpot); no en el modo de solo terreno. */
 	void SpawnSearchSpots();
 	void SpawnHazards();
+	/** Supervivencia (#516): calcula dónde van las trampas del mapa del catálogo (en todas las máquinas y en el editor). */
+	void PlanSurvivalTraps();
+	/** Crea las trampas del plan: las replicadas y las de lógica de servidor en el servidor; las zonas lentas en cada máquina. */
+	void SpawnSurvivalTraps();
+	/** Marcadores de las trampas del plan (Debug Draw), también en el editor. */
+	void DrawSurvivalTrapPlan() const;
 	/**
 	 * Servidor: conchas de puntos del plan puro (TNProcMap::PlanShells: rachas de 1, arcos de salto, cornisas y
 	 * especiales de 50 y 100) y las especiales de los tramos hundidos de los puentes (BrokenSpanPrizes). Después de
@@ -347,6 +354,9 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AActor>> SpawnedActors;
+
+	/** Trampas del mapa del catálogo de Supervivencia (vacío fuera de Supervivencia o con una semilla fuera del catálogo). */
+	TArray<TNSurvivalCatalog::FTrapPlacement> SurvivalTrapPlan;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UPrimitiveComponent>> BoundaryWalls;

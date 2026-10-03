@@ -117,3 +117,16 @@ void ATN_CrabSpawnZone::SpawnCrab()
 		}
 	}
 }
+
+void ATN_CrabSpawnZone::ConfigureZone(const FVector& Extent, int32 Count, TSubclassOf<ATN_CrabActor> FallbackClass)
+{
+	if (ProximityVolume)
+	{
+		ProximityVolume->SetBoxExtent(Extent, true);
+	}
+	SpawnCountOnEnter = FMath::Clamp(Count, 1, 20);
+	if (!CrabClass)
+	{
+		CrabClass = FallbackClass;
+	}
+}

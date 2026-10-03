@@ -193,6 +193,7 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 		return;
 	}
 	const double T1 = FPlatformTime::Seconds();
+	PlanSurvivalTraps();
 
 	BuildTerrain();
 	const double T2 = FPlatformTime::Seconds();
@@ -216,6 +217,7 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 		if (!bTerrainOnly)
 		{
 			SpawnHazards();
+			SpawnSurvivalTraps();
 			// Después de los peligros: las conchas del plan no pisan lo que estos han puesto (HazardSpots).
 			SpawnShells();
 			RunBiomePCG();
@@ -324,6 +326,7 @@ void ATN_ProcMapGenerator::Clear()
 		if (Comp) { Comp->DestroyComponent(); }
 	}
 	BoundaryWalls.Reset();
+	SurvivalTrapPlan.Reset();
 
 	for (AActor* Actor : SpawnedActors)
 	{
@@ -626,4 +629,5 @@ void ATN_ProcMapGenerator::DrawDebug() const
 				FColor::Orange, true, -1.f, 0, 20.f);
 		}
 	}
+	DrawSurvivalTrapPlan();
 }

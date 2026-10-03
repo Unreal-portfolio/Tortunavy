@@ -136,3 +136,11 @@ void ATN_SlowZoneVolume::OnCharacterDestroyed(AActor* DestroyedActor)
 
 	CharactersInZone.Remove(Char);
 }
+
+void ATN_SlowZoneVolume::SetZoneExtent(const FVector& Extent)
+{
+	if (TriggerBox)
+	{
+		TriggerBox->SetBoxExtent(Extent, true);
+	}
+}

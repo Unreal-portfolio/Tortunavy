@@ -29,6 +29,9 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 
+	/** Semiejes de la caja al crear la zona desde código (mapa de Supervivencia, #516). */
+	void SetZoneExtent(const FVector& Extent);
+
 protected:
 	/** Caja de colisión — editar su tamaño en el Viewport del Blueprint. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SlowZone")
