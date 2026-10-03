@@ -3,6 +3,7 @@
 #include "Player/TN_SlopeTiltDecisions.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
+#include "World/TN_EggHatch.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -16,9 +17,6 @@ namespace TNSlopeTiltPrivate
 		TEXT("TN.SlopeTilt.Enable"), 1,
 		TEXT("Inclinación visual de la tortuga con la pendiente (#586): 1 = activa, 0 = el modelo siempre recto."),
 		ECVF_Default);
-
-	/** Giro relativo igual al escrito (con margen por la conversión cuaternión ↔ rotador). */
-	constexpr float SameRotationTolerance = 1.e-2f;
 
 	/** Los proxies parados reutilizan la traza: se repite al moverse más de esto (cm) o pasado RetraceSeconds. */
 	constexpr float RetraceDistanceSq = 1.f;
@@ -83,50 +81,28 @@ void UTN_SlopeTiltComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		return;
 	}
 
-	// En ragdoll la malla la mueve la física: no se toca. El derribo guardó su giro relativo (con la inclinación) para
-	// devolverlo al levantarse: se recuerda la inclinación para seguir desde ella (Resume).
-	if (Mesh->IsSimulatingPhysics())
-	{
-		RememberTilt();
-		bTiltApplied = false;
-		CurrentTilt = TargetTilt = FRotator::ZeroRotator;
-		return;
-	}
+	// En ragdoll la malla la mueve la física y en la pausa del huevo la eclosión pone su pose sobre la foto de la malla
+	// inclinada: no se toca y se recuerda la inclinación. Al levantarse o al acabar la eclosión, la malla vuelve a la foto
+	// y se sigue desde esa inclinación hacia la del suelo, sin enderezarla de golpe.
+	TNSlopeTilt::FTiltGate Gate = ReadGate(*Character);
+	Gate.bRagdoll = Mesh->IsSimulatingPhysics();
 
-	const TNSlopeTilt::FTiltGate Gate = ReadGate(*Character);
-	if (TNSlopeTilt::IsTakenOver(Gate))
-	{
-		DropTilt(*Mesh);
-		return;
-	}
-
-	// Al levantarse (o al acabar la eclosión del huevo) la malla vuelve a la foto inclinada: se retoma esa inclinación y se
-	// interpola hacia la del suelo, sin enderezarla de golpe.
-	if (Resume.TryResume(Mesh->GetRelativeRotation(), TNSlopeTiltPrivate::SameRotationTolerance, BaseRelative, CurrentTilt))
-	{
-		LastWrittenRelative = Mesh->GetRelativeRotation();
-		LastAppliedTilt = CurrentTilt;
-		bTiltApplied = true;
-	}
-
-	TargetTilt = FRotator::ZeroRotator;
+	FRotator FloorTilt = FRotator::ZeroRotator;
 	FVector FloorNormal = FVector::UpVector;
 	if (TNSlopeTiltPrivate::CVarSlopeTiltEnable.GetValueOnGameThread() != 0
 		&& TNSlopeTilt::ShouldTilt(Gate)
 		&& ReadFloorNormal(*Character, FloorNormal))
 	{
 		const float Yaw = Character->GetCapsuleComponent() ? Character->GetCapsuleComponent()->GetComponentRotation().Yaw : Character->GetActorRotation().Yaw;
-		TargetTilt = TNSlopeTilt::ComputeTilt(FloorNormal, Yaw, MaxTiltDeg, MinTiltDeg);
+		FloorTilt = TNSlopeTilt::ComputeTilt(FloorNormal, Yaw, MaxTiltDeg, MinTiltDeg);
 	}
 
-	// Recto y sin nada aplicado: no se escribe en la malla (el caso normal en llano no cuesta nada más).
-	if (!bTiltApplied && TargetTilt.IsZero() && CurrentTilt.IsZero())
+	FQuat NewRelative;
+	if (Driver.Tick(Mesh->GetRelativeRotation(), Gate, FloorTilt, DeltaTime, TiltInterpSpeed, MaxTiltRateDegPerSec, NewRelative))
 	{
-		return;
+		Mesh->SetRelativeRotation(NewRelative);
+		Driver.NoteWritten(Mesh->GetRelativeRotation());
 	}
-
-	CurrentTilt = TNSlopeTilt::StepTilt(CurrentTilt, TargetTilt, DeltaTime, TiltInterpSpeed, MaxTiltRateDegPerSec);
-	ApplyToVisual(*Mesh);
 }
 
 TNSlopeTilt::FTiltGate UTN_SlopeTiltComponent::ReadGate(const ACharacter& Character) const
@@ -134,6 +110,7 @@ TNSlopeTilt::FTiltGate UTN_SlopeTiltComponent::ReadGate(const ACharacter& Charac
 	const UCharacterMovementComponent* Move = Character.GetCharacterMovement();
 	TNSlopeTilt::FTiltGate Gate;
 	Gate.bOnGround = Move && Move->IsMovingOnGround() && !Character.GetAttachParentActor();
+	Gate.bHatching = TNEggHatch::IsHatching(&Character);
 	if (const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(&Character))
 	{
 		Gate.bInShell = Turtle->IsInShell();
@@ -202,62 +179,11 @@ bool UTN_SlopeTiltComponent::TraceFloorNormal(const ACharacter& Character, FVect
 	return bCachedTraceHit;
 }
 
-void UTN_SlopeTiltComponent::ApplyToVisual(USceneComponent& Visual)
-{
-	// Otro sistema ha escrito el giro desde la última vez (o es la primera): ese es el nuevo giro sin inclinar.
-	const FRotator Now = Visual.GetRelativeRotation();
-	const bool bExternalWrite = !bTiltApplied || !Now.Equals(LastWrittenRelative, TNSlopeTiltPrivate::SameRotationTolerance);
-	if (bExternalWrite)
-	{
-		// Otro sistema pone su pose encima de la nuestra (p. ej. la eclosión): si luego devuelve la foto, se retoma.
-		RememberTilt();
-		BaseRelative = Now.Quaternion();
-	}
-
-	if (CurrentTilt.IsZero())
-	{
-		// Llegada a recto: se deja la base tal cual y se deja de escribir.
-		if (!bExternalWrite)
-		{
-			Visual.SetRelativeRotation(BaseRelative);
-		}
-		bTiltApplied = false;
-		return;
-	}
-
-	// Parada en la cuesta y sin cambios de nadie: no se mueve la malla (ni sus hijos) otra vez.
-	if (!bExternalWrite && CurrentTilt.Equals(LastAppliedTilt, TNSlopeTiltPrivate::SameRotationTolerance))
-	{
-		return;
-	}
-
-	// Escribiendo sobre una base propia de nuevo: la inclinación perdida ya no se va a devolver.
-	if (!bExternalWrite)
-	{
-		Resume.Forget();
-	}
-	Visual.SetRelativeRotation(TNSlopeTilt::ComposeTilt(BaseRelative, CurrentTilt));
-	LastWrittenRelative = Visual.GetRelativeRotation();
-	LastAppliedTilt = CurrentTilt;
-	bTiltApplied = true;
-}
-
-void UTN_SlopeTiltComponent::RememberTilt()
-{
-	if (bTiltApplied)
-	{
-		Resume.Remember(LastWrittenRelative, BaseRelative, LastAppliedTilt);
-	}
-}
-
 void UTN_SlopeTiltComponent::DropTilt(USceneComponent& Visual)
 {
-	RememberTilt();
-	// Si la malla sigue con lo que escribimos, vuelve a su base; si otro sistema ya la ha colocado, se deja como está.
-	if (bTiltApplied && Visual.GetRelativeRotation().Equals(LastWrittenRelative, TNSlopeTiltPrivate::SameRotationTolerance))
+	FQuat BaseRelative;
+	if (Driver.Drop(Visual.GetRelativeRotation(), BaseRelative))
 	{
 		Visual.SetRelativeRotation(BaseRelative);
 	}
-	bTiltApplied = false;
-	CurrentTilt = TargetTilt = FRotator::ZeroRotator;
 }

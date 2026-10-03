@@ -56,11 +56,11 @@ public:
 
 	/** Inclinación aplicada ahora (Pitch y Roll en grados, ejes de la cápsula). */
 	UFUNCTION(BlueprintPure, Category = "Slope Tilt")
-	FRotator GetCurrentTilt() const { return CurrentTilt; }
+	FRotator GetCurrentTilt() const { return Driver.CurrentTilt; }
 
 	/** Inclinación hacia la que va (la del suelo, o cero si no toca inclinarse). */
 	UFUNCTION(BlueprintPure, Category = "Slope Tilt")
-	FRotator GetTargetTilt() const { return TargetTilt; }
+	FRotator GetTargetTilt() const { return Driver.TargetTilt; }
 
 private:
 	/** Normal del suelo que ve esta máquina; false si no hay suelo andable debajo. */
@@ -69,35 +69,14 @@ private:
 	/** Traza corta hacia abajo (proxies simulados), cacheada mientras la tortuga no se mueve. */
 	bool TraceFloorNormal(const ACharacter& Character, FVector& OutNormal);
 
-	/** Estado de la tortuga que decide si se inclina (suelo, bola, llevada, derribada, muerta). */
+	/** Estado de la tortuga que decide si se inclina (suelo, bola, llevada, derribada, muerta, en el huevo). */
 	TNSlopeTilt::FTiltGate ReadGate(const ACharacter& Character) const;
-
-	/** Escribe base + inclinación en la malla (o solo la base, al llegar a cero). */
-	void ApplyToVisual(USceneComponent& Visual);
 
 	/** Quita la inclinación al momento: devuelve la malla a su base si nadie la ha cambiado desde la última vez. */
 	void DropTilt(USceneComponent& Visual);
 
-	FRotator CurrentTilt = FRotator::ZeroRotator;
-	FRotator TargetTilt = FRotator::ZeroRotator;
-
-	/** Giro relativo de la malla sin la inclinación (lo que han dejado los demás sistemas). */
-	FQuat BaseRelative = FQuat::Identity;
-
-	/** Giro relativo que escribimos la última vez: si la malla no lo tiene, otro sistema lo ha cambiado. */
-	FRotator LastWrittenRelative = FRotator::ZeroRotator;
-
-	/** Inclinación de la última escritura (para no volver a escribir la misma). */
-	FRotator LastAppliedTilt = FRotator::ZeroRotator;
-
-	/** Hay inclinación aplicada sobre la malla (BaseRelative y LastWrittenRelative valen). */
-	bool bTiltApplied = false;
-
-	/** Inclinación perdida por el ragdoll, el derribo u otro sistema: se retoma si la malla vuelve a su giro. */
-	TNSlopeTilt::FTiltResume Resume;
-
-	/** Guarda la inclinación aplicada (si la hay) para retomarla si la malla vuelve a ese giro. */
-	void RememberTilt();
+	/** Inclinación aplicada, su base y la que se retoma tras una foto (lógica pura, probada en Tortunabo.Player.SlopeTilt.*). */
+	TNSlopeTilt::FTiltDriver Driver;
 
 	/** Caché de la traza de los proxies simulados. */
 	FVector LastTraceLocation = FVector(UE_BIG_NUMBER);

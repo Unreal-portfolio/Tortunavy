@@ -22,15 +22,28 @@ namespace TNSlopeTilt
 		bool bKnockedDown = false;
 		bool bDead = false;
 		bool bRagdoll = false;
+		/** En la pausa del huevo (TNEggHatch::IsHatching): la eclosión pone su pose sobre la foto de la malla. */
+		bool bHatching = false;
 	};
 
 	/**
 	 * Estados en los que otro sistema manda en la malla (la bola la pone sobre el caparazón, el derribo y la muerte la
-	 * giran o la sueltan a la física): la inclinación se quita al momento, sin interpolar, para no torcer su pose.
+	 * giran o la sueltan a la física, la eclosión la anima): la inclinación se quita al momento, sin interpolar, para no
+	 * torcer su pose.
 	 */
 	inline bool IsTakenOver(const FTiltGate& Gate)
 	{
-		return Gate.bInShell || Gate.bCarried || Gate.bKnockedDown || Gate.bDead || Gate.bRagdoll;
+		return Gate.bInShell || Gate.bCarried || Gate.bKnockedDown || Gate.bDead || Gate.bRagdoll || Gate.bHatching;
+	}
+
+	/**
+	 * Estados en los que otro sistema mueve la malla desde la foto que le hizo, inclinación incluida, y la devolverá al
+	 * acabar (el ragdoll la suelta a la física; la eclosión del huevo pone su pose sobre la foto y la devuelve al lanzar):
+	 * no se escribe nada en la malla, solo se recuerda la inclinación para retomarla cuando vuelva la foto.
+	 */
+	inline bool HoldsSnapshot(const FTiltGate& Gate)
+	{
+		return Gate.bRagdoll || Gate.bHatching;
 	}
 
 	/** Solo en el suelo y de pie o de tripa: en el aire, en la bola, llevada, derribada, muerta o en ragdoll, no. */
@@ -153,5 +166,156 @@ namespace TNSlopeTilt
 		}
 
 		void Forget() { bPending = false; }
+	};
+
+	/** Giro relativo igual al escrito (con margen por la conversión cuaternión ↔ rotador). */
+	constexpr float SameRotationTolerance = 1.e-2f;
+
+	/**
+	 * Estado de la inclinación de una malla y su paso por fotograma, sin componentes: UTN_SlopeTiltComponent lo usa con la
+	 * malla de la tortuga. Quien lo usa lee el giro relativo de la malla, escribe el que le devuelven (true + OutRelative)
+	 * y, tras escribirlo, anota el que queda con NoteWritten.
+	 */
+	struct FTiltDriver
+	{
+		/** Inclinación aplicada ahora y hacia la que va (Pitch y Roll en grados, ejes de la cápsula). */
+		FRotator CurrentTilt = FRotator::ZeroRotator;
+		FRotator TargetTilt = FRotator::ZeroRotator;
+
+		/** Giro relativo de la malla sin la inclinación (lo que han dejado los demás sistemas). */
+		FQuat BaseRelative = FQuat::Identity;
+
+		/** Giro relativo que escribimos la última vez: si la malla no lo tiene, otro sistema lo ha cambiado. */
+		FRotator LastWrittenRelative = FRotator::ZeroRotator;
+
+		/** Inclinación de la última escritura (para no volver a escribir la misma). */
+		FRotator LastAppliedTilt = FRotator::ZeroRotator;
+
+		/** Hay inclinación aplicada sobre la malla (BaseRelative y LastWrittenRelative valen). */
+		bool bTiltApplied = false;
+
+		/** Inclinación perdida por el ragdoll, la eclosión u otro sistema: se retoma si la malla vuelve a su giro. */
+		FTiltResume Resume;
+
+		/** Otro sistema mueve la malla desde su foto (HoldsSnapshot): se recuerda la inclinación y la malla no se toca. */
+		void Suspend()
+		{
+			RememberTilt();
+			bTiltApplied = false;
+			CurrentTilt = TargetTilt = FRotator::ZeroRotator;
+		}
+
+		/**
+		 * Quita la inclinación al momento. true si la malla sigue con lo que escribimos: hay que devolverla a su base
+		 * (OutRelative); si otro sistema ya la ha colocado, se deja como está.
+		 */
+		bool Drop(const FRotator& MeshRelative, FQuat& OutRelative)
+		{
+			RememberTilt();
+			const bool bWrite = bTiltApplied && MeshRelative.Equals(LastWrittenRelative, SameRotationTolerance);
+			OutRelative = BaseRelative;
+			bTiltApplied = false;
+			CurrentTilt = TargetTilt = FRotator::ZeroRotator;
+			return bWrite;
+		}
+
+		/**
+		 * Un fotograma con la malla libre, hacia Target. Si la malla ha vuelto a la foto de la inclinación perdida, sigue
+		 * desde ella (sin enderezarla de golpe ni inclinarla dos veces); si tiene otro giro, esa foto ya no vuelve y se
+		 * olvida. true si hay que escribir OutRelative en la malla.
+		 */
+		bool Step(const FRotator& MeshRelative, const FRotator& Target, float DeltaTime, float InterpSpeed, float MaxRateDegPerSec,
+			FQuat& OutRelative)
+		{
+			if (Resume.TryResume(MeshRelative, SameRotationTolerance, BaseRelative, CurrentTilt))
+			{
+				LastWrittenRelative = MeshRelative;
+				LastAppliedTilt = CurrentTilt;
+				bTiltApplied = true;
+			}
+			else
+			{
+				Resume.Forget();
+			}
+
+			TargetTilt = Target;
+			// Recto y sin nada aplicado: no se escribe en la malla (el caso normal en llano no cuesta nada más).
+			if (!bTiltApplied && TargetTilt.IsZero() && CurrentTilt.IsZero())
+			{
+				return false;
+			}
+			CurrentTilt = StepTilt(CurrentTilt, TargetTilt, DeltaTime, InterpSpeed, MaxRateDegPerSec);
+
+			// Otro sistema ha escrito el giro desde la última vez (o es la primera): ese es el nuevo giro sin inclinar. Si
+			// luego devuelve lo que escribimos (una foto), se retoma.
+			const bool bExternalWrite = !bTiltApplied || !MeshRelative.Equals(LastWrittenRelative, SameRotationTolerance);
+			if (bExternalWrite)
+			{
+				RememberTilt();
+				BaseRelative = MeshRelative.Quaternion();
+			}
+
+			if (CurrentTilt.IsZero())
+			{
+				// Llegada a recto: se deja la base tal cual y se deja de escribir.
+				OutRelative = BaseRelative;
+				bTiltApplied = false;
+				return !bExternalWrite;
+			}
+
+			// Parada en la cuesta y sin cambios de nadie: no se mueve la malla (ni sus hijos) otra vez.
+			if (!bExternalWrite && CurrentTilt.Equals(LastAppliedTilt, SameRotationTolerance))
+			{
+				return false;
+			}
+
+			// Escribiendo sobre una base propia de nuevo: la inclinación perdida ya no se va a devolver.
+			if (!bExternalWrite)
+			{
+				Resume.Forget();
+			}
+			OutRelative = ComposeTilt(BaseRelative, CurrentTilt);
+			LastWrittenRelative = OutRelative.Rotator();
+			LastAppliedTilt = CurrentTilt;
+			bTiltApplied = true;
+			return true;
+		}
+
+		/**
+		 * El fotograma completo según el estado de la tortuga: con la foto en manos de otro sistema (HoldsSnapshot) no se
+		 * toca la malla; si otro sistema manda en ella (IsTakenOver), se quita al momento; si no, un paso hacia FloorTilt
+		 * (la inclinación del suelo, o cero en el aire). true si hay que escribir OutRelative en la malla.
+		 */
+		bool Tick(const FRotator& MeshRelative, const FTiltGate& Gate, const FRotator& FloorTilt, float DeltaTime, float InterpSpeed,
+			float MaxRateDegPerSec, FQuat& OutRelative)
+		{
+			if (HoldsSnapshot(Gate))
+			{
+				Suspend();
+				return false;
+			}
+			if (IsTakenOver(Gate))
+			{
+				return Drop(MeshRelative, OutRelative);
+			}
+			const FRotator Target = ShouldTilt(Gate) ? FloorTilt : FRotator::ZeroRotator;
+			return Step(MeshRelative, Target, DeltaTime, InterpSpeed, MaxRateDegPerSec, OutRelative);
+		}
+
+		/** El giro relativo que ha quedado en la malla tras escribir OutRelative (el componente puede redondearlo). */
+		void NoteWritten(const FRotator& MeshRelative)
+		{
+			LastWrittenRelative = MeshRelative;
+		}
+
+	private:
+		/** Guarda la inclinación aplicada (si la hay) para retomarla si la malla vuelve a ese giro. */
+		void RememberTilt()
+		{
+			if (bTiltApplied)
+			{
+				Resume.Remember(LastWrittenRelative, BaseRelative, LastAppliedTilt);
+			}
+		}
 	};
 }

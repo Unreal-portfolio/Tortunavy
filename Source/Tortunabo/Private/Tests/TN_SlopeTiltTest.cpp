@@ -19,6 +19,24 @@ namespace TNSlopeTiltTest
 		const FVector Uphill = FRotator(0.f, UphillYawDeg, 0.f).Vector();
 		return (-Uphill * FMath::Sin(SlopeRad) + FVector::UpVector * FMath::Cos(SlopeRad)).GetSafeNormal();
 	}
+
+	/** Un fotograma de UTN_SlopeTiltComponent sobre una malla de prueba: lee su giro relativo y escribe el que le dan. */
+	void TickMesh(TNSlopeTilt::FTiltDriver& Driver, FRotator& Mesh, const TNSlopeTilt::FTiltGate& Gate, const FRotator& FloorTilt,
+		float DeltaTime)
+	{
+		FQuat NewRelative;
+		if (Driver.Tick(Mesh, Gate, FloorTilt, DeltaTime, TNSlopeTilt::DefaultInterpSpeed, TNSlopeTilt::DefaultMaxRateDegPerSec, NewRelative))
+		{
+			Mesh = NewRelative.Rotator();
+			Driver.NoteWritten(Mesh);
+		}
+	}
+
+	/** Ángulo (grados) entre dos giros relativos de la malla. */
+	double AngleDeg(const FRotator& A, const FRotator& B)
+	{
+		return FMath::RadiansToDegrees(A.Quaternion().AngularDistance(B.Quaternion()));
+	}
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSlopeTiltComputeTest,
@@ -145,6 +163,15 @@ bool FTNSlopeTiltGateTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Derribada: se quita al momento"), IsTakenOver(Knocked));
 	TestTrue(TEXT("Muerta: se quita al momento"), IsTakenOver(Dead));
 	TestTrue(TEXT("En ragdoll: se quita al momento"), IsTakenOver(Ragdoll));
+
+	// En la pausa del huevo la eclosión anima la malla desde su foto: ni se inclina ni se escribe en ella.
+	FTiltGate Hatching = Ground;
+	Hatching.bHatching = true;
+	TestFalse(TEXT("En el huevo: no se inclina"), ShouldTilt(Hatching));
+	TestTrue(TEXT("En el huevo: otro sistema manda en la malla"), IsTakenOver(Hatching));
+	TestTrue(TEXT("En el huevo: la malla sale de su foto (no se toca)"), HoldsSnapshot(Hatching));
+	TestTrue(TEXT("En ragdoll: la malla sale de su foto (no se toca)"), HoldsSnapshot(Ragdoll));
+	TestFalse(TEXT("Derribada sin ragdoll: se devuelve a su base"), HoldsSnapshot(Knocked));
 	return true;
 }
 
@@ -266,6 +293,114 @@ bool FTNSlopeTiltResumeTest::RunTest(const FString& Parameters)
 	Forgotten.Remember(Written, Base, Tilt);
 	Forgotten.Forget();
 	TestFalse(TEXT("Olvidada no se retoma"), Forgotten.TryResume(Written, Tolerance, OutBase, OutTilt));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSlopeTiltEggHatchTest,
+	"Tortunabo.Player.SlopeTilt.EggHatchResume",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNSlopeTiltEggHatchTest::RunTest(const FString& Parameters)
+{
+	using namespace TNSlopeTilt;
+	using namespace TNSlopeTiltTest;
+
+	// Eclosión del huevo en una cuesta de 35° (#586, revisión de Mokius): la eclosión hace una foto de la malla inclinada,
+	// sujeta a la tortuga (MOVE_None: ya no está «en el suelo»), pone su vaivén sobre la foto en cada fotograma y la
+	// devuelve al lanzarla. Antes, el primer fotograma tras la foto ya enderezaba la malla (en el aire), se recordaba ese
+	// giro y no el de la foto, y al lanzarla la tortuga seguía torcida en el aire.
+	constexpr float DeltaTime = 1.f / 30.f;
+	const FRotator MeshDefault(0.f, -90.f, 0.f);
+	FTiltDriver Driver;
+	FRotator Mesh = MeshDefault;
+
+	FTiltGate Ground;
+	Ground.bOnGround = true;
+	for (int32 Frame = 0; Frame < 60; ++Frame)
+	{
+		TickMesh(Driver, Mesh, Ground, FRotator(-35.f, 0.f, 0.f), DeltaTime);
+	}
+	TestEqual(TEXT("En la cuesta: inclinada 35°"), AngleDeg(Mesh, MeshDefault), 35.0, 0.5);
+
+	const FQuat Photo = Mesh.Quaternion();
+	FTiltGate Hatching;
+	Hatching.bHatching = true;
+	bool bTouchedPose = false;
+	for (int32 Frame = 0; Frame < 45; ++Frame)
+	{
+		const double TwistDeg = 12.0 * FMath::Sin(0.9 * Frame);
+		Mesh = (FQuat(FVector::UpVector, FMath::DegreesToRadians(TwistDeg)) * Photo).Rotator();
+		const FRotator Posed = Mesh;
+		TickMesh(Driver, Mesh, Hatching, FRotator::ZeroRotator, DeltaTime);
+		bTouchedPose |= !Mesh.Equals(Posed, 1.e-3f);
+	}
+	TestFalse(TEXT("En la pausa del huevo no se toca la pose de la eclosión"), bTouchedPose);
+
+	// El lanzamiento devuelve la foto y la tortuga sale volando: se retoma la inclinación de la foto y se endereza poco a poco.
+	Mesh = Photo.Rotator();
+	const FTiltGate Air;
+	double MaxStepDeg = 0.0;
+	for (int32 Frame = 0; Frame < 30; ++Frame)
+	{
+		const FRotator Before = Mesh;
+		TickMesh(Driver, Mesh, Air, FRotator::ZeroRotator, DeltaTime);
+		MaxStepDeg = FMath::Max(MaxStepDeg, AngleDeg(Before, Mesh));
+	}
+	TestTrue(FString::Printf(TEXT("Tras el huevo ningún fotograma gira más de 5° (máx. %.2f°)"), MaxStepDeg), MaxStepDeg <= 5.0);
+	const double LeftDeg = AngleDeg(Mesh, MeshDefault);
+	TestTrue(FString::Printf(TEXT("En 1 s en el aire queda recta, sin la inclinación de la foto (%.2f°)"), LeftDeg), LeftDeg < 0.5);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSlopeTiltForgetWhenFreeTest,
+	"Tortunabo.Player.SlopeTilt.ForgetResumeWhenFree",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNSlopeTiltForgetWhenFreeTest::RunTest(const FString& Parameters)
+{
+	using namespace TNSlopeTilt;
+	using namespace TNSlopeTiltTest;
+
+	// Ragdoll en una cuesta: se recuerda la inclinación, pero al levantarse la malla vuelve a su giro por defecto (no a la
+	// foto). Con la malla libre y otro giro, esa foto ya no vuelve: se olvida para que no tape la siguiente (la del huevo).
+	constexpr float DeltaTime = 1.f / 30.f;
+	const FRotator MeshDefault(0.f, -90.f, 0.f);
+	const FRotator Slope(-20.f, 0.f, 0.f);
+	FTiltDriver Driver;
+	FRotator Mesh = MeshDefault;
+
+	FTiltGate Ground;
+	Ground.bOnGround = true;
+	for (int32 Frame = 0; Frame < 60; ++Frame)
+	{
+		TickMesh(Driver, Mesh, Ground, Slope, DeltaTime);
+	}
+	FTiltGate Ragdoll = Ground;
+	Ragdoll.bRagdoll = true;
+	TickMesh(Driver, Mesh, Ragdoll, FRotator::ZeroRotator, DeltaTime);
+	TestTrue(TEXT("En ragdoll se recuerda la inclinación"), Driver.Resume.bPending);
+
+	Mesh = MeshDefault;
+	TickMesh(Driver, Mesh, FTiltGate(), FRotator::ZeroRotator, DeltaTime);
+	TestFalse(TEXT("Con la malla libre y otro giro, la foto pendiente se olvida"), Driver.Resume.bPending);
+
+	// Un fotograma en la cuesta y enseguida el huevo: se retoma esa inclinación, no la del ragdoll.
+	TickMesh(Driver, Mesh, Ground, Slope, DeltaTime);
+	const FRotator Photo = Mesh;
+	TestTrue(TEXT("Empieza a inclinarse"), AngleDeg(Photo, MeshDefault) > 1.0);
+	FTiltGate Hatching;
+	Hatching.bHatching = true;
+	for (int32 Frame = 0; Frame < 10; ++Frame)
+	{
+		TickMesh(Driver, Mesh, Hatching, FRotator::ZeroRotator, DeltaTime);
+	}
+	Mesh = Photo;
+	for (int32 Frame = 0; Frame < 30; ++Frame)
+	{
+		TickMesh(Driver, Mesh, FTiltGate(), FRotator::ZeroRotator, DeltaTime);
+	}
+	const double LeftDeg = AngleDeg(Mesh, MeshDefault);
+	TestTrue(FString::Printf(TEXT("Tras el huevo queda recta en el aire (%.2f°)"), LeftDeg), LeftDeg < 0.5);
 	return true;
 }
 
