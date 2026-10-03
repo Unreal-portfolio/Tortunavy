@@ -110,6 +110,10 @@ dificultades) por lo que más destaca de cada uno dentro de su dificultad; la ta
   imprime la huella nueva de cada mapa que cambia: hay que mirar esos mapas (export y `bench --hojas`) y, si siguen
   valiendo para su tipo y sus trampas, poner las huellas nuevas; si no, elegir otra semilla.
 - Las trampas las colocan #516 y #517; el nivel N juega un mapa del catálogo de su dificultad sin repetir (#518).
+- Densidad: tras probarlo en #516 se dobló. Cada mapa tiene de 4 a 5 puntos con trampa en la dificultad 1 y de 6 a 8
+  en la 5 (unas 8 y 15 trampas contando cada cáscara de un grupo). Los añadidos rellenan los tramos vacíos más
+  largos con la trampa que pide el terreno: cáscaras en curvas, bajadas y antes de los saltos, medusas en los
+  estrechos, zonas lentas en las subidas y cangrejos en las rectas.
 
 ### Trampas sobre el mapa (#516)
 
