@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-03 23:17\n"
-"PO-Revision-Date: 2026-10-03 23:17\n"
+"POT-Creation-Date: 2026-10-03 23:57\n"
+"PO-Revision-Date: 2026-10-03 23:57\n"
 "Language-Team: \n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -838,6 +838,90 @@ msgstr "いつもの目。白くて丸くて、きらっと光ります。"
 msgctxt "Tortunabo,SerieBodyDesc"
 msgid "Verde tortuga, el clásico que nunca falla."
 msgstr "カメの緑。外さない定番カラーです。"
+
+#. Key:	ItemKnockoutPistol
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(160)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(160)
+msgctxt "TNTct,ItemKnockoutPistol"
+msgid "Pistola de noqueo"
+msgstr "気絶ピストル"
+
+#. Key:	ItemAirBlunderbuss
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(161)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(161)
+msgctxt "TNTct,ItemAirBlunderbuss"
+msgid "Trabuco de aire"
+msgstr "エアラッパ銃"
+
+#. Key:	ItemGrapple
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(162)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(162)
+msgctxt "TNTct,ItemGrapple"
+msgid "Garfio"
+msgstr "グラップリングフック"
+
+#. Key:	ItemShovel
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(163)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(163)
+msgctxt "TNTct,ItemShovel"
+msgid "Pala"
+msgstr "スコップ"
+
+#. Key:	ItemBeachBall
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(164)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(164)
+msgctxt "TNTct,ItemBeachBall"
+msgid "Balón de playa"
+msgstr "ビーチボール"
+
+#. Key:	ItemAnchor
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(165)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(165)
+msgctxt "TNTct,ItemAnchor"
+msgid "Ancla"
+msgstr "いかり"
+
+#. Key:	ItemJellyDart
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(166)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(166)
+msgctxt "TNTct,ItemJellyDart"
+msgid "Dardo de medusa"
+msgstr "クラゲダーツ"
+
+#. Key:	ItemInkPistol
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(167)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(167)
+msgctxt "TNTct,ItemInkPistol"
+msgid "Pistola de tinta"
+msgstr "インクピストル"
+
+#. Key:	ItemBall
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(168)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(168)
+msgctxt "TNTct,ItemBall"
+msgid "Bola"
+msgstr "ボール"
+
+#. Key:	ItemConchTrap
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(169)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(169)
+msgctxt "TNTct,ItemConchTrap"
+msgid "Concha trampa"
+msgstr "わなの貝がら"
+
+#. Key:	ItemBigHead
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(170)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(170)
+msgctxt "TNTct,ItemBigHead"
+msgid "Cabezota"
+msgstr "でかあたま"
+
+#. Key:	ItemUnknown
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(173)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(173)
+msgctxt "TNRace,ItemUnknown"
+msgid "Objeto"
+msgstr "アイテム"
 
 #. Key:	BoothPrompt
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(103)
@@ -9387,109 +9471,102 @@ msgid "Coger caja"
 msgstr "ボックスを取る"
 
 #. Key:	ItemBox
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(206)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(206)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(207)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(207)
 msgctxt "TNRace,ItemBox"
 msgid "Caja de objetos"
 msgstr "アイテムボックス"
 
 #. Key:	ItemCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(207)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(207)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
 msgctxt "TNRace,ItemCoconut"
 msgid "Coco turbo"
 msgstr "ターボココナッツ"
 
 #. Key:	ItemTripleCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
 msgctxt "TNRace,ItemTripleCoconut"
 msgid "Triple coco"
 msgstr "トリプルココナッツ"
 
 #. Key:	ItemTripleCoconut2
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
 msgctxt "TNRace,ItemTripleCoconut2"
 msgid "Triple coco (2)"
 msgstr "トリプルココナッツ（2）"
 
 #. Key:	ItemTripleCoconut1
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
 msgctxt "TNRace,ItemTripleCoconut1"
 msgid "Triple coco (1)"
 msgstr "トリプルココナッツ（1）"
 
 #. Key:	ItemGoldenCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
 msgctxt "TNRace,ItemGoldenCoconut"
 msgid "Coco dorado"
 msgstr "ゴールデンココナッツ"
 
 #. Key:	ItemPelicanTaxi
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
 msgctxt "TNRace,ItemPelicanTaxi"
 msgid "Pelícano taxi"
 msgstr "ペリカンタクシー"
 
 #. Key:	ItemSunscreen
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
 msgctxt "TNRace,ItemSunscreen"
 msgid "Protector solar"
 msgstr "日焼け止め"
 
 #. Key:	ItemHomingCrab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
 msgctxt "TNRace,ItemHomingCrab"
 msgid "Cangrejo teledirigido"
 msgstr "ホーミングガニ"
 
 #. Key:	ItemGullStrike
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
 msgctxt "TNRace,ItemGullStrike"
 msgid "Gaviota justiciera"
 msgstr "正義のカモメ"
 
 #. Key:	ItemSandMine
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
 msgctxt "TNRace,ItemSandMine"
 msgid "Mina de arena"
 msgstr "砂の地雷"
 
 #. Key:	ItemStormCloud
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
 msgctxt "TNRace,ItemStormCloud"
 msgid "Nube de tormenta"
 msgstr "雷雲"
 
 #. Key:	ItemFrisbee
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
 msgctxt "TNRace,ItemFrisbee"
 msgid "Disco volador"
 msgstr "フライングディスク"
 
 #. Key:	ItemWhistle
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
 msgctxt "TNRace,ItemWhistle"
 msgid "Silbato del sargento"
 msgstr "軍曹のホイッスル"
-
-#. Key:	ItemUnknown
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
-msgctxt "TNRace,ItemUnknown"
-msgid "Objeto"
-msgstr "アイテム"
 
 #. Key:	MineBoom
 #. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(903)
@@ -9554,6 +9631,13 @@ msgctxt "Tortunabo,SkinStatuePrompt"
 msgid "Equipar cosmético"
 msgstr "きせかえを装備"
 
+#. Key:	PickupItemPrompt
+#. SourceLocation:	Source/Tortunabo/Private/World/TN_TctItemPad.cpp(56)
+#: Source/Tortunabo/Private/World/TN_TctItemPad.cpp(56)
+msgctxt "TNTct,PickupItemPrompt"
+msgid "Coger {0}"
+msgstr "{0}を取る"
+
 #. Key:	TotemPrompt
 #. SourceLocation:	Source/Tortunabo/Private/World/TN_TotemInteractable.cpp(14)
 #: Source/Tortunabo/Private/World/TN_TotemInteractable.cpp(14)
@@ -9616,4 +9700,3 @@ msgstr "{0}:{1}"
 msgctxt "Tortunabo,CastleGateName"
 msgid "TORTUNAVY"
 msgstr "TORTUNAVY"
-
