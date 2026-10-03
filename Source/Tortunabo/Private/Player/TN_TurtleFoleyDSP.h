@@ -22,6 +22,10 @@
  * (arena que sisea, tierra y hojas, roca a trompicones, tablón que zumba, estela en el agua) con la fuerza y la viveza
  * que manda el juego (Drag y DragPace, que siguen a la velocidad del deslizamiento).
  *
+ * Nado y caparazón: la brazada (StepKind::Stroke) es solo el agua que empujan las aletas, con ataque lento, cola larga y
+ * burbujas detrás; meterse y salir del caparazón (StepKind::Shell) es un roce de banda que barre (hacia grave al entrar,
+ * hacia agudo al salir) y el «tonc» hueco de la concha. Las dos llevan un fundido de salida para que la cola no corte.
+ *
  * Hilos: FSharedParams lo escribe el hilo de juego (atómicos relajados y un anillo de pasos con un solo escritor) y lo
  * lee el de audio; Busy va al revés. Cada generador lleva su propio cursor del anillo y solo lee pasos si su arranque
  * es el vigente (RunId): el de un arranque anterior que aún suene no roba ni repite pasos. Todo lo demás vive solo en
@@ -43,6 +47,9 @@ namespace TNTurtleFoley
 	/** Burbujas por pisada en el agua. */
 	constexpr int32 MaxBubbles = 3;
 
+	/** Envolventes de capa de cada pisada (FStepVoice::Env). */
+	constexpr int32 NumStepEnv = 10;
+
 	/** Superficies (índices de FStepEvent::Surf). */
 	namespace Surface
 	{
@@ -63,6 +70,18 @@ namespace TNTurtleFoley
 		constexpr uint8 Belly = 3;  ///< Panzazo contra el suelo: «plaf» de tripa (golpe grave ancho y chasquido blando).
 		constexpr uint8 Bump = 4;   ///< Choque del caparazón contra un obstáculo arrastrándose: «tonc» hueco.
 		constexpr uint8 Stash = 5;  ///< Guardar (Foot 0) o sacar (Foot 1, más agudo) algo del caparazón: «toc» hueco corto.
+		constexpr uint8 Stroke = 6; ///< Brazada al nadar: el agua que empujan las aletas (entra despacio, cola larga y burbujas).
+		constexpr uint8 Shell = 7;  ///< Meterse (Foot 0) o salir (Foot 1) del caparazón: roce de la piel y «tonc» hueco.
+	}
+
+	/** Fase del ciclo de la brazada (0..1, la de UTN_TurtleAnimInstance::GetSwimStrokePhase) en la que suena: aleta estirada. */
+	constexpr float SwimStrokeAt = 0.25f;
+
+	/** Si la fase de un ciclo (0..1) ha pasado por At al ir de Prev a Cur (avanzando, con la vuelta de 1 a 0). */
+	inline bool CrossedPhase(float Prev, float Cur, float At)
+	{
+		if (Prev <= Cur) { return Prev < At && At <= Cur; }
+		return Prev < At || At <= Cur;
 	}
 
 	/** Una pisada que manda el hilo de juego. */
@@ -363,6 +382,7 @@ namespace TNTurtleFoley
 		constexpr float Bubble = 0.095f;  ///< Agua: burbujas.
 		constexpr float Slap = 0.3f;     ///< Panzazo: chasquido de la tripa blanda contra el suelo.
 		constexpr float Shell = 0.009f;  ///< Choque arrastrándose: modos huecos del caparazón.
+		constexpr float Swish = 0.3f;    ///< Caparazón: roce de la piel al meterse o salir (ruido de banda que barre).
 		constexpr float Air = 5.f;       ///< Jadeo: aire por los formantes.
 		constexpr float Voice = 0.7f;    ///< Jadeo: voz por los formantes.
 		constexpr float Breath = 0.1f;   ///< Jadeo: nivel general.
@@ -415,8 +435,24 @@ namespace TNTurtleFoley
 		FOnePole SlapHP;
 		/** Choque arrastrándose: cuánto suena el caparazón hueco (los modos del tablón, afinados al caparazón). */
 		float Shell = 0.f;
-		/** Envolventes al final del bloque anterior: golpe, «pat», arena, tierra, hojas, arenilla, chapoteo, masa de agua y chasquido de tripa. */
-		float Env[9] = {};
+		/** Golpe sordo y «pat» de la pata (0 en la brazada: ahí solo suena el agua). */
+		float Pad = 1.f;
+		/** Agua: ataque del chapoteo (la masa de agua tarda el triple), cola (0 = la de la pisada), caída del tono y su suelo. */
+		float WaterAtk = 0.004f;
+		float WaterTail = 0.f;
+		float SplashSweep = 0.05f;
+		float SplashLow = 1000.f;
+		/** Roce del caparazón: nivel (0 = nada), arranque y duración (s) y centro del filtro al empezar y al acabar (Hz). */
+		float Swish = 0.f;
+		float SwishAt = 0.f;
+		float SwishDur = 0.1f;
+		float SwishF0 = 2000.f;
+		float SwishF1 = 800.f;
+		FBandPass SwishBP;
+		/** Fundido de salida al final (s; 0 = corte, como las pisadas): las colas largas no acaban en seco. */
+		float Release = 0.f;
+		/** Envolventes al final del bloque anterior: golpe, «pat», arena, tierra, hojas, arenilla, chapoteo, masa de agua, chasquido de tripa y roce. */
+		float Env[NumStepEnv] = {};
 		/** Chasquido de cada contacto (decae muestra a muestra). */
 		float HitEnv = 0.f;
 		float HitK = 0.99f;
@@ -463,6 +499,15 @@ namespace TNTurtleFoley
 			Sum += V.HitAmp[k] * SmoothStep01(X / Atk) * FMath::Exp(-FMath::Max(0.f, X - Atk) / (V.HitDec[k] * DecayScale));
 		}
 		return Sum;
+	}
+
+	/** Roce del caparazón T segundos después de empezar: una joroba (sen²) entre SwishAt y SwishAt + SwishDur. */
+	inline float SwishEnvelope(const FStepVoice& V, float T)
+	{
+		const float X = (T - V.SwishAt) / FMath::Max(1e-3f, V.SwishDur);
+		if (X <= 0.f || X >= 1.f) { return 0.f; }
+		const float S = FastSin01(0.5f * X);
+		return S * S;
 	}
 
 	/** Voz propia de una tortuga (sale de su semilla; la misma cuenta que la tos). */
@@ -888,6 +933,114 @@ namespace TNTurtleFoley
 
 			V.Dur = FMath::Max(V.HitAt[0], V.HitAt[1]) + (bBelly ? 0.42f : (bLand ? 0.32f : 0.24f)) + (V.W[Surface::Water] > 0.f ? 0.25f : 0.f)
 				+ ((V.W[Surface::Wood] > 0.f || bBump || bStash) ? 0.12f : 0.f);
+
+			// Lo que no es una pisada, por encima de lo de serie.
+			V.Pad = 1.f;
+			V.WaterAtk = 0.004f;
+			V.WaterTail = 0.f;
+			V.SplashSweep = 0.05f;
+			V.SplashLow = 1000.f;
+			V.Swish = 0.f;
+			V.Release = 0.f;
+			if (InEvent.Kind == StepKind::Stroke)
+			{
+				ShapeStroke(V, Force);
+			}
+			else if (InEvent.Kind == StepKind::Shell)
+			{
+				ShapeShell(V, InEvent.Foot == 0);
+			}
+		}
+
+		/** Brazada: solo el agua que empujan las dos aletas (sin pata ni suelo), que entra despacio y se va con burbujas. */
+		void ShapeStroke(FStepVoice& V, float Force)
+		{
+			FRandom& R = V.Rng;
+			for (int32 s = 0; s < Surface::Num; ++s) { V.W[s] = 0.f; }
+			V.W[Surface::Water] = 1.f;
+			V.Pad = 0.f;
+			V.Slap = 0.f;
+			V.Shell = 0.f;
+			V.HitAt[1] = 0.f;
+			V.HitAmp[1] = 0.f;
+			V.bHitDone[1] = true;
+
+			// Más agua y más grave cuanto más fuerte bracea.
+			V.Depth = FMath::Clamp(0.45f + 0.35f * Force + 0.2f * R.Unit(), 0.f, 1.f);
+			V.WaterAtk = R.Range(0.045f, 0.07f);
+			V.WaterTail = FMath::Lerp(0.11f, 0.17f, V.Depth);
+			V.SplashHz = R.Range(1500.f, 2200.f) * FMath::Lerp(0.9f, 1.15f, V.Bright);
+			V.SplashSweep = 0.16f;
+			V.SplashLow = R.Range(550.f, 700.f);
+			V.SplashBP.Set(V.SplashHz, 1.3f, InvRate);
+			V.SplashBP.Reset();
+			V.SloshLP.SetHz(R.Range(260.f, 380.f), InvRate);
+			V.SloshLP.Reset();
+			for (int32 b = 0; b < MaxBubbles; ++b)
+			{
+				FBubble& Bub = V.Bubbles[b];
+				Bub.bStarted = false;
+				Bub.Phase = 0.f;
+				Bub.Env = 0.f;
+				Bub.Amp = (b == 0 || R.Chance(0.5f + 0.3f * V.Depth)) ? R.Range(0.4f, 0.9f) : 0.f;
+				// Detrás de la aleta, cuando el agua ya se ha movido.
+				Bub.At = V.WaterAtk + R.Range(0.02f, 0.2f) + 0.03f * static_cast<float>(b);
+				Bub.F0 = b == 0 ? R.Range(320.f, 520.f) : R.Range(650.f, 1200.f);
+				const float Life = b == 0 ? R.Range(0.035f, 0.06f) : R.Range(0.015f, 0.03f);
+				Bub.K = DecayPerSample(Life, InvRate);
+				Bub.Rise = R.Range(0.5f, 1.2f) / Life;
+			}
+			V.Release = 0.06f;
+			// La masa de agua cae con 1,6 veces la cola: a 4,5 constantes queda a unos -39 dB y el fundido la cierra.
+			V.Dur = V.WaterAtk + 4.5f * 1.6f * V.WaterTail;
+		}
+
+		/**
+		 * Caparazón: al meterse, la piel roza hacia dentro (barrido de agudo a grave) y acaba en un «tonc» grave del cuerpo
+		 * contra la concha; al salir, un «pop» que sube de tono y el roce hacia fuera (de grave a agudo), más agudo y flojo.
+		 */
+		void ShapeShell(FStepVoice& V, bool bEntering)
+		{
+			FRandom& R = V.Rng;
+			for (int32 s = 0; s < Surface::Num; ++s) { V.W[s] = 0.f; }
+			V.Slap = 0.f;
+			V.Shell = 1.f;
+			V.HitAt[1] = 0.f;
+			V.HitAmp[1] = 0.f;
+			V.bHitDone[1] = true;
+			V.Swish = bEntering ? 1.f : 0.8f;
+			float Plank = 0.f;
+			if (bEntering)
+			{
+				V.SwishAt = 0.f;
+				V.SwishDur = R.Range(0.08f, 0.1f);
+				V.SwishF0 = R.Range(2200.f, 2800.f);
+				V.SwishF1 = R.Range(600.f, 800.f);
+				V.HitAt[0] = 0.85f * V.SwishDur;
+				V.HitDec[0] *= 1.2f;
+				V.PadF0 = Traits.FootHz * R.Range(0.62f, 0.72f);
+				V.PadF1 = V.PadF0 * R.Range(0.58f, 0.66f);
+				Plank = R.Range(230.f, 280.f);
+			}
+			else
+			{
+				V.HitAt[0] = 0.f;
+				V.SwishAt = R.Range(0.015f, 0.025f);
+				V.SwishDur = R.Range(0.06f, 0.08f);
+				V.SwishF0 = R.Range(700.f, 900.f);
+				V.SwishF1 = R.Range(2200.f, 2800.f);
+				V.PadF0 = Traits.FootHz * R.Range(0.9f, 1.f);
+				V.PadF1 = V.PadF0 * R.Range(1.5f, 1.7f);
+				Plank = R.Range(340.f, 400.f);
+			}
+			V.SwishBP.Set(V.SwishF0, 1.6f, InvRate);
+			V.SwishBP.Reset();
+			V.Modes[0].Set(Plank, R.Range(0.06f, 0.09f), InvRate);
+			V.Modes[1].Set(Plank * R.Range(2.65f, 2.85f), R.Range(0.035f, 0.05f), InvRate);
+			V.Modes[2].Set(Plank * R.Range(5.2f, 5.6f), R.Range(0.018f, 0.026f), InvRate);
+			for (FResonator& Mode : V.Modes) { Mode.Reset(); }
+			V.Release = 0.03f;
+			V.Dur = FMath::Max(V.HitAt[0], V.SwishAt + V.SwishDur) + 0.3f;
 		}
 
 		void RenderStep(FStepVoice& V, int32 N)
@@ -896,7 +1049,7 @@ namespace TNTurtleFoley
 			const float TEnd = V.Time + BlockDt;
 
 			// Envolventes al final del bloque (se interpolan dentro): cada capa con sus tiempos.
-			float EnvEnd[9];
+			float EnvEnd[NumStepEnv];
 			EnvEnd[0] = ContactEnvelope(V, TEnd, 1.3f, 1.f);                   // Golpe sordo.
 			EnvEnd[1] = ContactEnvelope(V, TEnd, 0.55f, 1.f);                  // «Pat».
 			EnvEnd[2] = ContactEnvelope(V, TEnd, FMath::Lerp(3.2f, 2.2f, V.Bright), 2.2f); // Arena (se hunde).
@@ -904,12 +1057,13 @@ namespace TNTurtleFoley
 			EnvEnd[4] = ContactEnvelope(V, TEnd, 2.4f, 1.5f);                  // Hojas.
 			EnvEnd[5] = ContactEnvelope(V, TEnd, 1.2f, 1.f);                   // Arenilla.
 			{
-				const float S = SmoothStep01(TEnd / 0.004f);
-				const float Tail = FMath::Lerp(0.07f, 0.12f, V.Depth);
+				const float S = SmoothStep01(TEnd / V.WaterAtk);
+				const float Tail = V.WaterTail > 0.f ? V.WaterTail : FMath::Lerp(0.07f, 0.12f, V.Depth);
 				EnvEnd[6] = S * FMath::Exp(-TEnd / Tail);                           // Chapoteo.
-				EnvEnd[7] = SmoothStep01(TEnd / 0.012f) * FMath::Exp(-TEnd / (1.6f * Tail)); // Masa de agua.
+				EnvEnd[7] = SmoothStep01(TEnd / (3.f * V.WaterAtk)) * FMath::Exp(-TEnd / (1.6f * Tail)); // Masa de agua.
 			}
 			EnvEnd[8] = V.Slap > 0.f ? ContactEnvelope(V, TEnd, 0.8f, 0.4f) : 0.f;    // Chasquido de tripa.
+			EnvEnd[9] = V.Swish > 0.f ? V.Swish * SwishEnvelope(V, TEnd) : 0.f;    // Roce del caparazón.
 
 			// Chasquido en cada contacto (con precisión de bloque: 0,7 ms).
 			for (int32 k = 0; k < 2; ++k)
@@ -923,7 +1077,7 @@ namespace TNTurtleFoley
 
 			// Tono del golpe sordo (cae en ~20 ms desde el primer contacto) y del chapoteo (baja de agudo a medio).
 			const float TMid = V.Time + 0.5f * BlockDt;
-			const float PadHz = V.PadF1 + (V.PadF0 - V.PadF1) * FMath::Exp(-TMid / 0.02f);
+			const float PadHz = V.PadF1 + (V.PadF0 - V.PadF1) * FMath::Exp(-FMath::Max(0.f, TMid - V.HitAt[0]) / 0.02f);
 			const float PadInc = FMath::Min(PadHz * InvRate, 0.45f);
 			const float WSand = V.W[Surface::Sand];
 			const float WSoil = V.W[Surface::Soil];
@@ -932,13 +1086,22 @@ namespace TNTurtleFoley
 			const float WWater = V.W[Surface::Water];
 			if (WWater > 0.f)
 			{
-				V.SplashBP.Set(1000.f + (V.SplashHz - 1000.f) * FMath::Exp(-TMid / 0.05f), 1.3f, InvRate);
+				V.SplashBP.Set(V.SplashLow + (V.SplashHz - V.SplashLow) * FMath::Exp(-TMid / V.SplashSweep), 1.3f, InvRate);
 			}
+			if (V.Swish > 0.f)
+			{
+				// El roce barre de SwishF0 a SwishF1 mientras dura.
+				const float X = FMath::Clamp((TMid - V.SwishAt) / V.SwishDur, 0.f, 1.f);
+				V.SwishBP.Set(V.SwishF0 * FMath::Pow(V.SwishF1 / V.SwishF0, X), 1.6f, InvRate);
+			}
+			// Fundido de salida (solo las voces con Release: brazadas y caparazón).
+			const float FadeStart = V.Release > 0.f ? SmoothStep01((V.Dur - V.Time) / V.Release) : 1.f;
+			const float FadeEnd = V.Release > 0.f ? SmoothStep01((V.Dur - TEnd) / V.Release) : 1.f;
 
 			const float InvN = 1.f / static_cast<float>(N);
-			float E[9];
-			float DE[9];
-			for (int32 k = 0; k < 9; ++k)
+			float E[NumStepEnv];
+			float DE[NumStepEnv];
+			for (int32 k = 0; k < NumStepEnv; ++k)
 			{
 				E[k] = V.Env[k];
 				DE[k] = (EnvEnd[k] - V.Env[k]) * InvN;
@@ -947,17 +1110,23 @@ namespace TNTurtleFoley
 			const float Amp = V.Gain;
 			const float WoodMix = WWood + V.Shell;
 			const float WoodTrim = V.Shell > 0.f ? Trim::Shell : Trim::Wood;
+			float Fade = FadeStart;
+			const float DFade = (FadeEnd - FadeStart) * InvN;
 			for (int32 i = 0; i < N; ++i)
 			{
-				for (int32 k = 0; k < 9; ++k) { E[k] += DE[k]; }
+				for (int32 k = 0; k < NumStepEnv; ++k) { E[k] += DE[k]; }
+				Fade += DFade;
 				const float Noise = R.Bipolar();
 				V.HitEnv *= V.HitK;
 
-				// La pata: golpe grave y «pat» apagado (en todas las superficies).
+				// La pata: golpe grave y «pat» apagado (en todas las superficies; no en la brazada).
 				V.PadPhase += PadInc;
 				V.PadPhase -= FMath::FloorToFloat(V.PadPhase);
-				float Y = Trim::Thump * E[0] * FastSin01(V.PadPhase);
-				Y += Trim::Pat * E[1] * V.PatLP.Low(Noise);
+				float Y = V.Pad * (Trim::Thump * E[0] * FastSin01(V.PadPhase) + Trim::Pat * E[1] * V.PatLP.Low(Noise));
+				if (V.Swish > 0.f)
+				{
+					Y += Trim::Swish * E[9] * V.SwishBP.Process(Noise);
+				}
 				if (V.Slap > 0.f)
 				{
 					// La tripa blanda contra el suelo: un chasquido de ruido brillante que dura lo que el golpe.
@@ -1016,11 +1185,12 @@ namespace TNTurtleFoley
 					}
 					Y += WWater * V.Depth * Water;
 				}
-				Mix[i] += Y * Amp;
+				Mix[i] += Y * Amp * Fade;
 			}
-			for (int32 k = 0; k < 9; ++k) { V.Env[k] = EnvEnd[k]; }
+			for (int32 k = 0; k < NumStepEnv; ++k) { V.Env[k] = EnvEnd[k]; }
 			V.Time = TEnd;
 			V.SlapHP.Flush();
+			V.SwishBP.Flush();
 			V.SandBP.Flush();
 			V.LeafBP.Flush();
 			V.TockBP.Flush();
