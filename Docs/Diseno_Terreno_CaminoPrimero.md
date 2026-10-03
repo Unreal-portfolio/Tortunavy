@@ -335,4 +335,22 @@ Módulos en `Scripts/terrain_path/`: `placement_site.py` (caminos, tramos bloque
 
 **C01 (semilla 652):** 5 puzles (1 de grupo en el principal, 2 de grupo en rodeos, parkour en un atajo y la catapulta de un meandro), 4 mecánicas, 18 enemigos y obstáculos, 4 nidos, 92 de botín y 158 de decorado y vegetación, sin violaciones. El principal de C01 está casi lleno de túneles, río, puente del barranco, escalones y 14 uniones: solo cabe un puzle de grupo en él; los otros dos van en rodeos que el grupo puede saltarse.
 
-**Pendiente:** ni `ATN_MapVariantLoader` ni `build_demo_level.py` leen aún el bloque `placements` (formato en `placement_io.py`).
+**Colocación al cargar el mapa.** `ATN_MapVariantLoader` (con `bSpawnPlacements`, activo por defecto) lee el bloque en `BeginPlay` y lo coloca con `ATN_MapPlacementSpawner` (`Source/Tortunabo/.../World/TN_MapPlacementSpawner*.cpp`; lectura en `TN_MapPlacements.cpp`). La cota se ajusta con una traza contra los trozos del terreno (3 m por encima y 15 m por debajo de la del manifest). Lo puesto a mano en el nivel manda: una entrada con una pieza de juego del nivel (o un actor con la etiqueta `TN_Manual`) dentro de su radio no se coloca. Un bloque `stale` solo coloca lo manual.
+
+| Entrada | Pieza | Red |
+|---|---|---|
+| Enemigos, obstáculos, trampolín, pala, catapulta, plataforma móvil, cofre | `ATN_BeachElement::SpawnElement` | servidor, replicado |
+| Decorado y pasarela | `ATN_BeachDecorField::BeginBuildPlaced` | local en cada máquina |
+| Vegetación (`Palm`, `Shrub`, `Grass`) | flora del mapa procedural, instanciada y sin colisión | local; no en servidor dedicado |
+| Géiser | `ATN_ProcGeyser` con `target_uu` | local (así es la clase) |
+| Nidos | `ATN_ProcEggNest` en el orden del camino | servidor |
+| Caja de objetos, rebuscable, concha | `ATN_RaceItemBox`, `ATN_ProcSearchSpot`, `BP_ScorePickup` | servidor |
+| `throw_chain` | `ATN_ProcThrowWall` + `ATN_ProcSwitch` | servidor |
+| `plate_balance` | `BP_PressurePlate` ×3-5 + `BP_PressurePlateGroupManager`; **sin puerta** hasta que exista `ATN_PuzzleDoor` (N4) | servidor |
+| `breakable_chain` | `ATN_BreakablePlatform` en zigzag (losa de cubo de serie) + trampolín en el hueco del medio | servidor |
+| `shell_gauntlet`, `wobbly_run` | `ShellGate`, `WobblyPlatform` en fila | servidor |
+| `catapult_gap` | sus piezas son la catapulta y el trampolín del bloque | — |
+
+Las piezas de un tramo se reparten por `path_uu`, la polilínea del camino bajo la huella que escribe `placement_io.py`. Los puzles pendientes (`basket_hold`, `geyser_aim`, `think_room`) y los kinds desconocidos se registran en el log y se saltan. Tests sin ventana: `Automation RunTests Tortunabo.World.MapPlacements` (manifest de prueba `Scripts/tests/fixtures/manifest_placements.json`).
+
+**Pendiente:** `build_demo_level.py` aún no lee el bloque; la puerta N4 de `plate_balance`.
