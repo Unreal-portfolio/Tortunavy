@@ -423,12 +423,23 @@ void ATN_HQGameMode::BeginMatchTravel()
 			// Supervivencia: los niveles del Clásico (LVL_Run) con su propio GameMode (alias «Survival», DefaultEngine.ini).
 			TravelURL = MatchMapPath + TEXT("?game=Survival");
 		}
+		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath))
+		{
+			// Todos contra Todos: rondas de supervivencia en una arena inventada (ATN_TctGameMode, alias «Tct»).
+			TravelURL = TctMapPath + TEXT("?game=Tct");
+		}
 		else if (GI->SelectedProcMode != ETNProcGameMode::Classic)
 		{
 			if (bBeachRace)
 			{
 				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_beach_race.py): la carrera se juega en el mapa procedural."),
 					*BeachRaceMapPath);
+			}
+			if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll)
+			{
+				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_tct_level.py): se juega el cooperativo."),
+					*TctMapPath);
+				GI->SelectedProcMode = ETNProcGameMode::Coop;
 			}
 			// También en la URL: la lee ATN_ProcMapGameMode y sustituye a la del viaje anterior.
 			TravelURL = ProcMapPath + (GI->PendingStartStyle == ETNMatchStartStyle::Eggs ? TEXT("?ProcStart=Eggs") : TEXT("?ProcStart=Gate"));

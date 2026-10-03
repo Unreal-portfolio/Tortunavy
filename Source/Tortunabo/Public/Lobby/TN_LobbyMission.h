@@ -18,13 +18,14 @@ class UObject;
  */
 namespace TNLobbyMission
 {
-	/** Los modos que se ofrecen al crear partida y con el general, en su orden (el selector del lobby viejo recorre los cuatro). */
-	inline constexpr ETNProcGameMode MenuModes[] = { ETNProcGameMode::Coop, ETNProcGameMode::Race, ETNProcGameMode::Survival };
+	/** Los modos que se ofrecen al crear partida y con el general, en su orden (el selector del lobby viejo recorre todos). */
+	inline constexpr ETNProcGameMode MenuModes[] = { ETNProcGameMode::Coop, ETNProcGameMode::Race, ETNProcGameMode::Survival,
+		ETNProcGameMode::FreeForAll };
 
 	/** Las dificultades, en su orden. */
 	inline constexpr ETNProcDifficulty Difficulties[] = { ETNProcDifficulty::Easy, ETNProcDifficulty::Normal, ETNProcDifficulty::Hard };
 
-	/** Nombre del modo («Cooperativo», «Carrera», «2 vs 2», «Clásico», «Supervivencia»). */
+	/** Nombre del modo («Cooperativo», «Carrera», «2 vs 2», «Clásico», «Supervivencia», «Todos contra Todos»). */
 	TORTUNABO_API FText ModeName(ETNProcGameMode Mode);
 
 	/** El modo si es uno de MenuModes; si no (2 vs 2, Clásico), Cooperativo. Lo que admite una sala nueva. */

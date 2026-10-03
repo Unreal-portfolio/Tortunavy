@@ -94,7 +94,7 @@ void ATN_ProcMapGameMode::ResolveModeAndDifficulty()
 	if (const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
 	{
 		if (GI->SelectedProcMode != ETNProcGameMode::Classic && GI->SelectedProcMode != ETNProcGameMode::Survival
-			&& GI->SelectedProcMode != ETNProcGameMode::Count)
+			&& GI->SelectedProcMode != ETNProcGameMode::FreeForAll && GI->SelectedProcMode != ETNProcGameMode::Count)
 		{
 			Mode = GI->SelectedProcMode;
 			Difficulty = GI->SelectedProcDifficulty;
