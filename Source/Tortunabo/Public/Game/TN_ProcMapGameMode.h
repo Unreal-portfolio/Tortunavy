@@ -69,6 +69,13 @@ protected:
 	virtual void OnWaitingTimeout() override;
 	virtual void UpdateRoundProgressAndMaybeFinish() override;
 
+	/** Coop: se vuelve (o se entra) al camino; Carrera y 2vs2: se mira hasta la ronda siguiente (#345). */
+	virtual ETNLateJoinPolicy GetLateJoinPolicy() const override;
+	/** La ronda está en juego: antes, entre rondas o generando, se entra como al empezar y PlacePlayersAtStart coloca. */
+	virtual bool IsMatchInProgressForJoin() const override { return bRoundActive && !bMatchOver; }
+	/** La pila de huevos más lejana del equipo que siga por delante de la tormenta, o la salida (FindRespawnTransform). */
+	virtual bool PlaceMidMatchJoiner(APlayerController* PlayerController) override;
+
 	/** Clase del generador que se crea si el nivel no tiene uno colocado. */
 	UPROPERTY(EditDefaultsOnly, Category = "ProcMap")
 	TSubclassOf<ATN_ProcMapGenerator> GeneratorClass;

@@ -1648,6 +1648,7 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Replicar a todos los clientes para que el visual sea visible en todos
 	DOREPLIFETIME(ATortugaCharacter, bIsKnockedDown);
 	DOREPLIFETIME(ATortugaCharacter, bIsDead);
+	DOREPLIFETIME(ATortugaCharacter, DeathGroundLocation);
 	// Freeze del ragdoll de muerte — JIP-safe: llegan en el bunch inicial.
 	DOREPLIFETIME(ATortugaCharacter, bRagdollFrozen);
 	DOREPLIFETIME(ATortugaCharacter, RagdollFrozenLoc);

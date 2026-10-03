@@ -891,14 +891,12 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerDropEquippedItem();
 
-	void ApplyKnockdownVisual(bool bKnocked);
-
 	/**
-	 * Multicast RPC fiable — garantiza que TODOS los clientes reciban
-	 * el cambio de knockdown inmediatamente, sin depender solo de OnRep.
+	 * Tilt o ragdoll del derribo (idempotente). Un solo camino de estado (#78): el servidor lo aplica al cambiar
+	 * bIsKnockedDown y los clientes en OnRep_IsKnockedDown, también quien entra tarde. El golpe suena aparte, una vez
+	 * por máquina (MulticastPlaySfx, no fiable).
 	 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastApplyKnockdownVisual(bool bKnocked);
+	void ApplyKnockdownVisual(bool bKnocked);
 
 	UFUNCTION()
 	void OnRep_IsKnockedDown();
@@ -915,18 +913,6 @@ private:
 	/** Escala la Cabeza al BigHeadScale en reposo o la restaura. */
 	void ApplyBigHeadVisual(bool bBig);
 
-	/**
-	 * Multicast fiable: fuerza el visual de muerte en todos los clientes.
-	 */
-	/**
-	 * Multicast con la pos suelo final como parámetro. Pattern del Codex DualMax
-	 * round 3: el dato del transform inicial viaja CON el RPC, no en canal
-	 * separado vía bReplicateMovement. Sin esto, el cliente recibe el MC antes
-	 * que la replicación de SetActorLocation server (UE replica RPCs antes que
-	 * propiedades en el mismo bunch) → arranca sim en pos vieja → divergencia.
-	 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetDeadVisual(bool bDead, FVector GroundLocation);
 
 	/**
 	 * Patrón canónico Epic para activar ragdoll sin que el cuerpo "salga lanzado":
@@ -939,7 +925,7 @@ private:
 	 *  7. SetSimulatePhysics(true) + SetAllBodiesSimulatePhysics(true)
 	 *  8. SetAllPhysicsLinearVelocity(0) defensivo (post-simulate, no antes)
 	 *  9. WakeAllRigidBodies
-	 * Llamado en server (SetDeadVisual) y cliente (MulticastSetDeadVisual, OnRep_IsDead).
+	 * Llamado en server (SetDeadVisual) y cliente (OnRep_IsDead).
 	 */
 	void EnterRagdollState();
 
@@ -1127,6 +1113,13 @@ protected:
 	 */
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead, BlueprintReadOnly, Category = "Death")
 	bool bIsDead = false;
+
+	/**
+	 * Suelo donde arranca el ragdoll de muerte (el servidor sube el cuerpo y deja de replicar el movimiento en el mismo
+	 * fotograma). Se escribe junto a bIsDead: llegan en la misma actualización y OnRep_IsDead ya la tiene.
+	 */
+	UPROPERTY(Replicated)
+	FVector_NetQuantize DeathGroundLocation = FVector_NetQuantize::ZeroVector;
 
 	/**
 	 * true cuando el servidor congeló el ragdoll de muerte (fin de la simulación
@@ -1336,8 +1329,8 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_StartDive(FVector DiveDir);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDiveVisual(bool bEnter);
+	/** Inclinación y cápsula del panzazo (idempotente): el servidor al cambiar bIsDiving y los clientes en OnRep_IsDiving (#78). */
+	void ApplyDiveVisual(bool bEnter);
 
 	UFUNCTION()
 	void OnRep_IsDiving();

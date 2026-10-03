@@ -22,7 +22,7 @@
 // Flow:
 //   Input (client)  → TryDive()
 //   → Server_StartDive(DiveDir)      — validates, applies physics, sets bIsDiving (+ DiveSerial)
-//   → Multicast_OnDiveVisual(true)   — all clients apply tilt + capsule resize
+//   → ApplyDiveVisual(true)          — server here, clients in OnRep_IsDiving: tilt + capsule resize
 //   Al caer de tripa, UTN_TurtleMovementComponent arrastra a la tortuga dentro de la simulación del movimiento
 //   (predicha en el cliente dueño): inercia, rozamiento por superficie, pendientes y rebotes. Casi parada, se levanta
 //   (cápsula de pie sin atravesar nada) y, con eso, TickDive (servidor) llama a EndDive().
@@ -214,13 +214,13 @@ void ATortugaCharacter::Server_StartDive_Implementation(FVector DiveDir)
 	bIsDiving     = true;
 	DiveLockTimer = 0.f;
 
-	// Apply visual on all machines (server runs Multicast locally too)
-	Multicast_OnDiveVisual(true);
+	// Servidor aquí; los clientes, en OnRep_IsDiving (un solo camino de estado, #78).
+	ApplyDiveVisual(true);
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Dive] %s — dive started, dir=%s"), *GetNameSafe(this), *DiveDir.ToString());
 }
 
-void ATortugaCharacter::Multicast_OnDiveVisual_Implementation(bool bEnter)
+void ATortugaCharacter::ApplyDiveVisual(bool bEnter)
 {
 	UCharacterMovementComponent* CMC = GetCharacterMovement();
 
@@ -303,10 +303,8 @@ void ATortugaCharacter::RestoreDiveCapsule()
 
 void ATortugaCharacter::OnRep_IsDiving()
 {
-	// Called on REMOTE clients when bIsDiving changes.
-	// The server already ran Multicast_OnDiveVisual, but OnRep covers clients
-	// that joined late or missed the multicast.
-	Multicast_OnDiveVisual_Implementation(bIsDiving);
+	// Clientes (también quien entra tarde): el servidor ya lo aplicó en Server_StartDive / EndDive.
+	ApplyDiveVisual(bIsDiving);
 }
 
 void ATortugaCharacter::EndDive()
@@ -317,8 +315,8 @@ void ATortugaCharacter::EndDive()
 	bDiveYawInterpActive  = false;
 	DiveLockTimer         = 0.f;
 
-	// Multicast restore visual
-	Multicast_OnDiveVisual(false);
+	// Servidor aquí; los clientes, en OnRep_IsDiving.
+	ApplyDiveVisual(false);
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Dive] %s — dive ended."), *GetNameSafe(this));
 }

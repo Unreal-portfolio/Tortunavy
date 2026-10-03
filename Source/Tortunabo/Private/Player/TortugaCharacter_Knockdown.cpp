@@ -109,9 +109,13 @@ void ATortugaCharacter::ApplyKnockdown(float Duration, FVector ImpulseOverride)
 	// Servidor: aplicar localmente (OnRep no dispara en quien posee la variable)
 	StartEmoteLocally(KNOCKDOWN_EMOTE_ID);
 
-	// Tilt del cuerpo (pitch -180°) — se ejecuta en servidor + todos los clientes.
-	// Sin esto el emote solo agita brazos y el jugador se ve flotando, no tumbado.
-	MulticastApplyKnockdownVisual(true);
+	// Tilt o ragdoll del cuerpo: aquí el servidor y en OnRep_IsKnockedDown los clientes (#78). Sin esto el emote solo
+	// agita brazos y el jugador se ve flotando, no tumbado. El golpe suena una vez en cada máquina.
+	ApplyKnockdownVisual(true);
+	if (KnockdownSound)
+	{
+		MulticastPlaySfx(KnockdownSound);
+	}
 
 	// ── DBNO heartbeat: solo el jugador local incapacitado oye el latido ──
 	if (IsLocallyControlled())
@@ -156,8 +160,8 @@ void ATortugaCharacter::RecoverFromKnockdown()
 		}
 	}
 
-	// Restaurar rotación del cuerpo en todas las máquinas
-	MulticastApplyKnockdownVisual(false);
+	// Restaurar el cuerpo: aquí el servidor y en OnRep_IsKnockedDown los clientes.
+	ApplyKnockdownVisual(false);
 
 	// ── Audio feedback de revive ─────────────────────────────────────────
 	StopDBNOHeartbeatSound();
@@ -168,12 +172,6 @@ void ATortugaCharacter::RecoverFromKnockdown()
 
 void ATortugaCharacter::OnRep_IsKnockedDown()
 {
-	// Pajaritos del mareo en todas las máquinas (también para quien entra con el derribo ya empezado).
-	if (DizzyBirds)
-	{
-		DizzyBirds->SetDizzy(bIsKnockedDown);
-	}
-
 	// ReplicatedEmoteIndex usa COND_SkipOwner: el DUEÑO del pawn nunca recibe
 	// OnRep_ReplicatedEmoteIndex cuando el servidor pone KNOCKDOWN_EMOTE_ID.
 	// Por eso manejamos aquí TANTO el input COMO el visual del knockdown para
@@ -213,22 +211,10 @@ void ATortugaCharacter::OnRep_IsKnockedDown()
 			bCanAirDash = true;  // Restore air dash after knockdown recovery
 		}
 	}
-}
 
-void ATortugaCharacter::MulticastApplyKnockdownVisual_Implementation(bool bKnocked)
-{
-	// La animación de agitar brazos la emite el sistema de emotes via
-	// ReplicatedEmoteIndex = KNOCKDOWN_EMOTE_ID. Aquí aplicamos la rotación
-	// simulada del cuerpo (pitch -180°) encima del emote — sin tilt el
-	// jugador se ve "flotando" en vez de tumbado. Se ejecuta en TODAS las
-	// máquinas para cubrir listen-server + todos los clientes (incluido el
-	// dueño, que no recibe OnRep_ReplicatedEmoteIndex por COND_SkipOwner).
-	ApplyKnockdownVisual(bKnocked);
-
-	if (bKnocked && KnockdownSound)
-	{
-		PlaySfxAtSelf(KnockdownSound);
-	}
+	// Tilt o ragdoll y pajaritos del mareo encima del emote, en todos los clientes (también el dueño y quien entra con
+	// el derribo ya empezado): el único camino de estado del derribo (#78).
+	ApplyKnockdownVisual(bIsKnockedDown);
 }
 
 void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
@@ -692,10 +678,15 @@ void ATortugaCharacter::SetDeadVisual(bool bDead)
 		SetReplicateMovement(true);
 	}
 
-	MulticastSetDeadVisual(bDead, GroundLocation);
+	// Los clientes lo aplican en OnRep_IsDead con este suelo, que llega en la misma actualización (#78). El sonido de
+	// muerte, una vez en cada máquina.
+	DeathGroundLocation = GroundLocation;
+	if (bDead && KillSound)
+	{
+		MulticastPlaySfx(KillSound);
+	}
 
-	// Servidor / listen-server: disparar el evento BP aquí (los clientes lo reciben
-	// dentro de MulticastSetDeadVisual_Implementation).
+	// Servidor / listen-server: el evento BP aquí (los clientes, en OnRep_IsDead).
 	OnDeathVisualSet(bDead);
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Death] %s dead visual = %s"), *GetNameSafe(this), bDead ? TEXT("RAGDOLL") : TEXT("ALIVE"));
@@ -793,10 +784,9 @@ void ATortugaCharacter::EnterRagdollState()
 
 	// 5. (movido al caller — DualMax round 3): el LineTrace + SetActorLocation
 	//    se hacen ANTES de EnterRagdollState. Server lo calcula en SetDeadVisual
-	//    y lo envía como param del Multicast; cliente lo aplica en
-	//    MulticastSetDeadVisual_Implementation antes de llamar EnterRagdollState.
-	//    Esto elimina la divergencia client/server por LineTrace local
-	//    inconsistente y la race condition entre RPC y bReplicateMovement.
+	//    y lo replica en DeathGroundLocation; cliente lo aplica en OnRep_IsDead
+	//    antes de llamar EnterRagdollState. Esto elimina la divergencia
+	//    client/server por LineTrace local inconsistente.
 
 	// 6. Use the same collision setup as knockdown. The Ragdoll profile should be
 	//    authored in the PhysicsAsset/project settings; do not override it here.
@@ -906,42 +896,22 @@ void ATortugaCharacter::OnRep_IsDead()
 		SkM && SkM->IsSimulatingPhysics() ? 1 : 0,
 		SkM ? SkM->Bodies.Num() : -1,
 		SkM && SkM->GetPhysicsAsset() ? TEXT("YES") : TEXT("NO"));
-	// JIP late-join: cliente recibe bIsDead replicado y aplica el state
-	// correspondiente vía las helpers compartidas (mismo patrón canónico).
-	if (bIsDead) { EnterRagdollState(); }
-	else         { ExitRagdollState();  }
-}
-
-void ATortugaCharacter::MulticastSetDeadVisual_Implementation(bool bDead, FVector GroundLocation)
-{
-	UE_LOG(LogTortunabo, Warning, TEXT("[DeathState][MC] %s bDead=%d NetMode=%d HasAuthority=%d Role=%d RemoteRole=%d Ground=(%.0f,%.0f,%.0f)"),
-		*GetName(), bDead, (int32)GetNetMode(), HasAuthority() ? 1 : 0, (int32)GetLocalRole(), (int32)GetRemoteRole(),
-		GroundLocation.X, GroundLocation.Y, GroundLocation.Z);
-
-	// Sonido de muerte: se reproduce en TODAS las máquinas (incluido listen-server)
-	// antes del early-return de autoridad. Anclado a la pos actual del actor — el
-	// teleport a GroundLocation aún no ha ocurrido, así que el sonido sale en la
-	// pos visible donde murió.
-	if (bDead && KillSound)
+	// Único camino de estado de la muerte en los clientes (#78), también para quien entra tarde. El servidor subió el
+	// cuerpo a DeathGroundLocation y dejó de replicar el movimiento en el mismo fotograma: el ragdoll arranca ahí.
+	if (bIsDead)
 	{
-		PlaySfxAtSelf(KillSound);
-	}
-
-	if (HasAuthority()) { return; }  // server ya lo hizo en SetDeadVisual
-	if (bDead)
-	{
-		// DualMax round 3: cliente teleporta a la pos GROUND-SNAP autoritativa
-		// recibida con el RPC (no espera replicación de bReplicateMovement, que
-		// llega después del MC). Después arranca sim en la pos correcta.
-		SetActorLocation(GroundLocation, false, nullptr, ETeleportType::TeleportPhysics);
+		if (!DeathGroundLocation.IsZero())
+		{
+			SetActorLocation(DeathGroundLocation, false, nullptr, ETeleportType::TeleportPhysics);
+		}
 		EnterRagdollState();
 	}
 	else
 	{
 		ExitRagdollState();
 	}
-	// Notificar BP para que active el raptor, VFX, audio de muerte, etc.
-	OnDeathVisualSet(bDead);
+	// Raptor, VFX y demás del Blueprint.
+	OnDeathVisualSet(bIsDead);
 }
 
 // ── R2: freeze/snap replicado del ragdoll de muerte ───────────────────────────
@@ -978,7 +948,7 @@ void ATortugaCharacter::OnRep_RagdollFrozen()
 		ApplyRagdollFreeze();
 	}
 	// bRagdollFrozen=false llega con el revive: ExitRagdollState (vía
-	// OnRep_IsDead / MulticastSetDeadVisual) ya restaura el estado vivo.
+	// OnRep_IsDead) ya restaura el estado vivo.
 }
 
 void ATortugaCharacter::ApplyRagdollFreeze()
