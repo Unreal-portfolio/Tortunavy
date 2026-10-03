@@ -142,11 +142,9 @@ void UMP_MainMenuWidget::NativeConstruct()
 		GI->OnStatusChanged.AddUniqueDynamic(this, &UMP_MainMenuWidget::OnGameInstanceStatusChanged);
 	}
 
-	TNMainMenuDetail::SetLabel(HostButton, NSLOCTEXT("TNRooms", "MenuCreate", "Crear partida"));
-	TNMainMenuDetail::SetLabel(FindButton, NSLOCTEXT("TNRooms", "MenuJoin", "Unirse"));
-	TNMainMenuDetail::SetLabel(QuitButton, NSLOCTEXT("TNRooms", "MenuQuit", "Salir"));
 	BuildSettingsButton();
-	SetStatus(BuildIdleStatus());
+	// Primero, cómo jugar: Local u Online (con un aviso de las salas pendiente, directamente en Online).
+	ShowModePage(false);
 
 	// Pantallas de salas: su propio widget a pantalla completa, montado y en pantalla antes de enseñar nada.
 	if (!RoomMenu)
@@ -172,6 +170,7 @@ void UMP_MainMenuWidget::NativeConstruct()
 		const FTNMenuNotice Notice = GI->ConsumeMenuNotice();
 		if (!Notice.Text.IsEmpty())
 		{
+			ShowModePage(true);
 			if (Notice.bOpenJoin)
 			{
 				OpenRooms(ETNRoomMenuPage::Join);
@@ -328,19 +327,75 @@ void UMP_MainMenuWidget::HandleSettingsClosed()
 
 void UMP_MainMenuWidget::OnHostClicked()
 {
+	if (!bOnlinePage)
+	{
+		// «Local»: hasta cuatro en este PC; el jugador 1 va derecho al lobby y los mandos se unen allí con Start.
+		if (UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
+		{
+			SetStatus(NSLOCTEXT("TNLocal", "MenuLocalGo", "Partida local: en el lobby, cada mando se une con Start (hasta 4).").ToString());
+			GI->StartLocalGame();
+		}
+		return;
+	}
 	RoomsOpener = HostButton.Get();
 	OpenRooms(ETNRoomMenuPage::Create);
 }
 
 void UMP_MainMenuWidget::OnFindClicked()
 {
+	if (!bOnlinePage)
+	{
+		ShowModePage(true);
+		return;
+	}
 	RoomsOpener = FindButton.Get();
 	OpenRooms(ETNRoomMenuPage::Join);
 }
 
 void UMP_MainMenuWidget::OnQuitClicked()
 {
+	if (bOnlinePage)
+	{
+		// «Volver»: otra vez a elegir Local u Online.
+		ShowModePage(false);
+		return;
+	}
 	UKismetSystemLibrary::QuitGame(GetWorld(), GetOwningPlayer(), EQuitPreference::Quit, true);
+}
+
+void UMP_MainMenuWidget::ShowModePage(bool bOnline)
+{
+	bOnlinePage = bOnline;
+	if (bOnline)
+	{
+		TNMainMenuDetail::SetLabel(HostButton, NSLOCTEXT("TNRooms", "MenuCreate", "Crear partida"));
+		TNMainMenuDetail::SetLabel(FindButton, NSLOCTEXT("TNRooms", "MenuJoin", "Unirse"));
+		TNMainMenuDetail::SetLabel(QuitButton, NSLOCTEXT("TNLocal", "MenuBack", "Volver"));
+	}
+	else
+	{
+		TNMainMenuDetail::SetLabel(HostButton, NSLOCTEXT("TNLocal", "MenuLocal", "Local"));
+		TNMainMenuDetail::SetLabel(FindButton, NSLOCTEXT("TNLocal", "MenuOnline", "Online"));
+		TNMainMenuDetail::SetLabel(QuitButton, NSLOCTEXT("TNRooms", "MenuQuit", "Salir"));
+	}
+	SetStatus(BuildIdleStatus());
+	if (HostButton && !(RoomMenu && RoomMenu->IsOpen()) && !bSettingsOpen)
+	{
+		HostButton->SetKeyboardFocus();
+	}
+}
+
+FReply UMP_MainMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	// En la página Online, Escape o B vuelven a elegir Local u Online (como «Volver»).
+	const FKey Key = InKeyEvent.GetKey();
+	if (bOnlinePage && !InKeyEvent.IsRepeat() && (Key == EKeys::Escape || Key == EKeys::Gamepad_FaceButton_Right || Key == EKeys::BackSpace)
+		&& !(RoomMenu && RoomMenu->IsOpen()) && !bSettingsOpen)
+	{
+		ShowModePage(false);
+		return FReply::Handled();
+	}
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
 void UMP_MainMenuWidget::OpenRooms(ETNRoomMenuPage Page)
@@ -407,6 +462,11 @@ FString UMP_MainMenuWidget::BuildIdleStatus() const
 	if (Existing.FindLastChar(TEXT('\n'), LastBreak))
 	{
 		Existing = Existing.Mid(LastBreak + 1);
+	}
+	if (!bOnlinePage)
+	{
+		// Primera página: qué es cada cosa (el estado de las salas, en la de Online).
+		return NSLOCTEXT("TNLocal", "MenuChoose", "Local: hasta 4 en este PC, a pantalla partida y sin conexión. Online: salas por Steam, hasta 8.").ToString();
 	}
 	return Existing.IsEmpty() ? NSLOCTEXT("TNRooms", "MenuIdle", "Listo. Crea una partida o únete a una.").ToString() : Existing;
 }

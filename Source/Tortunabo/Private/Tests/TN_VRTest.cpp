@@ -1,13 +1,19 @@
 // Cuentas del modo VR sin mundo ni actores (VR/TN_VRMath.h, Docs/Modo_VR.md): el rayo del puntero contra el panel de la
-// interfaz, el HUD que sigue a la cabeza con retraso, el giro por pasos, la distancia y la escala del panel y los botones de
-// los mandos en los menús. Se pueden correr sin gafas.
+// interfaz, el HUD que sigue a la cabeza con retraso, el giro por pasos, la distancia y la escala del panel, los botones de
+// los mandos en los menús, el umbral de los gatillos, la velocidad de la mano respecto del cuerpo, el arco del menú sin
+// gafas y la tecla de cambiar de cámara. Se pueden correr sin gafas.
 // Correr desde Session Frontend (categoría "Tortunabo.VR") o sin ventana:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.VR; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
+#include "InputActionValue.h"
 #include "InputCoreTypes.h"
+#include "InputTriggers.h"
+#include "Settings/TN_SettingsSaveGame.h"
+#include "UObject/Package.h"
 #include "VR/TN_VRMath.h"
 #include "VR/TN_VRMode.h"
+#include "VR/TN_VRRig.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -173,6 +179,226 @@ bool FTNVRMenuKeysTest::RunTest(const FString& Parameters)
 
 	TestTrue(TEXT("A es un botón de los mandos VR"), FTNVRKeys::IsVRKey(FTNVRKeys::A));
 	TestFalse(TEXT("Un botón del mando normal no lo es"), FTNVRKeys::IsVRKey(EKeys::Gamepad_FaceButton_Bottom));
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Panel curvo (menús y HUD alrededor de los ojos)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRCurvedPanelTest,
+	"Tortunabo.VR.CurvedPanel",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRCurvedPanelTest::RunTest(const FString& Parameters)
+{
+	using namespace TNVRTest;
+	constexpr float Arc = 90.f;
+	const double Radius = TNVRMath::CurvedPanelRadius(VRPanelSize, Arc);
+	TestTrue(TEXT("Radio = ancho / arco"), FMath::IsNearlyEqual(Radius, 1920.0 / (UE_DOUBLE_PI * 0.5), 1e-6));
+
+	// Los puntos del panel están a Radius del eje (Radius, 0): el panel rodea los ojos.
+	for (const FVector2D UV : { FVector2D(0.0, 0.5), FVector2D(0.25, 0.1), FVector2D(0.5, 0.5), FVector2D(1.0, 0.9) })
+	{
+		const FVector P = TNVRMath::CurvedPanelPoint(UV, VRPanelSize, Arc);
+		TestTrue(TEXT("Punto del panel a un radio del eje"), FMath::IsNearlyEqual(FVector2D(P.X - Radius, P.Y).Size(), Radius, 1e-6));
+	}
+	TestTrue(TEXT("El centro del panel en el origen"), TNVRMath::CurvedPanelPoint(FVector2D(0.5, 0.5), VRPanelSize, Arc).Equals(FVector::ZeroVector, 1e-6));
+	const FVector Left = TNVRMath::CurvedPanelPoint(FVector2D(0.0, 0.5), VRPanelSize, Arc);
+	TestTrue(TEXT("El borde izquierdo (vista desde delante) está en +Y y hacia los ojos (+X)"), Left.Y > 0.0 && Left.X > 0.0);
+
+	// Desde el eje (los ojos), cada rayo toca el punto que le corresponde y devuelve su UV.
+	const FVector Eye(Radius, 0.0, 0.0);
+	FVector Hit;
+	FVector2D UV;
+	for (const FVector2D Want : { FVector2D(0.5, 0.5), FVector2D(0.1, 0.2), FVector2D(0.9, 0.8), FVector2D(0.02, 0.5) })
+	{
+		const FVector Target = TNVRMath::CurvedPanelPoint(Want, VRPanelSize, Arc);
+		TestTrue(TEXT("Rayo desde los ojos: toca"), TNVRMath::RayCurvedPanelHit(Eye, (Target - Eye).GetSafeNormal(), FTransform::Identity, VRPanelSize, Arc, Hit, UV));
+		TestTrue(TEXT("Rayo desde los ojos → su UV"), UV.Equals(Want, 1e-6));
+		TestTrue(TEXT("Rayo desde los ojos → su punto"), Hit.Equals(Target, 1e-3));
+	}
+	TestFalse(TEXT("Hacia atrás: no toca"), TNVRMath::RayCurvedPanelHit(Eye, FVector(1.0, 0.0, 0.0), FTransform::Identity, VRPanelSize, Arc, Hit, UV));
+	TestFalse(TEXT("Por encima del panel: no toca"), TNVRMath::RayCurvedPanelHit(Eye, FVector(-1.0, 0.0, 2.0).GetSafeNormal(), FTransform::Identity, VRPanelSize, Arc, Hit, UV));
+	TestFalse(TEXT("Fuera del arco (a 60° con 90° de arco): no toca"), TNVRMath::RayCurvedPanelHit(Eye, FRotator(0.0, 180.0 - 60.0, 0.0).Vector(), FTransform::Identity, VRPanelSize, Arc, Hit, UV));
+
+	// Con la escala de CurvedPanelScale, el radio en el mundo es la distancia pedida: los ojos, en el eje.
+	const float Scale = TNVRMath::CurvedPanelScale(160.f, Arc, static_cast<float>(VRPanelSize.X));
+	TestTrue(TEXT("Radio en el mundo = distancia"), FMath::IsNearlyEqual(Radius * Scale, 160.0, 1e-3));
+	const FTransform Placed(FRotator(0.0, 180.0, 0.0), FVector(160.0, 0.0, 0.0), FVector(Scale));
+	TestTrue(TEXT("Panel colocado: desde los ojos al frente toca el centro"),
+		TNVRMath::RayCurvedPanelHit(FVector::ZeroVector, FVector(1.0, 0.0, 0.0), Placed, VRPanelSize, Arc, Hit, UV));
+	TestTrue(TEXT("Panel colocado → UV (0,5; 0,5)"), UV.Equals(FVector2D(0.5, 0.5), 1e-6));
+	TestTrue(TEXT("Panel colocado: a 160 cm"), Hit.Equals(FVector(160.0, 0.0, 0.0), 1e-3));
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gatillos y agarres analógicos, y lo que se suelta de la mano
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRAnalogButtonTest,
+	"Tortunabo.VR.AnalogButton",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRAnalogButtonTest::RunTest(const FString& Parameters)
+{
+	bool bHeld = false;
+	TestEqual(TEXT("Dedo apoyado (0,2): nada"), TNVRMath::AnalogButton(0.2f, bHeld), 0);
+	TestEqual(TEXT("Apretar (0,6): pulsa"), TNVRMath::AnalogButton(0.6f, bHeld), 1);
+	TestTrue(TEXT("Queda apretado"), bHeld);
+	TestEqual(TEXT("Mantener: nada"), TNVRMath::AnalogButton(0.9f, bHeld), 0);
+	TestEqual(TEXT("Aflojar un poco (0,45): sigue apretado"), TNVRMath::AnalogButton(0.45f, bHeld), 0);
+	TestEqual(TEXT("Soltar (0,1): suelta"), TNVRMath::AnalogButton(0.1f, bHeld), -1);
+	TestFalse(TEXT("Queda suelto"), bHeld);
+	TestEqual(TEXT("Rozar el umbral (0,5): nada"), TNVRMath::AnalogButton(0.5f, bHeld), 0);
+
+	TestTrue(TEXT("Mano lenta: sale con su velocidad"), TNVRMath::ThrowVelocity(FVector(300.0, 0.0, 100.0)).Equals(FVector(300.0, 0.0, 100.0)));
+	TestTrue(TEXT("Mano muy rápida: con tope"), FMath::IsNearlyEqual(TNVRMath::ThrowVelocity(FVector(0.0, 5000.0, 0.0)).Size(), 1600.0, 1e-3));
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gatillo: umbral del 55 % en el juego y nada de clics al abrir un menú con él apretado
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRTriggerThresholdTest,
+	"Tortunabo.VR.TriggerThreshold",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRTriggerThresholdTest::RunTest(const FString& Parameters)
+{
+	// El disparador de las asignaciones de los gatillos (IA_Interact, IA_OpenChatWheel): «Down» al 55 %. Las acciones son
+	// booleanas, pero Enhanced Input les pasa el valor del gatillo tal cual (0,3 sigue siendo 0,3) y el disparador lo mira.
+	UInputTrigger* Trigger = ATN_VRRig::MakeAnalogPressTrigger(GetTransientPackage());
+	TestTrue(TEXT("Es un disparador «Down»"), Cast<UInputTriggerDown>(Trigger) != nullptr);
+	if (!Trigger)
+	{
+		return false;
+	}
+	TestEqual(TEXT("Umbral: el del botón analógico (55 %)"), Trigger->ActuationThreshold, TNVRMath::AnalogPressThreshold);
+	const auto Pressed = [Trigger](float TriggerValue)
+	{
+		return Trigger->IsActuated(FInputActionValue(EInputActionValueType::Boolean, FVector(static_cast<double>(TriggerValue), 0.0, 0.0)));
+	};
+	TestFalse(TEXT("Dedo apoyado (0,1): no interactúa"), Pressed(0.1f));
+	TestFalse(TEXT("Medio gatillo (0,5): no interactúa"), Pressed(0.5f));
+	TestTrue(TEXT("Apretado (0,6): interactúa"), Pressed(0.6f));
+	TestTrue(TEXT("A fondo (1): interactúa"), Pressed(1.f));
+
+	// Menús (FTNVRInputProcessor): el estado del gatillo se sigue también jugando. Abrir un menú con el gatillo ya apretado
+	// no hace clic; hay que soltarlo (por debajo del 35 %) y volver a apretar.
+	bool bHeld = false;
+	TestEqual(TEXT("Jugando, apretar: se apunta (sin actuar)"), TNVRMath::AnalogButton(0.9f, bHeld), 1);
+	TestEqual(TEXT("Ya en el menú, sigue apretado: ningún clic"), TNVRMath::AnalogButton(0.95f, bHeld), 0);
+	TestEqual(TEXT("Aflojar a 0,5: tampoco"), TNVRMath::AnalogButton(0.5f, bHeld), 0);
+	TestEqual(TEXT("Soltar: sin clic (no se pulsó en el menú)"), TNVRMath::AnalogButton(0.2f, bHeld), -1);
+	TestEqual(TEXT("Volver a apretar: ahora sí, clic"), TNVRMath::AnalogButton(0.7f, bHeld), 1);
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Velocidad de la mano respecto del cuerpo (lanzar con el gesto)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRHandVelocityTest,
+	"Tortunabo.VR.HandVelocity",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRHandVelocityTest::RunTest(const FString& Parameters)
+{
+	constexpr float Dt = 1.f / 72.f;
+	constexpr float ThrowSpeed = 250.f;
+	// La mano quieta respecto de los ojos: 40 cm delante y 30 abajo.
+	const FVector HandLocal(40.0, 0.0, -30.0);
+	const FTransform Start(FRotator(0.0, 20.0, 0.0), FVector(100.0, 200.0, 150.0));
+
+	// Andando a 450 cm/s (más que VRThrowSpeed) con la mano quieta: la mano no se mueve respecto del cuerpo.
+	const FTransform Walked(Start.GetRotation(), Start.GetLocation() + Start.GetRotation().GetForwardVector() * 450.0 * Dt);
+	const FVector Walking = TNVRMath::RelativeHandVelocity(Start, Start.TransformPosition(HandLocal), Walked, Walked.TransformPosition(HandLocal), Dt);
+	TestTrue(TEXT("Andando con la mano quieta: velocidad 0"), Walking.IsNearlyZero(1e-2));
+	TestFalse(TEXT("Andando con la mano quieta: soltar no lanza"), TNVRMath::IsThrowSwing(Walking, ThrowSpeed));
+	// Lo que se medía antes (la mano en el mundo) sí habría lanzado.
+	const FVector WorldVelocity = (Walked.TransformPosition(HandLocal) - Start.TransformPosition(HandLocal)) / Dt;
+	TestTrue(TEXT("En el mundo la mano iba a 450 cm/s"), FMath::IsNearlyEqual(WorldVelocity.Size(), 450.0, 0.5));
+
+	// Saltando (el origen sube a 500 cm/s): tampoco.
+	const FTransform Jumped(Start.GetRotation(), Start.GetLocation() + FVector(0.0, 0.0, 500.0 * Dt));
+	TestTrue(TEXT("Saltando con la mano quieta: velocidad 0"),
+		TNVRMath::RelativeHandVelocity(Start, Start.TransformPosition(HandLocal), Jumped, Jumped.TransformPosition(HandLocal), Dt).IsNearlyZero(1e-2));
+
+	// Giro de 30° con el stick de un fotograma a otro: la mano, a 50 cm del origen, salta ~26 cm en el mundo; respecto del
+	// cuerpo no se ha movido.
+	const FTransform Turned(FRotator(0.0, 50.0, 0.0), Start.GetLocation());
+	const FVector Turning = TNVRMath::RelativeHandVelocity(Start, Start.TransformPosition(HandLocal), Turned, Turned.TransformPosition(HandLocal), Dt);
+	TestTrue(TEXT("Giro a pasos con la mano quieta: velocidad 0"), Turning.IsNearlyZero(1e-2));
+
+	// Un gesto de lanzar de verdad (la mano a 400 cm/s hacia delante respecto del cuerpo) mientras se anda: 400 cm/s hacia
+	// donde miran los ojos ahora.
+	const FVector Swung = HandLocal + FVector(400.0 * Dt, 0.0, 0.0);
+	const FVector Swing = TNVRMath::RelativeHandVelocity(Start, Start.TransformPosition(HandLocal), Walked, Walked.TransformPosition(Swung), Dt);
+	TestTrue(TEXT("Gesto de lanzar andando: 400 cm/s"), FMath::IsNearlyEqual(Swing.Size(), 400.0, 0.5));
+	TestTrue(TEXT("Gesto de lanzar andando: hacia donde miran los ojos"), Swing.GetSafeNormal().Equals(Walked.GetRotation().GetForwardVector(), 1e-3));
+	TestTrue(TEXT("Gesto de lanzar: soltar lanza"), TNVRMath::IsThrowSwing(Swing, ThrowSpeed));
+	TestTrue(TEXT("Sin tiempo: velocidad 0"), TNVRMath::RelativeHandVelocity(Start, FVector::ZeroVector, Walked, FVector::OneVector, 0.f).IsZero());
+
+	// Al soltar un objeto con física se suma lo que llevaba el cuerpo (con el mismo tope); lo que se lanza con el gatillo o al
+	// compañero, no.
+	const FVector Body(450.0, 0.0, 0.0);
+	TestTrue(TEXT("Objeto con física: mano + cuerpo"), TNVRMath::ReleaseVelocity(FVector(0.0, 100.0, 0.0), Body, true).Equals(FVector(450.0, 100.0, 0.0)));
+	TestTrue(TEXT("Sin el cuerpo: solo la mano"), TNVRMath::ReleaseVelocity(FVector(0.0, 100.0, 0.0), Body, false).Equals(FVector(0.0, 100.0, 0.0)));
+	TestTrue(TEXT("Mano + cuerpo: con tope"), FMath::IsNearlyEqual(TNVRMath::ReleaseVelocity(FVector(1500.0, 0.0, 0.0), Body, true).Size(), 1600.0, 1e-3));
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Menú sin gafas: el arco que cabe en la ventana
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRSimulatedMenuArcTest,
+	"Tortunabo.VR.SimulatedMenuArc",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRSimulatedMenuArcTest::RunTest(const FString& Parameters)
+{
+	// Cámara de 90° en una ventana 16:9: los 100° del menú no caben; unos 76°, sí.
+	const float Arc = TNVRMath::SimulatedMenuArc(100.f, 90.f, 16.f / 9.f);
+	TestTrue(TEXT("90° y 16:9: entre 70° y 80°"), Arc > 70.f && Arc < 80.f);
+	TestTrue(TEXT("Lo que se pide, si cabe"), FMath::IsNearlyEqual(TNVRMath::SimulatedMenuArc(60.f, 90.f, 16.f / 9.f), 60.f, 1e-3f));
+	TestTrue(TEXT("Ventana más alta (4:3): cabe más"), TNVRMath::SimulatedMenuArc(100.f, 90.f, 4.f / 3.f) > Arc);
+	TestTrue(TEXT("Panorámica (21:9): cabe menos"), TNVRMath::SimulatedMenuArc(100.f, 90.f, 21.f / 9.f) < Arc);
+	TestTrue(TEXT("Por debajo de los ojos (como con gafas): cabe menos"), TNVRMath::SimulatedMenuArc(100.f, 90.f, 16.f / 9.f, 0.1f) < Arc);
+
+	// El que sale cabe (con el margen) y uno un poco mayor ya no.
+	const double TanH = FMath::Tan(FMath::DegreesToRadians(45.0)) * 0.85;
+	const double TanV = TanH / (16.0 / 9.0);
+	const double DrawAspect = 1080.0 / 1920.0;
+	TestTrue(TEXT("El arco que sale cabe"), TNVRMath::CurvedPanelFits(FMath::DegreesToRadians(static_cast<double>(Arc)), TanH, TanV, DrawAspect, 0.0));
+	TestFalse(TEXT("Dos grados más ya no"), TNVRMath::CurvedPanelFits(FMath::DegreesToRadians(static_cast<double>(Arc) + 2.0), TanH, TanV, DrawAspect, 0.0));
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tecla de cambiar de cámara (primera persona sin gafas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRCameraKeyTest,
+	"Tortunabo.VR.CameraKey",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRCameraKeyTest::RunTest(const FString& Parameters)
+{
+	const FTNGameSettings Defaults;
+	const FKey Keyboard(Defaults.CameraKey);
+	const FKey Pad(Defaults.CameraPadKey);
+	TestTrue(TEXT("De serie tiene tecla"), Keyboard.IsValid());
+	TestTrue(TEXT("De serie tiene botón del mando"), Pad.IsValid() && Pad.IsGamepadKey());
+	TestFalse(TEXT("La tecla no es un botón del mando"), Keyboard.IsGamepadKey());
+	TestTrue(TEXT("Nunca la de hablar (teclado)"), Keyboard != FKey(Defaults.PushToTalkKey));
+	TestTrue(TEXT("Nunca la de hablar (mando)"), Pad != FKey(Defaults.PushToTalkPadKey));
+	TestTrue(TEXT("Ni la del menú (teclado)"), Keyboard != FKey(Defaults.PauseKey));
+	TestTrue(TEXT("Ni la del menú (mando)"), Pad != FKey(Defaults.PausePadKey));
+	TestTrue(TEXT("Ni V (la de hablar de serie, que pide el tutorial)"), Keyboard != EKeys::V);
 	return true;
 }
 

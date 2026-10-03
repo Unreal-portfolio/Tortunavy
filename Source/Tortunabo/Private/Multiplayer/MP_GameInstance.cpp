@@ -24,6 +24,9 @@
 #include "Misc/PackageName.h"
 #include "TimerManager.h"
 #include "Multiplayer/TN_CosmeticSaveGame.h"
+#include "Multiplayer/TN_LocalPlayRules.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
+#include "Multiplayer/TN_LocalPlayerProfile.h"
 #include "Lobby/TN_LobbyMission.h"
 #include "Multiplayer/TN_RoomInfo.h"
 #include "Multiplayer/TN_SaveGameIO.h"
@@ -258,7 +261,7 @@ void UMP_GameInstance::ShowLoadingScreen(const FString& Reason)
 		return;
 	}
 
-	TNVR::AddToScreen(LoadingScreenWidget, 100000);
+	TNVR::AddToFullScreen(LoadingScreenWidget, 100000);
 	bIsLoadingScreenVisible = true;
 	RefreshLoadingText(Reason);
 }
@@ -282,7 +285,7 @@ void UMP_GameInstance::HideLoadingScreen()
 
 TArray<FName> UMP_GameInstance::GetUnlockedHelmetIds() const
 {
-	return CosmeticProfile ? CosmeticProfile->UnlockedHelmetIds : TArray<FName>();
+	return GetUnlockedHelmetIdsFor(nullptr);
 }
 
 bool UMP_GameInstance::IsHelmetUnlocked(FName HelmetId) const
@@ -292,75 +295,37 @@ bool UMP_GameInstance::IsHelmetUnlocked(FName HelmetId) const
 
 bool UMP_GameInstance::UnlockHelmet(FName HelmetId)
 {
-	if (!CosmeticProfile || HelmetId == NAME_None)
-	{
-		return false;
-	}
-
-	if (CosmeticProfile->UnlockedHelmetIds.Contains(HelmetId))
-	{
-		return true;
-	}
-
-	CosmeticProfile->UnlockedHelmetIds.Add(HelmetId);
-	SaveCosmeticProfile();
-	return true;
+	return UnlockHelmetFor(nullptr, HelmetId);
 }
 
 bool UMP_GameInstance::EquipHelmet(FName HelmetId)
 {
-	if (!IsHelmetUnlocked(HelmetId))
-	{
-		return false;
-	}
-
-	CosmeticProfile->EquippedHelmetId = HelmetId;
-	SaveCosmeticProfile();
-	return true;
+	return EquipHelmetFor(nullptr, HelmetId);
 }
 
 FName UMP_GameInstance::GetEquippedHelmetId() const
 {
-	return CosmeticProfile ? CosmeticProfile->EquippedHelmetId : NAME_None;
+	return GetEquippedHelmetIdFor(nullptr);
 }
 
 bool UMP_GameInstance::ForceEquipHelmet(FName HelmetId)
 {
-	if (!CosmeticProfile)
-	{
-		return false;
-	}
-	// Auto-desbloquear si viene de una estatua de lobby
-	if (HelmetId != NAME_None)
-	{
-		UnlockHelmet(HelmetId);
-	}
-	CosmeticProfile->EquippedHelmetId = HelmetId; // NAME_None = desequipar
-	SaveCosmeticProfile();
-	return true;
+	return ForceEquipHelmetFor(nullptr, HelmetId);
 }
 
 bool UMP_GameInstance::EquipSkin(FName SkinId)
 {
-	if (!CosmeticProfile)
-	{
-		return false;
-	}
-	CosmeticProfile->EquippedSkinId = SkinId; // NAME_None = sin skin (válido)
-	SaveCosmeticProfile();
-	return true;
+	return EquipSkinFor(nullptr, SkinId);
 }
 
 FName UMP_GameInstance::GetEquippedSkinId() const
 {
-	return CosmeticProfile ? CosmeticProfile->EquippedSkinId : NAME_None;
+	return GetEquippedSkinIdFor(nullptr);
 }
 
 bool UMP_GameInstance::IsCosmeticUnlocked(ETNCosmeticCategory Category, FName Id) const
 {
-	if (Id == NAME_None) { return true; }
-	if (!CosmeticProfile) { return false; }
-	return Category == ETNCosmeticCategory::Helmet ? CosmeticProfile->UnlockedHelmetIds.Contains(Id) : CosmeticProfile->UnlockedSkinIds.Contains(Id);
+	return IsCosmeticUnlockedFor(nullptr, Category, Id);
 }
 
 int32 UMP_GameInstance::GetCosmeticPrice(ETNCosmeticCategory Category, FName Id) const
@@ -377,16 +342,7 @@ int32 UMP_GameInstance::GetCosmeticPrice(ETNCosmeticCategory Category, FName Id)
 
 bool UMP_GameInstance::PurchaseCosmetic(ETNCosmeticCategory Category, FName Id)
 {
-	if (!CosmeticProfile || Id == NAME_None) { return false; }
-	if (IsCosmeticUnlocked(Category, Id)) { return true; }
-	const int32 Price = GetCosmeticPrice(Category, Id);
-	if (Price > CosmeticProfile->AccumulatedRaceScore) { return false; }
-	CosmeticProfile->AccumulatedRaceScore -= Price;
-	if (Category == ETNCosmeticCategory::Helmet) { CosmeticProfile->UnlockedHelmetIds.AddUnique(Id); }
-	else { CosmeticProfile->UnlockedSkinIds.AddUnique(Id); }
-	SaveCosmeticProfile();
-	UE_LOG(LogTortunabo, Log, TEXT("[Tienda] Desbloqueado '%s' por %d (quedan %d)."), *Id.ToString(), Price, CosmeticProfile->AccumulatedRaceScore);
-	return true;
+	return PurchaseCosmeticFor(nullptr, Category, Id);
 }
 
 TArray<FName> UMP_GameInstance::GetCosmeticCatalog(ETNCosmeticCategory Category) const
@@ -418,33 +374,191 @@ TArray<FName> UMP_GameInstance::GetCosmeticCatalog(ETNCosmeticCategory Category)
 
 TArray<FName> UMP_GameInstance::GetUnlockedSkinIds() const
 {
-	return CosmeticProfile ? CosmeticProfile->UnlockedSkinIds : TArray<FName>();
+	return GetUnlockedSkinIdsFor(nullptr);
 }
 
 bool UMP_GameInstance::EquipShell(FName ShellId)
 {
-	if (!CosmeticProfile) { return false; }
-	CosmeticProfile->EquippedShellId = ShellId;
-	SaveCosmeticProfile();
-	return true;
+	return EquipShellFor(nullptr, ShellId);
 }
 
 FName UMP_GameInstance::GetEquippedShellId() const
 {
-	return CosmeticProfile ? CosmeticProfile->EquippedShellId : NAME_None;
+	return GetEquippedShellIdFor(nullptr);
 }
 
 bool UMP_GameInstance::EquipEyes(FName EyesId)
 {
-	if (!CosmeticProfile) { return false; }
-	CosmeticProfile->EquippedEyesId = EyesId;
-	SaveCosmeticProfile();
-	return true;
+	return EquipEyesFor(nullptr, EyesId);
 }
 
 FName UMP_GameInstance::GetEquippedEyesId() const
 {
-	return CosmeticProfile ? CosmeticProfile->EquippedEyesId : NAME_None;
+	return GetEquippedEyesIdFor(nullptr);
+}
+
+// ── Aspecto de cada jugador local (#311) ──────────────────────────────────────
+
+UTN_CosmeticSaveGame* UMP_GameInstance::CosmeticsFor(const APlayerController* PC) const
+{
+	// Un invitado de la partida local: su aspecto de la partida (empieza con el de serie y no se guarda).
+	if (PC && UTN_LocalPlaySubsystem::IsGuest(PC))
+	{
+		if (UTN_LocalPlayerProfile* Profile = UTN_LocalPlayerProfile::Get(PC))
+		{
+			return Profile->GetGuestCosmetics(DefaultUnlockedHelmets);
+		}
+	}
+	return CosmeticProfile;
+}
+
+void UMP_GameInstance::SaveCosmeticsFor(const APlayerController* PC) const
+{
+	if (CosmeticsFor(PC) == CosmeticProfile)
+	{
+		SaveCosmeticProfile();
+	}
+}
+
+TArray<FName> UMP_GameInstance::GetUnlockedHelmetIdsFor(const APlayerController* PC) const
+{
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	return Profile ? Profile->UnlockedHelmetIds : TArray<FName>();
+}
+
+TArray<FName> UMP_GameInstance::GetUnlockedSkinIdsFor(const APlayerController* PC) const
+{
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	return Profile ? Profile->UnlockedSkinIds : TArray<FName>();
+}
+
+bool UMP_GameInstance::UnlockHelmetFor(const APlayerController* PC, FName HelmetId)
+{
+	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile || HelmetId == NAME_None)
+	{
+		return false;
+	}
+	if (Profile->UnlockedHelmetIds.Contains(HelmetId))
+	{
+		return true;
+	}
+	Profile->UnlockedHelmetIds.Add(HelmetId);
+	SaveCosmeticsFor(PC);
+	return true;
+}
+
+bool UMP_GameInstance::EquipHelmetFor(const APlayerController* PC, FName HelmetId)
+{
+	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile || HelmetId == NAME_None || !Profile->UnlockedHelmetIds.Contains(HelmetId))
+	{
+		return false;
+	}
+	Profile->EquippedHelmetId = HelmetId;
+	SaveCosmeticsFor(PC);
+	return true;
+}
+
+bool UMP_GameInstance::ForceEquipHelmetFor(const APlayerController* PC, FName HelmetId)
+{
+	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile)
+	{
+		return false;
+	}
+	// Auto-desbloquear si viene de una estatua de lobby
+	if (HelmetId != NAME_None)
+	{
+		UnlockHelmetFor(PC, HelmetId);
+	}
+	Profile->EquippedHelmetId = HelmetId; // NAME_None = desequipar
+	SaveCosmeticsFor(PC);
+	return true;
+}
+
+FName UMP_GameInstance::GetEquippedHelmetIdFor(const APlayerController* PC) const
+{
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	return Profile ? Profile->EquippedHelmetId : NAME_None;
+}
+
+bool UMP_GameInstance::EquipSkinFor(const APlayerController* PC, FName SkinId)
+{
+	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile)
+	{
+		return false;
+	}
+	Profile->EquippedSkinId = SkinId; // NAME_None = sin skin (válido)
+	SaveCosmeticsFor(PC);
+	return true;
+}
+
+FName UMP_GameInstance::GetEquippedSkinIdFor(const APlayerController* PC) const
+{
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	return Profile ? Profile->EquippedSkinId : NAME_None;
+}
+
+bool UMP_GameInstance::IsCosmeticUnlockedFor(const APlayerController* PC, ETNCosmeticCategory Category, FName Id) const
+{
+	if (Id == NAME_None) { return true; }
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile) { return false; }
+	return Category == ETNCosmeticCategory::Helmet ? Profile->UnlockedHelmetIds.Contains(Id) : Profile->UnlockedSkinIds.Contains(Id);
+}
+
+bool UMP_GameInstance::PurchaseCosmeticFor(const APlayerController* PC, ETNCosmeticCategory Category, FName Id)
+{
+	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile || Id == NAME_None) { return false; }
+	if (IsCosmeticUnlockedFor(PC, Category, Id)) { return true; }
+	const int32 Price = GetCosmeticPrice(Category, Id);
+	if (Price > Profile->AccumulatedRaceScore) { return false; }
+	Profile->AccumulatedRaceScore -= Price;
+	if (Category == ETNCosmeticCategory::Helmet) { Profile->UnlockedHelmetIds.AddUnique(Id); }
+	else { Profile->UnlockedSkinIds.AddUnique(Id); }
+	SaveCosmeticsFor(PC);
+	UE_LOG(LogTortunabo, Log, TEXT("[Tienda] Desbloqueado '%s' por %d (quedan %d)%s."), *Id.ToString(), Price, Profile->AccumulatedRaceScore,
+		Profile == CosmeticProfile ? TEXT("") : TEXT(" para esta partida (invitado local)"));
+	return true;
+}
+
+bool UMP_GameInstance::EquipShellFor(const APlayerController* PC, FName ShellId)
+{
+	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile) { return false; }
+	Profile->EquippedShellId = ShellId;
+	SaveCosmeticsFor(PC);
+	return true;
+}
+
+FName UMP_GameInstance::GetEquippedShellIdFor(const APlayerController* PC) const
+{
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	return Profile ? Profile->EquippedShellId : NAME_None;
+}
+
+bool UMP_GameInstance::EquipEyesFor(const APlayerController* PC, FName EyesId)
+{
+	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (!Profile) { return false; }
+	Profile->EquippedEyesId = EyesId;
+	SaveCosmeticsFor(PC);
+	return true;
+}
+
+FName UMP_GameInstance::GetEquippedEyesIdFor(const APlayerController* PC) const
+{
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	return Profile ? Profile->EquippedEyesId : NAME_None;
+}
+
+int32 UMP_GameInstance::GetAccumulatedRaceScoreFor(const APlayerController* PC) const
+{
+	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	return Profile ? Profile->AccumulatedRaceScore : 0;
 }
 
 const FTN_HelmetData* UMP_GameInstance::FindHelmetRow(FName HelmetId, const TCHAR* Ctx) const
@@ -460,6 +574,11 @@ const FTN_SkinData* UMP_GameInstance::FindSkinRow(FName SkinId, const TCHAR* Ctx
 }
 
 FName UMP_GameInstance::OpenHelmetCrate()
+{
+	return OpenHelmetCrateFor(nullptr);
+}
+
+FName UMP_GameInstance::OpenHelmetCrateFor(const APlayerController* PC)
 {
 	if (HelmetCrateTable.Num() == 0)
 	{
@@ -483,7 +602,7 @@ FName UMP_GameInstance::OpenHelmetCrate()
 		Roll -= FMath::Max(0.0f, Entry.Weight);
 		if (Roll <= 0.0f && Entry.HelmetId != NAME_None)
 		{
-			UnlockHelmet(Entry.HelmetId);
+			UnlockHelmetFor(PC, Entry.HelmetId);
 			return Entry.HelmetId;
 		}
 	}
@@ -529,6 +648,13 @@ FString UMP_GameInstance::BuildStatusLog() const
 
 void UMP_GameInstance::HostSession()
 {
+	// Otro «Crear» (o «Crear» con una entrada en marcha) no empieza una sala nueva: destruiría la sesión que se está creando. El
+	// primer intento sigue y la pantalla de carga ya es la suya.
+	if (RoomOp.IsBusy())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Salas] Crear sala ignorado: ya hay una sala creándose o una entrada en marcha."));
+		return;
+	}
 	EnsureActiveRoom();
 	ShowLoadingScreen(FText::Format(NSLOCTEXT("TNRooms", "CreatingRoom", "Creando la sala «{0}»..."), TNRoomNames::Get(ActiveRoom.NameId)).ToString());
 
@@ -544,8 +670,9 @@ void UMP_GameInstance::HostSession()
 	FNamedOnlineSession* Existing = Sessions->GetNamedSession(NAME_GameSession);
 	if (Existing)
 	{
-		bPendingHostAfterDestroy = true;
-		bPendingJoinAfterDestroy = false;
+		RoomOp.bHostAfterDestroy = true;
+		RoomOp.bJoinAfterDestroy = false;
+		RoomOpStartTime = FPlatformTime::Seconds();
 		Sessions->ClearOnDestroySessionCompleteDelegates(this);
 		Sessions->AddOnDestroySessionCompleteDelegate_Handle(
 			FOnDestroySessionCompleteDelegate::CreateUObject(this, &UMP_GameInstance::OnDestroySessionComplete));
@@ -579,7 +706,13 @@ void UMP_GameInstance::HostSession()
 
 	UpdateStatus(FString::Printf(TEXT("Creating Steam lobby (%s, %d plazas, código %s)..."), ActiveRoom.bPrivate ? TEXT("privada") : TEXT("pública"),
 		ActiveRoom.MaxPlayers, *ActiveRoom.Code));
-	Sessions->CreateSession(0, NAME_GameSession, Settings);
+	RoomOp.bCreating = true;
+	RoomOpStartTime = FPlatformTime::Seconds();
+	if (!Sessions->CreateSession(0, NAME_GameSession, Settings) && RoomOp.bCreating)
+	{
+		// No ha arrancado y no ha avisado: se da por fallida ya (si ha avisado, OnCreateSessionComplete ya la cerró).
+		OnCreateSessionComplete(NAME_GameSession, false);
+	}
 }
 
 void UMP_GameInstance::HostSessionWithMode(ETNProcGameMode Mode)
@@ -598,6 +731,7 @@ void UMP_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 	{
 		Sessions->ClearOnCreateSessionCompleteDelegates(this);
 	}
+	RoomOp.bCreating = false;
 
 	if (!bWasSuccessful)
 	{
@@ -607,6 +741,9 @@ void UMP_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 		return;
 	}
 
+	// La sesión ya está: falta el viaje (hasta que cargue el mapa, HandlePostLoadMap, otro «Crear» o «Unirse» sigue sobrando).
+	RoomOp.bTravelling = true;
+	RoomOpStartTime = FPlatformTime::Seconds();
 	UpdateStatus(FString::Printf(TEXT("Lobby '%s' created! Travelling to game map..."), *SessionName.ToString()));
 
 	// El viaje sale cuando el huevo de la pantalla de carga ha terminado de cerrarse (con el subsistema NULL la sesión se
@@ -619,6 +756,10 @@ void UMP_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 		UWorld* TravelWorld = Self ? Self->GetWorld() : nullptr;
 		if (!TravelWorld)
 		{
+			if (Self)
+			{
+				Self->RoomOp.bTravelling = false;
+			}
 			return;
 		}
 		// Menú que ya escucha (el Standalone del editor como servidor escuchando arranca en LVL_Menu?Listen): con Steam, el
@@ -653,6 +794,11 @@ void UMP_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 
 void UMP_GameInstance::FindAndJoinSession()
 {
+	if (RoomOp.IsBusy())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Salas] Unirse a la primera ignorado: ya hay una sala creándose o una entrada en marcha."));
+		return;
+	}
 	ShowLoadingScreen(TEXT("Buscando salas..."));
 	StartRoomSearch(ETNRoomSearch::QuickJoin);
 }
@@ -784,6 +930,7 @@ void UMP_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	{
 		Sessions->ClearOnJoinSessionCompleteDelegates(this);
 	}
+	RoomOp.bJoining = false;
 
 	if (Result != EOnJoinSessionCompleteResult::Success)
 	{
@@ -817,6 +964,9 @@ void UMP_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 		{
 			ConnectInfo += FString::Printf(TEXT("?%s=1"), TutorialJoinOption());
 		}
+		// Ya se está dentro de la sesión: falta la conexión (hasta que cargue el mapa, otro «Crear» o «Unirse» sigue sobrando).
+		RoomOp.bTravelling = true;
+		RoomOpStartTime = FPlatformTime::Seconds();
 		ShowLoadingScreen(PendingJoinRoomName.IsEmpty() ? FString(TEXT("Conectando a la partida..."))
 			: FText::Format(NSLOCTEXT("TNRooms", "Connecting", "Entrando en «{0}»..."), PendingJoinRoomName).ToString());
 		// Igual que al crear la sesión: se conecta cuando el huevo ya está cerrado del todo.
@@ -826,6 +976,10 @@ void UMP_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 			if (APlayerController* PC = WeakThis.IsValid() ? WeakThis->GetFirstLocalPlayerController() : nullptr)
 			{
 				PC->ClientTravel(ConnectInfo, TRAVEL_Absolute);
+			}
+			else if (WeakThis.IsValid())
+			{
+				WeakThis->RoomOp.bTravelling = false;
 			}
 		};
 		if (UTN_LoadingScreenSubsystem* EggLoading = GetSubsystem<UTN_LoadingScreenSubsystem>())
@@ -897,14 +1051,22 @@ void UMP_GameInstance::OnSessionUserInviteAccepted(const bool bWasSuccessful, co
 		return;
 	}
 
+	// Con una sala creándose o una entrada en marcha, la invitación sobra: aceptarla destruiría esa sesión. Se acepta otra vez al acabar.
+	if (RoomOp.IsBusy())
+	{
+		UpdateStatus(TEXT("Invite ignored: a room is being created or joined. Accept it again when it finishes."));
+		return;
+	}
+
 	// Una invitación entra también en salas privadas; el cierre, las plazas y los expulsados los mira el servidor al entrar.
 	bKickedFromRoom = false;
 	PendingJoinRoomName = FText::GetEmpty();
 
 	if (Sessions->GetNamedSession(NAME_GameSession))
 	{
-		bPendingHostAfterDestroy = false;
-		bPendingJoinAfterDestroy = true;
+		RoomOp.bHostAfterDestroy = false;
+		RoomOp.bJoinAfterDestroy = true;
+		RoomOpStartTime = FPlatformTime::Seconds();
 		PendingInviteResult = InviteResult;
 		Sessions->ClearOnDestroySessionCompleteDelegates(this);
 		Sessions->AddOnDestroySessionCompleteDelegate_Handle(
@@ -915,10 +1077,7 @@ void UMP_GameInstance::OnSessionUserInviteAccepted(const bool bWasSuccessful, co
 	}
 
 	UpdateStatus(TEXT("Joining invited session..."));
-	Sessions->ClearOnJoinSessionCompleteDelegates(this);
-	Sessions->AddOnJoinSessionCompleteDelegate_Handle(
-		FOnJoinSessionCompleteDelegate::CreateUObject(this, &UMP_GameInstance::OnJoinSessionComplete));
-	Sessions->JoinSession(ControllerId, NAME_GameSession, InviteResult);
+	BeginSessionJoin(InviteResult, ControllerId);
 }
 
 void UMP_GameInstance::DestroyCurrentSession()
@@ -951,24 +1110,62 @@ void UMP_GameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucc
 	// Solo al log: el menú enseña el último estado y esto taparía el motivo por el que se cerró la sesión.
 	UE_LOG(LogTortunabo, Log, TEXT("[MP] Session '%s' destroyed (ok=%d)"), *SessionName.ToString(), bWasSuccessful);
 
-	if (bPendingHostAfterDestroy)
+	if (RoomOp.bHostAfterDestroy)
 	{
-		bPendingHostAfterDestroy = false;
-		bPendingJoinAfterDestroy = false;
+		RoomOp.bHostAfterDestroy = false;
+		RoomOp.bJoinAfterDestroy = false;
 		HostSession();
 	}
-	else if (bPendingJoinAfterDestroy)
+	else if (RoomOp.bJoinAfterDestroy)
 	{
-		bPendingJoinAfterDestroy = false;
-		bPendingHostAfterDestroy = false;
-		if (Sessions.IsValid())
-		{
-			Sessions->ClearOnJoinSessionCompleteDelegates(this);
-			Sessions->AddOnJoinSessionCompleteDelegate_Handle(
-				FOnJoinSessionCompleteDelegate::CreateUObject(this, &UMP_GameInstance::OnJoinSessionComplete));
-			Sessions->JoinSession(0, NAME_GameSession, PendingInviteResult);
-		}
+		RoomOp.bJoinAfterDestroy = false;
+		RoomOp.bHostAfterDestroy = false;
+		BeginSessionJoin(PendingInviteResult, 0);
 	}
+}
+
+void UMP_GameInstance::BeginSessionJoin(const FOnlineSessionSearchResult& Result, int32 ControllerId)
+{
+	IOnlineSessionPtr Sessions = GetSessionInterface();
+	if (!Sessions.IsValid())
+	{
+		HideLoadingScreen();
+		PostRoomNotice(NSLOCTEXT("TNRooms", "NoOnline", "No hay conexión con Steam: ábrelo y vuelve a intentarlo."), true);
+		return;
+	}
+	RoomOp.bJoining = true;
+	RoomOpStartTime = FPlatformTime::Seconds();
+	Sessions->ClearOnJoinSessionCompleteDelegates(this);
+	Sessions->AddOnJoinSessionCompleteDelegate_Handle(
+		FOnJoinSessionCompleteDelegate::CreateUObject(this, &UMP_GameInstance::OnJoinSessionComplete));
+	if (!Sessions->JoinSession(ControllerId, NAME_GameSession, Result) && RoomOp.bJoining)
+	{
+		// No ha arrancado y no ha avisado: se da por fallida ya (si ha avisado, OnJoinSessionComplete ya la cerró).
+		OnJoinSessionComplete(NAME_GameSession, EOnJoinSessionCompleteResult::UnknownError);
+	}
+}
+
+int32 UMP_GameInstance::GetMaxPlayers() const
+{
+	if (UTN_LocalPlaySubsystem::IsLocalGame(this))
+	{
+		return TNLocalPlay::MaxPlayers;
+	}
+	return bHasActiveRoom ? ActiveRoom.MaxPlayers : MaxPlayers;
+}
+
+void UMP_GameInstance::StartLocalGame()
+{
+	UTN_LocalPlaySubsystem* LocalPlay = GetSubsystem<UTN_LocalPlaySubsystem>();
+	if (!LocalPlay)
+	{
+		return;
+	}
+	// Sin sesión ni sala: nada de Steam en la partida local (y si quedaba una sesión vieja, fuera).
+	DestroyCurrentSession();
+	ResetRoomState();
+	UpdateStatus(TEXT("Partida local: hasta 4 jugadores en este PC."));
+	LocalPlay->StartLocalGame(GameMapPath);
 }
 
 void UMP_GameInstance::HandleReturnToMenu()
@@ -977,6 +1174,12 @@ void UMP_GameInstance::HandleReturnToMenu()
 
 	// Stop all audio capture before travel to prevent WASAPI crash.
 	UProximityVoiceComponent::ShutdownAllCapture(GetWorld());
+
+	// Partida local: los invitados fuera (sus tortugas y sus vistas) y la pantalla, los mandos y la calidad como estaban.
+	if (UTN_LocalPlaySubsystem* LocalPlay = GetSubsystem<UTN_LocalPlaySubsystem>())
+	{
+		LocalPlay->EndLocalGame();
+	}
 
 	DestroyCurrentSession();
 
@@ -1018,9 +1221,19 @@ void UMP_GameInstance::HandlePostLoadMap(UWorld* LoadedWorld)
 
 	// De vuelta en el menú principal: la sala de antes (si se era anfitrión) ya no existe.
 	// PostLoadMapWithWorld salta para todas las GameInstance del proceso (PIE con varias ventanas): solo cuenta el mundo propio.
-	if (LoadedWorld && LoadedWorld->GetGameInstance() == this && IsMenuWorld(LoadedWorld))
+	if (LoadedWorld && LoadedWorld->GetGameInstance() == this)
 	{
-		ResetRoomState();
+		// El viaje de crear o entrar en una sala ha terminado (llegó al mapa de la partida o volvió al menú): se puede volver a pedir.
+		RoomOp.bTravelling = false;
+		if (IsMenuWorld(LoadedWorld))
+		{
+			ResetRoomState();
+			// Si se llegó al menú sin pasar por HandleReturnToMenu (un fallo, un viaje de consola), la partida local acaba aquí.
+			if (UTN_LocalPlaySubsystem* LocalPlay = GetSubsystem<UTN_LocalPlaySubsystem>())
+			{
+				LocalPlay->EndLocalGame();
+			}
+		}
 	}
 
 	// ── Si un auto-rejoin estaba pendiente y llegamos a un mapa ──
@@ -1652,6 +1865,12 @@ void UMP_GameInstance::HandleConnectionLost(const FString& FailureTypeStr)
 
 void UMP_GameInstance::HostRoom(const FTNRoomConfig& Config)
 {
+	// Antes de tocar la sala activa: un segundo «Crear» con otro nombre y otro código no puede cambiar la que ya se está creando.
+	if (RoomOp.IsBusy())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Salas] Crear sala ignorado: ya hay una sala creándose o una entrada en marcha."));
+		return;
+	}
 	const TArray<int32> Sizes = GetRoomSizeOptions();
 	ActiveRoom = Config;
 	ActiveRoom.Mode = TNLobbyMission::NormalizeMenuMode(Config.Mode);
@@ -1741,6 +1960,12 @@ bool UMP_GameInstance::IsSearchingRooms() const
 
 void UMP_GameInstance::JoinListedRoom(int32 ListingIndex)
 {
+	// Antes de nada: los avisos de abajo quitan la pantalla de carga, que en ese caso es la de la operación en marcha.
+	if (RoomOp.IsBusy())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Salas] Unirse ignorado: ya hay una sala creándose o una entrada en marcha."));
+		return;
+	}
 	if (!RoomListings.IsValidIndex(ListingIndex) || !RoomListSearch.IsValid()
 		|| !RoomListSearch->SearchResults.IsValidIndex(RoomListings[ListingIndex].SearchIndex))
 	{
@@ -1768,6 +1993,12 @@ void UMP_GameInstance::JoinListedRoom(int32 ListingIndex)
 
 void UMP_GameInstance::JoinRoomByCode(const FString& Code)
 {
+	// Sin el aviso «Buscando la sala X...»: nadie iba a contestarlo (la búsqueda no sale mientras haya otra operación).
+	if (RoomOp.IsBusy())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Salas] Entrar con código ignorado: ya hay una sala creándose o una entrada en marcha."));
+		return;
+	}
 	const FString Clean = TNRoomCode::Normalize(Code);
 	if (!TNRoomCode::IsComplete(Clean))
 	{
@@ -1784,13 +2015,29 @@ void UMP_GameInstance::StartRoomSearch(ETNRoomSearch Purpose, const FString& Cod
 	{
 		return;
 	}
-	// Una sola búsqueda a la vez (el NULL ignora la segunda sin avisar): la nueva espera su turno.
+	// Con una sala creándose o una entrada en marcha no se busca más (tampoco la que esperaba turno): ya hay a dónde ir.
+	if (RoomOp.IsBusy())
+	{
+		QueuedRoomSearch = ETNRoomSearch::None;
+		QueuedRoomCode.Reset();
+		return;
+	}
+	// Una sola búsqueda a la vez (el NULL ignora la segunda sin avisar): la nueva espera su turno. Solo hay un sitio en la cola y
+	// lo ocupa la más importante: la lista, que se repite sola, no pisa un código que espera respuesta ni un «unirse a la primera».
 	if (RoomSearchPurpose != ETNRoomSearch::None)
 	{
 		if (RoomSearchPurpose != Purpose || RoomSearchCode != Code)
 		{
-			QueuedRoomSearch = Purpose;
-			QueuedRoomCode = Code;
+			if (TNRoomSearchRules::CanTakeQueue(QueuedRoomSearch, Purpose))
+			{
+				QueuedRoomSearch = Purpose;
+				QueuedRoomCode = Code;
+			}
+			else
+			{
+				UE_LOG(LogTortunabo, Log, TEXT("[Salas] Búsqueda de salas (%d) descartada: espera otra más importante (%d)."), static_cast<int32>(Purpose),
+					static_cast<int32>(QueuedRoomSearch));
+			}
 		}
 		return;
 	}
@@ -1882,6 +2129,13 @@ bool UMP_GameInstance::ReadRoomListing(const FOnlineSession& Session, int32 Inde
 
 void UMP_GameInstance::JoinRoomResult(const FOnlineSessionSearchResult& Result, const FText& RoomName)
 {
+	// Un segundo «Unirse» (o «Unirse» con una sala creándose) no empieza otra entrada: destruiría la sesión que ya está en marcha
+	// o en espera de viajar. La primera sigue y la pantalla de carga ya es la suya.
+	if (RoomOp.IsBusy())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Salas] Entrar en «%s» ignorado: ya hay una sala creándose o una entrada en marcha."), *RoomName.ToString());
+		return;
+	}
 	IOnlineSessionPtr Sessions = GetSessionInterface();
 	if (!Sessions.IsValid())
 	{
@@ -1897,8 +2151,9 @@ void UMP_GameInstance::JoinRoomResult(const FOnlineSessionSearchResult& Result, 
 	// Si queda una sesión de antes, se cierra primero y se entra al acabar (OnDestroySessionComplete).
 	if (Sessions->GetNamedSession(NAME_GameSession))
 	{
-		bPendingHostAfterDestroy = false;
-		bPendingJoinAfterDestroy = true;
+		RoomOp.bHostAfterDestroy = false;
+		RoomOp.bJoinAfterDestroy = true;
+		RoomOpStartTime = FPlatformTime::Seconds();
 		PendingInviteResult = Result;
 		Sessions->ClearOnDestroySessionCompleteDelegates(this);
 		Sessions->AddOnDestroySessionCompleteDelegate_Handle(
@@ -1907,10 +2162,7 @@ void UMP_GameInstance::JoinRoomResult(const FOnlineSessionSearchResult& Result, 
 		return;
 	}
 
-	Sessions->ClearOnJoinSessionCompleteDelegates(this);
-	Sessions->AddOnJoinSessionCompleteDelegate_Handle(
-		FOnJoinSessionCompleteDelegate::CreateUObject(this, &UMP_GameInstance::OnJoinSessionComplete));
-	Sessions->JoinSession(0, NAME_GameSession, Result);
+	BeginSessionJoin(Result, 0);
 }
 
 bool UMP_GameInstance::GetRoomSnapshot(FTNRoomSnapshot& Out) const
@@ -2089,8 +2341,40 @@ FTNMenuNotice UMP_GameInstance::ConsumeMenuNotice()
 	return Notice;
 }
 
+void UMP_GameInstance::AbortRoomOperation()
+{
+	const bool bWasWaitingOnline = RoomOp.IsWaitingOnline();
+	const bool bWasHosting = RoomOp.bHostAfterDestroy || RoomOp.bCreating;
+	UE_LOG(LogTortunabo, Warning, TEXT("[Salas] La operación de sesión no contesta (%s): se da por fallida."),
+		bWasWaitingOnline ? (bWasHosting ? TEXT("crear") : TEXT("entrar")) : TEXT("viaje"));
+	RoomOp = FTNRoomOpState();
+	if (!bWasWaitingOnline)
+	{
+		// Solo faltaba el viaje: el motor tiene sus propios plazos de conexión. Solo se deja de esperar.
+		return;
+	}
+
+	// Una respuesta tardía de Steam no debe llegar a una operación que ya no existe.
+	IOnlineSessionPtr Sessions = GetSessionInterface();
+	if (Sessions.IsValid())
+	{
+		Sessions->ClearOnCreateSessionCompleteDelegates(this);
+		Sessions->ClearOnJoinSessionCompleteDelegates(this);
+	}
+	HideLoadingScreen();
+	DestroyCurrentSession();
+	PostRoomNotice(bWasHosting ? NSLOCTEXT("TNRooms", "CreateFailed", "No se ha podido crear la sala. ¿Está Steam abierto y conectado?")
+		: TNRoomText::RefusedMessage(FString()), true);
+}
+
 void UMP_GameInstance::RoomTick()
 {
+	// Cerrar, crear o entrar que no contesta (o un viaje que no llega): se deja de esperar para no bloquear el menú para siempre.
+	if (RoomOp.IsBusy() && TNRoomOpRules::HasTimedOut(RoomOp, FPlatformTime::Seconds() - RoomOpStartTime))
+	{
+		AbortRoomOperation();
+	}
+
 	// Búsqueda que no contesta (Steam sin conexión, o el NULL con otra en marcha): se da por fallida.
 	if (RoomSearchPurpose != ETNRoomSearch::None && FPlatformTime::Seconds() - RoomSearchStartTime > MPGameInstance_RoomSearchTimeout)
 	{
@@ -2287,6 +2571,8 @@ void UMP_GameInstance::HandleRoomRefused(const FString& Reason)
 {
 	const FText Message = TNRoomText::RefusedMessage(Reason);
 	UE_LOG(LogTortunabo, Warning, TEXT("[Salas] El servidor no nos deja entrar: %s"), *Reason);
+	// La entrada ha terminado (mal): se puede volver a intentar sin esperar a que cargue el menú.
+	RoomOp = FTNRoomOpState();
 	bPendingAutoRejoin = false;
 	GetTimerManager().ClearTimer(AutoRejoinTimerHandle);
 	HideLoadingScreen();

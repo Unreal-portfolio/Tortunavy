@@ -11,7 +11,7 @@ class UTN_VRSubsystem;
  * Entrada de los menús en VR, antes que nadie (preprocesador de Slate). Solo actúa con un menú delante (el panel VR en
  * modo menú); jugando no toca nada y los mandos van a Enhanced Input como siempre.
  *
- * - Gatillos: clic del puntero láser sobre el panel.
+ * - Gatillos: clic del puntero láser sobre el panel (por su botón o por su eje: con OpenXR los Touch solo dan el valor).
  * - A/X aceptar, B/Y atrás, agarre izquierdo/derecho = pestaña anterior/siguiente, menú = Start, sticks = cruceta (con
  *   repetición al mantener): se mandan como las teclas de mando que ya entienden todos los menús, al usuario que los tiene
  *   enfocados. Se comen las pulsaciones; los «soltar» pasan (así el juego no se queda con una tecla apretada).
@@ -50,6 +50,14 @@ private:
 
 	/** Si el motor manda las direcciones del stick como botones, se usan esas y no las del eje (sin pasos dobles). */
 	double LastDigitalStickTime = -100.0;
+
+	/** Gatillos y agarres por su eje (0 izquierdo, 1 derecho), con histéresis, también jugando (así uno ya apretado al abrir
+	 *  un menú no cuenta hasta soltarlo); si se ha mandado al menú la pulsación de pestaña de cada agarre (para mandar su
+	 *  «soltar»); y cuándo llegó el último eje de agarre (si llegan ejes, el botón del agarre no cambia de pestaña otra vez). */
+	bool bTriggerAxisHeld[2] = { false, false };
+	bool bGripAxisHeld[2] = { false, false };
+	bool bGripKeySent[2] = { false, false };
+	double LastGripAxisTime = -100.0;
 
 	uint32 UserIndex = 0;
 	bool bMousePointerDown = false;

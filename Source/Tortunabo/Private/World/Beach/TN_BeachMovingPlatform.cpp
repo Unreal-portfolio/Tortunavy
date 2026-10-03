@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachMovingPlatform.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "World/Beach/TN_BeachTrapSynthComponent.h"
 #include "World/ProcMap/TN_ProcWaterActors.h"
 #include "Core/TN_Log.h"
@@ -37,15 +38,10 @@ namespace TNBeachPlatformDetail
 	 */
 	constexpr double SoundReach = 1800.0;
 
-	/** Distancia de la cámara local (la primera) a Where; enorme si no hay jugador local. */
+	/** Distancia de la cámara local más cercana a Where (con la pantalla partida, cualquiera); enorme si no hay jugador local. */
 	inline double CameraDistance(const UWorld* World, const FVector& Where)
 	{
-		const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
-		if (!PC || !PC->PlayerCameraManager)
-		{
-			return 1.0e9;
-		}
-		return FVector::Dist(PC->PlayerCameraManager->GetCameraLocation(), Where);
+		return TNLocalViews::ClosestCameraDistance(World, Where);
 	}
 
 	enum class ERide : uint8
