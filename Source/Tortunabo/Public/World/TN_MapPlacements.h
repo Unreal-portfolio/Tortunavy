@@ -60,9 +60,11 @@ namespace TNMapPlacements
 		double LengthCm = 0.0;
 		double ExtentCm = 0.0;
 		float SizeScale = 1.f;
-		/** Línea del grafo y avance por ella (m), si los trae: el orden de los nidos. */
+		/** Línea del grafo y avance por ella (m), si los trae. */
 		int32 Line = INDEX_NONE;
 		double S = 0.0;
+		/** Avance por el recorrido en metros del principal (progress_m), comparable entre líneas; < 0 si no lo trae. */
+		double ProgressM = -1.0;
 		/** Polilínea del camino bajo la huella (path_uu); vacía en lo puntual. */
 		TArray<FVector> Path;
 		/** Punto donde cae lo que lanza el géiser (target_uu). */
@@ -93,6 +95,13 @@ namespace TNMapPlacements
 
 	/** Lee el bloque "placements" del manifest. False solo si el bloque existe y no tiene la forma esperada. */
 	TORTUNABO_API bool ParseBlock(const FJsonObject& Manifest, FParseResult& Out);
+
+	/**
+	 * Avance (m del principal) de P por el recorrido, comparable entre líneas: el orden de los nidos y su progreso.
+	 * Su progress_m si lo trae; si no (una entrada manual), el de la entrada con progress_m más cercana en planta; si
+	 * ninguna lo trae (bloque anterior a progress_m), s_m.
+	 */
+	TORTUNABO_API double AdvanceOf(const FParseResult& Parsed, const FPlacement& P);
 
 	/** Lo que crea el cargador para (category, kind); OutElement, si es un elemento de la playa. */
 	TORTUNABO_API ESpawn SpawnOf(const FString& Category, const FString& Kind, ETNBeachElement& OutElement);

@@ -78,6 +78,7 @@ namespace TNMapPlacementsDetail
 		Out.SizeScale = static_cast<float>(FMath::Clamp(NumberOr(Entry, TEXT("size_scale"), 1.0), 0.1, 10.0));
 		Out.Line = static_cast<int32>(NumberOr(Entry, TEXT("line"), INDEX_NONE));
 		Out.S = NumberOr(Entry, TEXT("s_m"), 0.0);
+		Out.ProgressM = NumberOr(Entry, TEXT("progress_m"), -1.0);
 		Out.bHasTarget = ReadVector(Entry, TEXT("target_uu"), Out.Target);
 		const TArray<TSharedPtr<FJsonValue>>* Path = nullptr;
 		if (Entry.TryGetArrayField(TEXT("path_uu"), Path) && Path)
@@ -297,4 +298,24 @@ FVector TNMapPlacements::PointAlong(const FPlacement& P, double Alpha, double& O
 		Remaining -= Segment;
 	}
 	return P.Path.Last();
+}
+
+double TNMapPlacements::AdvanceOf(const FParseResult& Parsed, const FPlacement& P)
+{
+	if (P.ProgressM >= 0.0)
+	{
+		return P.ProgressM;
+	}
+	const FPlacement* Nearest = nullptr;
+	double BestDistSq = TNumericLimits<double>::Max();
+	for (const FPlacement& Other : Parsed.Placements)
+	{
+		const double DistSq = FVector::DistSquared2D(Other.Location, P.Location);
+		if (Other.ProgressM >= 0.0 && DistSq < BestDistSq)
+		{
+			BestDistSq = DistSq;
+			Nearest = &Other;
+		}
+	}
+	return Nearest ? Nearest->ProgressM : P.S;
 }

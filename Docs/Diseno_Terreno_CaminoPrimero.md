@@ -343,7 +343,7 @@ Módulos en `Scripts/terrain_path/`: `placement_site.py` (caminos, tramos bloque
 | Decorado y pasarela | `ATN_BeachDecorField::BeginBuildPlaced` | local en cada máquina |
 | Vegetación (`Palm`, `Shrub`, `Grass`) | flora del mapa procedural, instanciada y sin colisión | local; no en servidor dedicado |
 | Géiser | `ATN_ProcGeyser` con `target_uu` | local (así es la clase) |
-| Nidos | `ATN_ProcEggNest` en el orden del camino | servidor |
+| Nidos | `ATN_ProcEggNest` numerados por `progress_m` (avance por el recorrido, comparable entre el principal y los lazos) | servidor |
 | Caja de objetos, rebuscable, concha | `ATN_RaceItemBox`, `ATN_ProcSearchSpot`, `BP_ScorePickup` | servidor |
 | `throw_chain` | `ATN_ProcThrowWall` + `ATN_ProcSwitch` | servidor |
 | `plate_balance` | `BP_PressurePlate` ×3-5 + `BP_PressurePlateGroupManager`; **sin puerta** hasta que exista `ATN_PuzzleDoor` (N4) | servidor |
@@ -353,4 +353,6 @@ Módulos en `Scripts/terrain_path/`: `placement_site.py` (caminos, tramos bloque
 
 Las piezas de un tramo se reparten por `path_uu`, la polilínea del camino bajo la huella que escribe `placement_io.py`. Los puzles pendientes (`basket_hold`, `geyser_aim`, `think_room`) y los kinds desconocidos se registran en el log y se saltan. Tests sin ventana: `Automation RunTests Tortunabo.World.MapPlacements` (manifest de prueba `Scripts/tests/fixtures/manifest_placements.json`).
 
-**Pendiente:** `build_demo_level.py` aún no lee el bloque; la puerta N4 de `plate_balance`.
+**Reaparición en los nidos.** Cada entrada automática lleva `progress_m`: la distancia por el camino a la salida entre la suma de las distancias a la salida y a la meta, por la longitud del principal (en el principal sin atajos es `s_m`). Los nidos se numeran por él, así que uno de un lazo va entre los del principal que lo rodean; uno manual sin `progress_m` toma el de la entrada más cercana. `ATN_ProcMapGameMode` reaparece sin generador procedural en el nido alcanzado más avanzado del mundo (`ATN_ProcEggNest::GatherWorldNests` y `PickRespawnNest`) y, sin ninguno alcanzado, en el `PlayerStart` de la salida. `BP_RunGameMode`, el de `LVL_Demo01`, no tiene reaparición en nidos: allí siguen sin efecto hasta que el Coop pase al modo del mapa procedural con un mapa fijo.
+
+**Pendiente:** `build_demo_level.py` aún no lee el bloque; la puerta N4 de `plate_balance`; la reaparición en los nidos con `BP_RunGameMode`.

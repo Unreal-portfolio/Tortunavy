@@ -45,6 +45,18 @@ public:
 	/** Punto de reaparición alrededor de la pila (slot 0..N). */
 	FTransform GetRespawnTransform(int32 Slot) const;
 
+	/**
+	 * Pilas vivas del mundo: las de un mapa fijo, que coloca ATN_MapPlacementSpawner con el bloque placements del
+	 * manifest (#652), o las puestas a mano. El mapa procedural lleva su propia lista (ATN_ProcMapGenerator::GetEggNests).
+	 */
+	static void GatherWorldNests(UWorld* World, TArray<ATN_ProcEggNest*>& OutNests);
+
+	/**
+	 * Pila de reaparición: la de orden más alto que no pase de ReachedOrder (la más avanzada alcanzada) y cuyo progreso
+	 * no quede por detrás de MinProgress (la tormenta). nullptr si no hay ninguna.
+	 */
+	static ATN_ProcEggNest* PickRespawnNest(TConstArrayView<ATN_ProcEggNest*> Nests, int32 ReachedOrder, float MinProgress);
+
 	/** Servidor: marca la pila como alcanzada (visual replicado). */
 	void MarkActivated();
 

@@ -203,17 +203,22 @@ void ATN_MapPlacementSpawner::Populate(const TNMapPlacements::FParseResult& Pars
 	bPopulated = true;
 	CollectLevelActors(bServer);
 
-	// Los nidos, en el orden del camino: primero los del principal (línea 0), por su avance.
+	// Los nidos, en el orden del recorrido por su avance (progress_m, comparable entre el principal y los lazos): el modo
+	// reaparece en el nido alcanzado de orden más alto, así que un nido de un lazo va entre los del principal que lo
+	// rodean y no detrás de todos ellos.
 	TArray<const TNMapPlacements::FPlacement*> Nests;
-	int32 NestOrder = 0;
+	TMap<const TNMapPlacements::FPlacement*, double> NestAdvanceM;
 	for (const TNMapPlacements::FPlacement& P : Parsed.Placements)
 	{
-		if (P.Spawn == ESpawn::EggNest) { Nests.Add(&P); }
+		if (P.Spawn == ESpawn::EggNest)
+		{
+			Nests.Add(&P);
+			NestAdvanceM.Add(&P, TNMapPlacements::AdvanceOf(Parsed, P));
+		}
 	}
-	Nests.StableSort([](const TNMapPlacements::FPlacement& A, const TNMapPlacements::FPlacement& B)
+	Nests.StableSort([&NestAdvanceM](const TNMapPlacements::FPlacement& A, const TNMapPlacements::FPlacement& B)
 	{
-		const bool bMainA = A.Line == 0, bMainB = B.Line == 0;
-		return bMainA != bMainB ? bMainA : A.S < B.S;
+		return NestAdvanceM.FindChecked(&A) < NestAdvanceM.FindChecked(&B);
 	});
 
 	for (const TNMapPlacements::FPlacement& P : Parsed.Placements)
@@ -235,15 +240,13 @@ void ATN_MapPlacementSpawner::Populate(const TNMapPlacements::FParseResult& Pars
 		{
 			if (bServer)
 			{
-				const int32 Order = Nests.IndexOfByKey(&P);
 				if (ATN_ProcEggNest* Nest = Cast<ATN_ProcEggNest>(SpawnClass(ATN_ProcEggNest::StaticClass(), Grounded(P.Location), P.YawDeg)))
 				{
-					Nest->InitNest(Order == INDEX_NONE ? NestOrder : Order, static_cast<float>(P.S * 100.0));
+					Nest->InitNest(Nests.IndexOfByKey(&P), static_cast<float>(NestAdvanceM.FindChecked(&P) * 100.0));
 					++Stats.PlacedBySpawn.FindOrAdd(FName(TNMapPlacements::SpawnName(P.Spawn)));
 				}
 				else { ++Stats.Failed; }
 			}
-			++NestOrder;
 			continue;
 		}
 		if (SpawnOne(P, bServer, bLocal))

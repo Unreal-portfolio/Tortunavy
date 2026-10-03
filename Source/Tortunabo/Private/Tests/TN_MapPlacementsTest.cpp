@@ -131,7 +131,105 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("C01: 281 colocaciones"), C01Parsed.Placements.Num(), 281);
 		TestEqual(TEXT("C01: ninguna sin pieza"), CountSpawn(C01Parsed, ESpawn::Unsupported), 0);
 		TestEqual(TEXT("C01: ninguna inválida"), C01Parsed.Invalid, 0);
+		const int32 WithoutProgress = C01Parsed.Placements.FilterByPredicate([](const FPlacement& P) { return P.ProgressM < 0.0; }).Num();
+		TestEqual(TEXT("C01: todas traen progress_m"), WithoutProgress, 0);
 	}
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Nidos de un mapa fijo: orden por el avance del recorrido (no «el principal primero») y reaparición en ellos sin
+// generador procedural (ATN_ProcEggNest::GatherWorldNests y PickRespawnNest, lo que usa ATN_ProcMapGameMode).
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace TNMapPlacementsTestDetail
+{
+	TNMapPlacements::FPlacement MakeNest(const TCHAR* Id, int32 Line, double S, double ProgressM, const FVector& Location)
+	{
+		TNMapPlacements::FPlacement P;
+		P.Id = Id;
+		P.Category = TEXT("nest");
+		P.Kind = TEXT("EggNest");
+		P.Source = ProgressM < 0.0 ? TEXT("manual") : TEXT("auto");
+		P.Spawn = TNMapPlacements::ESpawn::EggNest;
+		P.Line = Line;
+		P.S = S;
+		P.ProgressM = ProgressM;
+		P.Location = Location;
+		return P;
+	}
+
+	const ATN_ProcEggNest* NestNear(const TArray<ATN_ProcEggNest*>& Nests, const FVector& Location)
+	{
+		for (const ATN_ProcEggNest* Nest : Nests)
+		{
+			if (FVector::Dist2D(Nest->GetActorLocation(), Location) < 1.0)
+			{
+				return Nest;
+			}
+		}
+		return nullptr;
+	}
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNMapPlacementsNestRespawnTest,
+	"Tortunabo.World.MapPlacements.NestRespawn",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNMapPlacementsNestRespawnTest::RunTest(const FString& Parameters)
+{
+	using namespace TNMapPlacementsTestDetail;
+	// Dos nidos del principal (100 y 300 m), uno de un lazo a medio camino (200 m de avance, s = 20 m por su línea) y uno
+	// manual sin progress_m junto al de 300 m: su avance se toma del vecino.
+	const FVector MainNear(10000.0, 0.0, 0.0), MainFar(30000.0, 0.0, 0.0), Loop(20000.0, 5000.0, 0.0), Manual(30500.0, 300.0, 0.0);
+	TNMapPlacements::FParseResult Parsed;
+	Parsed.bHasBlock = true;
+	Parsed.Placements.Add(MakeNest(TEXT("main-far"), 0, 300.0, 300.0, MainFar));
+	Parsed.Placements.Add(MakeNest(TEXT("loop"), 2, 20.0, 200.0, Loop));
+	Parsed.Placements.Add(MakeNest(TEXT("main-near"), 0, 100.0, 100.0, MainNear));
+	Parsed.Placements.Add(MakeNest(TEXT("manual"), INDEX_NONE, 0.0, -1.0, Manual));
+	TestEqual(TEXT("Avance de la manual, el del nido más cercano"), TNMapPlacements::AdvanceOf(Parsed, Parsed.Placements[3]), 300.0);
+
+	UWorld* World = CreateGameWorld();
+	ATN_MapPlacementSpawner* Spawner = World->SpawnActor<ATN_MapPlacementSpawner>(ATN_MapPlacementSpawner::StaticClass(), FTransform::Identity);
+	if (!TestNotNull(TEXT("Colocador"), Spawner))
+	{
+		DestroyGameWorld(World);
+		return false;
+	}
+	Spawner->Populate(Parsed, true, false);
+
+	TArray<ATN_ProcEggNest*> Nests;
+	ATN_ProcEggNest::GatherWorldNests(World, Nests);
+	TestEqual(TEXT("Los cuatro nidos están en el mundo"), Nests.Num(), 4);
+	const ATN_ProcEggNest* Near = NestNear(Nests, MainNear);
+	const ATN_ProcEggNest* Mid = NestNear(Nests, Loop);
+	const ATN_ProcEggNest* Far = NestNear(Nests, MainFar);
+	const ATN_ProcEggNest* Hand = NestNear(Nests, Manual);
+	if (!TestTrue(TEXT("Cada nido en su sitio"), Near && Mid && Far && Hand))
+	{
+		DestroyGameWorld(World);
+		return false;
+	}
+	// El del lazo va entre los dos del principal que lo rodean, no detrás de todo el principal.
+	TestEqual(TEXT("Orden del primero del principal"), Near->GetNestOrder(), 0);
+	TestEqual(TEXT("Orden del nido del lazo"), Mid->GetNestOrder(), 1);
+	TestEqual(TEXT("Orden del segundo del principal"), Far->GetNestOrder(), 2);
+	TestEqual(TEXT("Orden del manual"), Hand->GetNestOrder(), 3);
+	TestEqual(TEXT("Progreso del nido del lazo, su avance (cm)"), Mid->GetPathProgress(), 20000.f);
+
+	// Reaparición sin generador: el nido alcanzado más avanzado, nunca uno sin alcanzar.
+	const float NoStorm = -TNumericLimits<float>::Max();
+	TestNull(TEXT("Sin alcanzar ninguno, no hay nido (se reaparece en la salida)"), ATN_ProcEggNest::PickRespawnNest(Nests, -1, NoStorm));
+	TestTrue(TEXT("Alcanzado el primero, reaparece en él"), ATN_ProcEggNest::PickRespawnNest(Nests, 0, NoStorm) == Near);
+	TestTrue(TEXT("Alcanzado el del lazo, reaparece en él y no en el segundo del principal"),
+		ATN_ProcEggNest::PickRespawnNest(Nests, 1, NoStorm) == Mid);
+	TestTrue(TEXT("Con la tormenta pasada del lazo, el siguiente alcanzado"), ATN_ProcEggNest::PickRespawnNest(Nests, 2, 25000.f) == Far);
+	TestNull(TEXT("Con la tormenta pasada de todos los alcanzados, ninguno"), ATN_ProcEggNest::PickRespawnNest(Nests, 1, 25000.f));
+	const FTransform At = Mid->GetRespawnTransform(0);
+	TestTrue(TEXT("El punto de reaparición está junto al nido"), FVector::Dist2D(At.GetLocation(), Loop) < 400.0);
+
+	DestroyGameWorld(World);
 	return true;
 }
 
@@ -291,6 +389,15 @@ bool FTNMapPlacementsC01Test::RunTest(const FString& Parameters)
 	TestEqual(TEXT("C01: 109 piezas de decorado"), Stats.DecorItems, 109);
 	TestEqual(TEXT("C01: 49 matas"), Stats.VegetationInstances, 49);
 	TestEqual(TEXT("C01: 4 nidos"), Stats.Actors(TEXT("TN_ProcEggNest")), 4);
+	// Los nidos, numerados 0..3 en el orden de su avance por el recorrido.
+	TArray<ATN_ProcEggNest*> Nests;
+	ATN_ProcEggNest::GatherWorldNests(World, Nests);
+	Nests.Sort([](const ATN_ProcEggNest& A, const ATN_ProcEggNest& B) { return A.GetNestOrder() < B.GetNestOrder(); });
+	for (int32 i = 0; i < Nests.Num(); ++i)
+	{
+		TestEqual(TEXT("C01: orden del nido"), Nests[i]->GetNestOrder(), i);
+		TestTrue(TEXT("C01: el avance crece con el orden"), i == 0 || Nests[i]->GetPathProgress() > Nests[i - 1]->GetPathProgress());
+	}
 	TestEqual(TEXT("C01: 75 conchas"), Stats.Actors(TEXT("TN_ScorePickup")), 75);
 	TestEqual(TEXT("C01: 2 muros de lanzamiento"), Stats.Actors(TEXT("TN_ProcThrowWall")), 2);
 	TestEqual(TEXT("C01: 8 plataformas que se rompen"), Stats.Actors(TEXT("TN_BreakablePlatform")), 8);
