@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Player/TN_DiveDecisions.h"
 #include "Player/TN_ServerLaunch.h"
 #include "Player/TN_TurtleSurface.h"
 #include "TN_TurtleMovementComponent.generated.h"
@@ -64,7 +65,7 @@ private:
  * (KeepBellyBodyOutOfWalls).
  *
  * Consola (igual en todas las máquinas; en PIE es una sola): TN.Dive.Slide, TN.Dive.Friction, TN.Dive.Slope,
- * TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
+ * TN.Dive.SlopeFall, TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
  */
 UCLASS()
 class TORTUNABO_API UTN_TurtleMovementComponent : public UCharacterMovementComponent
@@ -78,8 +79,11 @@ public:
 
 	ETNBellyPhase GetBellyPhase() const { return BellyPhase; }
 
-	/** Segundos en la fase actual (arrastrándose, reptando o levantándose). */
+	/** Segundos en la fase actual (arrastrándose, reptando o levantándose), sin los de cuesta abajo (GetBellySlopeTime). */
 	float GetBellyTime() const { return BellyTime; }
+
+	/** Segundos de este arrastre cuesta abajo (pendiente de BellySlopeMinAngle o más): en ellos BellyTime no corre. */
+	float GetBellySlopeTime() const { return BellySlopeTime; }
 
 	/** Número del panzazo del que viene el arrastre (0 = ninguno todavía). */
 	uint8 GetSlideSerial() const { return SlideSerial; }
@@ -102,14 +106,14 @@ public:
 	 * Repetición de movimientos tras una corrección (FTNSavedMove_Turtle::PrepMoveFor): deja el estado del arrastre como
 	 * estaba al empezar ese movimiento. Si entonces iba sobre la tripa, también la cápsula encogida.
 	 */
-	void RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight);
+	void RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight, float InSlopeTime);
 
 	/**
 	 * Estado del arrastre al empezar el movimiento que se va a guardar (FTNSavedMove_Turtle::SetInitialPosition). El
 	 * cliente lee el salto antes de guardar el movimiento: si ese salto la ha levantado de la tripa, devuelve (y olvida)
 	 * el estado de antes del salto, como hace el motor con JumpCurrentCountPreJump.
 	 */
-	void ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight);
+	void ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight, float& OutSlopeTime);
 
 	// ── UCharacterMovementComponent ──────────────────────────────────────────
 
@@ -212,6 +216,34 @@ public:
 	/** Multiplica la gravedad a lo largo de las pendientes (cuesta abajo acelera; cuesta arriba frena antes). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Speed", meta = (ClampMin = "0.0"))
 	float BellySlopeGravity = 1.15f;
+
+	// ── Pendiente: cuesta abajo sigue cayendo (E9-01, #62) ───────────────────
+	// Con el rozamiento de la arena (800) solo aceleraba por encima de 45°, que ya no es suelo: en la playa no se deslizaba
+	// por ninguna cuesta. Ahora, cuesta abajo desde BellySlopeMinAngle, el rozamiento y el freno por velocidad se multiplican
+	// por BellySlopeFrictionScale y BellySlopeDragScale (arena a 25°: más de 200 cm/s tras 2 s; el llano no cambia). Cuesta
+	// abajo el tiempo del arrastre no corre (ni la rampa de rozamiento ni BellyMaxSeconds); el tope es BellySlopeMaxSeconds.
+	// Al caer de tripa en una bajada, la caída cuenta entera (módulo 3D) con tope BellyMaxEntrySpeedDownhill. Las cuentas,
+	// en TNDiveLogic (TN_DiveDecisions.h). TN.Dive.SlopeFall 0 lo apaga.
+
+	/** Inclinación del suelo (grados) desde la que, cuesta abajo, sigue cayendo. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0", ClampMax = "90.0"))
+	float BellySlopeMinAngle = 12.f;
+
+	/** Rozamiento de la superficie cuesta abajo, multiplicado. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BellySlopeFrictionScale = 0.3f;
+
+	/** Freno por velocidad (BellyDrag) cuesta abajo, multiplicado. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BellySlopeDragScale = 0.4f;
+
+	/** Tope de todo el arrastre (s) contando el tiempo cuesta abajo: ninguna ladera la arrastra para siempre. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.5"))
+	float BellySlopeMaxSeconds = 6.f;
+
+	/** Tope de la velocidad al empezar a arrastrarse en una bajada (cm/s). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0"))
+	float BellyMaxEntrySpeedDownhill = 1000.f;
 
 	/** Tiempo mínimo arrastrándose antes de levantarse sola (s). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Time", meta = (ClampMin = "0.0"))
@@ -346,8 +378,20 @@ private:
 	/** Empieza el arrastre del panzazo Serial con la inercia a lo largo del suelo tocado. */
 	void StartBellySlide(const FHitResult& FloorHit, uint8 Serial, bool bFromAir);
 
-	/** Deja la velocidad horizontal a lo largo del suelo tocado, con Keep de lo que tenía y como mucho Cap. */
-	void RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap);
+	/**
+	 * Deja la velocidad horizontal a lo largo del suelo tocado, con Keep de lo que tenía y como mucho Cap (DownhillCap en una
+	 * bajada, donde cuenta el módulo 3D: TNDiveLogic::LandingSlideVelocity).
+	 */
+	void RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap, float DownhillCap);
+
+	/** Inclinación desde la que, cuesta abajo, sigue cayendo (90 con TN.Dive.SlopeFall 0: nunca). */
+	float SlopeMinAngleNow() const;
+
+	/** Lo que necesitan las cuentas del arrastre en este paso: suelo, gravedad, rozamiento de la superficie y pendiente. */
+	TNDiveLogic::FBellyStepInput MakeBellyStepInput() const;
+
+	/** Normal del suelo del movimiento (arriba si no es caminable). */
+	FVector BellyFloorNormal() const;
 
 	/** Antes de cada movimiento: entra, sigue, se levanta o repta. */
 	void TickBellyPhase(float DeltaSeconds);
@@ -386,11 +430,15 @@ private:
 
 	ETNBellyPhase BellyPhase = ETNBellyPhase::None;
 	float BellyTime = 0.f;
+	/** Tiempo de este arrastre cuesta abajo (no cuenta en BellyTime). */
+	float BellySlopeTime = 0.f;
 	uint8 SlideSerial = 0;
 
 	float SlideSurface[TNTurtleSurface::Num] = { 0.f, 0.f, 1.f, 0.f, 0.f };
 	float LastSlideFriction = 0.f;
 	FVector LastSlopeAccel = FVector::ZeroVector;
+	/** El último paso del arrastre iba cuesta abajo (TN.Dive.Debug). */
+	bool bLastSlideDownhill = false;
 
 	/** Velocidad que quería llevar el arrastre en este movimiento (antes de chocar) y pared contra la que ha chocado. */
 	FVector SlideIntentVelocity = FVector::ZeroVector;

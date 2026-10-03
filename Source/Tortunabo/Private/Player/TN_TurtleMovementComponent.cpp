@@ -1,5 +1,6 @@
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Core/TN_Log.h"
+#include "Player/TN_DiveDecisions.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachTrampoline.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
@@ -39,6 +40,13 @@ namespace TNBellySlide
 		TEXT("Multiplica cuánto tiran las pendientes del arrastre del panzazo (1 = normal; 0 = como en llano)."),
 		ECVF_Cheat);
 
+	static int32 GSlopeFall = 1;
+	static FAutoConsoleVariableRef CVarSlopeFall(
+		TEXT("TN.Dive.SlopeFall"),
+		GSlopeFall,
+		TEXT("1 = cuesta abajo (desde BellySlopeMinAngle, 12°) el arrastre del panzazo sigue cayendo: menos rozamiento y freno, y su tiempo no corre (#62); 0 = como antes. Igual en el servidor y los clientes."),
+		ECVF_Cheat);
+
 	static float GMaxSeconds = 0.f;
 	static FAutoConsoleVariableRef CVarMaxSeconds(
 		TEXT("TN.Dive.MaxTime"),
@@ -76,6 +84,7 @@ namespace TNBellySlide
 			SavedBellyTime = 0.f;
 			SavedSlideSerial = 0;
 			SavedCapsuleHalfHeight = 0.f;
+			SavedBellySlopeTime = 0.f;
 		}
 
 		virtual void SetInitialPosition(ACharacter* C) override
@@ -85,7 +94,7 @@ namespace TNBellySlide
 			// antes del salto: al repetirlo, el salto vuelve a levantarla igual.
 			if (UTN_TurtleMovementComponent* TurtleMove = C ? Cast<UTN_TurtleMovementComponent>(C->GetCharacterMovement()) : nullptr)
 			{
-				TurtleMove->ConsumeMoveStartBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight);
+				TurtleMove->ConsumeMoveStartBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
 			}
 		}
 
@@ -105,7 +114,7 @@ namespace TNBellySlide
 			Super::PrepMoveFor(C);
 			if (UTN_TurtleMovementComponent* TurtleMove = C ? Cast<UTN_TurtleMovementComponent>(C->GetCharacterMovement()) : nullptr)
 			{
-				TurtleMove->RestoreBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight);
+				TurtleMove->RestoreBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
 			}
 		}
 
@@ -125,6 +134,8 @@ namespace TNBellySlide
 		uint8 SavedSlideSerial = 0;
 		/** Semialtura de la cápsula sin escalar al empezar el movimiento. */
 		float SavedCapsuleHalfHeight = 0.f;
+		/** Tiempo del arrastre cuesta abajo al empezar el movimiento (#62). */
+		float SavedBellySlopeTime = 0.f;
 	};
 
 	class FTNNetworkPredictionData_Client_Turtle : public FNetworkPredictionData_Client_Character
@@ -204,14 +215,15 @@ bool UTN_TurtleMovementComponent::AcceptsInputDuringDive(uint8 DiveSerial) const
 
 bool UTN_TurtleMovementComponent::CanLeaveSlide() const
 {
-	return BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround() && BellyTime >= BellyMinExitSeconds
+	return BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround() && BellyTime + BellySlopeTime >= BellyMinExitSeconds
 		&& Velocity.Size2D() <= BellyExitSpeed;
 }
 
-void UTN_TurtleMovementComponent::RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight)
+void UTN_TurtleMovementComponent::RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight, float InSlopeTime)
 {
 	BellyPhase = static_cast<ETNBellyPhase>(FMath::Min<uint8>(InPhase, static_cast<uint8>(ETNBellyPhase::GetUp)));
 	BellyTime = InTime;
+	BellySlopeTime = InSlopeTime;
 	SlideSerial = InSerial;
 	bPendingBounce = false;
 
@@ -225,8 +237,11 @@ void UTN_TurtleMovementComponent::RestoreBellyState(uint8 InPhase, float InTime,
 	}
 }
 
-void UTN_TurtleMovementComponent::ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight)
+void UTN_TurtleMovementComponent::ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight,
+	float& OutSlopeTime)
 {
+	// El brinco no lo cambia: el de ahora es el de antes del salto.
+	OutSlopeTime = BellySlopeTime;
 	if (bHasPreJumpBelly)
 	{
 		bHasPreJumpBelly = false;
@@ -330,10 +345,22 @@ void UTN_TurtleMovementComponent::TickBellyPhase(float DeltaSeconds)
 			// desincrustarse, podía caer por debajo del mapa).
 			BellyPhase = ETNBellyPhase::None;
 			BellyTime = 0.f;
+			BellySlopeTime = 0.f;
 			RestoreStandingCapsule();
 			break;
 		}
-		BellyTime += DeltaSeconds;
+		// Cuesta abajo (#62) el tiempo del arrastre no corre: ni la rampa de rozamiento ni BellyMaxSeconds la paran en una
+		// ladera; el tope entonces es BellySlopeMaxSeconds, con todo el tiempo sobre la tripa.
+		const bool bDownhill = BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround()
+			&& !TNDiveLogic::ShouldAdvanceBellyTimer(BellyFloorNormal(), Velocity, SlopeMinAngleNow());
+		if (bDownhill)
+		{
+			BellySlopeTime += DeltaSeconds;
+		}
+		else
+		{
+			BellyTime += DeltaSeconds;
+		}
 		if (IsSwimming())
 		{
 			// Al agua: nada (la cápsula la devuelve el fin del panzazo, que llega en seguida).
@@ -351,10 +378,14 @@ void UTN_TurtleMovementComponent::TickBellyPhase(float DeltaSeconds)
 		{
 			const float Speed = static_cast<float>(Velocity.Size2D());
 			const float MaxSeconds = TNBellySlide::GMaxSeconds > 0.f ? TNBellySlide::GMaxSeconds : BellyMaxSeconds;
-			const bool bStopped = BellyTime >= BellyMinSeconds && Speed <= BellyStopSpeed;
+			const float OnBellySeconds = BellyTime + BellySlopeTime;
+			// Casi parada se levanta; cuesta abajo, solo si la cuesta no la va a llevar más deprisa (si no, sigue cayendo).
+			const bool bStopped = OnBellySeconds >= BellyMinSeconds && Speed <= BellyStopSpeed
+				&& (!bDownhill || TNDiveLogic::DownhillTerminalSpeed(MakeBellyStepInput()) <= BellyStopSpeed);
+			const bool bTooLong = BellyTime >= MaxSeconds || OnBellySeconds >= BellySlopeMaxSeconds;
 			// Moverse casi parada la levanta (el movimiento del jugador solo llega aquí entonces: ATortugaCharacter::Move).
 			const bool bWantsOut = !Acceleration.IsNearlyZero() && CanLeaveSlide();
-			bWantStand = bStopped || BellyTime >= MaxSeconds || bWantsOut;
+			bWantStand = bStopped || bTooLong || bWantsOut;
 		}
 		if (bWantStand)
 		{
@@ -385,6 +416,7 @@ void UTN_TurtleMovementComponent::TickBellyPhase(float DeltaSeconds)
 		{
 			BellyPhase = ETNBellyPhase::None;
 			BellyTime = 0.f;
+			BellySlopeTime = 0.f;
 		}
 		break;
 	}
@@ -394,9 +426,10 @@ void UTN_TurtleMovementComponent::StartBellySlide(const FHitResult& FloorHit, ui
 {
 	BellyPhase = ETNBellyPhase::Slide;
 	BellyTime = 0.f;
+	BellySlopeTime = 0.f;
 	SlideSerial = Serial;
 	bPendingBounce = false;
-	RedirectAlongFloor(FloorHit, bFromAir ? BellyLandingKeep : 1.f, BellyMaxEntrySpeed);
+	RedirectAlongFloor(FloorHit, bFromAir ? BellyLandingKeep : 1.f, BellyMaxEntrySpeed, BellyMaxEntrySpeedDownhill);
 	UpdateSlideSurface();
 	if (CharacterOwner && !CharacterOwner->bClientUpdating)
 	{
@@ -404,25 +437,43 @@ void UTN_TurtleMovementComponent::StartBellySlide(const FHitResult& FloorHit, ui
 	}
 }
 
-void UTN_TurtleMovementComponent::RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap)
+void UTN_TurtleMovementComponent::RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap, float DownhillCap)
 {
 	// La inercia a lo largo del suelo: se quita lo que iba contra él (el golpe). En llano es la velocidad horizontal; en
-	// una bajada, parte de la caída se convierte en arrastre; en una subida, se pierde.
-	FVector Along = Velocity;
-	if (FloorHit.bBlockingHit && !FloorHit.ImpactNormal.IsNearlyZero())
+	// una bajada, la caída se convierte en arrastre (entera desde BellySlopeMinAngle); en una subida, se pierde.
+	const FVector FloorNormal = (FloorHit.bBlockingHit && !FloorHit.ImpactNormal.IsNearlyZero()) ? FloorHit.ImpactNormal : FVector::ZeroVector;
+	const FVector Slide = TNDiveLogic::LandingSlideVelocity(Velocity, FloorNormal, Keep, Cap, DownhillCap, SlopeMinAngleNow());
+	Velocity.X = Slide.X;
+	Velocity.Y = Slide.Y;
+}
+
+TNDiveLogic::FBellyStepInput UTN_TurtleMovementComponent::MakeBellyStepInput() const
+{
+	TNDiveLogic::FBellyStepInput Step;
+	Step.Normal = BellyFloorNormal();
+	Step.Gravity = FMath::Abs(GetGravityZ());
+	Step.Friction = SlideFrictionNow();
+	Step.Drag = BellyDrag;
+	Step.Slope.SlopeGravity = BellySlopeGravity * FMath::Max(0.f, TNBellySlide::GSlopeScale);
+	Step.Slope.MinAngleDeg = SlopeMinAngleNow();
+	Step.Slope.FrictionScale = BellySlopeFrictionScale;
+	Step.Slope.DragScale = BellySlopeDragScale;
+	Step.Slope.MaxSpeed = BellyMaxSpeed;
+	return Step;
+}
+
+float UTN_TurtleMovementComponent::SlopeMinAngleNow() const
+{
+	return TNBellySlide::GSlopeFall != 0 ? BellySlopeMinAngle : 90.f;
+}
+
+FVector UTN_TurtleMovementComponent::BellyFloorNormal() const
+{
+	if (CurrentFloor.IsWalkableFloor() && !CurrentFloor.HitResult.ImpactNormal.IsNearlyZero())
 	{
-		const FVector N = FloorHit.ImpactNormal.GetSafeNormal();
-		const double Into = FVector::DotProduct(Along, N);
-		if (Into < 0.0)
-		{
-			Along -= N * Into;
-		}
+		return CurrentFloor.HitResult.ImpactNormal.GetSafeNormal();
 	}
-	const FVector Flat(Along.X, Along.Y, 0.0);
-	const double NewSpeed = FMath::Min(Flat.Size() * static_cast<double>(Keep), static_cast<double>(Cap));
-	const FVector Dir = Flat.GetSafeNormal();
-	Velocity.X = Dir.X * NewSpeed;
-	Velocity.Y = Dir.Y * NewSpeed;
+	return FVector::UpVector;
 }
 
 void UTN_TurtleMovementComponent::EnterGetUp()
@@ -499,7 +550,7 @@ void UTN_TurtleMovementComponent::ProcessLanded(const FHitResult& Hit, float rem
 			else if (BellyPhase == ETNBellyPhase::Slide && Serial == SlideSerial)
 			{
 				// Se había caído por un borde arrastrándose: sigue con la inercia a lo largo del suelo nuevo.
-				RedirectAlongFloor(Hit, 1.f, BellyMaxSpeed);
+				RedirectAlongFloor(Hit, 1.f, BellyMaxSpeed, BellyMaxSpeed);
 			}
 		}
 	}
@@ -554,48 +605,18 @@ float UTN_TurtleMovementComponent::SlideFrictionNow() const
 void UTN_TurtleMovementComponent::CalcBellySlideVelocity(float DeltaTime)
 {
 	UpdateSlideSurface();
-	const float SlideFriction = SlideFrictionNow();
 
-	// Gravedad a lo largo del suelo, en horizontal: la velocidad al andar es horizontal y el suelo la inclina al moverse.
-	// Con la normal N, la componente horizontal de g·senθ por el suelo es g·(Nx, Ny)·Nz, hacia abajo de la cuesta.
-	FVector N = FVector::UpVector;
-	if (CurrentFloor.IsWalkableFloor() && !CurrentFloor.HitResult.ImpactNormal.IsNearlyZero())
-	{
-		N = CurrentFloor.HitResult.ImpactNormal.GetSafeNormal();
-	}
-	const float G = FMath::Abs(GetGravityZ());
-	const float SlopeScale = BellySlopeGravity * FMath::Max(0.f, TNBellySlide::GSlopeScale);
-	const FVector SlopeAccel = FVector(N.X, N.Y, 0.0) * static_cast<double>(G * static_cast<float>(N.Z) * SlopeScale);
-	// El rozamiento va con el peso que apoya (menos en cuesta).
-	const float NormalShare = FMath::Clamp(static_cast<float>(N.Z), 0.2f, 1.f);
-	const float DragK = FMath::Max(0.f, BellyDrag);
-
-	// Integración en pasos cortos (igual a cualquier ritmo de fotogramas y al repetir movimientos). Sin la entrada del
-	// jugador: sobre la tripa no se dirige.
-	FVector V(Velocity.X, Velocity.Y, 0.0);
-	float Remaining = DeltaTime;
-	constexpr float MaxStep = 1.f / 60.f;
-	while (Remaining > UE_KINDA_SMALL_NUMBER)
-	{
-		const float H = FMath::Min(Remaining, MaxStep);
-		Remaining -= H;
-		V += SlopeAccel * static_cast<double>(H);
-		const float Speed = static_cast<float>(V.Size());
-		if (Speed <= UE_KINDA_SMALL_NUMBER)
-		{
-			V = FVector::ZeroVector;
-			continue;
-		}
-		// Rozamiento seco más freno por velocidad; en una cuesta suave el rozamiento puede más y se queda quieta.
-		const float Loss = (SlideFriction * NormalShare + DragK * Speed) * H;
-		V = Loss >= Speed ? FVector::ZeroVector : V * static_cast<double>((Speed - Loss) / Speed);
-	}
-	V = V.GetClampedToMaxSize(static_cast<double>(BellyMaxSpeed));
+	// Gravedad a lo largo del suelo, rozamiento con el peso que apoya y freno por velocidad, en pasos cortos; cuesta abajo
+	// desde BellySlopeMinAngle, menos rozamiento y freno (#62). Las cuentas, en TNDiveLogic::IntegrateBellyVelocity.
+	const TNDiveLogic::FBellyStepInput Step = MakeBellyStepInput();
+	float StepFriction = 0.f;
+	const FVector V = TNDiveLogic::IntegrateBellyVelocity(Velocity, Step, DeltaTime, &StepFriction);
 	Velocity.X = V.X;
 	Velocity.Y = V.Y;
 	SlideIntentVelocity = V;
-	LastSlideFriction = SlideFriction * NormalShare;
-	LastSlopeAccel = SlopeAccel;
+	LastSlideFriction = StepFriction;
+	LastSlopeAccel = TNDiveLogic::SlopeAcceleration(Step.Normal, Step.Gravity, Step.Slope.SlopeGravity);
+	bLastSlideDownhill = TNDiveLogic::IsGoingDownhill(Step.Normal, V, Step.Slope.MinAngleDeg);
 }
 
 void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
@@ -1050,9 +1071,12 @@ void UTN_TurtleMovementComponent::ShowBellyDebug() const
 		return;
 	}
 	const bool bLocal = CharacterOwner->IsLocallyControlled();
-	const FString Text = FString::Printf(TEXT("[Panzazo] %s (%s) · %s %.2f s · %.0f cm/s · %s· roce %.0f cm/s² · pendiente %.0f cm/s² · panzazo %s nº %d (arrastre del nº %d)"),
+	const FString SlopeText = BellySlopeTime > 0.f || bLastSlideDownhill
+		? FString::Printf(TEXT(" (%s, %.2f s cuesta abajo)"), bLastSlideDownhill ? TEXT("bajando") : TEXT("ya no baja"), BellySlopeTime)
+		: FString();
+	const FString Text = FString::Printf(TEXT("[Panzazo] %s (%s) · %s %.2f s · %.0f cm/s · %s· roce %.0f cm/s² · pendiente %.0f cm/s²%s · panzazo %s nº %d (arrastre del nº %d)"),
 		*GetNameSafe(CharacterOwner), bLocal ? TEXT("local") : TEXT("servidor"), TNBellySlide::PhaseName(BellyPhase), BellyTime,
-		Velocity.Size2D(), *SurfaceText, LastSlideFriction, LastSlopeAccel.Size(),
+		Velocity.Size2D(), *SurfaceText, LastSlideFriction, LastSlopeAccel.Size(), *SlopeText,
 		(Turtle && Turtle->IsDiving()) ? TEXT("sí") : TEXT("no"), Turtle ? static_cast<int32>(Turtle->GetDiveSerial()) : 0,
 		static_cast<int32>(SlideSerial));
 	GEngine->AddOnScreenDebugMessage(static_cast<uint64>(GetUniqueID()) + 0xB311F10Bull, 0.f,

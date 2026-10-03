@@ -125,6 +125,20 @@ seguida: encadenando salto, panzazo, arrastre y levantarse se va a unos 3,9 m/s 
 debajo de los 4,5 y 8 m/s de ir corriendo) ni atravesar paredes (barrido de la cápsula y comprobación de sitio al
 levantarse).
 
+### Pendiente: cuesta abajo sigue cayendo (#62)
+
+Con el rozamiento de la arena (800 cm/s²) el arrastre solo aceleraba por encima de 45°, que ya no es suelo andable: en la
+playa no se deslizaba por ninguna cuesta. Ahora, cuesta abajo desde `BellySlopeMinAngle` (12°), el rozamiento se
+multiplica por `BellySlopeFrictionScale` (0,3) y el freno por velocidad por `BellySlopeDragScale` (0,4): en arena a 25°
+sigue a unos 250-470 cm/s tras 2 s (según entre parada o a 720 cm/s) y en llano no cambia nada (se para en 0,57 s).
+Cuesta abajo el tiempo del arrastre no corre (ni la rampa de rozamiento ni `BellyMaxSeconds`); el tope es
+`BellySlopeMaxSeconds` (6 s) con todo el tiempo sobre la tripa. Casi parada en una cuesta solo se levanta si la cuesta no
+la va a llevar a más de `BellyStopSpeed` (en arena a 13° no: se levanta como en llano). Al caer de tripa en una bajada, la
+caída a lo largo de la cuesta cuenta entera (módulo 3D), con tope `BellyMaxEntrySpeedDownhill` (1000 cm/s). Subiendo, nada
+cambia. Las cuentas están en `TNDiveLogic` (`Player/TN_DiveDecisions.h`) y las prueban `Tortunabo.Dive.Slope.*`; van dentro
+del movimiento (el tiempo cuesta abajo viaja en el movimiento guardado), así que el cliente lo predice igual que el
+servidor. `TN.Dive.SlopeFall 0` lo apaga.
+
 ### Pose
 
 - `PoseBellySlide` (sobre la tripa en el suelo, `SlideW`): cabeza levantada mirando adelante y a los lados, brazos
@@ -157,6 +171,7 @@ solo se mueven con partículas vivas; nada a más de 50 m de la cámara. Ajustes
 | `TN.Dive.Slide 0\|1` | 0 = se para en seco al caer, como antes |
 | `TN.Dive.Friction <x>` | Multiplica el rozamiento en todas las superficies (0,5 = resbala el doble; 2 = se para antes) |
 | `TN.Dive.Slope <x>` | Multiplica cuánto tiran las pendientes (0 = como en llano) |
+| `TN.Dive.SlopeFall 0\|1` | 0 = cuesta abajo frena como en llano, como antes de #62 |
 | `TN.Dive.MaxTime <s>` | Tope de segundos arrastrándose (0 = el del componente, 2,6 s) |
 | `TN.Dive.Body 0\|1` | 0 = solo choca la cápsula (la cabeza y las patas vuelven a meterse en las paredes), como antes |
 | `TN.Dive.Debug 1` | Por cada tortuga simulada en esta máquina: fase, tiempo, velocidad, superficie y rozamiento; flecha verde de la velocidad y naranja de la pendiente; el cuerpo tumbado que choca (celeste, rojo al apartarse) |
@@ -171,7 +186,8 @@ salida, rebote y giro; `Belly Slide|Body`: medidas del cuerpo tumbado) y del per
 2. Panzazo en llano de arena (playa): cae de tripa con «plaf» y bocanada, se arrastra ~1,8 m con siseo y polvo claro,
    brazos y pies moviéndose, y se levanta con el empujón de brazos. Repetir en tierra (selva), roca (acantilados),
    tablones de un puente y agua poco profunda de la orilla: más o menos arrastre, otro sonido y otro polvo.
-3. Panzazo cuesta abajo: se arrastra más; cuesta arriba, menos. En una cuesta suave se queda quieta.
+3. Panzazo cuesta abajo de 15° o más (dunas, laderas de arena): sigue cayendo hasta el llano (con `TN.Dive.Debug 1`,
+   «bajando» y los segundos cuesta abajo); cuesta arriba frena antes que en llano. En una cuesta suave se queda quieta.
 4. Panzazo contra una pared: rebota un poco hacia atrás con un «tonc» y una bocanada, **con la cabeza tocando la
    pared, sin meterse** (antes entraba medio cuerpo). Lo mismo contra una muralla de fortaleza de la playa, contra una
    roca y de lado, a lo largo de una pared (el cuerpo resbala por ella sin que la cabeza entre). Empezar el panzazo de
