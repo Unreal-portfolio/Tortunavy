@@ -4,6 +4,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Rally/TN_RallyCircuit.h"
 #include "Rally/TN_RallyGameState.h"
 #include "Rally/TN_RallyLogic.h"
 #include "Rally/TN_RallyTrack.h"
@@ -177,7 +178,14 @@ float ATN_RallyAIController::TargetSpeedKmh(const ATN_RallyTrack& Track, double 
 	// Cuesta abajo se frena peor: menos velocidad objetivo (en las bajadas con curva de E01B se salían por fuera).
 	const double Grade = (Track.GetLocationAtArc(Arc + RallyAIGradeProbeCm).Z - Track.GetLocationAtArc(Arc).Z) / RallyAIGradeProbeCm;
 	const double Downhill = FMath::Clamp(1.0 + RallyAIDownhillSlowdown * FMath::Min(0.0, Grade), RallyAIMinDownhillFactor, 1.0);
-	return static_cast<float>(Target * Downhill);
+	// Saltos y horquillas del manifest (#622): el labio a la velocidad de diseño (no se pasa de la recepción) y la horquilla a
+	// la de su radio, frenando a tiempo. Sin elements no cambia nada.
+	TNRallyCircuit::FBrakeTuning Tuning;
+	Tuning.JumpLipSpeedFactor = JumpLipSpeedFactor;
+	Tuning.HairpinLateralG = HairpinLateralG;
+	const float FeatureKmh = TNRallyCircuit::FeatureSpeedLimitKmh(Track.GetFeatures(), Arc, Track.GetTrackLengthCm(), Track.IsCircuit(),
+		BrakeProbeCm, Decel, MaxSpeedKmh, Tuning);
+	return FMath::Min(static_cast<float>(Target * Downhill), FeatureKmh);
 }
 
 void ATN_RallyAIController::TryFire(const FVector& Location, const FVector& Forward)

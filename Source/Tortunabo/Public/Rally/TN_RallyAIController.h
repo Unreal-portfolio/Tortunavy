@@ -41,6 +41,17 @@ public:
 	float BrakeDecelG = 0.5f;
 
 	/**
+	 * Circuitos generados (#622): con los elements del manifest, llega a cada labio de salto a su velocidad de diseño por este
+	 * factor (cae en la mesa) y a cada horquilla a la velocidad de su radio con HairpinLateralG de lateral, frenando con
+	 * BrakeDecelG desde BrakeProbeCm (TNRallyCircuit::FeatureSpeedLimitKmh).
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|IA", meta = (ClampMin = "0.5", ClampMax = "1.2"))
+	float JumpLipSpeedFactor = 0.9f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|IA", meta = (ClampMin = "0.2", ClampMax = "1.2"))
+	float HairpinLateralG = 0.6f;
+
+	/**
 	 * Dirección acotada para no volcar (#606): con el ángulo de rueda SteerAngleDeg y la batalla WheelbaseCm del buggy, como
 	 * mucho MaxLateralAccelG de aceleración lateral (TNBuggy::SafeSteerFraction). Despacio gira a tope.
 	 */
@@ -77,7 +88,10 @@ public:
 private:
 	ATN_RallyTrack* ResolveTrack();
 	void Drive(float DeltaSeconds, ATN_RallyTrack& Track);
-	/** Velocidad objetivo (km/h) por las curvas de los siguientes BrakeProbeCm (frenando a tiempo) y la pendiente. */
+	/**
+	 * Velocidad objetivo (km/h) por las curvas de los siguientes BrakeProbeCm (frenando a tiempo), la pendiente y los saltos y
+	 * horquillas del manifest.
+	 */
 	float TargetSpeedKmh(const ATN_RallyTrack& Track, double SpeedCms) const;
 	void TryFire(const FVector& Location, const FVector& Forward);
 
