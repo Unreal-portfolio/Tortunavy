@@ -1790,8 +1790,8 @@ recalculadas; entre paréntesis, lo que dicen los documentos):
 | Protector solar (`max(base, correr) × 1,25`) | **500 cm/s** | 1000 cm/s |
 | Turbo + protector (tope 2,4×) | **960 cm/s** | 1920 cm/s |
 | Metros por barra de estamina corriendo (13,3 s) | **53 m** | 107 m |
-| Gaviota justiciera (el blanco sigue a 600 cm/s hasta soltar y a 450 al caer, y se queda quieto los últimos 0,5 s) | corriendo (400) **no se libra** por velocidad: solo con la plancha en el momento justo o con turbo (800) | corriendo (800) se libra |
-| Gaviotas de la zona (el blanco sigue a 540 cm/s; 450 al caer la cagada) | corriendo (400) el blanco no se despega hasta su último tramo (0,6 s el picado, 0,45 s la cagada): en ese tramo se gana como mucho 1,7 m (picado) o 1,8 m (cagada), menos de lo que coge (2,45 m) o mancha (2,25 m); libran la plancha en el momento justo, el caparazón (picado) y el techo. Ver el §36.7 | corriendo (800) se libra en línea recta |
+| Gaviota justiciera (el blanco sigue a 250 cm/s y, desde soltarla, cae por su línea; #636) | corriendo (400) **se libra** en línea recta (6,2 m al golpe); andando, solo con la plancha en el momento justo | corriendo (800) se libra |
+| Gaviotas de la zona (el blanco sigue a 250 cm/s; los últimos 1,5 s, lanzado por su línea; #636) | corriendo (400) se le gana 1,5 m/s a la sombra y en línea recta se libra (3,8 m el picado, 4,3 m la cagada); andando, libran la plancha en el momento justo, el caparazón (picado) y el techo. Ver el §36.7 | corriendo (800) se libra en línea recta |
 | Cangrejo gigante (persigue a 560 cm/s) | más rápido que correr (400): solo se le escapa saliendo de su correa (38 m) o de su vista, o con turbo (800) | más lento que correr (800) |
 | Erizo de mar (rueda a 210 cm/s) | algo más rápido que andar (200) | más lento que andar (450) |
 | Tormenta de bañistas Normal (180 cm/s) | 90 % de la velocidad de andar | 40 % |
@@ -4206,7 +4206,7 @@ Ninguno mata: **aturden** (bola temblando), **derriban** (ragdoll con mareo) o *
 | Erizo de mar (§36.4) | a partir de los 64 m, más hacia el mar | vibraciones a 22 m | rueda a 2,1 m/s y pincha a ~1,65 m: derribo 2,4 s | correr (4 m/s; andando a 2 m/s apenas le saca ventaja) o rodearlo; lo lanzado lo marea | 17 / 25 / 74 |
 | Lagarto (§36.5) | por los lados de la playa, antes del 88 % | alerta a 30 m; susto a 17 m; huye a 9 m | huidizo: empujón 6,5 m/s; mordedor: mordisco a 2,6 m y zarandeo 1,3 s | mordedor: ir en bola, agachada o en el aire; huidizo/generoso: dejarlo huir | 10 / 16 / 42 |
 | Paso de quads (§36.6) | 1–2 franjas de lado a lado (2–3 en Difícil) | aviso de 3,5 s (temblor, humo, motor) | rueda que pasa por encima: derribo 3 s, lanzada 9,5 m/s | fuera de su paso o en el hueco entre ruedas (10,6 m); no se marea | 1–2 / 1–2 / 2–3 |
-| Gaviotas y pelícanos (§36.7) | 3–4 zonas por ronda, por encima; atacan cada 4–7 s | tortuga a menos del 80 % de la huella desde el centro (con techo encima, el ataque falla) | cagada (derribo 2,4 s + mancha 12 s) o picado con agarre (colgada 3,3 s, bola 4 s) | plancha en el momento justo, caparazón (picado) o cubrirse; el blanco te sigue a 5,4 m/s y se queda casi quieto en el último tramo (corriendo no basta con las velocidades reales) | 2–3 / 3–4 / 4–6 zonas |
+| Gaviotas y pelícanos (§36.7) | 3–4 zonas por ronda, por encima; atacan cada 4–7 s | tortuga a menos del 80 % de la huella desde el centro (con techo encima, el ataque falla) | cagada (derribo 2,4 s + mancha 12 s) o picado con agarre (colgada 3,3 s, bola 4 s) | plancha en el momento justo, caparazón (picado) o cubrirse; el blanco te sigue a 2,5 m/s (más que andando, menos que corriendo: esprintando en línea recta se libra, #636) | 2–3 / 3–4 / 4–6 zonas |
 | Ermitaño bola (§36.8) | en calles cuesta abajo de 25–45 m | tortuga en su calle a menos de 5,2 m del eje | rueda a 3–15 m/s y derriba a todas las de la fila (2,5 s) | apartarse 3 m de lado, subir el terreno de la calle | 4,7 / 6,3 / 8,5 |
 | Pulpo de poza (§36.9) | dentro del agua de las 7 pozas | nadadora atacable dentro de la orilla | agarre a 3 m (0,8 s en el aire) y lanzamiento en bola de 9–34 m hacia la salida | salir nadando antes de que llegue, no nadar | 7,1 / 11 / 26 |
 | Pulgas de arena (§36.10) | en claros de arena abierta | tortuga a 18 m dentro de su correa (24 m) | picada a 2,7 m: 2 s de saltitos sin control + bola 1 s | andar (van a 1,6 m/s), lanzarles algo | 4 / 6,7 / 16,7 |
@@ -4387,10 +4387,11 @@ probada por `Tortunabo.Beach.Gull.*`). La ronda 4 las **rebajó** porque casi no
   **Junto al frente de la tormenta** (detrás o a menos de 25 m por delante, `StormNoCarryReach`) la zona caga en vez de picar y, si pica,
   falla (`IsNearStormFront`): el vuelo de 15 m hacia la salida metía a la tortuga en la tormenta y empezaba la cadena de patada,
   recolocación y red de seguridad.
-- **El blanco te sigue, menos que antes**. El punto de la arena al que van el picado y la cagada (`FTNBeachGullAttack::Aim`) va hacia la
-  tortuga a **5,4 m/s** como mucho (6,25). En el picado, los **últimos 0,6 s** ya va lanzado y apenas corrige (1,2 m/s); en la cagada
-  sigue a 5,4 m/s mientras el pájaro vuela encima (1,5 s), a 4,5 m/s mientras cae (2,1 s) y **queda quieto el último 0,45 s**. El servidor
-  lo mueve y lo replica (10 Hz); cada cliente lo suaviza. Aviso duro en la arena: un disco negro de borde neto que nace pequeño y crece a
+- **El blanco te sigue, menos que antes** (#636, `TNBeachGullTuning::GullChaseSpeed`). El punto de la arena al que van el picado y la
+  cagada (`FTNBeachGullAttack::Aim`) va hacia la tortuga a **2,5 m/s** como mucho (antes 6,25 y luego 4,2): más que andando (2 m/s) y
+  menos que corriendo (4 m/s). Los **últimos 1,5 s** ya va lanzado por la línea que llevaba la tortuga y hacia los lados apenas corrige
+  (0,75 m/s). Andando no se despega; **esprintando en línea recta se le gana 1,5 m/s** y al golpe queda a 3,8 m (picado), 4,3 m (cagada)
+  o 6,2 m (justiciera), más de lo que alcanza el pájaro más grande. El servidor lo mueve y lo replica (10 Hz); cada cliente lo suaviza. Aviso duro en la arena: un disco negro de borde neto que nace pequeño y crece a
   medida que baja, hasta lo que coge o la mancha.
 - **Cagada**: 1,5 s volando hasta encima; la suelta desde 30 m y cae acelerando en **2,1 s**: un pegote de 1,6 m con estela de gotitas y
   silbido; sobre la tortuga a la que va, un **signo de exclamación** amarillo de 105 cm sobre la cabeza que empieza 0,5 s antes de soltar y
@@ -4426,13 +4427,12 @@ probada por `Tortunabo.Beach.Gull.*`). La ronda 4 las **rebajó** porque casi no
   `RelocateTurtle` podrían conservar una altura vieja.
 - **Se evita**: tirarse en **plancha en el momento justo** (libra de la cagada y, como siempre, del picado), meterse en el caparazón (el
   picado no coge a quien va en bola), refugiarse bajo techo (sombrilla clavada, castillos con salas), lanzarle una piedra al que baja (lo
-  marea y suelta a la tortuga) o echar a correr. **Ojo con lo que se puede esquivar corriendo**: las cuentas del nerf
-  ([`Docs/Modo_Carrera.md`](Modo_Carrera.md), «Nerf de la gaviota y de su caca») suponen andar a 4,5 m/s y correr a 8 m/s, las velocidades del código; con ellas,
-  quien corre en línea recta se libra con 8 a 11 m de ventaja. Con las velocidades **reales** (2 y 4 m/s) [calc] el blanco (5,4 m/s) es más
-  rápido que una tortuga que corre: se pega a ella hasta su último tramo y en ese tramo solo se le saca 1,7 m (picado) o 1,8 m (cagada), menos
-  de lo que coge (2,45 m) o mancha (2,25 m). Corriendo, cambiando de rumbo o parándose no se libra: libran la plancha en el momento justo, el
-  caparazón (picado), el techo y el turbo del coco (8 m/s). **No confirmado en juego**; hay que recalcular los números del nerf con las
-  velocidades reales (§41).
+  marea y suelta a la tortuga) o echar a correr. **Corriendo** (#636, recalculado con las velocidades reales comprobadas en
+  `BP_TortugaCharacter`: 2 m/s andando y 4 m/s corriendo): esprintando en línea recta se libra de todo; andando, aunque gire al lanzarse,
+  no. Esprintando y dándose la vuelta al lanzarse se cruza la sombra (queda a 2,8 m en el picado, 2,45 en la cagada y 1,1 en la justiciera).
+  **Ventana de la plancha** (`TNBeachGullTuning::BellyDiveDodgeWindow`): libra mientras va por el aire (0,3-0,4 s) y mientras se arrastra
+  a 2,5 m/s o más: 0,59-0,69 s desde que despega corriendo y 0,48-0,58 s andando; la cagada tiene que caer dentro. Pruebas:
+  `Tortunabo.Beach.Gull.*` (`PoopWalkSprintDive` simula andar, esprintar y la plancha frente a la caca). **No confirmado en juego**.
 - Consola: `TN.Beach.Gull.Attack 1|2` (1 = cagada, 2 = picado; sin número, al azar), `TN.Beach.Gull.Grab [veces=2] [jugador]`,
   `TN.Beach.Place GullZone`.
 
