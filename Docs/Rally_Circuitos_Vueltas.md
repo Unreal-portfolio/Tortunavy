@@ -54,7 +54,7 @@ La velocidad de llegada a cada salto es la de la línea ideal en vuelta lanzada 
 
 Lo común de `write_map` y lo que ya lee `ATN_RallyTrack` (`mode` "rally", `closed` true, `laps`, `road_uu`, `road_width_m`, `checkpoints_uu`, `start_uu` = `end_uu`, `start_yaw`, `kill_boxes_uu`) siguen igual. En un circuito, `road_uu` no repite el primer punto al final (el lazo lo cierra `closed`), y la primera puerta de `checkpoints_uu` está en la línea de salida. Campos nuevos:
 
-- **`bank_deg`**: peralte de cada punto de `road_uu`, en grados. Positivo, el lado derecho de la marcha está más bajo (curva a la derecha); negativo, el izquierdo. |`bank_deg`| ≤ 15. El terreno ya lo lleva tallado; el juego todavía no lo lee. El siguiente paso en C++ puede usarlo para el piloto IA (velocidad de curva), la orientación de las puertas y los respawns y la colocación de la barrera.
+- **`bank_deg`**: peralte de cada punto de `road_uu`, en grados. Positivo, el lado derecho de la marcha está más bajo (curva a la derecha); negativo, el izquierdo. |`bank_deg`| ≤ 15. El terreno ya lo lleva tallado y el juego lo usa para inclinar las puertas con la calzada (`Docs/Rally_MVP.md`, «Circuitos por vueltas»).
 - **`elements`**: lista de elementos con `type` (`recta`, `curva_peraltada`, `horquilla`, `chicane`, `salto`, `rasante`), `id` y `s_m` (arco [inicio, fin] en metros desde la línea de salida, medido por `road_uu`). Las curvas llevan `radius_m`, `angle_deg` y `side`, y las peraltadas también `bank_deg` y `bank_signed_deg`. Los saltos llevan `lip_s_m`, `lip_deg`, `height_m`, `table_m`, `landing_deg`, `landing_s_m` (zona de aterrizaje), `land_design_s_m` y `land_boost_s_m`, `v_design_kmh` y `v_boost_kmh`, `airtime_s`, `impact_ms` e `impact_boost_ms`, y el diseño completo en `design`. Los rasantes llevan `crest_s_m`, `height_m` y `radius_m`.
 - **`markers_uu`**: `parrilla` (los 8 huecos), `salto_N_labio`, `salto_N_aterrizaje` y `rasante_N_cima`.
 - **`physics`**: la BuggySpec con la que se ha dimensionado. **`lap`**: largo y vuelta ideal. **`checks`**: el informe del validador y su veredicto (`recorrible` = todo en verde).
@@ -78,5 +78,6 @@ Vuelta de 1 830 m (3 vueltas) en una rejilla de 8 × 6 trozos y 74 000 triángul
 
 Límites conocidos:
 
-- Con una barra entera de turbo, los saltos se pasan de la recepción y caen en la escapatoria llana. Cerca de 120 km/h, el choque es de unos 14 m/s (`impact_boost_ms`), dentro de la calzada. El juego no se ha probado en el editor.
+- Uso en el juego (saltos, rasantes y horquillas para el copiloto y el piloto IA): `Docs/Rally_MVP.md`, «Circuitos por vueltas».
+- Con una barra entera de turbo, los saltos se pasan de la recepción y caen en la escapatoria llana. Cerca de 120 km/h, el choque es de unos 14 m/s (`impact_boost_ms`), dentro de la calzada. El juego no se ha probado en el editor; sin editor, el piloto IA da 5 vueltas sin atascarse.
 - Las barreras de #303 las coloca el C++ a partir de `road_uu`; el validador solo comprueba que haya suelo a su cota.

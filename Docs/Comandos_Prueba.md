@@ -296,6 +296,22 @@ géiseres, ocho cascadas y canales de agua).
 Sin editor (carreras solo de la IA, una línea `[RallyStats]` por carrera con terminados, atascos y vuelcos):
 `UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Run/LVL_ProcMap?game=Karts?Bots=4?AutoStart?Races=1?RaceTimeout=420?ProcDifficulty=Easy?ProcSeed=4242" -server -nullrhi -NoSteam`.
 
+## Rally: circuito por vueltas (R01)
+
+Circuito cerrado generado (#622, `Docs/Rally_Circuitos_Vueltas.md`): salida y meta en la misma puerta, 9 puertas en orden,
+parrilla 2 × 4 detrás de la línea y 3 vueltas por defecto (el `laps` del manifest; `?Laps=` manda).
+
+| Comando | Qué hace |
+|---|---|
+| `open LVL_Rally?Variant=R01_circuito_dunas` | El circuito con las vueltas del manifest (3). En PIE: abrir `LVL_Rally` y escribirlo en la consola. |
+| `...?Laps=5` / `...?Bots=3` / `...?Seats=1` | Vueltas (1-9), buggies con piloto IA y un buggy por jugadora. |
+| `log LogTNRally Verbose` | Cada puerta válida («puerta N (vuelta V) a los S s») y las que no cuentan porque se cruza su plano fuera de ella. |
+| `Automation RunTests Tortunabo.Rally.Circuit` | Lectura del manifest, puertas con peralte, notas de salto y cresta, frenada de la IA, R01 como circuito y E01B e I03R como antes. |
+
+Sin editor, el piloto IA da 5 vueltas (unos 8 min; criterio: `terminados 1/1, atascos 0` en la línea `[RallyStats]`):
+`UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Rally/LVL_Rally?Variant=R01_circuito_dunas?Bots=1?AutoStart?Races=1?Laps=5?RaceTimeout=900" -server -nullrhi -NoSteam -ExecCmds="log LogTNRally Verbose"`.
+No vale `-benchmark`: con el paso fijo sin límite, el buggy no avanza como en tiempo real.
+
 ## Tortuga: cara, voz, HUD y panzazo
 
 | Comando | Qué hace |
