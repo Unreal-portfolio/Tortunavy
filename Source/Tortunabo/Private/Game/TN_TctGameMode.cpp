@@ -233,13 +233,15 @@ AActor* ATN_TctGameMode::ChoosePlayerStart_Implementation(AController* Player)
 
 void ATN_TctGameMode::PostLogin(APlayerController* NewPlayer)
 {
+	// Antes de Super: la base puede arrancar la primera ronda con esta jugadora (la última que faltaba), y esa no se queda fuera.
+	const bool bJoinsLiveRound = bRoundLive;
 	Super::PostLogin(NewPlayer);
-	if (bRoundLive)
+	if (bJoinsLiveRound)
 	{
 		// Reconexión o entrada tardía con la ronda en juego: espera como fantasma a la siguiente.
 		SitOutRound(NewPlayer);
 	}
-	else
+	else if (!bRoundLive)
 	{
 		FreezePlayer(NewPlayer);
 	}
