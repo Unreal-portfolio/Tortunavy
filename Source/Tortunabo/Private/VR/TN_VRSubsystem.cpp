@@ -1,4 +1,6 @@
 #include "VR/TN_VRSubsystem.h"
+#include "Multiplayer/TN_LocalPlayRules.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "VR/TN_VRRig.h"
 #include "TN_VRInputProcessor.h"
 #include "Core/TN_Log.h"
@@ -6,6 +8,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
+#include "Engine/Texture2D.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
 #include "Framework/Application/SlateApplication.h"
@@ -145,6 +148,15 @@ UWorld* UTN_VRSubsystem::GetTickableGameObjectWorld() const
 ETNVRMode UTN_VRSubsystem::ResolveMode()
 {
 	using namespace TNVRSubsystemDetail;
+	// Partida local (#311): con más de un jugador en el PC, la pantalla plana (unas gafas son de uno solo).
+	if (const UTN_LocalPlaySubsystem* LocalPlay = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTN_LocalPlaySubsystem>() : nullptr)
+	{
+		if (!TNLocalPlay::AllowsVR(LocalPlay->IsLocalMode(), LocalPlay->GetNumPlayers()))
+		{
+			bTriedEnableHMD = false;
+			return ETNVRMode::Off;
+		}
+	}
 	int32 Choice = CVarTNVRMode.GetValueOnGameThread();
 	if (Choice < 0)
 	{
@@ -378,6 +390,55 @@ void UTN_VRSubsystem::Recenter()
 // Pantalla de carga de las gafas
 // ─────────────────────────────────────────────────────────────────────────────
 
+namespace TNVRSplashDetail
+{
+	/** Textura de 4 × N con una columna de colores de arriba abajo (el filtrado bilineal la convierte en degradado). */
+	UTexture2D* MakeColumnTexture(const TCHAR* Name, const TArray<FColor>& Column)
+	{
+		const int32 W = 4;
+		const int32 H = Column.Num();
+		UTexture2D* Texture = H > 0 ? UTexture2D::CreateTransient(W, H, PF_B8G8R8A8, FName(Name)) : nullptr;
+		if (!Texture)
+		{
+			return nullptr;
+		}
+		Texture->SRGB = true;
+		Texture->Filter = TF_Bilinear;
+		Texture->LODGroup = TEXTUREGROUP_UI;
+		FTexture2DMipMap& Mip = Texture->GetPlatformData()->Mips[0];
+		FColor* Data = static_cast<FColor*>(Mip.BulkData.Lock(LOCK_READ_WRITE));
+		for (int32 y = 0; y < H; ++y)
+		{
+			for (int32 x = 0; x < W; ++x)
+			{
+				Data[y * W + x] = Column[y];
+			}
+		}
+		Mip.BulkData.Unlock();
+		Texture->UpdateResource();
+		return Texture;
+	}
+}
+
+void UTN_VRSubsystem::EnsureSplashEnvironment()
+{
+	if (SplashEnvironment.Num() == 3)
+	{
+		return;
+	}
+	SplashEnvironment.Reset();
+	// Lados: cielo arriba, bruma cálida en el horizonte (a la altura de los ojos) y mar abajo.
+	const TArray<FColor> Sides = {
+		FColor(58, 142, 219), FColor(74, 158, 226), FColor(96, 176, 234), FColor(126, 200, 242), FColor(170, 220, 245),
+		FColor(214, 234, 240), FColor(245, 238, 222), FColor(255, 241, 214), FColor(120, 196, 206), FColor(64, 172, 196),
+		FColor(42, 157, 181), FColor(36, 140, 168), FColor(31, 124, 155), FColor(27, 110, 143) };
+	const TArray<FColor> Top = { FColor(52, 132, 212) };
+	const TArray<FColor> Bottom = { FColor(233, 211, 161) };
+	SplashEnvironment.Add(TNVRSplashDetail::MakeColumnTexture(TEXT("TN_VRSplashSides"), Sides));
+	SplashEnvironment.Add(TNVRSplashDetail::MakeColumnTexture(TEXT("TN_VRSplashTop"), Top));
+	SplashEnvironment.Add(TNVRSplashDetail::MakeColumnTexture(TEXT("TN_VRSplashBottom"), Bottom));
+}
+
 void UTN_VRSubsystem::ShowLoadingSplash(UTexture* Texture)
 {
 	if (Mode != ETNVRMode::Headset || !Texture)
@@ -385,9 +446,27 @@ void UTN_VRSubsystem::ShowLoadingSplash(UTexture* Texture)
 		return;
 	}
 	SplashTexture = Texture;
-	// Posición y tamaño en la misma escala: la capa ocupa ~56° de ancho a la altura de los ojos, delante.
+	UXRLoadingScreenFunctionLibrary::ClearLoadingScreenSplashes();
+	// La playa en 360: un cubo de 10 m con la cara de delante de cada capa hacia dentro (sin girar, una capa mira a -X).
+	EnsureSplashEnvironment();
+	if (SplashEnvironment.Num() == 3 && SplashEnvironment[0] && SplashEnvironment[1] && SplashEnvironment[2])
+	{
+		constexpr double Half = 500.0;
+		const FVector2D Face(2.0 * Half, 2.0 * Half);
+		for (int32 Side = 0; Side < 4; ++Side)
+		{
+			const FRotator Yaw(0.0, 90.0 * Side, 0.0);
+			UXRLoadingScreenFunctionLibrary::AddLoadingScreenSplash(SplashEnvironment[0], Yaw.RotateVector(FVector(Half, 0.0, 0.0)), Yaw,
+				Face, FRotator::ZeroRotator, false);
+		}
+		UXRLoadingScreenFunctionLibrary::AddLoadingScreenSplash(SplashEnvironment[1], FVector(0.0, 0.0, Half), FRotator(90.0, 0.0, 0.0),
+			Face, FRotator::ZeroRotator, false);
+		UXRLoadingScreenFunctionLibrary::AddLoadingScreenSplash(SplashEnvironment[2], FVector(0.0, 0.0, -Half), FRotator(-90.0, 0.0, 0.0),
+			Face, FRotator::ZeroRotator, false);
+	}
+	// El huevo delante, a la altura de los ojos: ~56° de ancho.
 	UXRLoadingScreenFunctionLibrary::AddLoadingScreenSplash(Texture, FVector(300.0, 0.0, 0.0), FRotator::ZeroRotator,
-		FVector2D(320.0, 180.0), FRotator::ZeroRotator, true);
+		FVector2D(320.0, 180.0), FRotator::ZeroRotator, false);
 	UXRLoadingScreenFunctionLibrary::ShowLoadingScreen();
 	bSplashShown = true;
 }

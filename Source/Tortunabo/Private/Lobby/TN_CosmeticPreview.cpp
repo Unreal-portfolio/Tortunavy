@@ -12,6 +12,9 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Engine/GameInstance.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
@@ -170,17 +173,33 @@ ATN_CosmeticPreview::ATN_CosmeticPreview()
 	CheerAnim = Cheer.Succeeded() ? Cheer.Object : nullptr;
 }
 
-ATN_CosmeticPreview* ATN_CosmeticPreview::Get(UWorld* World)
+ATN_CosmeticPreview* ATN_CosmeticPreview::Get(UWorld* World, int32 Slot)
 {
 	if (!World) { return nullptr; }
+	const int32 WantedSlot = FMath::Clamp(Slot, 0, 7);
 	for (TActorIterator<ATN_CosmeticPreview> It(World); It; ++It)
 	{
-		return *It;
+		if (It->Slot == WantedSlot) { return *It; }
 	}
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	Params.ObjectFlags |= RF_Transient;
-	return World->SpawnActor<ATN_CosmeticPreview>(TNPreviewDetail::StageLocation, FRotator::ZeroRotator, Params);
+	// Cada escaparate a 40 m del anterior: sus luces de estudio (1600 cm) no llegan al de al lado.
+	const FVector Where = TNPreviewDetail::StageLocation + FVector(4000.0 * WantedSlot, 0.0, 0.0);
+	ATN_CosmeticPreview* Stage = World->SpawnActorDeferred<ATN_CosmeticPreview>(ATN_CosmeticPreview::StaticClass(), FTransform(Where), nullptr, nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (Stage)
+	{
+		Stage->Slot = WantedSlot;
+		Stage->FinishSpawning(FTransform(Where));
+	}
+	return Stage;
+}
+
+ATN_CosmeticPreview* ATN_CosmeticPreview::GetFor(const APlayerController* PC)
+{
+	UWorld* World = PC ? PC->GetWorld() : nullptr;
+	const ULocalPlayer* Player = PC ? PC->GetLocalPlayer() : nullptr;
+	const UGameInstance* GameInstance = PC ? PC->GetGameInstance() : nullptr;
+	const int32 Index = Player && GameInstance ? GameInstance->GetLocalPlayers().IndexOfByKey(Player) : 0;
+	return Get(World, FMath::Max(0, Index));
 }
 
 void ATN_CosmeticPreview::BeginPlay()

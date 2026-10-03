@@ -37,4 +37,16 @@ namespace TNTutorialRules
 		}
 		return ReachedStation != INDEX_NONE && StationIndex <= ReachedStation;
 	}
+
+	/**
+	 * @brief ¿Hay que avisar al cliente de que su HUD empiece de cero (ClientResetProgress, #85)?
+	 *        Quien entra de nuevas lo hace solo: bInTutorial pasa a true y su máquina se reinicia al verlo. Quien repite
+	 *        estando ya dentro (volver a la salida) no cambia nada que replicar, y su HUD seguiría con las tareas tachadas.
+	 * @param bWasInside    El jugador ya estaba en el recorrido antes de la petición.
+	 * @param TargetStation Estación a la que se le lleva (0 = la salida).
+	 */
+	inline bool ShouldResetProgress(bool bWasInside, int32 TargetStation)
+	{
+		return bWasInside && TargetStation == 0;
+	}
 }

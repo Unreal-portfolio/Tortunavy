@@ -1,5 +1,6 @@
 #include "Lobby/TN_ShopKeeper.h"
 #include "Art/TN_Art.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Audio/TN_MusicSynthComponent.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Core/TN_Log.h"
@@ -536,8 +537,8 @@ void ATN_ShopKeeper::Tick(float DeltaSeconds)
 	if (GetNetMode() == NM_DedicatedServer) { return; }
 
 	// Se gira hacia el jugador local si está cerca y le saluda de vez en cuando.
-	const APlayerController* LocalPC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
-	const APawn* LocalPawn = LocalPC ? LocalPC->GetPawn() : nullptr;
+	// Con la pantalla partida (#311), a la tortuga local más cercana.
+	const APawn* LocalPawn = TNLocalViews::ClosestLocalPawn(GetWorld(), GetActorLocation());
 	float TargetYaw = 0.f;
 	if (LocalPawn)
 	{
