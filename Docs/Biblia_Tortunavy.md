@@ -2075,6 +2075,8 @@ juego. **No confirmado**.
 | `TN.Dive.Slide 0\|1` | 0 = se para en seco al caer, como antes |
 | `TN.Dive.Friction <x>` | Multiplica el rozamiento (0,5 resbala el doble; 2 se para antes) |
 | `TN.Dive.Slope <x>` | Multiplica cuánto tiran las pendientes (0 = como en llano) |
+| `TN.Dive.SlopeFall 0\|1` | 0 = cuesta abajo frena como en llano (antes de #62); 1 = desde 12° sigue cayendo |
+| `TN.Dive.WallBounce 0\|1` | 0 = en el vuelo del panzazo resbala por las paredes (antes de #63); 1 = rebota (0,45 y 60 %) |
 | `TN.Dive.MaxTime <s>` | Tope de segundos arrastrándose (0 = el del componente, 2,6 s) |
 | `TN.Dive.Body 0\|1` | 0 = solo choca la cápsula (la cabeza y las patas vuelven a meterse en las paredes) |
 | `TN.Dive.Debug 1` | Fase, tiempo, velocidad, superficie y rozamiento; flechas de velocidad y pendiente; el cuerpo que choca |

@@ -332,8 +332,28 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `TN.SlopeTilt.Find [lado\|frente] [espera_s] [captura]` | Pone tu tortuga en la cuesta de 15-30° más cercana (hasta 120 m), de lado (por defecto) o de frente, con la cámara donde se ve la inclinación. Con `captura` = 1, a los 2,5 s escribe el estado y hace `HighResShot`. En el anfitrión o sin red; `espera_s` sirve para lanzarlo con `-ExecCmds`. |
 | `TN.SlopeTilt.Dump [espera_s]` | Escribe en el registro la inclinación de cada tortuga en esa máquina (actual, objetivo y la de la malla), para comparar el anfitrión con un cliente. |
 | `TN.SlopeTilt.DiveProbe [abajo\|arriba] [espera_s] [captura]` | Corre hacia la cuesta de 15-30° más cercana (cuesta abajo por defecto), salta y hace el panzazo; escribe por fotograma en el registro la malla respecto al suelo en el vuelo, el aterrizaje y el deslizamiento, y al final el mayor giro en un fotograma. Con `captura` = 1, una `HighResShot` en el vuelo y otra deslizando (la captura frena ese fotograma: las cifras, sin ella). |
-| `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo. |
+| `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo (en el dueño de un cliente, también cuántas correcciones ha recibido y la última). |
+| `TN.Net.DivePredict 0` | En quien la controla: el panzazo vuelve a pedirse por `Server_StartDive` y lo lanza el servidor, como antes de #24 (para comparar el tirón al empezar con `p.NetShowCorrections 1`). |
+| `TN.Dive.SlopeFall 0` / `TN.Dive.WallBounce 0` | Cuesta abajo frena como en llano (antes de #62) / en el vuelo del panzazo resbala por las paredes (antes de #63). Igual en todas las máquinas. |
 | `TN.Music.Play Victoria` | Hace sonar una pista: `Victoria`, `Derrota`, `Eliminado`, `Tienda`, `Probador` o `Silencio`. |
+
+### Panzazo en red sin editor (#24, #62, #63)
+
+Un servidor `?listen` y un cliente `-game` con `-TNDiveNetTest=<escena>_<veces>` montan en el cielo (lejos del mapa) el
+mismo escenario con cajas de colisión; el servidor pone allí la tortuga del cliente y el cliente la mueve sola. Escenas:
+`dive` (panzazos en llano, a un lado y al otro), `wall` (salto y panzazo contra una pared a 2 m) y `slope` (carrerilla y
+panzazo cuesta abajo en una rampa de 25°). Pone `p.NetShowCorrections 1` y deja marcas `[DiveNet] ciclo N: …` en el
+registro; las líneas `*** Server: Error` / `*** Client: Error` entre ellas son las correcciones. Al acabar se cierran los dos.
+`-TNDiveNetBefore` en los dos compara con lo de antes (`TN.Net.DivePredict 0`, `TN.Dive.SlopeFall 0`,
+`TN.Dive.WallBounce 0`) y `-TNDiveNetSet=TN.Dive.Body:0+…` cambia otras variables.
+
+```bash
+MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject "/Game/Maps/Run/LVL_TestMap?listen" -game -nullrhi \
+  -nosound -NoSteam -port=17777 -TNDiveNetTest=wall_6 -ABSLOG=<carpeta>/servidor.log &
+sleep 12
+MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject 127.0.0.1:17777 -game -nullrhi -nosound -NoSteam \
+  -PktLag=150 -TNDiveNetTest=wall_6 -ABSLOG=<carpeta>/cliente.log
+```
 
 ## Tutorial de la primera partida
 

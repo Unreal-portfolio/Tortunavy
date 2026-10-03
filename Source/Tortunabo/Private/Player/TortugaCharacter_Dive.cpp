@@ -16,13 +16,26 @@
 #include "Components/SceneComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "HAL/IConsoleManager.h"
+
+namespace TNDiveNet
+{
+	static int32 GPredict = 1;
+	static FAutoConsoleVariableRef CVarPredict(
+		TEXT("TN.Net.DivePredict"),
+		GPredict,
+		TEXT("1 = el panzazo empieza dentro del movimiento del dueño (predicho, sin corrección al empezar; #24); 0 = lo pide por Server_StartDive y lo lanza el servidor, como antes (para comparar con p.NetShowCorrections 1). En quien la controla."),
+		ECVF_Cheat);
+}
 
 // ── Dive System ───────────────────────────────────────────────────────────────
 //
 // Flow:
-//   Input (client)  → TryDive()
-//   → Server_StartDive(DiveDir)      — validates, applies physics, sets bIsDiving (+ DiveSerial)
-//   → Multicast_OnDiveVisual(true)   — all clients apply tilt + capsule resize
+//   Input (client)  → TryDive() → UTN_TurtleMovementComponent::RequestDive(DiveDir)
+//   → la petición va en el siguiente movimiento guardado (marca FLAG_Custom_2 y giro, #24): en ese movimiento, el dueño y
+//     el servidor llaman a StartDiveFromMove con las mismas reglas (TNDiveLogic::DecideDiveStart): lanzan, encogen la
+//     cápsula y suben DiveSerial igual, sin corrección. TN.Net.DivePredict 0: Server_StartDive(DiveDir), como antes.
+//   → Multicast_OnDiveVisual(true)   — all clients apply tilt + capsule resize (el dueño ya la encogió en el movimiento)
 //   Al caer de tripa, UTN_TurtleMovementComponent arrastra a la tortuga dentro de la simulación del movimiento
 //   (predicha en el cliente dueño): inercia, rozamiento por superficie, pendientes y rebotes. Casi parada, se levanta
 //   (cápsula de pie sin atravesar nada) y, con eso, TickDive (servidor) llama a EndDive().
@@ -102,7 +115,118 @@ void ATortugaCharacter::TryDive()
 		TEXT("[Dive] DiveDir(input/camera)=(%.2f,%.2f,%.2f) ControlYaw=%.1f"),
 		DiveDir.X, DiveDir.Y, DiveDir.Z, ControlRot.Yaw);
 
+	// Predicho (#24): en el siguiente movimiento, que también simula el servidor con las mismas reglas.
+	if (TNDiveNet::GPredict != 0)
+	{
+		if (UTN_TurtleMovementComponent* TurtleMove = GetTurtleMovement())
+		{
+			TurtleMove->RequestDive(DiveDir);
+			return;
+		}
+	}
 	Server_StartDive(DiveDir);
+}
+
+bool ATortugaCharacter::IsDiveBlocked() const
+{
+	return bIsKnockedDown || bIsDead || IsInShell() || (CarryComponent && CarryComponent->IsBeingCarried());
+}
+
+TNDiveLogic::FDiveMomentumParams ATortugaCharacter::GetDiveMomentumParams() const
+{
+	TNDiveLogic::FDiveMomentumParams Params;
+	Params.BaseSpeed = DiveForwardSpeed;
+	Params.ForwardFactor = DiveMomentumForwardFactor;
+	Params.LateralFactor = DiveMomentumLateralFactor;
+	Params.BackwardFactor = DiveMomentumBackwardFactor;
+	Params.MaxTotalSpeed = DiveMaxTotalSpeed;
+	return Params;
+}
+
+bool ATortugaCharacter::StartDiveFromMove(uint16 DiveYaw, bool bInAir, bool bLaunchPending, bool bReplaying, const FVector& VelocityBefore,
+	FVector& OutLaunchVelocity)
+{
+	// La misma dirección en el dueño y en el servidor: la que viaja por red (giro en 16 bits).
+	const FVector DiveDir = TNDiveLogic::DiveDirFromYaw(DiveYaw);
+	TNDiveLogic::FDiveStartContext Context;
+	Context.bBlocked = IsDiveBlocked();
+	Context.bAlreadyDiving = bIsDiving;
+	Context.bInAir = bInAir;
+	Context.bLaunchPending = bLaunchPending;
+	Context.ForwardSpeed = TNDiveLogic::DiveForwardSpeed(DiveDir, JumpStartHorizontalVelocity, GetDiveMomentumParams());
+	Context.MinSpeed = DiveStopSpeedThreshold;
+	const TNDiveLogic::EDiveStart Result = TNDiveLogic::DecideDiveStart(Context);
+	if (Result != TNDiveLogic::EDiveStart::Accept)
+	{
+		if (!bReplaying)
+		{
+			UE_LOG(LogTortunabo, Log, TEXT("[Dive] %s (%s): panzazo pedido que no empieza: %s."), *GetNameSafe(this),
+				HasAuthority() ? TEXT("servidor") : TEXT("dueño"), TNDiveLogic::DiveStartName(Result));
+		}
+		return false;
+	}
+
+	OutLaunchVelocity = TNDiveLogic::DiveLaunchVelocity(DiveDir, Context.ForwardSpeed, DiveDownwardSpeed);
+	// El estado que mira el movimiento (arrastre al caer, rebote en vuelo, cuerpo tumbado): igual en las dos máquinas y en
+	// cada repetición. La cápsula tumbada, en su sitio (en el aire: los pies suben).
+	DiveSerial    = TNDiveLogic::NextDiveSerial(DiveSerial);
+	bIsDiving     = true;
+	DiveLockTimer = 0.f;
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->SetCapsuleHalfHeight(DiveCapsuleHalfHeight);
+	}
+	// El giro hacia la dirección del panzazo también es del movimiento (UTN_TurtleMovementComponent::
+	// ComputeOrientToMovementRotation): al repetir, también.
+	DiveTargetYaw        = DiveDir.Rotation().Yaw;
+	bDiveYawInterpActive = true;
+	if (bReplaying)
+	{
+		return true;
+	}
+
+	if (HasAuthority())
+	{
+		if (ReplicatedEmoteIndex >= 0)
+		{
+			ReplicatedEmoteIndex = -1;
+			CancelEmoteLocalOnly();
+		}
+		// Llevando a un compañero en alto, el panzazo lo lanza (ThrowWithDive) en el siguiente TickDive: nada se crea dentro
+		// del movimiento del cliente. Con la velocidad de antes de lanzarse (la del salto).
+		if (CarryComponent && CarryComponent->IsCarrying())
+		{
+			PendingDiveThrow.bPending = true;
+			PendingDiveThrow.DiveDir = DiveDir;
+			PendingDiveThrow.DiveVelocity = OutLaunchVelocity;
+			PendingDiveThrow.CarrierVelocity = VelocityBefore;
+		}
+		Multicast_OnDiveVisual(true);
+	}
+	else
+	{
+		// Dueño: lo visual ya (cuando llegue el del servidor, la cápsula ya está).
+		Multicast_OnDiveVisual_Implementation(true);
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Dive] %s — dive started en el movimiento (%s), nº %d, dir=%s, %.0f cm/s"), *GetNameSafe(this),
+		HasAuthority() ? TEXT("servidor") : TEXT("dueño"), static_cast<int32>(DiveSerial), *DiveDir.ToString(), Context.ForwardSpeed);
+	return true;
+}
+
+void ATortugaCharacter::ApplyServerDiveCorrection(bool bDiving, uint8 Serial)
+{
+	if (bIsDiving == bDiving && DiveSerial == Serial)
+	{
+		return;
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Dive] %s: la corrección del servidor trae su panzazo (%s, nº %d; aquí %s, nº %d)."), *GetNameSafe(this),
+		bDiving ? TEXT("sí") : TEXT("no"), static_cast<int32>(Serial), bIsDiving ? TEXT("sí") : TEXT("no"), static_cast<int32>(DiveSerial));
+	bIsDiving = bDiving;
+	DiveSerial = Serial;
+	if (!bIsDiving)
+	{
+		bDiveYawInterpActive = false;
+	}
 }
 
 bool ATortugaCharacter::Server_StartDive_Validate(FVector DiveDir)
@@ -160,43 +284,12 @@ void ATortugaCharacter::Server_StartDive_Implementation(FVector DiveDir)
 	//
 	// Si rotaste la cámara para mirar atrás del salto, el momentum se anula —
 	// el jugador "decide" no preservar el momentum cambiando hacia donde mira.
-	float MomentumBonus = 0.f;
-	const float JumpStartSpeed = JumpStartHorizontalVelocity.Size();
-	if (JumpStartSpeed > 1.f)
-	{
-		const FVector JumpStartDir = JumpStartHorizontalVelocity / JumpStartSpeed;
-
-		// Se compara la dirección real del dash (ya saneada arriba) con la del salto.
-		const float Alignment = FVector::DotProduct(DiveDir, JumpStartDir); // [-1, 1]
-
-		float Factor;
-		if (Alignment >= 0.f)
-		{
-			Factor = FMath::Lerp(DiveMomentumLateralFactor, DiveMomentumForwardFactor, Alignment);
-		}
-		else
-		{
-			Factor = FMath::Lerp(DiveMomentumLateralFactor, DiveMomentumBackwardFactor, -Alignment);
-		}
-		MomentumBonus = JumpStartSpeed * Factor;
-
-		UE_LOG(LogTortunabo, Log,
-			TEXT("[Dive] Momentum · JumpStartSpeed=%.0f CamVsJumpAlign=%.2f Factor=%.2f Bonus=%.0f → Total=%.0f"),
-			JumpStartSpeed, Alignment, Factor, MomentumBonus, DiveForwardSpeed + MomentumBonus);
-	}
-	else
-	{
-		UE_LOG(LogTortunabo, Log,
-			TEXT("[Dive] Momentum · sin salto registrado (JumpStartSpeed=0) → bonus 0, dash a velocidad base %.0f"),
-			DiveForwardSpeed);
-	}
-
-	// Cap simétrico: permite valores negativos (dash hacia atrás cuando la cámara
-	// está opuesta al salto y BackwardFactor es lo bastante negativo). El char
-	// invierte la DiveDir naturalmente porque DiveDir * (-Speed) = -DiveDir * Speed.
-	const float CombinedForwardSpeed = FMath::Clamp(DiveForwardSpeed + MomentumBonus,
-		-DiveMaxTotalSpeed, DiveMaxTotalSpeed);
-	const FVector DiveVelocity = DiveDir * CombinedForwardSpeed + FVector(0.f, 0.f, -DiveDownwardSpeed);
+	// La misma cuenta que el panzazo predicho (TNDiveLogic::DiveForwardSpeed). Cap simétrico: permite valores negativos
+	// (dash hacia atrás cuando la cámara está opuesta al salto y BackwardFactor es lo bastante negativo).
+	const float CombinedForwardSpeed = TNDiveLogic::DiveForwardSpeed(DiveDir, JumpStartHorizontalVelocity, GetDiveMomentumParams());
+	UE_LOG(LogTortunabo, Log, TEXT("[Dive] Momentum · JumpStartSpeed=%.0f → Total=%.0f (por Server_StartDive)"),
+		JumpStartHorizontalVelocity.Size2D(), CombinedForwardSpeed);
+	const FVector DiveVelocity = TNDiveLogic::DiveLaunchVelocity(DiveDir, CombinedForwardSpeed, DiveDownwardSpeed);
 
 	// Llevando a un compañero en alto: el panzazo lo lanza, con el impulso del panzazo (la carrera va dentro) y el del
 	// salto sumados al del lanzamiento. Antes de lanzarse ella: la velocidad de ahora es la del salto.
@@ -210,7 +303,7 @@ void ATortugaCharacter::Server_StartDive_Implementation(FVector DiveDir)
 
 	// Activate dive state — triggers OnRep on clients. El número nuevo le dice al movimiento que este panzazo aún no se
 	// ha arrastrado (al dar la vuelta se salta el 0, que significa «ninguno»).
-	DiveSerial    = DiveSerial >= 255 ? static_cast<uint8>(1) : static_cast<uint8>(DiveSerial + 1);
+	DiveSerial    = TNDiveLogic::NextDiveSerial(DiveSerial);
 	bIsDiving     = true;
 	DiveLockTimer = 0.f;
 
@@ -232,8 +325,12 @@ void ATortugaCharacter::Multicast_OnDiveVisual_Implementation(bool bEnter)
 			CMC->NetworkSmoothingMode = ENetworkSmoothingMode::Disabled;
 		}
 
-		// Shrink capsule to represent horizontal hitbox
-		GetCapsuleComponent()->SetCapsuleHalfHeight(DiveCapsuleHalfHeight);
+		// Shrink capsule to represent horizontal hitbox. El dueño que predice el panzazo ya la encogió en el movimiento
+		// (StartDiveFromMove) y la de pie la pone él al levantarse: si este aviso llega tarde no la vuelve a encoger.
+		if (!(GetLocalRole() == ROLE_AutonomousProxy && TNDiveNet::GPredict != 0))
+		{
+			GetCapsuleComponent()->SetCapsuleHalfHeight(DiveCapsuleHalfHeight);
+		}
 
 		// Abort any active emote or blend-out — dive takes full control of limbs.
 		// Snap all limb components to rest immediately so the dive pose starts clean.
@@ -325,6 +422,16 @@ void ATortugaCharacter::EndDive()
 
 void ATortugaCharacter::TickDive(float DeltaTime)
 {
+	// Servidor: el panzazo que empezó en un movimiento lanza lo que llevaba (fuera del movimiento del cliente, #24).
+	if (PendingDiveThrow.bPending)
+	{
+		PendingDiveThrow.bPending = false;
+		if (HasAuthority() && CarryComponent && CarryComponent->IsCarrying())
+		{
+			CarryComponent->ThrowWithDive(PendingDiveThrow.DiveDir, PendingDiveThrow.DiveVelocity, PendingDiveThrow.CarrierVelocity);
+		}
+	}
+
 	// ── Guard: si el mesh ya está en ragdoll (knockdown post-dash a plátano,
 	//    o muerte durante dive), NO tocar SetRelativeRotation. Hacerlo dispara
 	//    "Attempting to move a fully simulated skeletal mesh" y desincroniza
@@ -353,31 +460,13 @@ void ATortugaCharacter::TickDive(float DeltaTime)
 		}
 	}
 
-	// ── DASH-05: interpolación fluida del actor Yaw hacia DiveTargetYaw ────────
-	// Owner + server interpolan localmente para feel inmediato. Clientes remotos
-	// también: bDiveYawInterpActive y DiveTargetYaw replican, así que el cliente
-	// remoto ejecuta el mismo path con valores autoritativos.
-	if (bDiveYawInterpActive)
-	{
-		const FRotator CurrentRot = GetActorRotation();
-		const float DeltaYaw = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DiveTargetYaw);
-		const float MaxStep  = DiveYawInterpSpeed * DeltaTime;
-		const float StepYaw  = FMath::Clamp(DeltaYaw, -MaxStep, MaxStep);
-		const float NewYaw   = CurrentRot.Yaw + StepYaw;
-
-		// Solo aplicamos en owner (cliente local) y server. Clientes remotos no-owner
-		// reciben la rotation por bReplicateMovement con smoothing — si llamamos
-		// SetActorRotation en ellos, peleamos contra la replicación.
-		if (IsLocallyControlled() || HasAuthority())
-		{
-			SetActorRotation(FRotator(0.f, NewYaw, 0.f));
-		}
-
-		if (FMath::Abs(DeltaYaw) <= 1.f)
-		{
-			bDiveYawInterpActive = false; // alcanzado el target → desactivar
-		}
-	}
+	// ── DASH-05: giro del actor hacia DiveTargetYaw ─────────────────────────────
+	// Lo hace el movimiento (UTN_TurtleMovementComponent::ComputeOrientToMovementRotation, GetDiveYawTurn) a
+	// DiveYawInterpSpeed, igual en el dueño y en el servidor y en cada paso (#24): girando aquí, en el Tick, cada máquina
+	// llegaba a otra orientación (el cliente, además, la perdía al juntar movimientos) y el cuerpo tumbado chocaba distinto
+	// con las paredes. Los demás reciben el giro replicado. Ya no se apaga aquí al llegar: el dueño, al juntar movimientos,
+	// vuelve a simular desde antes de llegar y se quedaba a medio giro. Lo apaga el fin del panzazo y, mientras, el movimiento
+	// solo lo aplica en el vuelo (hasta caer de tripa).
 
 	// ── Whole-character forward tilt (all machines, cosmetic) ─────────────────
 	// Rotate GetMesh() (carries all re-attached limbs) AND KnockdownVisualComp
