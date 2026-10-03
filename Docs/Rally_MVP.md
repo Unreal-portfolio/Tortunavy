@@ -6,7 +6,7 @@ Fuentes: plan maestro §3.3 y §7.2, `Docs/Rally_Sistemas.md`, `Docs/Rally_E01B_
 
 ## Cómo se juega
 
-- `open LVL_Rally` abre E01B (`?Variant=E01B_espana_rally`, por defecto); también `?Variant=I03R_tortuga_magna`, `C01_camino` y las demás variantes con `checkpoints_uu`). Opciones: `?Seats=1` (un buggy por jugador), `?Bots=N` (buggies con piloto IA), `?Laps=N`.
+- `open LVL_Rally` abre E01B (`?Variant=E01B_espana_rally`, por defecto); también `?Variant=I03R_tortuga_magna`, `R01_circuito_dunas` (circuito por vueltas generado, `Docs/Rally_Circuitos_Vueltas.md`), `C01_camino` y las demás variantes con `checkpoints_uu`). Opciones: `?Seats=1` (un buggy por jugador), `?Bots=N` (buggies con piloto IA), `?Laps=N`.
 - Biplaza (por defecto): los jugadores se emparejan por orden de llegada; la 1.ª de cada pareja conduce y la 2.ª es la artillera. Si una tortuga va sola, conduce y dispara ella con apuntado automático.
 - Semáforo de 3 s; salir antes corta el motor 1 s. Cuando llega el primer buggy quedan 20 s; después, resultados y, a los 15 s, carrera nueva en el mismo mapa.
 
