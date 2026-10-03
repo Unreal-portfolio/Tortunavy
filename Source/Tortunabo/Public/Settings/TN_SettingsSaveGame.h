@@ -144,9 +144,14 @@ struct FTNGameSettings
 	UPROPERTY()
 	FString Language;
 
-	/** Ojo de pez leve (proyección Panini muy suave): todo se ve algo más inmenso. Encendido de serie. */
+	/**
+	 * Ojo de pez leve (proyección Panini muy suave): todo se ve algo más inmenso. Apagado de serie (#634: puede marear); se
+	 * enciende en Ajustes > Juego. UE solo escribe en el fichero lo que difiere del valor de serie: un guardado de antes en
+	 * el que el jugador lo había apagado lo trae apagado, y uno en el que nunca lo tocó no lo trae y se queda con el de serie
+	 * (apagado). Sin paso de migración: el campo no cambia de significado. Lo prueba Tortunabo.Settings.Fisheye.
+	 */
 	UPROPERTY()
-	bool bFisheye = true;
+	bool bFisheye = false;
 
 	/** Silenciar el juego cuando la ventana no está activa. */
 	UPROPERTY()

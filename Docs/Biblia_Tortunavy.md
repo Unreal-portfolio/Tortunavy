@@ -1313,13 +1313,13 @@ Abajo, la ayuda de la opción enfocada y los atajos. Una línea dorada de **avis
 |---|---|---|
 | Cámara | Temblor de cámara | Sí / No: apagado, se desactivan los modificadores de temblor (golpes, quads, tormenta…) |
 | | Campo de visión | −15 a +20° sobre el de la tortuga (se enseña en grados); al correr se abre lo mismo que antes; vale también mirando a otra tortuga |
-| | Ojo de pez leve | Sí / No (**Sí de serie**): proyección Panini suave del motor sobre la imagen del mundo; no deforma el HUD ni los menús; se enciende y se apaga en 1,2 s y se afloja con el campo de visión (§14.3) |
+| | Ojo de pez leve | Sí / No (**No de serie**, #634): proyección Panini suave del motor sobre la imagen del mundo; no deforma el HUD ni los menús; se enciende y se apaga en 1,2 s y se afloja con el campo de visión (§14.3) |
 | Interfaz | Tamaño de la interfaz | 75–130 %: agranda o achica el HUD y los menús (el editor no cambia) |
 | Accesibilidad | Filtro para daltónicos | No · Deuteranopía (verde) · Protanopía (rojo) · Tritanopía (azul) |
 | | Intensidad del filtro | 0–100 % |
 | | Quién habla (texto) | Sí / No |
 | | Idioma / Language | Primera fila de la pestaña. Lista de los 13 idiomas con su nombre en su idioma; se aplica en caliente; sin elegir, el del sistema si está en la lista y, si no, el español (§10.1) |
-| Reinicios | Restablecer esta pestaña | Temblor encendido, ojo de pez encendido, campo de visión e interfaz de siempre, sin filtro, sin «Quién habla» y con el idioma «sin elegir» (el del sistema) |
+| Reinicios | Restablecer esta pestaña | Temblor encendido, ojo de pez apagado, campo de visión e interfaz de siempre, sin filtro, sin «Quién habla» y con el idioma «sin elegir» (el del sistema) |
 | | Restablecer todos los ajustes | Con confirmación: sonido, voz, micrófono, controles (teclas incluidas), juego, brillo y FPS; **no** toca calidad gráfica ni pantalla |
 
 Cada pestaña (salvo Gráficos) tiene «Restablecer».
@@ -1373,7 +1373,7 @@ toca gráficos ni pantalla).
 | **Tamaño de la interfaz** 75–130 % | Juego > Interfaz | Multiplica la escala de la interfaz del motor (`UUserInterfaceSettings::ApplicationScale`): cambia el HUD y los menús de UMG al momento, no el editor. El menú de pausa se encoge si no cabe | Baja visión, pantallas de sofá o de portátil, resoluciones extremas (4:3, 16:10, 4K) |
 | **Brillo** 0–100 % (50 % = el de siempre) | Gráficos > Pantalla | Gamma de salida del motor (`GEngine->DisplayGamma`), ±0,7 | Pantallas mal calibradas, salas con reflejos; la playa es muy luminosa |
 | **Campo de visión** −15° a +20° | Juego > Cámara | Suma o resta a los grados de la cámara de la tortuga (reposo y correr); vale también mirando a otra tortuga | Ver más a los lados, o menos ángulo para reducir la distorsión y el mareo |
-| **Ojo de pez leve** Sí / No (Sí de serie) | Juego > Cámara | Curva un poco los bordes de la imagen del mundo (Panini) y se afloja al abrirse el campo de visión; no toca el HUD | Sensación de inmensidad; **puede marear a quien es sensible a la distorsión de lente**: se apaga en la misma pestaña (hueco n.º 14 del §40.1) |
+| **Ojo de pez leve** Sí / No (No de serie, #634) | Juego > Cámara | Curva un poco los bordes de la imagen del mundo (Panini) y se afloja al abrirse el campo de visión; no toca el HUD | Sensación de inmensidad; **puede marear a quien es sensible a la distorsión de lente**: por eso viene apagado y se enciende en la misma pestaña (hueco n.º 14 del §40.1) |
 | **Temblor de cámara** Sí / No | Juego > Cámara | Apagado, se desactivan los modificadores de temblor (golpes, quads de la carrera, tormenta…) | «Apágalo si te marea»: sensibilidad al movimiento, fotosensibilidad parcial |
 | **Contador de FPS** | Gráficos > Pantalla | FPS y peor fotograma | Diagnóstico para quien ajuste la calidad |
 | **Calidad general / partes / escala de resolución / límite de FPS / vsync / modo de ventana / resolución** | Gráficos | Niveles Baja–Épica por sombras, efectos, vegetación, distancia de visión, antialiasing, texturas, postprocesado, iluminación global y reflejos; «Calidad recomendada» mide el equipo | Accesibilidad **de hardware**: equipos modestos (la vegetación llega a ~500 000 instancias). El cambio de modo de ventana o resolución pide confirmar en 12 s y **se deshace solo**, para no dejar al jugador ante una imagen que no ve |
@@ -1869,7 +1869,7 @@ Tercera persona con brazo de resorte (`ATortugaCharacter`, `TickCameraInterp`, s
 | Colisión | sonda de 30 cm por el canal de cámara; no choca con otras tortugas ni con cajas de caparazón | [C] |
 | Suelo | si la cámara queda a menos de 40 cm del suelo, sube (interpolación a 10/s) | [C] `TickCameraInterp` |
 | Turbo del coco | empujón de +16° de campo de visión a velocidad 40 | [C] `TN_RaceItemComponent.cpp` |
-| Ojo de pez leve | Proyección Panini del motor (`r.LensDistortion.Panini.D` = 0,55 con todo encendido; `TN.Fisheye.D`/`.S`). Se enciende y apaga en 1,2 s y se afloja con el campo de visión (al correr, 82°, baja hasta ~0,35) para que el borde se comprima igual que en reposo. No toca el HUD, que se pinta después. Ajuste «Ojo de pez leve» de la pestaña Juego, activado por defecto (`bFisheye`) | [C] `TN_GameSettingsSubsystem.cpp` |
+| Ojo de pez leve | Proyección Panini del motor (`r.LensDistortion.Panini.D` = 0,55 con todo encendido; `TN.Fisheye.D`/`.S`). Se enciende y apaga en 1,2 s y se afloja con el campo de visión (al correr, 82°, baja hasta ~0,35) para que el borde se comprima igual que en reposo. No toca el HUD, que se pinta después. Ajuste «Ojo de pez leve» de la pestaña Juego, desactivado por defecto (`bFisheye`, #634) | [C] `TN_GameSettingsSubsystem.cpp` |
 
 El espectador tiene su propia cámara libre o fija (§22.4).
 
@@ -4884,7 +4884,7 @@ escucha). Los índices de jugador empiezan en 0 (0 = el anfitrión).
 | Gaviotas | Ataque cada 4–7 s a menos del 80 % de la huella; blanco a 5,4 m/s (últimos 0,6 s a 1,2 m/s); coge a 2,2 m × tamaño + 0,25 m; la plancha libra de la cagada si va en el aire o a ≥ 2,5 m/s | `TN_BeachGullTuning.h` |
 | Música de la carrera | Mi bemol mayor, 116 BPM, bucle de 132 s; RMS −29 dBFS; categoría Música | `TN_RaceMusicDSP.h` |
 | Golpes del caparazón | Desde 260 cm/s (máximo a 1800); 8 sonidos por segundo en todo el mundo como mucho | `TN_ShellImpactFXComponent` |
-| Ojo de pez | Panini `r.LensDistortion.Panini.D` = 0,55, encendido de serie | `TN_GameSettingsSubsystem.cpp` |
+| Ojo de pez | Panini `r.LensDistortion.Panini.D` = 0,55, apagado de serie (#634) | `TN_GameSettingsSubsystem.cpp` |
 | Velocidad de la tortuga | **andar 200 y correr 400 cm/s** reales (el Blueprint pisa los 450 y 800 del código; §13); salto 485 cm/s (120 cm de alto, 0,99 s) | `BP_TortugaCharacter`, `TN_StaminaComponent.h` |
 | Energía | 200 máx.; correr gasta 15/s (≈13 s, 53 m con la velocidad real) | `TN_StaminaComponent.h` |
 | Duración de la ronda de playa | ≈ 4 min 46 s con la media real de ~2,8 m/s [calc]; el juego anuncia 3,3 min | `AverageRaceSpeed` |
@@ -4914,7 +4914,7 @@ importante para quien lo necesite. Ninguno se cuenta como existente en el resto 
 | 11 | **Sin chat de texto libre, ni voz a texto, ni texto a voz** | Solo frases prefabricadas (`TN_QuickChatWheelDataAsset`) | Quien no puede hablar ni oír queda limitado a las frases de la rueda | Transcripción opcional de la voz |
 | 12 | **Sin lector de pantalla ni exposición de la interfaz a tecnologías de asistencia** | Los menús son widgets de UMG hechos en código con dibujo propio (`Private/UI/...`); no hay rastro de accesibilidad de UMG | Ceguera | Fuera de alcance realista para un juego de acción visual; se cita por completitud |
 | 13 | **Idiomas: selector hecho, traducciones pendientes**: los 13 idiomas se pueden elegir (ronda 4), pero mientras los `.po` no estén traducidos todo sale en español, y para japonés, coreano y chino faltan fuentes propias (la reserva del motor solo tiene un peso) | §10 | Barrera de acceso | Traducir (§10.5) y dejar las fuentes Noto Sans en `Content/Slate/Fonts` |
-| 14 | **El «Ojo de pez leve» viene activado por defecto** y es una distorsión de lente que puede marear | `bFisheye = true` (`TN_SettingsSaveGame.h`); Panini 0,55 (`TN_GameSettingsSubsystem.cpp`) | Mareo | Se apaga en la misma pestaña; comprobar en juego que no marea con el campo de visión al correr y valorar que respete el ajuste de temblor |
+| 14 | **Resuelto (#634): el «Ojo de pez leve» venía activado por defecto** y es una distorsión de lente que puede marear | `bFisheye = false` desde #634 (`TN_SettingsSaveGame.h`); Panini 0,55 (`TN_GameSettingsSubsystem.cpp`) | Mareo | Se apaga en la misma pestaña; comprobar en juego que no marea con el campo de visión al correr y valorar que respete el ajuste de temblor |
 | 15 | **No hay asistencia de partida por persona** (velocidad, tiempo extra, ayudas) | La dificultad es de la sala | Motricidad | Opcional; hoy la Fácil ayuda a todos por igual |
 
 ### 40.2 Juego
