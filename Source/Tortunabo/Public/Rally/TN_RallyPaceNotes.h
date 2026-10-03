@@ -5,6 +5,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Rally/TN_RallyCircuit.h"
 
 class ATN_RallyTrack;
 
@@ -111,7 +112,16 @@ namespace TNRallyPaceNotes
 	TORTUNABO_API FTrackNotes Build(const TArray<FVector>& Polyline, bool bClosed, bool bHasWater, double WaterZ,
 		const FParams& Params = FParams());
 
-	/** Notas de una pista ya construida (solo su API pública: arco, longitud, circuito y nivel del agua). */
+	/**
+	 * Si Features trae saltos o rasantes (elements de un circuito generado, #622), las notas de salto y cresta salen de ellos y no
+	 * de la forma del eje: «salto» en cada labio y «cresta» en cada cima. Sin ninguno, no toca las notas.
+	 */
+	TORTUNABO_API void ApplyAuthoredVerticalNotes(FTrackNotes& Track, TConstArrayView<TNRallyCircuit::FFeatureArc> Features);
+
+	/**
+	 * Notas de una pista ya construida (solo su API pública: arco, longitud, circuito, nivel del agua y, si el manifest los trae,
+	 * sus saltos y rasantes con ApplyAuthoredVerticalNotes).
+	 */
 	TORTUNABO_API FTrackNotes BuildForTrack(const ATN_RallyTrack& Track, const FParams& Params = FParams());
 
 	/** Punto del eje remuestreado en el arco dado (envuelto en circuito, recortado en punto a punto). */
