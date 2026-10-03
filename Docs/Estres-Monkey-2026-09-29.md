@@ -7,7 +7,7 @@ Rama `macro-update`, build DebugGame, `-game -nullrhi` sobre `LVL_BeachRace`. Te
 | Qué | Cómo | Salida |
 | --- | --- | --- |
 | Monkey | consola `TN.Monkey <s> [semilla] [jugadores]` o `-TNMonkey=<s>:<semilla> [-TNMonkeyPlayers=N] [-TNMonkeyWarmup=s] [-TNMonkeyOut=ruta] [-TNQuitWhenDone]` | `Saved/Monkey/<fecha>.json` |
-| Estrés | consola `TN.Stress <light\|heavy\|race8\|control> [s]` o `-TNStress=<escenario> [-TNStressSeconds=60] [-TNStressWarmup=10] [-TNStressNoMonkey]` | `Saved/Stress/<escenario>_<fecha>.json` |
+| Estrés | consola `TN.Stress <light\|heavy\|race8\|control> [s]` o `-TNStress=<escenario> [-TNStressSeconds=60] [-TNStressWarmup=10] [-TNStressNoMonkey] [-TNStressDefaultQoS]` (por defecto pide QoS alta y solo núcleos P; el informe dice qué porcentaje de fotogramas cayó en núcleos E) | `Saved/Stress/<escenario>_<fecha>.json` |
 | Test | `Tortunabo.Monkey.Headless30s` lanza un proceso hijo (monkey 30 s, semilla 11) y falla con asserts/ensures, caídas sin rescatar, proceso caído o sin informe | `Saved/Monkey/automation-headless30s.json` |
 
 Notas de uso:
@@ -51,7 +51,7 @@ Fotograma en ms, DebugGame headless, monkey moviendo las tortugas. El control (s
 | 3 | 8 tortugas vs 4 (race8/semilla 303 vs 202) | 17,5 ms frente a 7,0 ms: ~2,5 ms por tortuga a partir de la 5.ª, no lineal |
 | 4 | 50 tanques de juguete, heavy | +7,7 ms netos (0,15 ms cada uno) |
 | 5 | 50 zonas de gaviotas, heavy | +3,5 ms netos (0,07 ms cada una); +20 MB |
-| 6 | Picos periódicos en el control | p50 5,5-8,7 ms pero p95 17-21 ms: ~65 picos por 10 s, uno cada ~40 ms (25 Hz). Sin identificar; hay que perfilar |
+| 6 | Picos periódicos en el control | p50 5,5-8,7 ms pero p95 17-21 ms: ~65 picos por 10 s, uno cada ~40 ms (25 Hz). **No es del juego** (2026-10-03, #57): el planificador de Windows mueve el hilo de juego a núcleos E de la CPU híbrida cuando hay otros procesos cargando la máquina. Ver `Docs/Analisis/2026-10-03-Pico-25Hz-control.md` |
 | 7 | Actores con Tick en reposo | 549-584 de ~700 actores; 253 `BP_ScorePickup_C`, cada uno con `WidgetComponent` y `TN_PickupGlowComponent` con Tick |
 | 8 | 100 cajas de objetos | ~0 ms, pero +194 componentes con Tick (2 por caja) |
 | 9 | Hitch al crear grupos | 21-96 ms en el fotograma de creación (lanzables 96, cangrejos 47, tanques 41) |

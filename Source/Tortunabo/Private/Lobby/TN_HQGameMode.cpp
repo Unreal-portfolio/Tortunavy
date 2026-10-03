@@ -1,4 +1,5 @@
 #include "Lobby/TN_HQGameMode.h"
+#include "Art/TN_TurtleArt.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -28,7 +29,6 @@
 #include "Lobby/TN_TutorialCourse.h"
 #include "Lobby/TN_TutorialPlayerComponent.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkinnedAsset.h"
 
 ATN_HQGameMode::ATN_HQGameMode()
@@ -649,9 +649,11 @@ void ATN_HQGameMode::SpawnLobbyShops()
 		if (const ASkeletalMeshActor* SkelActor = Cast<ASkeletalMeshActor>(Actor))
 		{
 			const USkinnedAsset* Asset = SkelActor->GetSkeletalMeshComponent() ? SkelActor->GetSkeletalMeshComponent()->GetSkinnedAsset() : nullptr;
-			if (Asset && Asset->GetName().Contains(TEXT("TotugaDemo")) && Actor->GetActorScale3D().Z >= 3.2f) { BlockoutKeepers.Add(Actor); }
+			// Tortugas de la maqueta (la malla del personaje, otra con su esqueleto o la de demo; TNTurtleArt::IsTurtleMesh).
+			const bool bTurtle = TNTurtleArt::IsTurtleMesh(Asset);
+			if (bTurtle && Actor->GetActorScale3D().Z >= 3.2f) { BlockoutKeepers.Add(Actor); }
 			// El general de la maqueta: la tortuga suelta más cerca de su sitio (sea cual sea su escala).
-			if (Asset && Asset->GetName().Contains(TEXT("TotugaDemo")) && FVector::Dist2D(Actor->GetActorLocation(), BlockoutGeneralSpot) < 500.0
+			if (bTurtle && FVector::Dist2D(Actor->GetActorLocation(), BlockoutGeneralSpot) < 500.0
 				&& (!BlockoutGeneral || FVector::Dist2D(Actor->GetActorLocation(), BlockoutGeneralSpot) < FVector::Dist2D(BlockoutGeneral->GetActorLocation(), BlockoutGeneralSpot)))
 			{
 				BlockoutGeneral = Actor;

@@ -31,6 +31,19 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	/**
+	 * Solo servidor: alguien lo lleva en la mano (VR, UTN_VRGrabComponent; Docs/Modo_VR.md). Mientras alguien lo lleve está
+	 * despierto en red (DORM_Awake) y no se vuelve a dormir; al soltarlo del todo, se duerme solo cuando se pare, como tras
+	 * un golpe (TryEnterDormancy). Cada true va con su false.
+	 */
+	void SetExternallyHeld(bool bHeld);
+
+	/** Cubo de empujar sin física (bUseKinematicPush): no se coge con la mano. */
+	bool UsesKinematicPush() const { return bUseKinematicPush; }
+
+	/** La malla con la física (la raíz): lo que se coge. */
+	UStaticMeshComponent* GetPhysicsMesh() const { return Mesh; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -203,6 +216,9 @@ private:
 
 	FTimerHandle DormancyCheckTimer;
 	FTimerHandle CrushCheckTimer;
+
+	/** Manos (VR) que lo llevan ahora (SetExternallyHeld): con alguna, no se duerme en red. */
+	int32 ExternalHolds = 0;
 
 	/** Velocidad vertical acumulada en modo kinematic-push. Reset al tocar suelo. */
 	float KinematicFallSpeed = 0.f;

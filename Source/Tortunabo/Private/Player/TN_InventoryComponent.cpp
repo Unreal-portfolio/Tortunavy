@@ -19,7 +19,6 @@ namespace TNInventoryHold
 	const FName RightHandBone(TEXT("RightHand"));
 	const FName RightForeArmBone(TEXT("RightForeArm"));
 	const FName LeftHandBone(TEXT("LeftHand"));
-	const FName LeftForeArmBone(TEXT("LeftForeArm"));
 	const FName ChestBone(TEXT("Spine2"));
 
 	// Medidas en unidades de la malla (sin la escala del personaje, 2,5): mira a +Y, arriba +Z, su izquierda +X.

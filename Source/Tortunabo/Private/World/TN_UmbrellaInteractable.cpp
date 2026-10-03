@@ -4,7 +4,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
-#include "Particles/ParticleSystem.h"
 #include "UObject/ConstructorHelpers.h"
 
 ATN_UmbrellaInteractable::ATN_UmbrellaInteractable()

@@ -144,6 +144,7 @@ public:
 
 	/** Pestaña activa (píldora dorada). */
 	void SetActive(bool bInActive);
+	bool IsActive() const { return bActive; }
 
 	void SetLabel(const FText& InLabel);
 
@@ -163,6 +164,8 @@ public:
 	/** El menú: aviso al recibir el foco (ayuda, desplazamiento) y sonidos. */
 	TFunction<void(UTN_PauseRow*)> OnFocused;
 	TFunction<void(ETNPauseSound, float)> OnSound;
+	/** Pestañas: izquierda (-1) y derecha (1) de la cruceta, el stick, las flechas o A y D, en vez de mover el foco. */
+	TFunction<void(int32 /*Direction*/)> OnSideStep;
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -330,6 +333,11 @@ private:
  *
  * Lo abre y lo cierra UTN_GameSettingsSubsystem (Escape; la tecla y el botón elegidos, Start de serie; Tabulador en el
  * editor).
+ *
+ * Partida local (#311): lo abre cualquiera, a toda la pantalla, y la partida se para para todos. Solo lo maneja quien lo
+ * abrió (su foco; el ratón, que es del jugador 1, no toca el de un invitado) y lo que cambia es suyo: un invitado ve
+ * Controles y Juego con sus ajustes de jugador (cámara, teclas y botones), que no se guardan, y puede dejar de jugar en el
+ * lobby; el jugador 1 ve todo y cierra la partida. Sin página «Sala» ni pestaña de voz; en el lobby, «Hacer el tutorial».
  */
 UCLASS()
 class TORTUNABO_API UTN_PauseMenuWidget : public UUserWidget
@@ -350,6 +358,8 @@ protected:
 	virtual FReply NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnAnalogValueChanged(const FGeometry& InGeometry, const FAnalogInputEvent& InAnalogEvent) override;
+	virtual FNavigationReply NativeOnNavigation(const FGeometry& MyGeometry, const FNavigationEvent& InNavigationEvent,
+		const FNavigationReply& InDefaultReply) override;
 
 private:
 	// ── Árbol ────────────────────────────────────────────────────────────────
@@ -490,7 +500,8 @@ private:
 	void UpdateVoiceIcons();
 
 	void ShowPage(ETNPausePage NewPage);
-	void ShowTab(ETNPauseTab NewTab);
+	/** Abre la pestaña NewTab; el foco, a su lista o (bFocusList = false, al cambiarla desde la barra) a su pestaña. */
+	void ShowTab(ETNPauseTab NewTab, bool bFocusList = true);
 	void FillTab();
 	void FillGraphicsTab();
 	void FillSoundTab();
@@ -560,4 +571,18 @@ private:
 	bool CanReturnToLobby() const;
 	/** Partida en red (anfitrión o invitado): hay página «Sala». */
 	bool HasRoomPage() const;
+
+	// ── Partida local (#311) ─────────────────────────────────────────────────
+
+	/** true si lo ha abierto un invitado de la partida local (solo sus ajustes de jugador; el ratón no lo toca). */
+	bool IsGuestMenu() const;
+	/** true en una partida local. */
+	bool IsLocalGame() const;
+	/** ¿Se ve esta pestaña? (Un invitado, solo Controles y Juego; en la partida local, sin Voz.) */
+	bool IsTabAvailable(ETNPauseTab InTab) const;
+	/** La siguiente pestaña que se ve en esa dirección (Q y E, LB y RB), desde la abierta o desde From. */
+	ETNPauseTab StepTab(int32 Direction) const { return StepTab(Tab, Direction); }
+	ETNPauseTab StepTab(ETNPauseTab From, int32 Direction) const;
+	/** Enfoca para el jugador que maneja el menú (con la pantalla partida, su foco; si no, el del teclado). */
+	void FocusForOwner(UWidget* Widget);
 };

@@ -78,12 +78,6 @@ namespace TNBeachProp
 		return FLinearColor(From.R + (To.R - From.R) * U, From.G + (To.G - From.G) * U, From.B + (To.B - From.B) * U, From.A + (To.A - From.A) * U);
 	}
 
-	/** Color descolorido por el sol y el salitre (Wear 0-1: hacia un gris arena claro). */
-	inline FLinearColor Faded(const FLinearColor& Color, float Wear)
-	{
-		return Blend(Color, FLinearColor(0.62f, 0.58f, 0.5f, Color.A), Wear * 0.6f);
-	}
-
 	// ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 	// Piezas: malla fija, parte animada, colisión simple y colocación de cada ejemplar
 	// ─────────────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 #include "Player/TN_ShellBody.h"
 #include "Core/TN_Log.h"
 #include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/CollisionProfile.h"
@@ -587,8 +588,8 @@ void ATN_BeachTrampoline::PlaceSign(double Fit, uint32 Seed)
 void ATN_BeachTrampoline::BeginPlay()
 {
 	Super::BeginPlay();
-	BodyCollision->OnComponentHit.AddUniqueDynamic(this, &ATN_BeachTrampoline::OnBodyHit);
-	BounceSensor->OnComponentBeginOverlap.AddUniqueDynamic(this, &ATN_BeachTrampoline::OnSensorOverlap);
+	// Las tortugas rebotan desde su movimiento (UTN_TurtleMovementComponent, al empezar cada paso en que tocan el sensor),
+	// no desde el golpe ni el solape: así cae en el mismo paso en el servidor y en el cliente dueño (#21).
 	if (GetNetMode() != NM_DedicatedServer)
 	{
 		Toy = UTN_PlaygroundSynthComponent::AttachTo(this, Frame->GetComponentLocation() + FVector(0.0, 0.0, 0.6 * TopZ), 600.f, bBoosted ? 4500.f : 3000.f);
@@ -630,61 +631,83 @@ bool ATN_BeachTrampoline::IsNearBody(const FVector& Local, double Margin) const
 	}
 }
 
-bool ATN_BeachTrampoline::TryBounce(ACharacter* Character)
+bool ATN_BeachTrampoline::IsBounceSensor(const UPrimitiveComponent* Component) const
 {
-	UWorld* World = GetWorld();
-	if (!Character || !World || !TNBeachTrapKit::SimulatesMovement(Character))
-	{
-		return false;
-	}
-	ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(Character);
-	// La tortuga metida en el caparazón es una caja con física: la lanza BounceShells.
-	if (!Turtle || Turtle->IsDead() || Turtle->IsInShell())
-	{
-		return false;
-	}
-	UCharacterMovementComponent* Move = Character->GetCharacterMovement();
-	if (!Move || Move->MovementMode == MOVE_None || Move->Velocity.Z > 150.0)
-	{
-		return false;
-	}
-	const double Now = World->GetTimeSeconds();
-	const TWeakObjectPtr<ACharacter> Key(Character);
-	if (const double* Last = LastBounceTime.Find(Key))
-	{
-		if (Now - *Last < BounceCooldown)
-		{
-			return false;
-		}
-	}
-	LastBounceTime.Add(Key, Now);
+	return Component && Component == BounceSensor.Get();
+}
 
-	// Mismo impulso en el servidor y en el cliente dueño, en el mismo movimiento: la predicción cuadra. Caer de más alto
-	// rebota más (con tope); la horizontal se conserva en parte y se empuja hacia el mar (el potenciado, mucho más).
-	const double Fall = FMath::Max(0.0, -static_cast<double>(Move->Velocity.Z));
-	const double Base = static_cast<double>(BaseUp) * UpScale;
-	const double TopUp = static_cast<double>(EffectiveMaxUp());
-	const double Up = FMath::Clamp(Base + FallGain * FMath::Max(0.0, Fall - 300.0), FMath::Min(Base, TopUp), TopUp);
-	const FVector Sea = Frame->GetForwardVector().GetSafeNormal2D();
-	FVector Horizontal = FVector(Move->Velocity.X, Move->Velocity.Y, 0.0) * KeepHorizontal + Sea * EffectivePush();
-	Horizontal = Horizontal.GetClampedToMaxSize(EffectiveMaxHorizontal());
-	Character->LaunchCharacter(FVector(Horizontal.X, Horizontal.Y, Up), true, true);
-	// El vuelo pasa de 5 m: que no se meta sola en el caparazón al caer.
-	Turtle->SetFallImmuneUntilLanded();
-	SpreadBounceFX(Character, static_cast<float>(FMath::Clamp(Up / FMath::Max(1.0, TopUp), 0.35, 1.0)));
+TNTrampolineRules::FBounceTuning ATN_BeachTrampoline::TurtleTuning() const
+{
+	TNTrampolineRules::FBounceTuning Tuning;
+	Tuning.BaseUp = static_cast<double>(BaseUp) * UpScale;
+	Tuning.FallGain = FallGain;
+	Tuning.MaxUp = EffectiveMaxUp();
+	Tuning.KeepHorizontal = KeepHorizontal;
+	Tuning.Push = EffectivePush();
+	Tuning.MaxHorizontal = EffectiveMaxHorizontal();
+	return Tuning;
+}
+
+bool ATN_BeachTrampoline::ComputeTurtleBounce(const FVector& Velocity, FVector& OutLaunch, float& OutStrength) const
+{
+	if (!TNTrampolineRules::CanBounce(Velocity))
+	{
+		return false;
+	}
+	// Caer de más alto rebota más (con tope); la horizontal se conserva en parte y se empuja hacia el mar (el potenciado,
+	// mucho más). Solo con la velocidad del paso: lo mismo en el servidor, en el cliente dueño y al repetir el paso.
+	const TNTrampolineRules::FBounceTuning Tuning = TurtleTuning();
+	OutLaunch = TNTrampolineRules::BounceVelocity(Velocity, Frame->GetForwardVector().GetSafeNormal2D(), Tuning);
+	OutStrength = TNTrampolineRules::BounceStrength(OutLaunch.Z, Tuning);
 	return true;
 }
 
-void ATN_BeachTrampoline::OnBodyHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void ATN_BeachTrampoline::NotifyTurtleBounced(ACharacter* Turtle, float Strength)
 {
-	// Llega dentro del movimiento del personaje (servidor y cliente dueño): el lanzamiento se aplica en el siguiente.
-	TryBounce(Cast<ACharacter>(OtherActor));
+	UWorld* World = GetWorld();
+	if (!Turtle || !World)
+	{
+		return;
+	}
+	// El efecto, como mucho uno por BounceCooldown (un techo justo encima puede devolverla al trampolín en el paso siguiente).
+	const double Now = World->GetTimeSeconds();
+	const TWeakObjectPtr<ACharacter> Key(Turtle);
+	const double* Last = LastBounceTime.Find(Key);
+	const bool bShowFX = !Last || Now - *Last >= static_cast<double>(BounceCooldown);
+	LastBounceTime.Add(Key, Now);
+	if (bShowFX)
+	{
+		SpreadBounceFX(Turtle, Strength);
+	}
 }
 
-void ATN_BeachTrampoline::OnSensorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-	bool bFromSweep, const FHitResult& SweepResult)
+double ATN_BeachTrampoline::DropOntoTrampoline(const ACharacter& Character, double MaxDrop)
 {
-	TryBounce(Cast<ACharacter>(OtherActor));
+	const UWorld* World = Character.GetWorld();
+	const UCapsuleComponent* Capsule = Character.GetCapsuleComponent();
+	if (!World || !Capsule || MaxDrop <= 0.0)
+	{
+		return TNTrampolineRules::NoTrampolineBelow;
+	}
+	// La cápsula en vertical con el canal de los personajes, sin chocar con otras tortugas: los toques llegan antes que el
+	// primer bloqueo, así que el sensor (solapa) cuenta aunque el cuerpo (bloquea) esté debajo.
+	const FVector From = Capsule->GetComponentLocation();
+	const FVector To = From - FVector(0.0, 0.0, MaxDrop);
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNTrampolineBelow), false, &Character);
+	FCollisionResponseParams Response;
+	Capsule->InitSweepCollisionParams(Params, Response);
+	Response.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
+	TArray<FHitResult> Hits;
+	World->SweepMultiByChannel(Hits, From, To, Capsule->GetComponentQuat(), Capsule->GetCollisionObjectType(), Capsule->GetCollisionShape(), Params,
+		Response);
+	for (const FHitResult& Hit : Hits)
+	{
+		if (Cast<ATN_BeachTrampoline>(Hit.GetActor()))
+		{
+			return FMath::Max(0.0, static_cast<double>(Hit.Distance));
+		}
+	}
+	return TNTrampolineRules::NoTrampolineBelow;
 }
 
 void ATN_BeachTrampoline::BounceShells(double Now)
@@ -810,19 +833,8 @@ void ATN_BeachTrampoline::Tick(float DeltaSeconds)
 	}
 	const double Now = World->GetTimeSeconds();
 
-	// Rescate: quien sigue de pie sobre el cuerpo sin haber rebotado (el golpe y el solape ya lo cubren casi siempre).
-	TArray<AActor*> Touching;
-	BounceSensor->GetOverlappingActors(Touching, ACharacter::StaticClass());
-	for (AActor* Other : Touching)
-	{
-		ACharacter* Standing = Cast<ACharacter>(Other);
-		if (Standing && Standing->GetMovementBase() == BodyCollision.Get())
-		{
-			TryBounce(Standing);
-		}
-	}
-
-	// Los recién lanzados siguen sin auto-caparazón durante el vuelo.
+	// Los recién lanzados siguen sin auto-caparazón durante el vuelo. (Quien sigue de pie sobre el cuerpo ya no necesita
+	// rescate: su movimiento lo rebota en cuanto toca el sensor sin subir.)
 	for (auto It = LastBounceTime.CreateIterator(); It; ++It)
 	{
 		ACharacter* Flyer = It.Key().Get();

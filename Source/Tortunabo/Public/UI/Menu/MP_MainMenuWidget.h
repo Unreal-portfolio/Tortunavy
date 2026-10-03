@@ -12,6 +12,11 @@ class UTextBlock;
 /**
  * @brief Widget del menú principal (WBP_MainMenuWidget: botones Host / Find / Quit y log de status).
  *
+ * Primero se elige cómo jugar (#311), con los mismos botones del Blueprint: «Local» (hasta cuatro en este PC a pantalla
+ * partida, sin conexión: UMP_GameInstance::StartLocalGame, el jugador 1 va derecho al lobby y los mandos se unen allí con
+ * Start) u «Online» (lo de siempre: salas, Steam, hasta ocho), «Ajustes» y «Salir». «Online» cambia los rótulos a los de
+ * abajo y «Salir» pasa a ser «Volver» (también Escape o B).
+ *
  * Los tres botones del Blueprint (mismo estilo visual; aquí solo cambian sus textos): «Crear partida», «Unirse» y «Salir».
  * Crear y Unirse abren las pantallas de salas (UTN_RoomMenuWidget, montadas en código encima de este widget, que se
  * esconde mientras tanto; Docs/Salas.md):
@@ -35,6 +40,7 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> HostButton;
@@ -88,6 +94,12 @@ private:
 
 	/** Estado del GameInstance (o el saludo si aún no hay nada). */
 	FString BuildIdleStatus() const;
+
+	/** Primera página: «Local» u «Online» (bOnline = false), o la de siempre de las partidas en red (true). */
+	void ShowModePage(bool bOnline);
+
+	/** true en la página de las partidas en red (Crear partida, Unirse, Ajustes, Volver). */
+	bool bOnlinePage = false;
 
 	/** Pantallas de salas (widget propio en la pantalla, encima de este). */
 	UPROPERTY(Transient)

@@ -2111,7 +2111,8 @@ la cima de la fortaleza más cercana, detrás del lanzador. Semillas seguidas pa
 - **Rebote**: hacia arriba **1250 cm/s** (x1 medusa, x0,92 colchoneta, x1,08 donut, x0,96 sombrero; ~8 m de altura) más
   **0,55** por cada cm/s de caída por encima de 300, con tope de **2000** (~20 m): de trampolín en trampolín se sube cada
   vez más. Hacia delante se conserva el **75 %** de la velocidad horizontal y se suman **320 cm/s** hacia el mar (tope
-  1100): 16 m andando, ~23 m esprintando. Sin meterse en el caparazón al caer. 0,3 s entre dos rebotes de la misma.
+  1100): 16 m andando, ~23 m esprintando. Sin meterse en el caparazón al caer. No rebota mientras sube a más de 150 cm/s
+  (el rebote anterior o un salto); el boing y la deformación, como mucho uno cada 0,3 s por tortuga.
 - **Deformación** (cada máquina con pantalla): se aplasta entera y rebota estirándose (10-26 %) y se hunde donde cae
   la tortuga (22-64 cm, en un radio de ~2,7 m) con una abolladura que vibra y se recupera en ~1 s (la malla procedural
   se actualiza solo mientras dura y si se ve). La medusa además respira.
@@ -2123,8 +2124,11 @@ la cima de la fortaleza más cercana, detrás del lanzador. Semillas seguidas pa
   boing más grave, un barrido de aire, destellos dorados y la fanfarria (como mucho una cada 3 s en cada máquina).
 - **Cartel**: por el lado -X, 24° a un lado del eje (no delante del salto), a 80 cm por fuera de lo que rebota (en el
   potenciado, también por fuera de sus palos), con la tabla de cara hacia fuera.
-- **Red**: como la medusa del lobby: el rebote lo aplican el servidor y el cliente dueño dentro del mismo movimiento
-  (golpe con la colisión o solape con el sensor, 15 cm más grande); el resto lo ve por un multicast no fiable. Las bolas
+- **Red** (#21): el rebote lo decide el movimiento de la tortuga (`UTN_TurtleMovementComponent::TickTrampolineBounce`) al
+  empezar cada paso en que su cápsula toca el sensor (15 cm más grande), con las reglas puras de
+  `TN_BeachTrampolineRules.h` y sin relojes: el servidor y el cliente dueño rebotan en el mismo paso, también al repetir
+  pasos tras una corrección, y no hay corrección (antes llegaba por el golpe o el solape, un paso después o fuera del paso,
+  con una espera según la hora del mundo de cada máquina). El resto lo ve por un multicast no fiable. Las bolas
   de caparazón rebotan también (las lanza el servidor, al 90 %). Lo potenciado sale de `Spec` (replicado): el servidor y
   el cliente dueño aplican el mismo impulso.
 - **Probar**: `TN.Beach.Place Trampoline [Tamaño] 0 [Semilla]` (semillas seguidas para ver las cuatro) y

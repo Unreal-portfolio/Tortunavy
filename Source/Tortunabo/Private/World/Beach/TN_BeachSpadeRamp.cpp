@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachSpadeRamp.h"
+#include "World/Beach/TN_BeachNearby.h"
 #include "World/Beach/TN_BeachTrapSynthComponent.h"
 #include "Core/TN_Log.h"
 #include "Components/BoxComponent.h"
@@ -366,9 +367,20 @@ void ATN_BeachSpadeRamp::TrackRiders(double ServerTime)
 	const double Reach = SpadeLength * 0.5 + 500.0;
 	const bool bIdle = IsSeesawIdle(ServerTime);
 	bool bFlipRequested = false;
-	for (TActorIterator<ACharacter> It(World); It; ++It)
+	// Solo quien está al alcance en planta; a los demás que se seguían se les suelta como a cualquiera que se aleja.
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(World, ActorXf.GetLocation(), Reach * ActorXf.GetMaximumAxisScale(), Near);
+	for (auto It = Tracks.CreateIterator(); It; ++It)
 	{
-		ACharacter* Walker = *It;
+		ACharacter* Tracked = It.Key().Get();
+		if (Tracked && !Near.Contains(Tracked))
+		{
+			Unbind(Tracked, It.Value());
+			It.RemoveCurrent();
+		}
+	}
+	for (ACharacter* Walker : Near)
+	{
 		if (!IsValid(Walker))
 		{
 			continue;

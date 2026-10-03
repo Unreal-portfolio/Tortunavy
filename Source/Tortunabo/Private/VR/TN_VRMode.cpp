@@ -1,6 +1,7 @@
 #include "VR/TN_VRMode.h"
 #include "VR/TN_VRRig.h"
 #include "VR/TN_VRSubsystem.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/GameViewportClient.h"
 #include "Widgets/SWidget.h"
@@ -98,7 +99,34 @@ void TNVR::AddToScreen(UUserWidget* Widget, int32 ZOrder)
 			}
 		}
 	}
+	// Partida local (#311): el widget de un jugador, a su trozo de la pantalla partida (con uno solo, la pantalla entera).
+	if (Widget->GetOwningLocalPlayer() && UTN_LocalPlaySubsystem::IsLocalGame(Widget))
+	{
+		if (Widget->AddToPlayerScreen(ZOrder))
+		{
+			return;
+		}
+	}
 	// Sin VR, lo de siempre (y si con VR no hay mundo de juego todavía, al viewport: el rig lo recoge al aparecer).
+	Widget->AddToViewport(ZOrder);
+}
+
+void TNVR::AddToFullScreen(UUserWidget* Widget, int32 ZOrder)
+{
+	if (!Widget)
+	{
+		return;
+	}
+	if (IsEnabled())
+	{
+		if (UTN_VRSubsystem* VR = UTN_VRSubsystem::Get(Widget))
+		{
+			if (VR->HostWidget(Widget, ZOrder))
+			{
+				return;
+			}
+		}
+	}
 	Widget->AddToViewport(ZOrder);
 }
 

@@ -6,11 +6,8 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "NiagaraFunctionLibrary.h"
-#include "NiagaraSystem.h"
-#include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
-#include "TimerManager.h"
 
 ATN_GoalZone::ATN_GoalZone()
 {

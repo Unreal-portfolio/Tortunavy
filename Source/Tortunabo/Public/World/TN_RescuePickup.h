@@ -17,6 +17,7 @@ class TORTUNABO_API ATN_RescuePickup : public ATN_InteractableBase
 public:
 	ATN_RescuePickup();
 
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual bool CanInteract(APawn* Interactor) const override;
@@ -42,7 +43,41 @@ protected:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Rescue")
 	int32 DeadPlayerId = -1;
 
+	/**
+	 * Huevo de la reaparición (el del fantasma: TNCastleKit) que flota sobre el cuerpo mientras Mesh no lleve una malla
+	 * del proyecto. Escala respecto al huevo de 2,4 m de la salida.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Rescue|Art", meta = (ClampMin = "0.05", ClampMax = "1.0"))
+	float CodeArtEggScale = 0.28f;
+
+	/** Altura (cm) de la base del huevo sobre el punto que sigue al cuerpo. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Rescue|Art", meta = (ClampMin = "0.0"))
+	float CodeArtLift = 45.f;
+
+	/** Vaivén vertical del huevo: amplitud (cm) y frecuencia (Hz). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Rescue|Art", meta = (ClampMin = "0.0"))
+	float CodeArtBobAmplitude = 8.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Rescue|Art", meta = (ClampMin = "0.0"))
+	float CodeArtBobHz = 0.7f;
+
+	/** Giro del huevo sobre sí mismo (grados por segundo). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Rescue|Art")
+	float CodeArtSpinDegreesPerSecond = 40.f;
+
 private:
+	/** Huevo de código (null si el Blueprint trae su propia malla o en el servidor dedicado). */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> CodeArtEgg;
+
+	/** Reloj del vaivén y del giro (local en cada máquina). */
+	float CodeArtClock = 0.f;
+
+	/** Monta el huevo y oculta el marcador del motor, que conserva su colisión: es lo que encuentra el escaneo (#49). */
+	void BuildCodeArt();
+
+	void AnimateCodeArt(float DeltaSeconds);
+
 	UPROPERTY()
 	TWeakObjectPtr<APawn> FollowedDeadPawn;
 

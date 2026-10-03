@@ -256,6 +256,8 @@ void UTN_MonkeySubsystem::StopSession(const TCHAR* Reason)
 TSharedRef<FJsonObject> UTN_MonkeySubsystem::BuildReport(const TCHAR* Reason, bool bCrashed) const
 {
 	using TNMonkey::EAction;
+	/** Centímetros por metro: el informe da las distancias en m. */
+	constexpr double CmPerMeter = 100.0;
 	TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
 	const UWorld* World = GetWorld();
 	Root->SetStringField(TEXT("tool"), TEXT("TN.Monkey"));
@@ -294,8 +296,8 @@ TSharedRef<FJsonObject> UTN_MonkeySubsystem::BuildReport(const TCHAR* Reason, bo
 		}
 		Player->SetObjectField(TEXT("actions"), Actions);
 		Player->SetNumberField(TEXT("pause_skipped_no_ui"), Stats.PauseSkipped);
-		Player->SetNumberField(TEXT("distance_m"), Stats.DistanceCm / 100.0);
-		Player->SetNumberField(TEXT("min_feet_z_m"), Stats.MinZ == TNumericLimits<double>::Max() ? 0.0 : Stats.MinZ / 100.0);
+		Player->SetNumberField(TEXT("distance_m"), Stats.DistanceCm / CmPerMeter);
+		Player->SetNumberField(TEXT("min_feet_z_m"), Stats.MinZ == TNumericLimits<double>::Max() ? 0.0 : Stats.MinZ / CmPerMeter);
 		Player->SetNumberField(TEXT("max_depth_under_ground_cm"), Stats.MaxDepthUnderGround < -1e9 ? 0.0 : Stats.MaxDepthUnderGround);
 		Player->SetNumberField(TEXT("pawn_changes"), Stats.PawnChanges);
 		TArray<TSharedPtr<FJsonValue>> EventsJson;
@@ -304,7 +306,7 @@ TSharedRef<FJsonObject> UTN_MonkeySubsystem::BuildReport(const TCHAR* Reason, bo
 			TSharedRef<FJsonObject> Item = MakeShared<FJsonObject>();
 			Item->SetStringField(TEXT("kind"), Event.Kind);
 			Item->SetNumberField(TEXT("t"), Event.Time);
-			Item->SetStringField(TEXT("location_m"), FString::Printf(TEXT("%.1f, %.1f, %.1f"), Event.Location.X / 100.0, Event.Location.Y / 100.0, Event.Location.Z / 100.0));
+			Item->SetStringField(TEXT("location_m"), FString::Printf(TEXT("%.1f, %.1f, %.1f"), Event.Location.X / CmPerMeter, Event.Location.Y / CmPerMeter, Event.Location.Z / CmPerMeter));
 			Item->SetStringField(TEXT("detail"), Event.Detail);
 			EventsJson.Add(MakeShared<FJsonValueObject>(Item));
 			Stuck += Event.Kind == TEXT("stuck") ? 1 : 0;

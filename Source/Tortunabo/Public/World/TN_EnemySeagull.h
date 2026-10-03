@@ -146,6 +146,24 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemySeagull|Visual", meta = (ClampMin = "50.0"))
 	float DecalDepth = 800.f;
 
+	/**
+	 * Escala de la gaviota de la fauna (TNFaunaBuildSpecies, 80 cm de envergadura a escala 1) que se monta en la posición
+	 * real del actor si SeagullMesh no lleva una malla del proyecto. Con una malla propia no se monta nada.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemySeagull|Visual", meta = (ClampMin = "0.5", ClampMax = "30.0"))
+	float CodeArtScale = 6.f;
+
+	/** Aleteo de la gaviota de código: amplitud (grados) y frecuencia (Hz). En el picado lleva las alas recogidas. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemySeagull|Visual", meta = (ClampMin = "0.0", ClampMax = "80.0"))
+	float CodeArtFlapDegrees = 35.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemySeagull|Visual", meta = (ClampMin = "0.1"))
+	float CodeArtFlapHz = 2.4f;
+
+	/** Velocidad de bajada (cm/s) a partir de la cual la gaviota de código pliega las alas: está picando. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemySeagull|Visual", meta = (ClampMin = "50.0"))
+	float CodeArtDiveSpeed = 600.f;
+
 	// ── Audio / VFX ────────────────────────────────────────────────────────────
 
 	/** Sonido al hacer el picotazo. Reproducido en el punto del objetivo en todas las máquinas. */
@@ -232,6 +250,32 @@ private:
 	bool IsTargetUnderUmbrella() const;
 
 	void UpdateDecalSize();
+
+	// ── Arte de código (#50; local en cada máquina) ───────────────────────────
+
+	/** Raíz de la gaviota de código (en el origen del actor; gira hacia donde vuela). */
+	UPROPERTY(Transient)
+	TObjectPtr<USceneComponent> CodeArtRoot;
+
+	/** Piezas de la gaviota (cuerpo primero) y su pivote de reposo. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> CodeArtParts;
+
+	TArray<FVector> CodeArtPivots;
+	int32 CodeArtWingLeft = INDEX_NONE;
+	int32 CodeArtWingRight = INDEX_NONE;
+	int32 CodeArtLegLeft = INDEX_NONE;
+	int32 CodeArtLegRight = INDEX_NONE;
+	float CodeArtClock = 0.f;
+	FVector CodeArtLastLocation = FVector::ZeroVector;
+
+	/** Monta la gaviota de la fauna y oculta el marcador del motor. */
+	void BuildCodeArt();
+
+	/** Aleteo, patas recogidas y rumbo; alas plegadas al picar. */
+	void AnimateCodeArt(float DeltaTime);
+
+	void PoseCodeArtPart(int32 Index, const FRotator& Rotation);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayStrikeEffects(FVector TargetLocation);

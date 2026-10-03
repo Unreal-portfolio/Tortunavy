@@ -11,6 +11,7 @@ class IInputProcessor;
 class SWidget;
 class UGameViewportClient;
 class UTexture;
+class UTexture2D;
 class UUserWidget;
 
 /**
@@ -70,7 +71,10 @@ public:
 	/** La vista vuelve a mirar al frente desde donde está ahora la cabeza (gafas); el HUD se vuelve a poner delante. */
 	void Recenter();
 
-	/** Pantalla de carga de las gafas: el huevo pintado en una textura, en una capa del compositor. */
+	/**
+	 * Pantalla de carga de las gafas: el huevo pintado en una textura, en una capa del compositor, dentro de una playa en 360
+	 * (un cubo de capas con el cielo, el horizonte, el mar y la arena), como si se estuviera en un mapa.
+	 */
 	void ShowLoadingSplash(UTexture* Texture);
 	void HideLoadingSplash();
 
@@ -92,6 +96,13 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTexture> SplashTexture;
+
+	/** Playa en 360 alrededor de la capa de carga: degradado de cielo, mar y arena en las caras de un cubo. */
+	void EnsureSplashEnvironment();
+
+	/** Texturas del cubo de la carga: 0 los lados (cielo → horizonte → mar), 1 arriba (cielo), 2 abajo (arena). */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTexture2D>> SplashEnvironment;
 
 	/** Variables de consola cambiadas para las gafas (sin desenfoque de movimiento...): el valor de antes, para devolverlo. */
 	TMap<FString, FString> SavedCVars;
