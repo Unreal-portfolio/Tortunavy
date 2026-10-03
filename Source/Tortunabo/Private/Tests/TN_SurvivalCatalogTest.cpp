@@ -2,6 +2,7 @@
 // repetidas, con trampas válidas, y cada semilla genera el mismo layout que cuando se eligió (huella).
 // Colocación (#516): ninguna trampa se pierde ni cae en un hueco, la salida, la meta o una unión; ninguna zona lenta
 // antes de un hueco; los obstáculos dejan 3 m de paso libre.
+// El mapa de pruebas (TestMaps) pasa por las mismas huellas y colocación, y tiene una trampa de cada tipo.
 // Correr desde Session Frontend (categoría "Tortunabo.Survival.Catalogo") o headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Survival.Catalogo; Quit" -nullrhi -unattended
 
@@ -11,6 +12,17 @@
 #include "World/ProcMap/TN_SurvivalTrapPlacement.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+
+namespace
+{
+	/** Los 50 mapas del catálogo y el mapa de pruebas. */
+	TArray<TNSurvivalCatalog::FMapEntry> CatalogAndTestMaps()
+	{
+		TArray<TNSurvivalCatalog::FMapEntry> All(TNSurvivalCatalog::Maps, UE_ARRAY_COUNT(TNSurvivalCatalog::Maps));
+		All.Append(TNSurvivalCatalog::TestMaps, UE_ARRAY_COUNT(TNSurvivalCatalog::TestMaps));
+		return All;
+	}
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reparto: 9 + 9 + 9 + 9 + 14, sin semillas repetidas y con trampas válidas
@@ -41,6 +53,15 @@ bool FTNSurvivalCatalogShareTest::RunTest(const FString& Parameters)
 	{
 		TestEqual(FString::Printf(TEXT("mapas de dificultad %d"), D + 1), PerDifficulty[D], Expected[D]);
 	}
+	// El mapa de pruebas: fuera del catálogo y con una trampa de cada tipo.
+	for (const FMapEntry& M : TestMaps)
+	{
+		const FString Ctx = FString::Printf(TEXT("mapa de pruebas %u (%s)"), M.Seed, M.Name);
+		TestFalse(Ctx + TEXT(": su semilla no es del catálogo"), Seeds.Contains(M.Seed));
+		TSet<ETrap> Kinds;
+		for (const FTrapSpot& T : TrapsOf(M.Seed)) { Kinds.Add(T.Trap); }
+		TestEqual(Ctx + TEXT(": tiene todas las trampas"), Kinds.Num(), static_cast<int32>(ETrap::PressurePlate) + 1);
+	}
 	for (const FTrapSpot& T : Traps)
 	{
 		const FString Ctx = FString::Printf(TEXT("trampa %d de la semilla %u"), static_cast<int32>(T.Trap), T.Seed);
@@ -63,7 +84,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalCatalogFingerprintTest,
 bool FTNSurvivalCatalogFingerprintTest::RunTest(const FString& Parameters)
 {
 	using namespace TNSurvivalCatalog;
-	for (const FMapEntry& M : Maps)
+	for (const FMapEntry& M : CatalogAndTestMaps())
 	{
 		const FString Ctx = FString::Printf(TEXT("semilla %u dificultad %d (%s)"), M.Seed, M.Difficulty, M.Name);
 		TNProcMap::FLayout L;
@@ -89,7 +110,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalCatalogPlacementTest,
 bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 {
 	using namespace TNSurvivalCatalog;
-	for (const FMapEntry& M : Maps)
+	for (const FMapEntry& M : CatalogAndTestMaps())
 	{
 		const FString Ctx = FString::Printf(TEXT("semilla %u (%s)"), M.Seed, M.Name);
 		TNProcMap::FLayout L;

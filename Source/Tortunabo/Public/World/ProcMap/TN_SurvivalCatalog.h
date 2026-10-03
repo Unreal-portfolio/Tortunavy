@@ -127,6 +127,15 @@ namespace TNSurvivalCatalog
 		{ 142, 5, TEXT("El Último Cruce"),           EMapKind::Crossroads, 0xBA0AC3F8F62B4093ull },
 	};
 
+	/**
+	 * Mapa de pruebas: una trampa de cada tipo, en orden y cada una en su tramo, sobre una semilla que tiene viga en
+	 * el camino principal (puente que se rompe), rama (placa) y playa (quad). No es del catálogo: no cuenta en el
+	 * reparto ni sale en las partidas (#518). Se abre con ?ProcMode=Survival?ProcSeed=6?ProcDifficulty=Hard.
+	 */
+	inline constexpr FMapEntry TestMaps[] = {
+		{   6, 5, TEXT("Banco de Pruebas"),          EMapKind::Crossroads, 0xBBF470D3445AC62Cull },
+	};
+
 	using enum ETrap;
 
 	inline constexpr FTrapSpot Traps[] = {
@@ -185,12 +194,16 @@ namespace TNSurvivalCatalog
 		{ 104, BreakableBridge, 10, 10 }, { 104, BananaPeel, 19, 19, 4 }, { 104, Crab, 30, 30, 2 }, { 104, Jellyfish, 41, 41 }, { 104, Jellyfish, 47, 47 }, { 104, BananaPeel, 48, 48, 3 }, { 104, Seagull, 55, 75, 1, 1 }, { 104, Crab, 83, 83, 3 }, { 104, Jellyfish, 90, 90 },
 		{ 137, SlowZone, 10, 60, 3 }, { 137, PressurePlate, 32, 32 }, { 137, BananaPeel, 37, 37, 3 }, { 137, Crab, 45, 45, 2 }, { 137, BananaPeel, 56, 56, 4 }, { 137, Seagull, 60, 80, 1, 1 }, { 137, Quad, 85, 85 }, { 137, BananaPeel, 92, 92, 4 },
 		{ 142, BananaPeel, 3, 3, 3 }, { 142, BananaPeel, 22, 22, 4 }, { 142, BananaPeel, 38, 38, 4 }, { 142, PressurePlate, 58, 58 }, { 142, Crab, 63, 63, 2 }, { 142, Quad, 85, 85 },
+		// ── Mapa de pruebas (TestMaps) ──
+		{   6, BananaPeel, 5, 5, 3 }, {   6, BreakableBridge, 10, 10 }, {   6, SlowZone, 17, 17 }, {   6, Jellyfish, 24, 24 },
+		{   6, Crab, 30, 30, 2 }, {   6, PressurePlate, 44, 44 }, {   6, Seagull, 62, 76, 1, 2 }, {   6, Quad, 88, 88 },
 	};
 
-	/** La entrada de una semilla del catálogo, o nullptr si no está. */
+	/** La entrada de una semilla del catálogo o del mapa de pruebas, o nullptr si no está. */
 	inline const FMapEntry* FindMap(uint32 Seed)
 	{
 		for (const FMapEntry& M : Maps) { if (M.Seed == Seed) { return &M; } }
+		for (const FMapEntry& M : TestMaps) { if (M.Seed == Seed) { return &M; } }
 		return nullptr;
 	}
 
