@@ -37,6 +37,8 @@ bool FTNTctArenaDianaSurveyTest::RunTest(const FString& Parameters)
 	ATN_TctArena* Arena = World->SpawnActor<ATN_TctArena>(ATN_TctArena::StaticClass(), FTransform::Identity, Params);
 	if (TestNotNull(TEXT("Arena"), Arena))
 	{
+		// Como la de LVL_Tct al cargarse en partida: con la variante ya puesta en el nivel y sin malla (es transitoria).
+		Arena->Variant = Diana;
 		Arena->ServerSetArenaVariant(Diana);
 		TestEqual(TEXT("Variante replicada"), Arena->GetArenaVariant(), Diana);
 		// Medir en el mismo fotograma de la carga (como en StartPlay): la colisión se cocina síncrona.

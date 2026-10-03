@@ -101,7 +101,11 @@ void ATN_TctArena::ServerSetArenaVariant(FName NewVariant)
 		return;
 	}
 	ArenaVariant = NewVariant;
-	if (Variant != NewVariant)
+	// La malla es transitoria: el nivel cargado en partida llega sin ella aunque la variante sea la misma. Se construye ya
+	// (el BeginPlay de la base ya no la repite) para que el GameMode pueda medir la arena en StartPlay.
+	TArray<UProceduralMeshComponent*> Meshes;
+	GetComponents(Meshes);
+	if (Variant != NewVariant || Meshes.Num() == 0)
 	{
 		Variant = NewVariant;
 		Recargar();
