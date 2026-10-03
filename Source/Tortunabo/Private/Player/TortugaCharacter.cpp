@@ -18,6 +18,7 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
 #include "Player/TN_TurtleFaceComponent.h"
+#include "Player/TN_SlopeTiltComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_WadingComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
@@ -147,6 +148,8 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	DizzyBirds->SetupAttachment(RootComponent);
 	// Lengua, caras de cansancio, sudor y boca (se engancha sola a la cabeza de la malla en su primer fotograma).
 	TurtleFace = CreateDefaultSubobject<UTN_TurtleFaceComponent>(TEXT("TurtleFace"));
+	// La malla se inclina con la pendiente (solo visual; ver UTN_SlopeTiltComponent).
+	SlopeTilt = CreateDefaultSubobject<UTN_SlopeTiltComponent>(TEXT("SlopeTilt"));
 
 	// Casco cosmético: adjunto directamente a GetMesh() (SkeletalMeshComponent).
 	// Al estar en el árbol del mesh, recibe el network smoothing del CMC → sin lag.
