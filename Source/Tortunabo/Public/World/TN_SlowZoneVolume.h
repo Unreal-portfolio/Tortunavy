@@ -5,6 +5,7 @@
 #include "TN_SlowZoneVolume.generated.h"
 
 class UBoxComponent;
+class UDecalComponent;
 class ATortugaCharacter;
 
 /**
@@ -29,7 +30,11 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 
-	/** Semiejes de la caja al crear la zona desde código (mapa de Supervivencia, #516). */
+	/**
+	 * Semiejes de la caja al crear la zona desde código (mapa de Supervivencia, #516). Además pinta en el suelo un charco
+	 * de sirope del tamaño de la caja (M_SlowZoneSyrupDecal): en el Clásico la zona la marcan las plataformas del chunk,
+	 * pero sobre el mapa generado no habría nada que la distinga.
+	 */
 	void SetZoneExtent(const FVector& Extent);
 
 protected:
@@ -82,6 +87,10 @@ private:
 	UFUNCTION()
 	void OnBoxEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	/** Charco de sirope que marca la zona creada desde código (nullptr en las zonas colocadas a mano). */
+	UPROPERTY(Transient)
+	TObjectPtr<UDecalComponent> SyrupDecal;
 
 	/** Personajes actualmente dentro de la zona — para evitar aplicar el cap dos veces. */
 	TSet<TWeakObjectPtr<ATortugaCharacter>> CharactersInZone;

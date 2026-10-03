@@ -114,6 +114,12 @@ dificultades) por lo que más destaca de cada uno dentro de su dificultad; la ta
   en la 5 (unas 8 y 15 trampas contando cada cáscara de un grupo). Los añadidos rellenan los tramos vacíos más
   largos con la trampa que pide el terreno: cáscaras en curvas, bajadas y antes de los saltos, medusas en los
   estrechos, zonas lentas en las subidas y cangrejos en las rectas.
+- Mapa de pruebas (`TestMaps`): «Banco de Pruebas», semilla 6 en dificultad 5, con una trampa de cada tipo en orden y
+  cada una en su tramo (plátanos 5 %, puente que se rompe en la viga 10 %, zona lenta 17 %, medusa 24 %, cangrejos 30 %,
+  placa en la rama 44 %, gaviotas 62–76 %, quad en la playa 88 %). No cuenta en el reparto ni sale en las partidas;
+  se abre con `ServerTravel /Game/Maps/Run/LVL_ProcMap?ProcMode=Survival?ProcSeed=6?ProcDifficulty=Hard`.
+- Las zonas lentas que coloca el generador pintan un charco de sirope del tamaño de su caja (`M_SlowZoneSyrupDecal`,
+  creado con `Scripts/create_slowzone_decal.py`); las del Clásico las siguen marcando las plataformas del chunk.
 
 ### Trampas sobre el mapa (#516)
 
