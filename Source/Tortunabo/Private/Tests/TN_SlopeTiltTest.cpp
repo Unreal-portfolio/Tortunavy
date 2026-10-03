@@ -130,10 +130,18 @@ bool FTNSlopeTiltGateTest::RunTest(const FString& Parameters)
 {
 	using namespace TNSlopeTilt;
 
-	FTiltGate Ground;
-	Ground.bOnGround = true;
-	TestTrue(TEXT("En el suelo, de pie: se inclina"), ShouldTilt(Ground));
+	// Andando y corriendo va recta (decisión del director, 04-10): solo de tripa en el suelo sigue la pendiente.
+	FTiltGate Walking;
+	Walking.bOnGround = true;
+	TestFalse(TEXT("En el suelo, de pie (andando o corriendo): recta"), ShouldTilt(Walking));
 
+	FTiltGate Ground = Walking;
+	Ground.bBellySlide = true;
+	TestTrue(TEXT("De tripa en el suelo (deslizándose): se inclina"), ShouldTilt(Ground));
+
+	FTiltGate BellyAir;
+	BellyAir.bBellySlide = true;
+	TestFalse(TEXT("De tripa en el aire: recta"), ShouldTilt(BellyAir));
 	TestFalse(TEXT("En el aire: recta"), ShouldTilt(FTiltGate()));
 
 	FTiltGate Shell = Ground;
@@ -172,6 +180,52 @@ bool FTNSlopeTiltGateTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("En el huevo: la malla sale de su foto (no se toca)"), HoldsSnapshot(Hatching));
 	TestTrue(TEXT("En ragdoll: la malla sale de su foto (no se toca)"), HoldsSnapshot(Ragdoll));
 	TestFalse(TEXT("Derribada sin ragdoll: se devuelve a su base"), HoldsSnapshot(Knocked));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSlopeTiltWalkUprightTest,
+	"Tortunabo.Player.SlopeTilt.WalkUpright",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNSlopeTiltWalkUprightTest::RunTest(const FString& Parameters)
+{
+	using namespace TNSlopeTilt;
+	using namespace TNSlopeTiltTest;
+
+	// Decisión del director (#586, 04-10): andando y corriendo en una cuesta de 25° la tortuga va recta (0°); de tripa,
+	// deslizándose en el panzazo por la misma cuesta, paralela a ella (25°). Al levantarse vuelve a recta poco a poco.
+	constexpr float DeltaTime = 1.f / 30.f;
+	const FRotator MeshDefault(0.f, -90.f, 0.f);
+	const FRotator Slope25 = ComputeTilt(SlopeNormal(25.f, 0.f), 0.f, MaxTilt);
+	FTiltDriver Driver;
+	FRotator Mesh = MeshDefault;
+
+	FTiltGate Walking;
+	Walking.bOnGround = true;
+	for (int32 Frame = 0; Frame < 60; ++Frame)
+	{
+		TickMesh(Driver, Mesh, Walking, Slope25, DeltaTime);
+	}
+	TestEqual(TEXT("Andando en 25°: recta (0°)"), AngleDeg(Mesh, MeshDefault), 0.0, 0.01);
+	TestTrue(TEXT("Andando: sin objetivo de inclinación"), Driver.TargetTilt.IsZero());
+
+	FTiltGate Sliding = Walking;
+	Sliding.bBellySlide = true;
+	for (int32 Frame = 0; Frame < 60; ++Frame)
+	{
+		TickMesh(Driver, Mesh, Sliding, Slope25, DeltaTime);
+	}
+	TestEqual(TEXT("Deslizándose en 25°: inclinada 25°"), AngleDeg(Mesh, MeshDefault), 25.0, 0.5);
+
+	double MaxStepDeg = 0.0;
+	for (int32 Frame = 0; Frame < 60; ++Frame)
+	{
+		const FRotator Before = Mesh;
+		TickMesh(Driver, Mesh, Walking, Slope25, DeltaTime);
+		MaxStepDeg = FMath::Max(MaxStepDeg, AngleDeg(Before, Mesh));
+	}
+	TestTrue(FString::Printf(TEXT("Al levantarse se endereza sin tirones (máx. %.2f° por fotograma)"), MaxStepDeg), MaxStepDeg <= 5.0);
+	TestEqual(TEXT("De pie otra vez: recta"), AngleDeg(Mesh, MeshDefault), 0.0, 0.5);
 	return true;
 }
 
@@ -316,6 +370,7 @@ bool FTNSlopeTiltEggHatchTest::RunTest(const FString& Parameters)
 
 	FTiltGate Ground;
 	Ground.bOnGround = true;
+	Ground.bBellySlide = true;
 	for (int32 Frame = 0; Frame < 60; ++Frame)
 	{
 		TickMesh(Driver, Mesh, Ground, FRotator(-35.f, 0.f, 0.f), DeltaTime);
@@ -371,6 +426,7 @@ bool FTNSlopeTiltForgetWhenFreeTest::RunTest(const FString& Parameters)
 
 	FTiltGate Ground;
 	Ground.bOnGround = true;
+	Ground.bBellySlide = true;
 	for (int32 Frame = 0; Frame < 60; ++Frame)
 	{
 		TickMesh(Driver, Mesh, Ground, Slope, DeltaTime);

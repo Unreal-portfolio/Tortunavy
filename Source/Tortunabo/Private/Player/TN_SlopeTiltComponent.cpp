@@ -113,6 +113,7 @@ TNSlopeTilt::FTiltGate UTN_SlopeTiltComponent::ReadGate(const ACharacter& Charac
 	Gate.bHatching = TNEggHatch::IsHatching(&Character);
 	if (const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(&Character))
 	{
+		Gate.bBellySlide = Turtle->IsBellyOnGround();
 		Gate.bInShell = Turtle->IsInShell();
 		Gate.bKnockedDown = Turtle->IsKnockedDown();
 		Gate.bDead = Turtle->IsDead();
