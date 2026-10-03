@@ -112,9 +112,10 @@ void ATN_ProcMapGenerator::SpawnSurvivalTraps()
 				}
 				break;
 			case ETrap::Crab:
+				// Centrada en el suelo: la zona hace nacer los cangrejos a la altura de su centro (y ellos se pegan al suelo).
 				if (!bServer) { break; }
 				if (ATN_CrabSpawnZone* Zone = Cast<ATN_CrabSpawnZone>(SpawnMapActor(TrapClass<ATN_CrabSpawnZone>(CrabZonePath),
-					FTransform(Rot, MapToWorld2D(Where, Ground + P.Extent.Z)), true)))
+					FTransform(Rot, MapToWorld2D(Where, Ground)), true)))
 				{
 					Zone->ConfigureZone(P.Extent, P.Count, LoadClass<ATN_CrabActor>(nullptr, CrabPath));
 				}
@@ -152,7 +153,9 @@ void ATN_ProcMapGenerator::DrawSurvivalTrapPlan() const
 			// Zonas: su caja (las de gaviotas, en los ejes del mapa).
 			const double Ground = P.Trap == TNSurvivalCatalog::ETrap::Seagull ? P.Location.Z : TerrainHeightMap(Where);
 			const FQuat Rot = FRotator(0.0, P.YawDeg + Yaw0, 0.0).Quaternion();
-			DrawDebugBox(World, MapToWorld2D(Where, Ground + P.Extent.Z), P.Extent, Rot, Color, true, -1.f, 0, 20.f);
+			// La de cangrejos va centrada en el suelo; las demás, apoyadas en él.
+			const double Lift = P.Trap == TNSurvivalCatalog::ETrap::Crab ? 0.0 : P.Extent.Z;
+			DrawDebugBox(World, MapToWorld2D(Where, Ground + Lift), P.Extent, Rot, Color, true, -1.f, 0, 20.f);
 		}
 		else
 		{

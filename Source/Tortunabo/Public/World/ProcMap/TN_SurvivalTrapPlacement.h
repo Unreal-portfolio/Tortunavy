@@ -270,7 +270,9 @@ namespace TNSurvivalCatalog
 					const int32 i = NearestFree(M, SampleAtDistance(M, (From + To) * 0.5));
 					if (i == INDEX_NONE) { break; }
 					FTrapPlacement P = At(M, ETrap::Crab, i, 0.0);
-					P.Extent = FVector(FMath::Max(CrabZoneHalfLength, (To - From) * 0.5), M[i].Width * 0.5 + 300.0, 300.0);
+					// Solo el ancho del camino: la zona hace nacer los cangrejos en cualquier punto de su caja, y fuera del
+					// camino caerían en las paredes.
+					P.Extent = FVector(FMath::Max(CrabZoneHalfLength, (To - From) * 0.5), M[i].Width * 0.5, 300.0);
 					P.Count = Spot.Count;
 					Out.Add(P);
 					break;
