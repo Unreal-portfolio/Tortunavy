@@ -51,6 +51,8 @@ class TORTUNABO_API ATortugaCharacter : public ACharacter
 
 	/** El monkey test (TN.Monkey) pulsa los mismos manejadores de entrada que el jugador. */
 	friend class UTN_MonkeyComponent;
+	/** Escenario de estrés «caos» (Testing/TN_StressChaos.h): juega con la misma entrada que el jugador. */
+	friend class UTN_StressChaosSubsystem;
 
 public:
 	/** Con UTN_TurtleMovementComponent como movimiento (el arrastre del panzazo va dentro de la simulación, predicho). */
@@ -864,14 +866,12 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerDropEquippedItem();
 
-	void ApplyKnockdownVisual(bool bKnocked);
-
 	/**
-	 * Multicast RPC fiable — garantiza que TODOS los clientes reciban
-	 * el cambio de knockdown inmediatamente, sin depender solo de OnRep.
+	 * Tilt o ragdoll del derribo (idempotente). Un solo camino de estado (#78): el servidor lo aplica al cambiar
+	 * bIsKnockedDown y los clientes en OnRep_IsKnockedDown, también quien entra tarde. El golpe suena aparte, una vez
+	 * por máquina (MulticastPlaySfx, no fiable).
 	 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastApplyKnockdownVisual(bool bKnocked);
+	void ApplyKnockdownVisual(bool bKnocked);
 
 	UFUNCTION()
 	void OnRep_IsKnockedDown();
@@ -888,18 +888,6 @@ private:
 	/** Escala la Cabeza al BigHeadScale en reposo o la restaura. */
 	void ApplyBigHeadVisual(bool bBig);
 
-	/**
-	 * Multicast fiable: fuerza el visual de muerte en todos los clientes.
-	 */
-	/**
-	 * Multicast con la pos suelo final como parámetro. Pattern del Codex DualMax
-	 * round 3: el dato del transform inicial viaja CON el RPC, no en canal
-	 * separado vía bReplicateMovement. Sin esto, el cliente recibe el MC antes
-	 * que la replicación de SetActorLocation server (UE replica RPCs antes que
-	 * propiedades en el mismo bunch) → arranca sim en pos vieja → divergencia.
-	 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetDeadVisual(bool bDead, FVector GroundLocation);
 
 	/**
 	 * Patrón canónico Epic para activar ragdoll sin que el cuerpo "salga lanzado":
@@ -912,7 +900,7 @@ private:
 	 *  7. SetSimulatePhysics(true) + SetAllBodiesSimulatePhysics(true)
 	 *  8. SetAllPhysicsLinearVelocity(0) defensivo (post-simulate, no antes)
 	 *  9. WakeAllRigidBodies
-	 * Llamado en server (SetDeadVisual) y cliente (MulticastSetDeadVisual, OnRep_IsDead).
+	 * Llamado en server (SetDeadVisual) y cliente (OnRep_IsDead).
 	 */
 	void EnterRagdollState();
 
@@ -951,6 +939,10 @@ private:
 	/** Multicast: reproduce el sonido de éxito de revive en todas las máquinas. */
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayReviveSuccessSound();
+
+	/** Multicast: el «¡clonc!» del derribo en cada máquina (KnockdownSound o, sin recurso, el sintetizado). */
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlayKnockdownSound();
 
 	TWeakObjectPtr<APlayerController> ReviveTargetPC;
 	float ReviveChannelElapsed = 0.f;
@@ -991,6 +983,9 @@ private:
 	/** Callback for DBNOAudioComponent: re-loops heartbeat while DBNO. */
 	UFUNCTION()
 	void OnDBNOAudioFinished();
+
+	/** Cuerpo de RecoverFromKnockdown y RecoverFromKnockdownSilently. */
+	void RecoverFromKnockdownImpl(bool bPlayReviveSound);
 
 protected:
 	// ── Emote replication ────────────────────────────────────────────────────
@@ -1100,6 +1095,13 @@ protected:
 	 */
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead, BlueprintReadOnly, Category = "Death")
 	bool bIsDead = false;
+
+	/**
+	 * Suelo donde arranca el ragdoll de muerte (el servidor sube el cuerpo y deja de replicar el movimiento en el mismo
+	 * fotograma). Se escribe junto a bIsDead: llegan en la misma actualización y OnRep_IsDead ya la tiene.
+	 */
+	UPROPERTY(Replicated)
+	FVector_NetQuantize DeathGroundLocation = FVector_NetQuantize::ZeroVector;
 
 	/**
 	 * true cuando el servidor congeló el ragdoll de muerte (fin de la simulación
@@ -1292,8 +1294,8 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_StartDive(FVector DiveDir);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDiveVisual(bool bEnter);
+	/** Inclinación y cápsula del panzazo (idempotente): el servidor al cambiar bIsDiving y los clientes en OnRep_IsDiving (#78). */
+	void ApplyDiveVisual(bool bEnter);
 
 	UFUNCTION()
 	void OnRep_IsDiving();
@@ -1341,6 +1343,12 @@ public:
 	/** Recover from knockdown immediately (server-only). Used by RunGameMode::RevivePlayer. */
 	UFUNCTION(BlueprintCallable, Category = "Knockdown")
 	void RecoverFromKnockdown();
+
+	/**
+	 * Como RecoverFromKnockdown, pero sin el sonido de reanimar (server-only). Para la muerte
+	 * (ATN_RunGameMode::ApplyDeathVisuals), que también levanta el derribo y no debe sonar a «¡arriba!» (#348).
+	 */
+	void RecoverFromKnockdownSilently();
 
 	/** Returns true if this character is currently in a knockdown/DBNO state. */
 	UFUNCTION(BlueprintPure, Category = "Knockdown")
@@ -1615,6 +1623,25 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SFX|Player")
 	TObjectPtr<USoundBase> ConsumeSound;
+
+	/**
+	 * Servidor: sacudida corta de cámara y vibración del mando (Strength 0..1) solo en la máquina del jugador que recibe
+	 * el golpe, con sus ajustes (TNHitFeedback). Uno por fotograma: el primer aviso manda.
+	 */
+	void NotifyHitFeedback(float Strength);
+
+	/**
+	 * Cliente dueño: aplica la sacudida y la vibración de un golpe que ha decidido el servidor. Fiable: uno por golpe, y en
+	 * una prueba con un cliente el no fiable se perdió en el primer derribo.
+	 */
+	UFUNCTION(Client, Reliable)
+	void ClientPlayHitFeedback(float Strength);
+
+private:
+	/** Fotograma del último aviso de golpe (NotifyHitFeedback), para no repetirlo dentro del mismo. */
+	uint64 LastHitFeedbackFrame = 0;
+
+public:
 
 	/**
 	 * Multicast: spawnea Sound at-location en todas las máquinas. Llamar SOLO

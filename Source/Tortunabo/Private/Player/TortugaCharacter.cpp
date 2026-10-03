@@ -28,6 +28,7 @@
 #include "Player/TN_TurtleDustComponent.h"
 #include "Player/TN_TurtleFoleyComponent.h"
 #include "Player/TN_TurtleMovementComponent.h"
+#include "Player/TN_TurtleActionSfx.h"
 #include "World/TN_InteractableBase.h"
 #include "World/Beach/TN_BeachTrampoline.h"
 #include "GameFramework/PlayerState.h"
@@ -65,6 +66,12 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 {
 	PrimaryActorTick.bCanEverTick = true;   // needed for leg animation
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	// Sonidos de acción de serie (Docs/Sonido_Tortuga.md, «Acciones»); el Blueprint puede cambiarlos.
+	KillSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Kill);
+	PickupSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Pickup);
+	ThrowSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Throw);
+	ConsumeSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Consume);
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -516,7 +523,8 @@ void ATortugaCharacter::StartCosmeticRetryTimer()
 void ATortugaCharacter::PlaySfxAtSelf(USoundBase* Sound) const
 {
 	if (!Sound || !GetWorld()) { return; }
-	UGameplayStatics::SpawnSoundAtLocation(this, Sound, GetActorLocation());
+	// Con la atenuación natural de los sonidos del derribo si el recurso no trae la suya (antes sonaba en 2D en todo el mapa).
+	TNTurtleActionSfx::PlayAt(GetWorld(), Sound, GetActorLocation(), ReviveAudioInnerRadius, ReviveAudioOuterRadius);
 }
 
 void ATortugaCharacter::MulticastPlaySfx_Implementation(USoundBase* Sound)
@@ -1633,6 +1641,7 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Replicar a todos los clientes para que el visual sea visible en todos
 	DOREPLIFETIME(ATortugaCharacter, bIsKnockedDown);
 	DOREPLIFETIME(ATortugaCharacter, bIsDead);
+	DOREPLIFETIME(ATortugaCharacter, DeathGroundLocation);
 	// Freeze del ragdoll de muerte — JIP-safe: llegan en el bunch inicial.
 	DOREPLIFETIME(ATortugaCharacter, bRagdollFrozen);
 	DOREPLIFETIME(ATortugaCharacter, RagdollFrozenLoc);
@@ -1815,7 +1824,11 @@ void ATortugaCharacter::Multicast_OnTotemAutoRevive_Implementation()
 {
 	if (TotemSelfReviveSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, TotemSelfReviveSound, GetActorLocation());
+		PlaySfxAtSelf(TotemSelfReviveSound);
+	}
+	else if (UTN_TurtleActionSynthComponent* Synth = UTN_TurtleActionSynthComponent::FindOrAddTo(this))
+	{
+		Synth->PlayRevive(/*bTotem=*/true);
 	}
 	if (TotemSelfReviveVFX)
 	{

@@ -217,7 +217,7 @@ void UTN_TurtleMovementComponent::RestoreBellyState(uint8 InPhase, float InTime,
 
 	// Sobre la tripa la cápsula iba encogida. Si ahora ya está de pie (se levantó después), vuelve a encogerse para
 	// repetir el arrastre desde donde dice el servidor; al repetir el movimiento en que se levantó, se vuelve a estirar.
-	// En el resto de fases no se toca: el encogido del panzazo lo manda el servidor (Multicast_OnDiveVisual).
+	// En el resto de fases no se toca: el encogido del panzazo lo manda el servidor (ApplyDiveVisual por bIsDiving).
 	UCapsuleComponent* Capsule = CharacterOwner ? CharacterOwner->GetCapsuleComponent() : nullptr;
 	if (Capsule && IsOnBelly() && InCapsuleHalfHeight > 0.f && Capsule->GetUnscaledCapsuleHalfHeight() > InCapsuleHalfHeight + 0.5f)
 	{

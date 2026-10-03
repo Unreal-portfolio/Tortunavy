@@ -19,9 +19,9 @@ namespace TNSaveLogic
 
 	/**
 	 * Versión actual de los ajustes (UTN_SettingsSaveGame::Version): 1 sonido, voz y juego; 2 teclas, micrófono e interfaz;
-	 * 3 idioma y ojo de pez. 0 = guardado sin número (ver TNSettingsMigration).
+	 * 3 idioma y ojo de pez; 4 vibración del mando. 0 = guardado sin número (ver TNSettingsMigration).
 	 */
-	constexpr int32 SETTINGS_SAVE_VERSION = 3;
+	constexpr int32 SETTINGS_SAVE_VERSION = 4;
 
 	/**
 	 * Guardado automático de los ajustes: segundos sin cambios antes del primer intento y tope de la espera entre

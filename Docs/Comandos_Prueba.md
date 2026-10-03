@@ -137,6 +137,8 @@ necesita espera a que esté lista.
 
 | Comando | Qué hace |
 |---|---|
+| `TN.Stress caos [segundos por fase=20]` | Peor caso de juego real en el anfitrión: cuatro tortugas (las que faltan entran como jugadores extra, con la pantalla partida apagada) usan catapultas, se cogen y se lanzan, ruedan en su bola y lanzan objetos en ráfagas con cangrejos, gaviotas y tanques encima, en 7 fases que suman carga. Informe en `Saved/Stress/caos_<fecha>.json` (p50/p95/p99 de fotograma, juego, render, RHI y GPU, RAM, memoria comprometida, VRAM, KB/s, correcciones y acciones por fase) y regiones `TNChaos_<fase>` en Unreal Insights. `TN.Stress stop` lo para. Análisis: `Docs/Analisis/2026-10-03-Estres-caos.md`. |
+| `-TNStress=caos [-TNStressSeconds=20] [-TNStressWarmup=20] [-TNChaosEnemies=1] [-TNChaosVerbose] [-TNQuitWhenDone]` | Lo mismo desde la línea de órdenes (con `-game`). En un cliente (`127.0.0.1 -TNStress=caos`), su tortuga juega igual por red y escribe `caos_cliente_<fecha>.json` con sus correcciones. `-TNChaosEnemies` multiplica los enemigos (12 cangrejos, 4 gaviotas y 4 tanques por tanda); `-TNChaosVerbose` escribe en el registro qué hace cada tortuga. En el Coop para la tormenta mientras dura. |
 | `TN.Beach.Perf` | Tiempos de la última ronda (reparto, asientos, decorado, actores, botín y fotogramas), decorado local (piezas, instancias, con colisión y con sombra, partes que se mueven, componentes), actores de la playa (con dormancy, siempre relevantes, relevancia media), rebuscables (puntos, usados, actores ahora), objetos, conchas y la lista de red. En la ventana donde se escribe y, en PIE, también el servidor. |
 | `TN.Beach.BuildBudgetMs 6` | Milisegundos por fotograma para montar la ronda (asientos, decorado local y actores). |
 | `TN.Beach.AsyncBuild 0` | Monta la ronda entera en un fotograma, como antes (para comparar); `1` vuelve a por partes. |
@@ -332,6 +334,7 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `TN.HeadLook.Shots [carpeta]` | Fotos sin interfaz de la cabeza siguiendo a la vista (al frente, 45° a la derecha, 60° a la izquierda, en el tope, arriba, abajo y detrás), el giro medido en el hueso en el registro, y cierra el juego. En `-game -RenderOffScreen -UseFixedTimeStep -FPS=30`. |
 | `TN.HeadLook.Sweep 20` | Mueve sola la vista del jugador local 20 s (guiñada ±60°, cabeceo ±25°) para ver el giro de la cabeza en las demás máquinas. |
 | `TN.HeadLook.Log 1` | Cada tortuga escribe una vez por segundo su vista respecto del cuerpo (del mando o replicada) y el giro de su cabeza. |
+| `TN.Debug.Knockdown [segundos=2] [jugador=0] [empujón=0] [retraso=0]` | En el anfitrión: derriba a esa tortuga (empujón hacia arriba en cm/s; retraso en s, para lanzarlo con `-ExecCmds`). Suena el «¡clonc!» del derribo, el latido (solo en su máquina) y el arpegio al levantarse; en su máquina, sacudida y vibración según el empujón (`[HitFeedback]` en el log; con `-LogCmds="LogTortunabo Verbose"`, también `[ActionSfx]`). |
 | `TN.Music.Play Victoria` | Hace sonar una pista: `Victoria`, `Derrota`, `Eliminado`, `Tienda`, `Probador` o `Silencio`. |
 
 ## Tutorial de la primera partida

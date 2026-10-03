@@ -17,6 +17,7 @@
 #include "TimerManager.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Game/TN_RunGameMode.h"
+#include "Player/TN_TurtleActionSfx.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REVIVE SYSTEM (DBNO)
@@ -300,6 +301,11 @@ void ATortugaCharacter::PlayReviveSuccessSound()
 {
 	if (!ReviveSuccessSound)
 	{
+		// Sin recurso: el arpegio sintetizado (#348).
+		if (UTN_TurtleActionSynthComponent* Synth = UTN_TurtleActionSynthComponent::FindOrAddTo(this))
+		{
+			Synth->PlayRevive(/*bTotem=*/false);
+		}
 		return;
 	}
 
@@ -327,6 +333,11 @@ void ATortugaCharacter::PlayDBNOHeartbeatSound()
 {
 	if (!DBNOHeartbeatSound)
 	{
+		// Sin recurso: el latido sintetizado, solo para este jugador (#348).
+		if (UTN_TurtleActionSynthComponent* Synth = UTN_TurtleActionSynthComponent::FindOrAddTo(this))
+		{
+			Synth->StartHeartbeat();
+		}
 		return;
 	}
 
@@ -342,6 +353,10 @@ void ATortugaCharacter::PlayDBNOHeartbeatSound()
 
 void ATortugaCharacter::StopDBNOHeartbeatSound()
 {
+	if (UTN_TurtleActionSynthComponent* Synth = FindComponentByClass<UTN_TurtleActionSynthComponent>())
+	{
+		Synth->StopHeartbeat();
+	}
 	if (DBNOAudioComponent && DBNOAudioComponent->IsPlaying())
 	{
 		DBNOAudioComponent->Stop();
