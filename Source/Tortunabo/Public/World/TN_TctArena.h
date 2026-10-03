@@ -1,0 +1,94 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "World/TN_MapVariantLoader.h"
+#include "TN_TctArena.generated.h"
+
+class UStaticMeshComponent;
+
+/**
+ * La arena de Todos contra Todos (#651): una variante inventada de Scripts/terrain_volumes/Variants (por defecto A01_diana,
+ * hecha para este modo; con ?Arena=<variante> en la URL, otra, p. ej. P01_plataformas) cargada como ATN_MapVariantLoader, más
+ * el mar que sube durante la ronda.
+ *
+ * - Replicada: el servidor elige la variante (ServerSetArenaVariant) y cada máquina construye la misma malla desde el disco.
+ * - El mar es un plano con el material del mar del mapa procedural; en cada máquina se pone a la altura que da el GameState
+ *   (ATN_TctGameState::GetWaterZ), sin replicar la altura.
+ * - Servidor: Survey mide el suelo pisable (alturas para los escalones del agua, caja de la arena y sitios de salida lejos de
+ *   los bordes).
+ *
+ * Como ATN_MapVariantLoader, lee de Scripts/, que no se empaqueta: el modo solo se juega desde el editor (PIE o -game sin
+ * cocinar) hasta que las arenas pasen a assets.
+ */
+UCLASS()
+class TORTUNABO_API ATN_TctArena : public ATN_MapVariantLoader
+{
+	GENERATED_BODY()
+
+public:
+	ATN_TctArena();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
+	/** La arena del mundo (la primera), o nullptr. */
+	static ATN_TctArena* Find(const UWorld* World);
+
+	/** Servidor: carga NewVariant (si cambia) y la replica. Antes de BeginPlay, las zonas de muerte salen de ella. */
+	void ServerSetArenaVariant(FName NewVariant);
+
+	FName GetArenaVariant() const { return ArenaVariant; }
+
+	/** true si existe la carpeta de esa variante con su manifest.json. */
+	static bool VariantExists(FName VariantName);
+
+	/**
+	 * Servidor: mide el suelo pisable de la arena con trazas cada SampleSpacing (uu). false si no hay suelo (variante que no se
+	 * pudo cargar).
+	 */
+	bool Survey(float SampleSpacing);
+
+	/** Alturas del suelo pisable (una por muestra) de la última medición. */
+	const TArray<float>& GetSurveyHeights() const { return SurveyHeights; }
+
+	/** Caja del terreno con colisión (válida tras Survey). */
+	const FBox& GetGroundBox() const { return GroundBox; }
+
+	/** Altura del mar de la variante (water_uu del manifest, en el mundo). */
+	float GetBaseWaterZ() const { return BaseWaterZ; }
+
+	/**
+	 * Count sitios de salida repartidos por el suelo pisable (lejos de los bordes), con la cápsula CapsuleLift por encima del
+	 * suelo y mirando al centro. Menos si no hay tantos sitios.
+	 */
+	TArray<FTransform> PickSpawnTransforms(int32 Count, float CapsuleLift) const;
+
+protected:
+	/** Variante elegida por el servidor (la de Variant del nivel hasta que la cambie). */
+	UPROPERTY(ReplicatedUsing = OnRep_ArenaVariant)
+	FName ArenaVariant;
+
+	UFUNCTION()
+	void OnRep_ArenaVariant();
+
+	/** El mar que sube. */
+	UPROPERTY(VisibleAnywhere, Category = "Tct")
+	TObjectPtr<UStaticMeshComponent> WaterPlane;
+
+	/** Cuánto sobresale el mar por cada lado de la caja de la arena (uu). */
+	UPROPERTY(EditAnywhere, Category = "Tct", meta = (ClampMin = "0.0"))
+	float WaterPlaneMargin = 40000.f;
+
+private:
+	/** Lee water_uu del manifest y ajusta el plano del mar a la caja del terreno. */
+	void FitWaterPlane();
+	/** Traza vertical en (X, Y) contra este actor: suelo pisable con su altura. */
+	bool TraceGround(double X, double Y, double TopZ, double BottomZ, FVector& OutPoint) const;
+
+	TArray<float> SurveyHeights;
+	/** Muestras de suelo pisable con sus cuatro vecinas también pisables y a la misma altura (lejos de los bordes). */
+	TArray<FVector> SpawnCandidates;
+	FBox GroundBox = FBox(ForceInit);
+	float BaseWaterZ = 0.f;
+};
