@@ -65,6 +65,9 @@ public:
 	virtual float GetForwardSpeedCms() const = 0;
 	virtual bool IsFlipped() const = 0;
 
+	/** Ángulo máximo de la rueda (grados) con el que el piloto IA acota la dirección para no volcar; 0 = sin dato (no la acota). */
+	virtual float GetMaxSteerAngleDeg() const { return 0.f; }
+
 	/** Índice del equipo (un buggy = un equipo) que asigna el GameMode; replicado para colores y HUD. */
 	virtual int32 GetRallyTeamIndex() const = 0;
 	virtual void SetRallyTeamIndex(int32 Index) = 0;

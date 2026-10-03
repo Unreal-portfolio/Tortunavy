@@ -77,6 +77,7 @@ public:
 	virtual void SetEngineLocked(bool bLocked) override;
 	virtual float GetForwardSpeedCms() const override;
 	virtual bool IsFlipped() const override;
+	virtual float GetMaxSteerAngleDeg() const override;
 	virtual int32 GetRallyTeamIndex() const override { return TeamIndex; }
 	virtual void SetRallyTeamIndex(int32 Index) override;
 	virtual void GiveSpecialAmmo(ETNRallyAmmo Ammo, int32 Charges) override;

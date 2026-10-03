@@ -810,6 +810,11 @@ bool ATN_Buggy::IsFlipped() const
 	return TNBuggy::IsFlipped(GetActorUpVector().Z);
 }
 
+float ATN_Buggy::GetMaxSteerAngleDeg() const
+{
+	return GetData()->MaxSteerAngleDeg;
+}
+
 void ATN_Buggy::SetAIDriveInput(float Throttle, float Brake, float Steer, bool bHandbrake)
 {
 	UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement();

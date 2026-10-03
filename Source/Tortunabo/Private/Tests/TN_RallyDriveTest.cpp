@@ -3,6 +3,7 @@
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Drive; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
+#include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyData.h"
 #include "Vehicles/TN_BuggyMath.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
@@ -21,6 +22,8 @@ bool FTNRallyDriveSteerCurveTest::RunTest(const FString& Parameters)
 	// #606: el ángulo de un buggy real (35-40 grados), el mismo a cualquier velocidad (antes, 40 parado y 12 a punta).
 	TestTrue(TEXT("el ángulo por defecto está entre 35 y 40 grados"), DefaultSteerAngleDeg >= 35.f && DefaultSteerAngleDeg <= 40.f);
 	TestEqual(TEXT("el asset de ajuste trae el mismo ángulo"), Tuning->MaxSteerAngleDeg, DefaultSteerAngleDeg);
+	// El piloto IA acota la dirección con el ángulo del propio buggy, no con una copia suya (revisión de #606).
+	TestEqual(TEXT("el buggy da al piloto IA el ángulo de su ajuste"), GetDefault<ATN_Buggy>()->GetMaxSteerAngleDeg(), Tuning->MaxSteerAngleDeg);
 	TestEqual(TEXT("parado gira el ángulo entero"), MaxSteerAngleDeg(0.f), DefaultSteerAngleDeg);
 	TestEqual(TEXT("a 80 km/h gira lo mismo"), MaxSteerAngleDeg(2222.f), DefaultSteerAngleDeg, 0.01f);
 	TestEqual(TEXT("a punta gira lo mismo"), MaxSteerAngleDeg(Top), DefaultSteerAngleDeg, 0.01f);

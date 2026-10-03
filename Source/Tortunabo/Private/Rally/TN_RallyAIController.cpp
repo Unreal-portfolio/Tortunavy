@@ -141,7 +141,8 @@ void ATN_RallyAIController::Drive(float DeltaSeconds, ATN_RallyTrack& Track)
 	}
 	// Con 38 grados de rueda a cualquier velocidad (#606), la dirección a tope a mucha velocidad volcaría el buggy: se acota a
 	// lo que no pasa de MaxLateralAccelG de lateral.
-	const float SteerCap = TNBuggy::SafeSteerFraction(static_cast<float>(SpeedCms), SteerAngleDeg, WheelbaseCm, MaxLateralAccelG * RallyAIGravityCms2);
+	const float SteerCap = TNBuggy::SafeSteerFraction(static_cast<float>(SpeedCms), RallyVehicle->GetMaxSteerAngleDeg(), WheelbaseCm,
+		MaxLateralAccelG * RallyAIGravityCms2);
 	const float SafeSteer = FMath::Clamp(Steer, -SteerCap, SteerCap);
 	// Frena en cuanto pasa del objetivo y más fuerte cuanto más se pasa: llega a la curva a su velocidad.
 	const float Over = SpeedKmh - TargetKmh;
