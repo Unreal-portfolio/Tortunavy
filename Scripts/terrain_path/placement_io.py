@@ -15,6 +15,10 @@ size_scale, intensity, params y source. Una entrada manual solo necesita categor
 Lo que ocupa un tramo (length_m > 0: puzles, plataforma móvil, ermitaño, tanque) lleva además path_uu, la
 polilínea del camino bajo su huella cada PATH_STEP_M (el cargador reparte las piezas por ella y no en recta);
 el géiser lleva target_uu, el punto del camino donde cae (GEYSER_REACH_M más adelante).
+Lo automático lleva también progress_m, su avance por el recorrido en metros del principal: la distancia
+por el camino a la salida entre la suma de las distancias a la salida y a la meta, por la longitud del
+principal. En el principal sin atajos es s_m; en un lazo, lo que equivale en el principal. El cargador
+ordena los nidos por él (el orden de reaparición) y les da ese avance.
 """
 
 from __future__ import annotations
@@ -56,7 +60,20 @@ def _geyser_target_uu(site: Site, p: Placement) -> list[float]:
     return _uu(ln.at(min(p.s + GEYSER_REACH_M, ln.length), 0.0))
 
 
-def to_json(site: Site, p: Placement) -> dict:
+def progress_field(site: Site) -> np.ndarray:
+    """Avance (m del principal) de cada muestra del grafo: d_salida / (d_salida + d_meta) * largo."""
+    main = site.main
+    d = site.geodesic_from([(0, 0.0), (0, main.length)])
+    total = d[0] + d[1]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        frac = np.where(np.isfinite(total) & (total > 0.0), d[0] / total, np.nan)
+    return frac * main.length
+
+
+def to_json(site: Site, p: Placement, progress: np.ndarray | None = None) -> dict:
+    """Entrada del manifest. progress: progress_field(site), para no rehacerlo en cada entrada."""
+    if progress is None:
+        progress = progress_field(site)
     ln = site.line(p.line)
     x, y, z = ln.at(p.s, p.q)
     yaw = (ln.yaw_deg(p.s) + p.yaw_offset_deg + 180.0) % 360.0 - 180.0
@@ -66,6 +83,9 @@ def to_json(site: Site, p: Placement) -> dict:
            "yaw_deg": round(yaw, 1), "length_m": round(p.length, 2), "extent_uu": round(p.extent_m * UU_PER_M, 1),
            "size_scale": p.size_scale, "intensity": intensity_of(p.category, p.kind),
            "params": p.params, "source": p.source}
+    advance = float(progress[site.node(p.line, p.s)])
+    if np.isfinite(advance):
+        out["progress_m"] = round(advance, 1)
     path = _path_uu(site, p)
     if path is not None:
         out["path_uu"] = path
@@ -97,8 +117,9 @@ def read_block(manifest: dict) -> tuple[list[dict], list[str], dict]:
 
 def build_block(site: Site, auto, manual_raw: list[dict], suppressed: list[str], seed: int, map_seed: int,
                 include_pending: bool, summary: dict) -> dict:
+    progress = progress_field(site)
     return {"format": FORMAT, "generator": GENERATOR, "seed": seed, "map_seed": map_seed,
-            "include_pending": include_pending, "auto": [to_json(site, p) for p in auto],
+            "include_pending": include_pending, "auto": [to_json(site, p, progress) for p in auto],
             "manual": manual_raw, "suppressed": suppressed, "summary": summary}
 
 

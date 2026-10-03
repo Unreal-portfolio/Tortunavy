@@ -24,6 +24,7 @@ from terrain_path.placement_io import (  # noqa: E402
     build_block,
     carry_placements,
     from_json,
+    progress_field,
     read_block,
     to_json,
     with_block,
@@ -242,6 +243,25 @@ def test_los_tramos_llevan_su_polilinea_y_el_geiser_su_destino(site):
     assert "target_uu" not in to_json(site, Placement("tr", "mechanic", "Trampoline", 0, 300.0))
     geyser = to_json(site, Placement("gy", "mechanic", "Geyser", 0, 300.0))
     assert np.allclose(np.asarray(geyser["target_uu"]) / 100.0, ln.at(314.0), atol=0.01)
+
+
+def test_el_avance_ordena_los_lazos_entre_los_puntos_del_principal(site):
+    """progress_m (orden de los nidos al cargar): un punto de un lazo cae entre sus extremos en el
+    principal y no detrás de todo el principal."""
+    progress = progress_field(site)
+
+    def at(line, s):
+        return float(progress[site.node(line, s)])
+
+    main = site.main
+    assert at(0, 0.0) == pytest.approx(0.0, abs=0.5)
+    assert at(0, main.length) == pytest.approx(main.length, abs=0.5)
+    assert at(0, 50.0) < at(0, 400.0) < at(0, 700.0)
+    detour, short = site.line(1), site.line(2)
+    assert at(0, 90.0) < at(1, detour.length / 2.0) < at(0, 240.0)
+    assert at(0, 290.0) < at(2, short.length / 2.0) < at(0, 560.0)
+    entry = to_json(site, P("n", "nest", "EggNest", 1, detour.length / 2.0), progress)
+    assert entry["progress_m"] == pytest.approx(at(1, detour.length / 2.0), abs=0.1)
 
 
 def test_regenerar_el_terreno_conserva_lo_colocado(tmp_path):

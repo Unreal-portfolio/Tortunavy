@@ -2179,6 +2179,7 @@
      "landing_s": 55.0
     },
     "source": "auto",
+    "progress_m": 134.5,
     "path_uu": [
      [
       9298.0,
@@ -2228,7 +2229,8 @@
     "params": {
      "puzzle_id": "pz-catapult_gap-l1-s55"
     },
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 134.5
    },
    {
     "id": "mec-Trampoline-l7-s55",
@@ -2252,7 +2254,8 @@
      "puzzle_id": "pz-catapult_gap-l1-s55",
      "landing": true
     },
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 410.4
    },
    {
     "id": "pz-throw_chain-l0-s234",
@@ -2279,6 +2282,7 @@
      "effect_s": 8
     },
     "source": "auto",
+    "progress_m": 246.4,
     "path_uu": [
      [
       10434.4,
@@ -2373,6 +2377,7 @@
      "latch": false
     },
     "source": "auto",
+    "progress_m": 328.3,
     "path_uu": [
      [
       18341.7,
@@ -2471,6 +2476,7 @@
      "effect_s": 8
     },
     "source": "auto",
+    "progress_m": 419.5,
     "path_uu": [
      [
       14153.3,
@@ -2563,6 +2569,7 @@
      "trampoline": true
     },
     "source": "auto",
+    "progress_m": 569.4,
     "path_uu": [
      [
       23609.1,
@@ -2655,7 +2662,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 233.7
    },
    {
     "id": "nido-EggNest-l0-s104",
@@ -2676,7 +2684,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 117.2
    },
    {
     "id": "nido-EggNest-l0-s396",
@@ -2697,7 +2706,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 396.0
    },
    {
     "id": "nido-EggNest-l0-s544",
@@ -2718,7 +2728,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 532.5
    },
    {
     "id": "mec-MovingPlatform-l0-s309",
@@ -2740,6 +2751,7 @@
     "intensity": 0.5,
     "params": {},
     "source": "auto",
+    "progress_m": 325.4,
     "path_uu": [
      [
       14701.0,
@@ -2818,6 +2830,7 @@
     "intensity": 0.5,
     "params": {},
     "source": "auto",
+    "progress_m": 623.5,
     "target_uu": [
      26993.6,
      17108.1,
@@ -2843,7 +2856,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 80.0
    },
    {
     "id": "ob-BarbedWire-l0-s190",
@@ -2864,7 +2878,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 214.1
    },
    {
     "id": "en-PoolOctopus-l0-s289i",
@@ -2885,7 +2900,8 @@
     "size_scale": 1.0,
     "intensity": 2.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 304.3
    },
    {
     "id": "ob-ClamTrap-l0-s367i",
@@ -2906,7 +2922,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 363.3
    },
    {
     "id": "en-GullZone-l0-s381d",
@@ -2927,7 +2944,8 @@
     "size_scale": 1.0,
     "intensity": 1.5,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 379.1
    },
    {
     "id": "en-SandFleas-l0-s411d",
@@ -2948,7 +2966,8 @@
     "size_scale": 1.0,
     "intensity": 1.5,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 412.9
    },
    {
     "id": "en-SandFleas-l0-s498d",
@@ -2969,7 +2988,8 @@
     "size_scale": 1.0,
     "intensity": 1.5,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 510.9
    },
    {
     "id": "ob-BarbedWire-l0-s638",
@@ -2990,7 +3010,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 628.0
    },
    {
     "id": "ob-BarbedWire-l0-s652",
@@ -3011,7 +3032,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 643.8
    },
    {
     "id": "ob-BarbedWire-l1-s135",
@@ -3032,7 +3054,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 207.5
    },
    {
     "id": "en-SeaUrchin-l1-s185",
@@ -3053,7 +3076,8 @@
     "size_scale": 1.0,
     "intensity": 1.5,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 253.4
    },
    {
     "id": "en-HermitCrab-l2-s40",
@@ -3075,6 +3099,7 @@
     "intensity": 1.5,
     "params": {},
     "source": "auto",
+    "progress_m": 500.2,
     "path_uu": [
      [
       19674.8,
@@ -3152,7 +3177,8 @@
     "size_scale": 1.0,
     "intensity": 2.5,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 403.6
    },
    {
     "id": "en-ToyTank-l3-s187",
@@ -3174,6 +3200,7 @@
     "intensity": 2.0,
     "params": {},
     "source": "auto",
+    "progress_m": 420.5,
     "path_uu": [
      [
       14379.6,
@@ -3241,7 +3268,8 @@
     "size_scale": 1.0,
     "intensity": 1.5,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 263.5
    },
    {
     "id": "ob-BarbedWire-l6-s63",
@@ -3262,7 +3290,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 262.7
    },
    {
     "id": "ob-BarbedWire-l7-s65",
@@ -3283,7 +3312,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 411.7
    },
    {
     "id": "ob-BarbedWire-l0-s118",
@@ -3304,7 +3334,8 @@
     "size_scale": 1.0,
     "intensity": 1.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 133.0
    },
    {
     "id": "bot-ItemBox-l0-s77",
@@ -3325,7 +3356,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 86.8
    },
    {
     "id": "bot-ItemBox-l0-s461",
@@ -3346,7 +3378,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 469.2
    },
    {
     "id": "bot-ItemBox-l0-s539",
@@ -3367,7 +3400,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 527.2
    },
    {
     "id": "bot-ItemBox-l0-s659",
@@ -3388,7 +3422,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 651.7
    },
    {
     "id": "bot-ItemBox-l4-s40",
@@ -3409,7 +3444,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 279.2
    },
    {
     "id": "bot-ItemBox-l5-s14",
@@ -3430,7 +3466,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 549.1
    },
    {
     "id": "bot-TreasureChest-l7-s65d",
@@ -3451,7 +3488,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 411.7
    },
    {
     "id": "bot-TreasureChest-l6-s61i",
@@ -3472,7 +3510,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 262.2
    },
    {
     "id": "bot-SearchSpot-l0-s206d",
@@ -3493,7 +3532,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 233.3
    },
    {
     "id": "bot-SearchSpot-l0-s395i",
@@ -3514,7 +3554,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 394.9
    },
    {
     "id": "bot-SearchSpot-l0-s607d",
@@ -3535,7 +3576,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 597.9
    },
    {
     "id": "bot-SearchSpot-l1-s84i",
@@ -3556,7 +3598,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 159.4
    },
    {
     "id": "bot-SearchSpot-l1-s199d",
@@ -3577,7 +3620,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 249.1
    },
    {
     "id": "bot-SearchSpot-l3-s29d",
@@ -3598,7 +3642,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 292.3
    },
    {
     "id": "bot-SearchSpot-l4-s28i",
@@ -3619,7 +3664,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 265.7
    },
    {
     "id": "bot-SearchSpot-l6-s17i",
@@ -3640,7 +3686,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 235.3
    },
    {
     "id": "bot-SearchSpot-l7-s19d",
@@ -3661,7 +3708,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 414.2
    },
    {
     "id": "bot-ScoreShell-l0-s25",
@@ -3682,7 +3730,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 28.2
    },
    {
     "id": "bot-ScoreShell-l0-s28",
@@ -3703,7 +3752,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 31.6
    },
    {
     "id": "bot-ScoreShell-l0-s80",
@@ -3724,7 +3774,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 90.2
    },
    {
     "id": "bot-ScoreShell-l0-s83",
@@ -3745,7 +3796,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 93.5
    },
    {
     "id": "bot-ScoreShell-l0-s86",
@@ -3766,7 +3818,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 96.9
    },
    {
     "id": "bot-ScoreShell-l0-s89",
@@ -3787,7 +3840,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 100.3
    },
    {
     "id": "bot-ScoreShell-l0-s92",
@@ -3808,7 +3862,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 103.7
    },
    {
     "id": "bot-ScoreShell-l0-s193",
@@ -3829,7 +3884,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 217.5
    },
    {
     "id": "bot-ScoreShell-l0-s196",
@@ -3850,7 +3906,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 220.9
    },
    {
     "id": "bot-ScoreShell-l0-s199",
@@ -3871,7 +3928,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 224.3
    },
    {
     "id": "bot-ScoreShell-l0-s202",
@@ -3892,7 +3950,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 227.6
    },
    {
     "id": "bot-ScoreShell-l0-s413",
@@ -3913,7 +3972,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 415.1
    },
    {
     "id": "bot-ScoreShell-l0-s416",
@@ -3934,7 +3994,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 418.5
    },
    {
     "id": "bot-ScoreShell-l0-s419",
@@ -3955,7 +4016,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 421.9
    },
    {
     "id": "bot-ScoreShell-l0-s422",
@@ -3976,7 +4038,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 425.3
    },
    {
     "id": "bot-ScoreShell-l0-s465",
@@ -3997,7 +4060,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 473.7
    },
    {
     "id": "bot-ScoreShell-l0-s468",
@@ -4018,7 +4082,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 477.1
    },
    {
     "id": "bot-ScoreShell-l0-s471",
@@ -4039,7 +4104,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 480.5
    },
    {
     "id": "bot-ScoreShell-l0-s474",
@@ -4060,7 +4126,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 483.9
    },
    {
     "id": "bot-ScoreShell-l0-s477",
@@ -4081,7 +4148,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 487.3
    },
    {
     "id": "bot-ScoreShell-l0-s520",
@@ -4102,7 +4170,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 530.7
    },
    {
     "id": "bot-ScoreShell-l0-s523",
@@ -4123,7 +4192,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 529.1
    },
    {
     "id": "bot-ScoreShell-l0-s526",
@@ -4144,7 +4214,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 527.6
    },
    {
     "id": "bot-ScoreShell-l0-s529",
@@ -4165,7 +4236,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 526.0
    },
    {
     "id": "bot-ScoreShell-l0-s532",
@@ -4186,7 +4258,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 524.5
    },
    {
     "id": "bot-ScoreShell-l0-s630",
@@ -4207,7 +4280,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 619.0
    },
    {
     "id": "bot-ScoreShell-l0-s642",
@@ -4228,7 +4302,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 632.5
    },
    {
     "id": "bot-ScoreShell-l0-s685",
@@ -4249,7 +4324,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 681.0
    },
    {
     "id": "bot-ScoreShell-l0-s688",
@@ -4270,7 +4346,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 684.4
    },
    {
     "id": "bot-ScoreShell-l0-s691",
@@ -4291,7 +4368,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 687.7
    },
    {
     "id": "bot-ScoreShell-l0-s694",
@@ -4312,7 +4390,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 691.1
    },
    {
     "id": "bot-ScoreShell-l0-s697",
@@ -4333,7 +4412,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 694.5
    },
    {
     "id": "bot-ScoreShell-l1-s25",
@@ -4354,7 +4434,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 115.0
    },
    {
     "id": "bot-ScoreShell-l1-s28",
@@ -4375,7 +4456,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 117.1
    },
    {
     "id": "bot-ScoreShell-l1-s31",
@@ -4396,7 +4478,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 119.1
    },
    {
     "id": "bot-ScoreShell-l1-s34",
@@ -4417,7 +4500,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 121.2
    },
    {
     "id": "bot-ScoreShell-l1-s37",
@@ -4438,7 +4522,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 123.2
    },
    {
     "id": "bot-ScoreShell-l1-s95",
@@ -4459,7 +4544,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 169.8
    },
    {
     "id": "bot-ScoreShell-l1-s98",
@@ -4480,7 +4566,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 172.6
    },
    {
     "id": "bot-ScoreShell-l1-s101",
@@ -4501,7 +4588,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 175.4
    },
    {
     "id": "bot-ScoreShell-l1-s104",
@@ -4522,7 +4610,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 178.2
    },
    {
     "id": "bot-ScoreShell-l1-s107",
@@ -4543,7 +4632,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 181.1
    },
    {
     "id": "bot-ScoreShell-l1-s165",
@@ -4564,7 +4654,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 235.8
    },
    {
     "id": "bot-ScoreShell-l1-s168",
@@ -4585,7 +4676,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 238.6
    },
    {
     "id": "bot-ScoreShell-l1-s171",
@@ -4606,7 +4698,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 241.4
    },
    {
     "id": "bot-ScoreShell-l1-s174",
@@ -4627,7 +4720,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 244.2
    },
    {
     "id": "bot-ScoreShell-l1-s177",
@@ -4648,7 +4742,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 247.1
    },
    {
     "id": "bot-ScoreShell-l2-s25",
@@ -4669,7 +4764,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 484.0
    },
    {
     "id": "bot-ScoreShell-l3-s25",
@@ -4690,7 +4786,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 291.4
    },
    {
     "id": "bot-ScoreShell-l3-s28",
@@ -4711,7 +4808,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 292.0
    },
    {
     "id": "bot-ScoreShell-l3-s31",
@@ -4732,7 +4830,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 292.5
    },
    {
     "id": "bot-ScoreShell-l3-s34",
@@ -4753,7 +4852,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 293.0
    },
    {
     "id": "bot-ScoreShell-l3-s37",
@@ -4774,7 +4874,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 294.9
    },
    {
     "id": "bot-ScoreShell-l3-s165",
@@ -4795,7 +4896,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 416.9
    },
    {
     "id": "bot-ScoreShell-l3-s168",
@@ -4816,7 +4918,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 417.4
    },
    {
     "id": "bot-ScoreShell-l3-s171",
@@ -4837,7 +4940,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 417.9
    },
    {
     "id": "bot-ScoreShell-l3-s174",
@@ -4858,7 +4962,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 418.3
    },
    {
     "id": "bot-ScoreShell-l3-s177",
@@ -4879,7 +4984,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 418.8
    },
    {
     "id": "bot-ScoreShell-l4-s28",
@@ -4900,7 +5006,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 265.7
    },
    {
     "id": "bot-ScoreShell-l4-s31",
@@ -4921,7 +5028,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 269.1
    },
    {
     "id": "bot-ScoreShell-l4-s34",
@@ -4942,7 +5050,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 272.5
    },
    {
     "id": "bot-ScoreShell-l4-s37",
@@ -4963,7 +5072,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 275.9
    },
    {
     "id": "bot-ScoreShell-l6-s25",
@@ -4984,7 +5094,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 237.4
    },
    {
     "id": "bot-ScoreShell-l6-s28",
@@ -5005,7 +5116,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 238.3
    },
    {
     "id": "bot-ScoreShell-l6-s31",
@@ -5026,7 +5138,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 239.2
    },
    {
     "id": "bot-ScoreShell-l6-s34",
@@ -5047,7 +5160,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 240.0
    },
    {
     "id": "bot-ScoreShell-l6-s37",
@@ -5068,7 +5182,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 241.6
    },
    {
     "id": "bot-ScoreShell-l6-s101",
@@ -5089,7 +5204,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 253.1
    },
    {
     "id": "bot-ScoreShell-l6-s104",
@@ -5110,7 +5226,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 252.2
    },
    {
     "id": "bot-ScoreShell-l6-s107",
@@ -5131,7 +5248,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 251.4
    },
    {
     "id": "bot-ScoreShell-l7-s25",
@@ -5152,7 +5270,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 413.3
    },
    {
     "id": "bot-ScoreShell-l7-s28",
@@ -5173,7 +5292,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 412.9
    },
    {
     "id": "bot-ScoreShell-l7-s31",
@@ -5194,7 +5314,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 412.5
    },
    {
     "id": "bot-ScoreShell-l7-s34",
@@ -5215,7 +5336,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 412.1
    },
    {
     "id": "bot-ScoreShell-l7-s37",
@@ -5236,7 +5358,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 411.7
    },
    {
     "id": "dec-TankTrap-l0-s3i",
@@ -5257,7 +5380,8 @@
     "size_scale": 1.19,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 4.5
    },
    {
     "id": "veg-Grass-l0-s10d",
@@ -5278,7 +5402,8 @@
     "size_scale": 1.07,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 11.3
    },
    {
     "id": "veg-Grass-l0-s14i",
@@ -5299,7 +5424,8 @@
     "size_scale": 1.14,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 15.8
    },
    {
     "id": "dec-Driftwood-l0-s20d",
@@ -5320,7 +5446,8 @@
     "size_scale": 0.99,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 23.7
    },
    {
     "id": "dec-Driftwood-l0-s28i",
@@ -5341,7 +5468,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 31.6
    },
    {
     "id": "dec-Rock-l0-s68d",
@@ -5362,7 +5490,8 @@
     "size_scale": 1.12,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 76.6
    },
    {
     "id": "dec-Driftwood-l0-s75i",
@@ -5383,7 +5512,8 @@
     "size_scale": 1.17,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 85.6
    },
    {
     "id": "dec-ShipSailWreck-l0-s80d",
@@ -5404,7 +5534,8 @@
     "size_scale": 1.1,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 91.3
    },
    {
     "id": "dec-Driftwood-l0-s94d",
@@ -5425,7 +5556,8 @@
     "size_scale": 0.81,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 105.9
    },
    {
     "id": "dec-AmmoCrate-l0-s98i",
@@ -5446,7 +5578,8 @@
     "size_scale": 0.83,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 110.4
    },
    {
     "id": "dec-TankTrap-l0-s105d",
@@ -5467,7 +5600,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 118.3
    },
    {
     "id": "veg-Grass-l0-s111i",
@@ -5488,7 +5622,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 126.2
    },
    {
     "id": "dec-RockCluster-l0-s117d",
@@ -5509,7 +5644,8 @@
     "size_scale": 0.87,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 131.9
    },
    {
     "id": "dec-Driftwood-l0-s189d",
@@ -5530,7 +5666,8 @@
     "size_scale": 0.88,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 214.1
    },
    {
     "id": "dec-Rock-l0-s195i",
@@ -5551,7 +5688,8 @@
     "size_scale": 0.84,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 220.9
    },
    {
     "id": "dec-Driftwood-l0-s207i",
@@ -5572,7 +5710,8 @@
     "size_scale": 1.13,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 233.3
    },
    {
     "id": "dec-TankTrap-l0-s212d",
@@ -5593,7 +5732,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 235.6
    },
    {
     "id": "dec-TankTrap-l0-s218i",
@@ -5614,7 +5754,8 @@
     "size_scale": 1.07,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 237.5
    },
    {
     "id": "veg-Shrub-l0-s250d",
@@ -5635,7 +5776,8 @@
     "size_scale": 0.83,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 263.3
    },
    {
     "id": "dec-ToyBucket-l0-s405d",
@@ -5656,7 +5798,8 @@
     "size_scale": 1.01,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 406.1
    },
    {
     "id": "veg-Shrub-l0-s411i",
@@ -5677,7 +5820,8 @@
     "size_scale": 1.09,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 414.0
    },
    {
     "id": "veg-Palm-l0-s476d",
@@ -5698,7 +5842,8 @@
     "size_scale": 1.1,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 487.3
    },
    {
     "id": "dec-PlantedUmbrella-l0-s501d",
@@ -5719,7 +5864,8 @@
     "size_scale": 0.99,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 515.4
    },
    {
     "id": "dec-FlipFlop-l0-s507i",
@@ -5740,7 +5886,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 522.2
    },
    {
     "id": "dec-Coconut-l0-s512d",
@@ -5761,7 +5908,8 @@
     "size_scale": 0.92,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 527.8
    },
    {
     "id": "dec-Coconut-l0-s518i",
@@ -5782,7 +5930,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 531.3
    },
    {
     "id": "veg-Palm-l0-s531i",
@@ -5803,7 +5952,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 525.0
    },
    {
     "id": "veg-Shrub-l0-s538d",
@@ -5824,7 +5974,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 527.2
    },
    {
     "id": "dec-BeachChair-l0-s542i",
@@ -5845,7 +5996,8 @@
     "size_scale": 0.98,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 530.4
    },
    {
     "id": "veg-Shrub-l0-s602i",
@@ -5866,7 +6018,8 @@
     "size_scale": 0.87,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 594.3
    },
    {
     "id": "dec-BeachTowel-l0-s610d",
@@ -5887,7 +6040,8 @@
     "size_scale": 1.03,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 600.1
    },
    {
     "id": "veg-Grass-l0-s614i",
@@ -5908,7 +6062,8 @@
     "size_scale": 0.85,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 603.2
    },
    {
     "id": "dec-StrandedJellyfish-l0-s620d",
@@ -5929,7 +6084,8 @@
     "size_scale": 1.18,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 607.7
    },
    {
     "id": "dec-SandCastleSmall-l0-s628i",
@@ -5950,7 +6106,8 @@
     "size_scale": 0.94,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 617.9
    },
    {
     "id": "veg-Grass-l0-s632d",
@@ -5971,7 +6128,8 @@
     "size_scale": 1.07,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 622.4
    },
    {
     "id": "dec-Lollipop-l0-s640i",
@@ -5992,7 +6150,8 @@
     "size_scale": 1.19,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 630.3
    },
    {
     "id": "dec-BeachBall-l0-s646d",
@@ -6013,7 +6172,8 @@
     "size_scale": 0.96,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 637.0
    },
    {
     "id": "dec-DecorShell-l0-s652i",
@@ -6034,7 +6194,8 @@
     "size_scale": 0.87,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 644.9
    },
    {
     "id": "dec-WatermelonRind-l0-s658d",
@@ -6055,7 +6216,8 @@
     "size_scale": 0.82,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 651.7
    },
    {
     "id": "dec-BeachBall-l0-s663i",
@@ -6076,7 +6238,8 @@
     "size_scale": 0.97,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 657.3
    },
    {
     "id": "veg-Grass-l0-s669d",
@@ -6097,7 +6260,8 @@
     "size_scale": 1.15,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 664.1
    },
    {
     "id": "dec-SandCastleSmall-l0-s676i",
@@ -6118,7 +6282,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 670.8
    },
    {
     "id": "dec-Starfish-l0-s680d",
@@ -6139,7 +6304,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 676.5
    },
    {
     "id": "dec-WatermelonRind-l0-s688i",
@@ -6160,7 +6326,8 @@
     "size_scale": 1.12,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 685.5
    },
    {
     "id": "dec-WatermelonRind-l0-s694d",
@@ -6181,7 +6348,8 @@
     "size_scale": 0.93,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 692.2
    },
    {
     "id": "dec-Starfish-l0-s700i",
@@ -6202,7 +6370,8 @@
     "size_scale": 1.01,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 699.0
    },
    {
     "id": "dec-DecorShell-l0-s705d",
@@ -6223,7 +6392,8 @@
     "size_scale": 0.97,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 704.6
    },
    {
     "id": "veg-Palm-l0-s711i",
@@ -6244,7 +6414,8 @@
     "size_scale": 0.92,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 711.4
    },
    {
     "id": "dec-Rock-l1-s8d",
@@ -6265,7 +6436,8 @@
     "size_scale": 1.05,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 103.0
    },
    {
     "id": "dec-Rock-l1-s14i",
@@ -6286,7 +6458,8 @@
     "size_scale": 1.1,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 106.9
    },
    {
     "id": "dec-RockCluster-l1-s20d",
@@ -6307,7 +6480,8 @@
     "size_scale": 0.98,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 111.4
    },
    {
     "id": "dec-TankTrap-l1-s28i",
@@ -6328,7 +6502,8 @@
     "size_scale": 1.13,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 117.8
    },
    {
     "id": "dec-RockCluster-l1-s33d",
@@ -6349,7 +6524,8 @@
     "size_scale": 1.16,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 121.2
    },
    {
     "id": "veg-Shrub-l1-s40i",
@@ -6370,7 +6546,8 @@
     "size_scale": 1.12,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 125.2
    },
    {
     "id": "veg-Grass-l1-s44d",
@@ -6391,7 +6568,8 @@
     "size_scale": 0.83,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 127.7
    },
    {
     "id": "veg-Shrub-l1-s64i",
@@ -6412,7 +6590,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 140.5
    },
    {
     "id": "dec-TankTrap-l1-s69d",
@@ -6433,7 +6612,8 @@
     "size_scale": 0.98,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 145.2
    },
    {
     "id": "veg-Shrub-l1-s75i",
@@ -6454,7 +6634,8 @@
     "size_scale": 0.88,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 151.8
    },
    {
     "id": "dec-TankTrap-l1-s80d",
@@ -6475,7 +6656,8 @@
     "size_scale": 1.04,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 155.6
    },
    {
     "id": "veg-Grass-l1-s92d",
@@ -6496,7 +6678,8 @@
     "size_scale": 0.89,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 166.9
    },
    {
     "id": "dec-Driftwood-l1-s100i",
@@ -6517,7 +6700,8 @@
     "size_scale": 1.09,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 175.4
    },
    {
     "id": "dec-MossyLog-l1-s105d",
@@ -6538,7 +6722,8 @@
     "size_scale": 1.08,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 180.1
    },
    {
     "id": "dec-Driftwood-l1-s112i",
@@ -6559,7 +6744,8 @@
     "size_scale": 0.97,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 185.8
    },
    {
     "id": "dec-MossyLog-l1-s117d",
@@ -6580,7 +6766,8 @@
     "size_scale": 0.88,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 191.4
    },
    {
     "id": "dec-Sandbags-l1-s123i",
@@ -6601,7 +6788,8 @@
     "size_scale": 1.03,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 196.2
    },
    {
     "id": "dec-Rock-l1-s128d",
@@ -6622,7 +6810,8 @@
     "size_scale": 1.1,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 201.8
    },
    {
     "id": "dec-ShipSailWreck-l1-s134i",
@@ -6643,7 +6832,8 @@
     "size_scale": 1.07,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 207.5
    },
    {
     "id": "veg-Grass-l1-s141d",
@@ -6664,7 +6854,8 @@
     "size_scale": 1.1,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 214.1
    },
    {
     "id": "dec-Driftwood-l1-s147i",
@@ -6685,7 +6876,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 218.8
    },
    {
     "id": "veg-Grass-l1-s152d",
@@ -6706,7 +6898,8 @@
     "size_scale": 1.12,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 224.4
    },
    {
     "id": "veg-Shrub-l1-s160i",
@@ -6727,7 +6920,8 @@
     "size_scale": 1.09,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 232.0
    },
    {
     "id": "veg-Shrub-l1-s166d",
@@ -6748,7 +6942,8 @@
     "size_scale": 1.13,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 236.7
    },
    {
     "id": "dec-ShipSailWreck-l1-s171i",
@@ -6769,7 +6964,8 @@
     "size_scale": 0.83,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 241.4
    },
    {
     "id": "dec-Sandbags-l1-s178d",
@@ -6790,7 +6986,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 249.0
    },
    {
     "id": "dec-MossyLog-l1-s184i",
@@ -6811,7 +7008,8 @@
     "size_scale": 0.88,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 253.7
    },
    {
     "id": "dec-AmmoCrate-l1-s190d",
@@ -6832,7 +7030,8 @@
     "size_scale": 1.08,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 251.8
    },
    {
     "id": "dec-TankTrap-l1-s196i",
@@ -6853,7 +7052,8 @@
     "size_scale": 0.86,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 250.0
    },
    {
     "id": "dec-Driftwood-l1-s208i",
@@ -6874,7 +7074,8 @@
     "size_scale": 1.14,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 246.4
    },
    {
     "id": "dec-TankTrap-l1-s213d",
@@ -6895,7 +7096,8 @@
     "size_scale": 1.12,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 245.1
    },
    {
     "id": "dec-Driftwood-l1-s219i",
@@ -6916,7 +7118,8 @@
     "size_scale": 0.89,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 242.8
    },
    {
     "id": "dec-TankTrap-l1-s225d",
@@ -6937,7 +7140,8 @@
     "size_scale": 0.94,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 241.1
    },
    {
     "id": "dec-AmmoCrate-l1-s230i",
@@ -6958,7 +7162,8 @@
     "size_scale": 1.13,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 239.0
    },
    {
     "id": "dec-FlipFlop-l2-s2i",
@@ -6979,7 +7184,8 @@
     "size_scale": 0.85,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 474.8
    },
    {
     "id": "veg-Palm-l2-s10d",
@@ -7000,7 +7206,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 472.4
    },
    {
     "id": "dec-SodaCan-l2-s15i",
@@ -7021,7 +7228,8 @@
     "size_scale": 1.17,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 473.2
    },
    {
     "id": "dec-BeachChair-l2-s21d",
@@ -7042,7 +7250,8 @@
     "size_scale": 0.84,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 480.7
    },
    {
     "id": "dec-Starfish-l2-s27i",
@@ -7063,7 +7272,8 @@
     "size_scale": 1.09,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 487.2
    },
    {
     "id": "dec-Starfish-l2-s34d",
@@ -7084,7 +7294,8 @@
     "size_scale": 0.81,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 493.7
    },
    {
     "id": "dec-ToyBucket-l2-s39i",
@@ -7105,7 +7316,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 500.2
    },
    {
     "id": "veg-Grass-l2-s46d",
@@ -7126,7 +7338,8 @@
     "size_scale": 0.88,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 507.8
    },
    {
     "id": "veg-Shrub-l2-s50i",
@@ -7147,7 +7360,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 511.0
    },
    {
     "id": "dec-ToyBucket-l2-s58d",
@@ -7168,7 +7382,8 @@
     "size_scale": 0.82,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 519.7
    },
    {
     "id": "dec-Bottle-l2-s64i",
@@ -7189,7 +7404,8 @@
     "size_scale": 1.09,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 526.2
    },
    {
     "id": "veg-Grass-l3-s3i",
@@ -7210,7 +7426,8 @@
     "size_scale": 0.97,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 287.3
    },
    {
     "id": "dec-Clam-l3-s10d",
@@ -7231,7 +7448,8 @@
     "size_scale": 1.17,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 288.8
    },
    {
     "id": "dec-Starfish-l3-s15i",
@@ -7252,7 +7470,8 @@
     "size_scale": 0.89,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 289.7
    },
    {
     "id": "dec-Clam-l3-s20d",
@@ -7273,7 +7492,8 @@
     "size_scale": 1.01,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 290.5
    },
    {
     "id": "dec-RubberDuck-l3-s26i",
@@ -7294,7 +7514,8 @@
     "size_scale": 0.89,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 291.8
    },
    {
     "id": "dec-OldPlanks-l3-s38i",
@@ -7315,7 +7536,8 @@
     "size_scale": 0.95,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 295.9
    },
    {
     "id": "dec-Driftwood-l3-s46d",
@@ -7336,7 +7558,8 @@
     "size_scale": 0.82,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 304.5
    },
    {
     "id": "veg-Grass-l3-s52i",
@@ -7357,7 +7580,8 @@
     "size_scale": 1.11,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 309.2
    },
    {
     "id": "dec-RubberDuck-l3-s123i",
@@ -7378,7 +7602,8 @@
     "size_scale": 0.89,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 377.9
    },
    {
     "id": "dec-FishingNet-l3-s129d",
@@ -7399,7 +7624,8 @@
     "size_scale": 1.09,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 383.6
    },
    {
     "id": "dec-Driftwood-l3-s135i",
@@ -7420,7 +7646,8 @@
     "size_scale": 1.19,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 389.3
    },
    {
     "id": "dec-Clam-l3-s140d",
@@ -7441,7 +7668,8 @@
     "size_scale": 1.03,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 394.1
    },
    {
     "id": "veg-Grass-l3-s147i",
@@ -7462,7 +7690,8 @@
     "size_scale": 1.14,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 400.8
    },
    {
     "id": "veg-Shrub-l3-s153d",
@@ -7483,7 +7712,8 @@
     "size_scale": 1.07,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 405.5
    },
    {
     "id": "dec-SandCastleSmall-l3-s158i",
@@ -7504,7 +7734,8 @@
     "size_scale": 0.83,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 410.3
    },
    {
     "id": "dec-Coconut-l3-s164d",
@@ -7525,7 +7756,8 @@
     "size_scale": 0.84,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 416.9
    },
    {
     "id": "veg-Shrub-l3-s171i",
@@ -7546,7 +7778,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 417.9
    },
    {
     "id": "dec-SandCastleSmall-l3-s176d",
@@ -7567,7 +7800,8 @@
     "size_scale": 0.91,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 418.7
    },
    {
     "id": "dec-ToyBucket-l3-s182i",
@@ -7588,7 +7822,8 @@
     "size_scale": 1.01,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 419.7
    },
    {
     "id": "veg-Shrub-l3-s188d",
@@ -7609,7 +7844,8 @@
     "size_scale": 0.88,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 420.7
    },
    {
     "id": "veg-Shrub-l3-s195i",
@@ -7630,7 +7866,8 @@
     "size_scale": 0.89,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 422.2
    },
    {
     "id": "dec-BeachChair-l3-s201d",
@@ -7651,7 +7888,8 @@
     "size_scale": 1.01,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 423.3
    },
    {
     "id": "veg-Grass-l3-s206i",
@@ -7672,7 +7910,8 @@
     "size_scale": 0.93,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 424.3
    },
    {
     "id": "veg-Palm-l3-s214d",
@@ -7693,7 +7932,8 @@
     "size_scale": 0.94,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 425.7
    },
    {
     "id": "veg-Grass-l4-s10d",
@@ -7714,7 +7954,8 @@
     "size_scale": 1.11,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 245.4
    },
    {
     "id": "dec-ShipSailWreck-l4-s14i",
@@ -7735,7 +7976,8 @@
     "size_scale": 0.93,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 249.9
    },
    {
     "id": "dec-Driftwood-l4-s20d",
@@ -7756,7 +7998,8 @@
     "size_scale": 1.18,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 257.8
    },
    {
     "id": "dec-AmmoCrate-l4-s34d",
@@ -7777,7 +8020,8 @@
     "size_scale": 0.98,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 272.5
    },
    {
     "id": "veg-Grass-l4-s39i",
@@ -7798,7 +8042,8 @@
     "size_scale": 1.07,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 278.1
    },
    {
     "id": "dec-RubberDuck-l4-s46d",
@@ -7819,7 +8064,8 @@
     "size_scale": 1.04,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 286.0
    },
    {
     "id": "dec-Buoy-l4-s51i",
@@ -7840,7 +8086,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 291.6
    },
    {
     "id": "veg-Grass-l4-s56d",
@@ -7861,7 +8108,8 @@
     "size_scale": 0.84,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 297.3
    },
    {
     "id": "dec-Starfish-l4-s63i",
@@ -7882,7 +8130,8 @@
     "size_scale": 0.88,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 306.3
    },
    {
     "id": "veg-Grass-l4-s69d",
@@ -7903,7 +8152,8 @@
     "size_scale": 0.92,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 311.9
    },
    {
     "id": "dec-Clam-l4-s74i",
@@ -7924,7 +8174,8 @@
     "size_scale": 0.92,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 318.7
    },
    {
     "id": "dec-FlipFlop-l5-s2i",
@@ -7945,7 +8196,8 @@
     "size_scale": 1.01,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 535.6
    },
    {
     "id": "dec-Bottle-l5-s10d",
@@ -7966,7 +8218,8 @@
     "size_scale": 1.02,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 545.7
    },
    {
     "id": "veg-Grass-l5-s14i",
@@ -7987,7 +8240,8 @@
     "size_scale": 1.19,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 550.2
    },
    {
     "id": "dec-Starfish-l5-s56d",
@@ -8008,7 +8262,8 @@
     "size_scale": 1.14,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 597.6
    },
    {
     "id": "dec-AmmoCrate-l6-s3i",
@@ -8029,7 +8284,8 @@
     "size_scale": 0.95,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 230.5
    },
    {
     "id": "dec-Driftwood-l6-s22d",
@@ -8050,7 +8306,8 @@
     "size_scale": 1.1,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 236.5
    },
    {
     "id": "dec-Sandbags-l6-s26i",
@@ -8071,7 +8328,8 @@
     "size_scale": 0.98,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 238.0
    },
    {
     "id": "dec-RockCluster-l6-s33d",
@@ -8092,7 +8350,8 @@
     "size_scale": 1.12,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 240.0
    },
    {
     "id": "dec-AmmoCrate-l6-s39i",
@@ -8113,7 +8372,8 @@
     "size_scale": 1.07,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 244.2
    },
    {
     "id": "dec-TankTrap-l6-s46d",
@@ -8134,7 +8394,8 @@
     "size_scale": 1.04,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 250.2
    },
    {
     "id": "dec-TankTrap-l6-s52i",
@@ -8155,7 +8416,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 255.3
    },
    {
     "id": "dec-Driftwood-l6-s56d",
@@ -8176,7 +8438,8 @@
     "size_scale": 1.0,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 257.9
    },
    {
     "id": "dec-Sandbags-l6-s70d",
@@ -8197,7 +8460,8 @@
     "size_scale": 0.92,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 261.0
    },
    {
     "id": "dec-AmmoCrate-l6-s75i",
@@ -8218,7 +8482,8 @@
     "size_scale": 1.09,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 259.8
    },
    {
     "id": "dec-TankTrap-l6-s81d",
@@ -8239,7 +8504,8 @@
     "size_scale": 0.87,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 258.3
    },
    {
     "id": "veg-Shrub-l6-s86i",
@@ -8260,7 +8526,8 @@
     "size_scale": 1.03,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 256.8
    },
    {
     "id": "dec-Sandbags-l6-s106d",
@@ -8281,7 +8548,8 @@
     "size_scale": 0.87,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 251.4
    },
    {
     "id": "veg-Grass-l6-s111i",
@@ -8302,7 +8570,8 @@
     "size_scale": 1.01,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 249.9
    },
    {
     "id": "veg-Shrub-l6-s117d",
@@ -8323,7 +8592,8 @@
     "size_scale": 1.19,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 248.4
    },
    {
     "id": "veg-Grass-l6-s124i",
@@ -8344,7 +8614,8 @@
     "size_scale": 1.06,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 245.9
    },
    {
     "id": "veg-Grass-l7-s10d",
@@ -8365,7 +8636,8 @@
     "size_scale": 0.94,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 415.3
    },
    {
     "id": "veg-Grass-l7-s16i",
@@ -8386,7 +8658,8 @@
     "size_scale": 1.04,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 414.6
    },
    {
     "id": "veg-Palm-l7-s27i",
@@ -8407,7 +8680,8 @@
     "size_scale": 0.85,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 413.1
    },
    {
     "id": "veg-Grass-l7-s34d",
@@ -8428,7 +8702,8 @@
     "size_scale": 0.9,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 412.1
    },
    {
     "id": "dec-MossyLog-l7-s57d",
@@ -8449,7 +8724,8 @@
     "size_scale": 0.83,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 410.8
    },
    {
     "id": "dec-ShipSailWreck-l7-s63i",
@@ -8470,7 +8746,8 @@
     "size_scale": 0.91,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 411.4
    },
    {
     "id": "dec-Driftwood-l7-s69d",
@@ -8491,7 +8768,8 @@
     "size_scale": 0.85,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 412.2
    },
    {
     "id": "veg-Palm-l7-s75i",
@@ -8512,7 +8790,8 @@
     "size_scale": 1.13,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 413.1
    },
    {
     "id": "veg-Shrub-l7-s136i",
@@ -8533,7 +8812,8 @@
     "size_scale": 0.98,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 422.9
    },
    {
     "id": "dec-ToyBucket-l7-s141d",
@@ -8554,7 +8834,8 @@
     "size_scale": 1.13,
     "intensity": 0.0,
     "params": {},
-    "source": "auto"
+    "source": "auto",
+    "progress_m": 423.7
    }
   ],
   "manual": [],
