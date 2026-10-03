@@ -1,4 +1,5 @@
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
+#include "Multiplayer/TN_LocalViews.h"
 
 #include "STN_EggLoadingScreen.h"
 #include "Core/TN_CoopGameState.h"
@@ -1162,9 +1163,15 @@ bool UTN_LoadingScreenSubsystem::IsWorldReady(UWorld* World, double Now) const
 	{
 		return false;
 	}
-	const UGameInstance* GameInstance = GetGameInstance();
-	const APlayerController* PC = GameInstance ? GameInstance->GetFirstLocalPlayerController(World) : nullptr;
-	if (!(PC && PC->GetPawn()) && SinceLoad < 6.0)
+	// La tortuga de cada jugador local (con la pantalla partida, la de todos), como mucho unos segundos.
+	TArray<APlayerController*> LocalControllers;
+	TNLocalViews::GetLocalControllers(World, LocalControllers);
+	bool bAllPawns = LocalControllers.Num() > 0;
+	for (const APlayerController* LocalPC : LocalControllers)
+	{
+		bAllPawns = bAllPawns && LocalPC->GetPawn() != nullptr;
+	}
+	if (!bAllPawns && SinceLoad < 6.0)
 	{
 		return false;
 	}

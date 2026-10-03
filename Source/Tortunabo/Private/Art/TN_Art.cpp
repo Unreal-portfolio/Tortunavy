@@ -11,6 +11,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "HAL/IConsoleManager.h"
+#include "Misc/PackageName.h"
 #include "Materials/MaterialInterface.h"
 #include "UObject/GCObject.h"
 #include "UObject/StrongObjectPtr.h"
@@ -21,10 +22,42 @@ namespace TNArtDetail
 	TAutoConsoleVariable<int32> CVarArtEnabled(TEXT("TN.Art.Enabled"), 1,
 		TEXT("1 = las piezas con sustituto en los catálogos de arte usan su malla final; 0 = se ve todo lo generado (vuelve a cargar el nivel)."));
 
-	/** Catálogos cargados y sustitutos resueltos, retenidos para el recolector. */
+	/**
+	 * Catálogos cargados y sustitutos resueltos, retenidos para el recolector. Valen para un mundo: cada mundo de juego o del
+	 * editor que empieza vacía la caché (OnWorldInit), porque un catálogo puede cambiar sin pasar por PostEditChangeProperty
+	 * (Python escribe directamente en el asset, un paquete recargado es otro objeto) y la caché, que dura todo el proceso, se
+	 * quedaba con lo que había al abrir el editor: el PIE dibujaba lo generado aunque el catálogo ya tuviera la malla (#319).
+	 */
 	class FCache : public FGCObject
 	{
 	public:
+		FCache()
+		{
+			WorldInitHandle = FWorldDelegates::OnPreWorldInitialization.AddRaw(this, &FCache::OnWorldInit);
+		}
+
+		virtual ~FCache() override
+		{
+			FWorldDelegates::OnPreWorldInitialization.Remove(WorldInitHandle);
+		}
+
+		void OnWorldInit(UWorld* World, const UWorld::InitializationValues)
+		{
+			// Partida, PIE, viaje o nivel abierto en el editor (no las vistas previas de los editores de assets).
+			if (World && (World->IsGameWorld() || World->WorldType == EWorldType::Editor))
+			{
+				ClearResolved();
+			}
+		}
+
+		FDelegateHandle WorldInitHandle;
+		/** Sube con cada NotifyCatalogsChanged (GetCatalogVersion). */
+		uint32 Version = 0;
+#if WITH_EDITOR
+		/** Actores de un mundo del editor con piezas que se pueden sustituir sin jugar: se rehacen al cambiar un catálogo. */
+		TSet<TWeakObjectPtr<AActor>> EditorOwners;
+		bool bEditorRefreshPending = false;
+#endif
 		bool bCatalogsLoaded = false;
 		TArray<TObjectPtr<UTN_ArtCatalog>> Catalogs;
 		/** Catálogos de los tests (SetCatalogsForTest): mandan sobre los de los ajustes. */
@@ -95,9 +128,17 @@ namespace TNArtDetail
 				for (const TSoftObjectPtr<UTN_ArtCatalog>& Soft : Settings->Catalogs)
 				{
 					if (Soft.IsNull()) { continue; }
-					if (UTN_ArtCatalog* Cat = Soft.LoadSynchronous())
+					// Un catálogo que Arte aún no ha creado (DA_Arte_Tortuga hasta que se pone la primera pieza) no se intenta
+					// cargar: LoadSynchronous avisaría en cada mundo que empieza.
+					const bool bExists = Soft.Get() || FPackageName::DoesPackageExist(Soft.ToSoftObjectPath().GetLongPackageName());
+					if (UTN_ArtCatalog* Cat = bExists ? Soft.LoadSynchronous() : nullptr)
 					{
 						C.Catalogs.Add(Cat);
+						for (const FName& Unknown : TNArt::FindUnknownPieces(Cat))
+						{
+							UE_LOG(LogTortunabo, Warning, TEXT("[Arte] %s: la pieza %s tiene malla, pero el código no genera ninguna con ese nombre (¿mal escrito? TN.Art.Slots da la lista)."),
+								*Cat->GetName(), *Unknown.ToString());
+						}
 					}
 					else
 					{
@@ -141,6 +182,46 @@ namespace TNArtDetail
 		const AActor* Owner = Comp->GetOwner();
 		return Comp->HasAnyFlags(RF_Transient) || (Owner && Owner->HasAnyFlags(RF_Transient));
 	}
+
+	/** Anota el actor de Comp si es del mundo del editor y su pieza se puede sustituir allí (RefreshEditorWorlds lo rehace). */
+	void NoteEditorOwner(const UActorComponent* Comp)
+	{
+#if WITH_EDITOR
+		const UWorld* World = Comp ? Comp->GetWorld() : nullptr;
+		if (World && World->WorldType == EWorldType::Editor && CanModify(Comp))
+		{
+			if (AActor* Owner = Comp->GetOwner())
+			{
+				Cache().EditorOwners.Add(Owner);
+			}
+		}
+#endif
+	}
+
+#if WITH_EDITOR
+	/** Vuelve a construir los actores anotados del mundo del editor (como al moverlos): se ve el catálogo sin jugar. */
+	void RefreshEditorWorlds()
+	{
+		FCache& C = Cache();
+		C.bEditorRefreshPending = false;
+		const TArray<TWeakObjectPtr<AActor>> Owners = C.EditorOwners.Array();
+		C.EditorOwners.Reset();
+		int32 Rebuilt = 0;
+		for (const TWeakObjectPtr<AActor>& Weak : Owners)
+		{
+			AActor* Owner = Weak.Get();
+			const UWorld* World = Owner ? Owner->GetWorld() : nullptr;
+			if (!IsValid(Owner) || !World || World->WorldType != EWorldType::Editor) { continue; }
+			// Vuelve a anotarse al construirse (NoteEditorOwner).
+			Owner->RerunConstructionScripts();
+			++Rebuilt;
+		}
+		if (Rebuilt > 0)
+		{
+			UE_LOG(LogTortunabo, Display, TEXT("[Arte] Catálogos cambiados: %d actores del nivel abierto rehechos en el editor."), Rebuilt);
+		}
+	}
+#endif
 
 	UTN_ArtMeshComponent* FindArtChild(const USceneComponent* Parent)
 	{
@@ -283,11 +364,11 @@ namespace TNArtDetail
 		FConsoleCommandWithArgsDelegate::CreateStatic(&HandleSlots));
 
 	FAutoConsoleCommand ReloadCommand(TEXT("TN.Art.Reload"),
-		TEXT("Vuelve a leer los catálogos de arte (lo ya construido no cambia hasta volver a cargar el nivel)."),
+		TEXT("Vuelve a leer los catálogos de arte y rehace en el editor lo que se ve sin jugar (en una partida, lo ya construido no cambia hasta volver a cargar el nivel)."),
 		FConsoleCommandDelegate::CreateLambda([]()
 		{
-			TNArt::InvalidateCache();
-			UE_LOG(LogTortunabo, Display, TEXT("[Arte] Catálogos recargados: vuelve a cargar el nivel para verlo."));
+			TNArt::NotifyCatalogsChanged();
+			UE_LOG(LogTortunabo, Display, TEXT("[Arte] Catálogos recargados: en una partida, vuelve a cargar el nivel para verlo."));
 		}));
 }
 
@@ -295,11 +376,34 @@ namespace TNArtDetail
 // Catálogo, ajustes y componente de arte
 // ─────────────────────────────────────────────────────────────────────────────
 
+void UTN_ArtCatalog::ApplyChanges()
+{
+	int32 WithMesh = 0;
+	for (const TPair<FName, FTNArtOverride>& Pair : Pieces)
+	{
+		WithMesh += Pair.Value.HasMesh() ? 1 : 0;
+	}
+	const TArray<FName> Unknown = TNArt::FindUnknownPieces(this);
+	for (const FName& Name : Unknown)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Arte] %s: la pieza %s tiene malla, pero el código no genera ninguna con ese nombre (¿mal escrito? TN.Art.Slots da la lista)."),
+			*GetName(), *Name.ToString());
+	}
+	UE_LOG(LogTortunabo, Display, TEXT("[Arte] %s: %d piezas con malla (%d desconocidas). Cambios aplicados."), *GetName(), WithMesh, Unknown.Num());
+	TNArt::NotifyCatalogsChanged();
+}
+
 #if WITH_EDITOR
 void UTN_ArtCatalog::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	TNArt::InvalidateCache();
+	// Mientras se arrastra un valor (el ajuste) solo se vacía la caché; al soltarlo llega otro cambio que rehace el nivel.
+	if (PropertyChangedEvent.ChangeType == EPropertyChangeType::Interactive)
+	{
+		TNArt::InvalidateCache();
+		return;
+	}
+	TNArt::NotifyCatalogsChanged();
 }
 #endif
 
@@ -313,7 +417,7 @@ UTN_ArtSettings::UTN_ArtSettings()
 void UTN_ArtSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	TNArt::InvalidateCache();
+	TNArt::NotifyCatalogsChanged();
 }
 #endif
 
@@ -353,7 +457,7 @@ bool TNArt::IsValidSlotName(const FString& Name)
 	TArray<FString> Parts;
 	Name.ParseIntoArray(Parts, TEXT("."), false);
 	if (Parts.Num() < 2) { return false; }
-	if (Parts[0] != TEXT("Lobby") && Parts[0] != TEXT("ProcMap") && Parts[0] != TEXT("Beach")) { return false; }
+	if (Parts[0] != TEXT("Lobby") && Parts[0] != TEXT("ProcMap") && Parts[0] != TEXT("Beach") && Parts[0] != TEXT("Turtle")) { return false; }
 	for (const FString& Part : Parts)
 	{
 		if (Part.IsEmpty() || !FChar::IsUpper(Part[0])) { return false; }
@@ -409,6 +513,7 @@ const TNArt::FResolved* TNArt::Find(FName Slot)
 			Result->Mesh = Mesh;
 			Result->Adjust = Entry->Adjust;
 			Result->bUseArtCollision = Entry->bUseArtCollision;
+			Result->Bone = Entry->Bone;
 			for (const TSoftObjectPtr<UMaterialInterface>& Mat : Entry->Materials)
 			{
 				Result->Materials.Add(Mat.IsNull() ? nullptr : Mat.LoadSynchronous());
@@ -452,6 +557,7 @@ void TNArt::ApplyToComponent(UStaticMeshComponent* Comp, FName Slot)
 {
 	using namespace TNArtDetail;
 	if (!Comp) { return; }
+	NoteEditorOwner(Comp);
 	UStaticMesh* Generated = Comp->GetStaticMesh();
 	const FResolved* R = Generated ? Find(Slot) : nullptr;
 	UTN_ArtMeshComponent* Art = FindArtChild(Comp);
@@ -508,6 +614,7 @@ void TNArt::ApplyToInstances(UInstancedStaticMeshComponent* ISM, FName Slot)
 {
 	using namespace TNArtDetail;
 	if (!ISM) { return; }
+	NoteEditorOwner(ISM);
 	UStaticMesh* Generated = ISM->GetStaticMesh();
 	const FResolved* R = Generated ? Find(Slot) : nullptr;
 	if (Generated != (R ? R->Mesh.Get() : nullptr))
@@ -606,6 +713,44 @@ bool TNArt::IsCollisionTwin(const UActorComponent* Comp)
 void TNArt::InvalidateCache()
 {
 	TNArtDetail::Cache().ClearResolved();
+}
+
+void TNArt::NotifyCatalogsChanged()
+{
+	TNArtDetail::FCache& C = TNArtDetail::Cache();
+	C.ClearResolved();
+	++C.Version;
+#if WITH_EDITOR
+	// En el siguiente fotograma (fuera de la edición del panel y una sola vez aunque cambien varias cosas a la vez).
+	if (GIsEditor && !C.bEditorRefreshPending && C.EditorOwners.Num() > 0)
+	{
+		C.bEditorRefreshPending = true;
+		FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([](float)
+		{
+			TNArtDetail::RefreshEditorWorlds();
+			return false;
+		}));
+	}
+#endif
+}
+
+uint32 TNArt::GetCatalogVersion()
+{
+	return TNArtDetail::Cache().Version;
+}
+
+TArray<FName> TNArt::FindUnknownPieces(const UTN_ArtCatalog* Catalog)
+{
+	TArray<FName> Out;
+	if (!Catalog) { return Out; }
+	for (const TPair<FName, FTNArtOverride>& Pair : Catalog->Pieces)
+	{
+		if (Pair.Value.HasMesh() && !FindSlotInfo(Pair.Key))
+		{
+			Out.Add(Pair.Key);
+		}
+	}
+	return Out;
 }
 
 void TNArt::SetCatalogsForTest(const TArray<UTN_ArtCatalog*>& Catalogs)

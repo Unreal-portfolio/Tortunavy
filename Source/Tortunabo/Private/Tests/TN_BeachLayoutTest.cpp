@@ -441,6 +441,18 @@ namespace TNBeachLayoutTest
 		}
 	}
 
+	/**
+	 * Lo que un lanzador delante de un obstáculo (rol Launcher) puede pisar con su arco porque es lo que salta: castillos con
+	 * salas y enormes, piezas de las filas y plataformas.
+	 */
+	bool IsJumpTarget(const TNBeachLayout::FItem& Item)
+	{
+		using TNBeachLayout::EItemRole;
+		return Item.Role == EItemRole::Dungeon || Item.Role == EItemRole::Row || Item.Role == EItemRole::Castle
+			|| Item.Element == ETNBeachElement::SandDungeon || Item.Element == ETNBeachElement::SandCastleHuge
+			|| Item.Element == ETNBeachElement::WobblyPlatform || Item.Element == ETNBeachElement::MovingPlatform;
+	}
+
 	bool IsFortress(ETNBeachElement E)
 	{
 		return E == ETNBeachElement::FortressMedium || E == ETNBeachElement::FortressLarge || E == ETNBeachElement::FortressColossal;
@@ -782,9 +794,11 @@ bool FTNBeachLayoutRulesTest::RunTest(const FString& Parameters)
 						bFarFromStart &= TNProcMap::DistPointSegment(Spot, It.EndA(), It.EndB(), T) - It.Radius >= TNBeachLayout::ItemsStartX;
 					}
 				}
-				// El arco de salto de las catapultas y trampolines del relleno, y la franja de caída de cada fortaleza, libres
-				// de todo lo demás (los pasos de quads cruzan las franjas y los pulpos nadan bajo algún arco).
-				const bool bArc = TNBeachLayout::RuleOf(It.Element).bLauncher && It.Role != EItemRole::Launcher;
+				// El arco de salto de todas las catapultas y trampolines, y la franja de caída de cada fortaleza, libres de todo
+				// lo demás (los pasos de quads cruzan las franjas y los pulpos nadan bajo algún arco). Los de delante de un
+				// obstáculo (rol Launcher) pisan, además, lo que saltan.
+				const bool bArc = TNBeachLayout::RuleOf(It.Element).bLauncher;
+				const bool bAimed = bArc && It.Role == EItemRole::Launcher;
 				if (bArc || TNBeachLayoutTest::IsFortress(It.Element))
 				{
 					const FItem Zone = bArc ? TNBeachLayout::FBuilder::JumpArcZone(It) : TNBeachLayout::FBuilder::FortressLandingZone(It);
@@ -792,6 +806,7 @@ bool FTNBeachLayoutRulesTest::RunTest(const FString& Parameters)
 					{
 						const FItem& Other = L.Items[j];
 						if (j == i || Other.bOverlay || Other.Element == ETNBeachElement::QuadLane || Other.Element == ETNBeachElement::PoolOctopus) { continue; }
+						if (bAimed && TNBeachLayoutTest::IsJumpTarget(Other)) { continue; }
 						if (TNBeachLayout::Clearance(Zone, Other) < -1.0) { bArcsFree = false; }
 					}
 				}

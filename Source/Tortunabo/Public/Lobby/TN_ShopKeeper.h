@@ -120,6 +120,11 @@ private:
 	float WaveCooldown = 0.f;
 	float WaveTimeLeft = -1.f;
 	float LookYaw = 0.f;
+	/** Diferencia entre la malla del personaje de la tortuga y la de demo (TNTurtleArt::GetCopyCorrection). */
+	FTransform KeeperCorrection = FTransform::Identity;
+
+	/** Transformación del tendero: la de demo (mirando a los clientes, girado hacia el jugador) con KeeperCorrection. */
+	FTransform KeeperTransform() const;
 
 	void BuildStall();
 	void HideBlockoutKeeper();

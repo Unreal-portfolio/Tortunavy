@@ -79,7 +79,10 @@ suelo vuelve el control y sale el mensaje de despedida.
 - **Se da por hecho** al aterrizar tras la cascada o al saltarlo: menú de pausa > **Saltar el tutorial** (con confirmación;
   solo aparece dentro del tutorial) o `TN.Tutorial.Skip`. Saltarlo baja al jugador a la plaza del castillo. Se apunta en el
   guardado de su ordenador en ese momento.
-- `BP_TutorialEntryInteractable` («Repetir el tutorial»), si está en el nivel, vuelve a empezarlo desde la salida.
+- `BP_TutorialEntryInteractable` («Repetir el tutorial»), si está en el nivel, vuelve a empezarlo desde la salida. Estando ya
+  dentro, `bInTutorial` no cambia y no hay nada que replicar, así que el servidor avisa con `ClientResetProgress` y el HUD
+  del jugador (tareas tachadas, estación y medidas) empieza de cero; lo mismo con `TN.Tutorial.Start` y `TN.Tutorial.Station 1`
+  (#85). Volver a otra estación ya pisada conserva lo hecho.
 
 ## Reiniciarlo para probar
 

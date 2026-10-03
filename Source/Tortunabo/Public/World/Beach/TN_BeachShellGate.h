@@ -140,6 +140,9 @@ private:
 	/** Tortuga sobre el interruptor. */
 	bool IsOnSwitch(const ACharacter* Character) const;
 
+	/** Radio (cm, en planta, con la escala del actor) en el que un personaje puede pisar el interruptor, estar en el vano o empujar. */
+	double ReachRadius() const;
+
 	double DoorWidth = 300.0;
 	double DoorHeight = 330.0;
 	FVector SwitchLocal = FVector(-380.0, -320.0, 0.0);
@@ -149,6 +152,11 @@ private:
 	float SwitchPress = 0.f;
 	bool bLastOpen = false;
 	bool bLeavesSolid = true;
+
+	/** Ángulo de las hojas y bajada del interruptor ya aplicados a las mallas: sin cambio, no se mueven (cada movimiento rehace sus hijos). */
+	double ShownLeafAngle = -1.0;
+	int8 ShownLeafDir = 0;
+	float ShownSwitchPress = -1.f;
 
 	TMap<TWeakObjectPtr<ACharacter>, float> PushTime;
 	FTNTrapClock Clock;

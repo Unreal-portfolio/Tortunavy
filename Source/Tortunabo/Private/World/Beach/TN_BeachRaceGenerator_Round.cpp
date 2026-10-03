@@ -207,9 +207,9 @@ namespace TNBeachRoundDetail
 // Ronda por partes
 // ─────────────────────────────────────────────────────────────────────────────
 
-void ATN_BeachRaceGenerator::MakeRoundLayout(int32 Seed, ETNProcDifficulty InDifficulty, TNBeachLayout::FRoundLayout& Out)
+void ATN_BeachRaceGenerator::MakeRoundLayout(int32 Seed, ETNProcDifficulty InDifficulty, bool bSprint, TNBeachLayout::FRoundLayout& Out)
 {
-	TNBeachLayout::GenerateRound(Seed, InDifficulty, Out);
+	TNBeachLayout::GenerateRound(Seed, InDifficulty, Out, bSprint);
 }
 
 void ATN_BeachRaceGenerator::StartRoundBuild(bool bNow)
@@ -235,16 +235,17 @@ void ATN_BeachRaceGenerator::StartRoundBuild(bool bNow)
 	// calculan con los asientos que tiene ahora el terreno (para quitarlos) y los nuevos; todas si alguna quedó a medias.
 	const int32 Seed = RoundNet.Seed;
 	const ETNProcDifficulty RoundDifficulty = RoundNet.Difficulty;
+	const bool bSprintLayout = RoundNet.bSprintLayout;
 	const bool bTerrain = bBuilt && TilesX > 0 && TilesY > 0;
 	const bool bAllTiles = bTerrainDirtyAll;
 	bTerrainDirtyAll = false;
 	const int32 NumTilesX = TilesX;
 	const int32 NumTilesY = TilesY;
 	TSharedPtr<FTNBeachLayoutJob> Job = Build->Job;
-	auto Work = [Job, Seed, RoundDifficulty, bTerrain, bAllTiles, NumTilesX, NumTilesY, Xs = GridXs, Ys = GridYs, OldStamps = Layout.Stamps]()
+	auto Work = [Job, Seed, RoundDifficulty, bSprintLayout, bTerrain, bAllTiles, NumTilesX, NumTilesY, Xs = GridXs, Ys = GridYs, OldStamps = Layout.Stamps]()
 	{
 		const double T0 = FPlatformTime::Seconds();
-		MakeRoundLayout(Seed, RoundDifficulty, Job->Layout);
+		MakeRoundLayout(Seed, RoundDifficulty, bSprintLayout, Job->Layout);
 		const double T1 = FPlatformTime::Seconds();
 		if (bTerrain)
 		{

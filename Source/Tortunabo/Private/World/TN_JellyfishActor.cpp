@@ -11,6 +11,37 @@
 #include "Core/TN_DebugCVars.h"
 #include "DrawDebugHelpers.h"
 #include "World/TN_WorldTuning.h"
+#include "Core/TN_Log.h"
+#include "World/TN_PlaceholderArt.h"
+#include "World/TN_PlaceholderArtMeshes.h"
+#include "World/Beach/TN_BeachPropMeshes.h"
+
+namespace TNJellyfishArt
+{
+	/** Semilla fija por variante: todas las medusas de una variante comparten malla. */
+	constexpr uint32 SeedBase = 0x4A31u;
+
+	/** Campana (parte animada de la receta) y cuerpo (brazos y filamentos), en este orden. */
+	TPair<UStaticMesh*, UStaticMesh*> Meshes(int32 Variant)
+	{
+		const int32 Kind = FMath::Clamp(Variant, 0, 3);
+		TNBeachProp::FParts Parts;
+		bool bBuilt = false;
+		auto Build = [&Parts, &bBuilt, Kind]()
+		{
+			if (!bBuilt)
+			{
+				TNBeachProp::BuildJellyfish(Parts, Kind, SeedBase + static_cast<uint32>(Kind));
+				bBuilt = true;
+			}
+		};
+		UStaticMesh* Bell = TNPlaceholderArt::CachedArtMesh(FString::Printf(TEXT("Jellyfish.%d.Bell"), Kind),
+			[&](TNProcMesh::FTNProcMeshBuffers& B) { Build(); B = Parts.Moving; });
+		UStaticMesh* Body = TNPlaceholderArt::CachedArtMesh(FString::Printf(TEXT("Jellyfish.%d.Body"), Kind),
+			[&](TNProcMesh::FTNProcMeshBuffers& B) { Build(); B = Parts.Body; });
+		return TPair<UStaticMesh*, UStaticMesh*>(Bell, Body);
+	}
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constructor
@@ -57,6 +88,7 @@ void ATN_JellyfishActor::BeginPlay()
 
 	// Guardar escala inicial del HeadMesh para la animación squish
 	HeadMeshDefaultScale = HeadMesh->GetRelativeScale3D();
+	BuildCodeArt();
 
 	// Con el CVar de debug activo el draw vive en Tick → mantenerlo encendido.
 	if (TNDebug::EnemyDebug != 0)
@@ -159,6 +191,38 @@ void ATN_JellyfishActor::Tick(float DeltaTime)
 // ─────────────────────────────────────────────────────────────────────────────
 // ApplySquishScale — aplana la esfera en Z, expande en XY
 // ─────────────────────────────────────────────────────────────────────────────
+
+void ATN_JellyfishActor::BuildCodeArt()
+{
+	if (GetNetMode() == NM_DedicatedServer || !HeadMesh || !BounceZone || !TNPlaceholderArt::NeedsCodeArt(HeadMesh))
+	{
+		return;
+	}
+	const TPair<UStaticMesh*, UStaticMesh*> Art = TNJellyfishArt::Meshes(CodeArtVariant);
+	if (!Art.Key || !Art.Value)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Jellyfish] %s: no se ha podido construir la medusa de código; se queda el marcador."), *GetName());
+		return;
+	}
+	// La campana mide lo que la zona de rebote (la parte que se pisa) y su cima queda a ras de la cara de arriba.
+	const FVector Zone = BounceZone->GetUnscaledBoxExtent() * BounceZone->GetRelativeScale3D() * 2.0;
+	const FBox BellBox = Art.Key->GetBoundingBox();
+	const float Fit = TNPlaceholderArt::FitScale(BellBox.GetSize(), FVector(Zone.X, Zone.Y, 0.0) * CodeArtSizeFactor);
+	const double ZoneTop = BounceZone->GetRelativeLocation().Z + Zone.Z * 0.5;
+	const FVector Origin(0.0, 0.0, ZoneTop - BellBox.Max.Z * Fit);
+	// Bajo HeadMesh para que el squish la aplaste igual: se deshace su escala de reposo.
+	const FVector Head = HeadMeshDefaultScale;
+	const FVector Undo(1.0 / FMath::Max(Head.X, UE_KINDA_SMALL_NUMBER), 1.0 / FMath::Max(Head.Y, UE_KINDA_SMALL_NUMBER),
+		1.0 / FMath::Max(Head.Z, UE_KINDA_SMALL_NUMBER));
+	const FTransform Relative(FRotator::ZeroRotator, (Origin - HeadMesh->GetRelativeLocation()) * Undo, Undo * Fit);
+	CodeArtBell = TNPlaceholderArt::AddArtPart(this, HeadMesh, Art.Key, Relative);
+	CodeArtBody = TNPlaceholderArt::AddArtPart(this, HeadMesh, Art.Value, Relative);
+	// Los tentáculos de cilindro bloqueaban: escondidos serían paredes invisibles. La cabeza conserva la suya (es la
+	// medusa que se pisa, ahora con otra forma).
+	const ECollisionEnabled::Type HeadCollision = HeadMesh->GetCollisionEnabled();
+	TNPlaceholderArt::HidePlaceholders(this, true);
+	HeadMesh->SetCollisionEnabled(HeadCollision);
+}
 
 void ATN_JellyfishActor::ApplySquishScale() const
 {

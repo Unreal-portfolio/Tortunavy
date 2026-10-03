@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachStorm.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
@@ -1369,7 +1370,19 @@ void ATN_BeachStorm::TickFX(float DeltaSeconds)
 	const FTransform Xf = GetActorTransform();
 	FVector View = GetActorLocation();
 	FVector ViewFwd = Xf.GetUnitAxis(EAxis::X);
+	// El jugador local más atrás (el que tiene la tormenta más encima); sin pantalla partida, el de siempre.
 	const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	{
+		TArray<APlayerController*> LocalControllers;
+		TNLocalViews::GetLocalControllers(World, LocalControllers);
+		double Behind = TNumericLimits<double>::Max();
+		for (const APlayerController* Candidate : LocalControllers)
+		{
+			const APawn* CandidatePawn = Candidate->GetPawn();
+			const double X = CandidatePawn ? Xf.InverseTransformPositionNoScale(CandidatePawn->GetActorLocation()).X : TNumericLimits<double>::Max() * 0.5;
+			if (X < Behind) { Behind = X; PC = Candidate; }
+		}
+	}
 	if (PC && PC->PlayerCameraManager)
 	{
 		View = PC->PlayerCameraManager->GetCameraLocation();

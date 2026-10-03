@@ -1,4 +1,4 @@
-"""Catálogos de arte: crea DA_Arte_Lobby y DA_Arte_ProcMap en /Game/Art y mete todas las piezas vacías.
+"""Catálogos de arte: crea DA_Arte_Lobby, DA_Arte_ProcMap y DA_Arte_Tortuga en /Game/Art y mete todas las piezas vacías.
 
 Docs/Arte_Assets.md. La lista de piezas sale de la tabla del C++ (Source/Tortunabo/Private/Art/TN_ArtSlots_*.inl), la
 misma que usan TN.Art.Slots y los tests, así que no hace falta abrir el juego para conocerlas.
@@ -25,15 +25,16 @@ import sys
 from collections import OrderedDict
 
 # Zona del nombre de la pieza → data asset que la guarda (los dos mapas procedurales, el cooperativo y la carrera de la
-# playa, comparten el suyo).
+# playa, comparten el suyo; las piezas pegadas a la tortuga van en el suyo, que vale en todos los mapas).
 CATALOGS = OrderedDict([
     ("Lobby", "/Game/Art/DA_Arte_Lobby"),
     ("ProcMap", "/Game/Art/DA_Arte_ProcMap"),
     ("Beach", "/Game/Art/DA_Arte_ProcMap"),
+    ("Turtle", "/Game/Art/DA_Arte_Tortuga"),
 ])
 
 # Ficheros de la tabla, en el orden de TN_ArtSlots.cpp.
-TABLE_FILES = ("Lobby", "LobbyValley", "LobbyPlayground", "ProcMap", "Beach")
+TABLE_FILES = ("Lobby", "LobbyValley", "LobbyPlayground", "ProcMap", "Beach", "Turtle")
 
 # Una pieza por TN_ART_SLOT( a principio de línea (los comentarios de la cabecera no cuentan).
 SLOT_PATTERN = re.compile(
@@ -51,7 +52,7 @@ def repo_root() -> str:
 
 
 def read_slots(root: str | None = None) -> list[dict]:
-    """Piezas de la tabla del C++, en orden (Lobby, ProcMap, Beach)."""
+    """Piezas de la tabla del C++, en orden (Lobby, ProcMap, Beach, Turtle)."""
     art_dir = os.path.join(root or repo_root(), "Source", "Tortunabo", "Private", "Art")
     slots = []
     for part in TABLE_FILES:
@@ -72,16 +73,17 @@ def info_text(slot: dict) -> str:
 
 
 def group_of(name: str) -> str:
-    """«Lobby.Castle» de «Lobby.Castle.Tower»."""
+    """«Lobby.Castle» de «Lobby.Castle.Tower»; la zona si la pieza no tiene grupo («Turtle» de «Turtle.Shell»)."""
     parts = name.split(".")
-    return ".".join(parts[:2])
+    return ".".join(parts[:2]) if len(parts) > 2 else parts[0]
 
 
 def markdown(slots: list[dict]) -> str:
     """Tablas por zona y grupo para Docs/Arte_Assets.md."""
     lines = []
     zone_titles = {"Lobby": "Lobby (DA_Arte_Lobby)", "ProcMap": "Mapa procedural (DA_Arte_ProcMap)",
-                   "Beach": "Carrera de la playa (también en DA_Arte_ProcMap)"}
+                   "Beach": "Carrera de la playa (también en DA_Arte_ProcMap)",
+                   "Turtle": "Piezas de la tortuga (DA_Arte_Tortuga)"}
     current_zone = None
     current_group = None
     for slot in slots:

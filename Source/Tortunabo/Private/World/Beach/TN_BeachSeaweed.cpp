@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachSeaweed.h"
+#include "World/Beach/TN_BeachNearby.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_BeachTrapSynthComponent.h"
 #include "Core/TN_Log.h"
@@ -34,6 +35,19 @@ namespace TNBeachSeaweedDetail
 	constexpr double WrapHeight = 100.0;
 	/** Parte de la elipse que engancha (el borde son cintas sueltas). */
 	constexpr double CatchFraction = 0.85;
+
+	/**
+	 * Alcance de las reglas en planta, en veces el semieje mayor: la elipse más grande que miran (soltar a 1,2 veces la de
+	 * enganchar, ~1,02) con holgura. Más el margen fijo (cm) para la cápsula.
+	 */
+	constexpr double ReachAxes = 1.15;
+	constexpr double ReachMargin = 120.0;
+
+	/** Radio (cm, en planta, con la escala del actor) fuera del cual ningún personaje cumple ninguna regla de las algas. */
+	double ReachRadius(double InAx, double InAy, const FTransform& ActorXf)
+	{
+		return (FMath::Max(InAx, InAy) * ReachAxes + ReachMargin) * ActorXf.GetMaximumAxisScale();
+	}
 
 	/** Tipos de efecto de PlayCatchFX. */
 	constexpr int32 FXCatch = 0;
@@ -353,10 +367,11 @@ void ATN_BeachSeaweed::ServerUpdate()
 		}
 	}
 
-	// Nuevas: con los pies en las algas y sin gracia pendiente.
-	for (TActorIterator<ACharacter> It(World); It; ++It)
+	// Nuevas: con los pies en las algas y sin gracia pendiente (solo quien está al alcance).
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(World, GetActorLocation(), ReachRadius(Ax, Ay, GetActorTransform()), Near);
+	for (ACharacter* Walker : Near)
 	{
-		ACharacter* Walker = *It;
 		if (Catches.Num() >= MaxCatches || !TNBeachTrapKit::IsFreeTurtle(Walker) || IsCaught(Walker))
 		{
 			continue;
@@ -444,9 +459,10 @@ void ATN_BeachSeaweed::UpdateHolds()
 		return;
 	}
 	TSet<TWeakObjectPtr<ACharacter>> Seen;
-	for (TActorIterator<ACharacter> It(World); It; ++It)
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(World, GetActorLocation(), TNBeachSeaweedDetail::ReachRadius(Ax, Ay, GetActorTransform()), Near);
+	for (ACharacter* Walker : Near)
 	{
-		ACharacter* Walker = *It;
 		if (!IsValid(Walker) || !TNBeachTrapKit::SimulatesMovement(Walker))
 		{
 			continue;
@@ -709,9 +725,10 @@ void ATN_BeachSeaweed::UpdateWraps(float DeltaSeconds)
 		return;
 	}
 	// Huecos para las tortugas enganchadas que aún no tienen.
-	for (TActorIterator<ACharacter> It(World); It; ++It)
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(World, GetActorLocation(), TNBeachSeaweedDetail::ReachRadius(Ax, Ay, GetActorTransform()), Near);
+	for (ACharacter* Walker : Near)
 	{
-		ACharacter* Walker = *It;
 		if (!IsValid(Walker) || !IsVisuallyHeld(Walker))
 		{
 			continue;

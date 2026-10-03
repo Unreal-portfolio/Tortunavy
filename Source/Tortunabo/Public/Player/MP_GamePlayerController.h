@@ -445,6 +445,9 @@ private:
 	/** @brief Vector normalizado de la posición del ratón respecto al centro de la rueda. */
 	FVector2D ComputeMouseWheelVector() const;
 
+	/** @brief Centro de la rueda en píxeles del viewport: el de la vista de este jugador (con la pantalla partida, su trozo). */
+	FVector2D GetWheelCenter() const;
+
 	/** @brief Devuelve el vector del input activo (mouse o stick) según contexto. */
 	FVector2D ResolveCurrentWheelVector() const;
 

@@ -947,6 +947,9 @@ namespace TNRaceItemArtDetail
 	// Iconos (128x128, pegatina del HUD)
 	// ─────────────────────────────────────────────────────────────────────────
 
+	/** Lado en píxeles de los iconos cuadrados de los objetos. */
+	constexpr int32 IconSize = 128;
+
 	/** Silueta con filo oscuro y degradado vertical: el relleno básico de las pegatinas. */
 	template <typename FSdf>
 	void PaintBody(TNHUDArt::FPainter& Painter, const FSdf& Sdf, const FLinearColor& EdgeColor, const FLinearColor& TopColor, const FLinearColor& BottomColor,
@@ -1040,7 +1043,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintBoxIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const TArray<FVector2f> TopPoints = { { 22.f, 40.f }, { 92.f, 40.f }, { 108.f, 22.f }, { 38.f, 22.f } };
 		const TArray<FVector2f> SidePoints = { { 92.f, 40.f }, { 108.f, 22.f }, { 108.f, 92.f }, { 92.f, 110.f } };
 		const auto Front = [](float px, float py) { return Box(px, py, 57.f, 75.f, 35.f, 35.f, 3.f); };
@@ -1071,7 +1074,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintCoconutIcon(bool bGolden)
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const float Cx = 60.f;
 		const float Cy = 76.f;
 		const float Radius = 35.f;
@@ -1106,7 +1109,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintTripleIcon(int32 Count)
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const float Radius = 26.f;
 		const FVector2f Spots[3] = { FVector2f(64.f, 40.f), FVector2f(38.f, 84.f), FVector2f(90.f, 84.f) };
 		// Se gastan de arriba abajo: quedan los de abajo.
@@ -1154,7 +1157,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintPelicanIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const auto Neck = [](float px, float py) { return Box(px, py, 38.f, 98.f, 15.f, 16.f, 8.f); };
 		const auto Head = [](float px, float py) { return Circle(px, py, 44.f, 66.f, 21.f); };
 		const TArray<FVector2f> BillPoints = { { 58.f, 55.f }, { 110.f, 62.f }, { 120.f, 68.f }, { 110.f, 72.f }, { 58.f, 70.f } };
@@ -1200,7 +1203,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintSunscreenIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const auto Body = [](float px, float py) { return Box(px, py, 64.f, 80.f, 27.f, 30.f, 12.f); };
 		const TArray<FVector2f> ShoulderPoints = { { 40.f, 56.f }, { 88.f, 56.f }, { 76.f, 34.f }, { 52.f, 34.f } };
 		const auto Shoulder = [&ShoulderPoints](float px, float py) { return Polygon(px, py, ShoulderPoints); };
@@ -1236,7 +1239,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintCrabIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const FLinearColor RedTop = Hex(0xFF6B5E);
 		const FLinearColor RedBottom = Hex(0xC92A32);
 		const FLinearColor Outline = Hex(0x4A0F14);
@@ -1244,7 +1247,7 @@ namespace TNRaceItemArtDetail
 		// Pinzas (izquierda y, espejadas, derecha): brazo, palma y dos dedos en uve.
 		const auto Claw = [](float px, float py, float Mirror)
 		{
-			const float Mx = Mirror > 0.f ? px : 128.f - px;
+			const float Mx = Mirror > 0.f ? px : IconSize - px;
 			float Dist = Segment(Mx, py, 44.f, 66.f, 30.f, 52.f, 5.f);
 			Dist = FMath::Min(Dist, Circle(Mx, py, 28.f, 46.f, 11.f));
 			Dist = FMath::Min(Dist, Segment(Mx, py, 22.f, 40.f, 18.f, 22.f, 5.5f));
@@ -1252,7 +1255,7 @@ namespace TNRaceItemArtDetail
 		};
 		const auto Legs = [](float px, float py)
 		{
-			const float Mx = FMath::Min(px, 128.f - px);
+			const float Mx = FMath::Min(px, IconSize - px);
 			float Dist = FLT_MAX;
 			for (int32 Leg = 0; Leg < 3; ++Leg)
 			{
@@ -1299,18 +1302,18 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintGullIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const TArray<FVector2f> WingPoints = { { 42.f, 74.f }, { 12.f, 46.f }, { 6.f, 18.f }, { 30.f, 30.f }, { 52.f, 56.f } };
 		const TArray<FVector2f> TipPoints = { { 6.f, 18.f }, { 30.f, 30.f }, { 24.f, 40.f }, { 11.f, 36.f } };
 		const TArray<FVector2f> BeakPoints = { { 50.f, 66.f }, { 78.f, 66.f }, { 72.f, 88.f }, { 64.f, 94.f }, { 56.f, 88.f } };
 		const auto Wing = [&WingPoints](float px, float py)
 		{
-			const float Mx = FMath::Min(px, 128.f - px);
+			const float Mx = FMath::Min(px, IconSize - px);
 			return Polygon(Mx, py, WingPoints);
 		};
 		const auto Tip = [&TipPoints](float px, float py)
 		{
-			const float Mx = FMath::Min(px, 128.f - px);
+			const float Mx = FMath::Min(px, IconSize - px);
 			return Polygon(Mx, py, TipPoints);
 		};
 		const auto Chest = [](float px, float py) { return Ellipse(px, py, 64.f, 98.f, 27.f, 16.f); };
@@ -1340,7 +1343,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintMineIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const auto Base = [](float px, float py) { return Box(px, py, 64.f, 90.f, 48.f, 13.f, 11.f); };
 		const auto Dome = [](float px, float py) { return FMath::Max(Ellipse(px, py, 64.f, 80.f, 38.f, 26.f), py - 84.f); };
 		const TArray<FVector2f> SpikeL = { { 22.f, 76.f }, { 44.f, 74.f }, { 30.f, 42.f } };
@@ -1376,7 +1379,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintStormIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const auto Cloud = [](float px, float py)
 		{
 			float Dist = Circle(px, py, 40.f, 54.f, 21.f);
@@ -1399,7 +1402,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintFrisbeeIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		// Disco visto en perspectiva: el canto (elipse desplazada hacia abajo) y la cara con los anillos.
 		const auto Edge = [](float px, float py) { return Ellipse(px, py, 64.f, 74.f, 52.f, 27.f); };
 		const auto Face = [](float px, float py) { return Ellipse(px, py, 64.f, 64.f, 52.f, 27.f); };
@@ -1423,7 +1426,7 @@ namespace TNRaceItemArtDetail
 	UTexture2D* PaintWhistleIcon()
 	{
 		using namespace TNHUDArt;
-		FPainter Painter(128, 128);
+		FPainter Painter(IconSize, IconSize);
 		const TArray<FVector2f> TubePoints = { { 58.f, 66.f }, { 112.f, 72.f }, { 112.f, 92.f }, { 58.f, 100.f } };
 		const auto Tube = [&TubePoints](float px, float py) { return Polygon(px, py, TubePoints); };
 		const auto Drum = [](float px, float py) { return Circle(px, py, 50.f, 86.f, 30.f); };

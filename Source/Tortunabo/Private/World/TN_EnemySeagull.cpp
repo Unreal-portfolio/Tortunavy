@@ -13,6 +13,23 @@
 #include "Core/TN_DebugCVars.h"
 #include "World/TN_EnemyDecisions.h"
 #include "DrawDebugHelpers.h"
+#include "World/TN_PlaceholderArt.h"
+#include "World/Beach/TN_BeachEnemyKit.h"
+#include "World/ProcMap/TN_ProcMapFaunaMeshes.h"
+
+namespace TNEnemySeagullArt
+{
+	/** Por debajo de esta velocidad horizontal (cm/s) la gaviota no cambia de rumbo: se cierne. */
+	constexpr float MinHeadingSpeed = 40.f;
+	/** Rapidez con la que gira hacia su rumbo (1/s). */
+	constexpr float HeadingInterpSpeed = 4.f;
+	/** Patas recogidas en vuelo y alas plegadas hacia atrás en el picado (grados). */
+	constexpr float LegTuckDegrees = -60.f;
+	constexpr float DiveWingSweepDegrees = 55.f;
+	constexpr float DiveWingFoldDegrees = 12.f;
+	/** Cabeceo del cuerpo en el picado (grados, morro abajo). */
+	constexpr float DivePitchDegrees = -35.f;
+}
 
 ATN_EnemySeagull::ATN_EnemySeagull()
 {
@@ -57,6 +74,7 @@ void ATN_EnemySeagull::BeginPlay()
 {
 	Super::BeginPlay();
 	Active.AddUnique(this);
+	BuildCodeArt();
 	// Tick activo también en clientes: el decal se anima localmente derivando el
 	// countdown de AttackStartServerTime (la lógica de juego sigue siendo server-only,
 	// ver el early-branch de Tick).
@@ -124,9 +142,91 @@ float ATN_EnemySeagull::GetCurrentDangerRadius() const
 
 // ── Tick principal ─────────────────────────────────────────────────────────────
 
+void ATN_EnemySeagull::BuildCodeArt()
+{
+	if (GetNetMode() == NM_DedicatedServer || !TNPlaceholderArt::NeedsCodeArt(SeagullMesh))
+	{
+		return;
+	}
+	// La gaviota de la fauna (la de las zonas de gaviotas y la de la carrera): mismas piezas y misma caché de mallas.
+	TArray<TNFauna::FTNFaunaPart> Parts;
+	TNFauna::FTNFaunaRig Rig;
+	TNFauna::TNFaunaBuildSpecies(TNFauna::ETNFaunaSpecies::Gull, Parts, Rig);
+	CodeArtRoot = NewObject<USceneComponent>(this, NAME_None, RF_Transient);
+	CodeArtRoot->SetupAttachment(SceneRoot);
+	CodeArtRoot->SetRelativeScale3D(FVector(CodeArtScale));
+	CodeArtRoot->RegisterComponent();
+	UStaticMeshComponent* Body = nullptr;
+	for (int32 Pass = 0; Pass < 2; ++Pass)
+	{
+		for (int32 PartIndex = 0; PartIndex < Parts.Num(); ++PartIndex)
+		{
+			const TNFauna::FTNFaunaPart& Part = Parts[PartIndex];
+			const bool bIsBody = Part.Bone == TNFauna::ETNFaunaBone::Body;
+			if ((Pass == 0) != bIsBody)
+			{
+				continue;
+			}
+			const TNProcMesh::FTNProcMeshBuffers& Buffers = Part.Mesh;
+			UStaticMesh* PartMesh = TNBeachKit::CachedMesh(FString::Printf(TEXT("Beach.Gull.%d"), PartIndex), [&Buffers](TNProcMesh::FTNProcMeshBuffers& M) { M = Buffers; });
+			USceneComponent* Parent = (bIsBody || !Body) ? CodeArtRoot.Get() : static_cast<USceneComponent*>(Body);
+			UStaticMeshComponent* Comp = TNBeachKit::AddPart(this, Parent, PartMesh, Part.Pivot, true);
+			Body = (bIsBody && !Body) ? Comp : Body;
+			const int32 Index = CodeArtParts.Add(Comp);
+			CodeArtPivots.Add(Part.Pivot);
+			switch (Part.Bone)
+			{
+			case TNFauna::ETNFaunaBone::WingL: CodeArtWingLeft = Index; break;
+			case TNFauna::ETNFaunaBone::WingR: CodeArtWingRight = Index; break;
+			case TNFauna::ETNFaunaBone::LegBL: CodeArtLegLeft = Index; break;
+			case TNFauna::ETNFaunaBone::LegBR: CodeArtLegRight = Index; break;
+			default: break;
+			}
+		}
+	}
+	CodeArtLastLocation = GetActorLocation();
+	TNPlaceholderArt::HidePlaceholders(this, true);
+}
+
+void ATN_EnemySeagull::PoseCodeArtPart(int32 Index, const FRotator& Rotation)
+{
+	if (CodeArtParts.IsValidIndex(Index) && CodeArtPivots.IsValidIndex(Index))
+	{
+		TNBeachKit::Pose(CodeArtParts[Index], CodeArtPivots[Index], Rotation);
+	}
+}
+
+void ATN_EnemySeagull::AnimateCodeArt(float DeltaTime)
+{
+	using namespace TNEnemySeagullArt;
+	if (!CodeArtRoot || DeltaTime <= 0.f)
+	{
+		return;
+	}
+	CodeArtClock += DeltaTime;
+	const FVector Location = GetActorLocation();
+	const FVector Velocity = (Location - CodeArtLastLocation) / DeltaTime;
+	CodeArtLastLocation = Location;
+	const bool bDiving = Velocity.Z < -CodeArtDiveSpeed;
+	FRotator Heading = CodeArtRoot->GetRelativeRotation();
+	if (Velocity.Size2D() > MinHeadingSpeed)
+	{
+		Heading.Yaw = FMath::FixedTurn(Heading.Yaw, static_cast<float>(Velocity.Rotation().Yaw), 360.f * HeadingInterpSpeed * DeltaTime);
+	}
+	Heading.Pitch = FMath::FInterpTo(Heading.Pitch, bDiving ? DivePitchDegrees : 0.f, DeltaTime, HeadingInterpSpeed * 2.f);
+	CodeArtRoot->SetRelativeRotation(Heading);
+	const float Flap = bDiving ? DiveWingFoldDegrees : CodeArtFlapDegrees * FMath::Sin(CodeArtClock * UE_TWO_PI * CodeArtFlapHz);
+	const float Sweep = bDiving ? DiveWingSweepDegrees : 0.f;
+	PoseCodeArtPart(CodeArtWingLeft, FRotator(0.f, -Sweep, Flap));
+	PoseCodeArtPart(CodeArtWingRight, FRotator(0.f, Sweep, -Flap));
+	PoseCodeArtPart(CodeArtLegLeft, FRotator(LegTuckDegrees, 0.f, 0.f));
+	PoseCodeArtPart(CodeArtLegRight, FRotator(LegTuckDegrees, 0.f, 0.f));
+}
+
 void ATN_EnemySeagull::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	AnimateCodeArt(DeltaTime);
 
 	if (!HasAuthority())
 	{

@@ -5,7 +5,6 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_TurtleSurface.h"
-#include "World/ProcMap/TN_ProcMapEnums.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcMapLayout.h"
 #include "World/ProcMap/TN_ProcMapTerrain.h"

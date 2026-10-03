@@ -35,7 +35,10 @@ struct FTNArtOverride;
  * - Pieza de una malla combinada (Private/Art/TN_ArtPieces.h): se quita de la sección y se pone la de arte en su sitio.
  *
  * La carga de los catálogos y las mallas es síncrona y solo ocurre al montar el nivel (la primera vez que se pide una pieza);
- * queda en caché hasta TN.Art.Reload o hasta editar un catálogo. Consola: TN.Art.Slots, TN.Art.Reload, TN.Art.Enabled.
+ * queda en caché mientras dura ese mundo. Cada mundo de juego o del editor que empieza (partida, PIE, viaje, abrir un nivel)
+ * vuelve a leer los catálogos, así que se ve lo que tengan en ese momento aunque el cambio no haya pasado por el panel de
+ * detalles (Python, un asset recargado de git). Editar un catálogo, su botón «Aplicar cambios» o TN.Art.Reload además rehacen
+ * en el editor lo que se ve sin jugar (NotifyCatalogsChanged). Consola: TN.Art.Slots, TN.Art.Reload, TN.Art.Enabled.
  */
 namespace TNArt
 {
@@ -47,9 +50,14 @@ namespace TNArt
 		TArray<TObjectPtr<UMaterialInterface>> Materials;
 		FTransform Adjust = FTransform::Identity;
 		bool bUseArtCollision = false;
+		/** Hueso o socket de la tortuga (piezas Turtle.*; NAME_None = el de la tabla). */
+		FName Bone;
 	};
 
-	/** «Zona.Parte[.Parte...]»: zona Lobby, ProcMap o Beach; cada parte empieza por mayúscula y solo lleva letras y cifras. */
+	/**
+	 * «Zona.Parte[.Parte...]»: zona Lobby, ProcMap, Beach o Turtle (piezas pegadas a la tortuga, TNTurtleArt); cada parte
+	 * empieza por mayúscula y solo lleva letras y cifras.
+	 */
 	TORTUNABO_API bool IsValidSlotName(const FString& Name);
 
 	/** Zona de un nombre («Lobby» de «Lobby.Castle.Tower»). */
@@ -110,8 +118,24 @@ namespace TNArt
 	/** Es el gemelo invisible con la colisión generada que deja ApplyToInstances (para quien recicla sus ISM). */
 	TORTUNABO_API bool IsCollisionTwin(const UActorComponent* Comp);
 
-	/** Vacía la caché de catálogos y mallas (TN.Art.Reload, al editar un catálogo o los ajustes). */
+	/** Vacía la caché de catálogos y mallas: la próxima pieza que se pida los vuelve a leer (lo hace cada mundo que empieza). */
 	TORTUNABO_API void InvalidateCache();
+
+	/**
+	 * Los catálogos han cambiado (editar uno o los ajustes, «Aplicar cambios», TN.Art.Reload): vacía la caché, sube
+	 * GetCatalogVersion y, en el editor, rehace en el siguiente fotograma los actores del nivel abierto que dibujan piezas
+	 * sustituibles sin jugar (castillo, valle...), para que se vea sin darle al Play.
+	 */
+	TORTUNABO_API void NotifyCatalogsChanged();
+
+	/** Sube con cada NotifyCatalogsChanged: quien solo se reconstruye si cambia algo lo mete en su clave (el valle del lobby). */
+	TORTUNABO_API uint32 GetCatalogVersion();
+
+	/**
+	 * Pura: piezas de Catalog con malla cuyo nombre no está en la tabla de piezas (nombre mal escrito o pieza que el código ya
+	 * no genera): no cambian nada. Se avisan con un Warning al leer los catálogos y al darle a «Aplicar cambios».
+	 */
+	TORTUNABO_API TArray<FName> FindUnknownPieces(const UTN_ArtCatalog* Catalog);
 
 	/** Para los tests: usa estos catálogos en lugar de los de los ajustes. Vacío: vuelve a los de los ajustes. */
 	TORTUNABO_API void SetCatalogsForTest(const TArray<UTN_ArtCatalog*>& Catalogs);

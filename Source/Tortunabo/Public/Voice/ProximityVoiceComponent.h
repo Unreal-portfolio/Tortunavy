@@ -7,6 +7,7 @@
 #include "AudioCaptureCore.h"
 #include "ProximityVoiceComponent.generated.h"
 
+class APlayerState;
 class UUserWidget;
 class FTNVoiceDeviceCapture;
 class APawn;
@@ -73,6 +74,16 @@ public:
 	 * si ha llegado audio suyo en las últimas 0,35 s (bIsSpeaking no llega a los demás). Lo usa el HUD en código.
 	 */
 	bool IsHeardSpeaking() const;
+
+	/**
+	 * @brief El jugador al que pertenece esta voz: el PlayerState de su peón y, si el peón ya no tiene (sin poseer, o aún sin
+	 *        replicar), el último que se le vio. Con él se mira si quien escucha lo tiene silenciado (#248); sin él la voz
+	 *        saldría sin silenciar, porque no se sabría de quién es.
+	 */
+	const APlayerState* GetSpeakerState() const;
+
+	/** @brief true si quien escucha (esta máquina) tiene silenciado al dueño de esta voz (ajustes del menú de pausa). */
+	bool IsMutedByListener() const;
 
 	/**
 	 * @brief Nivel del micrófono propio (RMS del último bloque capturado, ya con VoiceGain) para el medidor del menú de
@@ -266,6 +277,10 @@ private:
 
 	/** Rate limiting server-side para paquetes de voz (evita flooding). */
 	float LastVoicePacketServerTime = -1.f;
+
+	/** Último PlayerState que tuvo el peón dueño (GetSpeakerState) y si ya se avisó de que habla sin ninguno. */
+	mutable TWeakObjectPtr<const APlayerState> LastSpeakerState;
+	bool bWarnedNoSpeakerState = false;
 
 	/** @brief Crea e inserta el widget VoiceIndicator en el HUD del jugador local. */
 	void CreateVoiceIndicatorHUD();

@@ -11,6 +11,7 @@ namespace TNArtSlotsDetail
 #include "TN_ArtSlots_LobbyPlayground.inl"
 #include "TN_ArtSlots_ProcMap.inl"
 #include "TN_ArtSlots_Beach.inl"
+#include "TN_ArtSlots_Turtle.inl"
 	};
 #undef TN_ART_SLOT
 }

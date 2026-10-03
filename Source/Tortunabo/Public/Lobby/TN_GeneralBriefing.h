@@ -136,6 +136,13 @@ private:
 	float SaluteCooldown = 0.f;
 	float SaluteTimeLeft = -1.f;
 	float LookYaw = 0.f;
+	/** Diferencia entre la malla del personaje de la tortuga y la de demo (TNTurtleArt::GetCopyCorrection). */
+	FTransform GeneralCorrection = FTransform::Identity;
+
+	/** Transformación del general: la de demo (mirando a los reclutas, girado hacia el jugador) con GeneralCorrection. */
+	FTransform GeneralTransform() const;
+	/** Le pone la malla del personaje de la tortuga (TNTurtleArt::ApplyBody) y sus animaciones. */
+	void DressGeneral();
 
 	void BuildTable();
 	/** Esconde el general de la maqueta y su mesa («Boolean») en cada máquina. */

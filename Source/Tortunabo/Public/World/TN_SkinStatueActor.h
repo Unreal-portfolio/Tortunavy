@@ -4,6 +4,10 @@
 #include "World/TN_DirectInteractableBase.h"
 #include "TN_SkinStatueActor.generated.h"
 
+class UAnimationAsset;
+class UBoxComponent;
+class UMaterialInterface;
+class USkeletalMesh;
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
 
@@ -89,6 +93,58 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cosmetic Statue")
 	TObjectPtr<UStaticMeshComponent> HelmetPreviewComp;
 
+protected:
+	// ── Estatua de código (#50): si PreviewMesh está vacío y el Blueprint solo trae marcadores del motor ──────────
+
+	/**
+	 * Tortuga de la estatua, vestida con el cosmético de la estatua como la del jugador (UTN_CosmeticLook). Vacía (lo normal):
+	 * la del personaje (TNTurtleArt, #581), así que cambia con la malla de BP_TortugaCharacter.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Cosmetic Statue|Art")
+	TSoftObjectPtr<USkeletalMesh> StatueTurtleMesh;
+
+	/** Animación de la que sale la pose fija y el segundo de la pose. Vacía: el saludo de los ajustes de arte (TNTurtleArt). */
+	UPROPERTY(EditDefaultsOnly, Category = "Cosmetic Statue|Art")
+	TSoftObjectPtr<UAnimationAsset> StatuePose;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cosmetic Statue|Art", meta = (ClampMin = "0.0"))
+	float StatuePoseSeconds = 1.f;
+
+	/** Escala de la tortuga: TotugaDemo_Rig mide 53 cm a escala 1 y el personaje la lleva a 2,5 (133 cm). */
+	UPROPERTY(EditDefaultsOnly, Category = "Cosmetic Statue|Art", meta = (ClampMin = "0.5", ClampMax = "5.0"))
+	float StatueTurtleScale = 4.f;
+
+	/** Peana octogonal de piedra: radio y alto (cm). */
+	UPROPERTY(EditDefaultsOnly, Category = "Cosmetic Statue|Art", meta = (ClampMin = "30.0"))
+	float PedestalRadius = 120.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cosmetic Statue|Art", meta = (ClampMin = "10.0"))
+	float PedestalHeight = 70.f;
+
 private:
 	void ApplyPreviewCosmetic();
+
+	/** Monta la tortuga en su peana donde estaban los marcadores y los oculta. False si no hacía falta o no se pudo. */
+	bool BuildCodeStatue();
+
+	/** Peana con su caja de colisión (la que bloquea y la que encuentra el escaneo de interacción). */
+	void BuildPedestal(const FVector& GroundCenter);
+
+	/** Pose fija: la animación parada en StatuePoseSeconds. */
+	void FreezePose();
+
+	/** Viste la tortuga con el cosmético de la estatua (casco o color). */
+	void DressCodeStatue();
+
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> PedestalComp;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UBoxComponent> StatueBlocker;
+
+	/** Materiales originales de la tortuga (ApplyLook parte de ellos). */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMaterialInterface>> StatueDefaultMaterials;
+
+	bool bCodeStatue = false;
 };
