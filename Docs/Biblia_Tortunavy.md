@@ -1304,8 +1304,9 @@ Abajo, la ayuda de la opción enfocada y los atajos. Una línea dorada de **avis
 |---|---|
 | Sensibilidad del ratón · del mando | 20–300 % (100 % = la de siempre); se usa la del último aparato tocado |
 | Invertir eje Y (ratón) · (mando) | Sí / No |
+| Vibración del mando | Sí / No (**Sí de serie**): al recibir un golpe (derribo, aturdimiento que mete en el caparazón, impacto de un lanzable) el mando vibra, más fuerte y más largo cuanto más fuerte es el golpe; solo en la máquina de quien lo recibe |
 | Cambiar teclas y botones | Abre la página de controles |
-| Restablecer los controles | Sensibilidad al 100 % y sin invertir (las teclas se restablecen en su página) |
+| Restablecer los controles | Sensibilidad al 100 %, sin invertir y con vibración (las teclas se restablecen en su página) |
 
 *Pestaña JUEGO*
 

@@ -25,6 +25,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
+#include "Player/TN_TurtleActionSfx.h"
+#include "Player/TN_HitFeedback.h"
 #include "TimerManager.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Game/TN_RunGameMode.h"
@@ -43,6 +45,10 @@ void ATortugaCharacter::ApplyKnockdown(float Duration, FVector ImpulseOverride)
 	{
 		return;
 	}
+	// Sacudida y vibración solo en la máquina de quien cae, más fuertes cuanto más fuerte es el empujón (#350). Si el
+	// golpe ya avisó en este fotograma con su propia fuerza (un lanzable), no se repite.
+	NotifyHitFeedback(TNHitFeedback::StrengthFromImpulse(ImpulseOverride.Size()));
+
 	// Noqueada de verdad: un momento quieta en el suelo con los pajaritos, aunque el golpe pida menos.
 	Duration = FMath::Max(Duration, MinKnockdownSeconds);
 
@@ -112,10 +118,7 @@ void ATortugaCharacter::ApplyKnockdown(float Duration, FVector ImpulseOverride)
 	// Tilt o ragdoll del cuerpo: aquí el servidor y en OnRep_IsKnockedDown los clientes (#78). Sin esto el emote solo
 	// agita brazos y el jugador se ve flotando, no tumbado. El golpe suena una vez en cada máquina.
 	ApplyKnockdownVisual(true);
-	if (KnockdownSound)
-	{
-		MulticastPlaySfx(KnockdownSound);
-	}
+	MulticastPlayKnockdownSound();
 
 	// ── DBNO heartbeat: solo el jugador local incapacitado oye el latido ──
 	if (IsLocallyControlled())
@@ -130,6 +133,16 @@ void ATortugaCharacter::ApplyKnockdown(float Duration, FVector ImpulseOverride)
 }
 
 void ATortugaCharacter::RecoverFromKnockdown()
+{
+	RecoverFromKnockdownImpl(/*bPlayReviveSound=*/true);
+}
+
+void ATortugaCharacter::RecoverFromKnockdownSilently()
+{
+	RecoverFromKnockdownImpl(/*bPlayReviveSound=*/false);
+}
+
+void ATortugaCharacter::RecoverFromKnockdownImpl(bool bPlayReviveSound)
 {
 	if (!HasAuthority())
 	{
@@ -165,7 +178,10 @@ void ATortugaCharacter::RecoverFromKnockdown()
 
 	// ── Audio feedback de revive ─────────────────────────────────────────
 	StopDBNOHeartbeatSound();
-	MulticastPlayReviveSuccessSound();
+	if (bPlayReviveSound)
+	{
+		MulticastPlayReviveSuccessSound();
+	}
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Knockdown] %s recovered"), *GetNameSafe(this));
 }
@@ -215,6 +231,20 @@ void ATortugaCharacter::OnRep_IsKnockedDown()
 	// Tilt o ragdoll y pajaritos del mareo encima del emote, en todos los clientes (también el dueño y quien entra con
 	// el derribo ya empezado): el único camino de estado del derribo (#78).
 	ApplyKnockdownVisual(bIsKnockedDown);
+}
+
+void ATortugaCharacter::MulticastPlayKnockdownSound_Implementation()
+{
+	if (KnockdownSound)
+	{
+		PlaySfxAtSelf(KnockdownSound);
+		return;
+	}
+	// Sin recurso: el «¡clonc!» sintetizado del caparazón (#348).
+	if (UTN_TurtleActionSynthComponent* Synth = UTN_TurtleActionSynthComponent::FindOrAddTo(this))
+	{
+		Synth->PlayKnockdown();
+	}
 }
 
 void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)

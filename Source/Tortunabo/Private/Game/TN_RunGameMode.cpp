@@ -662,7 +662,8 @@ void ATN_RunGameMode::ApplyDeathVisuals(APawn* Pawn, APlayerController* PlayerCo
 {
 	if (ATortugaCharacter* Character = Cast<ATortugaCharacter>(Pawn))
 	{
-		Character->RecoverFromKnockdown();
+		// Sin el arpegio de reanimar: muere, no se levanta (#348).
+		Character->RecoverFromKnockdownSilently();
 	}
 
 	if (ACharacter* Ch = Cast<ACharacter>(Pawn))

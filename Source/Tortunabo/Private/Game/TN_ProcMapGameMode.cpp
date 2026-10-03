@@ -800,7 +800,7 @@ void ATN_ProcMapGameMode::BeginRespawn(APlayerController* PlayerController, ATor
 	ReleaseCarry(Turtle);
 	if (Turtle->IsKnockedDown())
 	{
-		Turtle->RecoverFromKnockdown();
+		Turtle->RecoverFromKnockdownSilently();
 	}
 	if (UTN_ShellComponent* Shell = Turtle->GetShellComponent())
 	{

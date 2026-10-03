@@ -967,6 +967,10 @@ private:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayReviveSuccessSound();
 
+	/** Multicast: el «¡clonc!» del derribo en cada máquina (KnockdownSound o, sin recurso, el sintetizado). */
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlayKnockdownSound();
+
 	TWeakObjectPtr<APlayerController> ReviveTargetPC;
 	float ReviveChannelElapsed = 0.f;
 	FTimerHandle ReviveChannelTimerHandle;
@@ -1006,6 +1010,9 @@ private:
 	/** Callback for DBNOAudioComponent: re-loops heartbeat while DBNO. */
 	UFUNCTION()
 	void OnDBNOAudioFinished();
+
+	/** Cuerpo de RecoverFromKnockdown y RecoverFromKnockdownSilently. */
+	void RecoverFromKnockdownImpl(bool bPlayReviveSound);
 
 protected:
 	// ── Emote replication ────────────────────────────────────────────────────
@@ -1381,6 +1388,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Knockdown")
 	void RecoverFromKnockdown();
 
+	/**
+	 * Como RecoverFromKnockdown, pero sin el sonido de reanimar (server-only). Para la muerte
+	 * (ATN_RunGameMode::ApplyDeathVisuals), que también levanta el derribo y no debe sonar a «¡arriba!» (#348).
+	 */
+	void RecoverFromKnockdownSilently();
+
 	/** Returns true if this character is currently in a knockdown/DBNO state. */
 	UFUNCTION(BlueprintPure, Category = "Knockdown")
 	bool IsKnockedDown() const { return bIsKnockedDown; }
@@ -1654,6 +1667,25 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SFX|Player")
 	TObjectPtr<USoundBase> ConsumeSound;
+
+	/**
+	 * Servidor: sacudida corta de cámara y vibración del mando (Strength 0..1) solo en la máquina del jugador que recibe
+	 * el golpe, con sus ajustes (TNHitFeedback). Uno por fotograma: el primer aviso manda.
+	 */
+	void NotifyHitFeedback(float Strength);
+
+	/**
+	 * Cliente dueño: aplica la sacudida y la vibración de un golpe que ha decidido el servidor. Fiable: uno por golpe, y en
+	 * una prueba con un cliente el no fiable se perdió en el primer derribo.
+	 */
+	UFUNCTION(Client, Reliable)
+	void ClientPlayHitFeedback(float Strength);
+
+private:
+	/** Fotograma del último aviso de golpe (NotifyHitFeedback), para no repetirlo dentro del mismo. */
+	uint64 LastHitFeedbackFrame = 0;
+
+public:
 
 	/**
 	 * Multicast: spawnea Sound at-location en todas las máquinas. Llamar SOLO

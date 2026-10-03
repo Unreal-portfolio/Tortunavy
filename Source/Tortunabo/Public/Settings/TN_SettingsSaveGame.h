@@ -97,6 +97,10 @@ struct FTNGameSettings
 	UPROPERTY()
 	bool bInvertGamepadY = false;
 
+	/** Vibración del mando al recibir un golpe (derribo, aturdimiento, impacto de un lanzable). Desde la versión 4. */
+	UPROPERTY()
+	bool bGamepadVibration = true;
+
 	/**
 	 * Teclas y botones reasignados, por fila de controles y aparato: «IA_Jump#0» (teclado y ratón) o «IA_Move:Y+#1»
 	 * (mando) → tecla nueva. Lo que no está aquí va con la tecla de serie de IMC_Player.
@@ -200,9 +204,9 @@ class TORTUNABO_API UTN_SettingsSaveGame : public USaveGame
 
 public:
 	/**
-	 * Versión del formato (TNSaveLogic::SETTINGS_SAVE_VERSION); al cargar, TNSettingsMigration la lleva a la actual.
-	 * 0 = sin número. UE solo escribe en el fichero lo que difiere del valor por defecto de la clase: cuando este valía la
-	 * versión de entonces (1, 2 o 3), no se escribía nunca y no se podía saber de qué versión era un guardado. Por eso el
+	 * Versión del formato (TNSaveLogic::SETTINGS_SAVE_VERSION; la 4 añade la vibración del mando); al cargar,
+	 * TNSettingsMigration la lleva a la actual. 0 = sin número. UE solo escribe en el fichero lo que difiere del valor
+	 * por defecto de la clase: cuando este valía la versión de entonces (1, 2 o 3), no se escribía nunca y no se podía saber de qué versión era un guardado. Por eso el
 	 * valor por defecto es 0 y se sella al guardar (StampCurrentVersion), como el perfil cosmético y el tutorial.
 	 * Siempre se sella con la versión de esta build, también si el fichero venía de una más nueva: el número dice cómo
 	 * es el contenido escrito (solo los campos que esta build conoce), y así la build nueva vuelve a migrarlo. Lo que
