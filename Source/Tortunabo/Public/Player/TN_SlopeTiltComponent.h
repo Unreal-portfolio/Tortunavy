@@ -41,7 +41,14 @@ public:
 
 	/** Velocidad de la interpolación exponencial hacia la inclinación del suelo (1/s; más alto, más brusco). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Slope Tilt", meta = (ClampMin = "0.5", ClampMax = "40.0"))
-	float TiltInterpSpeed = 8.f;
+	float TiltInterpSpeed = TNSlopeTilt::DefaultInterpSpeed;
+
+	/**
+	 * Giro máximo de la inclinación (grados/s): evita el tirón del primer fotograma al aterrizar en una cuesta (p. ej. del
+	 * panzazo), que con solo la interpolación exponencial depende de la pendiente y de los fps.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Slope Tilt", meta = (ClampMin = "10.0", ClampMax = "720.0"))
+	float MaxTiltRateDegPerSec = TNSlopeTilt::DefaultMaxRateDegPerSec;
 
 	/** Proxies simulados: distancia (cm) bajo la base de la cápsula que mira la traza del suelo. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Slope Tilt", meta = (ClampMin = "5.0"))

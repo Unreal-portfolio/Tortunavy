@@ -124,7 +124,7 @@ void UTN_SlopeTiltComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		return;
 	}
 
-	CurrentTilt = TNSlopeTilt::StepTilt(CurrentTilt, TargetTilt, DeltaTime, TiltInterpSpeed);
+	CurrentTilt = TNSlopeTilt::StepTilt(CurrentTilt, TargetTilt, DeltaTime, TiltInterpSpeed, MaxTiltRateDegPerSec);
 	ApplyToVisual(*Mesh);
 }
 

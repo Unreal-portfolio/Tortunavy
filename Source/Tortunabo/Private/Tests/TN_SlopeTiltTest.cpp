@@ -182,4 +182,49 @@ bool FTNSlopeTiltInterpTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSlopeTiltLandingTest,
+	"Tortunabo.Player.SlopeTilt.LandingNoJerk",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNSlopeTiltLandingTest::RunTest(const FString& Parameters)
+{
+	using namespace TNSlopeTilt;
+
+	// Aterrizaje del panzazo (#586): en el vuelo la inclinación es cero y al tocar una cuesta de 35° (el tope) pasa a la
+	// del suelo. Con los valores del componente, ningún fotograma gira más de 5° (el tirón que se ve), a 30 y a 60 fps,
+	// y en menos de 1 s queda paralela al suelo. Solo con la interpolación exponencial, el primer paso eran 9,3° a 30 fps.
+	constexpr float MaxJerkDeg = 5.f;
+	const FRotator Targets[] = { FRotator(-35.f, 0.f, 0.f), FRotator(35.f, 0.f, 0.f), FRotator(-24.7f, 0.f, 24.7f) };
+	const float FrameRates[] = { 30.f, 60.f };
+	for (const FRotator& Target : Targets)
+	{
+		for (const float Fps : FrameRates)
+		{
+			const float DeltaTime = 1.f / Fps;
+			FRotator Current = FRotator::ZeroRotator;
+			float MaxStepDeg = 0.f;
+			bool bOffDirection = false;
+			for (int32 Frame = 0; Frame < FMath::CeilToInt(Fps); ++Frame)
+			{
+				const FRotator Next = StepTilt(Current, Target, DeltaTime, DefaultInterpSpeed, DefaultMaxRateDegPerSec);
+				const FVector2D Step(Next.Pitch - Current.Pitch, Next.Roll - Current.Roll);
+				const FVector2D ToTarget(Target.Pitch - Current.Pitch, Target.Roll - Current.Roll);
+				MaxStepDeg = FMath::Max(MaxStepDeg, static_cast<float>(Step.Size()));
+				// El tope recorta el paso sin torcerlo: sigue apuntando al objetivo.
+				bOffDirection |= !ToTarget.IsNearlyZero() && FVector2D::DotProduct(Step.GetSafeNormal(), ToTarget.GetSafeNormal()) < 0.999;
+				Current = Next;
+			}
+			const FString Case = FString::Printf(TEXT("(%.1f, %.1f) a %.0f fps"), Target.Pitch, Target.Roll, Fps);
+			TestTrue(FString::Printf(TEXT("%s: ningún fotograma gira más de %.0f° (máx. %.2f°)"), *Case, MaxJerkDeg, MaxStepDeg), MaxStepDeg <= MaxJerkDeg);
+			TestFalse(FString::Printf(TEXT("%s: el paso va hacia el objetivo"), *Case), bOffDirection);
+			TestTrue(FString::Printf(TEXT("%s: en 1 s queda a menos de 0,5° del suelo"), *Case), Current.Equals(Target, 0.5f));
+		}
+	}
+
+	// Sin tope (0), el paso es el exponencial de siempre.
+	const FRotator Free = StepTilt(FRotator::ZeroRotator, FRotator(-35.f, 0.f, 0.f), 1.f / 30.f, DefaultInterpSpeed, 0.f);
+	TestTrue(TEXT("Sin tope: el primer paso es el exponencial"), FMath::IsNearlyEqual(Free.Pitch, -35.f * DefaultInterpSpeed / 30.f, 0.01f));
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

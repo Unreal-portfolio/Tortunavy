@@ -73,14 +73,32 @@ namespace TNSlopeTilt
 		return FRotator(Pitch, 0.0, Roll);
 	}
 
-	/** Un paso de la interpolación exponencial hacia Target (Speed en 1/s); al quedar a menos de 0,05° se pega. */
-	inline FRotator StepTilt(const FRotator& Current, const FRotator& Target, float DeltaTime, float Speed)
+	/** Velocidad por defecto de la interpolación exponencial hacia la inclinación del suelo (1/s). */
+	constexpr float DefaultInterpSpeed = 8.f;
+
+	/**
+	 * Giro máximo por segundo por defecto (grados/s). La interpolación exponencial da el paso más grande en el primer
+	 * fotograma: al aterrizar de un panzazo en una cuesta de 35° eran 9° de golpe a 30 fps. Con este tope, el primer paso
+	 * es de 4° a 30 fps y de 2° a 60 fps.
+	 */
+	constexpr float DefaultMaxRateDegPerSec = 120.f;
+
+	/**
+	 * Un paso de la interpolación exponencial hacia Target (Speed en 1/s), con el giro del paso limitado a
+	 * MaxRateDegPerSec · DeltaTime (0 = sin límite) sin cambiar su dirección; al quedar a menos de 0,05° se pega.
+	 */
+	inline FRotator StepTilt(const FRotator& Current, const FRotator& Target, float DeltaTime, float Speed, float MaxRateDegPerSec = 0.f)
 	{
 		constexpr float SnapDeg = 0.05f;
-		FRotator Next(
-			FMath::FInterpTo(Current.Pitch, Target.Pitch, DeltaTime, Speed),
-			0.f,
-			FMath::FInterpTo(Current.Roll, Target.Roll, DeltaTime, Speed));
+		FVector2D Step(
+			FMath::FInterpTo(Current.Pitch, Target.Pitch, DeltaTime, Speed) - Current.Pitch,
+			FMath::FInterpTo(Current.Roll, Target.Roll, DeltaTime, Speed) - Current.Roll);
+		const double MaxStepDeg = static_cast<double>(MaxRateDegPerSec) * FMath::Max(0.f, DeltaTime);
+		if (MaxRateDegPerSec > 0.f && Step.Size() > MaxStepDeg)
+		{
+			Step = Step.GetSafeNormal() * MaxStepDeg;
+		}
+		FRotator Next(Current.Pitch + Step.X, 0.f, Current.Roll + Step.Y);
 		if (FMath::Abs(Next.Pitch - Target.Pitch) < SnapDeg && FMath::Abs(Next.Roll - Target.Roll) < SnapDeg)
 		{
 			Next = FRotator(Target.Pitch, 0.f, Target.Roll);
