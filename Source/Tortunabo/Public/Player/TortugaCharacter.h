@@ -50,6 +50,8 @@ class TORTUNABO_API ATortugaCharacter : public ACharacter
 
 	/** El monkey test (TN.Monkey) pulsa los mismos manejadores de entrada que el jugador. */
 	friend class UTN_MonkeyComponent;
+	/** Escenario de estrés «caos» (Testing/TN_StressChaos.h): juega con la misma entrada que el jugador. */
+	friend class UTN_StressChaosSubsystem;
 
 public:
 	/** Con UTN_TurtleMovementComponent como movimiento (el arrastre del panzazo va dentro de la simulación, predicho). */
