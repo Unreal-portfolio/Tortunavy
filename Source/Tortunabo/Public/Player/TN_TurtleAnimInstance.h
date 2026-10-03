@@ -100,6 +100,14 @@ struct FTNTurtleAnimFrame
 	float CliffDiveW = 0.f;
 	float CliffDiveTime = 0.f;
 	float CliffDivePitch = 0.f;
+	/**
+	 * VR (Docs/Modo_VR.md): las manos del cuerpo van a los mandos (IK de brazo y antebrazo). Peso de cada brazo (0 bailando,
+	 * en el caparazón, tumbada o llevando a otra tortuga) y dónde tiene que llegar cada mano, en el espacio de la malla.
+	 */
+	float VRArmLW = 0.f;
+	float VRArmRW = 0.f;
+	FVector VRHandL = FVector::ZeroVector;
+	FVector VRHandR = FVector::ZeroVector;
 };
 
 /** Evaluación en C++ de la pose de la tortuga (clips de Mixamo y poses procedurales encima). */

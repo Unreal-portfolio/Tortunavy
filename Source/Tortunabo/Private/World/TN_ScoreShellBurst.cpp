@@ -1,4 +1,5 @@
 #include "World/TN_ScoreShellBurst.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "World/TN_ScoreShells.h"
 #include "Audio/TN_ScoreShellSynthComponent.h"
 #include "Camera/PlayerCameraManager.h"
@@ -37,12 +38,12 @@ ATN_ScoreShellBurst* ATN_ScoreShellBurst::SpawnAt(UWorld* World, const FVector& 
 	{
 		return nullptr;
 	}
-	if (const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(World, 0))
+	// Lejos de todas las cámaras locales (con la pantalla partida, de la más cercana), nada.
+	FVector CameraAt = Location;
+	if (TNLocalViews::ClosestCamera(World, Location, CameraAt)
+		&& FVector::DistSquared(CameraAt, Location) > FMath::Square(TNShellBurstDetail::MaxViewDistance))
 	{
-		if (FVector::DistSquared(Cam->GetCameraLocation(), Location) > FMath::Square(TNShellBurstDetail::MaxViewDistance))
-		{
-			return nullptr;
-		}
+		return nullptr;
 	}
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

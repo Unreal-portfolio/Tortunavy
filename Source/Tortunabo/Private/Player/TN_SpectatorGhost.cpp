@@ -642,8 +642,8 @@ void ATN_SpectatorGhost::AddLook(float X, float Y, bool bGamepad)
 	bool bInvertY = false;
 	if (const UTN_GameSettingsSubsystem* Settings = UTN_GameSettingsSubsystem::Get(PC))
 	{
-		Sensitivity = Settings->GetLookSensitivity(bGamepad);
-		bInvertY = Settings->IsLookYInverted(bGamepad);
+		Sensitivity = Settings->GetLookSensitivityFor(PC, bGamepad);
+		bInvertY = Settings->IsLookYInvertedFor(PC, bGamepad);
 	}
 	const float Scale = (bGamepad ? PadDegreesPerSecond * World->GetDeltaSeconds() : MouseDegreesPerUnit) * Sensitivity;
 	CameraModifier->AddOrbitInput(X * Scale, Y * Scale * (bInvertY ? -1.f : 1.f));

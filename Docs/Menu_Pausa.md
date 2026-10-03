@@ -18,7 +18,7 @@ con el estilo del HUD (`TN_HUDArt`, `TN_HUDStyle`, `TN_ShopArt`) y los ajustes s
 | `TNHUDFonts` | `Private/UI/HUD/TN_HUDFonts.*` | La fuente compuesta de la interfaz (`TNHUDStyle::Font`): la del motor más una fuente de reserva por idioma cuando su archivo está en `Content/Slate/Fonts`. |
 | `UTN_PauseMenuWidget` | `UI/Pause/TN_PauseMenuWidget.*` | El menú: cabecera, portada, ajustes en cinco pestañas, página de controles (con el cambio de teclas), avisos y cuadro de confirmación. También sale desde el menú principal (ver «Ajustes desde el menú principal»). |
 | Botón «Ajustes» del menú principal | `UI/Menu/MP_MainMenuWidget.*`, `UTN_GameSettingsSubsystem::OpenMainMenuSettings` | Un botón hecho en código junto a los del Blueprint que abre este mismo menú. |
-| `UTN_PauseRow` | `UI/Pause/TN_PauseMenuWidget.*` | Fila enfocable: botón, deslizador, lista de opciones, texto, medidor o tecla. |
+| `UTN_PauseRow` | `UI/Pause/TN_PauseMenuWidget.*` | Fila enfocable: botón, deslizador, lista de opciones, texto, medidor o tecla. Es `Visible` (no `SelfHitTestInvisible`, el de serie de un `UUserWidget`): la navegación de Slate solo llega a lo que se puede tocar. |
 | `UTN_FpsCounterWidget` | `UI/Pause/TN_PauseMenuWidget.*` | Contador de FPS (ajuste «Mostrar FPS»). |
 | `UTN_TalkersWidget` | `UI/Pause/TN_PauseMenuWidget.*` | «Quién habla»: los nombres de quien se oye hablar por voz, a la derecha (accesibilidad). |
 | `TNPauseArt` | `Private/UI/Pause/TN_PauseArt.h` | Iconos pintados en código: los de los botones de la portada, altavoz y micrófono (tachados si están silenciados) y la corona del anfitrión. |
@@ -63,7 +63,9 @@ solo terreno; carrera clásica), la sala (su nombre, de quién es, pública o pr
 «cerrada» si lo está: [Salas](Salas.md); sin sala, la sesión como antes; sin sesión, si eres el anfitrión, un invitado
 o una partida local) y los jugadores con su cara, su
 nombre, «Tú», «Anfitrión» (corona) o su ping, y su icono de voz: micrófono para ti y altavoz para los demás, que late
-cuando habla y sale tachado si está silenciado.
+cuando habla y sale tachado si está silenciado. Un invitado ve también su propio ping («Tú · 42 ms»); el anfitrión no
+tiene ping contra nadie y una partida local tampoco (`TNPlayerRowRules`, #256). El ping se lee al hacer la lista (al abrir
+el menú o cuando alguien entra o sale), no se refresca mientras está abierto.
 
 **Portada**: Continuar, Ajustes, Controles, Sala (en red), Volver al lobby, Menú principal (anfitrión) o Salir de la
 partida (invitado) y Salir al escritorio. Abajo, la ayuda de la opción enfocada y los atajos.
@@ -86,7 +88,8 @@ mando por separado y los nombres en español, y se cambian ahí mismo (ver Contr
 sticks), los controles del espectador y moverse por los menús.
 
 **Moverse por el menú**: flechas, WASD, cruceta o stick izquierdo; Intro, Espacio o A pulsan; izquierda y derecha (A y
-D) cambian los deslizadores y las listas; Q y E o LB y RB cambian de pestaña; el ratón enfoca al pasar por encima,
+D) cambian los deslizadores y las listas y, en la barra de pestañas, abren la de al lado (arriba desde la lista lleva a
+la pestaña abierta); Q y E o LB y RB cambian de pestaña; el ratón enfoca al pasar por encima,
 pulsa con clic y arrastra los deslizadores; la rueda desplaza las listas. Cada fila suena al enfocarla («pom») y al
 pulsar («plin»): los sonidos de las conchas (`UTN_ScoreShellSynthComponent`); al mover un deslizador el «pom» sube de
 tono con el valor.
@@ -191,7 +194,7 @@ pasa con los sintetizadores del proyecto, que viven mucho más).
 | Ajuste | Cómo se aplica |
 |---|---|
 | Voz de los compañeros | Clase `TN_Voice` (todas las voces). |
-| Voz de cada compañero (0-200 %) y silenciarlo | Multiplicador de volumen del componente de reproducción de su voz (`PlaybackVolume` × el tuyo; 0 si está silenciado), cada fotograma. Se guarda por su id de la plataforma (Steam) o, si no hay, por su nombre, así que se recuerda entre partidas. |
+| Voz de cada compañero (0-200 %) y silenciarlo | Multiplicador de volumen del componente de reproducción de su voz (`PlaybackVolume` × el tuyo; 0 si está silenciado), cada fotograma. Además, la voz de un silenciado ni se descodifica ni se reproduce (`UProximityVoiceComponent::PlayRemoteVoice`), y su jugador se saca del peón o, si este no tiene `PlayerState`, del último que tuvo (`GetSpeakerState`, #248). Se guarda por su id de la plataforma (Steam) o, si no hay, por su nombre, así que se recuerda entre partidas. |
 | Silenciar mi micrófono | `UProximityVoiceComponent::SetTransmitEnabled(false)`: se sigue capturando (el medidor vive) pero no se envía nada y la tortuga deja de «hablar» en el acto. |
 | Modo: voz abierta o pulsar para hablar | Con pulsar para hablar, la salida solo se abre con la tecla pulsada (`IsInputKeyDown`); encima sigue haciendo falta superar el umbral. |
 | Tecla y botón para hablar | Una fila de tecla (la misma que en la página de controles): V y cruceta abajo de serie, y cualquier otra que se pulse. Si otra acción la tenía, se cambian entre sí (ver Controles). |
