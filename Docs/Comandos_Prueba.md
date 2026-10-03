@@ -50,6 +50,7 @@ necesita espera a que esté lista.
     - Con dos tortugas (o dos ventanas / un cliente): una metida en su caparazón dentro del cazo y la otra que entra andando y arma la catapulta. La bola no debe moverse aunque la otra la roce, y las dos salen lanzadas. En el cliente la bola debe volar igual que en el anfitrión, sin tirones ni saltos al salir. Una bola aturdida (la que deja un golpe de mina o de enemigo) no cuenta. En el log del anfitrión: `[Playa] Catapulta … dispara: N lanzadas (M ya en su bola)`.
   - `Mine`: mina.
   - `Trampoline`: trampolín (4 variantes por semilla).
+    - Caídas en red (#21): `TN.Beach.Drop <metros>[/<metros>...] [veces=1] [cada=3 s] [jugador=anfitrión]` en el anfitrión deja caer esa tortuga sobre lo más alto del trampolín de `TN.Beach.Place` más cercano (si no hay, crea uno de gelatina). Con `p.NetShowCorrections 1` y `NetEmulation.PktLag 120` en el cliente, `TN.Beach.Drop 5/7 10 4 1` hace diez caídas alternas de 5 y 7 m del jugador 1: tiene que rebotar igual en los dos y sin correcciones (solo las del propio teletransporte). La primera espera una vuelta para que el jugador acabe de entrar.
   - `FortressMedium`, `FortressLarge`, `FortressColossal`: fortaleza de arena con premio en la cima (lanzador potenciado, cofre y conchas de 50 y 100). Mira hacia donde miras (lanza hacia allí) y sale lejos: la colosal, a ~54 m. Por ejemplo `TN.Beach.Place FortressColossal 1 0 7`; semillas seguidas cambian catapulta o trampolín y el lado de la espiral.
 - **Lanzadores potenciados** (los de la cima de las fortalezas): `TN.Beach.PlaceBoosted <Catapult|Trampoline> [Tamaño=1] [Semilla]`, delante de ti y mirando hacia donde miras. `TN.Beach.Place clear` también los borra.
 - **Subir a la cima:** `TN.Beach.Fortress.Top [jugador=0]` lleva a esa tortuga a la cima de la fortaleza más cercana, detrás del lanzador y mirando hacia él.
@@ -216,6 +217,15 @@ despacio por la arena no debe sonar; un bote de más de 2,6 m/s, sí.
 Escape en el juego y Tabulador en el editor (PIE); Start en el mando. No tiene comandos. La lista de pruebas está en
 `Docs/Menu_Pausa.md`.
 
+Prueba automática con mando, teclado y pantalla partida: pulsa la cruceta, el stick, las flechas, A, B y RB como los
+manda el motor sobre el menú de pausa (los ajustes del menú principal), «Crear partida» y «Unirse», y el menú de un
+invitado de la partida local. Necesita el juego con su ventana, así que no sale en el editor:
+
+```
+UnrealEditor-Win64-DebugGame.exe <uproject> -game -RenderOffScreen -NoSteam -ResX=1280 -ResY=720 -unattended -nosound
+    -ExecCmds="Automation RunTests Tortunabo.UI.PausePad; Quit"
+```
+
 ## Modo VR
 
 Detalle, controles y pruebas en `Docs/Modo_VR.md`. Se escriben en la ventana de **quien lo prueba** (el modo VR es de cada
@@ -228,10 +238,14 @@ máquina).
 | `TN.VR 0` / `TN.VR -1` | Apagado a la fuerza / lo que diga el ajuste (Automático: gafas solo si el motor pinta en estéreo). |
 | `TN.VR.Status` | Escribe el modo, si hay OpenXR, gafas y estéreo, el dispositivo, el rig y si hay un menú delante. |
 | `TN.VR.Recenter` | Recentra la vista (con gafas) y vuelve a poner delante el HUD o el menú. Con los mandos, clic del stick derecho. |
-| `TN.VR.HudDistance 140` / `TN.VR.HudFov 50` | Distancia (cm) y ancho (grados) del HUD. |
-| `TN.VR.MenuDistance 160` / `TN.VR.MenuFov 58` | Lo mismo para los menús. |
+| `TN.VR.HudDistance 150` / `TN.VR.HudFov 80` | Distancia (cm) y arco (grados) del HUD curvo anclado a la cámara. |
+| `TN.VR.HudFollow 1` | HUD suelto delante que sigue a la cabeza con retraso (de serie `0`: anclado a la cámara, fijo en la vista). |
+| `TN.VR.MenuDistance 160` / `TN.VR.MenuFov 100` | Distancia y arco de los menús (curvos, quietos en el mundo). |
+| `TN.VR.LoadingDomeRadius 300` | Radio (cm) de la playa en 360 de la pantalla de carga (`0` la quita). |
 | `TN.VR.SmoothTurnSpeed 120` | Grados por segundo del giro suave. |
-| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, HUD, giro, panel, botones de los menús). |
+| `TN.Camera 1` / `TN.Camera 0` / `TN.Camera -1` | Sin gafas: primera persona / tercera persona / la del ajuste «Cámara». También con T o el clic del stick derecho (fila «Cambiar de cámara» de Controles). |
+| `TN.FirstPerson.ShellLight 0.2` | Luz que queda dentro del caparazón en primera persona y en VR (0 negro, 1 como fuera). |
+| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara). |
 
 ## Pantalla de carga del huevo
 
@@ -254,6 +268,17 @@ No existen en la build Shipping.
 | `TN.Rooms.FakeError <joinfull\|gone\|noaddress>` | Simula que falla la entrada en la sesión (llena, ya no existe, sin dirección del anfitrión): el aviso sale en el menú de salas sin recargarlo. |
 | `TN.Travel.Fail [/Game/Ruta/Mapa \| motor] [segundos]` | Solo en el anfitrión: pide un `ServerTravel` a un mapa que no existe (por defecto `/Game/Maps/TN_MapaQueNoExiste`), que `CanServerTravel` para sin mandar a los invitados; con `motor`, simula un fallo de `UEngine::OnTravelFailure` (un mapa que existe pero no carga), con la desconexión que pide el motor. Con segundos, lo hace pasado ese tiempo (para que entren invitados en una prueba sin ventana con `-ExecCmds`). En los dos casos, el registro debe dar un solo `Fallo de viaje ... (fallo 1 seguido)` y el anfitrión debe seguir en el lobby (o recargarlo) con su sesión. Antes `net.AllowPIESeamlessTravel 1` si se prueba en PIE el viaje sin cortes. Ver [Salas](Salas.md#viaje-de-mapa-fallido). |
 | `Automation RunTests Tortunabo.Net.TravelFailure` | Prueba automática de lo que se hace ante un viaje fallido (anfitrión, invitado, menú, lobby en pie, segundo fallo) y de si el `ServerTravel` ha arrancado de verdad. |
+
+## Partida local (pantalla partida)
+
+En una partida local (menú principal > «Local», Standalone). No existen en la build Shipping. Detalle en
+[Modo_Local.md](Modo_Local.md).
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Local.AddGuest [N]` | En el lobby, añade N invitados (1 a 3, hasta 4 jugadores) sin mando: su tortuga aparece y la pantalla se reparte, pero no los mueve nadie. Para ver el reparto con 2, 3 y 4 sin tener cuatro mandos. |
+| `TN.Local.RemoveGuest [N]` | Saca al último invitado (o al jugador N, de 2 a 4): su tortuga y su vista desaparecen. |
+| `TN.Local.Info` | Escribe si la partida es local y, de cada jugador local, su usuario de la plataforma y sus aparatos (qué mando es de quién). |
 
 ## Cooperativo (mapa procedural y lobby)
 
@@ -295,6 +320,25 @@ géiseres, ocho cascadas y canales de agua).
 
 Sin editor (carreras solo de la IA, una línea `[RallyStats]` por carrera con terminados, atascos y vuelcos):
 `UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Run/LVL_ProcMap?game=Karts?Bots=4?AutoStart?Races=1?RaceTimeout=420?ProcDifficulty=Easy?ProcSeed=4242" -server -nullrhi -NoSteam`.
+
+## Capturas de arte sin abrir el editor
+
+Desde la línea de órdenes (no Shipping), con `-game -windowed`. Por cada clase encuadra el ejemplar del mapa más
+cercano a `-TNArtShotsAt` (o crea uno allí), guarda `<clase>.png` y deja en el registro `[ArtShot] <clase>: marcadores
+visibles=N, medidas=…`: N tiene que ser 0 (ninguna malla del motor a la vista; ver `Public/World/TN_PlaceholderArt.h`).
+
+```bash
+MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Game/Maps/Lobby/LVL_HQ -game -windowed \
+  -ResX=1600 -ResY=900 -nosound -NoSteam -TNQuitWhenDone -TNArtShotsAt=-1000:3250 -TNArtShotsOut=<carpeta> \
+  "-TNArtShots=/Game/Blueprints/Gameplay/Cosmetics/BP_SkinStatue.BP_SkinStatue_C;/Game/Blueprints/Gameplay/Items/BP_JellyfishActor.BP_JellyfishActor_C"
+```
+
+| Opción | Qué hace |
+|---|---|
+| `-TNArtShots=<clase>;<clase>` | Rutas completas de las clases (`/Game/.../BP_X.BP_X_C`). |
+| `-TNArtShotsAt=X:Y` | Claro del mapa donde nacen las que no están (dos puntos: la coma corta el valor). Sin él, delante del jugador. |
+| `-TNArtShotsOut=<carpeta>` | Dónde guarda las capturas (por defecto `Saved/ArtShots`). |
+| `-TNArtShotsWarmup=4` | Segundos de espera antes de la primera. |
 
 ## Tortuga: cara, voz, HUD y panzazo
 

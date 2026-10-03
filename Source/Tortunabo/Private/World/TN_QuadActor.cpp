@@ -5,6 +5,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Core/TN_Log.h"
+#include "World/TN_PlaceholderArt.h"
+#include "World/Beach/TN_BeachEnemyKit.h"
+#include "World/Beach/TN_BeachEnemyMeshes.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ATN_QuadActor
@@ -89,8 +93,10 @@ void ATN_QuadActor::BeginPlay()
 		WheelRightMesh->SetRelativeScale3D(WheelScale);
 	}
 
-	// Solo el servidor mueve el quad y aplica kills
-	SetActorTickEnabled(HasAuthority());
+	BuildCodeArt();
+
+	// Solo el servidor mueve el quad y aplica kills; los clientes solo giran las ruedas del arte de código.
+	SetActorTickEnabled(HasAuthority() || CodeArtRoot != nullptr);
 
 	if (HasAuthority())
 	{
@@ -113,9 +119,63 @@ void ATN_QuadActor::InitializeTravel(const FVector& InEndLocation, float InSpeed
 	}
 }
 
+void ATN_QuadActor::BuildCodeArt()
+{
+	if (GetNetMode() == NM_DedicatedServer || !TNPlaceholderArt::NeedsCodeArt(QuadMesh))
+	{
+		return;
+	}
+	const int32 Palette = FMath::Clamp(CodeArtPalette, 0, 4);
+	const TNBeachMeshes::FQuadLook Look = TNBeachMeshes::QuadPalette(Palette);
+	UStaticMesh* BodyMesh = TNBeachKit::CachedMesh(FString::Printf(TEXT("Beach.Quad.%d.Body"), Palette), [&Look](TNProcMesh::FTNProcMeshBuffers& M) { TNBeachMeshes::BuildQuadBody(M, Look); });
+	UStaticMesh* WheelMesh = TNBeachKit::CachedMesh(FString::Printf(TEXT("Beach.Quad.%d.Wheel"), Palette), [&Look](TNProcMesh::FTNProcMeshBuffers& M) { TNBeachMeshes::BuildQuadWheel(M, Look); });
+	if (!BodyMesh || !WheelMesh)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Quad] %s: no se ha podido construir el quad de código; se quedan los marcadores."), *GetName());
+		return;
+	}
+	// Ruedas del arte sobre las de matar (ejes a ±WheelLateralOffset) y apoyado en el suelo de las cápsulas.
+	const double Beach = TNBeach::Scale;
+	const float Fit = static_cast<float>(WheelLateralOffset / (TNBeachMeshes::QuadTrackHalf * Beach));
+	CodeArtRoot = NewObject<USceneComponent>(this, NAME_None, RF_Transient);
+	CodeArtRoot->SetupAttachment(QuadMesh);
+	CodeArtRoot->SetRelativeLocation(FVector(0.0, 0.0, -WheelCapsuleRadius));
+	CodeArtRoot->SetRelativeScale3D(FVector(Fit));
+	CodeArtRoot->RegisterComponent();
+	TNBeachKit::AddPart(this, CodeArtRoot, BodyMesh, FVector::ZeroVector);
+	for (int32 i = 0; i < 4; ++i)
+	{
+		const double X = (i < 2 ? 1.0 : -1.0) * TNBeachMeshes::QuadBaseHalf * Beach;
+		const double Y = (i % 2 == 0 ? -1.0 : 1.0) * TNBeachMeshes::QuadTrackHalf * Beach;
+		const FVector Pivot(X, Y, TNBeachMeshes::QuadWheelR * Beach);
+		CodeArtWheels.Add(TNBeachKit::AddPart(this, CodeArtRoot, WheelMesh, Pivot));
+		CodeArtWheelPivots.Add(Pivot);
+	}
+	CodeArtWheelRadius = static_cast<float>(TNBeachMeshes::QuadWheelR * Beach * Fit);
+	CodeArtLastLocation = GetActorLocation();
+	TNPlaceholderArt::HidePlaceholders(this, true);
+}
+
+void ATN_QuadActor::AnimateCodeArt()
+{
+	if (!CodeArtRoot || CodeArtWheelRadius <= UE_KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+	const FVector Location = GetActorLocation();
+	const double Forward = FVector::DotProduct(Location - CodeArtLastLocation, GetActorForwardVector());
+	CodeArtLastLocation = Location;
+	CodeArtWheelAngle = FMath::Fmod(CodeArtWheelAngle - static_cast<float>(FMath::RadiansToDegrees(Forward / CodeArtWheelRadius)), 360.f);
+	for (int32 i = 0; i < CodeArtWheels.Num(); ++i)
+	{
+		TNBeachKit::Pose(CodeArtWheels[i], CodeArtWheelPivots[i], FRotator(CodeArtWheelAngle, 0.f, 0.f));
+	}
+}
+
 void ATN_QuadActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	AnimateCodeArt();
 	if (!HasAuthority() || !bTraveling) { return; }
 
 	const FVector CurrentLoc = GetActorLocation();

@@ -1,4 +1,5 @@
 #include "World/TN_PickupGlowComponent.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "TN_LootGlowKit.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/PointLightComponent.h"
@@ -242,9 +243,10 @@ void UTN_PickupGlowComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	BuildVisuals();
 
 	// Distancia a la cámara local: lejos, tick lento y nada que mover.
-	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	// Con la pantalla partida (#311), la cámara local más cercana.
 	const FVector Location = Actor->GetActorLocation();
-	const float ViewDistance = Camera ? static_cast<float>(FVector::Dist(Camera->GetCameraLocation(), Location)) : 0.f;
+	FVector CameraAt = Location;
+	const float ViewDistance = TNLocalViews::ClosestCamera(GetWorld(), Location, CameraAt) ? static_cast<float>(FVector::Dist(CameraAt, Location)) : 0.f;
 	const bool bNear = ViewDistance < AnimRange;
 	if (bNear != bNearView)
 	{

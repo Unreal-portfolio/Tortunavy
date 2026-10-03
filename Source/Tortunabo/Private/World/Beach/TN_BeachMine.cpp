@@ -2,6 +2,7 @@
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachMineSynth.h"
+#include "World/Beach/TN_BeachNearby.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
@@ -29,6 +30,9 @@
 namespace TNBeachMineDetail
 {
 	using FBuffers = TNBeachTrapKit::FBuffers;
+
+	/** Margen (cm) sobre el radio de la tapa para buscar quién la pisa: cabe la cápsula de una tortuga con holgura. */
+	constexpr double StepReachMargin = 150.0;
 
 	/** Aspecto de la mina. */
 	struct FMineLook
@@ -471,11 +475,13 @@ void ATN_BeachMine::Tick(float DeltaSeconds)
 
 void ATN_BeachMine::CheckStep(double Now)
 {
-	UWorld* World = GetWorld();
 	const FTransform ActorXf = GetActorTransform();
-	for (TActorIterator<ATortugaCharacter> It(World); It; ++It)
+	// Solo las que están al alcance de la tapa (en planta, con margen para la cápsula y la escala del actor).
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(GetWorld(), ActorXf.GetLocation(), (CapRadius + TNBeachMineDetail::StepReachMargin) * ActorXf.GetMaximumAxisScale(), Near);
+	for (ACharacter* Walker : Near)
 	{
-		ATortugaCharacter* Turtle = *It;
+		ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(Walker);
 		if (!TNBeachTrapKit::IsFreeTurtle(Turtle))
 		{
 			continue;

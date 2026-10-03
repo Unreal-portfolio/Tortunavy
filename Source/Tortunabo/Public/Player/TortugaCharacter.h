@@ -7,6 +7,7 @@
 #include "Core/TN_CosmeticsTypes.h"
 #include "TortugaCharacter.generated.h"
 
+class APlayerController;
 class UCameraComponent;
 class USpringArmComponent;
 class UInputMappingContext;
@@ -1670,10 +1671,10 @@ public:
 	// ── Modo VR (Docs/Modo_VR.md) ─────────────────────────────────────────────
 
 	/**
-	 * Primera persona VR en el jugador local: cámara a la altura de los ojos de la tortuga (con gafas, con el seguimiento
-	 * de la cabeza; simulado, con el ratón), el cuerpo propio oculto para uno mismo (su sombra sí se ve) y la tortuga
-	 * mirando hacia donde mira la cabeza, también para los demás. Lo pone ATN_VRRig cada fotograma; false la devuelve a la
-	 * cámara de siempre.
+	 * Primera persona VR en el jugador local: cámara en la cabeza de la tortuga (con gafas, con el seguimiento de la
+	 * cabeza; simulado, con el ratón; tumbada, en la cabeza del ragdoll), del cuerpo propio se ve todo menos la cabeza (los
+	 * brazos siguen a los mandos) y la tortuga mira hacia donde mira la cabeza, también para los demás. Lo pone ATN_VRRig
+	 * cada fotograma; false la devuelve a la cámara de siempre.
 	 */
 	void SetVRView(bool bOn, bool bHeadset);
 	bool IsVRView() const { return bVRViewActive; }
@@ -1684,6 +1685,15 @@ public:
 
 	/** Giro del stick derecho con gafas (por pasos o suave): gira el origen del seguimiento. */
 	void AddVRYaw(float DeltaYaw);
+
+	/** Cuántos giros de golpe (más de unos grados de una vez: a pasos, al reaparecer) ha dado el origen del seguimiento. */
+	uint32 GetVRTurnSerial() const { return VRTurnSerial; }
+
+	/**
+	 * ¿Ve el jugador local el juego desde esta tortuga? (Es su vista y no hay un cambio de vista en marcha hacia otra.) Con
+	 * otra vista (probador, cámaras de escena, espectador) el cuerpo propio se pinta entero y las manos VR no valen.
+	 */
+	bool IsLocalViewTarget() const;
 
 	/** Hacia dónde apunta la aleta derecha de los mandos (lo pone ATN_VRRig); bValid false = se apunta con la cámara. */
 	void SetLocalVRAim(const FRotator& Aim, bool bValid);
@@ -1696,6 +1706,128 @@ public:
 
 	/** ¿Juega en VR el dueño de esta tortuga? (replicado: la tortuga gira con la cabeza, no con el movimiento). */
 	bool IsVRPlayer() const { return bVRPlayer; }
+
+	/** Coger objetos con física con las aletas en VR (lo usa ATN_VRRig). */
+	class UTN_VRGrabComponent* GetVRGrabComponent() const { return VRGrabComponent; }
+
+	/**
+	 * VR: dónde están las manos del dueño (los mandos, en el mundo). Lo pone ATN_VRRig cada fotograma; se manda al servidor
+	 * unas 15 veces por segundo (relativo a la tortuga) para que los demás vean los brazos siguiendo a las manos.
+	 */
+	void SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid);
+
+	/** Manos VR para el IK de los brazos: las del dueño o, en las demás máquinas, las replicadas. false sin VR. */
+	bool GetVRHandTargets(FVector& OutLeft, FVector& OutRight, bool& bOutLeft, bool& bOutRight) const;
+
+	/** ¿Siguen los brazos del cuerpo a las manos VR? Sí, salvo bailando, en el caparazón, tumbada o llevando a otra. */
+	bool AreVRArmsFollowing() const;
+
+	/** Qué tiene cogido un agarre VR: nada, lo que tocó (un objeto o algo con lo que interactuar), un compañero o el
+	 *  objeto que ya llevaba en la aleta. */
+	enum class EVRGrip : uint8 { None, Touched, Partner, HeldItem };
+
+	/**
+	 * VR, al apretar un agarre (Docs/Modo_VR.md, «Coger y lanzar»): coge lo que esté muy cerca de ESA mano (un objeto del
+	 * suelo o algo con lo que interactuar, o un compañero en el caparazón o aturdido). Con bHeldItem, si no hay nada, el
+	 * objeto que ya lleva en la aleta derecha (para lanzarlo o soltarlo al abrir la mano).
+	 */
+	EVRGrip VRGripPressed(bool bRight, const FVector& HandLocation, bool bHeldItem);
+
+	/**
+	 * VR, al soltar el agarre: con impulso (la mano a más de VRThrowSpeed), lanza lo cogido hacia donde va la mano; sin
+	 * él, deja al compañero en el suelo y suelta el objeto de la aleta (lo recién cogido se queda en la aleta).
+	 */
+	void VRGripReleased(EVRGrip Held, const FVector& HandVelocity);
+
+	/** Distancia (cm) de la mano a un objeto para cogerlo en VR (sin VR, la de siempre: la del cuerpo). */
+	UPROPERTY(EditDefaultsOnly, Category = "VR")
+	float VRHandReach = 40.f;
+
+	/** Velocidad de la mano (cm/s) a partir de la cual soltar el agarre lanza lo cogido. */
+	UPROPERTY(EditDefaultsOnly, Category = "VR")
+	float VRThrowSpeed = 250.f;
+
+	// ── Primera persona (Docs/Modo_VR.md, «Primera persona») ──────────────────
+
+	/**
+	 * Cámara en primera persona sin gafas (fila «Cambiar de cámara» de los controles, T y el clic del stick derecho de serie;
+	 * ajuste «Cámara» o consola TN.Camera): en la
+	 * cabeza, también tumbada en el ragdoll; se ve el cuerpo propio sin la cabeza (con la lengua y las gotas de sudor) y
+	 * la tortuga mira hacia donde mira la cámara, también para los demás. En el caparazón, la vista es desde dentro y
+	 * mucho más oscura. En VR la primera persona es la de las gafas (SetVRView) y usa lo mismo.
+	 */
+	bool IsFirstPersonView() const { return bFirstPersonActive || bVRViewActive; }
+
+	/** Cambia entre tercera y primera persona (guarda el ajuste). */
+	void ToggleCameraView();
+
+	/** ¿Quiere el jugador local la primera persona sin gafas? (consola TN.Camera o el ajuste «Cámara»). */
+	bool WantsFirstPersonView() const;
+
+private:
+	/** Manos VR del dueño relativas a la tortuga, para los demás (IK de los brazos). */
+	UPROPERTY(Replicated)
+	FVector_NetQuantize10 RepVRHandLeft;
+
+	UPROPERTY(Replicated)
+	FVector_NetQuantize10 RepVRHandRight;
+
+	/** Bit 0 mano izquierda con seguimiento, bit 1 la derecha. */
+	UPROPERTY(Replicated)
+	uint8 RepVRHandsValid = 0;
+
+	UFUNCTION(Server, Unreliable)
+	void ServerSetVRHands(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid);
+
+	FVector LocalVRHand[2] = { FVector::ZeroVector, FVector::ZeroVector };
+	bool bLocalVRHandValid[2] = { false, false };
+	double LastVRHandsSent = -1.0;
+
+	/** La interactuable más cercana a una mano VR (a menos de VRHandReach); nullptr si no hay. */
+	class ATN_InteractableBase* FindInteractableNearHand(const FVector& HandLocation);
+
+	/** Coge objetos con física con las aletas (sus RPC van por la conexión del dueño). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UTN_VRGrabComponent> VRGrabComponent;
+
+	/** Cámara de la primera persona sin gafas (se crea al entrar). */
+	UPROPERTY(Transient)
+	TObjectPtr<UCameraComponent> FirstPersonCamera;
+
+	/** El dueño juega en primera persona sin gafas (replicado: la tortuga gira con la cámara, como en VR). */
+	UPROPERTY(ReplicatedUsing = OnRep_FirstPersonPlayer)
+	bool bFirstPersonPlayer = false;
+
+	UFUNCTION()
+	void OnRep_FirstPersonPlayer();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetFirstPersonPlayer(bool bOn);
+
+	void SetFirstPersonView(bool bOn);
+
+	/** Cada fotograma en el dueño: la tecla de cambio, la cámara en la cabeza y lo que se ve del cuerpo propio. */
+	void TickFirstPersonView(float DeltaTime);
+
+	/** ¿Se ha pulsado en este fotograma la tecla o el botón de «Cambiar de cámara» (UTN_GameSettingsSubsystem)? */
+	bool WasCameraToggleJustPressed(const APlayerController* PC) const;
+
+	/** Dónde van los ojos: la cabeza (tumbada, la del ragdoll), el centro del caparazón o, con gafas y de pie, la cápsula. */
+	FVector ComputeFirstPersonEye(bool bHeadsetStable) const;
+
+	/** Lo que se ve del cuerpo propio: todo (tercera persona), sin cabeza, o nada (dentro del caparazón). */
+	enum class EFirstPersonBody : uint8 { Full, Headless, Hidden };
+	void ApplyFirstPersonBody(EFirstPersonBody NewBody);
+
+	/** Oscuridad de dentro del caparazón en la cámara activa (0 fuera, 1 dentro). */
+	void ApplyShellDarkness(UCameraComponent* Camera, float Alpha) const;
+
+	bool bFirstPersonActive = false;
+	EFirstPersonBody FirstPersonBody = EFirstPersonBody::Full;
+	/** Ojos respecto de la cápsula, suavizados (así la cabeza no hace temblar la vista). */
+	FVector FirstPersonEyeOffset = FVector::ZeroVector;
+	bool bFirstPersonEyeValid = false;
+	float ShellDarknessAlpha = 0.f;
 
 private:
 	/**
@@ -1735,6 +1867,7 @@ private:
 
 	bool bVRViewActive = false;
 	bool bVRHeadsetView = false;
+	uint32 VRTurnSerial = 0;
 	float VRYaw = 0.f;
 	float VRLastControlYaw = 0.f;
 	bool bVRControlYawValid = false;

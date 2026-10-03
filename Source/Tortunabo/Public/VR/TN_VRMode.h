@@ -78,8 +78,13 @@ namespace TNVR
 	 * Pone un widget de pantalla completa en la pantalla: sin VR, AddToViewport(ZOrder) de siempre; con VR, en el panel
 	 * del mundo (ATN_VRRig: el HUD flota delante y los menús se quedan quietos delante y se apuntan con la aleta). Se quita
 	 * con RemoveFromParent como siempre. Usarlo en lugar de AddToViewport en todo el juego.
+	 * En la partida local (#311), el widget de un jugador va a su trozo de la pantalla partida (AddToPlayerScreen); lo que es
+	 * de todos (menú de pausa, carga, contador de FPS) va con AddToFullScreen.
 	 */
 	TORTUNABO_API void AddToScreen(UUserWidget* Widget, int32 ZOrder = 0);
+
+	/** Como AddToScreen, pero siempre a toda la pantalla, por encima de las vistas de la pantalla partida. */
+	TORTUNABO_API void AddToFullScreen(UUserWidget* Widget, int32 ZOrder = 0);
 
 	/** ¿Está en la pantalla (el viewport o el panel VR)? Usarlo en lugar de IsInViewport. */
 	TORTUNABO_API bool IsOnScreen(const UUserWidget* Widget);

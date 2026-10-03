@@ -8,13 +8,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include "World/Beach/TN_BeachRaceGenerator.h"
+#include "Game/TN_BeachRaceGameState.h"
 #include "World/Beach/TN_BeachDecorField.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachLoot.h"
 #include "World/ProcMap/TN_ProcWaterActors.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Core/TN_Log.h"
-#include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
@@ -31,7 +31,6 @@
 #include "Net/UnrealNetwork.h"
 #include "ProceduralMeshComponent.h"
 #include "UObject/UObjectGlobals.h"
-#include "TN_BeachRaceKit.h"
 #include "../ProcMap/TN_ProcMapAmbientFX.h"
 
 namespace TNBeachRace
@@ -212,6 +211,7 @@ void ATN_BeachRaceGenerator::GenerateRound(int32 InSeed)
 	RoundNet.Round += 1;
 	RoundNet.bCleared = false;
 	RoundNet.Difficulty = Difficulty;
+	RoundNet.bSprintLayout = IsSprintFinalRound();
 	// Huevos cerrados otra vez y en la salida: las tortugas de la ronda nueva aparecen dentro (el sprint final los lleva a
 	// su línea después, con SetStartEggsAtSprint).
 	RoundNet.bStartOpen = false;
@@ -229,6 +229,15 @@ void ATN_BeachRaceGenerator::GenerateRound(int32 InSeed)
 	// El reparto en otro hilo; los asientos, el decorado, los actores y el botín, por partes en los fotogramas siguientes
 	// (TickRoundBuild). IsRoundReady espera a que esté todo.
 	StartRoundBuild(false);
+}
+
+bool ATN_BeachRaceGenerator::IsSprintFinalRound() const
+{
+	// El GameMode pone bSprintFinal al anunciar el sprint (EnterSprintIntro) y lo quita al empezar otra partida
+	// (ResetMatchScores), antes de repartir: GenerateRound lo ve ya puesto en la ronda del sprint y solo en ella.
+	const UWorld* World = GetWorld();
+	const ATN_BeachRaceGameState* BeachState = World ? World->GetGameState<ATN_BeachRaceGameState>() : nullptr;
+	return BeachState && BeachState->bSprintFinal;
 }
 
 void ATN_BeachRaceGenerator::ClearRound()
@@ -394,7 +403,7 @@ void ATN_BeachRaceGenerator::PreviewRound()
 	const int32 Seed = bEditorRandomSeed ? FMath::Rand() : EditorSeed;
 	DestroyRoundElements();
 	TNBeachLayout::FRoundLayout NewLayout;
-	MakeRoundLayout(Seed, Difficulty, NewLayout);
+	MakeRoundLayout(Seed, Difficulty, false, NewLayout);
 	ApplyLayoutLocal(NewLayout);
 	// El decorado, instanciado como en juego y de una vez (en el editor no hay fotogramas que repartir).
 	int32 DecorInstances = 0;

@@ -1,4 +1,5 @@
 #include "Lobby/Playground/TN_PlaygroundPiece.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Lobby/Playground/TN_PlaygroundSynthComponent.h"
 #include "Art/TN_Art.h"
 #include "Core/TN_Log.h"
@@ -1189,8 +1190,8 @@ void ATN_PlaygroundPiece::TickSpinner(float DeltaSeconds)
 
 	// Aviso sonoro: barrido cuando una pala se acerca al jugador local.
 	WhooshCooldown -= DeltaSeconds;
-	const APlayerController* LocalPC = World->GetFirstPlayerController();
-	const APawn* Mine = LocalPC ? LocalPC->GetPawn() : nullptr;
+	// Con la pantalla partida (#311), la tortuga local más cercana.
+	const APawn* Mine = TNLocalViews::ClosestLocalPawn(World, ActorXf.GetLocation());
 	if (Voice && Mine && WhooshCooldown <= 0.f)
 	{
 		const FVector Local = ActorXf.InverseTransformPosition(Mine->GetActorLocation());

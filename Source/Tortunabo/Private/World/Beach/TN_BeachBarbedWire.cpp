@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachBarbedWire.h"
+#include "World/Beach/TN_BeachNearby.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_BeachTrapSynthComponent.h"
 #include "Core/TN_Log.h"
@@ -29,6 +30,8 @@ namespace TNBeachBarbedWireDetail
 	constexpr double StakeSpacing = 700.0;
 	/** Margen del sensor por fuera de la colisión. */
 	constexpr double TouchMargin = 14.0;
+	/** Margen (cm) del radio en el que se busca a quién toca: la cápsula de una tortuga con holgura. */
+	constexpr double GatherMargin = 150.0;
 	/** Semialto de las cajas de colisión sobre la altura del rollo. */
 	constexpr double CollisionTopPad = 4.0;
 
@@ -239,9 +242,12 @@ void ATN_BeachBarbedWire::CheckTouches()
 	// El alambre va a lo largo de X; se toca por los lados (Y) o desde arriba.
 	const double ReachY = CoilRadius * 0.85;
 	const double TopZ = 2.0 * CoilRadius + 10.0;
-	for (TActorIterator<ACharacter> It(World); It; ++It)
+	// Solo quien está al alcance del rollo (en planta, de punta a punta y por los lados).
+	const double Reach = (FMath::Sqrt(FMath::Square(HalfLength) + FMath::Square(ReachY + TouchMargin)) + GatherMargin) * ActorXf.GetMaximumAxisScale();
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(World, ActorXf.GetLocation(), Reach, Near);
+	for (ACharacter* Walker : Near)
 	{
-		ACharacter* Walker = *It;
 		if (!TNBeachTrapKit::IsFreeTurtle(Walker))
 		{
 			continue;

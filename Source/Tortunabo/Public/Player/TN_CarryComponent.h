@@ -25,6 +25,9 @@ class USoundBase;
  *    volando como caparazón con física propia (ATN_ShellBody): da volteretas, rebota y
  *    rueda y no puede salir hasta que la caja se para; entonces sale sola y se pone de pie.
  *    Soltada, cae como caparazón y sale cuando quiera.
+ *  - Derribada en brazos (el lanzable de un tercero, la piel de plátano, el DBNO), quien
+ *    la lleva la suelta y cae derribada como en el suelo (TNCarryRules, #68). Aturdida
+ *    (la bola de la carrera), sigue en sus brazos.
  *
  * Red: estado server-authoritative. CarriedTurtle (en el portador) y CarriedBy (en
  * el llevado) replican y cada máquina aplica localmente el enganche. El impulso

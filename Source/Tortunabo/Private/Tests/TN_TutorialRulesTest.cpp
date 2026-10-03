@@ -31,6 +31,27 @@ bool FTNTutorialGoToStationTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTutorialResetProgressTest,
+	"Tortunabo.Tutorial.ResetProgress",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNTutorialResetProgressTest::RunTest(const FString& Parameters)
+{
+	using namespace TNTutorialRules;
+
+	// Repetir desde dentro (#85): volver a la salida con el tutorial ya empezado avisa al cliente para vaciar su HUD.
+	TestTrue(TEXT("Dentro y de vuelta a la salida: el HUD empieza de cero"), ShouldResetProgress(true, 0));
+
+	// Quien entra de nuevas no necesita el aviso: su bInTutorial cambia y su máquina se reinicia sola.
+	TestFalse(TEXT("Entrando de nuevas por la salida: sin aviso"), ShouldResetProgress(false, 0));
+	TestFalse(TEXT("Entrando de nuevas por una estación: sin aviso"), ShouldResetProgress(false, 7));
+
+	// Volver a una estación ya pisada no es repetir: las tareas de las anteriores siguen hechas.
+	TestFalse(TEXT("Dentro y a la estación 2: se conserva lo hecho"), ShouldResetProgress(true, 1));
+	TestFalse(TEXT("Dentro y a la última: se conserva lo hecho"), ShouldResetProgress(true, 18));
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTutorialCheckpointStationTest,
 	"Tortunabo.Tutorial.CheckpointStation",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)

@@ -100,6 +100,14 @@ struct FTNTurtleAnimFrame
 	float CliffDiveW = 0.f;
 	float CliffDiveTime = 0.f;
 	float CliffDivePitch = 0.f;
+	/**
+	 * VR (Docs/Modo_VR.md): las manos del cuerpo van a los mandos (IK de brazo y antebrazo). Peso de cada brazo (0 bailando,
+	 * en el caparazón, tumbada o llevando a otra tortuga) y dónde tiene que llegar cada mano, en el espacio de la malla.
+	 */
+	float VRArmLW = 0.f;
+	float VRArmRW = 0.f;
+	FVector VRHandL = FVector::ZeroVector;
+	FVector VRHandR = FVector::ZeroVector;
 };
 
 /** Evaluación en C++ de la pose de la tortuga (clips de Mixamo y poses procedurales encima). */
@@ -145,6 +153,14 @@ public:
 	 * Seconds, con un empujón de brazos contra el suelo y las rodillas dobladas a mitad de camino.
 	 */
 	void BeginGetUp(const TArray<FTransform>& LocalPose, float Seconds);
+
+	/**
+	 * Saca ya la pose del caparazón (cabeza y patas fuera), sin el paso suave de siempre, también en la evaluación. Lo usa el
+	 * derribo justo antes de pausar las animaciones del ragdoll (#251): la escala de los huesos del ragdoll sale de la
+	 * animación y, con la pausa, la cabeza y las patas se quedaban medio metidas en la concha hasta levantarse. true si
+	 * estaba algo metida (entonces hay que volver a evaluar la pose).
+	 */
+	bool SnapOutOfShellPose();
 
 	/**
 	 * Pose de celebración del podio (modo carrera) encima de todo lo demás: Trofeo, Decepcionada o Pataleta (ver

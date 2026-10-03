@@ -1,6 +1,7 @@
 #include "Lobby/TN_CosmeticPreview.h"
 #include "Art/TN_Art.h"
 #include "Art/TN_ArtMeshComponent.h"
+#include "Art/TN_TurtleArt.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyLookComponent.h"
@@ -14,9 +15,11 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Engine/GameInstance.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInterface.h"
-#include "UObject/ConstructorHelpers.h"
 #include "../World/ProcMap/TN_ProcMapRuntimeMesh.h"
 #include "../Vehicles/TN_BuggyArt.h"
 
@@ -82,6 +85,15 @@ namespace TNPreviewDetail
 		}
 	}
 
+	/** La tortuga y sus piezas de Arte (TNTurtleArt) en la lista de lo que dibuja un captor. */
+	void ShowTurtle(USkeletalMeshComponent* Turtle, USceneCaptureComponent2D* Cap)
+	{
+		Cap->ShowOnlyComponent(Turtle);
+		TArray<UPrimitiveComponent*> Pieces;
+		TNTurtleArt::GetPieceComponents(Turtle, Pieces);
+		for (UPrimitiveComponent* Piece : Pieces) { Cap->ShowOnlyComponent(Piece); }
+	}
+
 	void SetupStudioLight(UPointLightComponent* Light, float Candelas, const FLinearColor& Color)
 	{
 		Light->SetIntensityUnits(ELightUnits::Candelas);
@@ -138,8 +150,7 @@ ATN_CosmeticPreview::ATN_CosmeticPreview()
 	Turtle->SetRelativeScale3D(FVector(TurtleScale));
 	Turtle->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 	SetupStudioPrimitive(Turtle);
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> TurtleMesh(TEXT("/Game/Meshses/Characters/Player/TotugaDemo_Rig.TotugaDemo_Rig"));
-	if (TurtleMesh.Succeeded()) { Turtle->SetSkeletalMeshAsset(TurtleMesh.Object); }
+	// La malla es la del personaje de la tortuga (TNTurtleArt::ApplyBody en BeginPlay), no una ruta fija.
 
 	Helmet = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Helmet"));
 	Helmet->SetupAttachment(Turtle);
@@ -187,26 +198,35 @@ ATN_CosmeticPreview::ATN_CosmeticPreview()
 	RimLight->SetRelativeLocation(FVector(-260.f, 60.f, 260.f));
 	SetupStudioLight(RimLight, 45.f, FLinearColor(0.85f, 0.97f, 1.f));
 	RimLight->SetCastShadows(false);
-
-	static ConstructorHelpers::FObjectFinder<UAnimationAsset> Idle(TEXT("/Game/Animations/Character/TortugaDemo/Anim/Old_Man_Idle.Old_Man_Idle"));
-	static ConstructorHelpers::FObjectFinder<UAnimationAsset> Salute(TEXT("/Game/Animations/Character/TortugaDemo/Anim/Salute.Salute"));
-	static ConstructorHelpers::FObjectFinder<UAnimationAsset> Cheer(TEXT("/Game/Animations/Character/TortugaDemo/Anim/Yelling.Yelling"));
-	IdleAnim = Idle.Succeeded() ? Idle.Object : nullptr;
-	SaluteAnim = Salute.Succeeded() ? Salute.Object : nullptr;
-	CheerAnim = Cheer.Succeeded() ? Cheer.Object : nullptr;
 }
 
-ATN_CosmeticPreview* ATN_CosmeticPreview::Get(UWorld* World)
+ATN_CosmeticPreview* ATN_CosmeticPreview::Get(UWorld* World, int32 Slot)
 {
 	if (!World) { return nullptr; }
+	const int32 WantedSlot = FMath::Clamp(Slot, 0, 7);
 	for (TActorIterator<ATN_CosmeticPreview> It(World); It; ++It)
 	{
-		return *It;
+		if (It->Slot == WantedSlot) { return *It; }
 	}
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	Params.ObjectFlags |= RF_Transient;
-	return World->SpawnActor<ATN_CosmeticPreview>(TNPreviewDetail::StageLocation, FRotator::ZeroRotator, Params);
+	// Cada escaparate a 40 m del anterior: sus luces de estudio (1600 cm) no llegan al de al lado.
+	const FVector Where = TNPreviewDetail::StageLocation + FVector(4000.0 * WantedSlot, 0.0, 0.0);
+	ATN_CosmeticPreview* Stage = World->SpawnActorDeferred<ATN_CosmeticPreview>(ATN_CosmeticPreview::StaticClass(), FTransform(Where), nullptr, nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (Stage)
+	{
+		Stage->Slot = WantedSlot;
+		Stage->FinishSpawning(FTransform(Where));
+	}
+	return Stage;
+}
+
+ATN_CosmeticPreview* ATN_CosmeticPreview::GetFor(const APlayerController* PC)
+{
+	UWorld* World = PC ? PC->GetWorld() : nullptr;
+	const ULocalPlayer* Player = PC ? PC->GetLocalPlayer() : nullptr;
+	const UGameInstance* GameInstance = PC ? PC->GetGameInstance() : nullptr;
+	const int32 Index = Player && GameInstance ? GameInstance->GetLocalPlayers().IndexOfByKey(Player) : 0;
+	return Get(World, FMath::Max(0, Index));
 }
 
 void ATN_CosmeticPreview::BeginPlay()
@@ -214,6 +234,14 @@ void ATN_CosmeticPreview::BeginPlay()
 	using namespace TNPreviewDetail;
 	Super::BeginPlay();
 	BuildPedestal();
+	// La tortuga del personaje (malla, materiales y escala) sobre la peana, mirando a la cámara, y sus animaciones.
+	if (TNTurtleArt::ApplyBody(Turtle, FTransform(FRotator(0.f, -90.f, 0.f), FVector(0.f, 0.f, PedestalTop), FVector(TurtleScale))))
+	{
+		DefaultMaterials.Reset();
+	}
+	IdleAnim = TNTurtleArt::GetClip(ETNTurtleClip::Idle);
+	SaluteAnim = TNTurtleArt::GetClip(ETNTurtleClip::Salute);
+	CheerAnim = TNTurtleArt::GetClip(ETNTurtleClip::Cheer);
 
 	Target = UKismetRenderingLibrary::CreateRenderTarget2D(this, LiveSize, LiveSize, RTF_RGBA16f, FLinearColor(0.f, 0.f, 0.f, 1.f));
 	Capture->TextureTarget = Target;
@@ -315,6 +343,8 @@ void ATN_CosmeticPreview::BuildPedestal()
 void ATN_CosmeticPreview::ApplyLookNow(const FTN_TurtleLook& InLook)
 {
 	UTN_CosmeticLook::ApplyLook(this, Turtle, Helmet, InLook, DefaultMaterials);
+	// Las piezas de Arte que acaba de pegar (o de cambiar) también salen en la vista en directo.
+	if (Capture->TextureTarget) { TNPreviewDetail::ShowTurtle(Turtle, Capture); }
 }
 
 void ATN_CosmeticPreview::SetLook(const FTN_TurtleLook& InLook)
@@ -441,7 +471,7 @@ void ATN_CosmeticPreview::CaptureThumbnail(const FThumbRequest& Request)
 			ViewDir = FVector(0.85, 0.45, 0.28).GetSafeNormal();
 			Distance = 105.f;
 			ThumbCapture->ClearShowOnlyComponents();
-			ThumbCapture->ShowOnlyComponent(Turtle);
+			ShowTurtle(Turtle, ThumbCapture);
 		}
 		else
 		{
@@ -460,7 +490,7 @@ void ATN_CosmeticPreview::CaptureThumbnail(const FThumbRequest& Request)
 		ViewDir = FVector(0.96, 0.2, 0.2).GetSafeNormal();
 		Distance = 62.f;
 		ThumbCapture->ClearShowOnlyComponents();
-		ThumbCapture->ShowOnlyComponent(Turtle);
+		ShowTurtle(Turtle, ThumbCapture);
 	}
 	else if (Request.Category == ETNCosmeticCategory::Shell)
 	{
@@ -469,7 +499,7 @@ void ATN_CosmeticPreview::CaptureThumbnail(const FThumbRequest& Request)
 		ViewDir = FVector(-0.9, 0.42, 0.22).GetSafeNormal();
 		Distance = 118.f;
 		ThumbCapture->ClearShowOnlyComponents();
-		ThumbCapture->ShowOnlyComponent(Turtle);
+		ShowTurtle(Turtle, ThumbCapture);
 	}
 	else
 	{
@@ -478,7 +508,7 @@ void ATN_CosmeticPreview::CaptureThumbnail(const FThumbRequest& Request)
 		ViewDir = FVector(0.9, 0.38, 0.12).GetSafeNormal();
 		Distance = 175.f;
 		ThumbCapture->ClearShowOnlyComponents();
-		ThumbCapture->ShowOnlyComponent(Turtle);
+		ShowTurtle(Turtle, ThumbCapture);
 	}
 	const FVector CamPos = Focus + ViewDir * Distance;
 	ThumbCapture->SetWorldLocationAndRotation(CamPos, LookRotation(CamPos, Focus));

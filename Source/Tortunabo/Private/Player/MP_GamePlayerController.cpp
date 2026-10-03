@@ -40,6 +40,8 @@
 #include "Engine/Engine.h"
 #include "Framework/Application/SlateApplication.h"
 #include "VR/TN_VRMode.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
+#include "Engine/LocalPlayer.h"
 
 namespace
 {
@@ -140,6 +142,11 @@ UMP_GameInstance* AMP_GamePlayerController::GetTNGameInstance() const
 
 void AMP_GamePlayerController::OnReturnToMenuPressed()
 {
+	// Partida local: solo el jugador 1 cierra la partida (un invitado sale con B en el lobby o desde su pausa).
+	if (UTN_LocalPlaySubsystem::IsGuest(this))
+	{
+		return;
+	}
 	// Un cliente remoto abandona la partida individualmente: destruye su propio
 	// registro de sesión y viaja a su menú, sin pedir al servidor que cierre la
 	// sesión de todos. Solo el host termina la partida para el resto.
@@ -202,8 +209,9 @@ void AMP_GamePlayerController::OnPossess(APawn* InPawn)
 		return;
 	}
 
+	// Partida local (#311): sin chat de voz (están en la misma sala) ni micrófono abierto.
 	UProximityVoiceComponent* ExistingVoice = InPawn->FindComponentByClass<UProximityVoiceComponent>();
-	if (!ExistingVoice)
+	if (!ExistingVoice && !UTN_LocalPlaySubsystem::IsLocalGame(this))
 	{
 		UProximityVoiceComponent* VoiceComp = NewObject<UProximityVoiceComponent>(InPawn, TEXT("ProximityVoice"));
 		if (VoiceComp)
@@ -252,7 +260,16 @@ void AMP_GamePlayerController::ApplyGameplayInputMode()
 
 	if (GEngine && GEngine->GameViewport)
 	{
-		FSlateApplication::Get().SetAllUserFocusToGameViewport(EFocusCause::SetDirectly);
+		// Con la pantalla partida, solo el foco de este jugador: los menús de los demás (tienda, probador) siguen con el suyo.
+		const ULocalPlayer* LocalPlayer = GetLocalPlayer();
+		if (LocalPlayer && UTN_LocalPlaySubsystem::IsLocalGame(this))
+		{
+			FSlateApplication::Get().SetUserFocusToGameViewport(LocalPlayer->GetControllerId(), EFocusCause::SetDirectly);
+		}
+		else
+		{
+			FSlateApplication::Get().SetAllUserFocusToGameViewport(EFocusCause::SetDirectly);
+		}
 	}
 }
 
@@ -263,6 +280,12 @@ void AMP_GamePlayerController::ApplyRadialInputMode()
 		return;
 	}
 
+	// Un invitado de la partida local elige con el stick: el ratón es del jugador 1.
+	if (UTN_LocalPlaySubsystem::IsGuest(this))
+	{
+		SetIgnoreLookInput(true);
+		return;
+	}
 	FInputModeGameAndUI InputMode;
 	InputMode.SetHideCursorDuringCapture(false);
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
@@ -715,16 +738,19 @@ void AMP_GamePlayerController::OpenRadialWheel(ETN_RadialWheelType WheelType)
 
 	float MouseX = 0.f;
 	float MouseY = 0.f;
-	bHadMousePositionBeforeWheel = GetMousePosition(MouseX, MouseY);
+	const bool bGuest = UTN_LocalPlaySubsystem::IsGuest(this);
+	bHadMousePositionBeforeWheel = !bGuest && GetMousePosition(MouseX, MouseY);
 	if (bHadMousePositionBeforeWheel)
 	{
 		CachedMousePositionBeforeWheel = FVector2D(MouseX, MouseY);
 	}
 
-	int32 ViewX = 0;
-	int32 ViewY = 0;
-	GetViewportSize(ViewX, ViewY);
-	SetMouseLocation(ViewX / 2, ViewY / 2);
+	// El ratón, al centro de la rueda (el centro de la vista de este jugador: con la pantalla partida, su trozo).
+	if (!bGuest)
+	{
+		const FVector2D Center = GetWheelCenter();
+		SetMouseLocation(FMath::RoundToInt(Center.X), FMath::RoundToInt(Center.Y));
+	}
 
 	CachedStickVector = FVector2D::ZeroVector;
 	ApplyRadialInputMode();
@@ -789,18 +815,37 @@ FVector2D AMP_GamePlayerController::ComputeMouseWheelVector() const
 	int32 ViewX = 0;
 	int32 ViewY = 0;
 	GetViewportSize(ViewX, ViewY);
+	const ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	const FVector2D Size = LocalPlayer ? FVector2D(ViewX * LocalPlayer->Size.X, ViewY * LocalPlayer->Size.Y) : FVector2D(ViewX, ViewY);
 
-	const FVector2D Center(ViewX * 0.5f, ViewY * 0.5f);
+	const FVector2D Center = GetWheelCenter();
 	const FVector2D Delta(MouseX - Center.X, MouseY - Center.Y);
-	const float Radius = FMath::Max(1.f, FMath::Min(ViewX, ViewY) * 0.25f);
+	const float Radius = FMath::Max(1.f, static_cast<float>(FMath::Min(Size.X, Size.Y)) * 0.25f);
 	return FVector2D(Delta.X / Radius, -Delta.Y / Radius).GetClampedToMaxSize(1.f);
+}
+
+FVector2D AMP_GamePlayerController::GetWheelCenter() const
+{
+	int32 ViewX = 0;
+	int32 ViewY = 0;
+	GetViewportSize(ViewX, ViewY);
+	// El centro de la vista de este jugador (sin pantalla partida, el de la pantalla).
+	const ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	const FVector2D Origin = LocalPlayer ? FVector2D(LocalPlayer->Origin) : FVector2D::ZeroVector;
+	const FVector2D Size = LocalPlayer ? FVector2D(LocalPlayer->Size) : FVector2D(1.0, 1.0);
+	return FVector2D(ViewX * (Origin.X + Size.X * 0.5), ViewY * (Origin.Y + Size.Y * 0.5));
 }
 
 FVector2D AMP_GamePlayerController::ResolveCurrentWheelVector() const
 {
 	const float Now = GetWorld() ? GetWorld()->GetRealTimeSeconds() : 0.f;
 	const bool bUseStick = CachedStickVector.SizeSquared() > 0.04f && (Now - LastStickInputRealTime) <= 0.2f;
-	return bUseStick ? CachedStickVector : ComputeMouseWheelVector();
+	// Un invitado de la partida local, siempre con el stick (el ratón es del jugador 1).
+	if (bUseStick || UTN_LocalPlaySubsystem::IsGuest(this))
+	{
+		return (Now - LastStickInputRealTime) <= 0.2f ? CachedStickVector : FVector2D::ZeroVector;
+	}
+	return ComputeMouseWheelVector();
 }
 
 void AMP_GamePlayerController::TNWheel(int32 Type, float X, float Y)
@@ -873,7 +918,7 @@ bool AMP_GamePlayerController::RequestEquipHelmet(FName HelmetId)
 
 	if (UMP_GameInstance* GI = GetTNGameInstance())
 	{
-		if (!GI->EquipHelmet(HelmetId))
+		if (!GI->EquipHelmetFor(this, HelmetId))
 		{
 			return false;
 		}
@@ -888,7 +933,7 @@ void AMP_GamePlayerController::RequestUnequipHelmet()
 	// Limpiar localmente el casco equipado en el save
 	if (UMP_GameInstance* GI = GetTNGameInstance())
 	{
-		GI->ForceEquipHelmet(NAME_None);
+		GI->ForceEquipHelmetFor(this, NAME_None);
 	}
 	// Enviar al servidor para actualizar PlayerState + notificar a todos
 	ServerSetEquippedHelmet(NAME_None);
@@ -898,7 +943,7 @@ FName AMP_GamePlayerController::OpenHelmetCrate()
 {
 	if (UMP_GameInstance* GI = GetTNGameInstance())
 	{
-		const FName Result = GI->OpenHelmetCrate();
+		const FName Result = GI->OpenHelmetCrateFor(this);
 		SyncCosmeticsToServer();
 		if (Result != NAME_None)
 		{
@@ -920,8 +965,8 @@ void AMP_GamePlayerController::ClientOpenCosmeticsMenu_Implementation()
 bool AMP_GamePlayerController::RequestEquipSkin(FName SkinId)
 {
 	UMP_GameInstance* GI = GetTNGameInstance();
-	if (GI && !GI->IsCosmeticUnlocked(ETNCosmeticCategory::Body, SkinId)) { return false; }
-	if (GI) { GI->EquipSkin(SkinId); }
+	if (GI && !GI->IsCosmeticUnlockedFor(this, ETNCosmeticCategory::Body, SkinId)) { return false; }
+	if (GI) { GI->EquipSkinFor(this, SkinId); }
 	ServerSetEquippedSkin(SkinId);
 	return true;
 }
@@ -929,8 +974,8 @@ bool AMP_GamePlayerController::RequestEquipSkin(FName SkinId)
 bool AMP_GamePlayerController::RequestEquipShell(FName ShellId)
 {
 	UMP_GameInstance* GI = GetTNGameInstance();
-	if (GI && !GI->IsCosmeticUnlocked(ETNCosmeticCategory::Shell, ShellId)) { return false; }
-	if (GI) { GI->EquipShell(ShellId); }
+	if (GI && !GI->IsCosmeticUnlockedFor(this, ETNCosmeticCategory::Shell, ShellId)) { return false; }
+	if (GI) { GI->EquipShellFor(this, ShellId); }
 	ServerSetEquippedShell(ShellId);
 	return true;
 }
@@ -938,8 +983,8 @@ bool AMP_GamePlayerController::RequestEquipShell(FName ShellId)
 bool AMP_GamePlayerController::RequestEquipEyes(FName EyesId)
 {
 	UMP_GameInstance* GI = GetTNGameInstance();
-	if (GI && !GI->IsCosmeticUnlocked(ETNCosmeticCategory::Eyes, EyesId)) { return false; }
-	if (GI) { GI->EquipEyes(EyesId); }
+	if (GI && !GI->IsCosmeticUnlockedFor(this, ETNCosmeticCategory::Eyes, EyesId)) { return false; }
+	if (GI) { GI->EquipEyesFor(this, EyesId); }
 	ServerSetEquippedEyes(EyesId);
 	return true;
 }
@@ -947,10 +992,12 @@ bool AMP_GamePlayerController::RequestEquipEyes(FName EyesId)
 bool AMP_GamePlayerController::RequestPurchaseCosmetic(ETNCosmeticCategory Category, FName Id)
 {
 	UMP_GameInstance* GI = GetTNGameInstance();
-	if (!GI || !GI->PurchaseCosmetic(Category, Id)) { return false; }
-	if (Category == ETNCosmeticCategory::Helmet) { ServerSyncUnlockedHelmets(GI->GetUnlockedHelmetIds()); }
-	else if (TNIsBuggyCategory(Category)) { ServerSyncUnlockedBuggy(GI->GetUnlockedBuggyIds()); }
-	else { ServerSyncUnlockedSkins(GI->GetUnlockedSkinIds()); }
+	// El buggy va con el perfil guardado (el de la partida local no lo tiene): sus desbloqueos, también.
+	const bool bBuggy = TNIsBuggyCategory(Category);
+	if (!GI || !(bBuggy ? GI->PurchaseCosmetic(Category, Id) : GI->PurchaseCosmeticFor(this, Category, Id))) { return false; }
+	if (Category == ETNCosmeticCategory::Helmet) { ServerSyncUnlockedHelmets(GI->GetUnlockedHelmetIdsFor(this)); }
+	else if (bBuggy) { ServerSyncUnlockedBuggy(GI->GetUnlockedBuggyIds()); }
+	else { ServerSyncUnlockedSkins(GI->GetUnlockedSkinIdsFor(this)); }
 	return true;
 }
 
@@ -1263,7 +1310,7 @@ void AMP_GamePlayerController::ClientSaveSkin_Implementation(FName SkinId)
 {
 	if (UMP_GameInstance* GI = GetTNGameInstance())
 	{
-		GI->EquipSkin(SkinId);
+		GI->EquipSkinFor(this, SkinId);
 	}
 }
 
@@ -1271,7 +1318,7 @@ void AMP_GamePlayerController::ClientSaveHelmet_Implementation(FName HelmetId)
 {
 	if (UMP_GameInstance* GI = GetTNGameInstance())
 	{
-		GI->ForceEquipHelmet(HelmetId);
+		GI->ForceEquipHelmetFor(this, HelmetId);
 	}
 }
 
@@ -1294,14 +1341,15 @@ void AMP_GamePlayerController::SyncCosmeticsToServer()
 
 	if (UMP_GameInstance* GI = GetTNGameInstance())
 	{
-		ServerSyncUnlockedHelmets(GI->GetUnlockedHelmetIds());
-		ServerSyncUnlockedSkins(GI->GetUnlockedSkinIds());
+		// El perfil de este jugador: el guardado o, si es un invitado de la partida local, el de la partida (#311).
+		ServerSyncUnlockedHelmets(GI->GetUnlockedHelmetIdsFor(this));
+		ServerSyncUnlockedSkins(GI->GetUnlockedSkinIdsFor(this));
 		// Sincronizar casco (NAME_None = sin casco, siempre enviar para no revertir un desequipado explícito)
-		ServerSetEquippedHelmet(GI->GetEquippedHelmetId());
+		ServerSetEquippedHelmet(GI->GetEquippedHelmetIdFor(this));
 		// Sincronizar color y caparazón (NAME_None = los de serie, siempre enviar)
-		ServerSetEquippedSkin(GI->GetEquippedSkinId());
-		ServerSetEquippedShell(GI->GetEquippedShellId());
-		ServerSetEquippedEyes(GI->GetEquippedEyesId());
+		ServerSetEquippedSkin(GI->GetEquippedSkinIdFor(this));
+		ServerSetEquippedShell(GI->GetEquippedShellIdFor(this));
+		ServerSetEquippedEyes(GI->GetEquippedEyesIdFor(this));
 		// Buggy del Rally: los desbloqueos antes que el equipado (se valida contra ellos).
 		ServerSyncUnlockedBuggy(GI->GetUnlockedBuggyIds());
 		ServerSetEquippedBuggyLook(GI->GetEquippedBuggyLook());
