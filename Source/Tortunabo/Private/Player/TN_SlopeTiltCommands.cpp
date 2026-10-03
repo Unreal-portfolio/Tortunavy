@@ -12,10 +12,11 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
+#include "Containers/Ticker.h"
+#include "Engine/Engine.h"
 #include "HAL/IConsoleManager.h"
 
 #if !UE_BUILD_SHIPPING
@@ -139,37 +140,58 @@ namespace TNSlopeTiltCommands
 		}
 		FTimerHandle Handle;
 		TWeakObjectPtr<UWorld> WeakWorld(World);
-		World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([WeakWorld]()
+		TWeakObjectPtr<APlayerController> WeakPC(PC);
+		World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([WeakWorld, WeakPC]()
 		{
-			if (UWorld* ShotWorld = WeakWorld.Get())
+			UWorld* ShotWorld = WeakWorld.Get();
+			APlayerController* ShotPC = WeakPC.Get();
+			if (ShotWorld && ShotPC)
 			{
 				Dump(ShotWorld);
-				GEngine->Exec(ShotWorld, TEXT("HighResShot 1"));
+				// Por la consola del jugador: HighResShot lo atiende el viewport, no UEngine::Exec.
+				ShotPC->ConsoleCommand(TEXT("HighResShot 1"));
 				UE_LOG(LogTortunabo, Log, TEXT("[SlopeTilt] Captura pedida."));
 			}
 		}), ShotDelaySeconds, false);
 	}
 
+	/** El mundo de juego de ahora: el de la consola si sigue vivo; si no (se ha viajado de mapa), el primero de juego. */
+	UWorld* CurrentGameWorld(const TWeakObjectPtr<UWorld>& Preferred)
+	{
+		if (UWorld* World = Preferred.Get())
+		{
+			return World;
+		}
+		for (const FWorldContext& Context : GEngine ? GEngine->GetWorldContexts() : TIndirectArray<FWorldContext>())
+		{
+			if (Context.World() && (Context.WorldType == EWorldType::Game || Context.WorldType == EWorldType::PIE))
+			{
+				return Context.World();
+			}
+		}
+		return nullptr;
+	}
+
+	/** Ejecuta Action pasados DelaySeconds de tiempo real, aunque entretanto se viaje a otro mapa (un cliente al unirse). */
 	void RunLater(UWorld* World, float DelaySeconds, TFunction<void(UWorld*)> Action)
 	{
-		if (!World)
-		{
-			return;
-		}
 		if (DelaySeconds <= 0.f)
 		{
-			Action(World);
+			if (World)
+			{
+				Action(World);
+			}
 			return;
 		}
-		FTimerHandle Handle;
 		TWeakObjectPtr<UWorld> WeakWorld(World);
-		World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([WeakWorld, Action]()
+		FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([WeakWorld, Action](float)
 		{
-			if (UWorld* LaterWorld = WeakWorld.Get())
+			if (UWorld* LaterWorld = CurrentGameWorld(WeakWorld))
 			{
 				Action(LaterWorld);
 			}
-		}), DelaySeconds, false);
+			return false;
+		}), DelaySeconds);
 	}
 
 	void FindFromConsole(const TArray<FString>& Args, UWorld* World)

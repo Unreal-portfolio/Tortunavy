@@ -205,7 +205,8 @@ void UTN_SlopeTiltComponent::ApplyToVisual(USceneComponent& Visual)
 {
 	// Otro sistema ha escrito el giro desde la última vez (o es la primera): ese es el nuevo giro sin inclinar.
 	const FRotator Now = Visual.GetRelativeRotation();
-	if (!bTiltApplied || !Now.Equals(LastWrittenRelative, TNSlopeTiltPrivate::SameRotationTolerance))
+	const bool bExternalWrite = !bTiltApplied || !Now.Equals(LastWrittenRelative, TNSlopeTiltPrivate::SameRotationTolerance);
+	if (bExternalWrite)
 	{
 		BaseRelative = Now.Quaternion();
 	}
@@ -213,13 +214,23 @@ void UTN_SlopeTiltComponent::ApplyToVisual(USceneComponent& Visual)
 	if (CurrentTilt.IsZero())
 	{
 		// Llegada a recto: se deja la base tal cual y se deja de escribir.
-		Visual.SetRelativeRotation(BaseRelative);
+		if (!bExternalWrite)
+		{
+			Visual.SetRelativeRotation(BaseRelative);
+		}
 		bTiltApplied = false;
+		return;
+	}
+
+	// Parada en la cuesta y sin cambios de nadie: no se mueve la malla (ni sus hijos) otra vez.
+	if (!bExternalWrite && CurrentTilt.Equals(LastAppliedTilt, TNSlopeTiltPrivate::SameRotationTolerance))
+	{
 		return;
 	}
 
 	Visual.SetRelativeRotation(TNSlopeTilt::ComposeTilt(BaseRelative, CurrentTilt));
 	LastWrittenRelative = Visual.GetRelativeRotation();
+	LastAppliedTilt = CurrentTilt;
 	bTiltApplied = true;
 }
 

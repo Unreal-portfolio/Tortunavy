@@ -80,6 +80,9 @@ private:
 	/** Giro relativo que escribimos la última vez: si la malla no lo tiene, otro sistema lo ha cambiado. */
 	FRotator LastWrittenRelative = FRotator::ZeroRotator;
 
+	/** Inclinación de la última escritura (para no volver a escribir la misma). */
+	FRotator LastAppliedTilt = FRotator::ZeroRotator;
+
 	/** Hay inclinación aplicada sobre la malla (BaseRelative y LastWrittenRelative valen). */
 	bool bTiltApplied = false;
 
