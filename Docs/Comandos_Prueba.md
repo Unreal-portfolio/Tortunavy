@@ -331,6 +331,9 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `TN.Voice.Pant 1` / `TN.Voice.Pant 2` | Jadeo de prueba: `1` suave, `2` agotada; `0` lo apaga. |
 | `TN.Voice.Drag 1` / `TN.Voice.Drag 2` | Arrastre de panzazo de prueba: `1` lento, `2` rápido; `0` lo apaga. |
 | `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo. |
+| `TN.HeadLook.Shots [carpeta]` | Fotos sin interfaz de la cabeza siguiendo a la vista (al frente, 45° a la derecha, 60° a la izquierda, en el tope, arriba, abajo y detrás), el giro medido en el hueso en el registro, y cierra el juego. En `-game -RenderOffScreen -UseFixedTimeStep -FPS=30`. |
+| `TN.HeadLook.Sweep 20` | Mueve sola la vista del jugador local 20 s (guiñada ±60°, cabeceo ±25°) para ver el giro de la cabeza en las demás máquinas. |
+| `TN.HeadLook.Log 1` | Cada tortuga escribe una vez por segundo su vista respecto del cuerpo (del mando o replicada) y el giro de su cabeza. |
 | `TN.Debug.Knockdown [segundos=2] [jugador=0] [empujón=0] [retraso=0]` | En el anfitrión: derriba a esa tortuga (empujón hacia arriba en cm/s; retraso en s, para lanzarlo con `-ExecCmds`). Suena el «¡clonc!» del derribo, el latido (solo en su máquina) y el arpegio al levantarse; en su máquina, sacudida y vibración según el empujón (`[HitFeedback]` en el log; con `-LogCmds="LogTortunabo Verbose"`, también `[ActionSfx]`). |
 | `TN.Music.Play Victoria` | Hace sonar una pista: `Victoria`, `Derrota`, `Eliminado`, `Tienda`, `Probador` o `Silencio`. |
 

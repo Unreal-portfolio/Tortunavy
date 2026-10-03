@@ -383,12 +383,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Arm Animation", meta = (ClampMin = "0.0", ClampMax = "180.0"))
 	float ArmSprintAmplitudeDeg = 65.f;
 
-	// ── Head Animation ───────────────────────────────────────────────────────
-	/** Yaw offset (°) que corrige la dirección en reposo del hueso Cabeza.
-	 *  Incrementar si la cabeza mira a la izquierda en reposo; decrementar si mira a la derecha. */
-	UPROPERTY(EditDefaultsOnly, Category = "Head Animation", meta = (ClampMin = "-180.0", ClampMax = "180.0"))
-	float HeadRestYawDeg = 0.f;
-
 	// ── Leg Animation (blockout) ──────────────────────────────────────────────
 	// Add child SceneComponents named "Pata1" and "Pata2" in your Blueprint.
 	// Set their origin at the HIP PIVOT (see setup guide below).
@@ -593,7 +587,7 @@ private:
 	void CacheInputAssets();
 	void ApplyInputMappingIfLocal();
 
-	/** BeginPlay: resuelve huesos/sockets de emote (Pata1/2, Brazo1/2, Cola, Cabeza) y NeckFollow. */
+	/** BeginPlay: resuelve huesos/sockets de emote (Pata1/2, Brazo1/2, Cola, Cabeza). */
 	void ResolveAnimationBones();
 	/** BeginPlay: resuelve KnockdownVisualComp (KnockdownComponentName → SkeletalMesh → StaticMesh hijo → fallback). */
 	void ResolveKnockdownVisualComponent();
@@ -682,27 +676,6 @@ private:
 	FRotator ColaRestRot   = FRotator::ZeroRotator;
 	FRotator CabezaRestRot = FRotator::ZeroRotator;
 	FVector  CabezaRestScale = FVector::OneVector;
-
-	/**
-	 * HEAD-NECK FOLLOW — workaround para skinning de la cara del cuello:
-	 * los polígonos del mesh que están pesados al hueso del cuerpo/cuello se quedan
-	 * fijos cuando la cabeza rota. Definir aquí el nombre del hueso padre/cuello
-	 * en el skeleton (p.ej. "Cuerpo" o "Neck") y un ratio [0..1]: la cabeza rota
-	 * 100% del yaw/pitch y este hueso rota RATIO× lo mismo → la piel del cuello
-	 * se arrastra parcialmente y oculta la discontinuidad.
-	 *
-	 * Configurar en BP_TortugaCharacter → Class Defaults → Head Animation:
-	 *  - NeckFollowBone: nombre exacto del hueso del cuello/tronco en el skeleton
-	 *  - NeckFollowRatio: 0.3f por defecto; subir si la piel sigue pegada.
-	 */
-	UPROPERTY(EditDefaultsOnly, Category="Head Animation")
-	FName NeckFollowBone = NAME_None;
-
-	UPROPERTY(EditDefaultsOnly, Category="Head Animation", meta=(ClampMin="0.0", ClampMax="1.0"))
-	float NeckFollowRatio = 0.3f;
-
-	/** Rest rot del NeckFollowBone capturada en BeginPlay. */
-	FRotator NeckFollowRestRot = FRotator::ZeroRotator;
 
 	/** Rest locations in component space (for SetLoc emotes). Re-derived in BeginPlay. */
 	FVector Brazo1RestLoc = FVector::ZeroVector;
@@ -1281,17 +1254,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ink")
 	TObjectPtr<UPostProcessComponent> InkPostProcess;
 
-	// ── Head Look replication ─────────────────────────────────────────────────
+	// ── La cabeza que sigue a la cámara (#623) ─────────────────────────────────
 	/**
-	 * Yaw (grados enteros, -90..90) de la cabeza relativo al cuerpo. Positivo = mira a la derecha. Replicado a clientes
-	 * remotos en un byte: cada uno lo suaviza (SmoothedHeadYaw), así que un grado de resolución no se nota.
+	 * Guiñada de la vista del dueño respecto del cuerpo, para los demás (TNHeadLook::EncodeYaw: un byte, de -180 a 180° en
+	 * pasos de 1,4°). La escribe el servidor en PreReplication con el giro del mando, que de un cliente le llega con el
+	 * movimiento (ServerMove): sin RPC propio. Solo cambia si se mueve 2 pasos o más. El cabeceo ya lo manda el motor
+	 * (RemoteViewPitch16).
 	 */
 	UPROPERTY(Replicated)
-	int8 ReplicatedHeadYaw   = 0;
-
-	/** Pitch (grados enteros, -80..80) de la cabeza. Positivo = mira hacia arriba. Replicado a clientes remotos (un byte). */
-	UPROPERTY(Replicated)
-	int8 ReplicatedHeadPitch = 0;
+	uint8 ReplicatedViewYaw = 0;
 
 	/** Tiempo acumulado desde que comenzó el dive (para DiveMinLockDuration). */
 	float DiveLockTimer = 0.f;
@@ -1315,23 +1286,8 @@ protected:
 	bool  bJumpAnimActive = false;
 	float JumpAnimTime    = 0.f;
 
-	// ── Head Look state (local + smoothing para clientes remotos) ─────────────
-	float LocalHeadRelativeYaw = 0.f;   ///< calculado cada tick en el owner, nunca va a la red
-	float LocalHeadPitch       = 0.f;
-	float SmoothedHeadYaw      = 0.f;   ///< interpolado en clientes remotos hacia ReplicatedHead*
-	float SmoothedHeadPitch    = 0.f;
-	/** Cliente dueño: lo último que ha mandado al servidor, lo que falta para poder mandar otra vez y desde cuándo no manda. */
-	int8  SentHeadYaw          = 0;
-	int8  SentHeadPitch        = 0;
-	float HeadSendCooldown     = 0.f;
-	float HeadSinceSend        = 0.f;
-
-	void TickHeadLook(float DeltaTime);
-	void ApplyHeadLookToCabeza(float Yaw, float Pitch);
-
-	/** Cabeza del dueño al servidor: grados enteros, como mucho HeadSendRate veces por segundo y solo si cambia. */
-	UFUNCTION(Server, Unreliable, WithValidation)
-	void ServerUpdateHeadRotation(int8 Yaw, int8 Pitch);
+	/** El probador tiene dentro a esta tortuga (SetHeadLookSuppressed): la cabeza no sigue a la cámara. */
+	bool bHeadLookSuppressed = false;
 
 	void TryDive();
 
@@ -1790,6 +1746,22 @@ public:
 
 	/** ¿Quiere el jugador local la primera persona sin gafas? (consola TN.Camera o el ajuste «Cámara»). */
 	bool WantsFirstPersonView() const;
+
+	/** ¿Juega el dueño en primera persona sin gafas? (replicado: vale en todas las máquinas, como IsVRPlayer). */
+	bool IsFirstPersonPlayer() const { return bFirstPersonPlayer; }
+
+	// ── La cabeza que sigue a la cámara (#623, UTN_TurtleAnimInstance) ────────
+
+	/**
+	 * Hacia dónde mira el dueño respecto del cuerpo (grados; guiñada positiva a su derecha, cabeceo positivo arriba): el
+	 * giro del mando en el dueño y en el servidor (el de un cliente llega con su movimiento); en los demás, la guiñada
+	 * replicada y el cabeceo del motor (RemoteViewPitch16). Vale en todas las máquinas.
+	 */
+	void GetViewRelativeToBody(float& OutYaw, float& OutPitch) const;
+
+	/** El probador (ATN_ChangingBooth) la tiene dentro: la cabeza mira al frente (su vista no es la de su cámara). Local en cada máquina. */
+	void SetHeadLookSuppressed(bool bSuppressed) { bHeadLookSuppressed = bSuppressed; }
+	bool IsHeadLookSuppressed() const { return bHeadLookSuppressed; }
 
 private:
 	/** Manos VR del dueño relativas a la tortuga, para los demás (IK de los brazos). */

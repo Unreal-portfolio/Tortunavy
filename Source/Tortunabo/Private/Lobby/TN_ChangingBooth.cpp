@@ -2,6 +2,7 @@
 #include "Art/TN_Art.h"
 #include "Core/TN_Log.h"
 #include "Player/MP_GamePlayerController.h"
+#include "Player/TortugaCharacter.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
@@ -566,6 +567,12 @@ void ATN_ChangingBooth::OnRep_Occupant()
 		Occupant->SetActorLocationAndRotation(GetActorTransform().TransformPosition(FVector(0.0, 0.0, 96.0)), Facing, false, nullptr, ETeleportType::TeleportPhysics);
 	}
 	APawn* Leaving = (!Occupant && PreviousOccupant.IsValid()) ? PreviousOccupant.Get() : nullptr;
+	// Dentro, la cabeza mira al frente y no a su cámara (su dueño ve la del probador), en todas las máquinas.
+	if (PreviousOccupant.Get() != Occupant.Get())
+	{
+		if (ATortugaCharacter* Before = Cast<ATortugaCharacter>(PreviousOccupant.Get())) { Before->SetHeadLookSuppressed(false); }
+		if (ATortugaCharacter* Inside = Cast<ATortugaCharacter>(Occupant.Get())) { Inside->SetHeadLookSuppressed(true); }
+	}
 	PreviousOccupant = Occupant.Get();
 	if (Leaving && Controls(Leaving) && GetWorld())
 	{
