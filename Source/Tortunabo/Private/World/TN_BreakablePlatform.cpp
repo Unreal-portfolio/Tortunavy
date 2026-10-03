@@ -7,6 +7,8 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Engine/StaticMesh.h"
+#include "UObject/ConstructorHelpers.h"
 
 ATN_BreakablePlatform::ATN_BreakablePlatform()
 {
@@ -17,6 +19,13 @@ ATN_BreakablePlatform::ATN_BreakablePlatform()
 	SetRootComponent(PlatformMesh);
 	PlatformMesh->SetCollisionProfileName(TEXT("BlockAll"));
 	PlatformMesh->Mobility = EComponentMobility::Movable;
+	// Cubo de serie para la que se crea por código sin Blueprint (los puzles colocados del manifest, #652, la escalan a
+	// losa); un Blueprint hijo pone su propia malla encima.
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
+	if (Cube.Succeeded())
+	{
+		PlatformMesh->SetStaticMesh(Cube.Object);
+	}
 
 	// Trigger delgado encima del mesh — detecta si alguien está sobre la plataforma.
 	// Ajustar extensión en el BP hijo para que coincida con el mesh.
