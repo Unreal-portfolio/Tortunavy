@@ -162,6 +162,13 @@ public:
 	/** Empieza a montar el decorado de este reparto (quita antes el que hubiera). */
 	void BeginBuild(const TNBeachLayout::FRoundLayout& Layout, int32 Round);
 
+	/**
+	 * Lo mismo con las piezas ya colocadas: InPlacements[i] es el origen de InItems[i] en el espacio del campo, con su cota
+	 * resuelta fuera (los mapas de terreno fijo, #652, que no son la playa de la carrera y no tienen su SandZ). Lo que no
+	 * es de la categoría Decor se ignora. Los índices de InItems hacen de índices del reparto (HasItem, CutCircle...).
+	 */
+	void BeginBuildPlaced(const TArray<TNBeachLayout::FItem>& InItems, const TArray<FTransform>& InPlacements, int32 Round);
+
 	/** Sigue montando hasta gastar BudgetSeconds (al menos un paso); true cuando está todo. */
 	bool StepBuild(double BudgetSeconds);
 
@@ -252,6 +259,8 @@ private:
 	/** Vuelve a poner las instancias de un lote sin las piezas quitadas. */
 	void RefillBatch(int32 BatchIndex);
 	void AddItem(const TNBeachLayout::FItem& Item, int32 LayoutIndex, const FTransform& ItemXf);
+	/** Prepara el montaje de las piezas pendientes ya apuntadas (PendingItems, PendingXf). */
+	void StartPendingBuild(int32 Round);
 	int32 BatchFor(uint32 Key, ETNBeachElement Element, UStaticMesh* Mesh, bool bMoving, bool bCollision, bool bBlocksCamera, bool bCastShadow);
 	void FinishBuild();
 

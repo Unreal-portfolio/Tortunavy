@@ -127,9 +127,6 @@ void ATN_BeachDecorField::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ATN_BeachDecorField::BeginBuild(const TNBeachLayout::FRoundLayout& Layout, int32 Round)
 {
 	ClearDecor();
-	const UWorld* World = GetWorld();
-	// Sin pantalla (servidor dedicado) basta con la colisión: ni partes que se mueven ni copias de sombra.
-	bVisuals = World && World->GetNetMode() != NM_DedicatedServer;
 	ItemOfLayout.Init(INDEX_NONE, Layout.Items.Num());
 	for (int32 i = 0; i < Layout.Items.Num(); ++i)
 	{
@@ -142,6 +139,37 @@ void ATN_BeachDecorField::BeginBuild(const TNBeachLayout::FRoundLayout& Layout, 
 		PendingLayoutIndex.Add(i);
 		PendingXf.Add(TNBeachDecorKit::ItemPlacement(Layout, Item));
 	}
+	StartPendingBuild(Round);
+}
+
+void ATN_BeachDecorField::BeginBuildPlaced(const TArray<TNBeachLayout::FItem>& InItems, const TArray<FTransform>& InPlacements, int32 Round)
+{
+	ClearDecor();
+	const int32 Num = FMath::Min(InItems.Num(), InPlacements.Num());
+	if (Num != InItems.Num() || Num != InPlacements.Num())
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[BeachDecorField] %d piezas y %d sitios: solo se montan %d."), InItems.Num(),
+			InPlacements.Num(), Num);
+	}
+	ItemOfLayout.Init(INDEX_NONE, InItems.Num());
+	for (int32 i = 0; i < Num; ++i)
+	{
+		if (TNBeach::CategoryOf(InItems[i].Element) != ETNBeachCategory::Decor)
+		{
+			continue;
+		}
+		PendingItems.Add(InItems[i]);
+		PendingLayoutIndex.Add(i);
+		PendingXf.Add(InPlacements[i]);
+	}
+	StartPendingBuild(Round);
+}
+
+void ATN_BeachDecorField::StartPendingBuild(int32 Round)
+{
+	const UWorld* World = GetWorld();
+	// Sin pantalla (servidor dedicado) basta con la colisión: ni partes que se mueven ni copias de sombra.
+	bVisuals = World && World->GetNetMode() != NM_DedicatedServer;
 	PendingRound = Round;
 	BuildSeconds = 0.0;
 	BuildFrames = 0;
