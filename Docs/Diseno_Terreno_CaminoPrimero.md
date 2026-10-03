@@ -301,3 +301,38 @@ Automáticas, por mapa (tests de `Scripts/tests/test_terrain_path.py` y `check()
 - barranco `walkable`: el fondo se recorre; `deadly`: las cajas cubren todo el fondo.
 
 Visual: Rodrigo valida C01 en `LVL_MapVariants`.
+
+
+---
+
+## Colocación por reglas de diseño (#652, 2026-10-04)
+
+Generador offline que, sobre el grafo de un mapa «camino primero» (C01 y el catálogo), coloca puzles del catálogo (`Docs/Catalogo-Puzzles-2026-09-29.md`), mecánicas, enemigos, obstáculos, nidos de reaparición, botín y decorado. No toca el procedural de Mokius.
+
+```bash
+uv run python Scripts/place_terrain_path.py                 # C01_camino, semilla 652: manifest + placements.png
+uv run python Scripts/place_terrain_path.py --comprobar     # valida el bloque escrito, sin tocar nada
+uv run python Scripts/place_terrain_path.py --simular       # genera y valida, sin escribir
+```
+
+Módulos en `Scripts/terrain_path/`: `placement_site.py` (caminos, tramos bloqueados, uniones y grafo de distancias por el camino), `placement_catalog.py` (catálogo y cifras de las reglas), `placement_rules.py` (validador), `placement.py` y `placement_extras.py` (generador), `placement_io.py` (bloque del manifest) y `placement_sheet.py` (lámina). Tests: `Scripts/tests/test_terrain_placement.py`.
+
+**Reglas que comprueba el validador** (distancias por el camino, no en línea recta):
+
+| Regla | Valor |
+|---|---|
+| Separación entre puzles | ≥ 90 m |
+| Calma junto a un puzle | sin enemigos ni obstáculos a media huella + 25 m |
+| Densidad por ruta | en cada bifurcación, la ruta corta lleva más peligro por metro que la larga (diferencia de longitud ≥ 15 %); un atajo con ≥ 30 m libres lleva al menos uno. El parkour cuenta doble |
+| Curva de intensidad | tramos de 50 m; tras un tramo ≥ 4 (pico) va uno ≤ 2 (calma); el primero y el último del principal, ≤ 2 |
+| Exclusiones | nada de juego a < 40 m de la salida, 50 m de la meta, 12 m de una unión, 15 m de un cruce o 12 m de un nido |
+| Posición | dentro del camino, fuera de túneles, tableros, arcos y escalones de medusa; en el río solo lo que vive en el agua; anchura mínima de cada plantilla; decorado a ≥ 4 m del eje |
+| Alcanzable | se llega desde la salida y se sigue hasta la meta |
+| Nidos | ≤ 200 m entre nidos del principal; uno entre 10 y 80 m antes de cada puzle de grupo del principal |
+| Secuencia | dos puzles seguidos del principal no son del mismo tipo |
+
+**Lo hecho a mano no se pisa.** El bloque `placements` del manifest tiene `auto` (lo rehace la CLI), `manual` (de los diseñadores: la CLI no lo toca y lo usa como restricción) y `suppressed` (ids de `auto` borrados a mano, que no vuelven). Regenerar el terreno con `gen_terrain_path.py` conserva el bloque; si cambia la semilla del mapa, lo marca `stale` y `--comprobar` falla hasta rehacerlo.
+
+**C01 (semilla 652):** 5 puzles (1 de grupo en el principal, 2 de grupo en rodeos, parkour en un atajo y la catapulta de un meandro), 4 mecánicas, 18 enemigos y obstáculos, 4 nidos, 92 de botín y 158 de decorado y vegetación, sin violaciones. El principal de C01 está casi lleno de túneles, río, puente del barranco, escalones y 14 uniones: solo cabe un puzle de grupo en él; los otros dos van en rodeos que el grupo puede saltarse.
+
+**Pendiente:** ni `ATN_MapVariantLoader` ni `build_demo_level.py` leen aún el bloque `placements` (formato en `placement_io.py`).
