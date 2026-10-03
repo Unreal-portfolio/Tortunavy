@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-03 00:33\n"
-"PO-Revision-Date: 2026-10-03 00:33\n"
+"POT-Creation-Date: 2026-10-03 14:27\n"
+"PO-Revision-Date: 2026-10-03 14:27\n"
 "Language-Team: \n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -783,6 +783,48 @@ msgctxt "UMG,TextBlockDefaultValue"
 msgid "Text Block"
 msgstr "Bloc de texte"
 
+#. Key:	443C30034C6520611B6DDBBB64F18DE4
+#. SourceLocation:	/Game/Vehicles/OffroadCar/Materials/M_OffroadCar_Wheel.M_OffroadCar_Wheel:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.B
+#: /Game/Vehicles/OffroadCar/Materials/M_OffroadCar_Wheel.M_OffroadCar_Wheel:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.B
+msgctxt ",443C30034C6520611B6DDBBB64F18DE4"
+msgid "AO"
+msgstr "AO"
+
+#. Key:	5CD9F0A5460A52068D96B2B670287E18
+#. SourceLocation:	/Game/Vehicles/OffroadCar/Materials/M_OffroadCar_Wheel.M_OffroadCar_Wheel:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.G
+#: /Game/Vehicles/OffroadCar/Materials/M_OffroadCar_Wheel.M_OffroadCar_Wheel:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.G
+msgctxt ",5CD9F0A5460A52068D96B2B670287E18"
+msgid "Metallic"
+msgstr "Metallic"
+
+#. Key:	A16FA3FB497E9AE3F4F6FBB3479885F9
+#. SourceLocation:	/Game/Vehicles/OffroadCar/Materials/M_OffroadCar_Wheel.M_OffroadCar_Wheel:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.R
+#: /Game/Vehicles/OffroadCar/Materials/M_OffroadCar_Wheel.M_OffroadCar_Wheel:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.R
+msgctxt ",A16FA3FB497E9AE3F4F6FBB3479885F9"
+msgid "Roughness"
+msgstr "Roughness"
+
+#. Key:	5C4867B64D435329D046C9B4FD8E27DF
+#. SourceLocation:	/Game/Vehicles/SportsCar/Materials/M_SportsCarBase.M_SportsCarBase:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.B
+#: /Game/Vehicles/SportsCar/Materials/M_SportsCarBase.M_SportsCarBase:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.B
+msgctxt ",5C4867B64D435329D046C9B4FD8E27DF"
+msgid "AO"
+msgstr "AO"
+
+#. Key:	6708F7224359A743C07A28B8B7A91F48
+#. SourceLocation:	/Game/Vehicles/SportsCar/Materials/M_SportsCarBase.M_SportsCarBase:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.G
+#: /Game/Vehicles/SportsCar/Materials/M_SportsCarBase.M_SportsCarBase:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.G
+msgctxt ",6708F7224359A743C07A28B8B7A91F48"
+msgid "Roughness"
+msgstr "Roughness"
+
+#. Key:	A20090BE4DDF8C3848C7DEB7E0F81934
+#. SourceLocation:	/Game/Vehicles/SportsCar/Materials/M_SportsCarBase.M_SportsCarBase:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.R
+#: /Game/Vehicles/SportsCar/Materials/M_SportsCarBase.M_SportsCarBase:MaterialExpressionTextureSampleParameter2D_1.ChannelNames.R
+msgctxt ",A20090BE4DDF8C3848C7DEB7E0F81934"
+msgid "Metallic"
+msgstr "Metallic"
+
 #. Key:	SerieHelmet
 #. SourceLocation:	Source/Tortunabo/Private/Core/TN_CosmeticLook.cpp(235)
 #: Source/Tortunabo/Private/Core/TN_CosmeticLook.cpp(235)
@@ -840,43 +882,43 @@ msgid "Verde tortuga, el clásico que nunca falla."
 msgstr "Vert tortue, le classique qui ne déçoit jamais."
 
 #. Key:	BoothPrompt
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(102)
-#: Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(102)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(103)
+#: Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(103)
 msgctxt "Tortunabo,BoothPrompt"
 msgid "Entrar al probador"
 msgstr "Entrer dans la cabine"
 
 #. Key:	BoothLabel
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(477)
-#: Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(477)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(478)
+#: Source/Tortunabo/Private/Lobby/TN_ChangingBooth.cpp(478)
 msgctxt "Tortunabo,BoothLabel"
 msgid "PROBADOR"
 msgstr "ESSAYAGE"
 
 #. Key:	GeneralPrompt
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(123)
-#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(123)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(125)
+#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(125)
 msgctxt "Tortunabo,GeneralPrompt"
 msgid "Hablar con el general"
 msgstr "Parler au général"
 
 #. Key:	GeneralName
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(124)
-#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(124)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(126)
+#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(126)
 msgctxt "Tortunabo,GeneralName"
 msgid "General Galápago"
 msgstr "Général Carapace"
 
 #. Key:	GeneralHQ
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(125)
-#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(125)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(127)
+#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(127)
 msgctxt "Tortunabo,GeneralHQ"
 msgid "Cuartel general"
 msgstr "Quartier général"
 
 #. Key:	GeneralMissionBoard
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(284)
-#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(284)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(286)
+#: Source/Tortunabo/Private/Lobby/TN_GeneralBriefing.cpp(286)
 msgctxt "Tortunabo,GeneralMissionBoard"
 msgid "ORDEN DEL DÍA<br>MISIÓN: {0}<br>DIFICULTAD: {1}"
 msgstr "ORDRE DU JOUR<br>MISSION : {0}<br>DIFFICULTÉ : {1}"
@@ -994,50 +1036,50 @@ msgid "lo que manda el reglamento."
 msgstr "selon le règlement."
 
 #. Key:	ProcSelectorMode
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(142)
-#: Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(142)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(146)
+#: Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(146)
 msgctxt "Tortunabo,ProcSelectorMode"
 msgid "MODO: {0}"
 msgstr "MODE : {0}"
 
 #. Key:	ProcSelectorDifficulty
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(145)
-#: Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(145)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(149)
+#: Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(149)
 msgctxt "Tortunabo,ProcSelectorDifficulty"
 msgid "DIFICULTAD: {0}"
 msgstr "DIFFICULTÉ : {0}"
 
 #. Key:	ProcSelectorPrompt
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(21)
-#: Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(21)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(22)
+#: Source/Tortunabo/Private/Lobby/TN_ProcModeSelector.cpp(22)
 msgctxt "Tortunabo,ProcSelectorPrompt"
 msgid "Cambiar"
 msgstr "Changer"
 
 #. Key:	ShopPrompt
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(141)
-#: Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(141)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(142)
+#: Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(142)
 msgctxt "Tortunabo,ShopPrompt"
 msgid "Hablar con el tendero"
 msgstr "Parler au boutiquier"
 
 #. Key:	ShopKeeperName
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(142)
-#: Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(142)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(143)
+#: Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(143)
 msgctxt "Tortunabo,ShopKeeperName"
 msgid "Don Tortugo"
 msgstr "Don Tortugo"
 
 #. Key:	ShopName
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(143)
-#: Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(143)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(144)
+#: Source/Tortunabo/Private/Lobby/TN_ShopKeeper.cpp(144)
 msgctxt "Tortunabo,ShopName"
 msgid "La Concha Dorada"
 msgstr "Le Coquillage d’Or"
 
 #. Key:	TreasureChestPrompt
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_TreasureChest.cpp(325)
-#: Source/Tortunabo/Private/Lobby/TN_TreasureChest.cpp(325)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_TreasureChest.cpp(326)
+#: Source/Tortunabo/Private/Lobby/TN_TreasureChest.cpp(326)
 msgctxt "Tortunabo,TreasureChestPrompt"
 msgid "Mantén para rebuscar en el cofre"
 msgstr "Maintiens pour fouiller le coffre"
@@ -1113,8 +1155,8 @@ msgid "¿Ya sabes jugar? {0} > «Saltar el tutorial»."
 msgstr "Tu sais déjà jouer ? {0} > « Passer le tutoriel »."
 
 #. Key:	MoundPrompt
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_TutorialPractice.cpp(297)
-#: Source/Tortunabo/Private/Lobby/TN_TutorialPractice.cpp(297)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_TutorialPractice.cpp(315)
+#: Source/Tortunabo/Private/Lobby/TN_TutorialPractice.cpp(315)
 msgctxt "TNTutorial,MoundPrompt"
 msgid "Mantén para rebuscar en el montículo"
 msgstr "Maintiens pour fouiller le monticule"
@@ -1603,78 +1645,78 @@ msgid "TUTORIAL · {0} / {1}"
 msgstr "TUTORIEL · {0} / {1}"
 
 #. Key:	ConnectFailed
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1632)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1632)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1634)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1634)
 msgctxt "TNRooms,ConnectFailed"
 msgid "No se ha podido conectar con la sala: puede que el anfitrión se haya ido."
 msgstr "Impossible de rejoindre le salon : l’hôte est peut-être parti."
 
 #. Key:	HostLeft
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1633)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1633)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1635)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1635)
 msgctxt "TNRooms,HostLeft"
 msgid "Se ha acabado la partida: el anfitrión se ha ido o se ha perdido la conexión."
 msgstr "La partie est terminée : l’hôte est parti ou la connexion a été perdue."
 
 #. Key:	ListStale
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1743)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1743)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1745)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1745)
 msgctxt "TNRooms,ListStale"
 msgid "Esa sala ya no está en la lista: actualízala."
 msgstr "Ce salon n’est plus dans la liste : actualise-la."
 
 #. Key:	ListLocked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1751)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1751)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1753)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1753)
 msgctxt "TNRooms,ListLocked"
 msgid "«{0}» está cerrada: el anfitrión no deja entrar a nadie más."
 msgstr "« {0} » est fermé : l’hôte ne laisse entrer personne d’autre."
 
 #. Key:	ListFull
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1757)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1757)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1759)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1759)
 msgctxt "TNRooms,ListFull"
 msgid "«{0}» está llena ({1}/{2})."
 msgstr "« {0} » est plein ({1}/{2})."
 
 #. Key:	CodeIncomplete
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1769)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1769)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1771)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1771)
 msgctxt "TNRooms,CodeIncomplete"
 msgid "El código tiene 5 letras y números (nunca lleva O, 0, I, 1 ni L)."
 msgstr "Le code compte 5 lettres et chiffres (jamais de O, 0, I, 1 ni L)."
 
 #. Key:	CodeSearching
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1772)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1772)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1774)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1774)
 msgctxt "TNRooms,CodeSearching"
 msgid "Buscando la sala {0}..."
 msgstr "Recherche du salon {0}..."
 
 #. Key:	Locked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2006)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2006)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2008)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2008)
 msgctxt "TNRooms,Locked"
 msgid "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
 msgstr "Salon fermé : personne d’autre ne peut entrer (ceux qui y étaient déjà peuvent revenir)."
 
 #. Key:	Unlocked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2007)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2007)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2009)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2009)
 msgctxt "TNRooms,Unlocked"
 msgid "Sala abierta: puede entrar gente otra vez."
 msgstr "Salon ouvert : on peut de nouveau y entrer."
 
 #. Key:	KickReason
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2045)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2045)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2047)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2047)
 msgctxt "TNRooms,KickReason"
 msgid "El anfitrión te ha expulsado de la sala."
 msgstr "Expulsion du salon décidée par l’hôte."
 
 #. Key:	KickedNotice
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2062)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2062)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2064)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2064)
 msgctxt "TNRooms,KickedNotice"
 msgid "El anfitrión te ha expulsado de la sala «{0}»."
 msgstr "Expulsion du salon « {0} » décidée par l’hôte."
@@ -3507,8 +3549,8 @@ msgid "No se ha podido cargar la partida y has vuelto al menú."
 msgstr "Impossible de charger la partie : tu es de retour au menu."
 
 #. Key:	TravelFailedLobby
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_TravelFailureSubsystem.cpp(312)
-#: Source/Tortunabo/Private/Multiplayer/TN_TravelFailureSubsystem.cpp(312)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_TravelFailureSubsystem.cpp(314)
+#: Source/Tortunabo/Private/Multiplayer/TN_TravelFailureSubsystem.cpp(314)
 msgctxt "TNRooms,TravelFailedLobby"
 msgid "No se ha podido cargar la partida: volvéis al lobby."
 msgstr "Impossible de charger la partie : vous retournez au lobby."
@@ -3527,583 +3569,1038 @@ msgctxt "TNHUD,ChatWheelTitle"
 msgid "FRASES"
 msgstr "PHRASES"
 
+#. Key:	QuickCallBoost
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyCrewCalls.cpp(89)
+#: Source/Tortunabo/Private/Rally/TN_RallyCrewCalls.cpp(89)
+msgctxt "Rally,QuickCallBoost"
+msgid "¡Turbo ya!"
+msgstr "Turbo, vas-y !"
+
+#. Key:	QuickCallBrake
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyCrewCalls.cpp(90)
+#: Source/Tortunabo/Private/Rally/TN_RallyCrewCalls.cpp(90)
+msgctxt "Rally,QuickCallBrake"
+msgid "¡Frena!"
+msgstr "Freine !"
+
+#. Key:	BotDriverName
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(338)
+#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(338)
+msgctxt "Rally,BotDriverName"
+msgid "Piloto IA"
+msgstr "Pilote IA"
+
+#. Key:	BotName
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(477)
+#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(477)
+msgctxt "Rally,BotName"
+msgid "Tortuga IA {0}"
+msgstr "Tortue IA {0}"
+
+#. Key:	AmmoCoco
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(11)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(11)
+msgctxt "Rally,AmmoCoco"
+msgid "Coco"
+msgstr "Noix de coco"
+
+#. Key:	AmmoAlga
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(12)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(12)
+msgctxt "Rally,AmmoAlga"
+msgid "Alga"
+msgstr "Algue"
+
+#. Key:	AmmoBurbuja
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(13)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(13)
+msgctxt "Rally,AmmoBurbuja"
+msgid "Burbuja"
+msgstr "Bulle"
+
+#. Key:	AmmoMortero
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(14)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(14)
+msgctxt "Rally,AmmoMortero"
+msgid "Mortero"
+msgstr "Mortier"
+
+#. Key:	AmmoTinta
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(15)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(15)
+msgctxt "Rally,AmmoTinta"
+msgid "Tinta"
+msgstr "Encre"
+
+#. Key:	AmmoAncla
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(16)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(16)
+msgctxt "Rally,AmmoAncla"
+msgid "Ancla"
+msgstr "Ancre"
+
+#. Key:	HitZoneFront
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(25)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(25)
+msgctxt "Rally,HitZoneFront"
+msgid "morro"
+msgstr "avant"
+
+#. Key:	HitZoneRear
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(26)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(26)
+msgctxt "Rally,HitZoneRear"
+msgid "cola"
+msgstr "arrière"
+
+#. Key:	HitZoneSide
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(27)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(27)
+msgctxt "Rally,HitZoneSide"
+msgid "lateral"
+msgstr "flanc"
+
+#. Key:	HitBlocked
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(33)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(33)
+msgctxt "Rally,HitBlocked"
+msgid "escudo"
+msgstr "bouclier"
+
+#. Key:	HitOutgoing
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(37)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(37)
+msgctxt "Rally,HitOutgoing"
+msgid "{0} → {1} · {2}"
+msgstr "{0} → {1} · {2}"
+
+#. Key:	HitIncoming
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(40)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(40)
+msgctxt "Rally,HitIncoming"
+msgid "Te dan: {0} · {1}"
+msgstr "Touchées : {0} · {1}"
+
+#. Key:	HitIncomingFrom
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(41)
+#: Source/Tortunabo/Private/Rally/TN_RallyHitReport.cpp(41)
+msgctxt "Rally,HitIncomingFrom"
+msgid "Te da {0}: {1} · {2}"
+msgstr "{0} te touche : {1} · {2}"
+
+#. Key:	SpeedUnit
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(172)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(172)
+msgctxt "Rally,SpeedUnit"
+msgid "km/h"
+msgstr "km/h"
+
+#. Key:	Boost
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(174)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(174)
+msgctxt "Rally,Boost"
+msgid "Turbo"
+msgstr "Turbo"
+
+#. Key:	WrongWay
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(187)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(187)
+msgctxt "Rally,WrongWay"
+msgid "¡CONTRAMANO!"
+msgstr "MAUVAIS SENS !"
+
+#. Key:	RespawnHint
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(192)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(192)
+msgctxt "Rally,RespawnHint"
+msgid "Mantén R para volver a la pista"
+msgstr "Maintiens R pour revenir sur la piste"
+
+#. Key:	SpectateHint
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(197)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(197)
+msgctxt "Rally,SpectateHint"
+msgid "A / D · LB / RB: cambiar de vista"
+msgstr "A / D · LB / RB : changer de vue"
+
+#. Key:	TurretHeat
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(248)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(248)
+msgctxt "Rally,TurretHeat"
+msgid "Torreta"
+msgstr "Tourelle"
+
+#. Key:	BuggyHealth
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(255)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(255)
+msgctxt "Rally,BuggyHealth"
+msgid "Buggy"
+msgstr "Buggy"
+
+#. Key:	ResultsTitle
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(288)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(288)
+msgctxt "Rally,ResultsTitle"
+msgid "Resultados"
+msgstr "Résultats"
+
+#. Key:	TurretOverheated
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(391)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(391)
+msgctxt "Rally,TurretOverheated"
+msgid "¡Torreta sobrecalentada!"
+msgstr "Tourelle en surchauffe !"
+
+#. Key:	Respawning
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(402)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(402)
+msgctxt "Rally,Respawning"
+msgid "Reapareciendo… {0}"
+msgstr "Réapparition… {0}"
+
+#. Key:	Go
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(445)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(445)
+msgctxt "Rally,Go"
+msgid "¡YA!"
+msgstr "PARTEZ !"
+
+#. Key:	WaitingForOthers
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(472)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(472)
+msgctxt "Rally,WaitingForOthers"
+msgid "Esperando a los demás…"
+msgstr "En attente des autres…"
+
+#. Key:	Spectating
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(475)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(475)
+msgctxt "Rally,Spectating"
+msgid "Mirando la carrera"
+msgstr "Tu regardes la course"
+
+#. Key:	FinishCountdown
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(478)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(478)
+msgctxt "Rally,FinishCountdown"
+msgid "Fin de la carrera en {0} s"
+msgstr "Fin de la course dans {0} s"
+
+#. Key:	NextRace
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(501)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(501)
+msgctxt "Rally,NextRace"
+msgid "Carrera nueva en {0} s"
+msgstr "Prochaine course dans {0} s"
+
+#. Key:	NotFinished
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(523)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(523)
+msgctxt "Rally,NotFinished"
+msgid "Sin llegar"
+msgstr "Pas arrivée"
+
+#. Key:	ResultsRow
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(524)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(524)
+msgctxt "Rally,ResultsRow"
+msgid "{0}.º   {1}   {2}   {3} pts"
+msgstr "{0}.   {1}   {2}   {3} pts"
+
+#. Key:	SpectateDrone
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(563)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(563)
+msgctxt "Rally,SpectateDrone"
+msgid "Dron: siguiendo al líder"
+msgstr "Drone : suit le leader"
+
+#. Key:	SpectateCrew
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(564)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(564)
+msgctxt "Rally,SpectateCrew"
+msgid "Mirando a {0} ({1}.º)"
+msgstr "Tu regardes {0} ({1}e)"
+
+#. Key:	SpecialAmmoCharges
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(629)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(629)
+msgctxt "Rally,SpecialAmmoCharges"
+msgid "Munición: {0} ×{1}"
+msgstr "Munitions : {0} ×{1}"
+
+#. Key:	SelectedAmmoReserve
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(635)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(635)
+msgctxt "Rally,SelectedAmmoReserve"
+msgid "Munición: {0} · {1} ×{2}"
+msgstr "Munitions : {0} · {1} ×{2}"
+
+#. Key:	SelectedAmmo
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(640)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(640)
+msgctxt "Rally,SelectedAmmo"
+msgid "Munición: {0}"
+msgstr "Munitions : {0}"
+
+#. Key:	GunnerKnocked
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(665)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(665)
+msgctxt "Rally,GunnerKnocked"
+msgid "¡Noqueada! {0}"
+msgstr "K.-O. ! {0}"
+
+#. Key:	EmptyBuggy
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(67)
+#: Source/Tortunabo/Private/Rally/TN_RallyHUDWidget.cpp(67)
+msgctxt "Rally,EmptyBuggy"
+msgid "Buggy vacío"
+msgstr "Buggy vide"
+
+#. Key:	PaceHairpinLeft
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(265)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(265)
+msgctxt "Rally,PaceHairpinLeft"
+msgid "horquilla izquierda"
+msgstr "épingle gauche"
+
+#. Key:	PaceHairpinRight
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(266)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(266)
+msgctxt "Rally,PaceHairpinRight"
+msgid "horquilla derecha"
+msgstr "épingle droite"
+
+#. Key:	PaceLeft
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(268)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(268)
+msgctxt "Rally,PaceLeft"
+msgid "izquierda {0}"
+msgstr "gauche {0}"
+
+#. Key:	PaceRight
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(268)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(268)
+msgctxt "Rally,PaceRight"
+msgid "derecha {0}"
+msgstr "droite {0}"
+
+#. Key:	PaceCrest
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(440)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(440)
+msgctxt "Rally,PaceCrest"
+msgid "cresta"
+msgstr "crête"
+
+#. Key:	PaceJump
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(441)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(441)
+msgctxt "Rally,PaceJump"
+msgid "salto"
+msgstr "saut"
+
+#. Key:	PaceWater
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(442)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(442)
+msgctxt "Rally,PaceWater"
+msgid "agua"
+msgstr "eau"
+
+#. Key:	PaceDontCut
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(445)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(445)
+msgctxt "Rally,PaceDontCut"
+msgid "{0}, no cortes"
+msgstr "{0}, ne coupe pas"
+
+#. Key:	PaceDistance
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(451)
+#: Source/Tortunabo/Private/Rally/TN_RallyPaceNotes.cpp(451)
+msgctxt "Rally,PaceDistance"
+msgid "{0} m"
+msgstr "{0} m"
+
+#. Key:	TabletFinish
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(291)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(291)
+msgctxt "Rally,TabletFinish"
+msgid "Meta"
+msgstr "Arrivée"
+
+#. Key:	TabletHint
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(372)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(372)
+msgctxt "Rally,TabletHint"
+msgid "Tab · M · Vista: guardar la tableta"
+msgstr "Tab · M · Vue : ranger la tablette"
+
+#. Key:	TabletTitle
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(379)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(379)
+msgctxt "Rally,TabletTitle"
+msgid "Copiloto"
+msgstr "Copilote"
+
+#. Key:	PlaceOfTotal
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(384)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(384)
+msgctxt "Rally,PlaceOfTotal"
+msgid "{0}.º / {1}"
+msgstr "{0} / {1}"
+
+#. Key:	TabletNextBox
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(434)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(434)
+msgctxt "Rally,TabletNextBox"
+msgid "Caja a {0}"
+msgstr "Caisse à {0}"
+
+#. Key:	TabletCharges
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(447)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(447)
+msgctxt "Rally,TabletCharges"
+msgid "{0} ×{1}"
+msgstr "{0} ×{1}"
+
+#. Key:	TabletNoNotes
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(592)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(592)
+msgctxt "Rally,TabletNoNotes"
+msgid "Todo recto"
+msgstr "Tout droit"
+
+#. Key:	TabletThen
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(614)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(614)
+msgctxt "Rally,TabletThen"
+msgid "luego {0} a {1}"
+msgstr "puis {0} dans {1}"
+
+#. Key:	TabletAmmo
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(627)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(627)
+msgctxt "Rally,TabletAmmo"
+msgid "Munición"
+msgstr "Munitions"
+
+#. Key:	TabletOverheated
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(657)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(657)
+msgctxt "Rally,TabletOverheated"
+msgid "¡Caliente!"
+msgstr "Surchauffe !"
+
+#. Key:	TabletNoSpecial
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(663)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(663)
+msgctxt "Rally,TabletNoSpecial"
+msgid "Sin carga especial"
+msgstr "Pas de munition spéciale"
+
+#. Key:	FinishedTime
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(102)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(102)
+msgctxt "Rally,FinishedTime"
+msgid "¡Meta! {0}"
+msgstr "Arrivée ! {0}"
+
+#. Key:	GateOfTotal
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(106)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(106)
+msgctxt "Rally,GateOfTotal"
+msgid "Puerta {0}/{1}"
+msgstr "Porte {0}/{1}"
+
+#. Key:	LapAndGate
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(110)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(110)
+msgctxt "Rally,LapAndGate"
+msgid "Vuelta {0}/{1} · {2}"
+msgstr "Tour {0}/{1} · {2}"
+
+#. Key:	RaceTime
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(94)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyDashboard.cpp(94)
+msgctxt "Rally,RaceTime"
+msgid "{0}:{1}"
+msgstr "{0}:{1}"
+
 #. Key:	NoKey
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1331)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1331)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1407)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1407)
 msgctxt "TNSettings,NoKey"
 msgid "—"
 msgstr "—"
 
 #. Key:	Space
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1336)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1336)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1412)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1412)
 msgctxt "TNKeys,Space"
 msgid "Espacio"
 msgstr "Espace"
 
 #. Key:	LeftShift
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1337)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1337)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1413)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1413)
 msgctxt "TNKeys,LeftShift"
 msgid "Mayús izq."
 msgstr "Maj gauche"
 
 #. Key:	RightShift
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1337)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1337)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1413)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1413)
 msgctxt "TNKeys,RightShift"
 msgid "Mayús der."
 msgstr "Maj droite"
 
 #. Key:	LeftCtrl
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1338)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1338)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1414)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1414)
 msgctxt "TNKeys,LeftCtrl"
 msgid "Ctrl izq."
 msgstr "Ctrl gauche"
 
 #. Key:	RightCtrl
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1338)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1338)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1414)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1414)
 msgctxt "TNKeys,RightCtrl"
 msgid "Ctrl der."
 msgstr "Ctrl droite"
 
 #. Key:	Alt
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1339)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1339)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1415)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1415)
 msgctxt "TNKeys,Alt"
 msgid "Alt"
 msgstr "Alt"
 
 #. Key:	AltGr
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1339)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1339)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1415)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1415)
 msgctxt "TNKeys,AltGr"
 msgid "Alt Gr"
 msgstr "Alt Gr"
 
 #. Key:	Backspace
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1340)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1340)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1416)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1416)
 msgctxt "TNKeys,Backspace"
 msgid "Retroceso"
 msgstr "Retour arrière"
 
 #. Key:	Escape
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1340)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1340)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1416)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1416)
 msgctxt "TNKeys,Escape"
 msgid "Esc"
 msgstr "Échap"
 
 #. Key:	Enter
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1341)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1341)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1417)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1417)
 msgctxt "TNKeys,Enter"
 msgid "Intro"
 msgstr "Entrée"
 
 #. Key:	Tab
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1341)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1341)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1417)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1417)
 msgctxt "TNKeys,Tab"
 msgid "Tab"
 msgstr "Tab"
 
 #. Key:	CapsLock
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1342)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1342)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1418)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1418)
 msgctxt "TNKeys,CapsLock"
 msgid "Bloq Mayús"
 msgstr "Verr. maj."
 
 #. Key:	PageDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1343)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1343)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1419)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1419)
 msgctxt "TNKeys,PageDown"
 msgid "Av Pág"
 msgstr "Pg suiv."
 
 #. Key:	PageUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1343)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1343)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1419)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1419)
 msgctxt "TNKeys,PageUp"
 msgid "Re Pág"
 msgstr "Pg préc."
 
 #. Key:	Delete
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1344)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1344)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1420)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1420)
 msgctxt "TNKeys,Delete"
 msgid "Supr"
 msgstr "Suppr"
 
 #. Key:	Insert
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1344)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1344)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1420)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1420)
 msgctxt "TNKeys,Insert"
 msgid "Insert"
 msgstr "Inser"
 
 #. Key:	End
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1345)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1345)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1421)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1421)
 msgctxt "TNKeys,End"
 msgid "Fin"
 msgstr "Fin"
 
 #. Key:	Home
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1345)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1345)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1421)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1421)
 msgctxt "TNKeys,Home"
 msgid "Inicio"
 msgstr "Début"
 
 #. Key:	ArrowDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1346)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1346)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1422)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1422)
 msgctxt "TNKeys,ArrowDown"
 msgid "Flecha abajo"
 msgstr "Flèche bas"
 
 #. Key:	ArrowUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1346)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1346)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1422)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1422)
 msgctxt "TNKeys,ArrowUp"
 msgid "Flecha arriba"
 msgstr "Flèche haut"
 
 #. Key:	ArrowLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1347)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1347)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1423)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1423)
 msgctxt "TNKeys,ArrowLeft"
 msgid "Flecha izquierda"
 msgstr "Flèche gauche"
 
 #. Key:	ArrowRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1347)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1347)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1423)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1423)
 msgctxt "TNKeys,ArrowRight"
 msgid "Flecha derecha"
 msgstr "Flèche droite"
 
 #. Key:	Mouse
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1348)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1348)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1424)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1424)
 msgctxt "TNKeys,Mouse"
 msgid "Ratón"
 msgstr "Souris"
 
 #. Key:	MouseLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1350)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1350)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1426)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1426)
 msgctxt "TNKeys,MouseLeft"
 msgid "Clic izquierdo"
 msgstr "Clic gauche"
 
 #. Key:	MouseRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1350)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1350)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1426)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1426)
 msgctxt "TNKeys,MouseRight"
 msgid "Clic derecho"
 msgstr "Clic droit"
 
 #. Key:	MouseMiddle
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1351)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1351)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1427)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1427)
 msgctxt "TNKeys,MouseMiddle"
 msgid "Clic de la rueda"
 msgstr "Clic molette"
 
 #. Key:	MouseSide1
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1352)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1352)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1428)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1428)
 msgctxt "TNKeys,MouseSide1"
 msgid "Botón lateral 1"
 msgstr "Bouton latéral 1"
 
 #. Key:	MouseSide2
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1352)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1352)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1428)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1428)
 msgctxt "TNKeys,MouseSide2"
 msgid "Botón lateral 2"
 msgstr "Bouton latéral 2"
 
 #. Key:	Wheel
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1353)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1353)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1429)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1429)
 msgctxt "TNKeys,Wheel"
 msgid "Rueda"
 msgstr "Molette"
 
 #. Key:	PadLeftStick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1355)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1355)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1431)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1431)
 msgctxt "TNKeys,PadLeftStick"
 msgid "Stick izquierdo"
 msgstr "Stick gauche"
 
 #. Key:	PadRightStick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1355)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1355)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1431)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1431)
 msgctxt "TNKeys,PadRightStick"
 msgid "Stick derecho"
 msgstr "Stick droit"
 
 #. Key:	PadFaceBottom
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1358)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1358)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1434)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1434)
 msgctxt "TNKeys,PadFaceBottom"
 msgid "A / Cruz"
 msgstr "A / Croix"
 
 #. Key:	PadFaceRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1358)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1358)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1434)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1434)
 msgctxt "TNKeys,PadFaceRight"
 msgid "B / Círculo"
 msgstr "B / Rond"
 
 #. Key:	PadFaceLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1359)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1359)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1435)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1435)
 msgctxt "TNKeys,PadFaceLeft"
 msgid "X / Cuadrado"
 msgstr "X / Carré"
 
 #. Key:	PadFaceTop
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1359)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1359)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1435)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1435)
 msgctxt "TNKeys,PadFaceTop"
 msgid "Y / Triángulo"
 msgstr "Y / Triangle"
 
 #. Key:	PadLeftShoulder
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1360)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1360)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1436)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1436)
 msgctxt "TNKeys,PadLeftShoulder"
 msgid "LB / L1"
 msgstr "LB / L1"
 
 #. Key:	PadRightShoulder
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1360)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1360)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1436)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1436)
 msgctxt "TNKeys,PadRightShoulder"
 msgid "RB / R1"
 msgstr "RB / R1"
 
 #. Key:	PadLeftTrigger
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1361)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1361)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1437)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1437)
 msgctxt "TNKeys,PadLeftTrigger"
 msgid "LT / L2"
 msgstr "LT / L2"
 
 #. Key:	PadRightTrigger
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1361)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1361)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1437)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1437)
 msgctxt "TNKeys,PadRightTrigger"
 msgid "RT / R2"
 msgstr "RT / R2"
 
 #. Key:	PadDpadDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1363)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1363)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1439)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1439)
 msgctxt "TNKeys,PadDpadDown"
 msgid "Cruceta abajo"
 msgstr "Croix bas"
 
 #. Key:	PadDpadUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1363)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1363)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1439)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1439)
 msgctxt "TNKeys,PadDpadUp"
 msgid "Cruceta arriba"
 msgstr "Croix haut"
 
 #. Key:	PadDpadLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1364)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1364)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1440)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1440)
 msgctxt "TNKeys,PadDpadLeft"
 msgid "Cruceta izquierda"
 msgstr "Croix gauche"
 
 #. Key:	PadDpadRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1364)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1364)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1440)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1440)
 msgctxt "TNKeys,PadDpadRight"
 msgid "Cruceta derecha"
 msgstr "Croix droite"
 
 #. Key:	PadLeftStickClick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1365)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1365)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1441)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1441)
 msgctxt "TNKeys,PadLeftStickClick"
 msgid "Clic stick izquierdo"
 msgstr "Clic stick gauche"
 
 #. Key:	PadRightStickClick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1366)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1366)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1442)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1442)
 msgctxt "TNKeys,PadRightStickClick"
 msgid "Clic stick derecho"
 msgstr "Clic stick droit"
 
 #. Key:	PadSelect
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1367)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1367)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1443)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1443)
 msgctxt "TNKeys,PadSelect"
 msgid "Select / Vista"
 msgstr "Select / Vue"
 
 #. Key:	PadStart
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1367)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1367)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1443)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1443)
 msgctxt "TNKeys,PadStart"
 msgid "Start / Menú"
 msgstr "Start / Menu"
 
 #. Key:	ActMove
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1380)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1380)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1456)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1456)
 msgctxt "TNSettings,ActMove"
 msgid "Moverse"
 msgstr "Se déplacer"
 
 #. Key:	ActLook
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1381)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1381)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1457)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1457)
 msgctxt "TNSettings,ActLook"
 msgid "Mover la cámara"
 msgstr "Bouger la caméra"
 
 #. Key:	ActJump
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1382)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1382)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1458)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1458)
 msgctxt "TNSettings,ActJump"
 msgid "Saltar"
 msgstr "Sauter"
 
 #. Key:	ActSprint
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1383)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1383)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1459)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1459)
 msgctxt "TNSettings,ActSprint"
 msgid "Correr"
 msgstr "Courir"
 
 #. Key:	ActInteract
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1384)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1384)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1460)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1460)
 msgctxt "TNSettings,ActInteract"
 msgid "Usar, coger y lanzar"
 msgstr "Utiliser, attraper et lancer"
 
 #. Key:	ActShell
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1385)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1385)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1461)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1461)
 msgctxt "TNSettings,ActShell"
 msgid "Meterse en el caparazón"
 msgstr "Rentrer dans la carapace"
 
 #. Key:	ActDrop
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1386)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1386)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1462)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1462)
 msgctxt "TNSettings,ActDrop"
 msgid "Soltar el objeto"
 msgstr "Lâcher l’objet"
 
 #. Key:	ActRotate
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1387)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1387)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1463)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1463)
 msgctxt "TNSettings,ActRotate"
 msgid "Cambiar de objeto"
 msgstr "Changer d’objet"
 
 #. Key:	ActEmotes
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1388)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1388)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1464)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1464)
 msgctxt "TNSettings,ActEmotes"
 msgid "Rueda de bailes"
 msgstr "Roue d’émotes"
 
 #. Key:	ActChat
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1389)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1389)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1465)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1465)
 msgctxt "TNSettings,ActChat"
 msgid "Frases rápidas"
 msgstr "Phrases rapides"
 
 #. Key:	ActWheelPick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1390)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1390)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1466)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1466)
 msgctxt "TNSettings,ActWheelPick"
 msgid "Elegir en la rueda"
 msgstr "Choisir dans la roue"
 
 #. Key:	TalkRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1521)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1521)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1597)
 msgctxt "TNSettings,TalkRow"
 msgid "Hablar (pulsar para hablar)"
 msgstr "Parler (appuyer pour parler)"
 
 #. Key:	PauseRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1527)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1527)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1603)
 msgctxt "TNSettings,PauseRow"
 msgid "Abrir y cerrar este menú"
 msgstr "Ouvrir et fermer ce menu"
 
 #. Key:	NotEditable
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1627)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1627)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1703)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1703)
 msgctxt "TNSettings,NotEditable"
 msgid "«{0}» no se cambia con {1}: va con {2}."
 msgstr "« {0} » ne se change pas avec {1} : il utilise {2}."
 
 #. Key:	Reserved
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1633)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1633)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1709)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1709)
 msgctxt "TNSettings,Reserved"
 msgid "{0} está reservada (menú, consola o editor). Prueba con otra."
 msgstr "{0} est une touche réservée (menu, console ou éditeur). Choisis-en une autre."
 
 #. Key:	Unchanged
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1640)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1640)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1716)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1716)
 msgctxt "TNSettings,Unchanged"
 msgid "«{0}» ya iba con {1}."
 msgstr "« {0} » utilisait déjà {1}."
 
 #. Key:	Swapped
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1733)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1733)
 msgctxt "TNSettings,Swapped"
 msgid "{0} estaba en «{1}»: ahora «{1}» va con {2}."
 msgstr "{0} était sur « {1} » : maintenant « {1} » utilise {2}."
 
 #. Key:	Emptied
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1735)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1735)
 msgctxt "TNSettings,Emptied"
 msgid "{0} estaba en «{1}», que se queda sin tecla en {2}."
 msgstr "{0} était sur « {1} », qui se retrouve sans touche sur {2}."
 
 #. Key:	Assigned
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1666)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1666)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1742)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1742)
 msgctxt "TNSettings,Assigned"
 msgid "«{0}»: {1}."
 msgstr "« {0} » : {1}."
 
 #. Key:	AlreadyDefault
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1721)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1721)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1797)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1797)
 msgctxt "TNSettings,AlreadyDefault"
 msgid "«{0}» ya iba con las de serie."
 msgstr "« {0} » utilisait déjà les touches par défaut."
 
 #. Key:	MoveForward
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(336)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(336)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(342)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(342)
 msgctxt "TNSettings,MoveForward"
 msgid "Avanzar"
 msgstr "Avancer"
 
 #. Key:	MoveBack
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(337)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(337)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(343)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(343)
 msgctxt "TNSettings,MoveBack"
 msgid "Retroceder"
 msgstr "Reculer"
 
 #. Key:	MoveLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(338)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(338)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(344)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(344)
 msgctxt "TNSettings,MoveLeft"
 msgid "Ir a la izquierda"
 msgstr "Aller à gauche"
 
 #. Key:	MoveRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(339)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(339)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(345)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(345)
 msgctxt "TNSettings,MoveRight"
 msgid "Ir a la derecha"
 msgstr "Aller à droite"
 
 #. Key:	DirNext
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(342)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(342)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(348)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(348)
 msgctxt "TNSettings,DirNext"
 msgid "siguiente"
 msgstr "suivant"
 
 #. Key:	DirPrevious
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(342)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(342)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(348)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(348)
 msgctxt "TNSettings,DirPrevious"
 msgid "anterior"
 msgstr "précédent"
 
 #. Key:	DirBack
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(343)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(343)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(349)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(349)
 msgctxt "TNSettings,DirBack"
 msgid "atrás"
 msgstr "arrière"
 
 #. Key:	DirForward
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(343)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(343)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(349)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(349)
 msgctxt "TNSettings,DirForward"
 msgid "adelante"
 msgstr "avant"
 
 #. Key:	DirLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(344)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(344)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(350)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(350)
 msgctxt "TNSettings,DirLeft"
 msgid "izquierda"
 msgstr "gauche"
 
 #. Key:	DirRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(344)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(344)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(350)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(350)
 msgctxt "TNSettings,DirRight"
 msgid "derecha"
 msgstr "droite"
 
 #. Key:	DirDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(345)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(345)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(351)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(351)
 msgctxt "TNSettings,DirDown"
 msgid "abajo"
 msgstr "bas"
 
 #. Key:	DirUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(345)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(345)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(351)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(351)
 msgctxt "TNSettings,DirUp"
 msgid "arriba"
 msgstr "haut"
 
 #. Key:	DirectionFmt
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(348)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(348)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(354)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(354)
 msgctxt "TNSettings,DirectionFmt"
 msgid "{0} ({1})"
 msgstr "{0} ({1})"
 
 #. Key:	WordKeyboard
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(353)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(353)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(359)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(359)
 msgctxt "TNSettings,WordKeyboard"
 msgid "el teclado y el ratón"
 msgstr "le clavier et la souris"
 
 #. Key:	WordPad
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(353)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(353)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(359)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(359)
 msgctxt "TNSettings,WordPad"
 msgid "el mando"
 msgstr "la manette"
@@ -5005,85 +5502,85 @@ msgid "Cargando..."
 msgstr "Chargement..."
 
 #. Key:	Storm
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1154)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1154)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1160)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1160)
 msgctxt "TNHUD,Storm"
 msgid "¡La tormenta te alcanza! ¡Al agua!   {0}"
 msgstr "La tempête te rattrape ! À l’eau !   {0}"
 
 #. Key:	Seagull
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1168)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1168)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1174)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1174)
 msgctxt "TNHUD,Seagull"
 msgid "¡Una gaviota te ha marcado! Sal del círculo o métete bajo techo   {0}"
 msgstr "Une mouette t'a repérée ! Sors du cercle ou mets-toi à l'abri   {0}"
 
 #. Key:	Down
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1181)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1181)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1187)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1187)
 msgctxt "TNHUD,Down"
 msgid "¡Panza arriba!\nUn compañero puede darte la vuelta:  {0} s"
 msgstr "Sur le dos !\nUn coéquipier peut te retourner :  {0} s"
 
 #. Key:	OutTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1240)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1240)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1246)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1246)
 msgctxt "TNHUD,OutTitle"
 msgid "¡Fuera de carrera!"
 msgstr "Hors course !"
 
 #. Key:	OutHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1241)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1241)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1247)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1247)
 msgctxt "TNHUD,OutHint"
 msgid "Anima a los demás hasta que lleguen al agua."
 msgstr "Encourage les autres jusqu’à ce qu’ils atteignent l’eau."
 
 #. Key:	PreviewSay
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1440)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1440)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1446)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1446)
 msgctxt "TNHUD,PreviewSay"
 msgid "¡Por aquí, que hay conchas!"
 msgstr "Par ici, il y a des coquillages !"
 
 #. Key:	WheelHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1665)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1665)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1671)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1671)
 msgctxt "TNHUD,WheelHint"
 msgid "Apunta con el ratón"
 msgstr "Vise avec la souris"
 
 #. Key:	Exhausted
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(388)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(388)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(394)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(394)
 msgctxt "TNHUD,Exhausted"
 msgid "¡SIN ALIENTO!"
 msgstr "ESSOUFFLÉE !"
 
 #. Key:	InHand
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(436)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(436)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(442)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(442)
 msgctxt "TNHUD,InHand"
 msgid "EN LA ALETA"
 msgstr "À LA NAGEOIRE"
 
 #. Key:	Stored
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(437)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(437)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(443)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(443)
 msgctxt "TNHUD,Stored"
 msgid "EN EL CAPARAZÓN"
 msgstr "DANS LA CARAPACE"
 
 #. Key:	Reviving
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(533)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(533)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(539)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(539)
 msgctxt "TNHUD,Reviving"
 msgid "Dando la vuelta a tu compañero..."
 msgstr "Tu retournes ton coéquipier..."
 
 #. Key:	ShellGain
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(975)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(975)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(981)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(981)
 msgctxt "TNHUD,ShellGain"
 msgid "+{0}"
 msgstr "+{0}"
@@ -8904,8 +9401,8 @@ msgid "¡CATAPULTA!"
 msgstr "CATAPULTE !"
 
 #. Key:	BeachChestPrompt
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachChest.cpp(659)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachChest.cpp(659)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachChest.cpp(660)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachChest.cpp(660)
 msgctxt "Tortunabo,BeachChestPrompt"
 msgid "Mantén para abrir el cofre"
 msgstr "Maintiens pour ouvrir le coffre"
@@ -8925,43 +9422,43 @@ msgid "¡ÑAM!"
 msgstr "GLOUP !"
 
 #. Key:	EnemyBonk
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1130)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1130)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1164)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1164)
 msgctxt "TNBeach,EnemyBonk"
 msgid "¡TOING!"
 msgstr "POC !"
 
 #. Key:	CrabRam
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1279)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1279)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1280)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1280)
 msgctxt "TNBeach,CrabRam"
 msgid "¡EMBESTIDA!"
 msgstr "CHARGE !"
 
 #. Key:	CrabCrash
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1297)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1297)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1298)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1298)
 msgctxt "TNBeach,CrabCrash"
 msgid "¡CATAPLÁN!"
 msgstr "PATATRAC !"
 
 #. Key:	GullGrab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1498)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1498)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1519)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1519)
 msgctxt "TNBeach,GullGrab"
 msgid "¡ÑAC!"
 msgstr "CLAC !"
 
 #. Key:	GullSplat
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1533)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1533)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1554)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1554)
 msgctxt "TNBeach,GullSplat"
 msgid "¡PLOF!"
 msgstr "SPLATCH !"
 
 #. Key:	GullPeck
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1974)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1974)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1995)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1995)
 msgctxt "TNBeach,GullPeck"
 msgid "¡PIC!"
 msgstr "PIC !"
@@ -8981,29 +9478,29 @@ msgid "¡STRIKE!"
 msgstr "STRIKE !"
 
 #. Key:	LizardBite
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(892)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(892)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(905)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(905)
 msgctxt "TNBeach,LizardBite"
 msgid "¡ÑAM!"
 msgstr "CROC !"
 
 #. Key:	LizardPrize
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(910)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(910)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(923)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachLizard.cpp(923)
 msgctxt "TNBeach,LizardPrize"
 msgid "¡UN REGALO!"
 msgstr "UN CADEAU !"
 
 #. Key:	MineClick
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(589)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(589)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(636)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(636)
 msgctxt "TNBeach,MineClick"
 msgid "¡clic!"
 msgstr "clic !"
 
 #. Key:	MineBoom
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(604)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(604)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(651)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(651)
 msgctxt "TNBeach,MineBoom"
 msgid "¡BUM!"
 msgstr "BOUM !"
@@ -9023,8 +9520,8 @@ msgid "¡FUERA!"
 msgstr "DEHORS !"
 
 #. Key:	QuadRunOver
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachQuadLane.cpp(318)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachQuadLane.cpp(318)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachQuadLane.cpp(358)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachQuadLane.cpp(358)
 msgctxt "TNBeach,QuadRunOver"
 msgid "¡ATROPELLO!"
 msgstr "ÉCRASÉ !"
@@ -9044,8 +9541,8 @@ msgid "¡QUÉ PICOR!"
 msgstr "ÇA DÉMANGE !"
 
 #. Key:	SandWormNom
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachSandWorm.cpp(1255)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachSandWorm.cpp(1255)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachSandWorm.cpp(1266)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachSandWorm.cpp(1266)
 msgctxt "TNBeach,SandWormNom"
 msgid "¡ÑAM!"
 msgstr "MIAM !"
@@ -9057,30 +9554,30 @@ msgctxt "TNBeach,UrchinPrick"
 msgid "¡PINCHAZO!"
 msgstr "PIQÛRE !"
 
+#. Key:	StormKick
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1149)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1149)
+msgctxt "TNBeach,StormKick"
+msgid "¡PATADA!"
+msgstr "SHOOT !"
+
 #. Key:	StormRun
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1300)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1300)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1455)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1455)
 msgctxt "TNBeach,StormRun"
 msgid "¡CORRE!"
 msgstr "COURS !"
 
 #. Key:	StormWarn
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1313)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1313)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1468)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(1468)
 msgctxt "TNBeach,StormWarn"
 msgid "¡QUE VIENE LA TORMENTA!"
 msgstr "LA TEMPÊTE ARRIVE !"
 
-#. Key:	StormKick
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(994)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachStorm.cpp(994)
-msgctxt "TNBeach,StormKick"
-msgid "¡PATADA!"
-msgstr "SHOOT !"
-
 #. Key:	TankFoamHit
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachToyTank.cpp(527)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachToyTank.cpp(527)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachToyTank.cpp(587)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachToyTank.cpp(587)
 msgctxt "TNBeach,TankFoamHit"
 msgid "¡PAF!"
 msgstr "PAF !"
@@ -9100,8 +9597,8 @@ msgid "¡CRAC!"
 msgstr "CRAC !"
 
 #. Key:	FrisbeeBonk
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(538)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(538)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(544)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(544)
 msgctxt "TNRace,FrisbeeBonk"
 msgid "¡BONK!"
 msgstr "BONK !"
@@ -9233,22 +9730,22 @@ msgid "¡TAXI!"
 msgstr "TAXI !"
 
 #. Key:	ProcSwitchPrompt
-#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(211)
-#: Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(211)
+#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(217)
+#: Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(217)
 msgctxt "Tortunabo,ProcSwitchPrompt"
 msgid "Pulsar"
 msgstr "Appuyer"
 
 #. Key:	SearchSpotPrompt
-#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(688)
-#: Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(688)
+#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(701)
+#: Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(701)
 msgctxt "Tortunabo,SearchSpotPrompt"
 msgid "Mantén para rebuscar"
 msgstr "Maintiens pour fouiller"
 
 #. Key:	ProcStartGateName
-#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcStartStructure.cpp(551)
-#: Source/Tortunabo/Private/World/ProcMap/TN_ProcStartStructure.cpp(551)
+#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcStartStructure.cpp(562)
+#: Source/Tortunabo/Private/World/ProcMap/TN_ProcStartStructure.cpp(562)
 msgctxt "Tortunabo,ProcStartGateName"
 msgid "TORTUNAVY"
 msgstr "TORTUNAVY"
@@ -9289,8 +9786,8 @@ msgid "Activar Tótem"
 msgstr "Activer le totem"
 
 #. Key:	ReplayPrompt
-#. SourceLocation:	Source/Tortunabo/Private/World/TN_TutorialEntryInteractable.cpp(11)
-#: Source/Tortunabo/Private/World/TN_TutorialEntryInteractable.cpp(11)
+#. SourceLocation:	Source/Tortunabo/Private/World/TN_TutorialEntryInteractable.cpp(12)
+#: Source/Tortunabo/Private/World/TN_TutorialEntryInteractable.cpp(12)
 msgctxt "TNTutorial,ReplayPrompt"
 msgid "Repetir el tutorial"
 msgstr "Refaire le tutoriel"

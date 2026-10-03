@@ -56,6 +56,9 @@ public class Tortunabo : ModuleRules
 		// las gafas y su pantalla de carga) y la textura del huevo para esa pantalla (RenderCore: BeginCleanup).
 		PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "XRBase", "RenderCore" });
 
+		// Rally Tortuga (Docs/Rally_MVP.md): buggy biplaza sobre Chaos Vehicles (ATN_Buggy y sus ruedas).
+		PrivateDependencyModuleNames.AddRange(new string[] { "ChaosVehicles", "ChaosVehiclesCore" });
+
 		// Steam solo existe en escritorio: en Android (Meta Quest) el juego usa el subsistema en línea NULL.
 		if (Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.Linux || Target.Platform == UnrealTargetPlatform.Mac)
 		{

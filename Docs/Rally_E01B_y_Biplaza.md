@@ -90,6 +90,7 @@ Total en recta 2 097 m; eje de 2 400 m, sinuosidad media 1,14.
 
 - Ventana geográfica: 0,83 × 1,69 km más 250 m de margen por lado = **1,33 × 2,19 km** (2,9 km²). Cumple «lado ≤ 2,4 km» y «centrado en el origen» del plan §2.5.
 - Malla: banda de ±150 m del eje (2 400 × 300 m = 0,72 km²) a 1 M tri/km² ≈ 0,72 M; el resto (≈ 2,2 km²) a voxel de 2–4 m y 0,2 M tri/km² ≈ 0,44 M. **Total ≈ 1,2 M triángulos, ≈ 20 MB de StaticMesh de editor** (17 MB por millón [A §3]). Unos 100 trozos de 100 m con contenido (el resto, vacío o de fondo).
+- Fondo (#532): la rejilla abarca la península entera con Portugal y Baleares (23 × 31 trozos; África, al sur de `AFRICA_LINE`, es mar, y Francia baja al mar junto a los bordes norte y este). El corredor se genera en las coordenadas de su marco y se desplaza (+1 fila, +10 columnas) sin cambiar: `Scripts/tests/data/e01b_corredor.json` guarda su huella. 68 trozos con colisión y 425 de fondo sin ella: ≈ 1,09 M triángulos (tope 1,5 M). El mar de `LVL_Rally` es un único plano opaco (`M_RallySea`) a la cota del agua, 20 km más allá de cada borde, que coloca `Scripts/build_rally_level.py`.
 - Altura: el relieve real a 1 m = 0,4 km apenas se nota (exageración vertical E = 3,2 daría cimas de 27 m). El eje y el terreno próximo llevan **cotas de autor** (§2.4); fuera de la banda manda el MDE con E = 3–4.
 - Rango Z del voxelizado: hoy 89 niveles de 0,5 m = 44,5 m ([C §1]). E01B llega a +44 m en la salida y con la roca sobre el túnel a ≈ +55 m: **128 niveles (64 m)**. Ver pregunta 4.
 

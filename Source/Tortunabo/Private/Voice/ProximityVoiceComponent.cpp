@@ -2,7 +2,9 @@
 #include "TN_VoiceDeviceCapture.h"
 #include "Core/TN_Log.h"
 #include "UI/Voice/VoiceIndicatorWidget.h"
-#include "Player/MP_GamePlayerController.h"
+#include "Voice/TN_VoiceRouting.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerState.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
@@ -45,27 +47,51 @@ void UProximityVoiceComponent::BeginPlay()
 	Super::BeginPlay();
 	bIsShuttingDown = false;
 	bRuntimeResourcesCleanedUp = false;
-
-	// Con un micrófono elegido en el menú de pausa (y aún conectado), ese; si no, el predeterminado de siempre.
-	if (IsLocallyOwned() && !OpenPreferredCaptureDevice())
+	if (IsLocallyOwned())
 	{
-		AudioCaptureSynth = MakeUnique<Audio::FAudioCaptureSynth>();
-		if (AudioCaptureSynth->OpenDefaultStream())
-		{
-			AudioCaptureSynth->StartCapturing();
-			Audio::FCaptureDeviceInfo DeviceInfo;
-			if (AudioCaptureSynth->GetDefaultCaptureDeviceInfo(DeviceInfo))
-			{
-				VoiceSampleRate = DeviceInfo.PreferredSampleRate;
-				CaptureNumChannels = FMath::Max(1, DeviceInfo.InputChannels);
-			}
-		}
-		else
-		{
-			AudioCaptureSynth.Reset();
-		}
-
+		OpenCapture();
 	}
+}
+
+void UProximityVoiceComponent::OpenCapture()
+{
+	bCaptureOpenAttempted = true;
+	// Con un micrófono elegido en el menú de pausa (y aún conectado), ese; si no, el predeterminado de siempre.
+	if (OpenPreferredCaptureDevice())
+	{
+		return;
+	}
+	AudioCaptureSynth = MakeUnique<Audio::FAudioCaptureSynth>();
+	if (!AudioCaptureSynth->OpenDefaultStream())
+	{
+		AudioCaptureSynth.Reset();
+		return;
+	}
+	AudioCaptureSynth->StartCapturing();
+	Audio::FCaptureDeviceInfo DeviceInfo;
+	if (AudioCaptureSynth->GetDefaultCaptureDeviceInfo(DeviceInfo))
+	{
+		VoiceSampleRate = DeviceInfo.PreferredSampleRate;
+		CaptureNumChannels = FMath::Max(1, DeviceInfo.InputChannels);
+	}
+}
+
+UProximityVoiceComponent* UProximityVoiceComponent::EnsureOn(APawn* Pawn)
+{
+	if (!Pawn || !Pawn->HasAuthority())
+	{
+		return nullptr;
+	}
+	if (UProximityVoiceComponent* Existing = Pawn->FindComponentByClass<UProximityVoiceComponent>())
+	{
+		return Existing;
+	}
+	UProximityVoiceComponent* VoiceComp = NewObject<UProximityVoiceComponent>(Pawn, TEXT("ProximityVoice"));
+	if (VoiceComp)
+	{
+		VoiceComp->RegisterComponent();
+	}
+	return VoiceComp;
 }
 
 namespace TNVoiceDevices
@@ -361,12 +387,8 @@ void UProximityVoiceComponent::SetupPlayback(int32 InSampleRate)
 	// fades to silence at OuterRadius (default 2500cm = 25m).
 	PlaybackAudioComponent->bAllowSpatialization = true;
 	PlaybackAudioComponent->bOverrideAttenuation = true;
-	PlaybackAudioComponent->AttenuationOverrides.bAttenuate = true;
-	PlaybackAudioComponent->AttenuationOverrides.bSpatialize = true;
-	PlaybackAudioComponent->AttenuationOverrides.FalloffDistance = FMath::Max(OuterRadius - InnerRadius, 100.f);
-	PlaybackAudioComponent->AttenuationOverrides.AttenuationShape = EAttenuationShape::Sphere;
-	PlaybackAudioComponent->AttenuationOverrides.AttenuationShapeExtents = FVector(InnerRadius);
-	PlaybackAudioComponent->AttenuationOverrides.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound;
+	PlaybackAudioComponent->AttenuationOverrides = MakeAttenuation(false);
+	bPlaybackIntercom = false;
 
 	PlaybackAudioComponent->RegisterComponent();
 	PlaybackAudioComponent->SetVolumeMultiplier(PlaybackVolume);
@@ -374,9 +396,41 @@ void UProximityVoiceComponent::SetupPlayback(int32 InSampleRate)
 	PlaybackAudioComponent->Play();
 }
 
+FSoundAttenuationSettings UProximityVoiceComponent::MakeAttenuation(bool bIntercom) const
+{
+	FSoundAttenuationSettings Settings;
+	// Interfono: ni atenuación ni espacialización (la cámara de persecución del Rally va a 8 m del buggy).
+	Settings.bAttenuate = !bIntercom;
+	Settings.bSpatialize = !bIntercom;
+	Settings.FalloffDistance = FMath::Max(OuterRadius - InnerRadius, 100.f);
+	Settings.AttenuationShape = EAttenuationShape::Sphere;
+	Settings.AttenuationShapeExtents = FVector(InnerRadius);
+	Settings.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound;
+	return Settings;
+}
+
+void UProximityVoiceComponent::ApplyPlaybackRoute(bool bIntercom)
+{
+	if (!PlaybackAudioComponent || bPlaybackIntercom == bIntercom)
+	{
+		return;
+	}
+	bPlaybackIntercom = bIntercom;
+	PlaybackAudioComponent->bAllowSpatialization = !bIntercom;
+	// AdjustAttenuation también cambia el sonido que ya está sonando.
+	PlaybackAudioComponent->AdjustAttenuation(MakeAttenuation(bIntercom));
+}
+
 void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// El peón pasa a ser de este jugador después de BeginPlay (la artillera que sube al volante del buggy, o el controlador
+	// que llega por red después que el componente): se abre el micrófono entonces, una sola vez.
+	if (!bCaptureOpenAttempted && !bIsShuttingDown && IsLocallyOwned())
+	{
+		OpenCapture();
+	}
 
 	if (bIsShuttingDown || (GetWorld() && GetWorld()->bIsTearingDown) || !IsLocallyOwned() || (!AudioCaptureSynth && !DeviceCapture))
 	{
@@ -590,48 +644,47 @@ void UProximityVoiceComponent::Server_SendVoiceData_Implementation(const TArray<
 	}
 	LastVoicePacketServerTime = Now;
 
-	// Enviar solo a clientes dentro del OuterRadius — evita enviar audio a todos.
-	AActor* SpeakerActor = GetOwner();
-	if (!SpeakerActor || !GetWorld())
+	RelayVoiceToListeners(CompressedData, SenderSampleRate);
+}
+
+void UProximityVoiceComponent::RelayVoiceToListeners(const TArray<uint8>& CompressedData, int32 SenderSampleRate)
+{
+	// Solo a quien la va a oír: los de su interfono (las dos ocupantes de un buggy del Rally) siempre, y el resto dentro de
+	// OuterRadius, como mucho los MaxVoiceListeners más cercanos (TNVoiceRouting).
+	AActor* Speaker = GetOwner();
+	UWorld* World = GetWorld();
+	if (!Speaker || !World)
 	{
 		return;
 	}
-
-	const FVector SpeakerLoc = SpeakerActor->GetActorLocation();
-
-	// Los oyentes dentro de OuterRadius y, si son más de MaxVoiceListeners, solo los más cercanos (los de lejos la oirían
-	// muy baja de todos modos).
-	TArray<TPair<double, AMP_GamePlayerController*>, TInlineAllocator<16>> Listeners;
-	const double OuterSq = FMath::Square(static_cast<double>(OuterRadius));
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	const APawn* SpeakerPawn = Cast<APawn>(Speaker);
+	const APlayerState* SpeakerState = SpeakerPawn ? SpeakerPawn->GetPlayerState() : nullptr;
+	const FVector SpeakerLoc = Speaker->GetActorLocation();
+	const int32 SpeakerGroup = TNVoiceRouting::IntercomGroupOf(SpeakerState);
+	TArray<ITN_VoiceListener*, TInlineAllocator<16>> Listeners;
+	TArray<TNVoiceRouting::FCandidate, TInlineAllocator<16>> Candidates;
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
 	{
-		AMP_GamePlayerController* PC = Cast<AMP_GamePlayerController>(It->Get());
-		if (!PC)
+		APlayerController* PC = It->Get();
+		ITN_VoiceListener* Listener = Cast<ITN_VoiceListener>(PC);
+		const APawn* ListenerPawn = PC ? PC->GetPawn() : nullptr;
+		// Ni a quien no recibe voz ni al propio hablante.
+		if (!Listener || !ListenerPawn || ListenerPawn == Speaker || (SpeakerState && PC->PlayerState == SpeakerState))
 		{
 			continue;
 		}
-
-		// Saltar al propio hablante
-		APawn* ListenerPawn = PC->GetPawn();
-		if (!ListenerPawn || ListenerPawn == SpeakerActor)
-		{
-			continue;
-		}
-
-		const double DistSq = FVector::DistSquared(ListenerPawn->GetActorLocation(), SpeakerLoc);
-		if (DistSq <= OuterSq)
-		{
-			Listeners.Emplace(DistSq, PC);
-		}
+		Listeners.Add(Listener);
+		Candidates.Add({ TNVoiceRouting::IntercomGroupOf(PC->PlayerState),
+			FVector::DistSquared(ListenerPawn->GetActorLocation(), SpeakerLoc) });
 	}
-	if (MaxVoiceListeners > 0 && Listeners.Num() > MaxVoiceListeners)
+	const TArray<TNVoiceRouting::ERoute> Routes = TNVoiceRouting::SelectListeners(SpeakerGroup, Candidates, OuterRadius, MaxVoiceListeners);
+	for (int32 Index = 0; Index < Listeners.Num(); ++Index)
 	{
-		Listeners.Sort([](const TPair<double, AMP_GamePlayerController*>& A, const TPair<double, AMP_GamePlayerController*>& B) { return A.Key < B.Key; });
-		Listeners.SetNum(MaxVoiceListeners);
-	}
-	for (const TPair<double, AMP_GamePlayerController*>& Listener : Listeners)
-	{
-		Listener.Value->ClientReceiveVoice(CompressedData, SenderSampleRate, SpeakerActor);
+		if (Routes[Index] != TNVoiceRouting::ERoute::None)
+		{
+			Listeners[Index]->SendVoiceToOwningClient(CompressedData, SenderSampleRate, Speaker,
+				Routes[Index] == TNVoiceRouting::ERoute::Intercom);
+		}
 	}
 }
 
@@ -645,7 +698,7 @@ bool UProximityVoiceComponent::IsHeardSpeaking() const
 	return World && LastRemoteVoiceTime >= 0.0 && World->GetRealTimeSeconds() - LastRemoteVoiceTime < 0.35;
 }
 
-void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate)
+void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, bool bIntercom)
 {
 	if (bIsShuttingDown || (GetWorld() && GetWorld()->bIsTearingDown) || IsLocallyOwned())
 	{
@@ -667,6 +720,7 @@ void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedDa
 	{
 		return;
 	}
+	ApplyPlaybackRoute(bIntercom);
 
 	const TArray<float> Samples = DecompressSamples(CompressedData);
 	if (Samples.Num() == 0)

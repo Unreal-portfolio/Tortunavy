@@ -1,0 +1,63 @@
+// Puerta del Rally: volumen de 24 × 10 × 4 m y arco visible. La construye ATN_RallyTrack; el cruce lo decide el servidor
+// geométricamente (TNRally::SegmentCrossesGate) en ATN_RallyGameMode, no por solapamiento.
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "TN_RallyGate.generated.h"
+
+class UBoxComponent;
+class UStaticMeshComponent;
+class UStaticMesh;
+
+UCLASS(Blueprintable)
+class TORTUNABO_API ATN_RallyGate : public AActor
+{
+	GENERATED_BODY()
+
+public:
+	ATN_RallyGate();
+
+	/** Índice en la pista y si es la meta (arco más alto y ancho). */
+	void Configure(int32 InGateIndex, bool bInFinish);
+
+	UFUNCTION(BlueprintPure, Category = "Rally")
+	int32 GetGateIndex() const { return GateIndex; }
+
+	UFUNCTION(BlueprintPure, Category = "Rally")
+	bool IsFinish() const { return bFinish; }
+
+	/** Centro del volumen con X en el sentido de la carrera. */
+	FTransform GetCrossingTransform() const;
+	FVector GetHalfExtent() const;
+
+	/** Ancho, alto y fondo del volumen (cm): 24 × 10 × 4 m (Docs/superpowers/specs/modos/03-Rally.md §5.2). */
+	static constexpr double WidthCm = 2400.0;
+	static constexpr double HeightCm = 1000.0;
+	static constexpr double DepthCm = 400.0;
+
+protected:
+	UPROPERTY(VisibleAnywhere, Category = "Rally")
+	TObjectPtr<UBoxComponent> Volume;
+
+	UPROPERTY(VisibleAnywhere, Category = "Rally")
+	TObjectPtr<UStaticMeshComponent> LeftPost;
+
+	UPROPERTY(VisibleAnywhere, Category = "Rally")
+	TObjectPtr<UStaticMeshComponent> RightPost;
+
+	UPROPERTY(VisibleAnywhere, Category = "Rally")
+	TObjectPtr<UStaticMeshComponent> Beam;
+
+	UPROPERTY(EditAnywhere, Category = "Rally")
+	TObjectPtr<UStaticMesh> PostMesh;
+
+	UPROPERTY(EditAnywhere, Category = "Rally")
+	TObjectPtr<UStaticMesh> BeamMesh;
+
+private:
+	void LayoutArch();
+
+	int32 GateIndex = 0;
+	bool bFinish = false;
+};

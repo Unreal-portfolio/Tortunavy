@@ -1,0 +1,6 @@
+Mapa E01_espana: región (-10.0, 35.0, 5.0, 44.5) (lon_min, lat_min, lon_max, lat_max), país ESP, borde por frontera.
+Proyección merc (Web Mercator esférico, EPSG:3857); 1 m de juego = 2148 m de suelo real en el centro.
+
+Relieve y batimetría: Terrain Tiles (Mapzen / Amazon Web Services Open Data), formato terrarium. https://registry.opendata.aws/terrain-tiles/ . Incluye datos de SRTM y GMTED2010 (U.S. Geological Survey, dominio público), ETOPO1 (NOAA National Centers for Environmental Information, dominio público), EU-DEM (producido con fondos de la Unión Europea, Copernicus), ArcticDEM (Polar Geospatial Center, NSF), NRCan CDEM, LINZ (CC BY 4.0) y otros. Atribución completa: https://github.com/tilezen/joerd/blob/master/docs/attribution.md
+Fronteras, costas y lagos: Natural Earth (dominio público). https://www.naturalearthdata.com/
+Trazado de Rally E01B: Scripts/gen_terrain_rally_spain.py.

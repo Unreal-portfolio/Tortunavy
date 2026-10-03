@@ -4,6 +4,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UI/HUD/TN_RadialWheelTypes.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Voice/TN_VoiceRouting.h"
 #include "MP_GamePlayerController.generated.h"
 
 struct FInputActionValue;
@@ -34,7 +35,7 @@ class UTN_AmbientSoundscapeComponent;
  *  - Auto-rejoin: hooks de seamless travel para preservar la sesión Steam.
  */
 UCLASS()
-class TORTUNABO_API AMP_GamePlayerController : public APlayerController
+class TORTUNABO_API AMP_GamePlayerController : public APlayerController, public ITN_VoiceListener
 {
 	GENERATED_BODY()
 
@@ -209,9 +210,14 @@ public:
 	 * @param CompressedData Buffer comprimido del emisor.
 	 * @param SenderSampleRate SampleRate original del emisor.
 	 * @param SpeakerActor Actor emisor (para calcular distancia).
+	 * @param bIntercom Comparte interfono con este jugador: se oye sin atenuar (TNVoiceRouting).
 	 */
 	UFUNCTION(Client, Unreliable)
-	void ClientReceiveVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, AActor* SpeakerActor);
+	void ClientReceiveVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, AActor* SpeakerActor, bool bIntercom);
+
+	// ITN_VoiceListener
+	virtual void SendVoiceToOwningClient(const TArray<uint8>& CompressedData, int32 SenderSampleRate, AActor* SpeakerActor,
+		bool bIntercom) override;
 
 	/** @brief Notifica al cliente dueño que guarde el SkinId. Llamado desde estatuas del lobby (servidor). */
 	void NotifySkinEquipped(FName SkinId);
