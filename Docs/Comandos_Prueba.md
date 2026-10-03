@@ -288,6 +288,7 @@ los resultados con ocho filas. `TN.Proc.StartStyle 0|1` fuerza cómo se sale.
 | `TN.SlopeTilt.Enable 0` | El modelo ya no se inclina con la pendiente (para comparar); `1` (lo normal) lo inclina. En `-game`: `-dpcvars=TN.SlopeTilt.Enable=0`. |
 | `TN.SlopeTilt.Find [lado\|frente] [espera_s] [captura]` | Pone tu tortuga en la cuesta de 15-30° más cercana (hasta 120 m), de lado (por defecto) o de frente, con la cámara donde se ve la inclinación. Con `captura` = 1, a los 2,5 s escribe el estado y hace `HighResShot`. En el anfitrión o sin red; `espera_s` sirve para lanzarlo con `-ExecCmds`. |
 | `TN.SlopeTilt.Dump [espera_s]` | Escribe en el registro la inclinación de cada tortuga en esa máquina (actual, objetivo y la de la malla), para comparar el anfitrión con un cliente. |
+| `TN.SlopeTilt.DiveProbe [abajo\|arriba] [espera_s] [captura]` | Corre hacia la cuesta de 15-30° más cercana (cuesta abajo por defecto), salta y hace el panzazo; escribe por fotograma en el registro la malla respecto al suelo en el vuelo, el aterrizaje y el deslizamiento, y al final el mayor giro en un fotograma. Con `captura` = 1, una `HighResShot` en el vuelo y otra deslizando (la captura frena ese fotograma: las cifras, sin ella). |
 | `TN.Music.Play Victoria` | Hace sonar una pista: `Victoria`, `Derrota`, `Eliminado`, `Tienda`, `Probador` o `Silencio`. |
 
 ## Tutorial de la primera partida
