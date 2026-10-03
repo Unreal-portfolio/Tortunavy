@@ -96,3 +96,17 @@ semilla: cada máquina construye el mismo mapa. La semilla base es al azar o la 
 Se espera en el corral de `LVL_Run`; al empezar la partida y en cada nivel nuevo, `ATN_SurvivalGameMode` lleva a los
 vivos a la salida del mapa en cuanto su suelo tiene colisión, y la tormenta de `LVL_Run` vuelve a su estado inicial
 (#448). La distancia que falta para el desempate se mide por el camino del mapa generado.
+
+## Catálogo de mapas
+
+Decisión en #143: Supervivencia juega un catálogo fijo de 50 mapas en vez de una semilla al azar (#515). Están en
+`TN_SurvivalCatalog.h`: 9 por dificultad de la 1 a la 4 y 14 en la 5, cada uno con su semilla, un nombre de trabajo,
+su tipo de terreno (Llanura, Desfiladero, Serpiente, Saltos, Cumbre o Encrucijada) y las trampas del Clásico que le
+encajan, en % del recorrido del camino principal. Se eligieron entre 750 mapas exportados (150 semillas × 5
+dificultades) por lo que más destaca de cada uno dentro de su dificultad; la tabla completa, en #515.
+
+- Ninguna semilla se repite: la misma semilla da casi el mismo terreno en todas las dificultades.
+- Cada entrada guarda la huella de su layout. Si el generador cambia, `Tortunabo.Survival.Catalogo.Huellas` falla e
+  imprime la huella nueva de cada mapa que cambia: hay que mirar esos mapas (export y `bench --hojas`) y, si siguen
+  valiendo para su tipo y sus trampas, poner las huellas nuevas; si no, elegir otra semilla.
+- Las trampas las colocan #516 y #517; el nivel N juega un mapa del catálogo de su dificultad sin repetir (#518).
