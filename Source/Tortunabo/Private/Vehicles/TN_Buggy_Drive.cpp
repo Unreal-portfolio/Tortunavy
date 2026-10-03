@@ -1,9 +1,10 @@
 // ATN_Buggy: control de estabilidad sin freno de mano (#288) y turbo (#294). La barra la gasta y la recarga el servidor; el
 // par y el empuje se aplican en cada máquina que simula el chasis (como el antivuelco), y la llama y el sonido, en cada
-// máquina con pantalla a partir del estado replicado.
+// máquina con pantalla a partir del estado replicado. El turbo es progresivo (#630): todo sigue a GetBoostStrength.
 
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyData.h"
+#include "Vehicles/TN_BuggyMath.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 #include "TN_BuggyFlameMesh.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
@@ -14,6 +15,12 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+
+namespace TNBuggyDriveDetail
+{
+	/** Largo de la llama del turbo al empezar a empujar (fracción del completo, BoostFlameLengthCm). */
+	constexpr float MinBoostFlameScale = 0.35f;
+}
 
 void ATN_Buggy::UpdateAirborne()
 {
@@ -105,16 +112,31 @@ void ATN_Buggy::UpdateBoost(float DeltaSeconds)
 	}
 }
 
+void ATN_Buggy::UpdateBoostRamp(float DeltaSeconds)
+{
+	const UTN_BuggyData* Tuning = GetData();
+	TNBuggy::FBoostRampTuning Ramp;
+	Ramp.UpSeconds = Tuning->BoostRampUpSeconds;
+	Ramp.DownSeconds = Tuning->BoostRampDownSeconds;
+	Ramp.Exponent = Tuning->BoostRampExponent;
+	// Cada máquina con su IsBoosting (la conductora local, predicho con su botón): la misma rampa en todas, sin replicarla.
+	BoostRampProgress01 = TNBuggy::AdvanceBoostRamp(BoostRampProgress01, IsBoosting(), IsEngineLocked() || bRaceBrakeHeld,
+		DeltaSeconds, Ramp);
+	BoostStrength01 = Tuning->EvaluateBoostRamp(BoostRampProgress01);
+}
+
 void ATN_Buggy::ApplyBoostPush()
 {
 	USkeletalMeshComponent* Chassis = GetMesh();
-	if (!IsBoosting() || bAirborne || !Chassis->IsSimulatingPhysics())
+	if (BoostStrength01 <= 0.f || bAirborne || !Chassis->IsSimulatingPhysics())
 	{
 		return;
 	}
 	const UTN_BuggyData* Tuning = GetData();
 	const float BoostTop = TNRallyTurret::BuggyTopSpeedCms * Tuning->BoostTopSpeedMultiplier;
-	const float Accel = TNBuggy::BoostPushAccel(GetForwardSpeedCms(), BoostTop, Tuning->BoostPushAccel, Tuning->BoostPushFadeBandCms);
+	// El empuje crece con la fuerza del turbo (#630) y se apaga suave al soltarlo.
+	const float Accel = BoostStrength01
+		* TNBuggy::BoostPushAccel(GetForwardSpeedCms(), BoostTop, Tuning->BoostPushAccel, Tuning->BoostPushFadeBandCms);
 	if (Accel > 0.f)
 	{
 		// En el centro de masas y como aceleración: lleva la punta por encima del corte de régimen del motor.
@@ -124,7 +146,9 @@ void ATN_Buggy::ApplyBoostPush()
 
 void ATN_Buggy::RefreshBoostEffects()
 {
-	const bool bWanted = HasActorBegunPlay() && !IsActorBeingDestroyed() && IsBoosting() && GetNetMode() != NM_DedicatedServer;
+	// Mientras empuja y mientras se apaga al soltarlo (#630).
+	const bool bWanted = HasActorBegunPlay() && !IsActorBeingDestroyed() && (IsBoosting() || BoostStrength01 > 0.f)
+		&& GetNetMode() != NM_DedicatedServer;
 	if (bWanted == bBoostEffectsOn)
 	{
 		return;
@@ -220,10 +244,24 @@ void ATN_Buggy::ShowBoostFlames(bool bShow)
 
 void ATN_Buggy::UpdateBoostFlames()
 {
-	if (!bBoostEffectsOn || BoostFlames.IsEmpty())
+	if (!bBoostEffectsOn)
 	{
 		return;
 	}
+	const UTN_BuggyData* Tuning = GetData();
+	if (BoostSoundComponent)
+	{
+		// El sonido sube con la fuerza del turbo (#630): más volumen y más agudo.
+		BoostSoundComponent->SetVolumeMultiplier(FMath::Lerp(Tuning->BoostSoundMinVolume, 1.f, BoostStrength01));
+		BoostSoundComponent->SetPitchMultiplier(FMath::Lerp(static_cast<float>(Tuning->BoostSoundPitchRange.X),
+			static_cast<float>(Tuning->BoostSoundPitchRange.Y), BoostStrength01));
+	}
+	if (BoostFlames.IsEmpty())
+	{
+		return;
+	}
+	// La llama crece con la fuerza del turbo.
+	const float Length = BoostFlameLengthCm * FMath::Lerp(TNBuggyDriveDetail::MinBoostFlameScale, 1.f, BoostStrength01);
 	const float Time = static_cast<float>(GetWorld()->GetTimeSeconds());
 	for (int32 Index = 0; Index < BoostFlames.Num(); ++Index)
 	{
@@ -239,7 +277,7 @@ void ATN_Buggy::UpdateBoostFlames()
 		const FVector Dir(BoostFlameDirection.X, Side * FMath::Abs(BoostFlameDirection.Y), BoostFlameDirection.Z);
 		// Desfase por tubo para que no parpadeen a la vez.
 		const float Flicker = TNBuggy::BoostFlameFlicker(Time + 0.37f * Index, BoostFlameFlickerAmount);
-		Flame->SetRelativeTransform(TNBuggy::BoostFlameTransform(Exhaust, Dir, BoostFlameLengthCm, BoostFlameDiameterCm, Flicker));
+		Flame->SetRelativeTransform(TNBuggy::BoostFlameTransform(Exhaust, Dir, Length, BoostFlameDiameterCm, Flicker));
 	}
 }
 

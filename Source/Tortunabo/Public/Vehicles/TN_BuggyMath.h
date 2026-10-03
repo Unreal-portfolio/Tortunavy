@@ -312,6 +312,30 @@ namespace TNBuggy
 	 */
 	TORTUNABO_API float BoostPushAccel(float ForwardSpeedCms, float BoostTopSpeedCms, float PushAccel, float FadeBandCms);
 
+	// ── Turbo progresivo (#630) ─────────────────────────────────────────────────
+
+	struct FBoostRampTuning
+	{
+		/** Segundos con el turbo pisado hasta el empuje completo y segundos en apagarse del todo al soltarlo. */
+		float UpSeconds = 0.9f;
+		float DownSeconds = 0.4f;
+		/** Forma de la subida sin curva propia: fuerza = avance ^ Exponent (1 = recta; más, empieza más suave). */
+		float Exponent = 1.5f;
+	};
+
+	/**
+	 * Avance lineal de la rampa del turbo en [0, 1]: sube en UpSeconds mientras empuja y baja en DownSeconds cuando no. Con
+	 * el motor cortado (bEngineLocked) cae a 0 de golpe. Igual en el servidor, en la conductora local y en el resto (cada
+	 * máquina lo avanza con su IsBoosting).
+	 */
+	TORTUNABO_API float AdvanceBoostRamp(float Progress01, bool bBoosting, bool bEngineLocked, float Dt, const FBoostRampTuning& Tuning);
+
+	/** Fuerza del turbo (0..1) para un avance de la rampa sin curva propia: Progress ^ Exponent. */
+	TORTUNABO_API float BoostRampStrength(float Progress01, float Exponent);
+
+	/** Multiplicador del par con el turbo a Strength (0..1): de 1 a TorqueMultiplier. */
+	TORTUNABO_API float BoostTorqueScale(float Strength01, float TorqueMultiplier);
+
 	// ── Llama del turbo (#294) ──────────────────────────────────────────────────
 
 	/** Cono básico de /Engine/BasicShapes: 100 cm de alto y de diámetro, centrado en el origen y con la punta en +Z. */
@@ -382,6 +406,8 @@ namespace TNBuggy
 		float VerticalSpeedCms = 0.f;
 		bool bAirborne = false;
 		bool bBoosting = false;
+		/** Fuerza del turbo (0..1, #630): escala el FOV extra y la sacudida del turbo. */
+		float BoostStrength01 = 1.f;
 		/** Sacudida externa de este fotograma (impactos, disparos), 0..1. */
 		float AddedTrauma = 0.f;
 	};

@@ -22,7 +22,9 @@ void ATN_Buggy::UpdateCamera(float DeltaSeconds)
 	In.SlipDeg = TNBuggy::SlipAngleDeg(GetActorForwardVector(), Velocity);
 	In.VerticalSpeedCms = static_cast<float>(Velocity.Z);
 	In.bAirborne = bAirborne;
-	In.bBoosting = IsBoosting();
+	// El FOV y la sacudida del turbo siguen a su fuerza (#630), también mientras se apaga.
+	In.bBoosting = BoostStrength01 > 0.f;
+	In.BoostStrength01 = BoostStrength01;
 	In.AddedTrauma = PendingCameraTrauma;
 	PendingCameraTrauma = 0.f;
 	CameraState = TNBuggy::AdvanceDriverCamera(CameraState, In, Tuning);

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Curves/CurveFloat.h"
 #include "Engine/DataAsset.h"
 #include "TN_BuggyData.generated.h"
 
@@ -138,6 +139,34 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turbo")
 	float BoostStartCharge = 0.5f;
+
+	/**
+	 * Turbo progresivo (#630): segundos con el turbo pisado hasta el empuje completo y segundos en apagarse al soltarlo. El
+	 * empuje, el par extra, el FOV de la cámara, la llama y el sonido siguen a la misma fuerza (GetBoostStrength).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turbo", meta = (ClampMin = "0"))
+	float BoostRampUpSeconds = 0.9f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turbo", meta = (ClampMin = "0"))
+	float BoostRampDownSeconds = 0.4f;
+
+	/** Forma de la subida si BoostRampCurve no tiene puntos: fuerza = avance ^ exponente (1 = recta; más, empieza más suave). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turbo", meta = (ClampMin = "0.1"))
+	float BoostRampExponent = 1.5f;
+
+	/** Curva propia de la subida (X: avance 0..1 de la rampa; Y: fuerza 0..1). Sin puntos, la potencia de BoostRampExponent. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turbo")
+	FRuntimeFloatCurve BoostRampCurve;
+
+	/** El sonido del turbo va de este volumen (con la fuerza mínima) a 1 y su tono, de X a Y, siguiendo la fuerza. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turbo", meta = (ClampMin = "0", ClampMax = "1"))
+	float BoostSoundMinVolume = 0.35f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turbo")
+	FVector2D BoostSoundPitchRange = FVector2D(0.85, 1.1);
+
+	/** Fuerza del turbo (0..1) para un avance de la rampa (0..1): la curva propia o la potencia. */
+	float EvaluateBoostRamp(float Progress01) const;
 
 	/**
 	 * Freno de la parrilla (#611): ganancia (1/s) con la que el buggy vuelve a su hueco si resbala cuesta abajo antes de la

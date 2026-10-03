@@ -353,6 +353,30 @@ namespace TNBuggy
 		const float Fade = FadeBandCms > 0.f ? FMath::Clamp((BoostTopSpeedCms - ForwardSpeedCms) / FadeBandCms, 0.f, 1.f) : 1.f;
 		return PushAccel * Fade;
 	}
+
+	float AdvanceBoostRamp(float Progress01, bool bBoosting, bool bEngineLocked, float Dt, const FBoostRampTuning& Tuning)
+	{
+		if (bEngineLocked)
+		{
+			return 0.f;
+		}
+		const float Step = FMath::Max(0.f, Dt);
+		const float Delta = bBoosting
+			? (Tuning.UpSeconds > 0.f ? Step / Tuning.UpSeconds : 1.f)
+			: -(Tuning.DownSeconds > 0.f ? Step / Tuning.DownSeconds : 1.f);
+		return FMath::Clamp(Progress01 + Delta, 0.f, 1.f);
+	}
+
+	float BoostRampStrength(float Progress01, float Exponent)
+	{
+		const float Progress = FMath::Clamp(Progress01, 0.f, 1.f);
+		return Progress <= 0.f ? 0.f : FMath::Pow(Progress, FMath::Max(0.1f, Exponent));
+	}
+
+	float BoostTorqueScale(float Strength01, float TorqueMultiplier)
+	{
+		return FMath::Lerp(1.f, TorqueMultiplier, FMath::Clamp(Strength01, 0.f, 1.f));
+	}
 }
 
 namespace TNBuggy
@@ -400,7 +424,7 @@ namespace TNBuggy
 			Trauma += FMath::Max(0.f, In.AddedTrauma);
 			if (In.bBoosting)
 			{
-				Trauma = FMath::Max(Trauma, Tuning.BoostTrauma);
+				Trauma = FMath::Max(Trauma, Tuning.BoostTrauma * FMath::Clamp(In.BoostStrength01, 0.f, 1.f));
 			}
 			Out.Trauma = FMath::Clamp(Trauma, 0.f, 1.f);
 		}
@@ -446,7 +470,8 @@ namespace TNBuggy
 		Out.ArmDeltaCm = FMath::FInterpTo(Out.ArmDeltaCm, Target.ArmDeltaCm, Dt, Tuning.PoseInterpSpeed);
 		Out.HeightDeltaCm = FMath::FInterpTo(Out.HeightDeltaCm, Target.HeightDeltaCm, Dt, Tuning.PoseInterpSpeed);
 		Out.RollDeg = FMath::FInterpTo(Out.RollDeg, Target.RollDeg, Dt, Tuning.PoseInterpSpeed);
-		Out.BoostFovDeg = FMath::FInterpTo(Out.BoostFovDeg, In.bBoosting ? Tuning.BoostFovDeg : 0.f, Dt, Tuning.BoostFovInterpSpeed);
+		const float BoostFovTarget = In.bBoosting ? Tuning.BoostFovDeg * FMath::Clamp(In.BoostStrength01, 0.f, 1.f) : 0.f;
+		Out.BoostFovDeg = FMath::FInterpTo(Out.BoostFovDeg, BoostFovTarget, Dt, Tuning.BoostFovInterpSpeed);
 		AdvanceTrauma(Out, In, Dt, Tuning);
 		return Out;
 	}
