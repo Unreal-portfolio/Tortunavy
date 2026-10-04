@@ -90,7 +90,8 @@ private:
 
 /**
  * Lo que manda el cliente al servidor en cada movimiento: lo de serie más el número del lanzamiento concedido que estrena
- * ese movimiento (FTNServerLaunch). Sin lanzamiento ocupa un bit.
+ * ese movimiento (FTNServerLaunch) y, si el movimiento pide el panzazo (marca TNDiveLogic::DiveRequestFlag, #24), su
+ * dirección. Sin lanzamiento ocupa un bit; sin panzazo, nada.
  */
 struct FTNTurtleNetworkMoveData : public FCharacterNetworkMoveData
 {
@@ -98,4 +99,7 @@ struct FTNTurtleNetworkMoveData : public FCharacterNetworkMoveData
 	virtual bool Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType) override;
 
 	uint8 LaunchId = 0;
+
+	/** Giro del panzazo que pide este movimiento (TNDiveLogic::CompressDiveYaw; 0 sin panzazo). */
+	uint16 DiveYaw = 0;
 };

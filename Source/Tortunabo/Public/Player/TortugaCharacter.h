@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "TimerManager.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Player/TN_DiveDecisions.h"
 #include "TortugaCharacter.generated.h"
 
 class APlayerController;
@@ -1276,6 +1277,16 @@ protected:
 	/** Tiempo acumulado desde que comenzó el dive (para DiveMinLockDuration). */
 	float DiveLockTimer = 0.f;
 
+	/** Servidor: el panzazo que empezó en un movimiento lanza lo que llevaba en el siguiente TickDive (#24). */
+	struct FTNPendingDiveThrow
+	{
+		bool bPending = false;
+		FVector DiveDir = FVector::ZeroVector;
+		FVector DiveVelocity = FVector::ZeroVector;
+		FVector CarrierVelocity = FVector::ZeroVector;
+	};
+	FTNPendingDiveThrow PendingDiveThrow;
+
 	/** Alpha del tilt del cuerpo [0 = reposo, 1 = pose completa de dive]. Cosmético, local. */
 	float DiveTiltAlpha = 0.f;
 
@@ -1369,6 +1380,39 @@ public:
 
 	/** Número del panzazo en curso (0 = aún ninguno). */
 	uint8 GetDiveSerial() const { return DiveSerial; }
+
+	// ── Panzazo predicho (#24) ───────────────────────────────────────────────
+
+	/**
+	 * Dentro del movimiento que pide el panzazo (UTN_TurtleMovementComponent::TickDiveStart), en el servidor y en el dueño,
+	 * también al repetirlo: decide con TNDiveLogic::DecideDiveStart si empieza (DiveYaw comprimido; en el aire, sin otro
+	 * lanzamiento en este paso) y, si empieza, cuenta el panzazo, encoge la cápsula y da la velocidad con que sale
+	 * (OutLaunchVelocity, que el movimiento aplica). Fuera de una repetición, además: el giro hacia la dirección y lo visual; en
+	 * el servidor, el emote cancelado, el lanzamiento de lo que lleve (en el siguiente TickDive: nada se crea dentro del
+	 * movimiento del cliente) y el aviso a todos. VelocityBefore: la de antes de lanzarse (la del salto).
+	 */
+	bool StartDiveFromMove(uint16 DiveYaw, bool bInAir, bool bLaunchPending, bool bReplaying, const FVector& VelocityBefore, FVector& OutLaunchVelocity);
+
+	/** Cliente dueño, en una corrección: el panzazo que tenía el servidor en ese movimiento (sin OnRep: la cápsula la pone el movimiento). */
+	void ApplyServerDiveCorrection(bool bDiving, uint8 Serial);
+
+	/** Derribada, muerta, en el caparazón o en brazos de otra: no puede empezar un panzazo. */
+	bool IsDiveBlocked() const;
+
+	/** Velocidad y ajustes de la inercia del panzazo (Dive y Dive|Momentum). */
+	TNDiveLogic::FDiveMomentumParams GetDiveMomentumParams() const;
+
+	/** Durante el panzazo, girando hacia su dirección: el giro (grados) y la velocidad del giro (grados/s). Lo aplica el movimiento. */
+	bool GetDiveYawTurn(float& OutTargetYaw, float& OutDegreesPerSecond) const
+	{
+		OutTargetYaw = DiveTargetYaw;
+		OutDegreesPerSecond = DiveYawInterpSpeed;
+		return bIsDiving && bDiveYawInterpActive;
+	}
+
+	/** Velocidad horizontal al saltar (la inercia del panzazo); el movimiento la guarda y la repone al repetir. */
+	const FVector& GetJumpStartHorizontalVelocity() const { return JumpStartHorizontalVelocity; }
+	void SetJumpStartHorizontalVelocity(const FVector& InVelocity) { JumpStartHorizontalVelocity = InVelocity; }
 
 	/** Movimiento de la tortuga (con el arrastre del panzazo); null si el Blueprint pusiera otra clase. */
 	UTN_TurtleMovementComponent* GetTurtleMovement() const;
