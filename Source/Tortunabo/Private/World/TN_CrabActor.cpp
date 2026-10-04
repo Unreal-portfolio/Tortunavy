@@ -68,11 +68,16 @@ void ATN_CrabActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// En todas las máquinas: la escala no se replica. Las esferas escalan con el actor, así que sus radios se dividen
-	// para que midan en el mundo lo que dicen BodyCollisionRadius y DetectionRadius.
-	SetActorScale3D(FVector(VisualScale));
-	DetectionSphere->SetSphereRadius(DetectionRadius / VisualScale);
-	BodyCollision->SetSphereRadius(BodyCollisionRadius / VisualScale);
+	// En todas las máquinas: la escala no se replica. Los colocados a mano en el nivel (Clásico) conservan la suya; los que
+	// crea una zona toman VisualScale. Las esferas escalan con el actor, así que sus radios se dividen para que midan en el
+	// mundo lo que dicen BodyCollisionRadius y DetectionRadius.
+	if (!IsNetStartupActor())
+	{
+		SetActorScale3D(FVector(VisualScale));
+	}
+	const float Scale = FMath::Max(KINDA_SMALL_NUMBER, static_cast<float>(GetActorScale3D().X));
+	DetectionSphere->SetSphereRadius(DetectionRadius / Scale);
+	BodyCollision->SetSphereRadius(BodyCollisionRadius / Scale);
 
 	// Solo el servidor hace tick de lógica
 	SetActorTickEnabled(HasAuthority());
