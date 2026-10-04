@@ -14,9 +14,10 @@ from terrain_vol.layout import MAP_MIN_M, UU_PER_M, WATER_M
 from terrain_vol.sheet import _colormap, _save_small
 
 COLORS = {"recta": "#1f77b4", "curva_peraltada": "#d62728", "horquilla": "#9467bd", "chicane": "#ff7f0e",
-          "salto": "#2ca02c", "rasante": "#8c564b", "baches": "#e377c2", "baden": "#5a3b1c", "banqueta": "#17becf"}
+          "salto": "#2ca02c", "rasante": "#8c564b", "baches": "#e377c2", "baches_aviso": "#f0c419", "baden": "#5a3b1c", "banqueta": "#17becf"}
 LABELS = {"recta": "recta de salida", "curva_peraltada": "curva peraltada", "horquilla": "horquilla",
           "chicane": "chicane", "salto": "salto", "rasante": "cambio de rasante", "baches": "baches",
+          "baches_aviso": "baches de aviso",
           "baden": "badén con barro", "banqueta": "banqueta de tierra"}
 
 

@@ -6,7 +6,10 @@
     validador comprueba en cada variante que los baches quedan fuera de la frenada de las horquillas
     (rally_circuit_check_dirt.hairpin_brake_gap);
   - en R02 a R06 YA GENERADOS, cada tren de baches medido en la malla conserva al menos el 60 % de su amplitud y
-    acaba antes de la frenada de la siguiente horquilla.
+    acaba antes de la frenada de la siguiente horquilla;
+  - baches de aviso: si el tema los activa (rally_circuit_themes, `warning_bumps`), cada horquilla lleva en su frenada
+    dos o tres ondas bajas (rally_circuit.place_warnings) sin cambiar el trazado ni el resto del lazo, y en R05 y R06
+    YA GENERADOS el validador los mide en la malla y dentro de la frenada del piloto IA (`warning_bumps`).
 
     uv run pytest Scripts/tests/test_terrain_rally_baches.py
 """
@@ -33,10 +36,11 @@ from terrain_geo.rally_circuit_check import load_report, verdict  # noqa: E402
 from terrain_geo import rally_circuit_plan as plan_module  # noqa: E402
 from terrain_geo.rally_circuit_check_dirt import (AI_BRAKE_G, AI_HAIRPIN_G, AI_MAX_KMH, AI_MIN_KMH,  # noqa: E402
                                                   LIMITS_TIERRA, ai_brake_m, hairpin_brake_gap)
-from terrain_geo.rally_circuit_dirt import BUMP_LEAD_M, BUMP_PATTERNS  # noqa: E402
+from terrain_geo.rally_circuit_dirt import (BUMP_LEAD_M, BUMP_PATTERNS, WARNING_CLEAR_M, WARNING_COUNT,  # noqa: E402
+                                           WARNING_END_M, WARNING_WAVELENGTH_M, BumpDesign)
 from terrain_geo.rally_circuit_physics import G  # noqa: E402
 from terrain_geo.rally_circuit_plan import Piece, bumps_before_hairpin, make_plan  # noqa: E402
-from terrain_geo.rally_circuit_themes import CIRCUITS  # noqa: E402
+from terrain_geo.rally_circuit_themes import CIRCUITS, THEMES  # noqa: E402
 from terrain_geo.rally_corridor import MeshSampler  # noqa: E402
 from terrain_vol.layout import CELL_M, MAP_MIN_M, UU_PER_M  # noqa: E402
 from terrain_vol.mesh import build_chunk  # noqa: E402
@@ -185,3 +189,84 @@ def test_caso_negativo_el_veredicto_cae_con_baches_en_la_frenada(name, reports):
     tabla = next(b for b in flat["tierra"]["bumps"] if b["pattern"] == "tabla_lavar")
     tabla["measured_amplitude_m"] = 0.55 * tabla["amplitude_m"]
     assert verdict(flat, manifest)["bumps"] is False
+
+
+# ── Baches de aviso en la frenada de las horquillas ──────────────────────────────
+WARNED = sorted(n for n, c in CIRCUITS.items() if THEMES[c.theme].warning_bumps)
+
+
+def test_al_menos_un_circuito_de_r03_a_r06_activa_los_baches_de_aviso_y_el_tema_base_no():
+    assert WARNED
+    assert not THEMES["base"].warning_bumps
+
+
+def test_draw_warning_mete_tres_ondas_si_caben_dos_si_no_y_ninguna_sin_sitio():
+    rng = np.random.default_rng(1)
+    roomy = BumpDesign.draw_warning(rng, 40.0)
+    assert roomy.count == WARNING_COUNT[1] and roomy.within_limits()
+    tight = BumpDesign.draw_warning(rng, 2.0 * WARNING_WAVELENGTH_M[0] + 0.5)
+    assert tight.count == WARNING_COUNT[0] and tight.train_m <= 2.0 * WARNING_WAVELENGTH_M[0] + 0.5
+    assert BumpDesign.draw_warning(rng, 2.0 * WARNING_WAVELENGTH_M[0] - 0.5) is None
+
+
+@pytest.mark.parametrize("name", WARNED)
+def test_cada_horquilla_lleva_sus_baches_de_aviso_en_el_enlace_previo(name):
+    c = CIRCUITS[name]
+    track = rc.build_track(c.seed, c.profile, warning_bumps=True)
+    spans = track.plan.spans
+    hairpins = {p: (i, s0) for i, (p, s0, _) in enumerate(spans) if track.plan.pieces[p].kind == "horquilla"}
+    assert sorted(w.piece for w in track.warnings) == sorted(hairpins)
+    for w in track.warnings:
+        i, s0 = hairpins[w.piece]
+        start, end = w.s0 + BUMP_LEAD_M, w.s0 + BUMP_LEAD_M + w.design.train_m
+        assert (s0 - end) % track.total == pytest.approx(WARNING_END_M)
+        assert (start - spans[i - 1][2]) % track.total >= WARNING_CLEAR_M - 1e-6
+        assert w.design.within_limits()
+
+
+@pytest.mark.parametrize("name", WARNED)
+def test_los_baches_de_aviso_no_cambian_el_resto_del_lazo(name):
+    c = CIRCUITS[name]
+    with_warnings = rc.build_track(c.seed, c.profile, warning_bumps=True)
+    without = rc.build_track(c.seed, c.profile)
+    inside = np.zeros(len(with_warnings.arc), dtype=bool)
+    for w in with_warnings.warnings:
+        inside |= rc.cyclic_mask(with_warnings.arc, with_warnings.total, w.s0, w.s0 + w.design.piece_m)
+    assert np.abs(with_warnings.z - without.z)[~inside].max() < 1e-6
+    assert np.abs(with_warnings.z - without.z)[inside].max() > 0.05
+
+
+@pytest.mark.parametrize("name", WARNED)
+def test_baches_de_aviso_medidos_en_la_malla_y_dentro_de_la_frenada(name, reports):
+    if name not in reports:
+        pytest.skip(f"{name} sin generar")
+    report, checks = reports[name]
+    t = report["tierra"]
+    assert t["warnings_on"] and len(t["warnings"]) == t["hairpins"] == 2
+    for w in t["warnings"]:
+        assert w["braking_overlap_m"] >= w["wavelength_m"], w
+        assert w["measured_amplitude_m"] >= MIN_RATIO * w["amplitude_m"], w
+        assert w["within_suspension"], w
+    assert checks["warning_bumps"]
+
+
+@pytest.mark.parametrize("name", WARNED)
+def test_caso_negativo_el_veredicto_cae_sin_baches_de_aviso_o_fuera_de_la_frenada(name, reports):
+    if name not in reports:
+        pytest.skip(f"{name} sin generar")
+    report, _ = reports[name]
+    manifest = json.loads((VARIANTS / name / "manifest.json").read_text(encoding="utf-8"))
+    missing = copy.deepcopy(report)
+    missing["tierra"]["warnings"].pop()
+    assert verdict(missing, manifest)["warning_bumps"] is False
+    early = copy.deepcopy(report)
+    early["tierra"]["warnings"][0]["braking_overlap_m"] = -10.0
+    assert verdict(early, manifest)["warning_bumps"] is False
+
+
+@pytest.mark.parametrize("name", sorted(set(TIERRA) - set(WARNED)))
+def test_sin_el_tema_no_hay_baches_de_aviso(name, reports):
+    if name not in reports:
+        pytest.skip(f"{name} sin generar")
+    report, checks = reports[name]
+    assert not report["tierra"]["warnings"] and checks["warning_bumps"]

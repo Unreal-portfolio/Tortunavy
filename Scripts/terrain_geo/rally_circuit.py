@@ -31,7 +31,7 @@ from terrain_vol.layout import CELL_M, MAP_MIN_M, WATER_M, ZRange
 from .heightfield import ZONES, HeightfieldModel
 from .layout import RASTER_PX_M
 from .rally_circuit_dirt import (BERM_END_M, BUMP_LEAD_M, DIP_DEPTH_M, DIP_LEAD_M, DIP_PIECE_M, MUD_COLOR, MUD_STRENGTH,
-                                 BumpDesign, DipDesign, berm_lift, design_dip)
+                                 WARNING_CLEAR_M, WARNING_END_M, BumpDesign, DipDesign, berm_lift, design_dip)
 from .rally_circuit_elements import (BANK_RAMP_M, CrestDesign, JumpDesign, JumpParams, bank_profile, design_crest,
                                      design_jump)
 from .rally_circuit_jumps import SHAPED_KINDS, ShapedJump, ShapedParams, design_shaped
@@ -104,6 +104,7 @@ class Track:
     jumps: list[PlacedJump] = field(default_factory=list)
     crests: list[PlacedCrest] = field(default_factory=list)
     bumps: list[PlacedBump] = field(default_factory=list)
+    warnings: list[PlacedBump] = field(default_factory=list)   # baches de aviso, uno por horquilla (#696)
     dips: list[PlacedDip] = field(default_factory=list)
     profile: str = "dunas"
     base_free: np.ndarray | None = None
@@ -154,7 +155,7 @@ def _elements_rel(track: Track) -> np.ndarray:
         rel += np.where(arc >= j.s0, j.design.profile(arc - j.s0), 0.0)
     for c in track.crests:
         rel += np.where(arc >= c.s0, c.design.profile(arc - c.s0), 0.0)
-    for b in track.bumps:
+    for b in track.bumps + track.warnings:
         rel += np.where(arc >= b.s0, b.design.profile(arc - b.s0), 0.0)
     for d in track.dips:
         rel += np.where(arc >= d.s0, d.design.profile(arc - d.s0), 0.0)
@@ -171,6 +172,7 @@ def _base_free(track: Track) -> np.ndarray:
     for c in track.crests:
         w[cyclic_mask(arc, total, c.s0 - 5.0, c.s0 + c.design.length_m + 5.0)] = 0.0
     for b in track.bumps:                       # baches y badén sobre base llana: solo su propio perfil
+        # (los baches de aviso, #696, no: van sobre la base que haya, para no cambiar la cota del resto del lazo)
         w[cyclic_mask(arc, total, b.s0 - 5.0, b.s0 + b.design.piece_m + 5.0)] = 0.0
     for d in track.dips:
         w[cyclic_mask(arc, total, d.s0 - 5.0, d.s0 + DIP_PIECE_M + 5.0)] = 0.0
@@ -218,9 +220,28 @@ def _design(prm: JumpParams | ShapedParams, v: float, v_boost: float) -> JumpDes
     return design_jump(prm, v, v_boost, JUMP_RESERVE_M)
 
 
-def build_track(seed: int = SEED, profile: str = "dunas") -> Track:
+def place_warnings(plan: Plan, rng: np.random.Generator) -> list[PlacedBump]:
+    """Baches de aviso (#696) en la frenada de cada horquilla: el tren acaba WARNING_END_M antes de la horquilla y
+    empieza al menos WARNING_CLEAR_M después de la pieza anterior (en el enlace recto entre las dos). Una horquilla
+    sin sitio no lleva; el validador lo detecta (rally_circuit_check_dirt, `warning_bumps`)."""
+    total, out = plan.length_m, []
+    spans = plan.spans
+    for i, (piece, s0, _) in enumerate(spans):
+        if plan.pieces[piece].kind != "horquilla":
+            continue
+        end = s0 - WARNING_END_M
+        room = (end - (spans[i - 1][2] + WARNING_CLEAR_M)) % total
+        design = BumpDesign.draw_warning(rng, room)
+        if design is not None:
+            out.append(PlacedBump(piece, (end - design.train_m - BUMP_LEAD_M) % total, design))
+    return out
+
+
+def build_track(seed: int = SEED, profile: str = "dunas", warning_bumps: bool = False) -> Track:
     """Perfil, peralte y velocidades del circuito. El perfil «tierra» (#682) añade los saltos con forma, los baches,
-    el badén y la banqueta; sus sorteos van con su propio generador ([seed, 682]) y el de «dunas» no cambia."""
+    el badén y la banqueta; sus sorteos van con su propio generador ([seed, 682]) y el de «dunas» no cambia. Con
+    warning_bumps (lo activa el tema, #696), baches de aviso en la frenada de cada horquilla, con su propio generador
+    ([seed, 696]): el trazado y los demás elementos no cambian."""
     plan = make_plan(seed, profile)
     rng = np.random.default_rng([seed, 622])
     rng_dirt = np.random.default_rng([seed, 682])
@@ -240,6 +261,8 @@ def build_track(seed: int = SEED, profile: str = "dunas") -> Track:
             track.bumps.append(PlacedBump(piece, s0, BumpDesign(p.variant, p.amplitude_m, p.wavelength_m, p.count)))
         elif p.kind == "baden":
             dip_depths[piece] = (s0, float(rng_dirt.uniform(*DIP_DEPTH_M)))
+    if warning_bumps:
+        track.warnings = place_warnings(plan, np.random.default_rng([seed, 696]))
     waves = ((rng.uniform(200.0, 350.0), rng.uniform(0, 2 * math.pi)), (rng.uniform(90.0, 150.0), rng.uniform(0, 2 * math.pi)))
     _speeds(track)
     lip_x = {p: 20.0 for p in jump_params}
@@ -365,7 +388,7 @@ class RallyCircuitModel(HeightfieldModel):
         """Por muestra del eje: 1 en los trenes de baches (y BUMP_UNSMOOTHED_MARGIN_M a cada lado), 0 fuera."""
         arc, total = self.track.arc, self.track.total
         out = np.zeros(len(arc))
-        for b in self.track.bumps:
+        for b in self.track.bumps + self.track.warnings:
             s0 = b.s0 + BUMP_LEAD_M - BUMP_UNSMOOTHED_MARGIN_M
             out[cyclic_mask(arc, total, s0, s0 + b.design.train_m + 2.0 * BUMP_UNSMOOTHED_MARGIN_M)] = 1.0
         return out

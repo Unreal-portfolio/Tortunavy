@@ -5,6 +5,10 @@ Un tema fija el relieve natural alrededor de la calzada (RallyCircuitModel._natu
 vértice (siempre arena: terrain_vol/mesh.py, «todo arena» del 2026-09-25), el color de la calzada y el del barro. El
 tema «base» reproduce R01 y R02 tal como se generaron en #622 y #682.
 
+Elementos de firme que activa el tema (#696): `warning_bumps` pone baches de aviso en la frenada de cada horquilla
+(rally_circuit.place_warnings; el trazado y el resto de elementos no cambian). La tabla de lavar y los whoops los pone
+el perfil «tierra» de todos los circuitos de R02 a R06.
+
     THEMES["cantera"]                 # parámetros del tema
     CIRCUITS["R04_circuito_cantera"]  # semilla, perfil y tema de cada circuito del catálogo del Rally
 """
@@ -30,6 +34,7 @@ class Theme:
     trail_color: tuple[float, float, float] = (0.42, 0.30, 0.17)
     trail_strength: float = 0.55
     mud_strength: float | None = None   # None: el de rally_circuit_dirt
+    warning_bumps: bool = False         # baches de aviso en la frenada de cada horquilla (#696)
 
 
 THEMES: dict[str, Theme] = {
@@ -44,10 +49,10 @@ THEMES: dict[str, Theme] = {
     # Marismas: llano, bajo y húmedo, con más barro en el badén.
     "marismas": Theme("marismas", hills_m=3.5, hills_scale_m=170.0, near_m=0.8, ripples_m=0.3, rim_m=8.0,
                       color_zone="marsh", shore_m=5.0, trail_color=(0.30, 0.22, 0.12), trail_strength=0.6,
-                      mud_strength=0.95),
+                      mud_strength=0.95, warning_bumps=True),
     # Lomas secas: colinas redondas medianas, pista de tierra clara.
     "lomas_secas": Theme("lomas_secas", hills_m=11.0, hills_scale_m=95.0, near_m=2.5, ripples_m=0.5, rim_m=16.0,
-                         trail_color=(0.55, 0.40, 0.22), trail_strength=0.5),
+                         trail_color=(0.55, 0.40, 0.22), trail_strength=0.5, warning_bumps=True),
 }
 
 

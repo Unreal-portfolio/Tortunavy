@@ -41,8 +41,10 @@ labio a la cresta de la recepción), `v_ai_kmh` y `land_ai_s_m` (el piloto IA ll
 con la que se acotan los baches; `generator.profile`: "tierra".
 
 Baches (#696): la calzada de los trenes de baches no se suaviza (RallyCircuitModel.unsmoothed_mask), para que la malla
-no aplane la tabla de lavar, y ninguna recta de baches va justo antes de una horquilla (rally_circuit_plan); el
-validador mide las dos cosas (`bumps` y `bumps_braking`).
+no aplane la tabla de lavar, y ninguna recta de whoops o tabla de lavar va justo antes de una horquilla
+(rally_circuit_plan). Si el tema lo activa (`warning_bumps`, en generator.warning_bumps), cada horquilla lleva en su
+frenada un elemento `baches_aviso` (tres ondas bajas, `train_s_m`, `hairpin` con el id de la horquilla). El validador
+mide las tres cosas (`bumps`, `bumps_braking` y `warning_bumps`).
 """
 
 from __future__ import annotations
@@ -61,7 +63,7 @@ from terrain_geo.rally_circuit_dirt import BERM_RISE_M, BUMP_LEAD_M, DIP_LEAD_M,
 from terrain_geo.rally_circuit_elements import impact_ms
 from terrain_geo.rally_circuit_jumps import AI_FACTOR, ShapedJump
 from terrain_geo.rally_circuit_physics import BUGGY
-from terrain_geo.rally_circuit_themes import CIRCUITS
+from terrain_geo.rally_circuit_themes import CIRCUITS, theme as get_theme
 from terrain_geo.rally_circuit_width import RULES_M, TAPER_M, width_sections
 from terrain_vol.export import global_top, write_map
 from terrain_vol.layout import CELL_SAMPLES, UU_PER_M
@@ -126,6 +128,7 @@ def elements(track: rc.Track) -> list[dict]:
     crests = {c.piece: c for c in track.crests}
     bumps = {b.piece: b for b in track.bumps}
     dips = {d.piece: d for d in track.dips}
+    warnings = {w.piece: w for w in track.warnings}
     for piece, s0, s1 in plan.spans:
         p = plan.pieces[piece]
         counts[p.kind] = counts.get(p.kind, 0) + 1
@@ -165,6 +168,12 @@ def elements(track: rc.Track) -> list[dict]:
             c = crests[piece]
             e.update(crest_s_m=round(c.s0 + c.design.length_m / 2.0, 2), **c.design.as_dict(),
                      v_boost_kmh=round(c.design.v_boost * 3.6, 1))
+        if piece in warnings:
+            w = warnings[piece]
+            train = (w.s0 + BUMP_LEAD_M, w.s0 + BUMP_LEAD_M + w.design.train_m)
+            counts["baches_aviso"] = counts.get("baches_aviso", 0) + 1
+            out.append({"type": "baches_aviso", "id": f"baches_aviso_{counts['baches_aviso']}", "s_m": _span(*train, total),
+                        "train_s_m": _span(*train, total), "hairpin": e["id"], **w.design.as_dict()})
         out.append(e)
         if p.variant == "banqueta":
             out.append({"type": "banqueta", "id": f"banqueta_{counts[p.kind]}", "s_m": e["s_m"], "side": e["side"],
@@ -188,7 +197,7 @@ def _jump_kind_fields(s0: float, d) -> dict:
 def fine_cells(model: rc.RallyCircuitModel) -> set:
     """Trozos (col, row) que tocan los baches o el badén (con 20 m de margen)."""
     track, out = model.track, set()
-    spans = [(b.s0, b.design.piece_m) for b in track.bumps] + [(d.s0, rc.DIP_PIECE_M) for d in track.dips]
+    spans = [(b.s0, b.design.piece_m) for b in track.bumps + track.warnings] + [(d.s0, rc.DIP_PIECE_M) for d in track.dips]
     for s0, length in spans:
         for s in np.arange(s0, s0 + length, 2.0):
             p = model.road[track.index(s)]
@@ -229,7 +238,7 @@ def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed
         "kill_boxes_uu": kill_boxes_uu(model.frame.grid),
         "z_range": [model.z_range.z_min_m, model.z_range.levels, model.z_range.step_m],
         "generator": {"generator": "rally_circuit_vueltas", "profile": track.profile, "theme": model.theme.key,
-                      "seed": seed,
+                      "seed": seed, **({"warning_bumps": True} if model.theme.warning_bumps else {}),
                       "attempt": track.plan.attempt,
                       "pieces": [p.__dict__ for p in track.plan.pieces], "road_w_m": rc.ROAD_W_M,
                       "shoulder_m": rc.SHOULDER_M, "berm_m": rc.BERM_M, "talud_deg": rc.TALUD_DEG,
@@ -252,7 +261,7 @@ def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed
 def build(seed: int, name: str, decimate: bool = True, sheet: bool = True, profile: str = "dunas",
           theme: str = "base", description: str | None = None) -> dict:
     t0 = time.time()
-    track = rc.build_track(seed, profile)
+    track = rc.build_track(seed, profile, warning_bumps=get_theme(theme).warning_bumps)
     model = rc.RallyCircuitModel(track, seed, theme)
     chunks = build_chunks(model, decimate)
     grid = model.frame.grid
