@@ -72,6 +72,27 @@ namespace TNRallyCircuit
 	TORTUNABO_API bool ReadCircuitFields(const FJsonObject& Root, int32 RoadPoints, TArray<double>& OutBankDeg,
 		TArray<FElement>& OutElements, FString& OutError);
 
+	/** Ancho mínimo y máximo (cm) que se acepta en road_widths_m; fuera de ahí el valor se recorta. */
+	inline constexpr double MinRoadWidthCm = 400.0;
+	inline constexpr double MaxRoadWidthCm = 4000.0;
+
+	/**
+	 * Lee road_widths_m (ancho de la calzada por punto de road_uu, en m; «Tramos variados», #622) y lo devuelve en cm, recortado a
+	 * [MinRoadWidthCm, MaxRoadWidthCm]. Sin el campo queda vacío y devuelve true; false (con OutError) si trae un valor que no es
+	 * un número. Con otro número de valores que road_uu (RoadPoints) se descarta: la pista usa road_width_m en todo el lazo.
+	 */
+	TORTUNABO_API bool ReadRoadWidths(const FJsonObject& Root, int32 RoadPoints, TArray<double>& OutWidthCm, FString& OutError);
+
+	/** Ancho de la calzada (cm) en el arco Arc interpolando las muestras de road_widths_m; FallbackCm sin muestras. */
+	TORTUNABO_API double RoadWidthAtArc(TConstArrayView<double> SampleArcs, TConstArrayView<double> WidthCm, double Arc, double LengthCm,
+		bool bClosed, double FallbackCm);
+
+	/**
+	 * Separación lateral (cm) entre Count objetos de una fila transversal (cajas «?»): la preferida, salvo que la fila no quepa
+	 * en una calzada de RoadWidthCm dejando EdgeMarginCm a cada lado; entonces se aprietan. Sin ancho (0), la preferida.
+	 */
+	TORTUNABO_API double RowLateralSpacingCm(double PreferredCm, double RoadWidthCm, int32 Count, double EdgeMarginCm = 150.0);
+
 	/** Rotación de una puerta con el rumbo YawDeg y el peralte BankDeg (positivo: el lado derecho de la marcha más bajo). */
 	TORTUNABO_API FRotator GateRotation(double YawDeg, double BankDeg);
 

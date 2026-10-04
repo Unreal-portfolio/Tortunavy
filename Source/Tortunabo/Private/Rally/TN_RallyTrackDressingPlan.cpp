@@ -273,15 +273,19 @@ namespace TNRallyDressing
 		{
 			const int32 Num = Track.Samples.Num();
 			TArray<double> Raw;
+			TArray<double> Half;
 			Raw.Init(0.0, Num);
+			Half.Init(0.0, Num);
 			for (int32 Index = 0; Index < Num; ++Index)
 			{
+				// Ancho por tramos (#622): cada muestra con su media calzada.
+				Half[Index] = SampleRoadHalfCm(Track, Index, Params);
 				if (!Flags.Limited[Index])
 				{
 					continue;
 				}
-				const double Curve = BarrierOffsetCm(Plan.Curvature[Index], Side, Plan.RoadHalfCm, Params);
-				Raw[Index] = Flags.Drop[Index] ? FMath::Min(Curve, Plan.RoadHalfCm + Params.DropEdgeMarginCm) : Curve;
+				const double Curve = BarrierOffsetCm(Plan.Curvature[Index], Side, Half[Index], Params);
+				Raw[Index] = Flags.Drop[Index] ? FMath::Min(Curve, Half[Index] + Params.DropEdgeMarginCm) : Curve;
 			}
 			const int32 SmoothRadius = FMath::RoundToInt32(0.5 * Params.SmoothWindowCm / FMath::Max(1.0, Track.StepCm));
 			const TArray<double> Smooth = SmoothedOffsets(Raw, SmoothRadius, Track.bClosed);
@@ -291,7 +295,10 @@ namespace TNRallyDressing
 			{
 				if (Smooth[Index] > 0.0)
 				{
-					Result.OffsetCm[Index] = CrowdedOffset(Track, Index, Side, Smooth[Index], Plan.RoadHalfCm, Params);
+					// El suavizado no mete la barrera en la calzada donde el tramo se ensancha.
+					const double Offset = Params.bHugRoad ? FMath::Max(Smooth[Index], Half[Index] + FMath::Max(0.0, Params.RoadEdgeMarginCm))
+						: Smooth[Index];
+					Result.OffsetCm[Index] = CrowdedOffset(Track, Index, Side, Offset, Half[Index], Params);
 				}
 			}
 			Result.Runs = CollectRuns(Result.OffsetCm, Track.bClosed);
@@ -454,6 +461,12 @@ namespace TNRallyDressing
 	double RoadHalfWidthCm(const FTrackData& Track, const FBarrierParams& Params)
 	{
 		return 0.5 * (Track.RoadWidthCm > 0.0 ? Track.RoadWidthCm : Params.DefaultRoadWidthCm);
+	}
+
+	double SampleRoadHalfCm(const FTrackData& Track, int32 Index, const FBarrierParams& Params)
+	{
+		const double Width = Track.Samples.IsValidIndex(Index) ? Track.Samples[Index].RoadWidthCm : 0.0;
+		return Width > 0.0 ? 0.5 * Width : RoadHalfWidthCm(Track, Params);
 	}
 
 	double BaseOffsetCm(double RoadHalfCm, const FBarrierParams& Params)
@@ -731,6 +744,8 @@ namespace TNRallyDressing
 			Sample.Arc = FMath::Min(Index * Data.StepCm, Length);
 			Sample.Location = Track.GetLocationAtArc(Sample.Arc);
 			Sample.Direction = Track.GetDirectionAtArc(Sample.Arc).GetSafeNormal2D();
+			// Con road_widths_m, el ancho de cada tramo (#622); sin él, 0 (el de road_width_m en todo el trazado).
+			Sample.RoadWidthCm = Track.HasRoadWidthsPerPoint() ? Track.GetRoadWidthAtArcCm(Sample.Arc) : 0.0;
 		}
 		for (int32 Gate = 0; Gate < Track.GetGateCount(); ++Gate)
 		{

@@ -142,15 +142,15 @@ bool ATN_RallyTrack::BuildFromManifestFile(const FString& ManifestPath)
 	}
 	bool bCircuit = false;
 	const TArray<TNRally::FGateDef> GateDefs = TNRally::BuildGateList(Source, bCircuit);
-	const bool bOk = BuildFromGates(GateDefs, bCircuit, Source.Road, Source.RoadWidthCm, Source.RoadBankDeg);
+	const bool bOk = BuildFromGates(GateDefs, bCircuit, Source.Road, Source.RoadWidthCm, Source.RoadBankDeg, Source.RoadWidthsCm);
 	if (bOk && RoadLengthCm > 0.0)
 	{
 		Features = TNRallyCircuit::ToFeatureArcs(Source.Elements, RoadLengthCm, GetTrackLengthCm(), bClosed);
 	}
 	if (bOk && (Features.Num() > 0 || BankSampleDeg.Num() > 0))
 	{
-		UE_LOG(LogTNRally, Log, TEXT("[RallyTrack] Manifest de circuito: %d elementos y peralte en %d puntos del eje."), Features.Num(),
-			BankSampleDeg.Num());
+		UE_LOG(LogTNRally, Log, TEXT("[RallyTrack] Manifest de circuito: %d elementos, peralte en %d puntos y ancho en %d puntos del eje."),
+			Features.Num(), BankSampleDeg.Num(), WidthSampleCm.Num());
 	}
 	bHasWater = Source.bHasWater;
 	WaterZ = Source.WaterZ;
@@ -187,7 +187,7 @@ bool ATN_RallyTrack::BuildFromPlacedCheckpoints()
 }
 
 bool ATN_RallyTrack::BuildFromGates(const TArray<TNRally::FGateDef>& GateDefs, bool bCircuit, const TArray<FVector>& RoadAxis,
-	double RoadWidthCm, TConstArrayView<double> RoadBankDeg)
+	double RoadWidthCm, TConstArrayView<double> RoadBankDeg, TConstArrayView<double> RoadWidthsCm)
 {
 	ClearTrack();
 	if (GateDefs.Num() < 2)
@@ -206,6 +206,11 @@ bool ATN_RallyTrack::BuildFromGates(const TArray<TNRally::FGateDef>& GateDefs, b
 		{
 			BankSampleArcs = PointArcs;
 			BankSampleDeg = TArray<double>(RoadBankDeg);
+		}
+		if (RoadWidthsCm.Num() == RoadAxis.Num())
+		{
+			WidthSampleArcs = PointArcs;
+			WidthSampleCm = TArray<double>(RoadWidthsCm);
 		}
 	}
 	else
@@ -249,6 +254,8 @@ void ATN_RallyTrack::ClearTrack()
 	AmmoRowArcs.Reset();
 	BankSampleArcs.Reset();
 	BankSampleDeg.Reset();
+	WidthSampleArcs.Reset();
+	WidthSampleCm.Reset();
 	Features.Reset();
 	RoadLengthCm = 0.0;
 	if (Borders) { Borders->ClearInstances(); }
@@ -355,9 +362,11 @@ void ATN_RallyTrack::SpawnAmmoRow(double Arc)
 {
 	UWorld* World = GetWorld();
 	UClass* Class = ItemBoxClass ? ItemBoxClass.Get() : ATN_KartItemBox::StaticClass();
+	// En un tramo estrecho la fila se aprieta para que ninguna caja quede fuera de la calzada (#622).
+	const double Spacing = TNRallyCircuit::RowLateralSpacingCm(AmmoLateralSpacingCm, GetRoadWidthAtArcCm(Arc), AmmoBoxesPerRow);
 	for (int32 Slot = 0; Slot < AmmoBoxesPerRow; ++Slot)
 	{
-		const double Lateral = (Slot - 0.5 * (AmmoBoxesPerRow - 1)) * AmmoLateralSpacingCm;
+		const double Lateral = (Slot - 0.5 * (AmmoBoxesPerRow - 1)) * Spacing;
 		const FVector OnAxis = OffsetAtArc(Arc, Lateral);
 		FVector Ground = OnAxis;
 		TraceGround(OnAxis, 400.0, 1500.0, Ground);
@@ -436,6 +445,11 @@ FTransform ATN_RallyTrack::GetGateCrossingTransform(int32 GateIndex) const
 double ATN_RallyTrack::GetBankDegAtArc(double Arc) const
 {
 	return TNRallyCircuit::BankAtArc(BankSampleArcs, BankSampleDeg, Arc, GetTrackLengthCm(), bClosed);
+}
+
+double ATN_RallyTrack::GetRoadWidthAtArcCm(double Arc) const
+{
+	return TNRallyCircuit::RoadWidthAtArc(WidthSampleArcs, WidthSampleCm, Arc, GetTrackLengthCm(), bClosed, ManifestRoadWidthCm);
 }
 
 FVector ATN_RallyTrack::GetGateHalfExtent() const
