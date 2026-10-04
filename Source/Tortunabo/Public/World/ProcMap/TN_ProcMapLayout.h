@@ -145,7 +145,21 @@ namespace TNProcMap
 
 		/** Tamaño de un escalón de la lógica de dificultad [0,1] (0 fácil, 1 difícil). */
 		double Difficulty01 = 0.5;
+
+		/**
+		 * Camino para los karts (ETNProcGameMode::Karts): el mismo mapa del cooperativo, pero que se pueda
+		 * conducir de principio a fin. SanitizeParams quita los cruces colosales, las ramas, los carriles y los huecos de
+		 * salto y ensancha el camino, los portales y los desfiladeros. Los desniveles grandes se quedan como en el
+		 * cooperativo: se suben en géiser y se bajan por la cascada (#293). El agua queda en canales abiertos sin isletas
+		 * (el kart flota de orilla a orilla), las cuevas no llevan río de lava, no hay pilas de huevos y en el camino no
+		 * quedan troncos, obstáculos de objetos, peñascos ni torres de escalada. Con false (siempre fuera de los karts) la
+		 * generación no cambia en nada.
+		 */
+		bool bDrivable = false;
 	};
+
+	/** Ancho mínimo del camino conducible (cm): dos buggies de lado con holgura. */
+	constexpr double DrivableMinPathWidth = 700.0;
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// Resultado

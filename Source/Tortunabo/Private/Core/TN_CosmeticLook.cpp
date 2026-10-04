@@ -10,6 +10,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "ReferenceSkeleton.h"
+#include "Vehicles/TN_BuggyCosmetics.h"
 
 namespace TNCosmeticLookDetail
 {
@@ -234,6 +235,9 @@ void UTN_CosmeticLook::SetEyeState(USkeletalMeshComponent* Body, float Blink, fl
 FText UTN_CosmeticLook::GetDisplayName(const UObject* WorldContext, ETNCosmeticCategory Category, FName Id)
 {
 	using namespace TNCosmeticLookDetail;
+	// Buggy: catálogo en C++ (NAME_None = el de serie, que también tiene nombre en el catálogo).
+	if (Category == ETNCosmeticCategory::BuggyModel) { return TNBuggyCosmetics::ResolveModel(Id).Name; }
+	if (Category == ETNCosmeticCategory::BuggyPaint) { return TNBuggyCosmetics::ResolvePaint(Id).Name; }
 	if (Id == NAME_None)
 	{
 		switch (Category)
@@ -259,6 +263,8 @@ FText UTN_CosmeticLook::GetDisplayName(const UObject* WorldContext, ETNCosmeticC
 FText UTN_CosmeticLook::GetDescription(const UObject* WorldContext, ETNCosmeticCategory Category, FName Id)
 {
 	using namespace TNCosmeticLookDetail;
+	if (Category == ETNCosmeticCategory::BuggyModel) { return TNBuggyCosmetics::ResolveModel(Id).Description; }
+	if (Category == ETNCosmeticCategory::BuggyPaint) { return TNBuggyCosmetics::ResolvePaint(Id).Description; }
 	if (Id == NAME_None)
 	{
 		switch (Category)

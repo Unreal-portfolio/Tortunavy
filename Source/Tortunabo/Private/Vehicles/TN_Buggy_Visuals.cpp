@@ -3,6 +3,7 @@
 
 #include "Vehicles/TN_Buggy.h"
 #include "TN_BuggyTurretMesh.h"
+#include "Vehicles/TN_BuggyLookComponent.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "World/ProcMap/TN_ProcMapRuntimeMesh.h"
 #include "UObject/Package.h"
@@ -102,6 +103,13 @@ void ATN_Buggy::ApplyTint()
 	{
 		return;
 	}
+	// Con un modelo o una pintura de la tienda manda el aspecto de la conductora (TN_Buggy_Look.cpp), que lleva el color
+	// del equipo en el banderín de la antena.
+	if (!UsesTeamSkin())
+	{
+		RefreshBuggyLook(false);
+		return;
+	}
 	const int32 SkinIndex = TeamIndex >= 0 ? TeamIndex % SkinMaterials.Num() : 0;
 	if (!TintMaterial || SkinIndex != AppliedSkinIndex)
 	{
@@ -132,8 +140,14 @@ void ATN_Buggy::ApplyTint()
 void ATN_Buggy::UpdateWheelVisuals()
 {
 	UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement();
-	// Los getters de la rueda leen la salida de la simulación: sin ella, los neumáticos se quedan en reposo.
-	if (!Move || !Move->HasValidPhysicsState() || !Move->PhysicsVehicleOutput() || !Body || !Body->WasRecentlyRendered(0.2f))
+	// Los getters de la rueda leen la salida de la simulación: sin ella, los neumáticos se quedan en reposo. Con una
+	// carrocería de tortuga, la de serie va oculta: basta con que se vea algún neumático.
+	bool bSeen = Body && Body->IsVisible() && Body->WasRecentlyRendered(0.2f);
+	for (int32 Index = 0; Index < Tires.Num() && !bSeen; ++Index)
+	{
+		bSeen = Tires[Index] && Tires[Index]->WasRecentlyRendered(0.2f);
+	}
+	if (!Move || !Move->HasValidPhysicsState() || !Move->PhysicsVehicleOutput() || !bSeen)
 	{
 		return;
 	}

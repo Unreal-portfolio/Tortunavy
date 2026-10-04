@@ -20,6 +20,13 @@ class UTexture2D;
 class UTextureRenderTarget2D;
 class UWrapBox;
 
+/** Una carta del catálogo: su categoría (la pestaña del buggy mezcla modelos y pinturas) y su Id (NAME_None = de serie). */
+struct FTNShopItem
+{
+	ETNCosmeticCategory Category = ETNCosmeticCategory::Helmet;
+	FName Id = NAME_None;
+};
+
 /** Botón de la tienda hecho en código: cartel con texto que crece un poco al pasar el ratón. */
 UCLASS()
 class TORTUNABO_API UTN_ShopButton : public UUserWidget
@@ -124,6 +131,9 @@ protected:
 	/** Lo que lleva puesto el jugador (PlayerState; si aún no hay, lo guardado en la GameInstance). */
 	FTN_TurtleLook GetWornLook() const;
 
+	/** El buggy del Rally que tiene puesto (igual: PlayerState o GameInstance). */
+	FTN_BuggyLook GetWornBuggyLook() const;
+
 	/** Miniatura de un cosmético (del escaparate). */
 	UTextureRenderTarget2D* Thumbnail(ETNCosmeticCategory Category, FName Id) const;
 
@@ -147,8 +157,10 @@ private:
 
 /**
  * La tienda de Don Tortugo, estilo Mario Kart: a la izquierda tu tortuga posando y girando con lo que miras puesto; a
- * la derecha el tendero hablando en su bocadillo, las pestañas (cascos, caparazones, colores) y el catálogo con
- * miniaturas y precio. Comprar desbloquea (hoy todo cuesta 0 conchas); para ponérselo, al probador.
+ * la derecha el tendero hablando en su bocadillo, las pestañas (cascos, caparazones, colores, ojos y buggy) y el catálogo
+ * con miniaturas y precio. En la pestaña del buggy, el escaparate enseña el buggy del Rally con la tortuga al volante y
+ * el catálogo mezcla modelos y pinturas. Comprar desbloquea (lo de la tortuga hoy cuesta 0 conchas; el buggy, conchas
+ * de verdad); para ponérselo, al probador.
  */
 UCLASS()
 class TORTUNABO_API UTN_ShopWidget : public UTN_CosmeticMenuBase
@@ -157,6 +169,11 @@ class TORTUNABO_API UTN_ShopWidget : public UTN_CosmeticMenuBase
 
 public:
 	void SetShop(ATN_ShopKeeper* InShop);
+
+#if !UE_BUILD_SHIPPING
+	/** Pruebas (TN.Shop.UIShots): abre la pestaña Index y elige la carta Item. */
+	void DebugShowTab(int32 Index, int32 Item);
+#endif
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -193,7 +210,7 @@ private:
 
 	TWeakObjectPtr<ATN_ShopKeeper> Shop;
 	ETNCosmeticCategory Tab = ETNCosmeticCategory::Helmet;
-	TArray<FName> Items;
+	TArray<FTNShopItem> Items;
 	int32 Selected = 0;
 	FString FullLine;
 	float Reveal = 0.f;
@@ -206,13 +223,14 @@ private:
 	void RefreshCards();
 	void RefreshBuyButton();
 	void RefreshWallet();
-	FText TagFor(FName Id, FLinearColor& OutColor) const;
+	FText TagFor(const FTNShopItem& Item, FLinearColor& OutColor) const;
 };
 
 /**
- * El probador, estilo Mario Kart: la tortuga girando a la izquierda y, a la derecha, tres filas (casco, caparazón y
- * color) que se cambian con las flechas. Solo salen los cosméticos desbloqueados. ¡Listo! se lo pone (se replica) y la
- * tortuga sale de la botella; Cancelar sale sin cambios.
+ * El probador, estilo Mario Kart: la tortuga girando a la izquierda y, a la derecha, dos páginas que se cambian con Q/E
+ * o con sus botones: la tortuga (casco, caparazón, color y ojos) y el buggy del Rally (modelo y pintura, con la tortuga
+ * al volante en el escaparate). Cada fila se cambia con las flechas y solo salen los cosméticos desbloqueados. ¡Listo!
+ * se lo pone todo (se guarda y se replica) y la tortuga sale de la botella; Cancelar sale sin cambios.
  */
 UCLASS()
 class TORTUNABO_API UTN_BoothWidget : public UTN_CosmeticMenuBase
@@ -221,6 +239,11 @@ class TORTUNABO_API UTN_BoothWidget : public UTN_CosmeticMenuBase
 
 public:
 	void SetBooth(ATN_ChangingBooth* InBooth);
+
+#if !UE_BUILD_SHIPPING
+	/** Pruebas (TN.Shop.UIShots): pasa a la página (0 tortuga, 1 buggy) y cambia la fila Row Steps veces. */
+	void DebugShowPage(int32 InPage, int32 Row, int32 Steps);
+#endif
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -242,17 +265,32 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTextBlock>> RowCounts;
 
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTextBlock>> RowCaptions;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTN_ShopButton>> PageButtons;
+
 	TWeakObjectPtr<ATN_ChangingBooth> Booth;
+	/** Opciones y elección por categoría (índice = ETNCosmeticCategory). */
 	TArray<TArray<FName>> Options;
 	TArray<int32> Choice;
 	int32 FocusedRow = 0;
+	/** 0 = tortuga, 1 = buggy. */
+	int32 Page = 0;
 	FTN_TurtleLook Initial;
+	FTN_BuggyLook InitialBuggy;
 
 	void BuildTree();
 	void LoadOptions();
 	void Cycle(int32 Row, int32 Dir);
 	void FocusRow(int32 Row);
+	void ShowPage(int32 NewPage);
 	void RefreshRows();
+	/** Categorías de las filas de la página que se ve. */
+	const TArray<ETNCosmeticCategory>& PageRows() const;
+	FName ChosenId(ETNCosmeticCategory Category) const;
 	FTN_TurtleLook ChosenLook() const;
+	FTN_BuggyLook ChosenBuggyLook() const;
 	void Accept();
 };

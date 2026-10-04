@@ -117,11 +117,12 @@ void ATN_ProcMapGameMode::ResolveModeAndDifficulty()
 	Mode = ModeWithoutLobby;
 	Difficulty = DifficultyWithoutLobby;
 
-	// Lo elegido en el lobby (Clásico y Supervivencia nunca llegan aquí: viajan a LVL_Run).
+	// Lo elegido en el lobby (Clásico y Supervivencia nunca llegan aquí: viajan a LVL_Run; los karts llegan con su propio
+	// GameMode, ?game=Karts).
 	if (const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
 	{
 		if (GI->SelectedProcMode != ETNProcGameMode::Classic && GI->SelectedProcMode != ETNProcGameMode::Survival
-			&& GI->SelectedProcMode != ETNProcGameMode::Count)
+			&& GI->SelectedProcMode != ETNProcGameMode::Karts && GI->SelectedProcMode != ETNProcGameMode::Count)
 		{
 			Mode = GI->SelectedProcMode;
 			Difficulty = GI->SelectedProcDifficulty;
@@ -144,7 +145,8 @@ void ATN_ProcMapGameMode::ResolveModeAndDifficulty()
 	const FString SeedOption = UGameplayStatics::ParseOption(OptionsString, TEXT("ProcSeed"));
 	UrlSeed = SeedOption.IsEmpty() ? 0 : FCString::Atoi(*SeedOption);
 
-	if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Count)
+	// Supervivencia sí (su mapa procedural, #273); los karts tienen su propio GameMode.
+	if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Karts || Mode == ETNProcGameMode::Count)
 	{
 		Mode = ETNProcGameMode::Coop;
 	}

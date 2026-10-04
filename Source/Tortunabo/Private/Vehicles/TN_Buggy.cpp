@@ -1,7 +1,7 @@
 // ATN_Buggy: construcción, física de conducción (fricción, derrape, golpe de rueda, charco, motor cortado),
 // enderezado, tinte y contrato con la carrera. Asientos y tortugas en TN_Buggy_Seats.cpp; input en TN_Buggy_Input.cpp;
 // impactos en TN_Buggy_Effects.cpp; estabilidad y turbo en TN_Buggy_Drive.cpp; cámara en TN_Buggy_Camera.cpp; modelo, skins y
-// neumáticos en TN_Buggy_Visuals.cpp.
+// neumáticos en TN_Buggy_Visuals.cpp; carrocerías tortuga y pinturas de la tienda en TN_Buggy_Look.cpp.
 
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyData.h"
@@ -9,6 +9,7 @@
 #include "Vehicles/TN_BuggyGunnerPawn.h"
 #include "Vehicles/TN_BuggyHealthComponent.h"
 #include "Vehicles/TN_BuggyRiderAnimComponent.h"
+#include "Vehicles/TN_BuggyLookComponent.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_BuggyWheel.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
@@ -170,6 +171,10 @@ ATN_Buggy::ATN_Buggy()
 	BoostSound = BoostLoopFinder.Object;
 	BoostStartSound = BoostStartFinder.Object;
 	// Llama del turbo sin Niagara (#294): BoostFlameMesh vacía = cono emisivo construido en ejecución (GetBoostFlameMesh).
+	// Aspecto de la tienda: carrocerías tortuga por piezas y pinturas (solo visual).
+	BuggyLook = CreateDefaultSubobject<UTN_BuggyLookComponent>(TEXT("BuggyLook"));
+	BuggyLook->SetupAttachment(Chassis);
+
 	Turret = CreateDefaultSubobject<UTN_BuggyTurretComponent>(TEXT("Turret"));
 	Turret->SetupAttachment(Chassis);
 	// Pivote PivotRaiseCm por encima de Muzzle_Gunner: el cañón pasa sobre la cabeza de la artillera y el arco trasero.

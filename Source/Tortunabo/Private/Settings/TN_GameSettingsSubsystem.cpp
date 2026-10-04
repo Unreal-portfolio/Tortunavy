@@ -12,6 +12,7 @@
 #include "Audio/TN_MusicSynthComponent.h"
 #include "Player/MP_GamePlayerController.h"
 #include "Player/TortugaCharacter.h"
+#include "Rally/TN_RallyPlayerController.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
 #include "UI/Pause/TN_PauseMenuWidget.h"
@@ -63,6 +64,12 @@
 // del bloque.
 namespace TNGameSettingsDetail
 {
+	/** PlayerController de una partida (tortugas o buggies del Rally): el que lleva el menú de pausa. */
+	bool IsMatchPlayerController(const APlayerController* PC)
+	{
+		return PC && (PC->IsA<AMP_GamePlayerController>() || PC->IsA<ATN_RallyPlayerController>());
+	}
+
 	/** Ranura de guardado de los ajustes propios (Saved/SaveGames/TN_Settings.sav). */
 	const TCHAR* const SlotName = TEXT("TN_Settings");
 	constexpr int32 SlotUser = 0;
@@ -2255,8 +2262,8 @@ bool UTN_GameSettingsSubsystem::IsMenuUp() const
 
 void UTN_GameSettingsSubsystem::EnsurePauseInput(APlayerController* PC, FTNPlayerInputState& State, const FTNGameSettings& Own)
 {
-	// Solo el PlayerController de la partida (no el del menú principal) y el local.
-	AMP_GamePlayerController* GamePC = Cast<AMP_GamePlayerController>(PC);
+	// Solo el PlayerController de la partida (no el del menú principal; también el del Rally) y el local.
+	APlayerController* GamePC = TNGameSettingsDetail::IsMatchPlayerController(PC) ? PC : nullptr;
 	if (!GamePC || !GamePC->IsLocalController())
 	{
 		return;
@@ -2309,7 +2316,7 @@ void UTN_GameSettingsSubsystem::EnsurePauseInput(APlayerController* PC, FTNPlaye
 
 bool UTN_GameSettingsSubsystem::CanOpenPauseMenu(const APlayerController* PC) const
 {
-	if (!PC || !PC->IsLocalController() || !PC->IsA<AMP_GamePlayerController>())
+	if (!PC || !PC->IsLocalController() || !TNGameSettingsDetail::IsMatchPlayerController(PC))
 	{
 		return false;
 	}

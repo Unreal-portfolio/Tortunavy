@@ -401,6 +401,12 @@ void ATN_HQGameMode::BeginMatchTravel()
 			// Supervivencia: los niveles del Clásico (LVL_Run) con su propio GameMode (alias «Survival», DefaultEngine.ini).
 			TravelURL = MatchMapPath + TEXT("?game=Survival");
 		}
+		else if (GI->SelectedProcMode == ETNProcGameMode::Karts)
+		{
+			// Karts: el mapa procedural del cooperativo con karts (ATN_KartGameMode, alias «Karts» en DefaultEngine.ini).
+			// La dificultad la lee el GameMode de la GameInstance.
+			TravelURL = ProcMapPath + TEXT("?game=Karts");
+		}
 		else if (GI->SelectedProcMode != ETNProcGameMode::Classic)
 		{
 			if (bBeachRace)

@@ -234,6 +234,8 @@ void ATN_Buggy::RefreshSeatVisuals(bool bForce)
 	}
 	ApplySeatLook(TNBuggySeats::DriverIndex, bForce);
 	ApplySeatLook(TNBuggySeats::GunnerIndex, bForce);
+	// El buggy lleva el modelo y la pintura de quien conduce.
+	RefreshBuggyLook(bForce);
 }
 
 void ATN_Buggy::ApplySeatLook(int32 SeatIndex, bool bForce)

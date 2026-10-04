@@ -145,19 +145,20 @@ void ATN_Buggy::RefreshBoostEffects()
 		}
 		return;
 	}
-	// Sujetos a la carrocería: la llama sigue al escape. Se destruyen solos al desactivarse.
+	// Sujetos a la carrocería: la llama sigue al escape (el del modelo de la tienda). Se destruyen solos al desactivarse.
+	const FVector Exhaust = GetExhaustLocal();
 	if (BoostEffect)
 	{
-		BoostEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(BoostEffect, Body, NAME_None, BoostEffectOffset,
+		BoostEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(BoostEffect, Body, NAME_None, Exhaust,
 			FRotator(0.f, 180.f, 0.f), EAttachLocation::KeepRelativeOffset, true);
 	}
 	if (BoostStartSound)
 	{
-		UGameplayStatics::SpawnSoundAttached(BoostStartSound, Body, NAME_None, BoostEffectOffset, EAttachLocation::KeepRelativeOffset, true);
+		UGameplayStatics::SpawnSoundAttached(BoostStartSound, Body, NAME_None, Exhaust, EAttachLocation::KeepRelativeOffset, true);
 	}
 	if (BoostSound)
 	{
-		BoostSoundComponent = UGameplayStatics::SpawnSoundAttached(BoostSound, Body, NAME_None, BoostEffectOffset,
+		BoostSoundComponent = UGameplayStatics::SpawnSoundAttached(BoostSound, Body, NAME_None, Exhaust,
 			EAttachLocation::KeepRelativeOffset, true);
 	}
 }
@@ -233,7 +234,8 @@ void ATN_Buggy::UpdateBoostFlames()
 		}
 		// Una llama por tubo: el índice 0 a la izquierda (Y negativa) y el 1 a la derecha, con la dirección reflejada.
 		const float Side = Index == 0 ? -1.f : 1.f;
-		const FVector Exhaust = BoostEffectOffset + FVector(0.f, Side * BoostFlameSideOffsetCm, 0.f);
+		// El escape del modelo puesto (el de la tienda o, con el de serie, BoostEffectOffset).
+		const FVector Exhaust = GetExhaustLocal() + FVector(0.f, Side * BoostFlameSideOffsetCm, 0.f);
 		const FVector Dir(BoostFlameDirection.X, Side * FMath::Abs(BoostFlameDirection.Y), BoostFlameDirection.Z);
 		// Desfase por tubo para que no parpadeen a la vez.
 		const float Flicker = TNBuggy::BoostFlameFlicker(Time + 0.37f * Index, BoostFlameFlickerAmount);

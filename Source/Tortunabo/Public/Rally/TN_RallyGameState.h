@@ -169,12 +169,19 @@ public:
 
 	/**
 	 * Fija Variant en el ATN_MapVariantLoader del nivel (lo crea si no hay), recarga el terreno si hace falta y construye
-	 * la pista (ATN_RallyTrack del nivel o una nueva). Lo usan el GameMode (servidor) y OnRep_Variant (clientes).
+	 * la pista (ATN_RallyTrack del nivel o una nueva). Lo usan el GameMode (servidor) y OnRep_Variant (clientes). Virtual
+	 * para los modos que hacen su pista de otra forma (los karts del mapa del cooperativo, ATN_KartGameState).
 	 */
-	ATN_RallyTrack* PrepareTrack(FName InVariant);
+	virtual ATN_RallyTrack* PrepareTrack(FName InVariant);
 
 	/** Se dispara al tener pista en esta máquina. */
 	FTNRallyTrackReady OnTrackReady;
+
+	/**
+	 * Al acabar los resultados se vuelve al lobby (los karts, ATN_KartGameState) en vez de empezar otra carrera en el mismo
+	 * mapa. Solo cambia el texto del pie de los resultados (UTN_RallyHUDWidget).
+	 */
+	virtual bool ReturnsToLobbyAfterResults() const { return false; }
 
 	/** Texto de una línea con la fase y los puestos (TN.Rally.Status). */
 	FString DescribeStatus() const;
@@ -186,10 +193,11 @@ protected:
 	UFUNCTION()
 	void OnRep_Standings();
 
-private:
+	/** Pista de esta máquina (protegida para los modos que la construyen de otra forma). */
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_RallyTrack> Track;
 
+private:
 	/** Última reaparición ya avisada de cada equipo (índice → hora del servidor), para no repetir el aviso. */
 	TMap<int32, float> NotifiedRespawnTimes;
 };

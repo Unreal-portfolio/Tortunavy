@@ -259,6 +259,52 @@ void ATN_RallyPlayerController::DebugSendCosmetics(FName SkinId, FName ShellId, 
 	ServerSyncCosmetics(Loadout);
 }
 
+void ATN_RallyPlayerController::DebugSendBuggy(FName ModelId, FName PaintId)
+{
+	const UMP_GameInstance* GameInstance = Cast<UMP_GameInstance>(GetGameInstance());
+	if (!IsLocalController() || !GameInstance)
+	{
+		return;
+	}
+	FTNCosmeticLoadout Loadout = TNCosmeticsSync::ReadLocalLoadout(*GameInstance);
+	Loadout.BuggyLook.ModelId = ModelId;
+	Loadout.BuggyLook.PaintId = PaintId;
+	for (const FName Id : { ModelId, PaintId })
+	{
+		if (!Id.IsNone()) { Loadout.UnlockedBuggyIds.AddUnique(Id); }
+	}
+	UE_LOG(LogTNRally, Log, TEXT("[RallyPC] %s manda buggy de prueba: modelo=%s pintura=%s"), *GetNameSafe(this), *ModelId.ToString(),
+		*PaintId.ToString());
+	ServerSyncCosmetics(Loadout);
+}
+
+static FAutoConsoleCommandWithWorldAndArgs GTNRallyDebugBuggyCommand(
+	TEXT("TN.Rally.DebugBuggy"),
+	TEXT("Rally: TN.Rally.DebugBuggy <modelo|-> [pintura|-] [espera]: la jugadora local manda ese buggy al servidor (BuggyModel_Caiman, BuggyModel_Laud, BuggyPaint_Lava...; - = el de serie; no toca el save)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld*)
+	{
+		const auto Arg = [&Args](int32 Index) { return Args.IsValidIndex(Index) && Args[Index] != TEXT("-") ? FName(*Args[Index]) : NAME_None; };
+		const FName Model = Arg(0);
+		const FName Paint = Arg(1);
+		const float Wait = Args.IsValidIndex(2) ? FCString::Atof(*Args[2]) : 0.f;
+		FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([Model, Paint](float)
+		{
+			for (const FWorldContext& Context : GEngine->GetWorldContexts())
+			{
+				UWorld* World = Context.World();
+				ATN_RallyPlayerController* PC = World && (Context.WorldType == EWorldType::Game || Context.WorldType == EWorldType::PIE)
+					? Cast<ATN_RallyPlayerController>(World->GetFirstPlayerController()) : nullptr;
+				if (PC)
+				{
+					PC->DebugSendBuggy(Model, Paint);
+					return false;
+				}
+			}
+			UE_LOG(LogTNRally, Warning, TEXT("TN.Rally.DebugBuggy: no hay un PlayerController del Rally"));
+			return false;
+		}), FMath::Max(Wait, 0.01f));
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GTNRallyDebugCosmeticsCommand(
 	TEXT("TN.Rally.DebugCosmetics"),
 	TEXT("Rally: TN.Rally.DebugCosmetics <color> [caparazón] [ojos] [espera]: la jugadora local manda ese aspecto al servidor (filas de DT_Skins; no toca el save)."),
@@ -303,7 +349,8 @@ void ATN_RallyPlayerController::ServerSyncCosmetics_Implementation(const FTNCosm
 		return;
 	}
 	const int32 Applied = TNCosmeticsSync::ApplyLoadoutOnServer(Cast<UMP_GameInstance>(GetGameInstance()), *CoopState, Loadout);
-	UE_LOG(LogTNRally, Log, TEXT("[RallyPC] cosméticos de %s: casco=%s color=%s caparazón=%s ojos=%s (%d/4 aplicados)"),
+	UE_LOG(LogTNRally, Log, TEXT("[RallyPC] cosméticos de %s: casco=%s color=%s caparazón=%s ojos=%s buggy=%s|%s (%d/5 aplicados)"),
 		*CoopState->GetPlayerName(), *CoopState->EquippedHelmetId.ToString(), *CoopState->EquippedSkinId.ToString(),
-		*CoopState->EquippedShellId.ToString(), *CoopState->EquippedEyesId.ToString(), Applied);
+		*CoopState->EquippedShellId.ToString(), *CoopState->EquippedEyesId.ToString(), *CoopState->EquippedBuggyLook.ModelId.ToString(),
+		*CoopState->EquippedBuggyLook.PaintId.ToString(), Applied);
 }

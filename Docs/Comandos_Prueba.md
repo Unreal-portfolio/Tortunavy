@@ -304,6 +304,32 @@ los resultados con ocho filas. `TN.Proc.StartStyle 0|1` fuerza cómo se sale.
 | `TN.Lobby.Castle 0` / `TN.Lobby.Valley 0` | Esconde el castillo o el valle del lobby (al recargarlo). |
 | `TN.Storm.Cough 1` / `TN.Storm.Cough 2` | Carraspeos sueltos (`1`) o tos fuerte (`2`) de la tormenta sin tormenta; `0` la apaga. |
 
+## Karts en el mapa del cooperativo
+
+Se elige como los demás modos: «Karts» en el menú al crear sala, en la sala o con el General Galápago (pestaña
+«Misión»), y la dificultad igual que en el cooperativo. Al salir del lobby se viaja a `LVL_ProcMap?game=Karts`
+(`ATN_KartGameMode`, aparte del Rally de `LVL_Rally`): el mapa del cooperativo con el camino hecho para el kart, puertas
+cada 250 m, salida en el claro y meta en la playa (más en `Docs/Karts.md`). Al acabar los resultados se vuelve al lobby
+(y desde el menú de pausa del anfitrión).
+
+| Comando | Qué hace |
+|---|---|
+| `open LVL_ProcMap?game=Karts?ProcDifficulty=Easy` | Karts sin pasar por el lobby (`Easy`, `Normal` o `Hard`; sin la opción, la del lobby). |
+| `...?ProcSeed=4242` | Mapa fijo (misma pista siempre). |
+| `...?Bots=3` / `TN.Kart.Bots 3` | Bots de la parrilla; sin ninguno de los dos se completa hasta 4 karts (`TN.Kart.Bots -1`). |
+| `...?Seats=1` / `TN.Kart.Seats 1` | Un kart por tortuga (sin artillera); `2` (por defecto) empareja a la segunda de artillera. |
+| `TN.Rally.Status` | Fase, puestos, ocupantes y cajas en el log (`LogTNRally`). |
+| `TN.Kart.GiveItem Coco` | Da un objeto al kart propio sin ruleta (`Coco`, `TripleCoco`, `Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Estrella`; servidor o partida sola). |
+| `TN.Kart.Place Geyser\|Cascada\|Agua [equipo] [s]` | Pone el kart (el tuyo con `-1` o sin equipo; el de un bot con su número) encima de un géiser, en lo alto de una cascada o en el agua, tras esos segundos. Servidor o partida sola, fuera de Shipping. |
+| `TN.Kart.ProbeArc 790` | Con `LogTNRally Verbose`, perfil del suelo a lo ancho del camino alrededor de ese arco (m) al empezar (atascos). |
+| `log LogTNRally Verbose` | Objetos que salen y se usan (`[KartItems]`), géiseres, obstáculos y puertas de la pista y los karts del primer tramo. |
+
+Mapas útiles para probar (`?ProcSeed=`): fácil `11` (un géiser y una cascada, 1,5 km); normal `777` (10,8 km con cinco
+géiseres, ocho cascadas y canales de agua).
+
+Sin editor (carreras solo de la IA, una línea `[RallyStats]` por carrera con terminados, atascos y vuelcos):
+`UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Run/LVL_ProcMap?game=Karts?Bots=4?AutoStart?Races=1?RaceTimeout=420?ProcDifficulty=Easy?ProcSeed=4242" -server -nullrhi -NoSteam`.
+
 ## Capturas de arte sin abrir el editor
 
 Desde la línea de órdenes (no Shipping), con `-game -windowed`. Por cada clase encuadra el ejemplar del mapa más
@@ -402,3 +428,16 @@ mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala 
 
 Ejemplo sin mando (captura de cada estado en `Saved/Screenshots`):
 `-ExecCmds="tn.HUD.Prompt 1, TN.Later 8 TN.Tutorial.Station 7, TN.Later 12 shot showui, TN.Later 13 TN.Input.Press Gamepad_DPad_Up, TN.Later 13.3 shot showui, TN.Later 15 TN.Input.PadFamily 2, TN.Later 16 shot showui"`.
+
+## Buggy del Rally: aspecto, tienda y probador
+
+Detalle en `Docs/Tienda_Probador.md` («Buggy del Rally»).
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Shop.AddShells [conchas]` | Suma conchas al perfil local (5000 si no se dice), para comprar buggies y pinturas en la tienda. |
+| `TNShop` / `TNBooth` | Abre la tienda o entra en el probador libre más cercano (pestaña y página BUGGY con Q/E). |
+| `TN.Rally.DebugBuggy <modelo\|-> [pintura\|-] [espera]` | En el Rally: la jugadora local manda ese buggy al servidor como si lo hubiera comprado (`BuggyModel_Clasico`, `BuggyModel_Caiman`, `BuggyModel_Laud`, `BuggyPaint_Lava`...; `-` = el de serie de Art/Source o la pintura de serie). No toca el guardado. |
+| `TN.Buggy.Photos [carpeta] [tamaño] [espera]` | Fotos PNG del escaparate (los cuatro modelos desde varios lados, todas las pinturas en el de serie y en el clásico y las miniaturas de la tienda) y cierra el juego. |
+| `TN.Buggy.WorldShots [carpeta] [espera]` | En el Rally (mejor con `?Bots=5`): congela el tiempo, saca fotos sin interfaz del buggy propio de cerca, de lejos y la parrilla, y cierra el juego. |
+| `TN.Shop.UIShots [carpeta] [espera]` | En el lobby: compra un Caimán y la pintura de lava de prueba y saca capturas de la tienda y del probador con la interfaz. |

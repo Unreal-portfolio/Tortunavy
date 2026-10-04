@@ -35,6 +35,9 @@ public:
 	 * cambiados (NAME_None = el guardado), como si estuvieran desbloqueados. No toca el save.
 	 */
 	void DebugSendCosmetics(FName SkinId, FName ShellId, FName EyesId);
+
+	/** Pruebas (TN.Rally.DebugBuggy): manda al servidor ese modelo y esa pintura del buggy como si estuvieran comprados. */
+	void DebugSendBuggy(FName ModelId, FName PaintId);
 #endif
 
 	/** HUD del Rally de este jugador (solo en el jugador local; nullptr en el resto). Lee calor, munición y tinta del buggy. */

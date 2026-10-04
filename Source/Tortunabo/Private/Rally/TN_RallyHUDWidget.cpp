@@ -498,8 +498,8 @@ void UTN_RallyHUDWidget::RefreshResults(const ATN_RallyGameState& RallyState, do
 		ShownResultsHash = 0;
 		return;
 	}
-	ResultsFooter->SetText(FText::Format(NSLOCTEXT("Rally", "NextRace", "Carrera nueva en {0} s"),
-		TNLocText::Int(CeilSeconds(RallyState.PhaseEndServerTime - ServerTime))));
+	ResultsFooter->SetText(FText::Format(RallyState.ReturnsToLobbyAfterResults() ? NSLOCTEXT("Rally", "BackToLobby", "Vuelta al lobby en {0} s")
+		: NSLOCTEXT("Rally", "NextRace", "Carrera nueva en {0} s"), TNLocText::Int(CeilSeconds(RallyState.PhaseEndServerTime - ServerTime))));
 
 	uint32 Hash = 1;
 	for (const FTNRallyStanding& Entry : RallyState.Standings)

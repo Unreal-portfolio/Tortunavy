@@ -79,6 +79,16 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> DifficultyHeading;
 
+	/** Karts (solo el anfitrión): una tortuga por kart o por parejas. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTN_ShopButton>> SeatsButtons;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> SeatsHeading;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UWidget> SeatsRow;
+
 	/** «Orden del día: CARRERA · NORMAL». */
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> MissionOrders;
@@ -88,7 +98,7 @@ private:
 	FString FullLine;
 	float Reveal = 0.f;
 
-	/** Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad. */
+	/** Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad, 2 = plazas por kart (karts). */
 	int32 MissionRow = 0;
 	/** Lo último que se ha pintado en «Misión» (si cambia desde otra máquina, se repinta y el general lo anuncia). */
 	ETNProcGameMode ShownMode = ETNProcGameMode::Count;
@@ -106,6 +116,12 @@ private:
 	/** Clic en un modo o en una dificultad (o ←/→): solo el anfitrión; a los demás, el general les recuerda quién manda. */
 	void PickMode(ETNProcGameMode Mode);
 	void PickDifficulty(ETNProcDifficulty Difficulty);
+	/** Karts: tortugas por kart (1 o 2). Solo el anfitrión. */
+	void PickSeats(int32 Seats);
+	/** Plazas por kart elegidas en la GameInstance del anfitrión. */
+	int32 GetKartSeats() const;
+	/** Hay fila de plazas: el anfitrión con los karts elegidos. */
+	bool HasSeatsRow() const;
 	/** ←/→ con el teclado o el mando: la opción anterior o la siguiente de la fila con el foco. */
 	void StepMission(int32 Direction);
 	void SetMissionRow(int32 Row);

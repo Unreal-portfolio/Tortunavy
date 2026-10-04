@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
+#include "Core/TN_CosmeticsTypes.h"
 #include "Multiplayer/TN_SaveGameDecisions.h"
 #include "TN_CosmeticSaveGame.generated.h"
 
@@ -46,6 +47,14 @@ public:
 	/** Ojos equipados (fila de DT_Skins de categoría Eyes). NAME_None = los clásicos. */
 	UPROPERTY(BlueprintReadWrite, Category = "Cosmetics")
 	FName EquippedEyesId = NAME_None;
+
+	/** Modelos y pinturas del buggy del Rally comprados en la tienda (Ids de TNBuggyCosmetics). */
+	UPROPERTY(BlueprintReadWrite, Category = "Cosmetics")
+	TArray<FName> UnlockedBuggyIds;
+
+	/** Buggy equipado en el probador (modelo y pintura). NAME_None = el de serie. */
+	UPROPERTY(BlueprintReadWrite, Category = "Cosmetics")
+	FTN_BuggyLook EquippedBuggyLook;
 
 	/**
 	 * Puntos de carrera acumulados (#26).

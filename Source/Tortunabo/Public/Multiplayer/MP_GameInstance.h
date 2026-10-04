@@ -341,6 +341,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	FName GetEquippedEyesId() const;
 
+	// ── Buggy del Rally (catálogo en C++: Vehicles/TN_BuggyCosmetics.h) ──────
+
+	/** Modelos y pinturas del buggy comprados (los de serie y los gratis no hace falta comprarlos). */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	TArray<FName> GetUnlockedBuggyIds() const;
+
+	/** Guarda el buggy equipado si se puede poner (desbloqueado o gratis). Lo que no existe pasa a ser el de serie. */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	bool EquipBuggyLook(const FTN_BuggyLook& Look);
+
+	/** Buggy equipado (saneado: un Id que ya no está en el catálogo da el de serie). */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	FTN_BuggyLook GetEquippedBuggyLook() const;
+
 	/** Devuelve el DataTable de skins para lookup externo. */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	UDataTable* GetSkinDataTable() const { return SkinDataTable; }
@@ -419,6 +433,10 @@ public:
 	/** Dificultad elegida en el lobby para el mapa procedural. */
 	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
 	ETNProcDifficulty SelectedProcDifficulty = ETNProcDifficulty::Normal;
+
+	/** Karts: tortugas por kart que eligió el anfitrión con el general (1 = cada una el suyo; 2 = por parejas). */
+	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
+	int32 SelectedKartSeats = 2;
 
 	/**
 	 * Cómo se pusieron listos en el lobby (sala de la puerta doble o huevos): así empieza la partida en el mapa

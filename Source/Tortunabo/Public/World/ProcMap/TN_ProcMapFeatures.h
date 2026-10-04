@@ -730,6 +730,12 @@ namespace TNProcMap
 			const double S0 = M[FMath::Max(0, i - 1)].S;
 			const double S1 = M[FMath::Min(M.Num() - 1, j + 1)].S;
 
+			// Karts: canal de agua abierta, sin isletas (el kart flota de una orilla a otra).
+			if (bIslet && P.bDrivable)
+			{
+				i = j;
+				continue;
+			}
 			if (bIslet)
 			{
 				const double LiMin = LerpD(900.0, 500.0, Diff);
@@ -821,6 +827,11 @@ namespace TNProcMap
 		const TArray<FPathSample>& M = L.Main;
 		const uint32 Bad = PathFlags::Elevated | PathFlags::Colossal | PathFlags::UnderTower | PathFlags::TowerTop | PathFlags::Slide
 			| PathFlags::GeyserBase | PathFlags::Tunnel | PathFlags::Islet | PathFlags::Boardwalk | PathFlags::Gap | PathFlags::Shore;
+		// Rally: los buggies reaparecen en las puertas de la carrera, no en huevos.
+		if (P.bDrivable || M.Num() == 0)
+		{
+			return;
+		}
 
 		int32 Order = 0;
 		{
@@ -1251,7 +1262,7 @@ namespace TNProcMap
 					// Aguja (alta y fina) o mogote (bajo y ancho) en mitad de la explanada, con carriles a ambos lados.
 					const bool bSpire = Rng.Chance(0.6);
 					const double R = bSpire ? Rng.Range(150.0, 320.0) : Rng.Range(380.0, 700.0);
-					const double Room = W * 0.5 - R - 500.0;
+					const double Room = W * 0.5 - R - (L.Params.bDrivable ? 800.0 : 500.0);
 					if (Room < 0.0) { continue; }
 					FFeature F = MakeAtSample(EFeature::RockSpire, Sm, i, BranchIndex);
 					F.Location = FVector(Sm.P + N * Rng.Range(-Room, Room) * 0.6, Sm.Z);
@@ -1261,6 +1272,12 @@ namespace TNProcMap
 					L.Features.Add(F);
 					// El siguiente, pasada la roca.
 					NextS = FMath::Max(NextS, Sm.S + R + 1200.0);
+					continue;
+				}
+				// Rally: solo las agujas y mogotes de las explanadas (con carriles a los lados); troncos, torres, obstáculos de
+				// objetos y peñascos pararían en seco al buggy en mitad del camino.
+				if (L.Params.bDrivable)
+				{
 					continue;
 				}
 				if ((bForest || bDrift) && W >= 500.0 && W <= 2600.0 && U < (bForest ? 0.5 : 0.28))

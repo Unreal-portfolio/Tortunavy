@@ -26,6 +26,7 @@ class UTN_BuggyData;
 class UTN_BuggyHealthComponent;
 class UTN_BuggyEngineAudioComponent;
 class UTN_BuggyInputSet;
+class UTN_BuggyLookComponent;
 class UTN_BuggyTurretComponent;
 struct FInputActionValue;
 
@@ -103,6 +104,10 @@ public:
 	const UTN_BuggyData* GetData() const;
 
 	UTN_BuggyTurretComponent* GetTurret() const { return Turret; }
+	UTN_BuggyLookComponent* GetBuggyLook() const { return BuggyLook; }
+
+	/** El PlayerState de una jugadora ha cambiado de buggy (OnRep): si conduce este, se repinta ya. */
+	void NotifyDriverLookChanged(const APlayerState* ChangedPlayerState);
 	UTN_BuggyHealthComponent* GetHealthComponent() const { return HealthComponent; }
 	ATN_BuggyGunnerPawn* GetGunnerPawn() const { return GunnerPawn; }
 	UStaticMeshComponent* GetBody() const { return Body; }
@@ -137,6 +142,12 @@ public:
 	/** Si la plaza de artillera está ocupada (estado replicado; vale en cualquier máquina). */
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool HasGunner() const { return bGunnerSeated; }
+
+	/** PlayerState de la jugadora sentada en esa plaza (replicado; null si está vacía o la ocupa la IA). */
+	const APlayerState* GetSeatPlayerState(ETNRallySeat Seat) const
+	{
+		return Seat == ETNRallySeat::Gunner ? GunnerPlayerState.Get() : DriverPlayerState.Get();
+	}
 
 	/** Si la carrera tiene el freno puesto (parrilla durante el semáforo): sin acelerador ni turbo. */
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
@@ -359,6 +370,16 @@ private:
 	/** Skin del equipo en la carrocería y las ruedas, con la pintura del color del equipo (TN_Buggy_Visuals.cpp). */
 	void ApplyTint();
 
+	/**
+	 * Aspecto comprado en la tienda (TN_Buggy_Look.cpp): el FTN_BuggyLook del PlayerState de la conductora. Sin trabajo
+	 * si no ha cambiado (salvo bForce).
+	 */
+	void RefreshBuggyLook(bool bForce);
+	/** El de serie con la pintura de serie: la carrocería y los neumáticos llevan la skin del equipo de ApplyTint. */
+	bool UsesTeamSkin() const;
+	/** Escape del modelo puesto (cm, espacio de la carrocería): de ahí salen la llama y el sonido del turbo. */
+	FVector GetExhaustLocal() const;
+
 	// ── Modelo (TN_Buggy_Visuals.cpp) ──────────────────────────────────────────
 	/** Mallas, sockets y posiciones de reposo de los neumáticos según los assets de Rally|Assets. */
 	void ApplyModelAssets();
@@ -416,6 +437,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UTN_BuggyTurretComponent> Turret;
+
+	/** Carrocerías tortuga de la tienda y pintura del buggy (solo visual). */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UTN_BuggyLookComponent> BuggyLook;
 
 	/** Vida del buggy: sus efectos (humo, explosión, choque) se asignan en el Blueprint. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))

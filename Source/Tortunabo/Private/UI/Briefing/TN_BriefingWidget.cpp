@@ -13,6 +13,7 @@
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
+#include "Multiplayer/MP_GameInstance.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Core/TN_LocText.h"
 #include "Engine/LocalPlayer.h"
@@ -59,6 +60,8 @@ namespace TNBriefingUI
 			return NSLOCTEXT("Tortunabo", "BriefingOrderRace", "¡Carrera! Todas contra todas hasta el agua. Tres conchas y al podio.");
 		case ETNProcGameMode::Survival:
 			return NSLOCTEXT("Tortunabo", "BriefingOrderSurvival", "¡Supervivencia! Nivel tras nivel, cada uno peor que el anterior. Solo queda en pie la última.");
+		case ETNProcGameMode::Karts:
+			return NSLOCTEXT("Tortunabo", "BriefingOrderKarts", "¡Karts! Al volante sola o con una artillera detrás. Cajas, géiseres y cascadas hasta la playa.");
 		default:
 			return NSLOCTEXT("Tortunabo", "BriefingOrderCoop", "¡Cooperativo! Aquí no se deja a nadie atrás: del castillo al mar, todas juntas.");
 		}
@@ -419,8 +422,11 @@ void UTN_BriefingWidget::ShowTab(int32 Index)
 	// Lo de «Misión» solo existe mientras se ve.
 	ModeButtons.Reset();
 	DifficultyButtons.Reset();
+	SeatsButtons.Reset();
 	ModeHeading = nullptr;
 	DifficultyHeading = nullptr;
+	SeatsHeading = nullptr;
+	SeatsRow = nullptr;
 	MissionOrders = nullptr;
 
 	const APlayerState* PS = GetOwningPlayer() ? GetOwningPlayer()->PlayerState : nullptr;
@@ -541,7 +547,8 @@ void UTN_BriefingWidget::BuildMissionPage()
 	for (const ETNProcGameMode Mode : TNLobbyMission::MenuModes)
 	{
 		UTN_ShopButton* Option = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
-		Option->Setup(TNLobbyMission::ModeName(Mode).ToUpper(), IdlePill(), TNHUDArt::Cream, 21, FVector2D(260.f, 58.f),
+		// Con cuatro modos o más, pastillas algo más estrechas para que quepan en la fila.
+		Option->Setup(TNLobbyMission::ModeName(Mode).ToUpper(), IdlePill(), TNHUDArt::Cream, 21, FVector2D(NumMenuModes > 3 ? 210.f : 260.f, 58.f),
 			[this, Mode]() { PickMode(Mode); });
 		AddH(ModeRow, Option, FMargin(0.f, 0.f, 12.f, 0.f));
 		ModeButtons.Add(Option);
@@ -571,6 +578,33 @@ void UTN_BriefingWidget::BuildMissionPage()
 		TNLobbyMission::DifficultyName(ETNProcDifficulty::Easy), TNLobbyMission::DifficultyBlurb(ETNProcDifficulty::Easy),
 		TNLobbyMission::DifficultyName(ETNProcDifficulty::Normal), TNLobbyMission::DifficultyBlurb(ETNProcDifficulty::Normal),
 		TNLobbyMission::DifficultyName(ETNProcDifficulty::Hard), TNLobbyMission::DifficultyBlurb(ETNProcDifficulty::Hard)));
+
+	// Karts (solo el anfitrión, que es quien lo elige): una tortuga por kart o por parejas (la segunda, de artillera).
+	if (bHost)
+	{
+		UVerticalBox* SeatsBox = New<UVerticalBox>(Tree);
+		SeatsHeading = Label(Tree, FText::GetEmpty(), TEXT("Black"), 23, TNHUDArt::CoralDeep, false);
+		AddV(SeatsBox, SeatsHeading, FMargin(0.f, 12.f, 0.f, 6.f));
+		UHorizontalBox* SeatsOptions = New<UHorizontalBox>(Tree);
+		const FText SeatsNames[] = { NSLOCTEXT("Tortunabo", "BriefingKartSeatsOne", "Una por kart"),
+			NSLOCTEXT("Tortunabo", "BriefingKartSeatsTwo", "Por parejas") };
+		for (int32 Seats = 1; Seats <= 2; ++Seats)
+		{
+			UTN_ShopButton* Option = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
+			Option->Setup(SeatsNames[Seats - 1].ToUpper(), IdlePill(), TNHUDArt::Cream, 21, FVector2D(260.f, 58.f),
+				[this, Seats]() { PickSeats(Seats); });
+			AddH(SeatsOptions, Option, FMargin(0.f, 0.f, 12.f, 0.f));
+			SeatsButtons.Add(Option);
+		}
+		AddV(SeatsBox, SeatsOptions, FMargin(0.f, 0.f, 0.f, 8.f), HAlign_Left);
+		UTextBlock* SeatsLine = Label(Tree, NSLOCTEXT("Tortunabo", "BriefingKartSeatsLine",
+			"•  Por parejas, la segunda de cada kart va de artillera: maneja la torreta y los objetos, y su peso cambia cuánto gira el kart."),
+			TEXT("Regular"), 18, TNHUDArt::Ink, false);
+		SeatsLine->SetAutoWrapText(true);
+		AddV(SeatsBox, SeatsLine, FMargin(0.f, 0.f, 8.f, 0.f));
+		SeatsRow = SeatsBox;
+		AddV(Page, SeatsBox, FMargin(0.f));
+	}
 
 	// La orden del día (lo que vale ahora) y quién manda.
 	MissionOrders = Label(Tree, FText::GetEmpty(), TEXT("Black"), 21, TNHUDArt::Ink, false);
@@ -632,6 +666,22 @@ void UTN_BriefingWidget::RefreshMission(bool bAnnounce)
 	};
 	StyleHeading(ModeHeading, 0, NSLOCTEXT("Tortunabo", "BriefingMissionModeH", "Modo de la misión"));
 	StyleHeading(DifficultyHeading, 1, NSLOCTEXT("Tortunabo", "BriefingMissionDiffH", "Dificultad"));
+	StyleHeading(SeatsHeading, 2, NSLOCTEXT("Tortunabo", "BriefingKartSeatsH", "Tortugas por kart"));
+	if (SeatsRow)
+	{
+		SeatsRow->SetVisibility(HasSeatsRow() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+	}
+	for (int32 i = 0; i < SeatsButtons.Num(); ++i)
+	{
+		if (UTN_ShopButton* Option = SeatsButtons[i])
+		{
+			Option->SetArt(GetKartSeats() == i + 1 ? ChosenPill() : IdlePill());
+		}
+	}
+	if (MissionRow == 2 && !HasSeatsRow())
+	{
+		MissionRow = 1;
+	}
 
 	if (MissionOrders)
 	{
@@ -677,9 +727,40 @@ void UTN_BriefingWidget::PickDifficulty(ETNProcDifficulty Difficulty)
 	RefreshMission(false);
 }
 
+int32 UTN_BriefingWidget::GetKartSeats() const
+{
+	const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance());
+	return GI ? FMath::Clamp(GI->SelectedKartSeats, 1, 2) : 2;
+}
+
+bool UTN_BriefingWidget::HasSeatsRow() const
+{
+	return CanChooseMission() && GetMissionMode() == ETNProcGameMode::Karts && SeatsButtons.Num() > 0;
+}
+
+void UTN_BriefingWidget::PickSeats(int32 Seats)
+{
+	UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance());
+	if (!CanChooseMission() || !GI)
+	{
+		return;
+	}
+	MissionRow = 2;
+	GI->SelectedKartSeats = FMath::Clamp(Seats, 1, 2);
+	Say(GI->SelectedKartSeats == 1
+		? NSLOCTEXT("Tortunabo", "BriefingSayKartsSolo", "¡Cada tortuga a su kart! Al volante y con la torreta, todo tuyo.")
+		: NSLOCTEXT("Tortunabo", "BriefingSayKartsPairs", "¡Por parejas! Una conduce y la otra dispara, usa los objetos y carga el peso en las curvas."));
+	RefreshMission(false);
+}
+
 void UTN_BriefingWidget::StepMission(int32 Direction)
 {
 	using namespace TNBriefingUI;
+	if (MissionRow == 2)
+	{
+		PickSeats(FMath::Clamp(GetKartSeats() + Direction, 1, 2));
+		return;
+	}
 	const bool bModeRow = MissionRow == 0;
 	const int32 NumOptions = bModeRow ? NumMenuModes : NumDifficulties;
 	int32 Index = INDEX_NONE;
@@ -706,7 +787,7 @@ void UTN_BriefingWidget::StepMission(int32 Direction)
 
 void UTN_BriefingWidget::SetMissionRow(int32 Row)
 {
-	MissionRow = FMath::Clamp(Row, 0, 1);
+	MissionRow = FMath::Clamp(Row, 0, HasSeatsRow() ? 2 : 1);
 	RefreshMission(false);
 }
 
@@ -785,8 +866,8 @@ FReply UTN_BriefingWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FK
 	// pestañas siguen con Q/E, Tab o LB/RB.
 	if (Tab == TNBriefingUI::TabMission && CanChooseMission())
 	{
-		if (IsKey(Key, { EKeys::Up, EKeys::W, EKeys::Gamepad_DPad_Up, EKeys::Gamepad_LeftStick_Up })) { SetMissionRow(0); return FReply::Handled(); }
-		if (IsKey(Key, { EKeys::Down, EKeys::S, EKeys::Gamepad_DPad_Down, EKeys::Gamepad_LeftStick_Down })) { SetMissionRow(1); return FReply::Handled(); }
+		if (IsKey(Key, { EKeys::Up, EKeys::W, EKeys::Gamepad_DPad_Up, EKeys::Gamepad_LeftStick_Up })) { SetMissionRow(MissionRow - 1); return FReply::Handled(); }
+		if (IsKey(Key, { EKeys::Down, EKeys::S, EKeys::Gamepad_DPad_Down, EKeys::Gamepad_LeftStick_Down })) { SetMissionRow(MissionRow + 1); return FReply::Handled(); }
 		if (IsKey(Key, { EKeys::Left, EKeys::A, EKeys::Gamepad_DPad_Left, EKeys::Gamepad_LeftStick_Left })) { StepMission(-1); return FReply::Handled(); }
 		if (IsKey(Key, { EKeys::Right, EKeys::D, EKeys::Gamepad_DPad_Right, EKeys::Gamepad_LeftStick_Right })) { StepMission(1); return FReply::Handled(); }
 	}

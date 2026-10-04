@@ -38,6 +38,19 @@ struct FTNShellSpot
 	FString Where;
 };
 
+/** Una muestra del camino principal en el mundo (para el Rally, que hace su pista con ellas). */
+struct FTNProcPathPoint
+{
+	/** Centro del camino a la cota del suelo. */
+	FVector Location = FVector::ZeroVector;
+	/** Dirección del camino en horizontal (unitaria). */
+	FVector Direction = FVector::ForwardVector;
+	/** Ancho del camino (cm). */
+	float Width = 0.f;
+	/** TNProcMap::PathFlags de la muestra (cueva, salida, playa final...). */
+	uint32 Flags = 0;
+};
+
 /** Lo único que se replica del mapa: con esto cada máquina genera el mismo. */
 USTRUCT(BlueprintType)
 struct TORTUNABO_API FTNProcMapNetConfig
@@ -175,6 +188,26 @@ public:
 
 	/** Altura del terreno generado en un punto del mundo (sin trazas: vale antes de cocinar colisión). */
 	float GetTerrainHeightAt(const FVector& WorldLocation) const;
+
+	/**
+	 * Mapa de los karts (NetConfig.Mode == Karts): el camino del cooperativo hecho para el kart (TNProcMap::FGenParams::
+	 * bDrivable) y sin lo que es de las tortugas a pie (huevos, recompensas, rebuscables, peligros, enemigos y conchas). Lo
+	 * saben todas las máquinas porque el modo viaja en la réplica.
+	 */
+	bool IsKartMap() const { return NetConfig.Mode == ETNProcGameMode::Karts; }
+
+	/** Muestras del camino principal en el mundo, de la salida a la playa final (vacío si no hay mapa). */
+	void GetMainPathWorld(TArray<FTNProcPathPoint>& OutPoints) const;
+
+	/**
+	 * Obstáculos grandes que quedan dentro del camino principal (piezas de explanada y agujas de roca), en el mundo: X, Y y
+	 * Z del centro a ras de suelo y W = radio libre (cm). El piloto IA de los karts los rodea. Los arcos que cruzan el camino
+	 * van con W negativo (su medio fondo más 4 m): bajo ellos el piloto va por el centro.
+	 */
+	void GetMainPathObstaclesWorld(TArray<FVector4>& OutObstacles) const;
+
+	/** Cota del mar en el mundo (por debajo, el kart está en el agua). */
+	float GetSeaLevelWorldZ() const;
 
 	UTN_ProcMapSettings* GetSettings() const { return Settings; }
 

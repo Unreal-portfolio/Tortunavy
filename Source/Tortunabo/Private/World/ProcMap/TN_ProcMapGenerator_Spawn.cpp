@@ -402,7 +402,9 @@ void ATN_ProcMapGenerator::SpawnServerActors()
 	UClass* SwitchClass = (Settings && Settings->SwitchClass) ? Settings->SwitchClass.Get() : ATN_ProcSwitch::StaticClass();
 
 	TMap<int32, ATN_ProcSabotageGate*> GateByFeature;
-	for (int32 f = 0; f < Layout.Features.Num(); ++f)
+	// Karts: ni recompensas, ni medusas, ni huevos, ni la meta del cooperativo (la carrera pone la suya), ni rebuscables.
+	const bool bKarts = IsKartMap();
+	for (int32 f = 0; f < Layout.Features.Num() && !bKarts; ++f)
 	{
 		const FFeature& F = Layout.Features[f];
 		const FVector2D C(F.Location.X, F.Location.Y);
@@ -493,7 +495,10 @@ void ATN_ProcMapGenerator::SpawnServerActors()
 	}
 
 	// Estatuas, rocas grandes, barcas, cajas... que se pueden rebuscar (al final del fichero).
-	SpawnSearchSpots();
+	if (!bKarts)
+	{
+		SpawnSearchSpots();
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -95,9 +95,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	bool RequestEquipEyes(FName EyesId);
 
-	/** @brief Tienda: lo compra (hoy todo cuesta 0), lo guarda y manda los desbloqueos al servidor. */
+	/** @brief Tienda: lo compra con conchas (los de la tortuga hoy cuestan 0), lo guarda y manda los desbloqueos al servidor. */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	bool RequestPurchaseCosmetic(ETNCosmeticCategory Category, FName Id);
+
+	/** @brief Probador: pone el buggy del Rally (modelo y pintura comprados o gratis), lo guarda y lo replica. */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	bool RequestEquipBuggyLook(const FTN_BuggyLook& Look);
 
 	/** @brief Client RPC: abre la tienda del tendero (UTN_ShopWidget). */
 	UFUNCTION(Client, Reliable)
@@ -374,6 +378,14 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerSetEquippedEyes(FName EyesId);
 
+	/** @brief Server RPC: modelos y pinturas del buggy desbloqueados del cliente (filtrados con TNBuggyCosmetics). */
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerSyncUnlockedBuggy(const TArray<FName>& UnlockedBuggyIds);
+
+	/** @brief Server RPC: asigna el buggy equipado en el PlayerState si está en el catálogo y desbloqueado. */
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerSetEquippedBuggyLook(const FTN_BuggyLook& Look);
+
 	/** @brief Client RPC: guarda SkinId en GameInstance del cliente dueño. */
 	UFUNCTION(Client, Reliable)
 	void ClientSaveSkin(FName SkinId);
@@ -458,6 +470,9 @@ private:
 
 	/** Colores y caparazones desbloqueados de este jugador (servidor). */
 	TSet<FName> ServerUnlockedSkins;
+
+	/** Modelos y pinturas del buggy desbloqueados de este jugador (servidor). */
+	TSet<FName> ServerUnlockedBuggy;
 
 	/** Tienda o probador abiertos (solo en el cliente dueño). */
 	UPROPERTY(Transient)
