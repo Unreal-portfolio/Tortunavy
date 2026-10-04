@@ -322,3 +322,67 @@ def test_comprobar_campos_rechaza_opciones_que_no_existen_y_admite_vacios():
         comprobar_campos(proyecto, {"Área": "Arte", "Prioridad": "P0"})
     with pytest.raises(ErrorTablero, match="Fase"):
         comprobar_campos(proyecto, {"Fase": "F1"})
+
+
+def _gh_con_auto_add(ediciones: list, error_item_add: str = "Content already exists in this project"):
+    """gh falso: crea la issue #700, `item-add` falla como cuando el auto-add del Project se adelanta."""
+    import json
+
+    from base import NUMERO, ErrorTablero
+
+    def gh(*args, entrada=None):
+        if args[:2] == ("issue", "create"):
+            return "https://github.com/Unreal-portfolio/Tortunavy/issues/700\n"
+        if args[:2] == ("project", "item-add"):
+            raise ErrorTablero(f"gh project item-add {NUMERO}…: {error_item_add}")
+        if args[:2] == ("api", "graphql"):
+            issue = {"number": 700, "title": "Rally: fallo", "state": "OPEN", "url": "u", "updatedAt": "t",
+                     "assignees": {"nodes": []}, "labels": {"nodes": []},
+                     "blockedBy": {"nodes": []}, "blocking": {"nodes": []},
+                     "projectItems": {"nodes": [{"id": "PVTI_auto", "project": {"number": NUMERO},
+                                                 "fieldValues": {"nodes": []}}]}}
+            return json.dumps({"data": {"repository": {"issue": issue}}})
+        if args[:2] == ("project", "item-edit"):
+            ediciones.append((args[args.index("--id") + 1], args[args.index("--field-id") + 1],
+                              args[args.index("--single-select-option-id") + 1]))
+            return ""
+        raise AssertionError(f"llamada inesperada a gh: {args}")
+
+    return gh
+
+
+def _proyecto_vacio():
+    opciones = {"Status": ["Ready"], "Prioridad": ["P1"], "Tamaño": ["S"], "Área": ["Red"], "Fase": ["F4"],
+                "Editor": ["Sin probar"]}
+    return {"id": "PVT_1", "items": {},
+            "campos": {c: {"id": f"F_{c}", "opciones": {v: f"O_{v}" for v in vs}} for c, vs in opciones.items()}}
+
+
+def test_nueva_sigue_con_los_campos_si_el_auto_add_se_adelanta(monkeypatch, tmp_path):
+    """#699: «Content already exists» en item-add no deja la issue sin campos ni estado."""
+    import argparse
+
+    import base
+
+    ediciones = []
+    gh_falso = _gh_con_auto_add(ediciones)
+    monkeypatch.setattr(base, "gh", gh_falso)
+    monkeypatch.setattr(tablero, "gh", gh_falso)
+    monkeypatch.setattr(tablero, "cargar_proyecto", _proyecto_vacio)
+    monkeypatch.setattr(tablero.auditoria, "problemas_de_formato", lambda *_: [])
+    cuerpo = tmp_path / "cuerpo.md"
+    cuerpo.write_text("Contexto\n\n- [ ] criterio\n", encoding="utf-8")
+    args = argparse.Namespace(padre=None, objeto=None, titulo="Rally: fallo", tipo="bug", etiqueta=[],
+                              cuerpo=str(cuerpo), estado="Ready", prioridad="P1", tamano="S", area="Red", fase="F4")
+    tablero.cmd_nueva(args)
+    assert ediciones == [("PVTI_auto", "F_Status", "O_Ready"), ("PVTI_auto", "F_Prioridad", "O_P1"),
+                         ("PVTI_auto", "F_Tamaño", "O_S"), ("PVTI_auto", "F_Área", "O_Red"),
+                         ("PVTI_auto", "F_Fase", "O_F4")]
+
+
+def test_item_de_issue_no_traga_otros_errores_de_item_add(monkeypatch):
+    import base
+
+    monkeypatch.setattr(base, "gh", _gh_con_auto_add([], error_item_add="HTTP 502: Bad Gateway"))
+    with pytest.raises(base.ErrorTablero, match="Bad Gateway"):
+        base.item_de_issue(_proyecto_vacio(), 700)
