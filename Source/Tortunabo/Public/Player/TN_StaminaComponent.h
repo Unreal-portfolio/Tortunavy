@@ -39,11 +39,24 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/**
-	 * @brief Pide activar o desactivar el sprint. Server-authoritative.
+	 * @brief Pide activar o desactivar el sprint en esta máquina. No va por RPC: la petición del cliente dueño viaja en sus
+	 *        movimientos (UTN_TurtleMovementComponent, predicha), y el servidor la recibe de ellos al mismo tiempo que el
+	 *        movimiento que la usa. Antes llegaba por su RPC a destiempo y cada cambio de velocidad era una corrección.
 	 * @param bRequested true = mantener sprint activo si hay stamina; false = soltar.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Stamina")
 	void SetSprintRequested(bool bRequested);
+
+	/** Con esta petición de sprint, si de verdad corre: hace falta estamina (o tenerla ilimitada). */
+	bool CanSprint(bool bRequested) const;
+
+	/**
+	 * Velocidad máxima andando (cm/s) corriendo o no, con este multiplicador del entorno y este turbo de los objetos de
+	 * carrera (1 = sin turbo): penalización tras el boost, turbo y el tope que mande (TNMovementLimits::ResolveWalkSpeed).
+	 * La usa el movimiento en cada paso, con el sprint, el vadeo y el turbo de ese movimiento (FTNSavedMove_Turtle), para
+	 * que el cliente y el servidor calculen lo mismo (#250, #22).
+	 */
+	float ComputeMaxWalkSpeed(bool bSprinting, float EnvironmentMultiplier, float RaceMultiplier = 1.f) const;
 
 	/**
 	 * @brief Otorga stamina ilimitada durante DurationSeconds (Barrita Energética / boosts).
@@ -99,15 +112,6 @@ public:
 	 *        — cada una aplica localmente, igual que SetSpeedCap.
 	 */
 	void SetEnvironmentSpeedMultiplier(float Multiplier);
-
-	/**
-	 * @brief Velocidad de andar con el turbo de los objetos de carrera (coco turbo y protector solar, UTN_RaceItemComponent)
-	 *        multiplicando: al menos la de correr aunque no se esprinte, por Multiplier y con los topes
-	 *        (TNMovementLimits::RaceBoostWalkSpeed). Con 1, lo mismo que MaxWalkSpeed.
-	 * @note  No se escribe en MaxWalkSpeed: el turbo va en cada movimiento (UTN_TurtleMovementComponent::GetMaxSpeed con el
-	 *        multiplicador de FTNSavedMove_Turtle), así el dueño lo predice y el servidor lo valida (issue #22).
-	 */
-	float GetRaceBoostWalkSpeed(float Multiplier) const;
 
 	/** @brief Vincula el componente de inventario para calcular el peso total cargado. */
 	void SetInventoryComponent(UTN_InventoryComponent* InvComp);
@@ -206,10 +210,6 @@ protected:
 	float SprintSpeed = 800.0f;
 
 private:
-	/** @brief Server RPC: confirma el estado de sprint solicitado por el cliente. */
-	UFUNCTION(Server, Reliable)
-	void ServerSetSprintRequested(bool bRequested);
-
 	/** @brief Server RPC: aplica stamina ilimitada del lado servidor. */
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerGrantUnlimitedStamina(float DurationSeconds);
@@ -227,7 +227,7 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_IsSprinting)
 	bool bIsSprinting = false;
 
-	UPROPERTY(Replicated)
+	/** Lo pide cada máquina para sí (el servidor, con lo que traen los movimientos del cliente): no se replica. */
 	bool bSprintRequested = false;
 
 	UPROPERTY(ReplicatedUsing = OnRep_UnlimitedStamina)
@@ -269,9 +269,6 @@ private:
 
 	/** Multiplicador ambiental (vadeo, etc.). 1.0 = sin efecto. Ver SetEnvironmentSpeedMultiplier. */
 	float EnvironmentSpeedMultiplier = 1.0f;
-
-	/** Velocidad de andar o correr con la penalización y el vadeo, sin topes ni turbo. */
-	float GetBaseMoveSpeed() const;
 
 	/** @brief OnRep: aplica MovementSpeed/visual al cambiar el estado de sprint. */
 	UFUNCTION()

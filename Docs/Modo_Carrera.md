@@ -1457,7 +1457,9 @@ del aturdimiento es solo de la malla; la cápsula de su tortuga solo solapa y su
   (`MaxVoiceListeners`). Peor caso con ocho hablando juntos: ~0,5 MB/s de subida del anfitrión (antes ~1,3 MB/s).
   Pendiente: Opus.
 - `UTN_StaminaComponent::SetSprintRequested`: el RPC fiable `ServerSetSprintRequested` iba **en cada fotograma** al moverse
-  (riesgo de desbordar los fiables); ahora solo al cambiar.
+  (riesgo de desbordar los fiables); ahora solo al cambiar. Después (#250) ya no hay RPC: la petición viaja en los
+  movimientos del cliente (`FLAG_Custom_0`) y `UTN_TurtleMovementComponent::GetMaxSpeed` calcula la velocidad en cada paso
+  con ese sprint y con el vadeo de esa posición, igual en el cliente y en el servidor (antes cada cambio era una corrección).
 - Cabeza: `ServerUpdateHeadRotation` iba en cada fotograma con dos floats a 60 Hz; ahora grados enteros (`int8`), como
   mucho 12 veces por segundo y solo si cambia (y una vez por segundo por si se perdió); `ReplicatedHeadYaw/Pitch`, un byte.
 - Tortuga (`ATortugaCharacter`): 60/30 Hz → **30/10 Hz**. `CurrentStamina` solo al dueño; los demás reciben
@@ -3355,8 +3357,8 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
 - **Efectos en la propia tortuga** (`UTN_RaceItemComponent`, componente dinámico replicado que el servidor añade la primera
   vez, como `UTN_BeachStunComponent`): turbo, protector y vuelo. El multiplicador de velocidad va en la predicción del
   movimiento (issue #22): quien mueve la tortuga lo toma al empezar cada movimiento y lo guarda en `FTNSavedMove_Turtle`
-  (marca `FLAG_Custom_0`); el servidor simula los movimientos marcados con el que él le reconoce
-  (`ResolveOwnerBoostMultiplier`: el de ahora o, recién acabado, el de antes durante un ping más 0,25 s) y
+  (marca `FLAG_Custom_1`; la `FLAG_Custom_0` es la petición de sprint, #250); el servidor simula los movimientos
+  marcados con el que él le reconoce (`ResolveOwnerBoostMultiplier`: el de ahora o, recién acabado, el de antes durante un ping más 0,25 s) y
   `UTN_TurtleMovementComponent` lo aplica a la velocidad y la aceleración. Sin corrección al empezar ni al acabar.
 - **Sonidos** sintetizados (`UTN_RaceItemSynthComponent`, 21 sonidos, sin archivos) y efectos puntuales locales
   (`ATN_RaceBurstFX`); nada en servidor dedicado.

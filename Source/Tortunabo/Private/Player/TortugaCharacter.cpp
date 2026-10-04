@@ -1493,7 +1493,13 @@ void ATortugaCharacter::RefreshSprintRequest()
 	const bool bHasMovementInput = LastMovementInput.SizeSquared() > (MovementInputDeadzone * MovementInputDeadzone);
 	// En el caparazón no se esprinta aunque la tecla siga pulsada: el input de movimiento llega igual y, sin esto, la
 	// petición de sprint volvía a activarse y gastaba estamina con la tortuga metida dentro.
-	StaminaComponent->SetSprintRequested(bSprintHeld && bHasMovementInput && !IsInShell() && !bIsKnockedDown && !bIsDead);
+	const bool bWantsToSprint = bSprintHeld && bHasMovementInput && !IsInShell() && !bIsKnockedDown && !bIsDead;
+	StaminaComponent->SetSprintRequested(bWantsToSprint);
+	// La velocidad la decide el movimiento con la petición que lleva cada movimiento; al servidor llega con ellos (#250).
+	if (UTN_TurtleMovementComponent* TurtleMove = GetTurtleMovement())
+	{
+		TurtleMove->SetWantsToSprint(bWantsToSprint);
+	}
 }
 
 void ATortugaCharacter::GrantInfiniteStamina(float DurationSeconds)

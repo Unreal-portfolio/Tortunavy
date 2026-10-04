@@ -112,9 +112,22 @@ public:
 	 */
 	void ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight);
 
+	// ── Sprint y vadeo, predichos ────────────────────────────────────────────
+	// La velocidad máxima andando se calcula en cada paso (GetMaxSpeed) con la petición de sprint de ese movimiento, que el
+	// cliente dueño manda en sus movimientos (FLAG_Custom_0), y con el vadeo de la posición de ese paso. Antes la ponía
+	// UTN_StaminaComponent en MaxWalkSpeed cuando a cada máquina le llegaba el cambio (el sprint por RPC, el vadeo en su Tick
+	// a 10 Hz): el cliente y el servidor andaban a velocidades distintas durante un momento y el servidor lo corregía, que
+	// se veía como temblores al andar (#250).
+
+	/** El jugador pide correr (ATortugaCharacter::RefreshSprintRequest, en la máquina que la controla). */
+	void SetWantsToSprint(bool bWants) { bInputWantsToSprint = bWants; bWantsToSprint = bWants; }
+
+	/** Lo que pide ahora el jugador (lo que se guarda en el movimiento nuevo). */
+	bool InputWantsToSprint() const { return bInputWantsToSprint; }
+
 	// ── Turbo de los objetos de carrera (issue #22) ─────────────────────────
 	// Va en la predicción como el panzazo: quien mueve la tortuga (su dueño o el anfitrión) toma el multiplicador de
-	// UTN_RaceItemComponent al empezar cada movimiento y lo guarda en él (FTNSavedMove_Turtle: marca FLAG_Custom_0 al
+	// UTN_RaceItemComponent al empezar cada movimiento y lo guarda en él (FTNSavedMove_Turtle: marca FLAG_Custom_1 al
 	// servidor y el valor para repetirlo); el servidor simula los movimientos marcados con el que él le reconoce
 	// (UTN_RaceItemComponent::ResolveOwnerBoostMultiplier) y los demás sin turbo. GetMaxSpeed y GetMaxAcceleration lo aplican.
 
@@ -317,7 +330,10 @@ protected:
 	/** Quien mueve la tortuga en esta máquina: antes de guardar y simular el movimiento, el turbo que lleva ahora. */
 	virtual void ControlledCharacterMove(const FVector& InputVector, float DeltaSeconds) override;
 
-	/** Servidor, movimiento de un cliente: con la marca de turbo, el multiplicador que le reconoce; sin ella, ninguno. */
+	/**
+	 * Servidor (y repetición en el cliente): la petición de sprint del movimiento (FLAG_Custom_0). Servidor, movimiento de un
+	 * cliente: con la marca de turbo (FLAG_Custom_1), el multiplicador que le reconoce; sin ella, ninguno.
+	 */
 	virtual void UpdateFromCompressedFlags(uint8 Flags) override;
 
 	virtual void ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations) override;
@@ -398,6 +414,16 @@ private:
 
 	/** TN.Dive.Debug: línea en pantalla y flechas. */
 	void ShowBellyDebug() const;
+
+	/** Vadeo en la posición de este paso (UpdateCharacterStateBeforeMovement). */
+	void UpdateMoveWadingMultiplier();
+
+	/** Lo que pide el jugador ahora y lo que pedía en el movimiento que se simula (distintos al repetir movimientos). */
+	bool bInputWantsToSprint = false;
+	bool bWantsToSprint = false;
+
+	/** Multiplicador del vadeo en este paso del movimiento (1 = fuera del agua). */
+	float MoveWadingMultiplier = 1.f;
 
 	/**
 	 * Trampolines de la playa (#21), al empezar cada paso: si la cápsula toca el sensor de uno (ATN_BeachTrampoline) y no

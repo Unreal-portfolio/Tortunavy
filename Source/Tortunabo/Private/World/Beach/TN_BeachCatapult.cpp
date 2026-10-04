@@ -16,6 +16,7 @@
 #include "Player/TN_ShellComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "ProceduralMeshComponent.h"
+#include "World/Beach/TN_BeachCatapultAim.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "TN_BeachBoostKit.h"
 #include "TN_BeachRideKit.h"
@@ -67,6 +68,13 @@ namespace TNBeachCatapultDetail
 	constexpr double BreakSeconds = 0.62;
 	/** Un solo uso: desde el disparo hasta que ya no se mueve nada (se apaga el Tick). */
 	constexpr double SettledSeconds = 4.0;
+	/**
+	 * Puntería al final del arco de conchitas (SetLaunchTarget): solo si queda a menos de estos grados del morro de la cuchara
+	 * (si no, el arco no es de su vuelo), y con la rapidez entre estas fracciones de LaunchSpeed.
+	 */
+	constexpr double AimMaxYawDeg = 35.0;
+	constexpr double AimMinSpeedFraction = 0.6;
+	constexpr double AimMaxSpeedFraction = 1.8;
 
 	struct FCatapultArm
 	{
@@ -671,8 +679,32 @@ int32 ATN_BeachCatapult::WhereOnArm(const ACharacter* Character) const
 	return 2;
 }
 
-FVector ATN_BeachCatapult::LaunchVelocity(float Fraction) const
+void ATN_BeachCatapult::SetLaunchTarget(const FVector& WorldTarget)
 {
+	LaunchTarget = WorldTarget;
+	bHasLaunchTarget = true;
+}
+
+FVector ATN_BeachCatapult::LaunchVelocity(float Fraction, const FVector& From) const
+{
+	using namespace TNBeachCatapultDetail;
+	// Con el arco de conchitas (las normales): hacia su final, con la rapidez justa para caer en él frenando en el aire.
+	const UWorld* World = GetWorld();
+	if (bHasLaunchTarget && !bBoosted && World)
+	{
+		const FVector Fwd = Frame->GetForwardVector().GetSafeNormal2D();
+		const FVector ToTarget = LaunchTarget - From;
+		const FVector Dir = ToTarget.GetSafeNormal2D();
+		if (!Dir.IsNearlyZero() && FVector::DotProduct(Dir, Fwd) >= FMath::Cos(FMath::DegreesToRadians(AimMaxYawDeg)))
+		{
+			const double PitchRad = FMath::DegreesToRadians(static_cast<double>(LaunchPitch));
+			const double Gravity = FMath::Max(1.0, -static_cast<double>(World->GetGravityZ()));
+			const double Speed = TNBeachCatapultAim::SpeedToReach(ToTarget.Size2D(), ToTarget.Z, PitchRad, TNBeachCatapultAim::ShellBallLinearDamping,
+				Gravity, AimMinSpeedFraction * LaunchSpeed, AimMaxSpeedFraction * LaunchSpeed);
+			const FVector Unit = Dir * FMath::Cos(PitchRad) + FVector::UpVector * FMath::Sin(PitchRad);
+			return Unit * (Speed * Fraction * FMath::FRandRange(0.98f, 1.02f));
+		}
+	}
 	// Hacia el mar (X del marco) con desvío y elevación al azar (servidor); la potenciada, más fuerte y más recta.
 	const float Spread = bBoosted ? BoostedDeviationDeg : DeviationDeg;
 	const float Yaw = FMath::FRandRange(-Spread, Spread);
@@ -812,6 +844,7 @@ void ATN_BeachCatapult::ServerTick(double Now)
 	const FVector PivotAt = ArmPivot->GetComponentLocation();
 	const double Reach = LongArm + 600.0;
 	int32 InBowl = 0;
+	int32 OnHandle = 0;
 	bool bKick = false;
 	for (TActorIterator<ACharacter> It(World); It; ++It)
 	{
@@ -856,6 +889,10 @@ void ATN_BeachCatapult::ServerTick(double Now)
 		{
 			++InBowl;
 		}
+		else if (Where == 2)
+		{
+			++OnHandle;
+		}
 	}
 	for (auto It = Riders.CreateIterator(); It; ++It)
 	{
@@ -874,7 +911,9 @@ void ATN_BeachCatapult::ServerTick(double Now)
 		}
 		return;
 	}
-	if (bKick)
+	// Pisar el cubito dispara si hay a quién lanzar. Sin nadie en el cazo ni en el mango la gastaba vacía: quien jugaba sola y
+	// lo pisaba la rompía y se hundía con el cubito, sin salir lanzada (#257). Para salir lanzada, al cazo.
+	if (bKick && InBowl + OnHandle > 0)
 	{
 		Fire(Now);
 		return;
@@ -932,7 +971,9 @@ void ATN_BeachCatapult::Fire(double Now)
 			ATortugaCharacter* BallTurtle = Cast<ATortugaCharacter>(Walker);
 			if (ATN_ShellBody* Ball = BowlBallOf(Walker))
 			{
-				if (LaunchBowlBall(BallTurtle, Ball, LaunchVelocity(1.f)))
+				const UBoxComponent* BallBox = Ball->GetBox();
+				const FVector From = BallBox ? BallBox->GetComponentLocation() : Walker->GetActorLocation();
+				if (LaunchBowlBall(BallTurtle, Ball, LaunchVelocity(1.f, From)))
 				{
 					BeginFlight(Walker);
 					++Launched;
@@ -946,7 +987,7 @@ void ATN_BeachCatapult::Fire(double Now)
 		{
 			continue;
 		}
-		if (TNBeachRideKit::LaunchAsBall(Cast<ATortugaCharacter>(Walker), LaunchVelocity(Where == 1 ? 1.f : HandleLaunchFraction)))
+		if (TNBeachRideKit::LaunchAsBall(Cast<ATortugaCharacter>(Walker), LaunchVelocity(Where == 1 ? 1.f : HandleLaunchFraction, Walker->GetActorLocation())))
 		{
 			BeginFlight(Walker);
 			++Launched;
