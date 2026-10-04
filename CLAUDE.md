@@ -36,7 +36,7 @@ GitHub Project «Tortunabo · Desarrollo» en vista Kanban: https://github.com/o
 | In progress | Alguien (o su Claude) la está haciendo o la dejó a medias; el asignado es quien está con ella |
 | In review | Terminada: la revisa la IA de otro miembro del equipo (campo Revisor) |
 | Revisiones | La revisión o la prueba encontraron un fallo, comentado en la propia issue |
-| QA editor | Solo lo fusionado antes de #282: aprobada y en dev, falta probarla en el editor |
+| QA editor | Revisión IA aprobada: falta probarla en el editor (en su rama; lo fusionado antes de #282, en dev) |
 | Validada | Aprobada y probada en el editor en su rama, sin fusionar: espera al resto de su lote (o a la fusión) |
 | Done | Fusionada en dev, aprobada y probada en el editor; cerrada |
 
@@ -47,8 +47,8 @@ Ciclo paso a paso:
 1. **Coger** (`coger <n>`): In progress, asignada y rama desde `origin/dev`. `coger` rechaza las issues con bloqueantes abiertas y exige el árbol de trabajo sin cambios en ficheros versionados. Asignado significa «estoy con ella ahora»: si la dejas sin terminar, `soltar <n> --motivo "..."` la devuelve a Ready sin asignado.
 2. **Probar mientras se trabaja** (`editor <n> funciona|falla`), en la rama del lote: si funciona, Editor = Funciona; si falla, se queda en In progress con el fallo comentado: no se manda algo que no funciona.
 3. **Entregar** (`revision <n>`): In review con revisor cruzado. Si el autor no la ha probado, va con Editor = Sin probar y el comentario «Sin QA editor»: la prueba se hace igualmente en la rama, antes de fusionar. Con Editor = Falla, `revision` la rechaza.
-4. **Revisar** (`ia <n> aprobada|cambios --revisor "<login> (Claude)"`): el campo Revisor pasa a ser quien ha revisado de verdad. Con cambios pasa a Revisiones con el fallo comentado. Lo normal es que el propio revisor lo arregle: la coge con `coger <n> --forzar` (In progress a su nombre) y la vuelve a entregar; la nueva revisión la hace otro.
-5. **Validar y fusionar** (cualquiera de los tres): revisión IA aprobada y `editor <n> funciona` probado en la rama → Validada. Con todas las issues de la PR en Validada (`lote estado <lote>` en verde), pásalas a Done (`estado <n> Done`), fusiona la PR en `dev` (`gh pr merge --merge --delete-branch`) y `sync --aplicar`. Nunca se fusiona una PR con alguna issue sin probar; lo que se salte el ciclo lo detecta «Avisos del tablero».
+4. **Revisar** (`ia <n> aprobada|cambios --revisor "<login> (Claude)"`): el campo Revisor pasa a ser quien ha revisado de verdad. Aprobada y sin probar pasa a QA editor; si ya se probó antes de la aprobación, se salta ese paso y va directa a Validada. Con cambios pasa a Revisiones con el fallo comentado. Lo normal es que el propio revisor lo arregle: la coge con `coger <n> --forzar` (In progress a su nombre) y la vuelve a entregar; la nueva revisión la hace otro.
+5. **Validar y fusionar** (cualquiera de los tres): en QA editor, `editor <n> funciona` probado en la rama → Validada. Con todas las issues de la PR en Validada (`lote estado <lote>` en verde), pásalas a Done (`estado <n> Done`), fusiona la PR en `dev` (`gh pr merge --merge --delete-branch`) y `sync --aplicar`. Nunca se fusiona una PR con alguna issue sin probar; lo que se salte el ciclo lo detecta «Avisos del tablero».
 6. **Cerrar** (`resumen <n>`): cada issue que llega a Done lleva su comentario **Resumen**.
 
 Una prueba que falla en In review, QA editor o con la issue cerrada la lleva a Revisiones (la reabre si hace falta, con `regresion` si ya funcionaba). Regla única que aplican `ia`, `editor` y `sync`: Done solo con la PR en dev, Revisión IA = Aprobada y Editor = Funciona.

@@ -166,9 +166,10 @@ def graves_abierta(issue: dict) -> list[dict]:
     if issue.get("lote_fusionado") and estado not in lotes.LISTOS:
         return [problema(f"la PR #{issue['lote_fusionado']} de su lote se fusionó sin que esta issue estuviera "
                          "validada (revisión IA aprobada y Editor = Funciona)", "grave")]
-    if estado == "QA editor" and issue.get("con_pr") and not issue.get("fusionada"):
-        # Sin PR es una tarea solo de prueba (se crea directamente en QA editor); con PR, debe estar en dev.
-        return [problema("está en QA editor, pero su PR no está fusionada en dev", "grave")]
+    if (estado == "QA editor" and issue.get("con_pr") and not issue.get("fusionada")
+            and issue["valores"].get("Revisión IA") != "Aprobada"):
+        # Sin PR es una tarea solo de prueba (se crea directamente en QA editor); con PR, exige la revisión aprobada.
+        return [problema("está en QA editor sin revisión IA aprobada y su PR no está fusionada en dev", "grave")]
     return []
 
 

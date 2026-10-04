@@ -37,9 +37,26 @@ def test_validada_solo_para_miembros_de_un_lote():
     assert flujo.estado_objetivo("In review", LISTA, fusionada=False, en_lote=False) == ("Validada", False)
 
 
-@pytest.mark.parametrize("valores", [{}, {"Editor": "Funciona"}, {"Revisión IA": "Aprobada"}])
+@pytest.mark.parametrize("valores", [{}, {"Editor": "Funciona"}])
 def test_miembro_de_lote_a_medias_no_se_valida(valores):
     assert flujo.estado_objetivo("In review", valores, fusionada=False, en_lote=True) == (None, False)
+
+
+@pytest.mark.parametrize("en_lote", [True, False])
+@pytest.mark.parametrize("editor", [None, "Sin probar"])
+def test_aprobada_sin_probar_y_sin_fusionar_pasa_a_qa_editor(en_lote, editor):
+    valores = {"Revisión IA": "Aprobada", "Editor": editor}
+    assert flujo.estado_objetivo("In review", valores, fusionada=False, en_lote=en_lote) == ("QA editor", False)
+    # Ya en QA editor no se mueve; probada en el editor pasa a Validada.
+    assert flujo.estado_objetivo("QA editor", valores, fusionada=False, en_lote=en_lote) == (None, False)
+    assert flujo.estado_objetivo("QA editor", LISTA, fusionada=False, en_lote=en_lote) == ("Validada", False)
+
+
+@pytest.mark.parametrize("estado", ["Revisiones", "In progress", "Bloqueada"])
+def test_aprobada_sin_probar_fuera_de_in_review_no_se_mueve(estado):
+    # En Revisiones la tiene un fallo o una petición; en In progress, alguien trabajando.
+    valores = {"Revisión IA": "Aprobada", "Editor": "Sin probar"}
+    assert flujo.estado_objetivo(estado, valores, fusionada=False, en_lote=True) == (None, False)
 
 
 def test_lote_fusionado_con_todo_validado_pasa_a_done():

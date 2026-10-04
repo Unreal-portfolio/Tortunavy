@@ -156,7 +156,7 @@ def cmd_pendiente(_args: argparse.Namespace) -> None:
     todas_abiertas = [i for i in proyecto["items"].values() if i["state"] == "OPEN"]
     seccion("Decisiones pendientes (etiqueta decision)" if aprobador else "Esperan una decisión de SkiTemplar o Mokius",
             [linea(i) for i in sorted(con_decision(todas_abiertas, yo, aprobador), key=clave_orden)])
-    seccion("En QA editor: fusionado, falta probar en el editor", [linea(i) for i in por_estado["QA editor"]])
+    seccion("En QA editor: aprobado por la IA, falta probar en el editor", [linea(i) for i in por_estado["QA editor"]])
     seccion("Validadas: revisadas y probadas, esperan a que su PR se fusione en dev", [linea(i) for i in por_estado["Validada"]])
     no_cogibles = {ETIQUETA_DECISION, "bloqueado"}
     libres = [i for i in por_estado["Ready"] if not i["assignees"]["nodes"] and not bloqueos.abiertas(i)
