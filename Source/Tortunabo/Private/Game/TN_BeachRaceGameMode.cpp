@@ -1137,7 +1137,7 @@ int32 ATN_BeachRaceGameMode::FeedSandWorms()
 		}
 		if (Turtle->IsKnockedDown())
 		{
-			Turtle->RecoverFromKnockdown();
+			Turtle->RecoverFromKnockdownSilently();
 		}
 		if (UTN_ShellComponent* Shell = Turtle->GetShellComponent())
 		{

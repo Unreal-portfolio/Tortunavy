@@ -37,9 +37,10 @@ namespace TNSettingsMigration
 			return Kind;
 		}
 		// 1 → 2 (teclas, pausa, micrófono, escala de la interfaz, aviso de quién habla, silenciar en segundo plano) y 2 → 3
-		// (idioma, ojo de pez) solo añadieron campos: un guardado viejo no los trae y se quedan los de serie. No se fuerzan
-		// aquí porque un guardado sin número también puede ser de la 3 y llevar los que eligió el jugador.
-		static_assert(TNSaveLogic::SETTINGS_SAVE_VERSION == 3,
+		// (idioma, ojo de pez) y 3 → 4 (vibración del mando) solo añadieron campos: un guardado viejo no los trae y se
+		// quedan los de serie. No se fuerzan aquí porque un guardado sin número también puede ser de la 3 o la 4 y llevar
+		// los que eligió el jugador.
+		static_assert(TNSaveLogic::SETTINGS_SAVE_VERSION == 4,
 			"Nueva versión de los ajustes: añade aquí su paso (if (From < N)) y actualiza esta comprobación y los tests.");
 		(void)Settings;
 		return Kind;

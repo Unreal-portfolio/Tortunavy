@@ -91,7 +91,7 @@ ATN_ShellBody::ATN_ShellBody()
 	Box->CanCharacterStepUpOn = ECB_No;
 	Box->BodyInstance.SetMassOverride(38.f, true);
 	// La lineal no se toca: la tormenta calcula sus patadas con ella (ATN_BeachStorm, BallisticLaunch).
-	Box->BodyInstance.LinearDamping = 0.25f;
+	Box->BodyInstance.LinearDamping = BoxLinearDamping;
 	Box->BodyInstance.AngularDamping = 1.4f;
 	// Estable sobre el terreno de la playa: sus teselas son mallas distintas y la caja tropezaba en cada costura y en cada
 	// arista interior (saltitos y vueltas sin motivo). Caro, pero son como mucho ocho bolas.

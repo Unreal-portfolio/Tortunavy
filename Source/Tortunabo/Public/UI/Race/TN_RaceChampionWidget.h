@@ -43,6 +43,34 @@ struct FTNConfetti
 };
 
 /**
+ * Foco con mando y teclado de la pantalla del campeón (#557), como lógica pura: la usa UTN_RaceChampionWidget y la
+ * prueban los tests de Tortunabo.UI.RaceChampion.
+ */
+namespace TNRaceChampionFocus
+{
+	/** Botones en el orden en que se ven (de arriba abajo). */
+	enum EButton : int32 { PlayAgain = 0, ChangeMode = 1, Quit = 2, ButtonCount = 3 };
+
+	/** Qué hace la tecla de atrás (B, Escape). */
+	enum class EBackAction : uint8 { None, FocusQuit, Quit };
+
+	/** Volver a jugar y Cambiar de modo, solo para quien elige; Salir, para todos; ninguno una vez elegido. */
+	bool IsEnabled(int32 Button, bool bCanChoose, bool bChoiceMade);
+
+	/**
+	 * Botón que debe tener el foco: el actual si sigue activo; si no (o si no hay ninguno), el siguiente activo dando la
+	 * vuelta, empezando por arriba. INDEX_NONE si no queda ninguno activo.
+	 */
+	int32 PickFocus(int32 Current, bool bCanChoose, bool bChoiceMade);
+
+	/** Atrás: con el foco fuera de Salir lo lleva a Salir (así el anfitrión no se va de un toque); en Salir, sale. */
+	EBackAction OnBack(int32 Current, bool bChoiceMade);
+
+	/** B del mando, Escape y el atrás genérico. */
+	bool IsBackKey(const FKey& Key);
+}
+
+/**
  * @brief Pantalla del campeón del modo carrera (ETNBeachRacePhase::Champion), con el estilo del HUD Tortunavy y hecha
  * en código.
  *
@@ -50,7 +78,8 @@ struct FTNConfetti
  * la campeona (su cara con su piel, corona, su nombre y sus conchas) y los botones Volver a jugar, Cambiar de modo y
  * Salir. Solo el anfitrión elige volver a jugar o cambiar de modo (ATN_BeachRaceGameMode::CanLocalPlayerChoose); los
  * demás ven esos botones apagados y pueden salir. Los botones llaman a ATN_BeachRaceGameMode::RequestChampionChoice:
- * la interfaz no decide nada del flujo.
+ * la interfaz no decide nada del flujo. Con mando o teclado el foco empieza en el primer botón activo (Salir en un
+ * cliente), la cruceta o el stick lo mueven, la A pulsa y la B lleva a Salir (y, desde Salir, sale).
  *
  * A la derecha, de fondo animado, el podio de verdad (ATN_RacePodiumStage, capturado a una textura y pintado con
  * M_UI_Preview) sobre un cielo pintado (degradado, sol y nubes que pasan), con el nombre de cada tortuga encima de su
@@ -77,6 +106,8 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual FReply NativeOnFocusReceived(const FGeometry& InGeometry, const FFocusEvent& InFocusEvent) override;
+	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 	virtual int32 NativePaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
 		FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
 
@@ -84,6 +115,16 @@ private:
 	void BuildTree();
 	UButton* MakeButton(const FText& Label, uint8 Icon);
 	void RefreshButtons();
+	/** Botón por índice (TNRaceChampionFocus::EButton). */
+	UButton* GetButton(int32 Index) const;
+	/** Índice del botón que tiene el foco del jugador dueño, o INDEX_NONE. */
+	int32 GetFocusedButton() const;
+	/**
+	 * Pone el foco en el botón que toca (TNRaceChampionFocus::PickFocus). Sin bForce solo lo mueve si ya estaba en uno de
+	 * los botones (no se lo quita a otro menú que se haya abierto encima).
+	 */
+	void UpdateFocus(bool bForce);
+	void FocusButton(int32 Index);
 	void TickPodiumImage();
 	void TickConfetti(float DeltaTime);
 	/** Elección de la pantalla (ETNBeachChampionChoice como número). */
@@ -131,4 +172,8 @@ private:
 	bool bChoiceMade = false;
 	/** El modo de entrada que se puso al abrir (para devolverlo al cerrar). */
 	bool bInputTaken = false;
+	/** Botón con el foco en el fotograma anterior (para el «pom» al moverlo con el mando). */
+	int32 LastFocusedButton = INDEX_NONE;
+	/** El próximo cambio de foco lo hace el código (al abrir o al apagarse un botón): sin «pom». */
+	bool bQuietFocusChange = false;
 };

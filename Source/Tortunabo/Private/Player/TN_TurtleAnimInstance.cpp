@@ -1,7 +1,9 @@
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Art/TN_TurtleArt.h"
+#include "Core/TN_Log.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
+#include "Player/TN_HeadLook.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TN_StaminaComponent.h"
@@ -13,7 +15,14 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "HAL/IConsoleManager.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
+
+#if !UE_BUILD_SHIPPING
+static TAutoConsoleVariable<int32> CVarTNHeadLookLog(TEXT("TN.HeadLook.Log"), 0,
+	TEXT("Pruebas: 1 = cada tortuga escribe en el registro una vez por segundo su vista respecto del cuerpo (del mando o replicada) y el giro de su cabeza."),
+	ECVF_Default);
+#endif
 
 namespace TNTurtleAnim
 {
@@ -170,14 +179,41 @@ namespace TNTurtleAnim
 		return Q;
 	}
 
+	/** Gira un hueso con Delta, un giro del espacio de la malla alrededor de su articulación (los hijos le siguen). */
+	void TurnBy(FCompactPose& Pose, FCompactPoseBoneIndex Bone, const FQuat& Delta)
+	{
+		if (!Bone.IsValid()) { return; }
+		const FQuat Parent = ParentRotation(Pose, Bone);
+		FTransform& Local = Pose[Bone];
+		Local.SetRotation((Parent.Inverse() * Delta * Parent * Local.GetRotation()).GetNormalized());
+	}
+
 	/** Gira un hueso Degrees alrededor de un eje del espacio de la malla que pasa por su articulación (los hijos le siguen). */
 	void Turn(FCompactPose& Pose, FCompactPoseBoneIndex Bone, const FVector& Axis, float Degrees)
 	{
 		if (!Bone.IsValid() || FMath::Abs(Degrees) < 0.01f) { return; }
-		const FQuat Parent = ParentRotation(Pose, Bone);
-		const FQuat Delta(Axis, FMath::DegreesToRadians(Degrees));
-		FTransform& Local = Pose[Bone];
-		Local.SetRotation((Parent.Inverse() * Delta * Parent * Local.GetRotation()).GetNormalized());
+		TurnBy(Pose, Bone, FQuat(Axis, FMath::DegreesToRadians(Degrees)));
+	}
+
+	/**
+	 * La cabeza que sigue a la cámara (#623): primero el cabeceo (sobre su izquierda: + sube la cabeza) y luego la guiñada
+	 * (sobre la vertical: + hacia su derecha), repartido entre el cuello (TNHeadLook::NeckShare) y la cabeza. Con los dos
+	 * huesos, la cabeza acaba girada justo Yaw y Pitch respecto de la pose que traía.
+	 */
+	void PoseLook(FCompactPose& P, const FBones& B, float Yaw, float Pitch)
+	{
+		if (FMath::Abs(Yaw) < 0.01f && FMath::Abs(Pitch) < 0.01f) { return; }
+		const FQuat Look = FQuat(AxisZ, FMath::DegreesToRadians(Yaw)) * FQuat(AxisX, FMath::DegreesToRadians(Pitch));
+		if (B.Neck.IsValid() && B.Head.IsValid())
+		{
+			const FQuat NeckPart = FQuat::Slerp(FQuat::Identity, Look, TNHeadLook::NeckShare);
+			TurnBy(P, B.Neck, NeckPart);
+			TurnBy(P, B.Head, Look * NeckPart.Inverse());
+		}
+		else
+		{
+			TurnBy(P, B.Head.IsValid() ? B.Head : B.Neck, Look);
+		}
 	}
 
 	/** A = mezcla de A con B (peso de B), hueso a hueso en espacio local. */
@@ -1072,6 +1108,9 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		}
 	}
 
+	// 4b. La cabeza sigue a la cámara (#623): el cuello y la cabeza, encima de todo lo anterior.
+	PoseLook(Output.Pose, B, F.LookYaw, F.LookPitch);
+
 	// 5. VR: las manos del cuerpo van a los mandos (el que coge es la mano, no el cuerpo).
 	ReachArm(Output.Pose, B.LArm, B.LFore, B.LHand, F.VRHandL, F.VRArmLW);
 	ReachArm(Output.Pose, B.RArm, B.RFore, B.RHand, F.VRHandR, F.VRArmRW);
@@ -1378,6 +1417,21 @@ Ease(F.CarryW, bCarrying, 8.f);
 		}
 	}
 
+	// La cabeza sigue a la cámara (#623): solo en los jugadores, en tercera persona y con la cabeza libre (ni ragdoll ni
+	// levantándose, ni en el caparazón, el panzazo, un emote, una celebración o la zambullida; ni en primera persona o VR,
+	// donde manda el visor, ni dentro del probador). Lo replicado basta para decidirlo igual en todas las máquinas.
+	{
+		const USkeletalMeshComponent* LookMesh = GetSkelMeshComponent();
+		const bool bLookAllowed = Turtle && Turtle->IsPlayerControlled()
+			&& !Turtle->IsKnockedDown() && !Turtle->IsDead() && !(LookMesh && LookMesh->IsSimulatingPhysics())
+			&& GetUpDuration <= 0.f && !Turtle->IsInShell() && !bDive && BellyGetUpElapsed < 0.f
+			&& Emote < 0 && F.Emote < 0 && F.PrevEmote < 0
+			&& WantedCelebration == ETNTurtleCelebration::None && F.CelebrationW < 0.01f && !bCliffDive
+			&& !Turtle->IsFirstPersonView() && !Turtle->IsFirstPersonPlayer() && !Turtle->IsVRPlayer()
+			&& !Turtle->IsHeadLookSuppressed();
+		UpdateHeadLook(Turtle, Dt, bLookAllowed);
+	}
+
 	FTNTurtleAnimProxy& Proxy = GetProxyOnGameThread<FTNTurtleAnimProxy>();
 	Proxy.Frame = F;
 	Proxy.IdleClip = IdleAnim;
@@ -1393,6 +1447,40 @@ Ease(F.CarryW, bCarrying, 8.f);
 	{
 		Proxy.GetUpPose.Reset();
 	}
+}
+
+void UTN_TurtleAnimInstance::UpdateHeadLook(const ATortugaCharacter* Turtle, float Dt, bool bLookAllowed)
+{
+	float ViewYaw = 0.f;
+	float ViewPitch = 0.f;
+	if (Turtle) { Turtle->GetViewRelativeToBody(ViewYaw, ViewPitch); }
+	const TNHeadLook::FAngles Target = TNHeadLook::Target(ViewYaw, ViewPitch);
+	// Muelle crítico hacia el giro buscado: sin tirones al arrancar ni temblores con lo replicado a saltitos. Su cuenta pide
+	// pasos de menos de la mitad de su tiempo: un fotograma largo se reparte en varios. Sigue a la vista también sin peso,
+	// así al volver a aplicarse ya mira donde toca.
+	for (float Left = FMath::Min(Dt, 1.f); Left > 0.f;)
+	{
+		const float Step = FMath::Min(Left, TNHeadLook::SmoothSeconds * 0.25f);
+		FMath::CriticallyDampedSmoothing(HeadLookYaw, HeadLookYawRate, Target.Yaw, 0.f, Step, TNHeadLook::SmoothSeconds);
+		FMath::CriticallyDampedSmoothing(HeadLookPitch, HeadLookPitchRate, Target.Pitch, 0.f, Step, TNHeadLook::SmoothSeconds);
+		Left -= Step;
+	}
+	HeadLookW = FMath::FInterpTo(HeadLookW, bLookAllowed ? 1.f : 0.f, Dt, 6.f);
+	Frame.LookYaw = HeadLookYaw * HeadLookW;
+	Frame.LookPitch = HeadLookPitch * HeadLookW;
+
+#if !UE_BUILD_SHIPPING
+	HeadLookLogIn -= Dt;
+	if (Turtle && CVarTNHeadLookLog.GetValueOnAnyThread() > 0 && HeadLookLogIn <= 0.f)
+	{
+		HeadLookLogIn = 1.f;
+		const ENetRole Role = Turtle->GetLocalRole();
+		const TCHAR* RoleName = Role == ROLE_Authority ? TEXT("servidor") : Role == ROLE_AutonomousProxy ? TEXT("dueño") : TEXT("proxy");
+		UE_LOG(LogTortunabo, Display, TEXT("[HeadLook] %s (%s, vista %s): vista %.1f/%.1f -> cabeza %.1f/%.1f, peso %.2f"),
+			*Turtle->GetName(), RoleName, Turtle->GetController() ? TEXT("del mando") : TEXT("replicada"),
+			ViewYaw, ViewPitch, Frame.LookYaw, Frame.LookPitch, HeadLookW);
+	}
+#endif
 }
 
 void UTN_TurtleAnimInstance::SetCelebration(ETNTurtleCelebration InCelebration)

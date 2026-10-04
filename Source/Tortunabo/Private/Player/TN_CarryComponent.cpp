@@ -1,6 +1,7 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_ShellComponent.h"
+#include "Player/TN_ShellBody.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -8,11 +9,15 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
+#include "Player/TN_TurtleActionSfx.h"
 
 UTN_CarryComponent::UTN_CarryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
+	// Sonidos de serie de coger y lanzar a otra tortuga (#348); el Blueprint puede cambiarlos.
+	GrabSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Pickup);
+	ThrowSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Throw);
 }
 
 void UTN_CarryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -254,10 +259,14 @@ void UTN_CarryComponent::ThrowCarried(const FRotator& AimRotation)
 	}
 
 	// Hacia donde mira la cámara, con el arco bajo de todos los lanzamientos (~25° con la cámara a nivel).
-	const FVector Dir = Self->GetThrowDirection(AimRotation);
 	const float Speed = ThrowSpeed * (bCarriedStruggling ? StruggleThrowMultiplier : 1.f);
 	const FVector Flat = FRotator(0.f, AimRotation.Yaw, 0.f).Vector();
 	const FVector Start = Self->GetActorLocation() + Flat * 70.f + FVector(0.f, 0.f, CarryHeight + 20.f);
+	// Al punto del centro de la pantalla (en VR, hacia la aleta).
+	// Dentro del caparazón la caja frena un poco en el aire: se compensa para que llegue al punto.
+	const UTN_ShellComponent* CarriedShell = Carried->GetShellComponent();
+	const float Damping = CarriedShell && CarriedShell->IsInShell() ? ATN_ShellBody::BoxLinearDamping : 0.f;
+	const FVector Dir = Self->GetThrowDirectionToCrosshair(Start, AimRotation, Speed, 0.f, Damping);
 
 	Release(Carried, Start, Dir * Speed, true, true);
 	if (ThrowSound)

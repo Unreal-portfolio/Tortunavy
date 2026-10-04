@@ -208,6 +208,9 @@ private:
 	int32 GainShown = 0;
 	float GainAge = 10.f;
 	bool bShellPaintDirty = false;
+	/** Punto blanco del centro de la pantalla: a donde irá lo que se lance (objeto lanzable, tinta o el compañero cogido). */
+	bool bAimDotShown = false;
+	bool ShouldShowAimDot() const;
 };
 
 /**

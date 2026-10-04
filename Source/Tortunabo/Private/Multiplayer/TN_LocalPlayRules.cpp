@@ -126,6 +126,7 @@ void TNLocalPlay::CopyPerPlayerSettings(const FTNGameSettings& From, FTNGameSett
 	To.GamepadSensitivity = From.GamepadSensitivity;
 	To.bInvertMouseY = From.bInvertMouseY;
 	To.bInvertGamepadY = From.bInvertGamepadY;
+	To.bGamepadVibration = From.bGamepadVibration;
 	To.KeyOverrides = From.KeyOverrides;
 	To.PauseKey = From.PauseKey;
 	To.PausePadKey = From.PausePadKey;

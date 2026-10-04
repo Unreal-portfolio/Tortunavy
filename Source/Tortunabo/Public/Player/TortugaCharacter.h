@@ -51,6 +51,8 @@ class TORTUNABO_API ATortugaCharacter : public ACharacter
 
 	/** El monkey test (TN.Monkey) pulsa los mismos manejadores de entrada que el jugador. */
 	friend class UTN_MonkeyComponent;
+	/** Escenario de estrés «caos» (Testing/TN_StressChaos.h): juega con la misma entrada que el jugador. */
+	friend class UTN_StressChaosSubsystem;
 
 public:
 	/** Con UTN_TurtleMovementComponent como movimiento (el arrastre del panzazo va dentro de la simulación, predicho). */
@@ -381,12 +383,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Arm Animation", meta = (ClampMin = "0.0", ClampMax = "180.0"))
 	float ArmSprintAmplitudeDeg = 65.f;
 
-	// ── Head Animation ───────────────────────────────────────────────────────
-	/** Yaw offset (°) que corrige la dirección en reposo del hueso Cabeza.
-	 *  Incrementar si la cabeza mira a la izquierda en reposo; decrementar si mira a la derecha. */
-	UPROPERTY(EditDefaultsOnly, Category = "Head Animation", meta = (ClampMin = "-180.0", ClampMax = "180.0"))
-	float HeadRestYawDeg = 0.f;
-
 	// ── Leg Animation (blockout) ──────────────────────────────────────────────
 	// Add child SceneComponents named "Pata1" and "Pata2" in your Blueprint.
 	// Set their origin at the HIP PIVOT (see setup guide below).
@@ -591,7 +587,7 @@ private:
 	void CacheInputAssets();
 	void ApplyInputMappingIfLocal();
 
-	/** BeginPlay: resuelve huesos/sockets de emote (Pata1/2, Brazo1/2, Cola, Cabeza) y NeckFollow. */
+	/** BeginPlay: resuelve huesos/sockets de emote (Pata1/2, Brazo1/2, Cola, Cabeza). */
 	void ResolveAnimationBones();
 	/** BeginPlay: resuelve KnockdownVisualComp (KnockdownComponentName → SkeletalMesh → StaticMesh hijo → fallback). */
 	void ResolveKnockdownVisualComponent();
@@ -680,27 +676,6 @@ private:
 	FRotator ColaRestRot   = FRotator::ZeroRotator;
 	FRotator CabezaRestRot = FRotator::ZeroRotator;
 	FVector  CabezaRestScale = FVector::OneVector;
-
-	/**
-	 * HEAD-NECK FOLLOW — workaround para skinning de la cara del cuello:
-	 * los polígonos del mesh que están pesados al hueso del cuerpo/cuello se quedan
-	 * fijos cuando la cabeza rota. Definir aquí el nombre del hueso padre/cuello
-	 * en el skeleton (p.ej. "Cuerpo" o "Neck") y un ratio [0..1]: la cabeza rota
-	 * 100% del yaw/pitch y este hueso rota RATIO× lo mismo → la piel del cuello
-	 * se arrastra parcialmente y oculta la discontinuidad.
-	 *
-	 * Configurar en BP_TortugaCharacter → Class Defaults → Head Animation:
-	 *  - NeckFollowBone: nombre exacto del hueso del cuello/tronco en el skeleton
-	 *  - NeckFollowRatio: 0.3f por defecto; subir si la piel sigue pegada.
-	 */
-	UPROPERTY(EditDefaultsOnly, Category="Head Animation")
-	FName NeckFollowBone = NAME_None;
-
-	UPROPERTY(EditDefaultsOnly, Category="Head Animation", meta=(ClampMin="0.0", ClampMax="1.0"))
-	float NeckFollowRatio = 0.3f;
-
-	/** Rest rot del NeckFollowBone capturada en BeginPlay. */
-	FRotator NeckFollowRestRot = FRotator::ZeroRotator;
 
 	/** Rest locations in component space (for SetLoc emotes). Re-derived in BeginPlay. */
 	FVector Brazo1RestLoc = FVector::ZeroVector;
@@ -891,14 +866,12 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerDropEquippedItem();
 
-	void ApplyKnockdownVisual(bool bKnocked);
-
 	/**
-	 * Multicast RPC fiable — garantiza que TODOS los clientes reciban
-	 * el cambio de knockdown inmediatamente, sin depender solo de OnRep.
+	 * Tilt o ragdoll del derribo (idempotente). Un solo camino de estado (#78): el servidor lo aplica al cambiar
+	 * bIsKnockedDown y los clientes en OnRep_IsKnockedDown, también quien entra tarde. El golpe suena aparte, una vez
+	 * por máquina (MulticastPlaySfx, no fiable).
 	 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastApplyKnockdownVisual(bool bKnocked);
+	void ApplyKnockdownVisual(bool bKnocked);
 
 	UFUNCTION()
 	void OnRep_IsKnockedDown();
@@ -915,18 +888,6 @@ private:
 	/** Escala la Cabeza al BigHeadScale en reposo o la restaura. */
 	void ApplyBigHeadVisual(bool bBig);
 
-	/**
-	 * Multicast fiable: fuerza el visual de muerte en todos los clientes.
-	 */
-	/**
-	 * Multicast con la pos suelo final como parámetro. Pattern del Codex DualMax
-	 * round 3: el dato del transform inicial viaja CON el RPC, no en canal
-	 * separado vía bReplicateMovement. Sin esto, el cliente recibe el MC antes
-	 * que la replicación de SetActorLocation server (UE replica RPCs antes que
-	 * propiedades en el mismo bunch) → arranca sim en pos vieja → divergencia.
-	 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetDeadVisual(bool bDead, FVector GroundLocation);
 
 	/**
 	 * Patrón canónico Epic para activar ragdoll sin que el cuerpo "salga lanzado":
@@ -939,7 +900,7 @@ private:
 	 *  7. SetSimulatePhysics(true) + SetAllBodiesSimulatePhysics(true)
 	 *  8. SetAllPhysicsLinearVelocity(0) defensivo (post-simulate, no antes)
 	 *  9. WakeAllRigidBodies
-	 * Llamado en server (SetDeadVisual) y cliente (MulticastSetDeadVisual, OnRep_IsDead).
+	 * Llamado en server (SetDeadVisual) y cliente (OnRep_IsDead).
 	 */
 	void EnterRagdollState();
 
@@ -978,6 +939,10 @@ private:
 	/** Multicast: reproduce el sonido de éxito de revive en todas las máquinas. */
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayReviveSuccessSound();
+
+	/** Multicast: el «¡clonc!» del derribo en cada máquina (KnockdownSound o, sin recurso, el sintetizado). */
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlayKnockdownSound();
 
 	TWeakObjectPtr<APlayerController> ReviveTargetPC;
 	float ReviveChannelElapsed = 0.f;
@@ -1018,6 +983,9 @@ private:
 	/** Callback for DBNOAudioComponent: re-loops heartbeat while DBNO. */
 	UFUNCTION()
 	void OnDBNOAudioFinished();
+
+	/** Cuerpo de RecoverFromKnockdown y RecoverFromKnockdownSilently. */
+	void RecoverFromKnockdownImpl(bool bPlayReviveSound);
 
 protected:
 	// ── Emote replication ────────────────────────────────────────────────────
@@ -1127,6 +1095,13 @@ protected:
 	 */
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead, BlueprintReadOnly, Category = "Death")
 	bool bIsDead = false;
+
+	/**
+	 * Suelo donde arranca el ragdoll de muerte (el servidor sube el cuerpo y deja de replicar el movimiento en el mismo
+	 * fotograma). Se escribe junto a bIsDead: llegan en la misma actualización y OnRep_IsDead ya la tiene.
+	 */
+	UPROPERTY(Replicated)
+	FVector_NetQuantize DeathGroundLocation = FVector_NetQuantize::ZeroVector;
 
 	/**
 	 * true cuando el servidor congeló el ragdoll de muerte (fin de la simulación
@@ -1279,17 +1254,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ink")
 	TObjectPtr<UPostProcessComponent> InkPostProcess;
 
-	// ── Head Look replication ─────────────────────────────────────────────────
+	// ── La cabeza que sigue a la cámara (#623) ─────────────────────────────────
 	/**
-	 * Yaw (grados enteros, -90..90) de la cabeza relativo al cuerpo. Positivo = mira a la derecha. Replicado a clientes
-	 * remotos en un byte: cada uno lo suaviza (SmoothedHeadYaw), así que un grado de resolución no se nota.
+	 * Guiñada de la vista del dueño respecto del cuerpo, para los demás (TNHeadLook::EncodeYaw: un byte, de -180 a 180° en
+	 * pasos de 1,4°). La escribe el servidor en PreReplication con el giro del mando, que de un cliente le llega con el
+	 * movimiento (ServerMove): sin RPC propio. Solo cambia si se mueve 2 pasos o más. El cabeceo ya lo manda el motor
+	 * (RemoteViewPitch16).
 	 */
 	UPROPERTY(Replicated)
-	int8 ReplicatedHeadYaw   = 0;
-
-	/** Pitch (grados enteros, -80..80) de la cabeza. Positivo = mira hacia arriba. Replicado a clientes remotos (un byte). */
-	UPROPERTY(Replicated)
-	int8 ReplicatedHeadPitch = 0;
+	uint8 ReplicatedViewYaw = 0;
 
 	/** Tiempo acumulado desde que comenzó el dive (para DiveMinLockDuration). */
 	float DiveLockTimer = 0.f;
@@ -1313,31 +1286,16 @@ protected:
 	bool  bJumpAnimActive = false;
 	float JumpAnimTime    = 0.f;
 
-	// ── Head Look state (local + smoothing para clientes remotos) ─────────────
-	float LocalHeadRelativeYaw = 0.f;   ///< calculado cada tick en el owner, nunca va a la red
-	float LocalHeadPitch       = 0.f;
-	float SmoothedHeadYaw      = 0.f;   ///< interpolado en clientes remotos hacia ReplicatedHead*
-	float SmoothedHeadPitch    = 0.f;
-	/** Cliente dueño: lo último que ha mandado al servidor, lo que falta para poder mandar otra vez y desde cuándo no manda. */
-	int8  SentHeadYaw          = 0;
-	int8  SentHeadPitch        = 0;
-	float HeadSendCooldown     = 0.f;
-	float HeadSinceSend        = 0.f;
-
-	void TickHeadLook(float DeltaTime);
-	void ApplyHeadLookToCabeza(float Yaw, float Pitch);
-
-	/** Cabeza del dueño al servidor: grados enteros, como mucho HeadSendRate veces por segundo y solo si cambia. */
-	UFUNCTION(Server, Unreliable, WithValidation)
-	void ServerUpdateHeadRotation(int8 Yaw, int8 Pitch);
+	/** El probador tiene dentro a esta tortuga (SetHeadLookSuppressed): la cabeza no sigue a la cámara. */
+	bool bHeadLookSuppressed = false;
 
 	void TryDive();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_StartDive(FVector DiveDir);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDiveVisual(bool bEnter);
+	/** Inclinación y cápsula del panzazo (idempotente): el servidor al cambiar bIsDiving y los clientes en OnRep_IsDiving (#78). */
+	void ApplyDiveVisual(bool bEnter);
 
 	UFUNCTION()
 	void OnRep_IsDiving();
@@ -1386,6 +1344,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Knockdown")
 	void RecoverFromKnockdown();
 
+	/**
+	 * Como RecoverFromKnockdown, pero sin el sonido de reanimar (server-only). Para la muerte
+	 * (ATN_RunGameMode::ApplyDeathVisuals), que también levanta el derribo y no debe sonar a «¡arriba!» (#348).
+	 */
+	void RecoverFromKnockdownSilently();
+
 	/** Returns true if this character is currently in a knockdown/DBNO state. */
 	UFUNCTION(BlueprintPure, Category = "Knockdown")
 	bool IsKnockedDown() const { return bIsKnockedDown; }
@@ -1430,6 +1394,20 @@ public:
 	 * ángulo bajo sobre la horizontal (ThrowBasePitchDeg con la cámara a nivel; ver Throwable). Vale en el servidor.
 	 */
 	FVector GetThrowDirection(const FRotator& AimRotation) const;
+
+	/** Los lanzamientos van al punto del centro de la pantalla (si no, en VR, siguen a la aleta con GetThrowDirection). */
+	bool UsesCameraThrowAim() const;
+
+	/**
+	 * Velocidad inicial (dirección) para que un lanzamiento que sale de Origin a Speed (cm/s) caiga en el punto que se ve en
+	 * el centro de la pantalla: el primer sitio que corta el rayo de la cámara (o, sin nada, un punto lejano), con el arco
+	 * justo para llegar. Si no llega, el ángulo de máximo alcance. GravityCmS2 <= 0 usa la del mundo. LinearDamping (1/s) compensa
+	 * el frenado en el aire de lo lanzado (la caja de la concha lo tiene). En VR, GetThrowDirection(AimRotation). Vale en el servidor.
+	 */
+	FVector GetThrowDirectionToCrosshair(const FVector& Origin, const FRotator& AimRotation, float Speed, float GravityCmS2 = 0.f, float LinearDamping = 0.f) const;
+
+	/** El punto del mundo que se ve en el centro de la pantalla (primer choque del rayo de la cámara, o uno lejano). Falso en VR. */
+	bool GetCrosshairPoint(FVector& OutPoint) const;
 
 	/** El golpe de brazo de lanzar un objeto, en todas las máquinas (cosmético; lo manda el servidor al lanzarlo). */
 	UFUNCTION(NetMulticast, Unreliable)
@@ -1661,6 +1639,25 @@ public:
 	TObjectPtr<USoundBase> ConsumeSound;
 
 	/**
+	 * Servidor: sacudida corta de cámara y vibración del mando (Strength 0..1) solo en la máquina del jugador que recibe
+	 * el golpe, con sus ajustes (TNHitFeedback). Uno por fotograma: el primer aviso manda.
+	 */
+	void NotifyHitFeedback(float Strength);
+
+	/**
+	 * Cliente dueño: aplica la sacudida y la vibración de un golpe que ha decidido el servidor. Fiable: uno por golpe, y en
+	 * una prueba con un cliente el no fiable se perdió en el primer derribo.
+	 */
+	UFUNCTION(Client, Reliable)
+	void ClientPlayHitFeedback(float Strength);
+
+private:
+	/** Fotograma del último aviso de golpe (NotifyHitFeedback), para no repetirlo dentro del mismo. */
+	uint64 LastHitFeedbackFrame = 0;
+
+public:
+
+	/**
 	 * Multicast: spawnea Sound at-location en todas las máquinas. Llamar SOLO
 	 * desde el servidor. Usado por TN_InventoryComponent (pickup/consume) y
 	 * por el propio Character (jump/knockdown/kill/throw).
@@ -1763,6 +1760,22 @@ public:
 
 	/** ¿Quiere el jugador local la primera persona sin gafas? (consola TN.Camera o el ajuste «Cámara»). */
 	bool WantsFirstPersonView() const;
+
+	/** ¿Juega el dueño en primera persona sin gafas? (replicado: vale en todas las máquinas, como IsVRPlayer). */
+	bool IsFirstPersonPlayer() const { return bFirstPersonPlayer; }
+
+	// ── La cabeza que sigue a la cámara (#623, UTN_TurtleAnimInstance) ────────
+
+	/**
+	 * Hacia dónde mira el dueño respecto del cuerpo (grados; guiñada positiva a su derecha, cabeceo positivo arriba): el
+	 * giro del mando en el dueño y en el servidor (el de un cliente llega con su movimiento); en los demás, la guiñada
+	 * replicada y el cabeceo del motor (RemoteViewPitch16). Vale en todas las máquinas.
+	 */
+	void GetViewRelativeToBody(float& OutYaw, float& OutPitch) const;
+
+	/** El probador (ATN_ChangingBooth) la tiene dentro: la cabeza mira al frente (su vista no es la de su cámara). Local en cada máquina. */
+	void SetHeadLookSuppressed(bool bSuppressed) { bHeadLookSuppressed = bSuppressed; }
+	bool IsHeadLookSuppressed() const { return bHeadLookSuppressed; }
 
 private:
 	/** Manos VR del dueño relativas a la tortuga, para los demás (IK de los brazos). */

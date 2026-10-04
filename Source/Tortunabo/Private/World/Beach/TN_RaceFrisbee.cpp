@@ -171,6 +171,16 @@ bool ATN_RaceFrisbee::ServerThrow(ATortugaCharacter* Turtle, const FVector& Dire
 		}
 	}
 	const FVector Start = Turtle->GetActorLocation() + Flat * SpawnForward;
+	// Con el punto en pantalla, el disco sale hacia él (solo el rumbo: vuela a ras de la arena).
+	FVector CrosshairPoint;
+	if (Turtle->GetCrosshairPoint(CrosshairPoint))
+	{
+		const FVector ToPoint = (CrosshairPoint - Start).GetSafeNormal2D();
+		if (!ToPoint.IsNearlyZero())
+		{
+			Flat = ToPoint;
+		}
+	}
 	const FTransform SpawnXf(FRotator(0.0, Flat.Rotation().Yaw, 0.0), Start);
 	ATN_RaceFrisbee* Disc = World->SpawnActorDeferred<ATN_RaceFrisbee>(StaticClass(), SpawnXf, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	if (!Disc)
