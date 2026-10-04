@@ -43,7 +43,7 @@ Estado de cada función: **MVP** (entra en la primera versión jugable), **Despu
 
 ### 1.2 Velocidades deducidas (est. propia; el radio y la pendiente se comprueban con `buggy_measure`)
 
-Radio mínimo geométrico: 3,03 m / tan 28° = 5,7 m. No es el límite real: manda el agarre lateral. Con una aceleración lateral de 1,2 g (est.; coincide con [B] `B_buggy_sync.md:116-117`: «≥ 25 m a 60 km/h, ≥ 50 m a 90 km/h»), v = √(a·r).
+Radio mínimo geométrico: 3,03 m / tan 28° = 5,7 m. No es el límite real: manda el agarre lateral. Con una aceleración lateral de 1,2 g (est.; coincide con [B] `B_buggy_sync.md:116-117` (eliminado): «≥ 25 m a 60 km/h, ≥ 50 m a 90 km/h»), v = √(a·r).
 
 | Situación | Cálculo | Velocidad de diseño |
 |---|---|---|

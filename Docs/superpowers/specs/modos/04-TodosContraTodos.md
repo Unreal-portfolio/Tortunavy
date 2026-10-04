@@ -2,7 +2,7 @@
 
 Fecha: 2026-09-29. Rama `macro-update`. Estado: especificación para implementar. Sin código escrito ni commit.
 
-Fuentes leídas: `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md` (§3.4, §3.5, §3.6, §7), `Docs/Analisis/2026-09-29/D_modos_juego.md` (§0, §1) y `G_doble_salto_fisico.md`, `Docs/Catalogo-Mapas-2026-09-29.md` (§3, §4.3, §6 y decisión del director), `Docs/Modos-UI-FX-2026-09-29.md` (§2.2 TcT), `Art/Library/IA/INDEX.md`. Cabeceras de código: `TortugaCharacter.h`, `TN_TurtleMovementComponent.h`, `TN_CarryComponent.h`, `TN_ThrowableItemActor.h`, `TN_InkProjectile.h`, `TN_BananaPeel.h`. `Catalogo-Puzzles-2026-09-29.md` no tiene filas legibles por patrón; ninguna plantilla de puzzle se usa como trampa en el MVP (el géiser orientable queda como opción posterior, §3.6).
+Fuentes leídas: `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md` (§3.4, §3.5, §3.6, §7), `Docs/Analisis/2026-09-29/D_modos_juego.md` (eliminado) (§0, §1) y `G_doble_salto_fisico.md`, `Docs/Catalogo-Mapas-2026-09-29.md` (§3, §4.3, §6 y decisión del director), `Docs/Modos-UI-FX-2026-09-29.md` (§2.2 TcT), `Art/Library/IA/INDEX.md`. Cabeceras de código: `TortugaCharacter.h`, `TN_TurtleMovementComponent.h`, `TN_CarryComponent.h`, `TN_ThrowableItemActor.h`, `TN_InkProjectile.h`, `TN_BananaPeel.h`. `Catalogo-Puzzles-2026-09-29.md` no tiene filas legibles por patrón; ninguna plantilla de puzzle se usa como trampa en el MVP (el géiser orientable queda como opción posterior, §3.6).
 
 Convenciones. **[1.ª pasada]** = hipótesis a validar en playtest. **[existe]** = valor leído en código. **[est. propia]** = horas sin medir. Estados: **MVP** / **Fase B** / **Después** / **Cortar**. Términos como en el plan: meseta, nido, caparazón, concha, baja.
 

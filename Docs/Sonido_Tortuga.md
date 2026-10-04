@@ -250,7 +250,7 @@ banda de cada filtro, `DragTrim`), el «plaf» parte del aterrizaje fuerte (golp
 
 ## Música de fondo de la carrera («Marcha de la Playa»)
 
-Tarea 8 de `Docs/Archivo/Plan_Carrera_Ronda4.md`. Sintetizada en C++ en tiempo real, sin archivos de audio, como el resto de la música
+Tarea 8 de `Docs/Archivo/Plan_Carrera_Ronda4.md` (eliminado). Sintetizada en C++ en tiempo real, sin archivos de audio, como el resto de la música
 del juego, y solo en la carrera de la playa. Suena de fondo (por debajo de efectos, voces y avisos), en la categoría **Música**
 del menú de pausa, con una capa de tensión y un «ducking» suave que sigue el estado que ya replica `ATN_BeachRaceGameState`.
 
@@ -357,7 +357,7 @@ con bloques de 1, 333, 480 y 1024 muestras; sin voces robadas en los depósitos.
 
 ## Golpes del caparazón
 
-Tarea 9 de `Docs/Archivo/Plan_Carrera_Ronda4.md`. Con la tortuga en bola (`ATN_ShellBody`, la caja de física), cada choque suena y
+Tarea 9 de `Docs/Archivo/Plan_Carrera_Ronda4.md` (eliminado). Con la tortuga en bola (`ATN_ShellBody`, la caja de física), cada choque suena y
 levanta un mini efecto según contra qué choca, con la fuerza que da la velocidad del impacto. **Sin red**: cada máquina lo
 detecta en su copia de la bola (los clientes también simulan la caja y la réplica la corrige), así que todos los jugadores
 cercanos lo ven y oyen sin un byte más y sin multicast; uno no fiable habría costado hasta 8 mensajes por segundo y bola con

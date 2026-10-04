@@ -6,7 +6,7 @@ Alcance: Carrera, Rally y Todos contra Todos a 8, con voz de 8 personas y répli
 
 ## Veredicto
 
-**Viable con condiciones.** La réplica de juego a 8 cabe en la subida de un anfitrión doméstico si el Rally usa la opción E de `Docs/Analisis/2026-09-29/B_buggy_sync.md`. La voz actual no cabe: el códec propio (µ-law de 8 bits a 16 kHz) gasta unos **17 KB/s por flujo**. En el pico (8 personas hablando a la vez) el anfitrión subiría entre **545 y 685 KB/s (4,4–5,5 Mbit/s)**, lo que satura una línea de 5 Mbit/s. Con Opus a 24 kbit/s (unos 3,5 KB/s por flujo) el peor caso baja a **160–250 KB/s (1,3–2,0 Mbit/s)** en los tres modos.
+**Viable con condiciones.** La réplica de juego a 8 cabe en la subida de un anfitrión doméstico si el Rally usa la opción E de `Docs/Analisis/2026-09-29/B_buggy_sync.md` (eliminado). La voz actual no cabe: el códec propio (µ-law de 8 bits a 16 kHz) gasta unos **17 KB/s por flujo**. En el pico (8 personas hablando a la vez) el anfitrión subiría entre **545 y 685 KB/s (4,4–5,5 Mbit/s)**, lo que satura una línea de 5 Mbit/s. Con Opus a 24 kbit/s (unos 3,5 KB/s por flujo) el peor caso baja a **160–250 KB/s (1,3–2,0 Mbit/s)** en los tres modos.
 
 Condiciones:
 
@@ -118,7 +118,7 @@ El anfitrión reenvía cada flujo a cada oyente remoto, así que su subida es ha
 | Carrera | **50–90 KB/s**. Tortugas: 7 × 7 × ~1,3 KB/s a 30 Hz en movimiento. Más PlayerState, enemigos y conchas dormidas. Las gaviotas a 60 Hz empujan hacia el extremo alto | `Docs/superpowers/specs/modos/02-Carrera.md:358` (5–8 KB/s por cliente, objetivo ≤ 60 KB/s sin voz) |
 | Todos contra Todos | **80–110 KB/s** | `04-TodosContraTodos.md:343` (78 KB/s + margen, objetivo ≤ 140) |
 | Rally, opción E (30/10 Hz) | **98 KB/s en régimen y 104 en la salida** | `03-Rally.md:366-382` |
-| Rally ingenuo (8 buggies a 60 Hz) | **280 KB/s (2,2 Mbit/s)** | `Docs/Analisis/2026-09-29/B_buggy_sync.md:84-88` |
+| Rally ingenuo (8 buggies a 60 Hz) | **280 KB/s (2,2 Mbit/s)** | `Docs/Analisis/2026-09-29/B_buggy_sync.md:84-88` (eliminado) |
 
 Bajada del anfitrión: `ServerMove` de 7 clientes, unos 2–4 KB/s cada uno, así que menos de 30 KB/s (no limita).
 
@@ -225,6 +225,6 @@ Orden: 1 → 2 (tras los cambios de Config) → 4 → 3 → 5 → 6a → 6c.
 | 9 | Detector de desincronía (parte de red del sistema de bugs de `00-Arquitectura`) | 8–10 |
 | 10 | Verificar la voz del conductor en el Rally (voz en el pawn buggy, relevancia) | 2 |
 | 11 | Sesiones de prueba: PIE a 8, 8 locales, máquinas virtuales y playtest Steam con 8 personas (2 sesiones) | 10–12 |
-| **Total** | Sin contar la opción E del Rally, ya presupuestada en 20–30 h en `B_buggy_sync.md` | **53–69 h** |
+| **Total** | Sin contar la opción E del Rally, ya presupuestada en 20–30 h en `B_buggy_sync.md` (eliminado) | **53–69 h** |
 
 Orden recomendado: tareas 1, 2 y 5 primero (unas 10–12 h). Esas tres bastan para pasar de «no cabe» a «cabe» en el pico. Después la 4 y la 3, y al final la verificación (6–11).

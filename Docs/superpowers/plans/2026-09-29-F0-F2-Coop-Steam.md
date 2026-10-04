@@ -10,7 +10,7 @@
 
 **Rama.** `macro-update`.
 
-**Spec.** `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md` §2 (arquitectura común), §3.1 (Coop), §4 (P0), §5 (F0–F2), §7 (respuestas del director: 1, 4). Apoyos: `Docs/Analisis/2026-09-29/A_coop_volumetrico.md` (R1–R12), `Docs/Analisis/2026-09-29/F_gaps_steam.md`, `Docs/Inventario-Objetos-Arte-2026-09-29.md`, `Docs/Limpieza-2026-09-29.md` (estado de `macro-update`).
+**Spec.** `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md` §2 (arquitectura común), §3.1 (Coop), §4 (P0), §5 (F0–F2), §7 (respuestas del director: 1, 4). Apoyos: `Docs/Analisis/2026-09-29/A_coop_volumetrico.md` (eliminado) (R1–R12), `Docs/Analisis/2026-09-29/F_gaps_steam.md`, `Docs/Inventario-Objetos-Arte-2026-09-29.md`, `Docs/Limpieza-2026-09-29.md` (estado de `macro-update`).
 
 ---
 
