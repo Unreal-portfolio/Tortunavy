@@ -9,7 +9,6 @@
 #include "Components/Widget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "Styling/SlateBrush.h"
 #include "GameFramework/Pawn.h"
 
 void UTN_PlayerHUDWidget::NativeConstruct()

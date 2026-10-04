@@ -1,5 +1,7 @@
 #include "Lobby/TN_ShopKeeper.h"
 #include "Art/TN_Art.h"
+#include "Multiplayer/TN_LocalViews.h"
+#include "Art/TN_TurtleArt.h"
 #include "Audio/TN_MusicSynthComponent.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Core/TN_Log.h"
@@ -170,8 +172,7 @@ ATN_ShopKeeper::ATN_ShopKeeper()
 	Keeper->SetRelativeScale3D(FVector(KeeperScale));
 	Keeper->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Keeper->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> TurtleMesh(TEXT("/Game/Meshses/Characters/Player/TotugaDemo_Rig.TotugaDemo_Rig"));
-	if (TurtleMesh.Succeeded()) { Keeper->SetSkeletalMeshAsset(TurtleMesh.Object); }
+	// La malla es la del personaje de la tortuga (TNTurtleArt::ApplyBody en BuildVisuals), no una ruta fija.
 
 	KeeperHat = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("KeeperHat"));
 	KeeperHat->SetupAttachment(Keeper);
@@ -220,11 +221,6 @@ ATN_ShopKeeper::ATN_ShopKeeper()
 	CanopyLight = MakeLight(TEXT("CanopyLight"), 2400.f, FLinearColor(1.f, 0.82f, 0.6f));
 	ShelfLight = MakeLight(TEXT("ShelfLight"), 1500.f, FLinearColor(1.f, 0.86f, 0.66f));
 	LampLight = MakeLight(TEXT("LampLight"), 1100.f, FLinearColor(1.f, 0.72f, 0.42f));
-
-	static ConstructorHelpers::FObjectFinder<UAnimationAsset> Idle(TEXT("/Game/Animations/Character/TortugaDemo/Anim/Old_Man_Idle.Old_Man_Idle"));
-	static ConstructorHelpers::FObjectFinder<UAnimationAsset> Wave(TEXT("/Game/Animations/Character/TortugaDemo/Anim/Salute.Salute"));
-	IdleAnim = Idle.Succeeded() ? Idle.Object : nullptr;
-	WaveAnim = Wave.Succeeded() ? Wave.Object : nullptr;
 }
 
 void ATN_ShopKeeper::OnConstruction(const FTransform& Transform)
@@ -242,10 +238,22 @@ void ATN_ShopKeeper::PostRegisterAllComponents()
 #endif
 }
 
+FTransform ATN_ShopKeeper::KeeperTransform() const
+{
+	// Como en BP_TortugaCharacter: la malla de demo mira a su +Y; girada -90 mira a los clientes (+X), y se gira hacia el
+	// jugador. Con otra malla en el personaje, la misma diferencia (TNTurtleArt::GetCopyCorrection).
+	return KeeperCorrection * FTransform(FRotator(0.f, -90.f + LookYaw, 0.f), FVector::ZeroVector, FVector(KeeperScale));
+}
+
 void ATN_ShopKeeper::BuildVisuals()
 {
 	using namespace TNShopKeeperDetail;
-	Keeper->SetRelativeScale3D(FVector(KeeperScale));
+	// La tortuga del personaje (malla, materiales y escala) y sus animaciones de los ajustes de arte.
+	KeeperCorrection = FTransform::Identity;
+	if (TNTurtleArt::ApplyBody(Keeper, KeeperTransform())) { KeeperDefaults.Reset(); }
+	KeeperCorrection = TNTurtleArt::GetCopyCorrection();
+	IdleAnim = TNTurtleArt::GetClip(ETNTurtleClip::Idle);
+	WaveAnim = TNTurtleArt::GetClip(ETNTurtleClip::Salute);
 	Sign->SetText(ShopName.ToUpper());
 	UTN_CosmeticLook::ApplyLook(this, Keeper, KeeperHat, KeeperLook, KeeperDefaults);
 	// En el editor, el tendero en su espera (no en T).
@@ -511,7 +519,7 @@ void ATN_ShopKeeper::HideBlockoutKeeper()
 		ASkeletalMeshActor* Blockout = *It;
 		const USkeletalMeshComponent* Comp = Blockout ? Blockout->GetSkeletalMeshComponent() : nullptr;
 		const USkinnedAsset* Asset = Comp ? Comp->GetSkinnedAsset() : nullptr;
-		if (Asset && Asset->GetName().Contains(TEXT("TotugaDemo")) && FVector::Dist2D(Blockout->GetActorLocation(), GetActorLocation()) < 150.0)
+		if (TNTurtleArt::IsTurtleMesh(Asset) && FVector::Dist2D(Blockout->GetActorLocation(), GetActorLocation()) < 150.0)
 		{
 			Blockout->SetActorHiddenInGame(true);
 			Blockout->SetActorEnableCollision(false);
@@ -536,8 +544,8 @@ void ATN_ShopKeeper::Tick(float DeltaSeconds)
 	if (GetNetMode() == NM_DedicatedServer) { return; }
 
 	// Se gira hacia el jugador local si está cerca y le saluda de vez en cuando.
-	const APlayerController* LocalPC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
-	const APawn* LocalPawn = LocalPC ? LocalPC->GetPawn() : nullptr;
+	// Con la pantalla partida (#311), a la tortuga local más cercana.
+	const APawn* LocalPawn = TNLocalViews::ClosestLocalPawn(GetWorld(), GetActorLocation());
 	float TargetYaw = 0.f;
 	if (LocalPawn)
 	{
@@ -555,7 +563,7 @@ void ATN_ShopKeeper::Tick(float DeltaSeconds)
 		}
 	}
 	LookYaw = FMath::FInterpTo(LookYaw, TargetYaw, DeltaSeconds, 3.f);
-	Keeper->SetRelativeRotation(FRotator(0.f, -90.f + LookYaw, 0.f));
+	Keeper->SetRelativeTransform(KeeperTransform());
 	WaveCooldown -= DeltaSeconds;
 	if (WaveTimeLeft > 0.f)
 	{

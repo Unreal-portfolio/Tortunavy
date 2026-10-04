@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "arte"))
 import rellenar_catalogos as rc  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-NAME = re.compile(r"^(Lobby|ProcMap|Beach)(\.[A-Z][A-Za-z0-9]*)+$")
+NAME = re.compile(r"^(Lobby|ProcMap|Beach|Turtle)(\.[A-Z][A-Za-z0-9]*)+$")
 
 
 def test_lee_la_tabla_del_cpp():
@@ -24,7 +24,9 @@ def test_lee_la_tabla_del_cpp():
     assert len(names) == len(set(names)), "piezas repetidas en la tabla"
     for slot in slots:
         assert NAME.match(slot["name"]), slot["name"]
-        assert slot["kind"] in ("Pieza", "Componente", "Instancias"), slot["name"]
+        assert slot["kind"] in ("Pieza", "Componente", "Instancias", "Hueso"), slot["name"]
+        # Las piezas de la tortuga (y solo ellas) van pegadas a un hueso.
+        assert (slot["kind"] == "Hueso") == slot["name"].startswith("Turtle."), slot["name"]
         assert (ROOT / "Source" / "Tortunabo" / "Private" / slot["source"]).is_file(), slot["source"]
         assert slot["name"].split(".")[0] in rc.CATALOGS
 
@@ -34,6 +36,14 @@ def test_cuenta_todas_las_lineas_de_la_tabla():
     art = ROOT / "Source" / "Tortunabo" / "Private" / "Art"
     total = sum(f.read_text(encoding="utf-8").count("\nTN_ART_SLOT(") for f in art.glob("TN_ArtSlots_*.inl"))
     assert total == len(rc.read_slots(str(ROOT)))
+
+
+def test_piezas_de_la_tortuga_en_su_catalogo():
+    turtle = [s["name"] for s in rc.read_slots(str(ROOT)) if s["name"].startswith("Turtle.")]
+    assert {"Turtle.Shell", "Turtle.Helmet", "Turtle.Eyes", "Turtle.Tongue"} <= set(turtle)
+    assert rc.CATALOGS["Turtle"] == "/Game/Art/DA_Arte_Tortuga"
+    text = rc.markdown(rc.read_slots(str(ROOT)))
+    assert "### Piezas de la tortuga (DA_Arte_Tortuga)" in text
 
 
 def test_markdown_tiene_una_fila_por_pieza():

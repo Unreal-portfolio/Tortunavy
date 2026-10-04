@@ -1,4 +1,5 @@
 #include "Audio/TN_AmbientSoundscape.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Audio/TN_AmbienceDataAsset.h"
 #include "Audio/TN_AmbientSynthComponent.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
@@ -240,8 +241,12 @@ bool UTN_AmbientSoundscapeComponent::IsLocalViewer() const
 		return false;
 	}
 	const AActor* OwnerActor = GetOwner();
-	if (const APlayerController* PC = Cast<APlayerController>(OwnerActor)) { return PC->IsLocalController(); }
-	if (const APawn* OwnerPawn = Cast<APawn>(OwnerActor)) { return OwnerPawn->IsLocallyControlled(); }
+	// Con la pantalla partida (#311) suena una sola vez, la del jugador 1 (cada jugador local tiene el suyo en su mando).
+	if (const APlayerController* PC = Cast<APlayerController>(OwnerActor)) { return PC->IsLocalController() && UTN_LocalPlaySubsystem::IsPrimaryPlayer(PC); }
+	if (const APawn* OwnerPawn = Cast<APawn>(OwnerActor))
+	{
+		return OwnerPawn->IsLocallyControlled() && UTN_LocalPlaySubsystem::IsPrimaryPlayer(Cast<APlayerController>(OwnerPawn->GetController()));
+	}
 	// En otro actor (colocado a mano en un nivel): suena para quien esté mirando en esta máquina.
 	return true;
 }

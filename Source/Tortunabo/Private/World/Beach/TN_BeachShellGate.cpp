@@ -1,5 +1,6 @@
 #include "World/Beach/TN_BeachShellGate.h"
 #include "World/Beach/TN_BeachTickWakeSubsystem.h"
+#include "World/Beach/TN_BeachNearby.h"
 #include "World/Beach/TN_BeachTrapSynthComponent.h"
 #include "Core/TN_Log.h"
 #include "Components/BoxComponent.h"
@@ -34,6 +35,9 @@ namespace TNBeachShellGateDetail
 	constexpr double CloseTime = 0.7;
 	/** Tras cerrarse, segundos que sigue despierta (chispas y golpe de las hojas) antes de poder dormirse de lejos. */
 	constexpr double SettleTail = 1.0;
+
+	/** Margen (cm) del radio de alcance del portón sobre el vano y el interruptor: la cápsula y el empuje desde fuera. */
+	constexpr double ReachMargin = 250.0;
 
 	FLinearColor Driftwood(int32 Index)
 	{
@@ -363,6 +367,12 @@ double ATN_BeachShellGate::LeafAngle(double ServerTime) const
 	return FMath::Max(0.0, FMath::Lerp(static_cast<double>(GateState.FromAngle), 0.0, U * U));
 }
 
+double ATN_BeachShellGate::ReachRadius() const
+{
+	const double Local = FMath::Max(DoorWidth, FVector2D(SwitchLocal.X, SwitchLocal.Y).Size() + SwitchRadius) + TNBeachShellGateDetail::ReachMargin;
+	return Local * GetActorTransform().GetMaximumAxisScale();
+}
+
 bool ATN_BeachShellGate::IsOnSwitch(const ACharacter* Character) const
 {
 	const UCapsuleComponent* Capsule = Character ? Character->GetCapsuleComponent() : nullptr;
@@ -405,9 +415,10 @@ void ATN_BeachShellGate::ServerUpdate(float DeltaSeconds, double ServerTime)
 	bool bHold = false;
 	bool bSwitch = false;
 	int8 PushDir = 0;
-	for (TActorIterator<ACharacter> It(World); It; ++It)
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(World, ActorXf.GetLocation(), ReachRadius(), Near);
+	for (ACharacter* Walker : Near)
 	{
-		ACharacter* Walker = *It;
 		if (!TNBeachTrapKit::IsFreeTurtle(Walker))
 		{
 			continue;
@@ -440,6 +451,11 @@ void ATN_BeachShellGate::ServerUpdate(float DeltaSeconds, double ServerTime)
 	}
 	for (auto It = PushTime.CreateIterator(); It; ++It)
 	{
+		// Quien se ha alejado deja de empujar: se le descuenta como a quien no va hacia la hoja.
+		if (!Near.Contains(It.Key().Get()))
+		{
+			It.Value() = FMath::Max(0.f, It.Value() - DeltaSeconds * 2.f);
+		}
 		if (!It.Key().IsValid() || It.Value() <= 0.f)
 		{
 			It.RemoveCurrent();
@@ -528,9 +544,15 @@ void ATN_BeachShellGate::Tick(float DeltaSeconds)
 
 	// Hojas: ángulo desde el estado replicado; solo chocan cerradas.
 	const double Angle = LeafAngle(Now);
-	const double Dir = GateState.Dir >= 0 ? 1.0 : -1.0;
-	HingeLeft->SetRelativeRotation(FRotator(0.0, -Angle * Dir, 0.0));
-	HingeRight->SetRelativeRotation(FRotator(0.0, 180.0 + Angle * Dir, 0.0));
+	const int8 DirSign = GateState.Dir >= 0 ? 1 : -1;
+	if (Angle != ShownLeafAngle || DirSign != ShownLeafDir)
+	{
+		ShownLeafAngle = Angle;
+		ShownLeafDir = DirSign;
+		const double Dir = static_cast<double>(DirSign);
+		HingeLeft->SetRelativeRotation(FRotator(0.0, -Angle * Dir, 0.0));
+		HingeRight->SetRelativeRotation(FRotator(0.0, 180.0 + Angle * Dir, 0.0));
+	}
 	const bool bSolid = Angle < 3.0;
 	if (bSolid != bLeavesSolid)
 	{
@@ -546,12 +568,11 @@ void ATN_BeachShellGate::Tick(float DeltaSeconds)
 
 	// Interruptor: baja en cada máquina con quien vea encima.
 	bool bPressed = false;
-	if (UWorld* World = GetWorld())
+	TArray<ACharacter*> Near;
+	TNBeachNearby::Gather(GetWorld(), GetActorLocation(), ReachRadius(), Near);
+	for (int32 Index = 0; Index < Near.Num() && !bPressed; ++Index)
 	{
-		for (TActorIterator<ACharacter> It(World); It && !bPressed; ++It)
-		{
-			bPressed = TNBeachTrapKit::IsFreeTurtle(*It) && IsOnSwitch(*It);
-		}
+		bPressed = TNBeachTrapKit::IsFreeTurtle(Near[Index]) && IsOnSwitch(Near[Index]);
 	}
 	if (bPressed && !bSwitchDown && Voice && GetNetMode() != NM_DedicatedServer)
 	{
@@ -559,6 +580,10 @@ void ATN_BeachShellGate::Tick(float DeltaSeconds)
 	}
 	bSwitchDown = bPressed;
 	SwitchPress = FMath::FInterpTo(SwitchPress, bPressed ? 1.f : 0.f, DeltaSeconds, 18.f);
-	SwitchMesh->SetRelativeLocation(SwitchLocal - FVector(0.0, 0.0, 10.0 * SwitchPress));
+	if (SwitchPress != ShownSwitchPress)
+	{
+		ShownSwitchPress = SwitchPress;
+		SwitchMesh->SetRelativeLocation(SwitchLocal - FVector(0.0, 0.0, 10.0 * SwitchPress));
+	}
 	Sparkle.Tick(DeltaSeconds);
 }

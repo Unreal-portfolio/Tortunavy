@@ -7,6 +7,7 @@
 
 #include "World/Beach/TN_BeachChest.h"
 #include "Art/TN_Art.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Settings/TN_GameplayAssetSettings.h"
 #include "World/TN_PickupInteractableBase.h"
 #include "World/TN_ScorePickup.h"
@@ -1106,8 +1107,7 @@ void ATN_BeachChestSpot::TickChest(float DeltaSeconds)
 	const double SinceOutcome = bOpened ? Now - static_cast<double>(State.OutcomeTime) : 1.0e6;
 
 	// Con la cámara cerca, la luz late a cada fotograma (lejos basta el tick lento).
-	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
-	bChestNearView = Camera && FVector::DistSquared(Camera->GetCameraLocation(), GetActorLocation()) < FMath::Square(NearViewDistance);
+	bChestNearView = TNLocalViews::ClosestCameraDistance(GetWorld(), GetActorLocation()) < NearViewDistance;
 
 	// Adónde va la tapa según el estado replicado (igual en todas las máquinas): entreabierta a tirones mientras se abre
 	// (más cuanto más se lleva), abierta del todo en cuanto se vacía (y así se queda) y, si no, cerrada.

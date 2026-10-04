@@ -58,6 +58,13 @@ struct FTNBeachRoundNet
 	/** Dificultad con la que se repartió la ronda: con la semilla, cada cliente rehace el mismo reparto y el mismo decorado. */
 	UPROPERTY()
 	ETNProcDifficulty Difficulty = ETNProcDifficulty::Normal;
+
+	/**
+	 * La ronda se repartió para el sprint final (TNBeachLayout::GenerateRound con bSprint): el nido de los huevos vacío y el
+	 * castillo principal lejos de él. Va con la semilla: cada cliente rehace el mismo reparto.
+	 */
+	UPROPERTY()
+	bool bSprintLayout = false;
 };
 
 /**
@@ -151,7 +158,9 @@ public:
 	 * anterior) y la replica ya; lo demás se monta por partes (Docs/Modo_Carrera.md, «Rendimiento y red»): el reparto en
 	 * otro hilo, los asientos en la arena y el decorado local en varios fotogramas, luego los actores replicados y el
 	 * botín. IsRoundReady es false hasta que está todo. Vuelve a armar la meta (cada tortuga avisa otra vez al tocar el
-	 * agua).
+	 * agua). Si la partida está en el sprint final (ATN_BeachRaceGameState::bSprintFinal), el reparto es el de sprint: deja
+	 * vacío el nido de los huevos de la línea del sprint y aparta de él el castillo principal (el GameMode lo despeja al
+	 * poner a las finalistas).
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Beach")
 	void GenerateRound(int32 InSeed);
@@ -582,8 +591,10 @@ private:
 	bool UploadPendingTiles(double BudgetSeconds);
 
 	// ── Ronda por partes y decorado local (TN_BeachRaceGenerator_Round.cpp) ──
-	/** Reparto de una ronda (lógica pura: vale en cualquier hilo). */
-	static void MakeRoundLayout(int32 Seed, ETNProcDifficulty InDifficulty, TNBeachLayout::FRoundLayout& Out);
+	/** Reparto de una ronda (lógica pura: vale en cualquier hilo); bSprint, el del sprint final. */
+	static void MakeRoundLayout(int32 Seed, ETNProcDifficulty InDifficulty, bool bSprint, TNBeachLayout::FRoundLayout& Out);
+	/** Servidor: la ronda que se reparte ahora es el sprint final (lo dice el estado de la partida de la carrera). */
+	bool IsSprintFinalRound() const;
 	/** Empieza a montar en esta máquina la ronda de RoundNet: el reparto y las teselas en otro hilo (o aquí mismo si bNow). */
 	void StartRoundBuild(bool bNow);
 	/** Sigue con la ronda a medias hasta gastar el presupuesto del fotograma (o hasta acabarla si bNow). */

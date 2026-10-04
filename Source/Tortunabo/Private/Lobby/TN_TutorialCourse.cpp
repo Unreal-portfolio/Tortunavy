@@ -264,6 +264,8 @@ void ATN_TutorialCourse::StartFor(APlayerController* PC)
 	}
 	EnsureBuilt();
 	FParticipant* P = FindParticipant(PC);
+	// Repetir estando dentro («Repetir el tutorial», TN.Tutorial.Start): bInTutorial ya es true y el cliente no se entera solo.
+	const bool bWasInside = P != nullptr;
 	if (!P)
 	{
 		FParticipant New;
@@ -281,6 +283,10 @@ void ATN_TutorialCourse::StartFor(APlayerController* PC)
 	if (UTN_TutorialPlayerComponent* Comp = UTN_TutorialPlayerComponent::EnsureFor(PC))
 	{
 		Comp->SetInTutorialOnServer(true);
+		if (TNTutorialRules::ShouldResetProgress(bWasInside, 0))
+		{
+			Comp->ClientResetProgress();
+		}
 	}
 	EnsurePractice();
 }
@@ -329,7 +335,8 @@ void ATN_TutorialCourse::GoToStation(APlayerController* PC, int32 StationIndex)
 	{
 		return;
 	}
-	if (!IsParticipant(PC))
+	const bool bWasInside = IsParticipant(PC);
+	if (!bWasInside)
 	{
 		StartFor(PC);
 	}
@@ -345,6 +352,14 @@ void ATN_TutorialCourse::GoToStation(APlayerController* PC, int32 StationIndex)
 	{
 		const FVector Feet = CheckpointFeet(P->Checkpoint) + FVector(0.0, ((P->Slot % 4) - 1.5) * 120.0, 0.0);
 		PlacePawn(Pawn, LocalToWorld(FVector(Feet.X, Feet.Y, CorridorFloorAt(Feet.X, Feet.Y - CorridorCenter(Feet.X)))), LocalYawToWorld(0.f), PC);
+	}
+	// Volver a la salida estando dentro es repetir el tutorial: el HUD del jugador empieza de cero. Quien acaba de entrar ya lo hace solo.
+	if (TNTutorialRules::ShouldResetProgress(bWasInside, Target))
+	{
+		if (UTN_TutorialPlayerComponent* Comp = UTN_TutorialPlayerComponent::FindFor(PC))
+		{
+			Comp->ClientResetProgress();
+		}
 	}
 	UE_LOG(LogTortunabo, Log, TEXT("[Tutorial] %s va a la estación %d."), *GetNameSafe(PC), Target + 1);
 }

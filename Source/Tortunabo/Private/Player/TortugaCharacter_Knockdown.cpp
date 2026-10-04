@@ -7,6 +7,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include "Player/TN_ShellComponent.h"
+#include "Player/TN_CarryComponent.h"
+#include "Player/TN_CarryRules.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_DizzyBirdsComponent.h"
 #include "Player/TN_TurtleAnimInstance.h"
@@ -49,6 +51,18 @@ void ATortugaCharacter::ApplyKnockdown(float Duration, FVector ImpulseOverride)
 	if (ShellComponent)
 	{
 		ShellComponent->ForceExitShell();
+	}
+
+	// En brazos de otra (#68): quien la lleva la suelta antes del derribo, ya fuera del caparazón (sin una bola que nazca y
+	// se quite en el acto). Si no, el derribo empezaba con el movimiento apagado y enganchada encima del portador, y al
+	// levantarse andaba (MOVE_Walking) pegada a él con CarriedBy puesto.
+	if (CarryComponent && TNCarryRules::KnockdownDropsFromCarrier(CarryComponent->IsBeingCarried()))
+	{
+		ATortugaCharacter* Carrier = CarryComponent->GetCarrier();
+		if (UTN_CarryComponent* CarrierCarry = Carrier ? Carrier->GetCarryComponent() : nullptr)
+		{
+			CarrierCarry->ForceRelease(false);
+		}
 	}
 
 	// Evitar solapar knockdowns
@@ -225,6 +239,16 @@ void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
 		DizzyBirds->SetDizzy(bKnocked);
 	}
 
+	// Derribada desde la bola del caparazón (#251). El servidor sale de la bola antes del derribo (ApplyKnockdown), pero en
+	// los clientes este aviso llega antes que la réplica del fin de la bola (el RPC va antes que las propiedades): si la caja
+	// sigue enganchada aquí, se suelta ya, como en el servidor. Si no, el derribo empezaba con la malla colocada sobre la caja
+	// (la foto de la malla se quedaba con su giro y, al levantarse, la tortuga andaba tumbada como en la bola) y la caja
+	// seguía colocando la malla y quitándole la física al ragdoll hasta que llegaba la réplica.
+	if (bKnocked && ShellComponent && ShellComponent->HasLocalBody())
+	{
+		ShellComponent->DropLocalBody();
+	}
+
 	// ── Ruta A: ragdoll físico (opción 2 del rediseño Q1-07) ───────────────────
 	// Si el BP configuró bUsePhysicsRagdoll=true y el SkelMesh tiene PhysicsAsset,
 	// activamos ragdoll completo. Sin PhysicsAsset no hay ragdoll posible → cae
@@ -239,12 +263,22 @@ void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
 		{
 			if (bKnockdownRagdollActive) { return; } // idempotente
 
-			SnapshotSkelMeshRelTransform = SkelMesh->GetRelativeTransform();
-			// Sin la subida del panzazo: al revivir, la malla vuelve a su sitio sobre la cápsula.
-			SnapshotSkelMeshRelTransform.SetLocation(DiveMeshDefaultLoc);
-			SnapshotSkelMeshRelTransform.SetScale3D(DiveMeshDefaultScale);
+			// Al revivir, la malla vuelve a su sitio sobre la cápsula: sin la subida ni el giro del panzazo, ni el giro de la
+			// bola del caparazón (#251).
+			SnapshotSkelMeshRelTransform = FTransform(DiveMeshDefaultRot, DiveMeshDefaultLoc, DiveMeshDefaultScale);
 			SnapshotSkelMeshCollisionProfile = SkelMesh->GetCollisionProfileName();
 			PreKnockdownStandLocation = GetActorLocation();
+
+			// Fuera de la pose del caparazón antes de que el ragdoll pause las animaciones (#251): la escala de los huesos del
+			// ragdoll sale de la animación y, con la pausa, la cabeza y las patas se quedaban metidas en la concha (a medias o
+			// del todo) bajo la cara de mareo hasta levantarse. Se vuelve a evaluar la pose antes de que simule.
+			if (UTN_TurtleAnimInstance* TurtleAnim = Cast<UTN_TurtleAnimInstance>(SkelMesh->GetAnimInstance()))
+			{
+				if (TurtleAnim->SnapOutOfShellPose())
+				{
+					SkelMesh->RefreshBoneTransforms();
+				}
+			}
 
 			if (HasAuthority())
 			{

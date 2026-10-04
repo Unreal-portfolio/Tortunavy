@@ -1,4 +1,5 @@
 #include "Player/TN_TurtleDustComponent.h"
+#include "Multiplayer/TN_LocalViews.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_TurtleSurface.h"
 #include "World/ProcMap/TN_ProcMapAmbientFX.h"
@@ -398,8 +399,8 @@ void UTN_TurtleDustComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	}
 
 	// Cerca de la cámara local (lo que ya vuela acaba su vida igualmente).
-	const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(DustWorld, 0);
-	const FVector View = Cam ? Cam->GetCameraLocation() : Turtle->GetActorLocation();
+	FVector View = Turtle->GetActorLocation();
+	TNLocalViews::ClosestCamera(DustWorld, Turtle->GetActorLocation(), View);
 	const bool bVisible = FVector::DistSquared(View, Turtle->GetActorLocation()) < FMath::Square(static_cast<double>(MaxViewDistance));
 
 	// Golpes: caer de tripa y chocar arrastrándose (la velocidad cambia de golpe; el rebote la da la vuelta).

@@ -139,6 +139,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool HasGunner() const { return bGunnerSeated; }
 
+	/** PlayerState de la jugadora sentada en esa plaza (replicado; null si está vacía o la ocupa la IA). */
+	const APlayerState* GetSeatPlayerState(ETNRallySeat Seat) const
+	{
+		return Seat == ETNRallySeat::Gunner ? GunnerPlayerState.Get() : DriverPlayerState.Get();
+	}
+
 	/** Si la carrera tiene el freno puesto (parrilla durante el semáforo): sin acelerador ni turbo. */
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool IsRaceBrakeHeld() const { return bRaceBrakeHeld; }

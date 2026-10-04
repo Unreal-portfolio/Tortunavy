@@ -5,6 +5,7 @@
 #include "Core/TN_CosmeticsTypes.h"
 #include "TN_CosmeticPreview.generated.h"
 
+class APlayerController;
 class UAnimationAsset;
 class UMaterialInterface;
 class UPointLightComponent;
@@ -33,8 +34,15 @@ class TORTUNABO_API ATN_CosmeticPreview : public AActor
 public:
 	ATN_CosmeticPreview();
 
-	/** El escaparate de este mundo (lo crea la primera vez). */
-	static ATN_CosmeticPreview* Get(UWorld* World);
+	/**
+	 * El escaparate de este mundo (lo crea la primera vez). Con la pantalla partida (#311) hay uno por jugador local (Slot:
+	 * su índice), cada uno lejos de los demás para que sus luces no se mezclen: dos jugadores pueden estar a la vez en la
+	 * tienda o en el probador.
+	 */
+	static ATN_CosmeticPreview* Get(UWorld* World, int32 Slot = 0);
+
+	/** El escaparate del jugador de PC (el 0 sin pantalla partida). */
+	static ATN_CosmeticPreview* GetFor(const APlayerController* PC);
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -77,6 +85,9 @@ public:
 	UTextureRenderTarget2D* GetThumbnail(ETNCosmeticCategory Category, FName Id);
 
 private:
+	/** Jugador local del escaparate (0: el primero; con la pantalla partida, uno por jugador). */
+	int32 Slot = 0;
+
 	struct FThumbRequest
 	{
 		ETNCosmeticCategory Category = ETNCosmeticCategory::Helmet;

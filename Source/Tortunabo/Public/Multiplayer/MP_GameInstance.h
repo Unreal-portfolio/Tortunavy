@@ -26,18 +26,6 @@ struct FUniqueNetIdRepl;
 /** Aviso de las salas para la interfaz (sala cerrada, llena, código que no existe...). bError: en coral; si no, en dorado. */
 DECLARE_MULTICAST_DELEGATE_TwoParams(FTNOnRoomNotice, const FText& /*Message*/, bool /*bError*/);
 
-/** Para qué es la búsqueda de sesiones en marcha (UMP_GameInstance). */
-enum class ETNRoomSearch : uint8
-{
-	None,
-	/** Lista de salas públicas. */
-	List,
-	/** Sala de un código. */
-	Code,
-	/** «Unirse a la primera» (FindAndJoinSession). */
-	QuickJoin,
-};
-
 /** Aviso que espera al menú principal (tras volver a él: expulsado, sala cerrada, el anfitrión se fue...). */
 struct FTNMenuNotice
 {
@@ -129,6 +117,12 @@ public:
 
 	/** true mientras hay una búsqueda de salas en marcha (la lista o un código). */
 	bool IsSearchingRooms() const;
+
+	/**
+	 * true mientras se cierra la sesión vieja, se crea la sala, se entra en otra o se viaja a su mapa. Entonces «Crear» y
+	 * «Unirse» no hacen nada: un segundo intento destruiría la sesión que se está creando.
+	 */
+	bool IsRoomTransitionBusy() const { return RoomOp.IsBusy(); }
 
 	/** Salas públicas de la última búsqueda: primero las que tienen sitio, luego las más llenas. */
 	const TArray<FTNRoomListing>& GetRoomListings() const { return RoomListings; }
@@ -254,10 +248,40 @@ public:
 
 	/**
 	 * @brief Plazas de la sesión: en el anfitrión con sala, las de su sala (4, 6 u 8, las mismas que aplica el PreLogin);
-	 *        si no, el tope de DefaultGame.ini (MaxPlayers, 8). Lo lee el marcador «Sala: X/Y» del lobby (ATN_HQGameMode).
+	 *        si no, el tope de DefaultGame.ini (MaxPlayers, 8). En la partida local, cuatro (TNLocalPlay::MaxPlayers). Lo lee el
+	 *        marcador «Sala: X/Y» del lobby (ATN_HQGameMode).
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Multiplayer")
-	int32 GetMaxPlayers() const { return bHasActiveRoom ? ActiveRoom.MaxPlayers : MaxPlayers; }
+	int32 GetMaxPlayers() const;
+
+	// ── Partida local (#311) ─────────────────────────────────────────────────
+
+	/**
+	 * @brief «Local» en el menú principal: hasta cuatro jugadores en este PC a pantalla partida, sin Steam ni sesión. El
+	 *        jugador 1 va derecho al lobby (Standalone) y los mandos se unen allí con Start (UTN_LocalPlaySubsystem).
+	 */
+	void StartLocalGame();
+
+	// ── Aspecto de cada jugador local (#311) ─────────────────────────────────
+	// Las mismas operaciones que las de arriba para el jugador de PC: en red, o el jugador 1 de la partida local, su perfil
+	// guardado; un invitado de la partida local, su aspecto de la partida (UTN_LocalPlayerProfile), que nunca se guarda.
+	// Con PC nulo, el perfil guardado (como las de arriba).
+
+	TArray<FName> GetUnlockedHelmetIdsFor(const APlayerController* PC) const;
+	TArray<FName> GetUnlockedSkinIdsFor(const APlayerController* PC) const;
+	bool IsCosmeticUnlockedFor(const APlayerController* PC, ETNCosmeticCategory Category, FName Id) const;
+	bool PurchaseCosmeticFor(const APlayerController* PC, ETNCosmeticCategory Category, FName Id);
+	bool EquipHelmetFor(const APlayerController* PC, FName HelmetId);
+	bool ForceEquipHelmetFor(const APlayerController* PC, FName HelmetId);
+	FName OpenHelmetCrateFor(const APlayerController* PC);
+	bool EquipSkinFor(const APlayerController* PC, FName SkinId);
+	bool EquipShellFor(const APlayerController* PC, FName ShellId);
+	bool EquipEyesFor(const APlayerController* PC, FName EyesId);
+	FName GetEquippedHelmetIdFor(const APlayerController* PC) const;
+	FName GetEquippedSkinIdFor(const APlayerController* PC) const;
+	FName GetEquippedShellIdFor(const APlayerController* PC) const;
+	FName GetEquippedEyesIdFor(const APlayerController* PC) const;
+	int32 GetAccumulatedRaceScoreFor(const APlayerController* PC) const;
 
 	/** Devuelve el DataTable de cascos para lookup externo (TortugaCharacter, widget). */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
@@ -513,9 +537,16 @@ private:
 	/** @brief Devuelve la interfaz online de sesiones (o nullptr si OnlineSubsystem no está disponible). */
 	IOnlineSessionPtr GetSessionInterface() const;
 
-	bool bPendingHostAfterDestroy = false;
-	bool bPendingJoinAfterDestroy = false;
+	/** Qué hace ahora con la sesión de la sala (cerrar la vieja, crear, entrar o viajar); RoomOpStartTime: desde cuándo. */
+	FTNRoomOpState RoomOp;
+	double RoomOpStartTime = 0.0;
 	FOnlineSessionSearchResult PendingInviteResult;
+
+	/** Empieza a entrar en una sesión (JoinSession): apunta la operación y, si ni arranca ni avisa, la da por fallida. */
+	void BeginSessionJoin(const FOnlineSessionSearchResult& Result, int32 ControllerId);
+
+	/** Una operación de sesión que no contesta a tiempo: se deshace (cierra la sesión, quita la pantalla de carga y avisa). */
+	void AbortRoomOperation();
 
 	/**
 	 * true durante el intervalo entre PreLoadMap y PostLoadMap.
@@ -553,6 +584,15 @@ private:
 
 	/** @brief Persiste el UTN_CosmeticSaveGame en disco. */
 	void SaveCosmeticProfile() const;
+
+	/** Perfil de aspecto de PC: el guardado (PC nulo, en red o el jugador 1) o el de la partida de un invitado local. */
+	UTN_CosmeticSaveGame* CosmeticsFor(const APlayerController* PC) const;
+
+	/** Guarda el perfil de PC si es el guardado (lo de un invitado local dura la partida: TNLocalPlay::ShouldSave). */
+	void SaveCosmeticsFor(const APlayerController* PC) const;
+
+	/** Desbloquea un casco en el perfil de PC (y lo guarda si es el guardado). */
+	bool UnlockHelmetFor(const APlayerController* PC, FName HelmetId);
 
 	/** @brief Construye el nombre de slot del save (incluye sufijo de Steam ID si está disponible). */
 	FString BuildCosmeticSaveSlot() const;

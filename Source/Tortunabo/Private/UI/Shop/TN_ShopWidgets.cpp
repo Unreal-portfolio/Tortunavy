@@ -52,6 +52,12 @@ namespace TNShopUI
 	const FLinearColor PriceColor = TNHUDArt::Hex(0xD9432F);
 	const FLinearColor WornColor = TNHUDArt::Hex(0x1E7FB0);
 
+	/** Si ya es suyo. El buggy va siempre con el perfil guardado; lo demás, con el de este jugador (invitado local incluido). */
+	bool IsOwned(const UMP_GameInstance* GI, const APlayerController* PC, ETNCosmeticCategory Category, FName Id)
+	{
+		return TNIsBuggyCategory(Category) ? GI->IsCosmeticUnlocked(Category, Id) : GI->IsCosmeticUnlockedFor(PC, Category, Id);
+	}
+
 	template <typename T>
 	T* New(UWidgetTree* Tree)
 	{
@@ -375,7 +381,7 @@ void UTN_CosmeticMenuBase::NativeOnInitialized()
 void UTN_CosmeticMenuBase::NativeConstruct()
 {
 	Super::NativeConstruct();
-	Preview = ATN_CosmeticPreview::Get(GetWorld());
+	Preview = ATN_CosmeticPreview::GetFor(GetOwningPlayer());
 	if (ATN_CosmeticPreview* Stage = Preview.Get())
 	{
 		Stage->SetLiveCapture(true);
@@ -426,10 +432,10 @@ FTN_TurtleLook UTN_CosmeticMenuBase::GetWornLook() const
 	}
 	else if (const UMP_GameInstance* GI = GetTNGI())
 	{
-		Worn.HelmetId = GI->GetEquippedHelmetId();
-		Worn.ShellId = GI->GetEquippedShellId();
-		Worn.SkinId = GI->GetEquippedSkinId();
-		Worn.EyesId = GI->GetEquippedEyesId();
+		Worn.HelmetId = GI->GetEquippedHelmetIdFor(PC);
+		Worn.ShellId = GI->GetEquippedShellIdFor(PC);
+		Worn.SkinId = GI->GetEquippedSkinIdFor(PC);
+		Worn.EyesId = GI->GetEquippedEyesIdFor(PC);
 	}
 	return Worn;
 }
@@ -447,7 +453,7 @@ FTN_BuggyLook UTN_CosmeticMenuBase::GetWornBuggyLook() const
 
 UTextureRenderTarget2D* UTN_CosmeticMenuBase::Thumbnail(ETNCosmeticCategory Category, FName Id) const
 {
-	ATN_CosmeticPreview* Stage = Preview.IsValid() ? Preview.Get() : ATN_CosmeticPreview::Get(GetWorld());
+	ATN_CosmeticPreview* Stage = Preview.IsValid() ? Preview.Get() : ATN_CosmeticPreview::GetFor(GetOwningPlayer());
 	return Stage ? Stage->GetThumbnail(Category, Id) : nullptr;
 }
 
@@ -633,7 +639,7 @@ void UTN_ShopWidget::SetShop(ATN_ShopKeeper* InShop)
 	const FText ShopTitle = InShop ? InShop->GetShopName() : NSLOCTEXT("Tortunabo", "ShopDefaultName", "La Concha Dorada");
 	if (TitleText) { TitleText->SetText(ShopTitle.ToUpper()); }
 	if (KeeperNameText) { KeeperNameText->SetText(InShop ? InShop->GetKeeperName() : NSLOCTEXT("Tortunabo", "ShopKeeperName", "Don Tortugo")); }
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::Get(GetWorld())) { Stage->SetLook(GetWornLook()); }
+	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer())) { Stage->SetLook(GetWornLook()); }
 	RefreshWallet();
 	ShowTab(ETNCosmeticCategory::Helmet);
 
@@ -676,7 +682,7 @@ void UTN_ShopWidget::ShowTab(ETNCosmeticCategory Category)
 		if (GI) { for (const FName Id : GI->GetCosmeticCatalog(Part)) { Items.Add({ Part, Id }); } }
 	}
 	// En la pestaña del buggy, el escaparate enseña el buggy con la tortuga al volante.
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::Get(GetWorld()))
+	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer()))
 	{
 		Stage->SetBuggyMode(bBuggyTab);
 		if (bBuggyTab) { Stage->SetBuggyLook(GetWornBuggyLook()); }
@@ -708,7 +714,7 @@ FText UTN_ShopWidget::TagFor(const FTNShopItem& Item, FLinearColor& OutColor) co
 		OutColor = TNShopUI::WornColor;
 		return NSLOCTEXT("Tortunabo", "ShopTagWorn", "PUESTO");
 	}
-	if (!GI || GI->IsCosmeticUnlocked(Item.Category, Item.Id))
+	if (!GI || TNShopUI::IsOwned(GI, GetOwningPlayer(), Item.Category, Item.Id))
 	{
 		OutColor = TNShopUI::OwnedColor;
 		return NSLOCTEXT("Tortunabo", "ShopTagOwned", "¡TUYO!");
@@ -734,7 +740,7 @@ void UTN_ShopWidget::RefreshBuyButton()
 	if (!BuyButton || !Items.IsValidIndex(Selected)) { return; }
 	const FTNShopItem& Item = Items[Selected];
 	const UMP_GameInstance* GI = GetTNGI();
-	const bool bOwned = !GI || GI->IsCosmeticUnlocked(Item.Category, Item.Id);
+	const bool bOwned = !GI || TNShopUI::IsOwned(GI, GetOwningPlayer(), Item.Category, Item.Id);
 	if (bOwned)
 	{
 		BuyButton->SetLabel(NSLOCTEXT("Tortunabo", "ShopBuyOwned", "¡YA ES TUYO!"));
@@ -744,13 +750,13 @@ void UTN_ShopWidget::RefreshBuyButton()
 	const int32 Price = GI->GetCosmeticPrice(Item.Category, Item.Id);
 	BuyButton->SetLabel(Price <= 0 ? NSLOCTEXT("Tortunabo", "ShopBuyFree", "COMPRAR · GRATIS")
 		: FText::Format(NSLOCTEXT("Tortunabo", "ShopBuyPrice", "COMPRAR · {0}"), FText::AsNumber(Price)));
-	BuyButton->SetDisabled(Price > GI->GetAccumulatedRaceScore());
+	BuyButton->SetDisabled(Price > GI->GetAccumulatedRaceScoreFor(GetOwningPlayer()));
 }
 
 void UTN_ShopWidget::RefreshWallet()
 {
 	const UMP_GameInstance* GI = GetTNGI();
-	if (WalletText) { WalletText->SetText(FText::AsNumber(GI ? GI->GetAccumulatedRaceScore() : 0)); }
+	if (WalletText) { WalletText->SetText(FText::AsNumber(GI ? GI->GetAccumulatedRaceScoreFor(GetOwningPlayer()) : 0)); }
 }
 
 void UTN_ShopWidget::Select(int32 Index, bool bSpeak)
@@ -759,7 +765,7 @@ void UTN_ShopWidget::Select(int32 Index, bool bSpeak)
 	const bool bChanged = Index != Selected;
 	Selected = Index;
 	const FTNShopItem Item = Items[Index];
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::Get(GetWorld()))
+	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer()))
 	{
 		if (TNIsBuggyCategory(Item.Category))
 		{
@@ -801,7 +807,7 @@ void UTN_ShopWidget::Buy()
 			: NSLOCTEXT("Tortunabo", "ShopSerie", "Eso ya viene de serie con tu caparazón. ¡Gratis desde que naciste!"));
 		return;
 	}
-	if (GI && GI->IsCosmeticUnlocked(Item.Category, Id))
+	if (GI && TNShopUI::IsOwned(GI, GetOwningPlayer(), Item.Category, Id))
 	{
 		Say(NSLOCTEXT("Tortunabo", "ShopAlready", "Ese ya es tuyo. Pruébatelo en las botellas: te queda de maravilla."));
 		return;
@@ -812,7 +818,7 @@ void UTN_ShopWidget::Buy()
 		Say(FText::Format(bBuggy ? NSLOCTEXT("Tortunabo", "ShopBoughtBuggy", "¡Hecho! {0} ya es tuyo. En la botella del probador, pasa a la página del buggy y póntelo.")
 			: NSLOCTEXT("Tortunabo", "ShopBought", "¡Hecho! {0} ya es tuyo. Ve a una botella del probador y póntelo."),
 			UTN_CosmeticLook::GetDisplayName(this, Item.Category, Id)));
-		if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::Get(GetWorld())) { Stage->PlayPose(true); }
+		if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer())) { Stage->PlayPose(true); }
 		RefreshWallet();
 		RefreshCards();
 		RefreshBuyButton();
@@ -989,7 +995,7 @@ void UTN_BoothWidget::LoadOptions()
 		{
 			for (const FName Id : GI->GetCosmeticCatalog(Category))
 			{
-				if (GI->IsCosmeticUnlocked(Category, Id)) { Owned.Add(Id); }
+				if (GI->IsCosmeticUnlockedFor(GetOwningPlayer(), Category, Id)) { Owned.Add(Id); }
 			}
 		}
 		const FName WornId = TNIsBuggyCategory(Category) ? InitialBuggy.Get(Category) : Initial.Get(Category);
@@ -1031,7 +1037,7 @@ void UTN_BoothWidget::ShowPage(int32 NewPage)
 		RowFrames[r]->SetVisibility(r < Count ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		if (r < Count && RowCaptions.IsValidIndex(r)) { RowCaptions[r]->SetText(TNShopUI::RowTitle(PageRows()[r])); }
 	}
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::Get(GetWorld())) { Stage->SetBuggyMode(Page == 1); }
+	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer())) { Stage->SetBuggyMode(Page == 1); }
 	FocusRow(0);
 	RefreshRows();
 }
@@ -1054,7 +1060,7 @@ void UTN_BoothWidget::RefreshRows()
 			if (UTextureRenderTarget2D* RT = Thumbnail(Category, Id)) { RowThumbMIDs[r]->SetTextureParameterValue(TEXT("Capture"), RT); }
 		}
 	}
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::Get(GetWorld()))
+	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer()))
 	{
 		Stage->SetLook(ChosenLook());
 		Stage->SetBuggyLook(ChosenBuggyLook());
@@ -1080,7 +1086,7 @@ void UTN_BoothWidget::Cycle(int32 Row, int32 Dir)
 	const int32 Num = Options[c].Num();
 	Choice[c] = (Choice[c] + Dir + Num) % Num;
 	RefreshRows();
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::Get(GetWorld())) { Stage->PlayPose(false); }
+	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer())) { Stage->PlayPose(false); }
 }
 
 void UTN_BoothWidget::Accept()

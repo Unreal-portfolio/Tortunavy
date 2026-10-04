@@ -2,6 +2,7 @@
 #include "Game/TN_BeachRaceDecisions.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
+#include "World/Beach/TN_BeachEnemyLod.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "Camera/PlayerCameraManager.h"
@@ -21,6 +22,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "HAL/IConsoleManager.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_ShellBody.h"
@@ -99,10 +101,8 @@ namespace TNBeachEnemyShared
 			Carry && Carry->IsBeingCarried(), Turtle->IsDead());
 	}
 
-	/** Revisión del nivel de detalle (s) y cada cuánto se actualiza lejos: a la vista y fuera de ella (s). */
+	/** Revisión del nivel de detalle (s); los ritmos de cada nivel y el tope están en TN_BeachEnemyLod.h. */
 	constexpr float LodPeriod = 0.5f;
-	constexpr float FarSeenInterval = 0.066f;
-	constexpr float FarHiddenInterval = 0.25f;
 
 	/** Elementos del reparto que un enemigo que anda rodea (lo que no se pisa sin más). */
 	bool IsObstacle(const TNBeachLayout::FItem& Item)
@@ -828,28 +828,26 @@ bool ATN_BeachEnemy::GroundHeightAt(const FVector& Where, float& OutZ) const
 	return TraceGround(this, Where, OutZ);
 }
 
-void ATN_BeachEnemy::CacheObstacles()
+const TArray<ATN_BeachEnemy::FObstacle>& ATN_BeachEnemy::SharedObstacles(const ATN_BeachRaceGenerator& Gen)
 {
-	if (bObstaclesCached)
+	// Una entrada: el reparto de la ronda en curso (en el PIE, el de cada mundo se recalcula al cambiar de generador).
+	static TWeakObjectPtr<const ATN_BeachRaceGenerator> CachedGen;
+	static const void* CachedItems = nullptr;
+	static int32 CachedNum = -1;
+	static int32 CachedSeed = 0;
+	static TArray<FObstacle> List;
+	const TNBeachLayout::FRoundLayout& Layout = Gen.GetRoundLayout();
+	if (CachedGen.Get() == &Gen && CachedItems == Layout.Items.GetData() && CachedNum == Layout.Items.Num() && CachedSeed == Gen.GetRoundSeed())
 	{
-		return;
+		return List;
 	}
-	const ATN_BeachRaceGenerator* Gen = FindGenerator();
-	if (!Gen)
-	{
-		bObstaclesCached = true;
-		return;
-	}
-	const TNBeachLayout::FRoundLayout& Layout = Gen->GetRoundLayout();
-	if (Layout.Items.Num() == 0)
-	{
-		// Aún no hay reparto (o se ha creado a mano antes de la primera ronda): se vuelve a mirar en el siguiente paso.
-		return;
-	}
-	bObstaclesCached = true;
-	const FTransform GenXf = Gen->GetActorTransform();
-	const FVector2D Home2D(Home.X, Home.Y);
-	const double Area = GetFootprintRadius() * 1.6 + 6000.0;
+	TRACE_CPUPROFILER_EVENT_SCOPE(TN_BeachEnemy_SharedObstacles);
+	CachedGen = &Gen;
+	CachedItems = Layout.Items.GetData();
+	CachedNum = Layout.Items.Num();
+	CachedSeed = Gen.GetRoundSeed();
+	List.Reset();
+	const FTransform GenXf = Gen.GetActorTransform();
 	for (const TNBeachLayout::FItem& Item : Layout.Items)
 	{
 		if (!TNBeachEnemyShared::IsObstacle(Item))
@@ -865,12 +863,39 @@ void ATN_BeachEnemy::CacheObstacles()
 		Ob.B = FVector2D(B3.X, B3.Y);
 		// Un poco menos que la huella: la huella tiene aire alrededor de la pieza.
 		Ob.Radius = static_cast<float>(Item.Radius * 0.85);
+		List.Add(Ob);
+	}
+	return List;
+}
+
+void ATN_BeachEnemy::CacheObstacles()
+{
+	if (bObstaclesCached)
+	{
+		return;
+	}
+	TRACE_CPUPROFILER_EVENT_SCOPE(TN_BeachEnemy_CacheObstacles);
+	const ATN_BeachRaceGenerator* Gen = FindGenerator();
+	if (!Gen)
+	{
+		bObstaclesCached = true;
+		return;
+	}
+	if (Gen->GetRoundLayout().Items.Num() == 0)
+	{
+		// Aún no hay reparto (o se ha creado a mano antes de la primera ronda): se vuelve a mirar en el siguiente paso.
+		return;
+	}
+	bObstaclesCached = true;
+	const FVector2D Home2D(Home.X, Home.Y);
+	const double Area = GetFootprintRadius() * 1.6 + 6000.0;
+	for (const FObstacle& Ob : SharedObstacles(*Gen))
+	{
 		double T = 0.0;
-		if (TNProcMap::DistPointSegment(Home2D, Ob.A, Ob.B, T) - Ob.Radius > Area)
+		if (TNProcMap::DistPointSegment(Home2D, Ob.A, Ob.B, T) - Ob.Radius <= Area)
 		{
-			continue;
+			Obstacles.Add(Ob);
 		}
-		Obstacles.Add(Ob);
 	}
 }
 
@@ -1442,6 +1467,26 @@ void ATN_BeachEnemy::PlaceHeldTurtle(const FVector& Grip, float Yaw)
 	Turtle->SetActorLocationAndRotation(Loc, FRotator(0.f, Yaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
 }
 
+int32 ATN_BeachEnemy::CountCloserFullRate() const
+{
+	const UWorld* World = GetWorld();
+	int32 Closer = 0;
+	for (const TWeakObjectPtr<ATN_BeachEnemy>& Weak : TNBeachEnemyShared::AllEnemies())
+	{
+		const ATN_BeachEnemy* Other = Weak.Get();
+		if (!Other || Other == this || !Other->bThrottleWhenFar || !Other->bLodWantsFull || Other->GetWorld() != World)
+		{
+			continue;
+		}
+		// Empate: decide la dirección del objeto, igual vista desde los dos (no se quedan los dos fuera ni los dos dentro).
+		if (Other->LodPriority < LodPriority || (Other->LodPriority == LodPriority && Other < this))
+		{
+			++Closer;
+		}
+	}
+	return Closer;
+}
+
 void ATN_BeachEnemy::UpdateLod()
 {
 	if (!bThrottleWhenFar)
@@ -1457,22 +1502,24 @@ void ATN_BeachEnemy::UpdateLod()
 	{
 		NearestSq = FMath::Min(NearestSq, FVector::DistSquared2D(Turtle->GetActorLocation(), Here));
 	}
-	const float Range = GetVisualRange();
-	const bool bActive = HasAuthority() && NearestSq < FMath::Square(static_cast<double>(GetActiveRange()));
-	const bool bClose = bHasScreen && ViewDistance < Range * 0.5f;
-	bThrottled = !bActive && !bClose;
-	float Interval = 0.f;
-	if (bThrottled)
-	{
-		Interval = (bHasScreen && ViewDistance < Range) ? TNBeachEnemyShared::FarSeenInterval : TNBeachEnemyShared::FarHiddenInterval;
-	}
+	TNBeachEnemyLod::FInput In;
+	In.bActive = HasAuthority() && NearestSq < FMath::Square(static_cast<double>(GetActiveRange()));
+	In.bHasScreen = bHasScreen;
+	In.ViewDistance = ViewDistance;
+	In.VisualRange = GetVisualRange();
+	const TNBeachEnemyLod::ETier Wanted = TNBeachEnemyLod::Classify(In);
+	bLodWantsFull = Wanted == TNBeachEnemyLod::ETier::Full;
+	LodPriority = TNBeachEnemyLod::Priority(HasAuthority(), static_cast<float>(FMath::Sqrt(NearestSq)), bHasScreen, ViewDistance);
+	const TNBeachEnemyLod::ETier Tier = bLodWantsFull ? TNBeachEnemyLod::ApplyBudget(Wanted, CountCloserFullRate()) : Wanted;
+	bThrottled = Tier != TNBeachEnemyLod::ETier::Full;
+	const float Interval = TNBeachEnemyLod::TickInterval(Tier);
 	if (!FMath::IsNearlyEqual(GetActorTickInterval(), Interval))
 	{
 		SetActorTickInterval(Interval);
 	}
 	if (HasAuthority())
 	{
-		const float Frequency = bActive ? NetFrequencyNear : FMath::Min(NetFrequencyNear, 3.f);
+		const float Frequency = In.bActive ? NetFrequencyNear : FMath::Min(NetFrequencyNear, 3.f);
 		if (!FMath::IsNearlyEqual(GetNetUpdateFrequency(), Frequency))
 		{
 			SetNetUpdateFrequency(Frequency);
@@ -1577,6 +1624,7 @@ void ATN_BeachEnemy::Tick(float DeltaSeconds)
 	{
 		// Bolas de caparazón lanzadas contra los enemigos (una vez por fotograma para todo el mundo).
 		TNBeachEnemyShared::ScanThrownShells(GetWorld());
+		TRACE_CPUPROFILER_EVENT_SCOPE(TN_BeachEnemy_ServerTick);
 		ServerTick(DeltaSeconds);
 	}
 	if (bUsesMover)
@@ -1590,6 +1638,7 @@ void ATN_BeachEnemy::Tick(float DeltaSeconds)
 	if (bHasScreen)
 	{
 		ViewDistance = LocalViewDistance(this, bUsesMover ? ShownLoc : GetActorLocation());
+		TRACE_CPUPROFILER_EVENT_SCOPE(TN_BeachEnemy_VisualTick);
 		VisualTick(DeltaSeconds);
 		UpdateHitStunVisual();
 		if (bPopsLive)

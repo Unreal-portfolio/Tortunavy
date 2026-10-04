@@ -1,4 +1,5 @@
 #include "UI/Race/TN_RacePodiumStage.h"
+#include "Art/TN_TurtleArt.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/PointLightComponent.h"
@@ -7,14 +8,12 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
-#include "Engine/TextureRenderTarget2D.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "HAL/IConsoleManager.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
-#include "UObject/ConstructorHelpers.h"
 #include "World/Beach/TN_BeachTypes.h"
 #include "../../World/ProcMap/TN_ProcMapMeshKit.h"
 #include "../../World/ProcMap/TN_ProcMapRuntimeMesh.h"
@@ -616,7 +615,7 @@ ATN_RacePodiumStage::ATN_RacePodiumStage()
 	IslandMesh = MakeMesh(TEXT("IslandMesh"), false);
 	TrophyMesh = MakeMesh(TEXT("TrophyMesh"), true);
 
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> TurtleMesh(TEXT("/Game/Meshses/Characters/Player/TotugaDemo_Rig.TotugaDemo_Rig"));
+	// La malla de las tortugas es la del personaje (TNTurtleArt::ApplyBody en BeginPlay), no una ruta fija.
 	for (int32 i = 0; i < 3; ++i)
 	{
 		USkeletalMeshComponent* Turtle = CreateDefaultSubobject<USkeletalMeshComponent>(*FString::Printf(TEXT("Turtle%d"), i));
@@ -627,7 +626,6 @@ ATN_RacePodiumStage::ATN_RacePodiumStage()
 		Turtle->SetRelativeScale3D(FVector(TurtleScale));
 		Turtle->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 		SetupPrimitive(Turtle, true);
-		if (TurtleMesh.Succeeded()) { Turtle->SetSkeletalMeshAsset(TurtleMesh.Object); }
 		Turtles.Add(Turtle);
 
 		UStaticMeshComponent* Helmet = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("Helmet%d"), i));
@@ -701,9 +699,12 @@ void ATN_RacePodiumStage::BeginPlay()
 {
 	using namespace TNRacePodiumDetail;
 	Super::BeginPlay();
-	for (USkeletalMeshComponent* Turtle : Turtles)
+	for (int32 i = 0; i < Turtles.Num(); ++i)
 	{
-		// La animación de la tortuga del jugador, sin personaje: la pose de celebración la pide el podio.
+		// La tortuga del personaje (malla, materiales y escala) en su sitio del podio, con la animación de la del jugador,
+		// sin personaje: la pose de celebración la pide el podio.
+		USkeletalMeshComponent* Turtle = Turtles[i];
+		if (TNTurtleArt::ApplyBody(Turtle, FTransform(FRotator(0.f, PlaceYaw[i], 0.f), PlaceSpots[i], FVector(TurtleScale)))) { DefaultMaterials.Reset(); }
 		Turtle->SetAnimInstanceClass(UTN_TurtleAnimInstance::StaticClass());
 		Turtle->SetVisibility(false, true);
 	}
@@ -778,6 +779,10 @@ void ATN_RacePodiumStage::SetPodium(const TArray<FTN_TurtleLook>& Looks)
 		Turtle->SetVisibility(bUse, true);
 		if (!bUse) { continue; }
 		UTN_CosmeticLook::ApplyLook(this, Turtle, Helmets[i], Looks[i], DefaultMaterials);
+		// Las piezas de Arte de la tortuga (TNTurtleArt) solo se ven en la captura, como ella.
+		TArray<UPrimitiveComponent*> Pieces;
+		TNTurtleArt::GetPieceComponents(Turtle, Pieces);
+		for (UPrimitiveComponent* Piece : Pieces) { Capture->ShowOnlyComponent(Piece); }
 		if (UTN_TurtleAnimInstance* Anim = Cast<UTN_TurtleAnimInstance>(Turtle->GetAnimInstance())) { Anim->SetCelebration(PlacePose[i]); }
 	}
 	const bool bTrophy = bPlaceUsed[0];

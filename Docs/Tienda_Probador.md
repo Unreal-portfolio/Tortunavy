@@ -95,7 +95,9 @@ arrastrar `TN_ShopKeeper` o `TN_ChangingBooth` al nivel.
 
 `TotugaDemo_Rig` tiene dos ranuras de material: `lambert2` (casco rojo de serie y lengua) y `lambert4` (cuerpo, ojos
 y caparazón juntos). Por eso el color y el caparazón se pintan con un solo material, `M_TurtleBody`, que separa las
-zonas por la posición local antes del skinning (unidades de la malla; mira a +Y y mide unos 53 de alto):
+zonas por la posición local antes del skinning (unidades de la malla; mira a +Y y mide unos 53 de alto). Las ranuras
+se buscan por nombre (Ajustes del proyecto > Tortunavy > Arte > Tortuga > Cosméticos): una malla de Arte sin ellas se
+queda con sus materiales, sin colores de la tienda ni cara animada (`Docs/Arte_Assets.md`, §10).
 
 - **Caparazón:** detrás del torso (`y` menor que un frente que va de 0,4 a 3,2 según la altura), entre `z` 22,3 y 38,4
   y con `|x|` < 7,2. Coincide con la pieza del caparazón de la malla.

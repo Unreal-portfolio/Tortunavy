@@ -198,6 +198,9 @@ void UTN_RoomCodeField::NativeOnInitialized()
 	Super::NativeOnInitialized();
 	// Se enfoca (teclado y mando) y la raíz existe desde ya: el campo entra en un panel que ya está en pantalla.
 	SetIsFocusable(true);
+	// Visible, no SelfHitTestInvisible (el de serie de un UUserWidget): la navegación de Slate solo llega a lo que se puede
+	// tocar (como las filas, UTN_PauseRow).
+	SetVisibility(ESlateVisibility::Visible);
 	Chars.Init(TCHAR(0), TNRoomCode::Length);
 	if (!WidgetTree || WidgetTree->RootWidget)
 	{

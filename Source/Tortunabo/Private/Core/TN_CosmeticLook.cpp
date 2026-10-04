@@ -1,4 +1,6 @@
 #include "Core/TN_CosmeticLook.h"
+#include "Art/TN_ArtSettings.h"
+#include "Art/TN_TurtleArt.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/SkinnedAsset.h"
@@ -29,22 +31,22 @@ namespace TNCosmeticLookDetail
 		int32 BodySlot = INDEX_NONE;
 	};
 
+	/**
+	 * Ranuras que pintan los cosméticos, por nombre (UTN_ArtSettings: «lambert2» y «lambert4» en la malla de demo). Una
+	 * malla que no las tenga (la de Arte) se queda con sus materiales: nunca se pinta una ranura por su número.
+	 */
 	FTurtleSlots SlotsOf(const USkeletalMeshComponent* Body)
 	{
 		FTurtleSlots Slots;
-		const int32 Num = Body->GetNumMaterials();
-		if (Num >= 5)
+		if (Body->GetNumMaterials() >= 5)
 		{
 			Slots.bUnified = true;
 			return Slots;
 		}
-		Slots.HelmetSlot = Body->GetMaterialIndex(TEXT("lambert2"));
-		Slots.BodySlot = Body->GetMaterialIndex(TEXT("lambert4"));
-		if (Num == 2)
-		{
-			if (Slots.HelmetSlot == INDEX_NONE) { Slots.HelmetSlot = 0; }
-			if (Slots.BodySlot == INDEX_NONE) { Slots.BodySlot = 1; }
-		}
+		const UTN_ArtSettings* Settings = GetDefault<UTN_ArtSettings>();
+		auto Find = [Body](FName Name) { return Name.IsNone() ? INDEX_NONE : Body->GetMaterialIndex(Name); };
+		Slots.HelmetSlot = Find(Settings->HelmetMaterialSlot);
+		Slots.BodySlot = Find(Settings->BodyMaterialSlot);
 		return Slots;
 	}
 
@@ -124,6 +126,9 @@ void UTN_CosmeticLook::ApplyLook(const UObject* WorldContext, USkeletalMeshCompo
 		if (HelmMesh) { AttachHelmet(Body, Helmet, HelmRow); }
 	}
 
+	// Piezas de Arte pegadas a los huesos (caparazón, casco de serie, ojos, lengua; TNTurtleArt): manda el casco de la tienda.
+	const bool bArtHelmet = TNTurtleArt::ApplyPieces(Body, HelmMesh != nullptr);
+
 	const FTurtleSlots Slots = SlotsOf(Body);
 	if (Slots.bUnified)
 	{
@@ -148,7 +153,8 @@ void UTN_CosmeticLook::ApplyLook(const UObject* WorldContext, USkeletalMeshCompo
 		UMaterialInterface* SlotMat = LoadMaterial(HelmetSlotMaterialPath);
 		if (UMaterialInstanceDynamic* SlotMID = SlotMat ? Body->CreateDynamicMaterialInstance(Slots.HelmetSlot, SlotMat) : nullptr)
 		{
-			SlotMID->SetScalarParameterValue(TEXT("HideHelmet"), HelmMesh ? 1.f : 0.f);
+			// El casco de serie de Arte (Turtle.Helmet) sustituye al pintado en la malla.
+			SlotMID->SetScalarParameterValue(TEXT("HideHelmet"), (HelmMesh || bArtHelmet) ? 1.f : 0.f);
 			SlotMID->SetScalarParameterValue(TEXT("HideTongue"), 1.f);
 		}
 	}

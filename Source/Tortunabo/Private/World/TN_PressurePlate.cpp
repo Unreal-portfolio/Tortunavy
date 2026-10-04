@@ -2,6 +2,7 @@
 #include "World/TN_ButtonGroupManager.h"   // FTN_TransformAction
 #include "Player/TortugaCharacter.h"
 #include "Core/TN_CoopPlayerState.h"
+#include "Core/TN_Log.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -360,7 +361,7 @@ void ATN_PressurePlateGroupManager::RegisterPlate(ATN_PressurePlate* Plate)
 	ManagedPlates.Add(Plate);
 	Plate->OnOccupancyChanged.AddUObject(this, &ATN_PressurePlateGroupManager::OnOccupancyChanged);
 
-	UE_LOG(LogTemp, Log, TEXT("[PressurePlateGroupManager] '%s' registró placa '%s' en runtime."),
+	UE_LOG(LogTortunabo, Log, TEXT("[PressurePlateGroupManager] '%s' registró placa '%s' en runtime."),
 		*GetName(), *GetNameSafe(Plate));
 
 	// Re-evaluar por si la placa ya estaba activa

@@ -16,6 +16,10 @@ class USoundBase;
  *
  * Replicada (el estado activado se ve en todos). La activación la decide el
  * servidor y la registra el GameMode del mapa procedural.
+ *
+ * Arte de código (#50): sin NestMeshOverride, la base es un nido de arena con un
+ * aro de paja y los ocho huevos son el de la pila del lobby (TNCastleKit), con la
+ * cáscara IdleColor o ActiveColor y una banda de color distinta en cada uno.
  */
 UCLASS(Blueprintable)
 class TORTUNABO_API ATN_ProcEggNest : public AActor
@@ -57,9 +61,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EggNest")
 	TObjectPtr<UStaticMeshComponent> NestBase;
 
-	/** Huevos greybox; se ocultan si se asigna NestMeshOverride. */
+	/** Huevos de la pila (arte de código); se ocultan si se asigna NestMeshOverride. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EggNest")
 	TArray<TObjectPtr<UStaticMeshComponent>> Eggs;
+
+	/** Colisión de la peana: un cilindro invisible bajo el nido (la malla de código no trae colisión simple). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EggNest")
+	TObjectPtr<UStaticMeshComponent> PedestalCollision;
 
 	/** Colisión de la pila de huevos: un cono invisible que los envuelve (sin huecos donde encajarse). */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EggNest")
@@ -72,11 +80,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EggNest")
 	TObjectPtr<USoundBase> ActivateSound;
 
+	/** Cáscara (lineal) de los huevos de código antes de alcanzar la pila. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EggNest")
 	FLinearColor IdleColor = FLinearColor(0.85f, 0.82f, 0.7f);
 
+	/** Cáscara (lineal) de los huevos de código con la pila activada. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EggNest")
 	FLinearColor ActiveColor = FLinearColor(1.f, 0.85f, 0.25f);
+
+	/** Escala de los huevos de código respecto al huevo de 2,4 m de la pila del lobby. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EggNest|Art", meta = (ClampMin = "0.05", ClampMax = "1.0"))
+	float CodeArtEggScale = 0.3f;
 
 	/** Evento BP al activarse (brillo, partículas...). */
 	UFUNCTION(BlueprintImplementableEvent, Category = "EggNest")
@@ -94,6 +108,13 @@ private:
 
 	UFUNCTION()
 	void OnRep_Activated();
+
+	/** True si la base y los huevos llevan el arte de código (sin NestMeshOverride y fuera del servidor dedicado). */
+	UPROPERTY(Transient)
+	bool bCodeArt = false;
+
+	/** Pone el nido y los huevos de código en NestBase y Eggs, y coloca los huevos en la pila. */
+	void BuildCodeArt();
 
 	void ApplyVisual();
 
