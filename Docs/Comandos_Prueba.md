@@ -351,6 +351,7 @@ parrilla 2 × 4 detrás de la línea y 3 vueltas por defecto (el `laps` del mani
 | `...?Bots=5?AutoStart?Spectate` | Carrera solo de bots y la jugadora mirando (#631). |
 | `log LogTNRally Verbose` | Cada puerta válida («puerta N (vuelta V) a los S s») y las que no cuentan porque se cruza su plano fuera de ella. |
 | `Automation RunTests Tortunabo.Rally.Circuit` | Lectura del manifest, puertas con peralte, notas de salto y cresta, frenada de la IA, R01 como circuito y E01B e I03R como antes. |
+| `Automation RunTests Tortunabo.Rally.Measure.RecoilNoFlip` | Con física y sin ventana (#695): cada munición especial hacia delante y hacia atrás, parado y a 50 km/h, sin volcar el buggy; caso negativo con el retroceso del mortero de antes. |
 
 Sin editor, el piloto IA da 5 vueltas (unos 8 min; criterio: `terminados 1/1, atascos 0` en la línea `[RallyStats]`):
 `UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Rally/LVL_Rally?Variant=R01_circuito_dunas?Bots=1?AutoStart?Races=1?Laps=5?RaceTimeout=900" -server -nullrhi -NoSteam -ExecCmds="log LogTNRally Verbose"`.

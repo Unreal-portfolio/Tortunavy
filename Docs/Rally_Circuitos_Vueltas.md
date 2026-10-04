@@ -105,12 +105,13 @@ El perfil `dunas` (R01) no cambia: los sorteos nuevos van con su propio generado
 - Cuatro saltos: la **doble** y la **cresta** en el zigzag de las horquillas, la **mesa** de #622 tras la chicane y el **salto largo sobre hueco** detrás de una curva peraltada, donde se llega más rápido.
 - Tras las curvas peraltadas (todas llevan algo detrás) se reparten el hueco (el primero de su curva), los dos rasantes, las dos rectas de baches y el badén.
 - Baches y badén son rectas propias, con 10-12 m llanos a cada lado: nunca caen en curva (el validador lo mide en `road_uu`).
+- Una recta de baches nunca va justo antes de una horquilla (#696, `rally_circuit_plan.bumps_before_hairpin`): sus baches caerían en la frenada. El orden de piezas que lo hace se descarta, sin gastar sorteos, así que los trazados que ya cumplían no cambian (las semillas 6938, 6923 y 7001 lo hacían).
 - Las dos horquillas llevan banqueta: peralte de 10-13° y caballón por fuera.
 
 ### Elementos
 
 - **Saltos de forma**: rampa como la de la mesa hasta el labio (7-13°) y después, en la doble y el hueco, cara trasera de 24°, vaguada (a la cota del pie en la doble y 2 m por debajo en el hueco) y cara de subida hasta la cresta de la recepción, 0,3 m (doble) o 0,9 m (hueco) por debajo del labio. La cresta está donde la trayectoria a 0,8 · v pasa 0,4 m por encima: el piloto IA, que llega a 0,9 · v, salva el hueco. La cara de recepción es convexa (de 2° a 12-20°) y se busca para el menor choque a v y a 0,9 · v; si pasa de 4 m/s (4,5 a la velocidad de la IA), se baja el labio de grado en grado. La cresta no tiene hueco: la cima redondeada cae directa a la cara. Las caras del hueco se suben andando si alguien cae dentro.
-- **Baches**: ondas `A · (1 − cos(2πx/λ))` (montículos de 2A de pico a pico). Whoops: A 0,14-0,19 m, λ 8-11 m; tabla de lavar: A 0,07-0,10 m, λ 4,5-6 m. Límites: A ≤ 0,8 · min(SuspensionMaxRaise, SuspensionMaxDrop) = 0,20 m (25 cm en `TN_BuggyWheel.cpp`, que lee el test), radio del valle ≥ radio de la rueda (0,504 m), λ ≥ 4,5 m (vóxel de 1 m). Los trozos con baches o badén se deciman a 0,02 m para no perder la tabla de lavar.
+- **Baches**: ondas `A · (1 − cos(2πx/λ))` (montículos de 2A de pico a pico). Whoops: A 0,14-0,19 m, λ 8-11 m; tabla de lavar: A 0,07-0,10 m, λ 4,5-6 m. Límites: A ≤ 0,8 · min(SuspensionMaxRaise, SuspensionMaxDrop) = 0,20 m (25 cm en `TN_BuggyWheel.cpp`, que lee el test), radio del valle ≥ radio de la rueda (0,504 m), λ ≥ 4,5 m (vóxel de 1 m). Los trozos con baches o badén se deciman a 0,02 m y la calzada de los trenes de baches (con 4 m más a cada lado) no pasa por el suavizado de Taubin de `terrain_vol/mesh.py` (`RallyCircuitModel.unsmoothed_mask`, #696): el suavizado es un paso bajo y dejaba la tabla de lavar al 31-60 % de su amplitud (peor cuanto más corta y más alineada con la rejilla); sin él queda al 74-89 %. El marching cubes de un campo de alturas ya pone los vértices a la cota exacta.
 - **Badén**: coseno hacia abajo de 0,45-0,65 m con el largo justo para 0,8 g de curvatura vertical a la velocidad con turbo (ni despega ni hunde la suspensión); el color de los vértices pasa a barro (`mud_mask`, `terrain_vol/mesh.py`).
 - **Banqueta**: caballón de 0,9 m que sube desde 6 m del eje hasta 10,5 m y vuelve a la berma en 14 m, antes de las barreras de #303.
 
@@ -122,7 +123,7 @@ El perfil `dunas` (R01) no cambia: los sorteos nuevos van con su propio generado
 
 ### Validador
 
-Además de lo de #622, con el perfil tierra el veredicto pide (`rally_circuit_check_dirt.tierra_verdict`): al menos 4 saltos de al menos 2 tipos y, en la doble y el hueco, que el vuelo medido a 0,9 · v caiga en la cara de recepción con un choque ≤ 6 m/s; dos tramos de baches (whoops y tabla de lavar) en recta (curvatura ≤ 1/400 m), con la amplitud medida en la malla a −4, 0 y +4 m del eje entre el 60 % del diseño y el límite de la suspensión (+2 cm); el badén con la profundidad medida a ±0,15 m y ≤ 0,95 g con turbo; y la banqueta con al menos el 60 % del caballón medido y peralte ≥ 8°.
+Además de lo de #622, con el perfil tierra el veredicto pide (`rally_circuit_check_dirt.tierra_verdict`): al menos 4 saltos de al menos 2 tipos y, en la doble y el hueco, que el vuelo medido a 0,9 · v caiga en la cara de recepción con un choque ≤ 6 m/s; dos tramos de baches (whoops y tabla de lavar) en recta (curvatura ≤ 1/400 m), con la amplitud medida en la malla a −4, 0 y +4 m del eje entre el 60 % del diseño y el límite de la suspensión (+2 cm); el badén con la profundidad medida a ±0,15 m y ≤ 0,95 g con turbo; y la banqueta con al menos el 60 % del caballón medido y peralte ≥ 8°. Desde #696, `bumps_braking`: cada tren de baches acaba antes de donde el piloto IA empieza a frenar para la siguiente horquilla (de la velocidad de la línea ideal al final del tren, como mucho 90 km/h, a la de la horquilla con 0,6 g de lateral, frenando a 0,5 g: los números de `ATN_RallyAIController`, que un test lee del C++). Lo comprueba `Scripts/tests/test_terrain_rally_baches.py` en R02 a R06.
 
 ### R02_circuito_tierra (semilla 682)
 
@@ -156,3 +157,18 @@ Piloto IA sin editor (04-10, 1 bot, 3 vueltas, `-server -nullrhi`, `LVL_Rally?Va
 | R02 (control, mismo día) | 367 s | 0 | 1 | 0 |
 
 Los vuelcos son momentáneos (el ritmo por vuelta no cambia y no hay reapariciones) y se repiten en los mismos sitios: curvas peraltadas a 40-55 km/h, la salida de horquillas con banqueta y, en R06, la mesa tras la chicane a 55 km/h (diseñada para 95). Falta verlos en el editor. No se ha probado en el editor.
+
+**Vuelcos (#695).** La causa no era el trazado: los 39 vuelcos de dos tandas de carreras (R02 a R06) llegaron todos 0,2-0,4 s después de que el bot gastara un mortero (37 disparos). El bot lo dispara hacia delante cuando lo ha guardado 8 s sin nadie a tiro, y el retroceso del mortero levantaba el morro 560 cm/s (700 · 0,8): a 50 km/h el buggy daba la vuelta. Peraltes, banquetas y la mesa de R06 solo eran el sitio donde se le acababan esos 8 s. El levantamiento del retroceso tiene ahora tope (`TNRallyTurret::MaxRecoilLiftCms`, 200 cm/s, el de la concha; el frenazo horizontal no cambia) y lo mide `Tortunabo.Rally.Measure.RecoilNoFlip`.
+
+Tras #695 y #696, con R01 a R06 regenerados (04-10, mismas condiciones):
+
+| Circuito | Tiempo (3 vueltas) | Atascos | Vuelcos | Morteros gastados | Tabla de lavar medida |
+|---|---|---|---|---|---|
+| R01 | 300 s | 0 | 0 | 1 | (sin baches) |
+| R02 | 368 s | 0 | 0 | 1 | 87 % |
+| R03 | 383 s | 0 | 0 | 3 | 82 % |
+| R04 | 377 s | 0 | 0 | 2 | 76 % |
+| R05 | 382 s | 0 | 0 | 1 | 74 % |
+| R06 | 370 s | 0 | 0 | 3 | 84 % |
+
+La regeneración solo cambia los trozos de los baches (3-6 por circuito) y los campos nuevos del veredicto; el trazado, los elementos y R01 quedan igual. No se ha probado en el editor.
