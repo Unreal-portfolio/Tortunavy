@@ -5,6 +5,7 @@
 #include "Vehicles/TN_BuggyMath.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_RallyAnchor.h"
+#include "Vehicles/TN_RallyFXParticles.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -538,8 +539,11 @@ void ATN_RallyBurstFX::Broadcast(ATN_Buggy* Via, ETNRallyBurstKind InKind, const
 void ATN_RallyBurstFX::BeginPlay()
 {
 	Super::BeginPlay();
-	SetLifeSpan(TNRallyFX::BurstSeconds(Kind) + 0.1f);
+	Particles = MakeShared<TNRallyParticles::FEmitterSet>();
+	const float ParticleLife = TNRallyParticles::SpawnBurst(this, *Particles, Kind, GetActorLocation(), RadiusCm);
+	SetLifeSpan(FMath::Max(TNRallyFX::BurstSeconds(Kind), ParticleLife) + 0.1f);
 	ApplyLook();
+	// Pendiente (#301): las partículas aún no se ven en las capturas del Rally; hasta confirmarlas, la esfera se queda.
 	// Spawn no crea ráfagas en un servidor dedicado: aquí siempre hay quien escuche.
 	if (const TObjectPtr<USoundBase>* Sound = ImpactSounds.Find(Kind); Sound && *Sound)
 	{
@@ -560,6 +564,10 @@ void ATN_RallyBurstFX::Tick(float DeltaSeconds)
 	if (Kind == ETNRallyBurstKind::Smoke)
 	{
 		AddActorWorldOffset(FVector(0.f, 0.f, TNRallyFX::SmokeRiseCms * DeltaSeconds));
+	}
+	if (Particles.IsValid())
+	{
+		TNRallyParticles::Tick(*Particles, FMath::Min(DeltaSeconds, 0.1f), TNRallyParticles::LocalView(GetWorld(), GetActorLocation()));
 	}
 	const float Alpha = FMath::Clamp(Age / TNRallyFX::BurstSeconds(Kind), 0.f, 1.f);
 	// Crece rápido hasta el radio final y se encoge al final para desaparecer.

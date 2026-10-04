@@ -5,6 +5,7 @@
 
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyData.h"
+#include "Vehicles/TN_BuggyDustComponent.h"
 #include "Vehicles/TN_BuggyEngineAudioComponent.h"
 #include "Vehicles/TN_BuggyGunnerPawn.h"
 #include "Vehicles/TN_BuggyHealthComponent.h"
@@ -167,6 +168,7 @@ ATN_Buggy::ATN_Buggy()
 
 	HealthComponent = CreateDefaultSubobject<UTN_BuggyHealthComponent>(TEXT("Health"));
 	EngineAudio = CreateDefaultSubobject<UTN_BuggyEngineAudioComponent>(TEXT("EngineAudio"));
+	DustFX = CreateDefaultSubobject<UTN_BuggyDustComponent>(TEXT("DustFX"));
 	static ConstructorHelpers::FObjectFinder<USoundBase> BoostLoopFinder(TEXT("/Game/Audio/Rally/SFX_Buggy_Turbo_Loop.SFX_Buggy_Turbo_Loop"));
 	static ConstructorHelpers::FObjectFinder<USoundBase> BoostStartFinder(TEXT("/Game/Audio/Rally/SFX_Buggy_Turbo_Start.SFX_Buggy_Turbo_Start"));
 	BoostSound = BoostLoopFinder.Object;

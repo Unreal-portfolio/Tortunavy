@@ -15,6 +15,12 @@ class UProjectileMovementComponent;
 class USphereComponent;
 class UStaticMeshComponent;
 
+namespace TNRallyParticles
+{
+	// Emisores de partículas de una ráfaga (Private/Vehicles/TN_RallyFXParticles.h).
+	struct FEmitterSet;
+}
+
 /** Colores de la munición (proyectil, cañón de la torreta y pantallita) y tinte de las mallas básicas. */
 namespace TNRallyLook
 {
@@ -138,7 +144,11 @@ enum class ETNRallyBurstKind : uint8
 	Smoke
 };
 
-/** Ráfaga cosmética corta (esfera que crece y se desvanece). No se replica: cada máquina crea la suya. */
+/**
+ * Ráfaga cosmética corta de un impacto (#301): partículas propias de cada munición (cáscara y arena del coco, brasas y humo
+ * de la explosión, gotas de tinta, gotas y onda de la burbuja, chispas, nube de arena) y su sonido. El escudo y el fogonazo
+ * conservan la esfera que crece. No se replica: cada máquina crea la suya.
+ */
 UCLASS()
 class TORTUNABO_API ATN_RallyBurstFX : public AActor
 {
@@ -174,4 +184,7 @@ private:
 	ETNRallyBurstKind Kind = ETNRallyBurstKind::CocoHit;
 	float RadiusCm = 100.f;
 	float Age = 0.f;
+
+	/** Partículas de la ráfaga (vacío en un servidor dedicado). */
+	TSharedPtr<TNRallyParticles::FEmitterSet> Particles;
 };

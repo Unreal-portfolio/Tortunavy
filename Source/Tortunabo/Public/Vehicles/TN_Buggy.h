@@ -26,6 +26,7 @@ class UStaticMeshComponent;
 class UTN_BuggyData;
 class UTN_BuggyHealthComponent;
 class UTN_BuggyEngineAudioComponent;
+class UTN_BuggyDustComponent;
 class UTN_BuggyInputSet;
 class UTN_BuggyLookComponent;
 class UTN_BuggyTurretComponent;
@@ -484,6 +485,10 @@ private:
 	/** Motor en tres capas por RPM y derrape en bucle: local y cosmético (los sonidos, en el componente). */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UTN_BuggyEngineAudioComponent> EngineAudio;
+
+	/** Polvo, salpicaduras, marcas de las ruedas y golpe de aterrizaje (#301), locales en cada máquina con pantalla. */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UTN_BuggyDustComponent> DustFX;
 
 	/** Caña y boca del cañón: gira y cabecea con el apuntado y toma el color de la munición (UTN_BuggyTurretComponent::TintTag). */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
