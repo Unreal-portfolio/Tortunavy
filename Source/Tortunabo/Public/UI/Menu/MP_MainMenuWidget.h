@@ -71,6 +71,10 @@ private:
 	UFUNCTION()
 	void OnSettingsClicked();
 
+	/** «Créditos»: abre la pantalla de créditos encima de este menú (UTN_CreditsWidget, Docs/Creditos.md). */
+	UFUNCTION()
+	void OnCreditsClicked();
+
 	/** Monta el botón «Ajustes» junto a los del Blueprint (una sola vez). */
 	void BuildSettingsButton();
 
@@ -110,6 +114,10 @@ private:
 	/** «Ajustes»: el botón hecho en código. */
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> SettingsButton;
+
+	/** «Créditos»: el botón hecho en código, entre «Ajustes» y «Salir». */
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> CreditsButton;
 
 	/** Los ajustes están abiertos encima de este menú (se vigila en NativeTick hasta que se cierren). */
 	bool bSettingsOpen = false;

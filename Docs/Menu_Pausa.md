@@ -67,7 +67,7 @@ cuando habla y sale tachado si está silenciado. Un invitado ve también su prop
 tiene ping contra nadie y una partida local tampoco (`TNPlayerRowRules`, #256). El ping se lee al hacer la lista (al abrir
 el menú o cuando alguien entra o sale), no se refresca mientras está abierto.
 
-**Portada**: Continuar, Ajustes, Controles, Sala (en red), Volver al lobby, Menú principal (anfitrión) o Salir de la
+**Portada**: Continuar, Ajustes, Controles, Créditos ([Créditos](Creditos.md)), Sala (en red), Volver al lobby, Menú principal (anfitrión) o Salir de la
 partida (invitado) y Salir al escritorio. Abajo, la ayuda de la opción enfocada y los atajos.
 
 **Sala** (partidas en red; ver [Salas](Salas.md)): nombre, pública o privada, el código (se copia), «Entrada: Abierta /

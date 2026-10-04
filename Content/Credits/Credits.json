@@ -1,0 +1,45 @@
+{
+	"format": 1,
+	"sections": [
+		{
+			"id": "team",
+			"entries": [
+				{ "name": "Rodrigo Fernández (SkiTemplar)", "roles": ["director"] },
+				{ "name": "José Mota (Mokius)", "roles": ["code"] },
+				{ "name": "Rubén Besteiro (Rubi)", "roles": ["code"] },
+				{ "name": "María Calzado del Valle", "roles": ["art"] },
+				{ "name": "Álvaro (Alvaro2rh)", "roles": ["art", "levels"] },
+				{ "name": "Sylkerr", "roles": ["levels"] },
+				{ "name": "MiguelilloElPillo", "roles": ["audio"] }
+			]
+		},
+		{
+			"id": "art",
+			"entries": [
+				{ "name": "Mixamo (Adobe)", "roles": ["animations"], "source": "mixamo.com" }
+			]
+		},
+		{
+			"id": "fonts",
+			"entries": [
+				{ "name": "Roboto", "source": "Google", "license": "Apache License 2.0" },
+				{ "name": "Droid Sans Fallback", "source": "Android Open Source Project", "license": "Apache License 2.0" },
+				{ "name": "Noto Naskh Arabic UI", "source": "Google Noto Fonts", "license": "SIL Open Font License 1.1" }
+			],
+			"notes": [
+				"Roboto, Droid Sans Fallback and Noto Naskh Arabic UI are distributed with Unreal Engine. Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0",
+				"The Noto fonts are licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org). Full text below and in Content/Credits/OFL-1.1.txt."
+			],
+			"licenseFile": "OFL-1.1.txt"
+		},
+		{
+			"id": "engine",
+			"entries": [
+				{ "name": "Unreal® Engine", "source": "Epic Games, Inc." }
+			],
+			"notes": [
+				"Tortunavy uses the Unreal® Engine. Unreal® is a trademark or registered trademark of Epic Games, Inc. in the United States of America and elsewhere."
+			]
+		}
+	]
+}

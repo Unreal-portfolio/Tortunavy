@@ -17,6 +17,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Multiplayer/TN_RoomNames.h"
 #include "Player/TortugaCharacter.h"
+#include "UI/Credits/TN_CreditsWidget.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
@@ -1249,8 +1250,9 @@ void UTN_PauseMenuWidget::BuildTree()
 	TNPauseUI::Pin(Canvas, BuildHeader(), FVector2D(0.5f, 0.f), FVector2D(0.f, 18.f));
 
 	Pages = TNPauseUI::Make<UWidgetSwitcher>(Tree);
+	CreditsPage = UTN_CreditsWidget::CreatePage(this);
 	// En el orden de ETNPausePage.
-	for (UWidget* PageWidget : { BuildHomePage(), BuildSettingsPage(), BuildControlsPage(), BuildRoomPage() })
+	for (UWidget* PageWidget : { BuildHomePage(), BuildSettingsPage(), BuildControlsPage(), BuildRoomPage(), static_cast<UWidget*>(CreditsPage.Get()) })
 	{
 		if (UWidgetSwitcherSlot* PageSlot = Cast<UWidgetSwitcherSlot>(Pages->AddChild(PageWidget)))
 		{
@@ -1350,6 +1352,15 @@ void UTN_PauseMenuWidget::BuildHomeButtons()
 	AddBig(NSLOCTEXT("TNPause", "Controls", "Controles"), TNPauseArt::EMenuIcon::Controls,
 		NSLOCTEXT("TNPause", "ControlsDesc", "Todas las teclas y botones del juego, con teclado y ratón o con mando."),
 		[WeakThis]() { if (UTN_PauseMenuWidget* Menu = WeakThis.Get()) { Menu->ShowPage(ETNPausePage::Controls); } });
+	// Cuarto botón (HomeRows[3]: el foco vuelve a él al salir de la página).
+	if (UTN_PauseRow* CreditsRow = NewRow())
+	{
+		CreditsRow->SetupButton(ETNPauseRowStyle::Big, NSLOCTEXT("TNCredits", "Button", "Créditos"),
+			[WeakThis]() { if (UTN_PauseMenuWidget* Menu = WeakThis.Get()) { Menu->ShowPage(ETNPausePage::Credits); } }, UTN_CreditsWidget::MenuIcon());
+		CreditsRow->SetDescription(NSLOCTEXT("TNCredits", "ButtonDesc", "Quién ha hecho Tortunavy y las licencias de lo que usa: arte, fuentes y motor."));
+		TNPauseUI::AddV(HomeColumn, CreditsRow, FMargin(0.f, 0.f, 0.f, 12.f), HAlign_Center);
+		HomeRows.Add(CreditsRow);
+	}
 
 	// Tutorial de la primera partida (Docs/Tutorial.md): saltarlo, con confirmación. Solo mientras se está en él.
 	const UTN_TutorialPlayerComponent* TutorialComp = UTN_TutorialPlayerComponent::FindFor(GetOwningPlayer());
@@ -1956,6 +1967,12 @@ void UTN_PauseMenuWidget::ShowPage(ETNPausePage NewPage)
 		FillRoomList();
 		FocusFirstOfPage();
 	}
+	else if (NewPage == ETNPausePage::Credits)
+	{
+		// Sin filas enfocables: el foco va a la lista y la ayuda de abajo se vacía.
+		HandleRowFocused(nullptr);
+		FocusFirstOfPage();
+	}
 	else
 	{
 		// Al volver a la portada, el foco en el botón por el que se salió.
@@ -1963,6 +1980,7 @@ void UTN_PauseMenuWidget::ShowPage(ETNPausePage NewPage)
 		if (Previous == ETNPausePage::Settings && HomeRows.IsValidIndex(1)) { Target = HomeRows[1]; }
 		else if (Previous == ETNPausePage::Controls && HomeRows.IsValidIndex(2)) { Target = HomeRows[2]; }
 		else if (Previous == ETNPausePage::Room) { Target = RoomHomeRow; }
+		else if (Previous == ETNPausePage::Credits && HomeRows.IsValidIndex(3)) { Target = HomeRows[3]; }
 		if (Target) { FocusRow(Target); }
 		else { FocusFirstOfPage(); }
 	}
@@ -3460,6 +3478,9 @@ void UTN_PauseMenuWidget::FocusFirstOfPage()
 		}
 		break;
 	}
+	case ETNPausePage::Credits:
+		if (CreditsPage) { CreditsPage->FocusList(); return; }
+		break;
 	}
 	FocusForOwner(this);
 }
@@ -3486,6 +3507,9 @@ void UTN_PauseMenuWidget::RefreshHint()
 		break;
 	case ETNPausePage::Room:
 		HintText->SetText(NSLOCTEXT("TNPause", "HintRoom", "Intro · A  Elegir      ← →  Cambiar      Esc · B  Volver      Tab · Start  Cerrar"));
+		break;
+	case ETNPausePage::Credits:
+		HintText->SetText(NSLOCTEXT("TNCredits", "HintPage", "↑ ↓ · LB RB  Desplazar      Esc · B  Volver      Tab · Start  Cerrar"));
 		break;
 	default:
 		HintText->SetText(NSLOCTEXT("TNPause", "HintHome", "Intro · A  Elegir      Esc · B  Continuar      Tab · Start  Cerrar"));

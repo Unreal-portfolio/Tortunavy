@@ -1,5 +1,6 @@
 #include "UI/Menu/MP_MainMenuWidget.h"
 #include "UI/Menu/TN_RoomMenuWidget.h"
+#include "UI/Credits/TN_CreditsWidget.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
@@ -179,6 +180,13 @@ void UMP_MainMenuWidget::NativeConstruct()
 		}
 	}
 
+	// «Créditos», entre «Ajustes» y «Salir» (Docs/Creditos.md).
+	if (!CreditsButton)
+	{
+		CreditsButton = UTN_CreditsWidget::AddMenuButton(WidgetTree, FindButton, QuitButton);
+		if (CreditsButton) { CreditsButton->OnClicked.AddUniqueDynamic(this, &UMP_MainMenuWidget::OnCreditsClicked); }
+	}
+
 	// Con el mando, el foco empieza en «Crear partida».
 	if (HostButton && !(RoomMenu && RoomMenu->IsOpen()))
 	{
@@ -312,6 +320,11 @@ void UMP_MainMenuWidget::OnSettingsClicked()
 		VisibilityBeforeSettings = GetVisibility();
 	}
 	SetVisibility(ESlateVisibility::HitTestInvisible);
+}
+
+void UMP_MainMenuWidget::OnCreditsClicked()
+{
+	UTN_CreditsWidget::OpenOver(GetOwningPlayer(), this, CreditsButton);
 }
 
 void UMP_MainMenuWidget::HandleSettingsClosed()
