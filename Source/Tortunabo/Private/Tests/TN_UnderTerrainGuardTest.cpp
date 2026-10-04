@@ -143,9 +143,15 @@ bool FTNUnderTerrainWorldTest::RunTest(const FString& Parameters)
 	FPlayWorld Play;
 	UWorld* World = Play.World;
 
-	// El terreno: una losa de 80 × 80 m con la cara de arriba a SurfaceZ. Debajo, una cueva: otra losa 10 m más abajo, solo a un lado.
-	SpawnSlab(World, FVector(0.0, 0.0, SurfaceZ - 50.0), FVector(4000.0, 4000.0, 50.0));
+	// El terreno: un bloque macizo de 60 × 80 × 20 m (X de -20 a 40 m) con la cara de arriba a SurfaceZ. Al lado, una cueva: un
+	// techo de 1 m de grueso a la misma altura y su suelo 10 m más abajo. Más allá, un puente de 50 cm sobre una sima sin fondo y
+	// una meseta maciza de 10 m con el fondo del río 5 m por debajo de ella.
+	SpawnSlab(World, FVector(1000.0, 0.0, SurfaceZ - 1000.0), FVector(3000.0, 4000.0, 1000.0));
+	SpawnSlab(World, FVector(-3000.0, 0.0, SurfaceZ - 50.0), FVector(800.0, 800.0, 50.0));
 	SpawnSlab(World, FVector(-3000.0, 0.0, SurfaceZ - 1050.0), FVector(800.0, 800.0, 50.0));
+	SpawnSlab(World, FVector(-6000.0, 0.0, SurfaceZ - 25.0), FVector(300.0, 800.0, 25.0));
+	SpawnSlab(World, FVector(-10000.0, 0.0, SurfaceZ - 500.0), FVector(800.0, 800.0, 500.0));
+	SpawnSlab(World, FVector(-10000.0, 0.0, SurfaceZ - 1550.0), FVector(2000.0, 2000.0, 50.0));
 
 	AActor* Host = World->SpawnActor<AActor>();
 	UTN_UnderTerrainGuardComponent* Guard = NewObject<UTN_UnderTerrainGuardComponent>(Host, TEXT("Guard"));
@@ -180,6 +186,15 @@ bool FTNUnderTerrainWorldTest::RunTest(const FString& Parameters)
 	// 4) En una cueva (terreno encima y suelo debajo): nada.
 	ATortugaCharacter* InCave = SpawnTurtle(World, -3000.0, 0.0, SurfaceZ - 1000.0 + 2.0, MOVE_Walking);
 	TestFalse(TEXT("En una cueva, con suelo debajo: no se la toca"), InCave && Look(Guard, InCave, 3, Now));
+
+	// 4b) Cayendo bajo un puente hacia una sima sin suelo en 50 m: es una caída al aire libre, no se la sube al puente.
+	ATortugaCharacter* UnderBridge = SpawnTurtle(World, -6000.0, 0.0, SurfaceZ - 400.0, MOVE_Falling);
+	TestFalse(TEXT("Bajo un puente, cayendo a una sima: no se la toca"), UnderBridge && Look(Guard, UnderBridge, 3, Now));
+
+	// 4c) Hundida 3 m en una meseta con el fondo del río debajo: está dentro de la meseta, se la rescata.
+	ATortugaCharacter* InMesa = SpawnTurtle(World, -10000.0, 0.0, SurfaceZ - 300.0, MOVE_Falling);
+	TestTrue(TEXT("Hundida en una meseta con suelo debajo: rescatada"), InMesa && Look(Guard, InMesa, 2, Now));
+	TestTrue(TEXT("Hundida en una meseta: vuelve encima"), InMesa && InMesa->GetActorLocation().Z - HalfHeight >= SurfaceZ);
 
 	// 5) Nadando bajo el terreno (agua profunda): nada.
 	ATortugaCharacter* Swimming = SpawnTurtle(World, 0.0, 1500.0, SurfaceZ - 250.0, MOVE_Swimming);

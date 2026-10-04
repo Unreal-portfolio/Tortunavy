@@ -66,8 +66,9 @@ struct FTNUnderTerrainWatch
  * (ATN_RunGameMode). La lleva ATN_RunGameMode; la carrera de la playa la apaga porque tiene la suya.
  *
  * Una tortuga está bajo el terreno si lo primero que la para bajando desde SurfaceSearchUp por encima de su punto más bajo
- * queda más de Margin por encima y, además, por debajo no hay suelo en FloorSearchDown (bajo un puente, una cornisa o en
- * una cueva hay suelo debajo: no se toca). No se mira a quien nada, está muerta o derribada esperando rescate, ha
+ * queda más de Margin por encima y, además, está dentro de esa geometría: mirando hacia arriba desde ella no hay otra cara
+ * por debajo de esa superficie (bajo un puente, una cornisa, un árbol o en una cueva se ve su cara de abajo: aire libre, no
+ * se toca, haya suelo debajo o una sima). No se mira a quien nada, está muerta o derribada esperando rescate, ha
  * terminado, va en brazos de otra, tiene el movimiento parado (esperando la ronda) o está dentro de una zona de muerte
  * (ATN_DeathZoneVolume): esas muertes son legítimas. Si cae al vacío sin nada encima, tampoco: es una caída.
  *
@@ -110,10 +111,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Safety", meta = (ClampMin = "100.0", Units = "Centimeters"))
 	float SurfaceSearchUp = 3000.f;
 
-	/** Hasta dónde (cm) por debajo se busca suelo: si lo hay, está bajo un puente, una cornisa o en una cueva. */
-	UPROPERTY(EditDefaultsOnly, Category = "Safety", meta = (ClampMin = "100.0", Units = "Centimeters"))
-	float FloorSearchDown = 5000.f;
-
 	/** Si la superficie de encima no tiene sitio de pie, se busca alrededor hasta este radio (cm). */
 	UPROPERTY(EditDefaultsOnly, Category = "Safety", meta = (ClampMin = "0.0", Units = "Centimeters"))
 	float RingSearchRadius = 1000.f;
@@ -136,8 +133,12 @@ private:
 	/** Lo primero que para a una tortuga bajando desde SurfaceSearchUp por encima de Probe hasta Probe; false si nada. */
 	bool TraceSurfaceAbove(const ATortugaCharacter& Turtle, const FVector& Probe, FHitResult& OutHit) const;
 
-	/** true si debajo de Probe hay suelo (una superficie hacia arriba, sin empezar dentro de ella) en FloorSearchDown. */
-	bool HasFloorBelow(const ATortugaCharacter& Turtle, const FVector& Probe) const;
+	/**
+	 * true si Probe está en aire libre bajo la superficie SurfaceZ: mirando hacia arriba se ve antes otra cara (la de abajo de
+	 * un puente, una cornisa o el techo de una cueva). false si está dentro de la geometría: el trazo empieza dentro, no da con
+	 * nada (cara de arriba vista por detrás) o da con la propia superficie.
+	 */
+	bool IsInOpenSpace(const ATortugaCharacter& Turtle, const FVector& Probe, double SurfaceZ) const;
 
 	/** El sitio de pie más cercano por encima de Probe (en su vertical y, si no, en anillos alrededor). */
 	bool FindSurfaceSpot(const ATortugaCharacter& Turtle, const FVector& Probe, FTransform& OutTransform) const;

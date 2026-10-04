@@ -29,8 +29,8 @@ namespace TNUnderTerrainDetail
 	/** Una superficie donde ponerse de pie: hacia arriba al menos esto (el suelo andable de la tortuga). */
 	constexpr double MinStandNormalZ = 0.6;
 
-	/** Suelo debajo (bajo un puente o en una cueva): hacia arriba al menos esto (una ladera empinada también cuenta). */
-	constexpr double MinFloorNormalZ = 0.3;
+	/** Una cara vista desde abajo a menos de esto (cm) de la superficie de encima es esa misma superficie (malla de doble cara). */
+	constexpr double SameSurfaceTolerance = 5.0;
 
 	/** Anillos alrededor (cm entre uno y otro) y direcciones por anillo al buscar sitio de pie. */
 	constexpr float RingStep = 250.f;
@@ -230,8 +230,9 @@ bool UTN_UnderTerrainGuardComponent::WatchTurtle(ATortugaCharacter* Turtle, floa
 	{
 		Depth = Surface.ImpactPoint.Z - Probe.Z;
 	}
-	// Algo encima, pero suelo debajo: bajo un puente, una cornisa, un árbol o en una cueva. No está bajo el mapa.
-	if (Depth > Margin && HasFloorBelow(*Turtle, Probe))
+	// Algo encima, pero en aire libre: bajo un puente, una cornisa, un árbol o en una cueva (aunque debajo haya una sima). No
+	// está bajo el mapa. Dentro de la geometría sí, aunque haya suelo debajo (el fondo del río bajo una meseta).
+	if (Depth > Margin && IsInOpenSpace(*Turtle, Probe, Surface.ImpactPoint.Z))
 	{
 		Depth = -1.0;
 	}
@@ -270,7 +271,7 @@ bool UTN_UnderTerrainGuardComponent::ShouldSkip(const ATortugaCharacter& Turtle)
 		return true;
 	}
 	const ATN_CoopPlayerState* PlayerState = Turtle.GetPlayerState<ATN_CoopPlayerState>();
-	return PlayerState && (!PlayerState->bIsAlive || PlayerState->bIsDBNO);
+	return PlayerState && (!PlayerState->bIsAlive || PlayerState->bIsDBNO || PlayerState->bHasFinishedRun);
 }
 
 bool UTN_UnderTerrainGuardComponent::IsInDeathZone(const ATortugaCharacter& Turtle, const FVector& Probe) const
@@ -298,15 +299,18 @@ bool UTN_UnderTerrainGuardComponent::TraceSurfaceAbove(const ATortugaCharacter& 
 	return GetWorld()->LineTraceSingleByChannel(OutHit, Top, Probe, ECC_Pawn, Query) && !OutHit.bStartPenetrating;
 }
 
-bool UTN_UnderTerrainGuardComponent::HasFloorBelow(const ATortugaCharacter& Turtle, const FVector& Probe) const
+bool UTN_UnderTerrainGuardComponent::IsInOpenSpace(const ATortugaCharacter& Turtle, const FVector& Probe, double SurfaceZ) const
 {
-	const FCollisionQueryParams Query = TNUnderTerrainDetail::MakeQuery(Turtle);
+	using namespace TNUnderTerrainDetail;
+	const FCollisionQueryParams Query = MakeQuery(Turtle);
 	FHitResult Hit;
-	// Desde un poco por encima de los pies: de pie en el suelo de una cueva, el suelo está justo debajo.
-	const FVector Start = Probe + FVector(0.0, 0.0, 20.0);
-	const FVector End = Probe - FVector(0.0, 0.0, FloorSearchDown);
-	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Query) && !Hit.bStartPenetrating
-		&& Hit.ImpactNormal.Z >= TNUnderTerrainDetail::MinFloorNormalZ;
+	// Hacia arriba, hasta un poco por encima de la superficie: sin depender de hacia dónde mira la cara (mallas de una o doble cara).
+	const FVector End(Probe.X, Probe.Y, SurfaceZ + SameSurfaceTolerance);
+	if (!GetWorld()->LineTraceSingleByChannel(Hit, Probe, End, ECC_Pawn, Query) || Hit.bStartPenetrating)
+	{
+		return false;
+	}
+	return Hit.ImpactPoint.Z < SurfaceZ - SameSurfaceTolerance;
 }
 
 bool UTN_UnderTerrainGuardComponent::FindStandInColumn(const ATortugaCharacter& Turtle, const FVector2D& Column, double FromZ, double ToZ,
