@@ -1,5 +1,7 @@
 #include "TN_VRInputProcessor.h"
 #include "VR/TN_VRMath.h"
+#include "VR/TN_VRHandMath.h"
+
 #include "VR/TN_VRMode.h"
 #include "VR/TN_VRRig.h"
 #include "VR/TN_VRSubsystem.h"
@@ -179,8 +181,15 @@ bool FTNVRInputProcessor::HandleAnalogInputEvent(FSlateApplication& SlateApp, co
 		// ya apretados (el menú se abrió con ellos), no cuentan como un clic o un cambio de pestaña hasta soltarlos (por
 		// debajo del 35 %) y volver a apretar.
 		const int32 Edge = TNVRMath::AnalogButton(Value, bTriggerAxis ? bTriggerAxisHeld[Side] : bGripAxisHeld[Side]);
-		if (!IsMenuUp() || !TNVR::IsHeadset())
+		const bool bMenuUp = IsMenuUp() && TNVR::IsHeadset();
+		// El gatillo llega al juego al soltarlo (también con el menú delante) y no llega mientras siga apretado desde el menú.
+		const bool bEatTrigger = bTriggerAxis && TNVRHands::ShouldEatTriggerAxis(bMenuUp, Edge > 0, Value, bTriggerPressedInMenu[Side]);
+		if (!bMenuUp)
 		{
+			if (bEatTrigger)
+			{
+				return true;
+			}
 			// Jugando no se toca nada (el juego los lee por Enhanced Input y ATN_VRRig); solo se suelta la pestaña que quedó
 			// pulsada en un menú que se cerró con el agarre apretado.
 			if (bGripAxis && Edge < 0 && bGripKeySent[Side])
@@ -200,6 +209,7 @@ bool FTNVRInputProcessor::HandleAnalogInputEvent(FSlateApplication& SlateApp, co
 				if (Edge > 0) { Rig->PointerPress(); }
 				else if (Edge < 0) { Rig->PointerRelease(); }
 			}
+			return bEatTrigger;
 		}
 		else
 		{
@@ -212,8 +222,9 @@ bool FTNVRInputProcessor::HandleAnalogInputEvent(FSlateApplication& SlateApp, co
 				SendKey(SlateApp, Mapped, Edge > 0, false);
 			}
 		}
-		// Con un menú delante, los gatillos y los agarres no llegan al juego.
-		return true;
+		// Con un menú delante, los agarres no llegan al juego, salvo al soltarlos (que no se quede con el valor de antes).
+		return Value >= TNVRMath::AnalogReleaseThreshold;
+
 	}
 	if (Key == FTNVRKeys::LeftStickX) { Sticks[0].X = Value; }
 	else if (Key == FTNVRKeys::LeftStickY) { Sticks[0].Y = Value; }

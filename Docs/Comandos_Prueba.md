@@ -240,16 +240,18 @@ máquina).
 | `TN.VR 2` | Modo VR simulado sin gafas: primera persona, aletas quietas delante, HUD y menús en un panel del mundo; el ratón mira y apunta. También `-vrsim` al arrancar o Ajustes > Juego > «Modo VR». |
 | `TN.VR 1` | Modo gafas: enciende las gafas OpenXR si las hay (Meta Quest Link o el Meta XR Simulator como runtime). |
 | `TN.VR 0` / `TN.VR -1` | Apagado a la fuerza / lo que diga el ajuste (Automático: gafas solo si el motor pinta en estéreo). |
-| `TN.VR.Status` | Escribe el modo, si hay OpenXR, gafas y estéreo, el dispositivo, el rig y si hay un menú delante. |
+| `TN.VR.Status` | Escribe el modo, si hay OpenXR, gafas y estéreo, el dispositivo, el rig, si hay un menú delante y qué hace cada mano (libre o parada por el escenario, qué agarra), la viñeta y la vibración. |
 | `TN.VR.Recenter` | Recentra la vista (con gafas) y vuelve a poner delante el HUD o el menú. Con los mandos, clic del stick derecho. |
 | `TN.VR.HudDistance 150` / `TN.VR.HudFov 80` | Distancia (cm) y arco (grados) del HUD curvo anclado a la cámara. |
 | `TN.VR.HudFollow 1` | HUD suelto delante que sigue a la cabeza con retraso (de serie `0`: anclado a la cámara, fijo en la vista). |
 | `TN.VR.MenuDistance 160` / `TN.VR.MenuFov 100` | Distancia y arco de los menús (curvos, quietos en el mundo). |
 | `TN.VR.LoadingDomeRadius 300` | Radio (cm) de la playa en 360 de la pantalla de carga (`0` la quita). |
 | `TN.VR.SmoothTurnSpeed 120` | Grados por segundo del giro suave. |
+| `TN.VR.Haptics 1` | Fuerza de la vibración de los mandos (0 la quita): coger, soltar, lanzar, tocar la pared, lo que se escapa, derribo y láser. |
+| `TN.VR.ComfortVignette 1` | Viñeta de confort al andar deprisa, caer, salir lanzado o con el giro suave, sin bajar nunca la de la escena (0 la quita, 2 la dobla). |
 | `TN.Camera 1` / `TN.Camera 0` / `TN.Camera -1` | Sin gafas: primera persona / tercera persona / la del ajuste «Cámara». También con T o el clic del stick derecho (fila «Cambiar de cámara» de Controles). |
 | `TN.FirstPerson.ShellLight 0.2` | Luz que queda dentro del caparazón en primera persona y en VR (0 negro, 1 como fuera). |
-| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara). |
+| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara) y de las manos (lanzar, agarres enganchados, viñeta, HUD, botones con la punta, gatillo y, con un mundo de prueba, mano contra la pared, objeto que lleva otro, nada que coger detrás de una pared fina y objeto destruido en la mano). |
 
 ## Pantalla de carga del huevo
 

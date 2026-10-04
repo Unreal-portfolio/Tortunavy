@@ -3,6 +3,8 @@
 #include "VR/TN_VRSubsystem.h"
 #include "VR/TN_VRMath.h"
 #include "VR/TN_VRGrabComponent.h"
+#include "VR/TN_VRInputTriggers.h"
+
 #include "Core/TN_Log.h"
 #include "Core/TN_ProjectMaterials.h"
 #include "Player/MP_GamePlayerController.h"
@@ -328,7 +330,9 @@ void ATN_VRRig::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		PointerRelease();
 	}
 	ReleaseGrips(ViewTurtle.Get());
+	StopHaptics(GetLocalPC());
 	RemoveVRMapping();
+
 	if (Screen)
 	{
 		Screen->ReleaseAll(false);
@@ -502,6 +506,8 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 	UpdatePanel(PC, DeltaSeconds);
 	UpdatePointer(PC);
 	UpdateLoadingDome(PC);
+	UpdateComfortVignette(PC, Turtle, DeltaSeconds);
+	UpdateHaptics(PC, Turtle);
 }
 
 void ATN_VRRig::UpdateViewAttachment(APlayerController* PC, ATortugaCharacter* Turtle)
@@ -609,6 +615,8 @@ void ATN_VRRig::UpdateHands(ATortugaCharacter* Turtle, bool bTurtleView, float D
 		RightGrip->SetRelativeTransform(Right);
 		RightAim->SetRelativeTransform(Right);
 	}
+	// Las manos no atraviesan el escenario: se quedan en la pared o en el suelo (y vibran al tocarlo).
+	BlockHandsByWorld(Turtle, bTurtleView);
 	// Con la tortuga, sus manos de verdad van a los mandos (IK de los brazos): lo que coge es su mano. Si la vista es otra
 	// (probador, espectador), las manos no valen: el rig va con esa cámara y los brazos se quedan con su animación. Las
 	// aletas sueltas solo se ven sin tortuga (menú principal, espectador), desde otra vista o dentro del caparazón, donde
@@ -625,6 +633,9 @@ void ATN_VRRig::UpdateHands(ATortugaCharacter* Turtle, bool bTurtleView, float D
 
 void ATN_VRRig::UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds)
 {
+	// Sin giro suave mientras no se gira este fotograma (menú o rueda abiertos, sin gafas): si no, la viñeta de confort se
+	// quedaría con el último giro.
+	SmoothTurnRate = 0.f;
 	if (Mode != ETNVRMode::Headset)
 	{
 		return;
@@ -659,7 +670,8 @@ void ATN_VRRig::UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, fl
 			// Giro suave.
 			if (FMath::Abs(TurnAxis) > 0.2f)
 			{
-				Turtle->AddVRYaw(TurnAxis * CVarTNVRSmoothTurnSpeed.GetValueOnGameThread() * DeltaSeconds);
+				SmoothTurnRate = TurnAxis * CVarTNVRSmoothTurnSpeed.GetValueOnGameThread();
+				Turtle->AddVRYaw(SmoothTurnRate * DeltaSeconds);
 			}
 			return;
 		}
@@ -681,9 +693,8 @@ void ATN_VRRig::UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, fl
 
 UInputTrigger* ATN_VRRig::MakeAnalogPressTrigger(UObject* Outer)
 {
-	UInputTriggerDown* Trigger = NewObject<UInputTriggerDown>(Outer ? Outer : GetTransientPackage());
-	Trigger->ActuationThreshold = TNVRMath::AnalogPressThreshold;
-	return Trigger;
+	// Pulsado al 55 % y suelto por debajo del 35 % (con histéresis: un gatillo que ronda el umbral no corta lo que se mantiene).
+	return NewObject<UTN_InputTriggerAnalogDown>(Outer ? Outer : GetTransientPackage());
 }
 
 void ATN_VRRig::EnsureVRMapping(APlayerController* PC)
@@ -793,14 +804,65 @@ float ATN_VRRig::FitDistance(const FVector& From, const FVector& Dir, float Desi
 		return Desired;
 	}
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNVRPanelFit), false, this);
-	if (const APlayerController* PC = GetLocalPC())
-	{
-		Params.AddIgnoredActor(PC->GetPawn());
-		Params.AddIgnoredActor(PC->GetViewTarget());
-	}
+	AddViewIgnores(Params);
 	FHitResult Hit;
 	const bool bBlocked = World->LineTraceSingleByChannel(Hit, From, From + Dir * Desired, ECC_Visibility, Params);
 	return TNVRMath::PanelDistance(Desired, bBlocked, bBlocked ? static_cast<float>(Hit.Distance) : Desired);
+}
+
+void ATN_VRRig::AddViewIgnores(FCollisionQueryParams& Params) const
+{
+	const APlayerController* PC = GetLocalPC();
+	if (!PC)
+	{
+		return;
+	}
+	Params.AddIgnoredActor(PC->GetPawn());
+	Params.AddIgnoredActor(PC->GetViewTarget());
+	// Lo que se lleva en las manos (objetos con física) no empuja el HUD contra la cara.
+	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
+	if (const UTN_VRGrabComponent* Grab = Turtle ? Turtle->GetVRGrabComponent() : nullptr)
+	{
+		for (int32 Hand = 0; Hand < 2; ++Hand)
+		{
+			if (const UPrimitiveComponent* Held = Grab->GetHeld(Hand))
+			{
+				Params.AddIgnoredComponent(Held);
+			}
+
+		}
+	}
+}
+
+float ATN_VRRig::FitHudDistance(const FVector& From, const FRotator& ViewRotation, float Desired, float ArcDeg) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return Desired;
+	}
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNVRHudFit), false, this);
+	AddViewIgnores(Params);
+	// El centro, los lados y el borde de abajo (lo que antes tapa el suelo al mirar abajo): el HUD se acerca lo que haga
+	// falta para que ninguno quede detrás del escenario.
+	static const FVector2D Probes[] = { { 0.5, 0.5 }, { 0.0, 0.5 }, { 1.0, 0.5 }, { 0.5, 1.0 }, { 0.0, 1.0 }, { 1.0, 1.0 }, { 0.5, 0.0 } };
+	const float Aspect = static_cast<float>(UTN_VRScreenWidget::ScreenHeight) / static_cast<float>(UTN_VRScreenWidget::ScreenWidth);
+	const FQuat ViewQuat = ViewRotation.Quaternion();
+	float Allowed = Desired;
+	bool bBlocked = false;
+	for (const FVector2D& Probe : Probes)
+	{
+		const FVector Local = TNVRHands::HudProbeDirection(ArcDeg, Aspect, static_cast<float>(Probe.X), static_cast<float>(Probe.Y));
+		// Lo que hay que mirar en esa dirección: hasta donde llegaría el panel a la distancia deseada.
+		const float Reach = Desired / FMath::Max(0.2f, static_cast<float>(FVector(Local.X, Local.Y, 0.0).Size()));
+		FHitResult Hit;
+		if (World->LineTraceSingleByChannel(Hit, From, From + ViewQuat.RotateVector(Local) * Reach, ECC_Visibility, Params))
+		{
+			bBlocked = true;
+			Allowed = FMath::Min(Allowed, TNVRHands::HudRadiusForHit(Local, static_cast<float>(Hit.Distance)));
+		}
+	}
+	return TNVRMath::PanelDistance(Desired, bBlocked, Allowed);
 }
 
 void ATN_VRRig::PlacePanel(const FVector& ViewLocation, const FRotator& Direction, float Distance, float HorizontalFov, float DropFraction)
@@ -876,8 +938,8 @@ void ATN_VRRig::UpdatePanel(APlayerController* PC, float DeltaSeconds)
 	}
 	if (ViewCamera)
 	{
-		// Si hay una pared delante, se acerca de golpe; se aleja poco a poco.
-		const float Wanted = FitDistance(ViewLocation, ViewRotation.Vector(), HudDistance);
+		// Si hay una pared delante (o el suelo bajo su borde de abajo), se acerca de golpe; se aleja poco a poco.
+		const float Wanted = FitHudDistance(ViewLocation, ViewRotation, HudDistance, HudArc);
 		PanelDistanceSmoothed = Wanted < PanelDistanceSmoothed ? Wanted : FMath::FInterpTo(PanelDistanceSmoothed, Wanted, DeltaSeconds, 4.f);
 		AttachPanelToCamera(ViewCamera);
 		// Colgado de la cámara (así lo mueve también la última pose de las gafas): delante, con su cara (+X) hacia los ojos.
@@ -997,6 +1059,13 @@ void ATN_VRRig::UpdatePointer(APlayerController* PC)
 			FlatPoint = ScreenPanel->GetComponentTransform().TransformPosition(FVector(0.0, (0.5 - UV.X) * Size.X, (0.5 - UV.Y) * Size.Y));
 		}
 	}
+	// Una vibración muy corta al entrar el láser en algo que se puede pulsar.
+	const bool bOverButton = bHit && bHeadset && Pointer->IsOverInteractableWidget();
+	if (bOverButton && !bPointerOverButton)
+	{
+		PulseHaptic(1, TNVRHands::Haptics::Hover);
+	}
+	bPointerOverButton = bOverButton;
 	if (bHit)
 	{
 		FHitResult Hit;
@@ -1044,6 +1113,8 @@ void ATN_VRRig::PointerPress()
 	}
 	bPointerDown = true;
 	Pointer->PressPointerKey(EKeys::LeftMouseButton);
+	PulseHaptic(1, TNVRHands::Haptics::Click);
+
 }
 
 void ATN_VRRig::PointerRelease()
@@ -1220,136 +1291,4 @@ void ATN_VRRig::UpdateLoadingDome(APlayerController* PC)
 	LoadingDome->SetWorldLocationAndRotation(ViewLocation, FRotator::ZeroRotator);
 	LoadingDome->SetWorldScale3D(FVector(Radius));
 	LoadingDome->SetVisibility(true);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Agarres: coger con la mano, lanzar con el gesto
-// ─────────────────────────────────────────────────────────────────────────────
-
-FTransform ATN_VRRig::GetGrabPoint(bool bRight) const
-{
-	const USceneComponent* Hand = bRight ? RightHand.Get() : LeftHand.Get();
-	FTransform Point = Hand ? Hand->GetComponentTransform() : GetActorTransform();
-	// Hacia la punta de la aleta (+X), donde se agarra.
-	Point.SetLocation(Point.GetLocation() + Point.GetRotation().GetForwardVector() * 10.0);
-	Point.SetScale3D(FVector::OneVector);
-	return Point;
-}
-
-void ATN_VRRig::UpdateGrips(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds)
-{
-	UTN_VRGrabComponent* Grab = Turtle ? Turtle->GetVRGrabComponent() : nullptr;
-	const AMP_GamePlayerController* GamePC = Cast<AMP_GamePlayerController>(PC);
-	const bool bActive = Mode == ETNVRMode::Headset && Turtle && PC->GetViewTarget() == Turtle && !bMenuMode
-		&& !(GamePC && GamePC->IsRadialWheelOpen());
-	// Tras un giro de golpe (a pasos, al reaparecer) la velocidad de antes va en otros ejes: se empieza de cero.
-	if (Turtle && Turtle->GetVRTurnSerial() != LastTurnSerial)
-	{
-		LastTurnSerial = Turtle->GetVRTurnSerial();
-		ResetHandVelocity();
-	}
-	const FTransform Origin = RigRoot->GetComponentTransform();
-	for (int32 Hand = 0; Hand < 2; ++Hand)
-	{
-		const bool bRight = Hand == 1;
-		const FTransform Point = GetGrabPoint(bRight);
-		// Velocidad de la mano respecto del origen de la vista (lo que se mueve la mano, no el cuerpo al andar o saltar),
-		// algo suavizada: decide si soltar es lanzar y hacia dónde.
-		if (bPrevGrabPointValid[Hand] && DeltaSeconds > KINDA_SMALL_NUMBER)
-		{
-			const FVector Now = TNVRMath::RelativeHandVelocity(PrevGrabOrigin[Hand], PrevGrabPoint[Hand], Origin, Point.GetLocation(), DeltaSeconds);
-			HandVelocity[Hand] = FMath::Lerp(HandVelocity[Hand], Now, 0.5f);
-		}
-		PrevGrabPoint[Hand] = Point.GetLocation();
-		PrevGrabOrigin[Hand] = Origin;
-		bPrevGrabPointValid[Hand] = true;
-
-		const float Value = bActive ? FMath::Max(PC->GetInputAnalogKeyState(bRight ? FTNVRKeys::RightGripAxis : FTNVRKeys::LeftGripAxis),
-			PC->IsInputKeyDown(bRight ? FTNVRKeys::RightGrip : FTNVRKeys::LeftGrip) ? 1.f : 0.f) : 0.f;
-		const int32 Edge = TNVRMath::AnalogButton(Value, bGripHeld[Hand]);
-		if (Edge > 0)
-		{
-			using EVRGrip = ATortugaCharacter::EVRGrip;
-			// 1) Lo que toca esa mano: un objeto del suelo, algo con lo que interactuar o un compañero.
-			EVRGrip Result = Turtle ? Turtle->VRGripPressed(bRight, Point.GetLocation(), false) : EVRGrip::None;
-			if (Result != EVRGrip::None)
-			{
-				GripUse[Hand] = EGripUse::Turtle;
-				GripTurtle[Hand] = static_cast<uint8>(Result);
-			}
-			// 2) Un objeto con física.
-			else if (Grab && Grab->TryGrab(Hand, Point))
-			{
-				GripUse[Hand] = EGripUse::Grab;
-			}
-			// 3) Lo que ya lleva en la aleta derecha (para lanzarlo o soltarlo) o, con la izquierda, correr.
-			else if (Turtle && (Result = Turtle->VRGripPressed(bRight, Point.GetLocation(), true)) != EVRGrip::None)
-			{
-				GripUse[Hand] = EGripUse::Turtle;
-				GripTurtle[Hand] = static_cast<uint8>(Result);
-			}
-			else
-			{
-				GripUse[Hand] = bRight ? EGripUse::None : EGripUse::Sprint;
-			}
-		}
-		else if (Edge < 0)
-		{
-			if (GripUse[Hand] == EGripUse::Turtle && Turtle)
-			{
-				Turtle->VRGripReleased(static_cast<ATortugaCharacter::EVRGrip>(GripTurtle[Hand]), HandVelocity[Hand]);
-			}
-			else if (GripUse[Hand] == EGripUse::Grab && Grab)
-			{
-				// Un objeto con física sale con la mano y con lo que llevaba el cuerpo (andando, lo soltado sigue contigo).
-				Grab->Release(Hand, TNVRMath::ReleaseVelocity(HandVelocity[Hand], Turtle ? Turtle->GetVelocity() : FVector::ZeroVector, true));
-			}
-			GripUse[Hand] = EGripUse::None;
-		}
-
-		if (GripUse[Hand] == EGripUse::Grab && Grab)
-		{
-			if (Grab->IsGrabbing(Hand))
-			{
-				Grab->UpdateGrab(Hand, Point);
-			}
-			else
-			{
-				GripUse[Hand] = EGripUse::None;
-			}
-		}
-		else if (GripUse[Hand] == EGripUse::Sprint && SprintAction)
-		{
-			// Correr mientras se mantiene: la acción de siempre, inyectada (Completed al dejar de inyectarla).
-			ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-			if (UEnhancedInputLocalPlayerSubsystem* Input = LocalPlayer ? LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>() : nullptr)
-			{
-				Input->InjectInputForAction(SprintAction, FInputActionValue(true), {}, {});
-			}
-		}
-	}
-}
-
-void ATN_VRRig::ReleaseGrips(ATortugaCharacter* Turtle)
-{
-	UTN_VRGrabComponent* Grab = Turtle ? Turtle->GetVRGrabComponent() : nullptr;
-	for (int32 Hand = 0; Hand < 2; ++Hand)
-	{
-		if (GripUse[Hand] == EGripUse::Grab && Grab)
-		{
-			Grab->Release(Hand, FVector::ZeroVector);
-		}
-		GripUse[Hand] = EGripUse::None;
-		bGripHeld[Hand] = false;
-	}
-	ResetHandVelocity();
-}
-
-void ATN_VRRig::ResetHandVelocity()
-{
-	for (int32 Hand = 0; Hand < 2; ++Hand)
-	{
-		HandVelocity[Hand] = FVector::ZeroVector;
-		bPrevGrabPointValid[Hand] = false;
-	}
 }

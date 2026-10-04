@@ -57,7 +57,10 @@ private:
 	bool bTriggerAxisHeld[2] = { false, false };
 	bool bGripAxisHeld[2] = { false, false };
 	bool bGripKeySent[2] = { false, false };
+	/** Gatillo apretado con un menú delante: no llega al juego hasta soltarlo (TNVRHands::ShouldEatTriggerAxis). */
+	bool bTriggerPressedInMenu[2] = { false, false };
 	double LastGripAxisTime = -100.0;
+
 
 	uint32 UserIndex = 0;
 	bool bMousePointerDown = false;

@@ -13,7 +13,9 @@
 #include "UObject/Package.h"
 #include "VR/TN_VRMath.h"
 #include "VR/TN_VRMode.h"
+#include "VR/TN_VRInputTriggers.h"
 #include "VR/TN_VRRig.h"
+
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -268,11 +270,13 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRTriggerThresholdTest,
 
 bool FTNVRTriggerThresholdTest::RunTest(const FString& Parameters)
 {
-	// El disparador de las asignaciones de los gatillos (IA_Interact, IA_OpenChatWheel): «Down» al 55 %. Las acciones son
-	// booleanas, pero Enhanced Input les pasa el valor del gatillo tal cual (0,3 sigue siendo 0,3) y el disparador lo mira.
+	// El disparador de las asignaciones de los gatillos (IA_Interact, IA_OpenChatWheel): «Down» al 55 % con histéresis. Las
+	// acciones son booleanas, pero Enhanced Input les pasa el valor del gatillo tal cual (0,3 sigue siendo 0,3) y el
+	// disparador lo mira.
 	UInputTrigger* Trigger = ATN_VRRig::MakeAnalogPressTrigger(GetTransientPackage());
-	TestTrue(TEXT("Es un disparador «Down»"), Cast<UInputTriggerDown>(Trigger) != nullptr);
-	if (!Trigger)
+	UTN_InputTriggerAnalogDown* Analog = Cast<UTN_InputTriggerAnalogDown>(Trigger);
+	TestTrue(TEXT("Es un disparador «Down» con histéresis"), Analog != nullptr);
+	if (!Trigger || !Analog)
 	{
 		return false;
 	}
@@ -285,6 +289,19 @@ bool FTNVRTriggerThresholdTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Medio gatillo (0,5): no interactúa"), Pressed(0.5f));
 	TestTrue(TEXT("Apretado (0,6): interactúa"), Pressed(0.6f));
 	TestTrue(TEXT("A fondo (1): interactúa"), Pressed(1.f));
+
+	// Mantener (rebuscar, cofres): el gatillo ronda el 55 % sin soltarse. Con un «Down» sin histéresis, bajar a 0,5 cortaba
+	// lo que se mantenía; ahora sigue hasta bajar del 35 %.
+	const auto Update = [Analog](float TriggerValue)
+	{
+		return Analog->UpdateState(nullptr, FInputActionValue(EInputActionValueType::Boolean, FVector(static_cast<double>(TriggerValue), 0.0, 0.0)), 1.f / 72.f);
+	};
+	TestEqual(TEXT("Medio gatillo sin haberlo apretado: nada"), Update(0.5f), ETriggerState::None);
+	TestEqual(TEXT("Apretado (0,6): activo"), Update(0.6f), ETriggerState::Triggered);
+	TestEqual(TEXT("Ronda el umbral (0,5): sigue activo"), Update(0.5f), ETriggerState::Triggered);
+	TestEqual(TEXT("Aflojado a 0,4: sigue activo"), Update(0.4f), ETriggerState::Triggered);
+	TestEqual(TEXT("Soltado (0,2): nada"), Update(0.2f), ETriggerState::None);
+	TestEqual(TEXT("Otra vez a medias (0,5): nada"), Update(0.5f), ETriggerState::None);
 
 	// Menús (FTNVRInputProcessor): el estado del gatillo se sigue también jugando. Abrir un menú con el gatillo ya apretado
 	// no hace clic; hay que soltarlo (por debajo del 35 %) y volver a apretar.

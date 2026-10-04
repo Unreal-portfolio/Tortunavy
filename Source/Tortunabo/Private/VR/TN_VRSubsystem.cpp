@@ -497,5 +497,7 @@ FString UTN_VRSubsystem::DescribeStatus() const
 		TNVRSubsystemDetail::IsStereoOn() ? TEXT("sí") : TEXT("no"),
 		*Device.ToString(),
 		ActiveRig ? *ActiveRig->GetName() : TEXT("ninguno"),
-		ActiveRig && ActiveRig->IsMenuMode() ? TEXT("sí") : TEXT("no"));
+		ActiveRig && ActiveRig->IsMenuMode() ? TEXT("sí") : TEXT("no"))
+		+ (ActiveRig ? TEXT(" · ") + ActiveRig->DescribeHands() : FString());
 }
+
