@@ -170,12 +170,11 @@ def test_variante_reproducible_desde_la_semilla(manifest):
 @generated
 def test_cuatro_saltos_de_varios_tipos_aterrizan_en_la_calzada(measured, manifest):
     report, checks = measured
-    half = manifest["road_width_m"] / 2.0
     kinds = [j["jump_kind"] for j in report["jumps"]]
     assert len(kinds) >= 4 and len(set(kinds)) >= 2 and checks["jumps"] and checks["jump_kinds"]
     for j in report["jumps"]:
         assert j["speed_rel_err"] <= LIMITS["speed_rel"] and j["zone_m"][0] <= j["x_land_m"] <= j["zone_m"][1]
-        assert j["landing_lateral_m"] <= half - LIMITS["landing_margin_m"] and j["impact_ms"] <= LIMITS["impact_ms"]
+        assert j["landing_lateral_m"] <= j["landing_half_m"] - LIMITS["landing_margin_m"] and j["impact_ms"] <= LIMITS["impact_ms"]
         if j.get("gap_m") is not None:
             assert j["ai_clears_gap"] and j["impact_ai_ms"] <= LIMITS_TIERRA["impact_ai_ms"]
 

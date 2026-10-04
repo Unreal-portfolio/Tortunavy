@@ -14,6 +14,7 @@ import numpy as np
 from .rally_circuit_dirt import BERM_PEAK_M, DIP_MAX_G
 from .rally_circuit_jumps import AI_FACTOR
 from .rally_circuit_physics import G
+from .rally_circuit_width import WIDTH_NORMAL_M
 
 LIMITS_TIERRA = {"jumps": 4, "jump_kinds": 2, "bumps": 2, "straight_k": 1.0 / 400.0, "bump_measured_min": 0.6,
                  "amplitude_tol_m": 0.02, "dip_depth_tol_m": 0.15, "dip_g": DIP_MAX_G + 0.15,
@@ -105,9 +106,12 @@ def banqueta_report(e: dict, ctx: dict, sampler) -> dict:
     idx = _span_indices(core, ctx["step"], len(ctx["pts"]))
     side = 1.0 if e["outside"] == "derecha" else -1.0
     pts, right, z, bank = ctx["pts"][idx], ctx["right"][idx], ctx["z"][idx], ctx["bank"][idx]
-    platform = ctx["road_w"] / 2.0 + 3.0
+    half = ctx["half"][idx]
+    platform = half + 3.0
     base = z - side * platform * np.tan(np.radians(bank))
-    lift = sampler.top(pts + side * BERM_PEAK_M * right) - base
+    # La banqueta sigue al borde del tramo (rally_circuit._carve): su cresta se aparta lo que el tramo pasa de 14 m.
+    peak = BERM_PEAK_M + (half - WIDTH_NORMAL_M / 2.0)
+    lift = sampler.top(pts + side * peak[:, None] * right) - base
     return {"id": e["id"], "outside": e["outside"], "berm_rise_m": e["berm_rise_m"],
             "measured_rise_m": round(float(np.nanmedian(lift)), 3), "bank_deg": e["bank_deg"]}
 

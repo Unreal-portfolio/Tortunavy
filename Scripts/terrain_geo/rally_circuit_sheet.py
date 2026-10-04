@@ -25,6 +25,17 @@ def _mask(arc: np.ndarray, total: float, span) -> np.ndarray:
     return ((arc >= s0) & (arc <= s1)) if s0 <= s1 else ((arc >= s0) | (arc <= s1))
 
 
+def _edges(ax, road: np.ndarray, widths: np.ndarray) -> None:
+    """Bordes de la calzada con el ancho de cada tramo (road_widths_m)."""
+    d = np.roll(road, -1, axis=0) - np.roll(road, 1, axis=0)
+    t = d / np.maximum(np.hypot(*d.T), 1e-9)[:, None]
+    right = np.column_stack([-t[:, 1], t[:, 0]])
+    for side in (-1.0, 1.0):
+        edge = road + side * (widths / 2.0)[:, None] * right
+        ax.plot(edge[:, 1], edge[:, 0], "-", color="white", lw=0.7, alpha=0.9,
+                label="bordes de la calzada (ancho por tramos)" if side > 0 else None)
+
+
 def _plan_panel(ax, top: np.ndarray, data: dict, road: np.ndarray, arc: np.ndarray, total: float) -> None:
     from matplotlib.colors import LightSource, TwoSlopeNorm
     rel = top - WATER_M
@@ -34,6 +45,7 @@ def _plan_panel(ax, top: np.ndarray, data: dict, road: np.ndarray, arc: np.ndarr
     rows, cols = top.shape[0] - 1, top.shape[1] - 1
     ax.imshow(rgb, origin="lower", extent=(MAP_MIN_M, MAP_MIN_M + cols, MAP_MIN_M, MAP_MIN_M + rows))
     ax.plot(road[:, 1], road[:, 0], "-", color="0.15", lw=3.2, alpha=0.8)
+    _edges(ax, road, np.asarray(data.get("road_widths_m") or [data["road_width_m"]] * len(road)))
     seen = set()
     for e in data["elements"]:
         m = _mask(arc, total, e["s_m"])
@@ -134,10 +146,11 @@ def render_circuit_sheet(path: Path, name: str, data: dict, top: np.ndarray, tra
     crests = [e for e in data["elements"] if e["type"] == "rasante"]
     jump_text = ", ".join(f"{e['v_design_kmh']:.0f} km/h y {e['airtime_s']:.1f} s en el aire" for e in jumps)
     bank_text = ", ".join(f"{e['bank_deg']:.0f}°" for e in banked)
+    widths = data.get("road_widths_m") or [data["road_width_m"]]
     failed = [k for k, v in checks.items() if not v]
     summary = (f"Vuelta de {lap['length_m']:.0f} m ({data['laps']} vueltas), vuelta ideal {lap['ideal_lap_s']:.0f} s; "
                f"{len(jumps)} saltos ({jump_text}); {len(banked)} curvas peraltadas ({bank_text}); "
-               f"{len(crests)} rasantes; rejilla {model.frame.rows} x {model.frame.cols} trozos. "
+               f"{len(crests)} rasantes; calzada de {min(widths):.1f} a {max(widths):.1f} m por tramos; rejilla {model.frame.rows} x {model.frame.cols} trozos. "
                f"Validador: {'FALLA ' + ', '.join(failed) if failed else 'todo en verde'}.")
     fig.text(0.01, 0.945, summary, fontsize=9, ha="left", va="top", wrap=True)
     top = top[:model.frame.rows * 100 + 1, :model.frame.cols * 100 + 1]     # la rejilla es rows x cols, no grid x grid

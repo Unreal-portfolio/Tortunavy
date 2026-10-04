@@ -21,6 +21,13 @@ salida, start_uu = end_uu, start_yaw, kill_boxes_uu) y, nuevo en #622 (Docs/Rall
     cima de cada rasante.
   - physics: la BuggySpec con la que se han dimensionado; checks: el informe del validador y su veredicto.
 
+Ancho por tramos (#622, «Tramos variados», terrain_geo/rally_circuit_width.py):
+
+  - road_widths_m: ancho de la calzada (m) por punto de road_uu, de 10 a 20 m, con transiciones lineales;
+    road_width_m pasa a ser el máximo (quien solo lea ese campo pone las barreras fuera de toda la calzada).
+  - width_sections: tramos de ancho constante en el orden de la carrera (s_m, length_m, width_m, class estrecho,
+    normal o ancho, y la pieza que lo pide); cada elemento lleva además su width_m (mediana en su arco).
+
 Perfil tierra (#682): los saltos llevan `jump_kind` (mesa, doble, cresta, hueco) y, los de forma, `gap_s_m` (del
 labio a la cresta de la recepción), `v_ai_kmh` y `land_ai_s_m` (el piloto IA llega a 0,9 · v); elementos nuevos
 `baches` (`pattern` whoops o tabla_lavar, amplitud, longitud de onda, tramo de las ondas `train_s_m`), `baden`
@@ -44,6 +51,7 @@ from terrain_geo.rally_circuit_dirt import BERM_RISE_M, BUMP_LEAD_M, DIP_LEAD_M,
 from terrain_geo.rally_circuit_elements import impact_ms
 from terrain_geo.rally_circuit_jumps import AI_FACTOR, ShapedJump
 from terrain_geo.rally_circuit_physics import BUGGY
+from terrain_geo.rally_circuit_width import RULES_M, TAPER_M, width_sections
 from terrain_vol.export import global_top, write_map
 from terrain_vol.layout import CELL_SAMPLES, UU_PER_M
 from terrain_vol.mesh import build_chunk
@@ -96,6 +104,10 @@ def _span(s0: float, s1: float, total: float) -> list[float]:
     return [round(s0 % total, 2), round(s1 % total, 2) or round(total, 2)]
 
 
+def _span_mask(track: rc.Track, s0: float, s1: float) -> np.ndarray:
+    return rc.cyclic_mask(track.arc, track.total, s0, s1)
+
+
 def elements(track: rc.Track) -> list[dict]:
     plan, total = track.plan, track.total
     out, counts = [], {}
@@ -112,6 +124,7 @@ def elements(track: rc.Track) -> list[dict]:
                      side="derecha" if p.angle_deg > 0 else "izquierda")
         if p.kind in ("curva_peraltada", "horquilla"):
             e.update(bank_deg=round(p.bank_deg, 2), bank_signed_deg=round(math.copysign(p.bank_deg, p.angle_deg), 2))
+        e["width_m"] = round(float(np.median(track.width_m[_span_mask(track, s0, s1)])), 2)
         if p.kind == "recta":
             e.update(length_m=round((s1 - s0) % total, 1), v_max_kmh=round(float(track.speed.max()) * 3.6, 1))
         if p.kind == "salto":
@@ -207,9 +220,12 @@ def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed
                       "pieces": [p.__dict__ for p in track.plan.pieces], "road_w_m": rc.ROAD_W_M,
                       "shoulder_m": rc.SHOULDER_M, "berm_m": rc.BERM_M, "talud_deg": rc.TALUD_DEG,
                       "rows": model.frame.rows, "cols": model.frame.cols, "shift_m": model.frame.shift.tolist(),
-                      "decimate_m": [DECIMATE_NEAR_M, DECIMATE_FAR_M] if decimate else 0.0, "near_m": NEAR_M},
+                      "decimate_m": [DECIMATE_NEAR_M, DECIMATE_FAR_M] if decimate else 0.0, "near_m": NEAR_M,
+                      "width_rules_m": {k: list(v) for k, v in RULES_M.items()}, "width_taper_m": TAPER_M},
         "physics": BUGGY.as_dict(), **({"suspension": SUSPENSION.as_dict()} if tierra else {}),
-        "road_width_m": rc.ROAD_W_M, "road_uu": [uu(p, zz) for p, zz in zip(road, track.z)],
+        "road_width_m": round(float(track.width_m.max()), 2), "road_uu": [uu(p, zz) for p, zz in zip(road, track.z)],
+        "road_widths_m": [round(float(w), 2) for w in track.width_m],
+        "width_sections": width_sections(track.plan, seed),
         "bank_deg": [round(float(b), 2) for b in track.bank_deg],
         "checkpoints_uu": [uu(road[k], track.z[k], yaw_deg(track.plan.psi[k])) for k in cps],
         "start_yaw": yaw_deg(track.plan.psi[0]),

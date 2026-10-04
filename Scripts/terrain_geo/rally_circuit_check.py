@@ -7,7 +7,9 @@ la cara superior de la malla con colisión (rally_corridor.MeshSampler), no el c
 Mide: cierre y continuidad del eje, escalones fuera de los saltos, pendiente sostenida, peralte (manifest y medido
 en la malla), saltos (velocidad de llegada recalculada sobre la malla, ángulo de salida medido, vuelo y aterrizaje
 dentro de la zona y de la calzada, también con turbo), rasantes (altura y radio vertical frente a la velocidad con
-turbo), radio mínimo, separación entre tramos, parrilla 2 x 4 llana, suelo bajo las barreras de #303 y puertas.
+turbo), radio mínimo, separación entre tramos, parrilla 2 x 4 llana, suelo bajo las barreras de #303, puertas y ancho por
+tramos (road_widths_m, rally_circuit_check_width: rango, transiciones, tramos estrechos y anchos, horquillas anchas).
+Los aterrizajes y la parrilla se miden contra la media calzada del punto, no contra un ancho único.
 """
 
 from __future__ import annotations
@@ -22,13 +24,14 @@ from scipy import ndimage
 from terrain_vol.layout import UU_PER_M, WATER_M
 
 from .rally_circuit_check_dirt import is_tierra, jump_ai_fields, tierra_report, tierra_verdict
+from .rally_circuit_check_width import road_widths, width_report, width_verdict
 from .rally_circuit_physics import G, boost_arrival, speed_profile, takeoff_flight
 from .rally_corridor import MeshSampler, radii
 
 LIMITS = {"wrap_gap_m": 1.5, "max_step_m": 0.4, "sustained_grade_deg": 8.0, "bank_deg": 15.0, "bank_mesh_deg": 15.5,
           "jumps": 3, "banked": 4, "crests": 2, "banked_min_deg": 6.0, "crest_min_m": 1.5, "min_radius_m": 15.0,
           "separation_m": 40.0, "grid_slope_deg": 3.0, "barrier_dz_m": 1.0, "impact_ms": 5.0, "speed_rel": 0.08,
-          "checkpoint_gap_m": (120.0, 300.0), "landing_margin_m": 1.5}
+          "checkpoint_gap_m": (120.0, 300.0), "landing_margin_m": 1.5, "grid_room_m": 1.5}
 SUSTAINED_M = 30
 SEPARATION_ARC_M = 150.0
 BANK_PROBE_M = 5.0
@@ -77,11 +80,16 @@ def _jump_report(e: dict, ctx: dict, sampler: MeshSampler) -> dict:
     land_b, _, launch_b = fly(v_boost)
     zone = [e["landing_s_m"][0] - e["lip_s_m"], e["landing_s_m"][1] - e["lip_s_m"]]
 
-    def lateral(fl) -> float:
+    def lateral(fl) -> tuple[float, float]:
+        """Distancia del punto de aterrizaje al eje y media calzada en el punto del eje más cercano."""
         if fl is None:
-            return math.inf
+            return math.inf, 0.0
         p = pts[lip_k] + fl.x_land_m * u
-        return float(np.hypot(*(pts - p).T).min())
+        d = np.hypot(*(pts - p).T)
+        k = int(np.argmin(d))
+        return float(d[k]), float(ctx["half"][k])
+
+    (lat, half), (lat_b, half_b) = lateral(land), lateral(land_b)
 
     def impact(fl, speed: float, angle: float) -> float:
         if fl is None:
@@ -97,7 +105,8 @@ def _jump_report(e: dict, ctx: dict, sampler: MeshSampler) -> dict:
             "speed_rel_err": round(abs(v - e["v_design_ms"]) / e["v_design_ms"], 3),
             "x_land_m": land.x_land_m if land else None, "x_land_boost_m": land_b.x_land_m if land_b else None,
             "zone_m": [round(zone[0], 2), round(zone[1], 2)], "airtime_s": land.airtime_s if land else None,
-            "landing_lateral_m": round(lateral(land), 2), "boost_lateral_m": round(lateral(land_b), 2),
+            "landing_lateral_m": round(lat, 2), "boost_lateral_m": round(lat_b, 2),
+            "landing_half_m": round(half, 2), "boost_half_m": round(half_b, 2),
             "impact_ms": round(impact(land, v, launch), 2), "impact_boost_ms": round(impact(land_b, v_boost, launch_b), 2),
             "in_zone": bool(land and zone[0] <= land.x_land_m <= zone[1]),
             "boost_on_straight": bool(land_b and land_b.x_land_m <= straight_end - 5.0),
@@ -122,7 +131,7 @@ def _crest_report(e: dict, ctx: dict) -> dict:
 def _barrier_dz(ctx: dict, sampler: MeshSampler) -> float:
     """Mayor desnivel entre el suelo bajo cada barrera (como la coloca FBarrierParams) y el borde de su lado."""
     pts, right, k, z, bank = ctx["pts"], ctx["right"], ctx["curvature"], ctx["z"], ctx["bank"]
-    half = ctx["road_w"] / 2.0
+    half = ctx["half"]
     worst = 0.0
     for side in (-1.0, 1.0):
         inside = np.sign(k) == side
@@ -158,7 +167,7 @@ def circuit_report(variant_dir: Path, sampler: MeshSampler | None = None) -> dic
     speed_boost = speed_profile(curvature, inward, grade, air, step, boost=True)
     ctx = {"pts": pts, "tan": tan, "right": right, "curvature": curvature, "inward": inward, "grade": grade,
            "arc": arc, "step": step, "z": zf, "bank": bank, "speed": speed, "speed_boost": speed_boost,
-           "road_w": m["road_width_m"], "total": total}
+           "road_w": m["road_width_m"], "half": road_widths(m, len(pts)) / 2.0, "total": total}
     exempt = _in_spans(arc, total, [tuple(e["s_m"]) for e in jumps])
     steps = np.abs(np.roll(zf, -1) - zf)
     win = int(round(SUSTAINED_M / step))
@@ -182,9 +191,10 @@ def circuit_report(variant_dir: Path, sampler: MeshSampler | None = None) -> dic
     gap = np.abs(np.arange(n)[:, None] - np.arange(n)[None, :]) * 2.0 * step
     gap = np.minimum(gap, total - gap)
     slots = np.asarray(m["markers_uu"]["parrilla"], dtype=np.float64) / UU_PER_M
-    grid_slope = 0.0
+    grid_slope, grid_room = 0.0, math.inf
     for p in slots:
         k = int(np.argmin(np.hypot(*(pts - p[:2]).T)))
+        grid_room = min(grid_room, float(ctx["half"][k] - abs(np.dot(p[:2] - pts[k], right[k]))))
         ring = sampler.top(p[None, :2] + np.array([[2, 0], [-2, 0], [0, 2], [0, -2]]) @ np.array([tan[k], right[k]]))
         grid_slope = max(grid_slope, math.degrees(math.atan(max(abs(ring[0] - ring[1]), abs(ring[2] - ring[3])) / 4.0)))
     cps = np.asarray(m["checkpoints_uu"], dtype=np.float64) / UU_PER_M
@@ -202,12 +212,13 @@ def circuit_report(variant_dir: Path, sampler: MeshSampler | None = None) -> dic
             "crests": [_crest_report(e, ctx) for e in m["elements"] if e["type"] == "rasante"],
             "min_radius_m": round(float(radii(np.vstack([pts[-8:], pts, pts[:8]])).min()), 1),
             "min_separation_m": round(float(dist[gap > SEPARATION_ARC_M].min()), 1),
-            "grid_slope_deg": round(grid_slope, 2), "grid_slots": len(slots),
+            "grid_slope_deg": round(grid_slope, 2), "grid_slots": len(slots), "grid_room_m": round(grid_room, 2),
             "barrier_dz_m": round(_barrier_dz(ctx, sampler), 2),
             "checkpoints": {"count": len(cps), "first_at_start": bool(np.hypot(*(cps[0][:2] - pts[0])) < 1.0),
                             "gap_min_m": round(float(cp_gaps.min()), 1), "gap_max_m": round(float(cp_gaps.max()), 1),
                             "ordered": bool((np.diff(cp_arcs) > 0).all())},
             "lap_time_s": round(float((step / np.maximum(speed, 1.0)).sum()), 1)}
+    report["widths"] = width_report(m, ctx)
     if is_tierra(m):
         report["tierra"] = tierra_report(m, ctx, sampler)
     return report
@@ -225,17 +236,18 @@ def verdict(r: dict, manifest: dict) -> dict[str, bool]:
         "bank": r["bank_manifest_max_deg"] <= L["bank_deg"] and r["bank_mesh_max_deg"] <= L["bank_mesh_deg"],
         "banked_curves": sum(b["ok"] for b in r["banked"]) >= L["banked"],
         "jumps": len(r["jumps"]) >= L["jumps"] and all(
-            j["in_zone"] and j["landing_lateral_m"] <= manifest["road_width_m"] / 2.0 - L["landing_margin_m"]
-            and j["boost_on_straight"] and j["boost_lateral_m"] <= manifest["road_width_m"] / 2.0 - L["landing_margin_m"]
+            j["in_zone"] and j["landing_lateral_m"] <= j["landing_half_m"] - L["landing_margin_m"]
+            and j["boost_on_straight"] and j["boost_lateral_m"] <= j["boost_half_m"] - L["landing_margin_m"]
             and j["impact_ms"] <= L["impact_ms"] and j["speed_rel_err"] <= L["speed_rel"] for j in r["jumps"]),
         "crests": sum(c["height_m"] >= L["crest_min_m"] and c["keeps_ground"] for c in r["crests"]) >= L["crests"],
         "radius": r["min_radius_m"] >= L["min_radius_m"],
         "separation": r["min_separation_m"] >= L["separation_m"],
-        "grid": r["grid_slots"] == 8 and r["grid_slope_deg"] <= L["grid_slope_deg"],
+        "grid": r["grid_slots"] == 8 and r["grid_slope_deg"] <= L["grid_slope_deg"] and r["grid_room_m"] >= L["grid_room_m"],
         "barrier_ground": r["barrier_dz_m"] <= L["barrier_dz_m"],
         "checkpoints": cp["first_at_start"] and cp["ordered"] and L["checkpoint_gap_m"][0] <= cp["gap_min_m"]
         and cp["gap_max_m"] <= L["checkpoint_gap_m"][1],
     }
+    checks.update(width_verdict(r))
     if is_tierra(manifest):
         checks.update(tierra_verdict(r))
     return checks
