@@ -262,12 +262,18 @@ namespace TNBuggyDust
 	/** Pone un tramo de marca de From a To sobre el suelo de normal Normal (anillo: se recicla el más viejo). */
 	void AddMark(FState& S, const FVector& From, const FVector& To, const FVector& Normal)
 	{
-		const FVector Along = (To - From).GetSafeNormal();
+		// La base tiene que ser ortonormal: el tramo no es exactamente perpendicular a la normal del suelo y
+		// una base sesgada da un cuaternio sin normalizar que hace saltar IsRotationNormalized en la ISM.
 		const FVector Up = Normal.GetSafeNormal();
-		const FVector Side = FVector::CrossProduct(Up, Along).GetSafeNormal();
-		const FMatrix Basis(Along, Side, Up, FVector::ZeroVector);
+		const FVector Along = FVector::VectorPlaneProject(To - From, Up).GetSafeNormal();
+		if (Up.IsNearlyZero() || Along.IsNearlyZero())
+		{
+			return;
+		}
+		FQuat Rotation = FRotationMatrix::MakeFromXZ(Along, Up).ToQuat();
+		Rotation.Normalize();
 		const float Length = static_cast<float>(FVector::Dist(From, To));
-		S.MarkXf[S.NextMark] = FTransform(Basis.ToQuat(), (From + To) * 0.5 + Up * MarkLiftCm,
+		S.MarkXf[S.NextMark] = FTransform(Rotation, (From + To) * 0.5 + Up * MarkLiftCm,
 			FVector(Length / FlakeLengthCm, MarkWidthCm / FlakeWidthCm, 1.f));
 		S.MarkAge[S.NextMark] = 0.f;
 		S.NextMark = (S.NextMark + 1) % MaxMarks;
