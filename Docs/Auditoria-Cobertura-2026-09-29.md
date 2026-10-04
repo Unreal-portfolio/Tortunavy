@@ -53,7 +53,7 @@ Parciales completados: P40, P41 y P42 (aparición de objetos) estaban decididos 
 | P31 | 17:35 | Filipinas «rara» = adaptada a TcT o Rally, sin elevar el relieve | `I01_filipinas_v2` en `countries.py`; E2-22 | en curso |
 | P32 | 17:35 | ¿Cuántos mapas? | Catálogo (25) + lote inventado N01–N16 + 13 países | hecho (respuesta) / en curso |
 | P33 | 17:37 | Países enteros miniaturizados | Catálogo §Decisión; 03-Rally D6; `country.py` (6 de 13 países); E2-21 | en curso |
-| P34 | 17:43 | Rally: no ir en dirección contraria, enderezar el coche, efectos de derrape y boost, interfaz, assets | `Rally_Sistemas.md`, 03-Rally §5, §7, §8, §12; E6-07, E6-08, E6-22, E6-23 | planificado |
+| P34 | 17:43 | Rally: no ir en dirección contraria, enderezar el coche, efectos de derrape y boost, interfaz, assets | `Rally_Sistemas.md` (eliminado), 03-Rally §5, §7, §8, §12; E6-07, E6-08, E6-22, E6-23 | planificado |
 | P35 | 17:44 | En 2 vs 2 se puede lanzar a los rivales | 05-2vs2 §5.4, UI-FX decisión 2; E8-02 | planificado |
 | P36 | 17:46 | Spec completa de todos los modos con objetos; ahorrar assets en todo | specs 00–05 y README (2 assets imprescindibles) | hecho |
 | P37 | 17:49 | 2 vs 2 ≈ Coop; Carrera ≈ Coop recto sin puzzles, caótico y rápido; TcT y Rally distintos | 01-Coop como base común, 02 y 05 como diferencias; C1 | hecho |
@@ -94,7 +94,7 @@ Recuento (43): hecho 16 (P03, P05, P08, P12–P16, P18, P20–P23, P36, P37, P43
 | C22 | `MapsToCook` | F_gaps #10: abierto y peor; Limpieza 2.8 (`ab4744e14`): lista explícita | **Hecho**; falta un cocinado completo | E1-09 |
 | C23 | Pistola de ragdoll | Plan §3.4 (primera versión) y P04: «activa ragdolls»; director (P10): pistola de **noqueo** | **Noqueo en el servidor; ragdoll solo cosmético** | E7-15 |
 | C24 | Ragdoll de muerte | Memoria `project_ragdoll_red`: ragdoll físico que rueda y revive donde queda; Plan §3.5: ragdoll cosmético | **Noqueo cosmético**; la muerte puede rodar con posición final del servidor | E9-09, confirmar con Rodrigo |
-| C25 | Dirección contraria del Rally | `Rally_Sistemas.md`: `TNRally::IsWrongWay` «puro, testeado»; repo: no existe | **No existe** (0 coincidencias en `Source/`) | E6-07 |
+| C25 | Dirección contraria del Rally | `Rally_Sistemas.md` (eliminado): `TNRally::IsWrongWay` «puro, testeado»; repo: no existe | **No existe** (0 coincidencias en `Source/`) | E6-07 |
 | C26 | Puntos por entorno en TcT | Plan y análisis D: muerte por entorno = +1 a la líder; hundimiento de arenas | **El hundimiento no puntúa**; gaviota, cangrejo y aguja sí (04-TcT K6) | — |
 | C27 | Tamaño del trabajo | Plan §0.9: 549–752 h (solo código F0–F8); P39: «161 horas» | **1 721–2 287 h MVP + 311–460 h Después** (suma de specs, roadmap §2) | — |
 

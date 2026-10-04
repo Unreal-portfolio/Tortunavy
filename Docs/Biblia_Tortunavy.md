@@ -337,7 +337,7 @@ Blueprint pisa a los 450 y 800 del código; §13). Donde una cifra de diseño de
 (C++ en el módulo `Tortunabo`, más Blueprints para el cableado). Se juega con **tortugas marinas antropomórficas** recién
 salidas del huevo que tienen que **llegar al mar**. Lo que las separa del agua cambia según el modo: un mapa largo y
 procedural con una tormenta detrás (cooperativo) o una playa gigante y hostil llena de trampas, enemigos y objetos
-(carrera). Ver README, «Tortunavy», y [`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md).
+(carrera). Ver README, «Tortunavy», y [`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)).
 
 Lo que hace a Tortunavy reconocible:
 
@@ -358,7 +358,7 @@ Lo que hace a Tortunavy reconocible:
 
 ### 1.2 Tono y estilo
 
-- **Frenético y ligero, con humor**. «Las muertes son cómicas, no punitivas» ([`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md), «Tone»). La regla se
+- **Frenético y ligero, con humor**. «Las muertes son cómicas, no punitivas» ([`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)), «Tone»). La regla se
   ha llevado más lejos en la carrera: no hay muerte, hay bola temblorosa con pajaritos.
 - **Humor en la superficie**: nombres de sala graciosos (242, localizables y adaptados al inglés, `Private/Multiplayer/TN_RoomNames.cpp`; §10.2), el
   General Galápago y su cuartel, Don Tortugo y «La Concha Dorada», frases de ánimo en «¡ADELANTE!» (una de ocho al azar), premios
@@ -384,7 +384,7 @@ equipo:
   objetos tipo karts que dan opciones a quien va detrás (`TNRaceItems`, pesos por posición), y una dificultad de tres niveles
   que elige el anfitrión.
 - **Quien quiere cooperar**: el cooperativo exige lectura del terreno y coordinación; la LDD lo plantea como «caos
-  cooperativo» ([`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md), «Themes»).
+  cooperativo» ([`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)), «Themes»).
 - **Contexto de proyecto**: entrega T-Day de U-tad; equipo formado por Rodrigo Fernández y José Antonio Mota (Mokius); red de
   pruebas con el AppId 480 de Steam (README).
 
@@ -397,7 +397,7 @@ equipo:
 
 ### 1.5 Pilares de diseño (vigentes)
 
-Del LDD ([`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md), «Design Principles»), con lo que sigue valiendo:
+Del LDD ([`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)), «Design Principles»), con lo que sigue valiendo:
 
 1. **Cooperación emergente**: el juego no manda cooperar; monta situaciones en las que cooperar es lo obvio (coger y lanzar a
    un compañero, puzles de dos placas, mecanismos remotos).
@@ -924,7 +924,7 @@ La puerta doble da a la laguna. Desde la azotea de la torre del homenaje se ven 
 ### 4.3 Otros mapas
 
 - **Clásico** (`LVL_Run`): cadena de chunks (`ATN_ChunkManager`) con dificultades Easy / Medium / Hard; ver `project_chunk_system` en la
-  memoria del proyecto y [`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md) (módulos de 300 m y 35 m de ancho en inicio y fin).
+  memoria del proyecto y [`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)) (módulos de 300 m y 35 m de ancho en inicio y fin).
 - **Solo terreno** (`LVL_ProcMap_Terrain`): el mismo generador sin vegetación, fauna, hitos, recompensas, huevos, peligros ni efectos, para comparar terrenos.
 - **Menú** (`LVL_Menu`): escenario sencillo con cielo y luz.
 
@@ -4631,7 +4631,7 @@ Distribución por bioma y dificultad: §37.2. La fauna ambiental (§32.9) **no**
 ### 36.16 Modo clásico (chunks, `LVL_Run`)
 
 El modo clásico (`ATN_ChunkManager`, `World/TN_ChunkManager.*`, chunks `BP_Chunk_Easy_01…05`, `Medium_02…04`, `Hard`, `Hard_02/03` y
-`Final`) usa los mismos actores del cooperativo con reglas de diseño de [`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md): 5 rondas de 6 módulos (M1–M4 de dificultad
+`Final`) usa los mismos actores del cooperativo con reglas de diseño de [`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)): 5 rondas de 6 módulos (M1–M4 de dificultad
 creciente, M5 puzle y M6 victoria), con bañistas que avanzan por detrás (`ATN_StormVolume`: caja que crece en línea recta a 150 cm/s y mata a
 los 5 s dentro). Elementos y su nivel: algas y rampas (Fácil); erizos estáticos con veneno (Fácil, señal: silueta espinosa); arenas movedizas,
 alambre de espino, cangrejo dinámico que patrulla y persigue a ~300 cm y cangrejo enterrado (Medio); gaviota (estándar y de hostigamiento
@@ -4993,7 +4993,7 @@ Dónde una fuente dice una cosa y el código otra. **Manda el código**; la colu
 | 26 | README | `GameInstanceClass=/Script/Tortunabo.MP_GameInstance`; «73 archivos .h» | `BP_GameInstance` (subclase Blueprint); 286 cabeceras (Public + Private) y 236 `.cpp` |
 | 27 | `Docs/Inventario_Scripts.md` (eliminado) | Inventario de 73 cabeceras | Desactualizado |
 | 28 | [`Docs/Mapa_Procedural.md`](Mapa_Procedural.md) §1.7 | `LVL_ProcMap` y `Content/ProcMap` no están en el repositorio | Los `.umap` de `LVL_ProcMap` y `LVL_ProcMap_Terrain` y `Content/ProcMap` están versionados |
-| 29 | [`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md) | Diseño de 5 rondas de 6 módulos con bañistas | Es el modo Clásico (§1.6) |
+| 29 | [`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)) | Diseño de 5 rondas de 6 módulos con bañistas | Es el modo Clásico (§1.6) |
 | 30 | `Config/DefaultEngine.ini` | `bUseSplitscreen=True` con tres diseños | No hay soporte documentado para pantalla dividida (no confirmado que funcione) |
 
 ## 42. Lo no confirmado
@@ -5128,7 +5128,7 @@ Enlaces relativos a `Docs/`.
 
 | Documento | Contenido |
 |---|---|
-| [`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md) | Diseño original (mayo 2026): módulos, tiers, enemigos, lobby, pilares |
+| [`Docs/LDD_Tortunabo.md` (eliminado)](LDD_Tortunabo.md (eliminado)) | Diseño original (mayo 2026): módulos, tiers, enemigos, lobby, pilares |
 | [`Docs/Mapa_Procedural.md`](Mapa_Procedural.md) | Generador por módulos, biomas, cruces, cuevas, conchas de puntos, modos, salida |
 | [`Docs/Modo_Carrera.md`](Modo_Carrera.md) | Todo el modo carrera en la playa (más de 3400 líneas), con la ronda 4: llegada al agua, paso entre rondas, nerf de las gaviotas y torbellino |
 | [`Docs/Salas.md`](Salas.md) | Salas públicas y privadas; idioma de los nombres y de los avisos |
