@@ -5,6 +5,7 @@
 #include "TN_ProcMapMeshKit.h"
 #include "TN_ProcMapFloraMeshes.h"
 #include "TN_ProcMapPropMeshes.h"
+#include "World/Beach/TN_BeachCreatureRules.h"
 
 /**
  * Mallas de las formaciones temáticas (low-poly de caras planas con color de vértice). Cada receta
@@ -877,20 +878,22 @@ namespace TNFormMesh
 			}
 			case EFormation::Bunker:
 			{
-				// Búnker de hormigón: planta octogonal, losa volada, tronera oscura al frente y camuflaje.
+				// Búnker de hormigón entrable (#689): paredes, puerta por detrás (-X), losa volada, tronera oscura al frente y
+				// camuflaje. Dentro, el refugio (ATN_BeachShelterVolume, lo pone el generador con las mismas medidas).
 				const double R = P.Radius;
 				const double H = P.Height;
-				TArray<FVector2D> Oct, Roof;
-				for (int32 k = 0; k < 8; ++k)
+				const TNBeachCreatureRules::Shelter::FBunkerDims Dims = TNBeachCreatureRules::Shelter::FormationBunker(R, H);
+				const TArray<TNBeachCreatureRules::Shelter::FBunkerBox> Boxes = TNBeachCreatureRules::Shelter::BunkerBoxes(Dims);
+				for (int32 b = 0; b < Boxes.Num(); ++b)
 				{
-					const double A = TNProcMap::TwoPi * (k + 0.5) / 8.0;
-					Oct.Add(FVector2D(FMath::Cos(A) * R, FMath::Sin(A) * R * 0.8));
-					Roof.Add(FVector2D(FMath::Cos(A) * (R + 45.0), FMath::Sin(A) * (R * 0.8 + 45.0)));
+					// Las paredes bajan 40 cm para asentarse en el terreno; el techo, no.
+					const bool bRoof = b == Boxes.Num() - 1;
+					const FVector Half = bRoof ? Boxes[b].Half : Boxes[b].Half + FVector(0.0, 0.0, 20.0);
+					const FVector Center = bRoof ? Boxes[b].Center : Boxes[b].Center - FVector(0.0, 0.0, 20.0);
+					TNFormBox(M, Center, Half, 0.0, bRoof ? C.Concrete * 1.08f : C.Concrete);
 				}
-				M.AddPrism(Oct, H, -40.0, C.Concrete);
-				M.AddPrism(Roof, H + 45.0, H, C.Concrete * 1.08f);
-				TNFormBox(M, FVector(R * 0.93, 0.0, H * 0.62), FVector(12.0, R * 0.45, 14.0), 0.0, C.Dark);
-				TNFormBox(M, FVector(-R * 0.93, 0.0, H * 0.38), FVector(12.0, 55.0, H * 0.38), 0.0, C.Dark);
+				TNFormBox(M, FVector(Dims.Interior.X + Dims.Wall + 1.0, 0.0, Dims.Interior.Z * 0.62), FVector(3.0, Dims.Interior.Y * 0.5, 14.0), 0.0, C.Dark);
+				TNFormBox(M, FVector(0.0, 0.0, 1.0), FVector(Dims.Interior.X, Dims.Interior.Y, 2.0), 0.0, C.Concrete * 0.8f);
 				for (int32 k = 0; k < 3; ++k)
 				{
 					TNFloraBlob(M, FVector(Rand(10 + k, -R * 0.5, R * 0.5), Rand(20 + k, -R * 0.4, R * 0.4), H + 50.0), Rand(30 + k, 60.0, 110.0), 16.0, Seed + k, (k % 2) ? C.Metal : FLinearColor(0.3f, 0.25f, 0.14f), 6);

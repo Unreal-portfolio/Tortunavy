@@ -60,7 +60,7 @@ bool FTNSurvivalCatalogShareTest::RunTest(const FString& Parameters)
 		TestFalse(Ctx + TEXT(": su semilla no es del catálogo"), Seeds.Contains(M.Seed));
 		TSet<ETrap> Kinds;
 		for (const FTrapSpot& T : TrapsOf(M.Seed)) { Kinds.Add(T.Trap); }
-		TestEqual(Ctx + TEXT(": tiene todas las trampas"), Kinds.Num(), static_cast<int32>(ETrap::PressurePlate) + 1);
+		TestEqual(Ctx + TEXT(": tiene todas las trampas"), Kinds.Num(), static_cast<int32>(ETrap::Trench) + 1);
 	}
 	for (const FTrapSpot& T : Traps)
 	{
@@ -125,6 +125,8 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 			switch (T.Trap)
 			{
 				case ETrap::BananaPeel: case ETrap::Jellyfish: case ETrap::SlowZone: Expected += T.Count; break;
+				case ETrap::Quicksand: case ETrap::DragCrab: case ETrap::BurrowCrab: case ETrap::UrchinSpikes:
+				case ETrap::TankTrap: case ETrap::TrashPile: case ETrap::Trench: Expected += T.Count; break;
 				case ETrap::Crab: Expected += 1; break;
 				case ETrap::Seagull: Expected += 1 + (T.Umbrellas > 0 ? T.Umbrellas : DefaultUmbrellas); break;
 				default: break;
@@ -145,6 +147,11 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 			{
 				TestTrue(What + TEXT(": sin hueco en los 30 m siguientes"), Placement::GapEndBetween(L.Main,
 					P.Along - SlowZoneHalfLength, P.Along + SlowZoneHalfLength + SlowZoneGapClearance) < 0.0);
+			}
+			if (P.Trap == ETrap::Quicksand)
+			{
+				TestTrue(What + TEXT(": arenas movedizas sin hueco en los 30 m siguientes"), Placement::GapEndBetween(L.Main,
+					P.Along - QuicksandMaxRadius, P.Along + QuicksandMaxRadius + SlowZoneGapClearance) < 0.0);
 			}
 
 			// Paso libre: los obstáculos a menos de 1,5 m a lo largo del camino ocupan franjas de la sección.

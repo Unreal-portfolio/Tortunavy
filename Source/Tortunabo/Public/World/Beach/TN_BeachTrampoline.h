@@ -6,6 +6,8 @@
 #include "World/Beach/TN_BeachTrampolineRules.h"
 #include "TN_BeachTrampoline.generated.h"
 
+class USoundBase;
+
 class AActor;
 class ACharacter;
 class APawn;
@@ -138,6 +140,14 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastBounceFX(APawn* Bouncer, float Strength);
 
+	/** Picotazo de los tentáculos de la medusa (#683): sonido en todas las máquinas. */
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSting(FVector_NetQuantize At);
+
+	/** Sonido del picotazo de los tentáculos (solo la variante medusa). */
+	UPROPERTY(EditDefaultsOnly, Category = "Trampolín|Medusa")
+	TObjectPtr<USoundBase> StingSound;
+
 	/** Marco orientado hacia el mar. */
 	UPROPERTY(VisibleAnywhere, Category = "Trampolín")
 	TObjectPtr<USceneComponent> Frame;
@@ -181,6 +191,9 @@ private:
 	/** Servidor: caparazones con física que tocan el cuerpo. */
 	void BounceShells(double Now);
 
+	/** Servidor, solo la medusa: los tentáculos pican a quien los toca desde la arena (#683). */
+	void StingTurtles(double Now);
+
 	/** Punto (espacio del marco) a menos de Margin del cuerpo. */
 	bool IsNearBody(const FVector& Local, double Margin) const;
 
@@ -214,6 +227,10 @@ private:
 	FTNTrapBurst Sparkle;
 	/** Medidas de la variante (cm, espacio del marco). */
 	double BodyR = 500.0;
+	/** Alcance de los tentáculos de la medusa por la arena (0 en las demás variantes). */
+	double TentacleR = 0.0;
+	/** Último picotazo a cada tortuga (servidor). */
+	TMap<TWeakObjectPtr<ACharacter>, double> LastSting;
 	double TopZ = 300.0;
 	double RimZ = 40.0;
 	double InnerR = 0.0;

@@ -50,6 +50,7 @@
 #include "Core/TN_CosmeticsTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include "World/Beach/TN_BeachTrapStatusComponent.h"
 
 // ── CVar de debug ─────────────────────────────────────────────────────────────
 // Activar en consola con: TN.Debug.Interaction 1
@@ -1130,6 +1131,12 @@ void ATortugaCharacter::OnJumped_Implementation()
 
 void ATortugaCharacter::Jump()
 {
+	// Atrapada por una criatura de la playa (arenas movedizas, pinza, arrastre): el salto es forcejeo (#684-#686).
+	if (UTN_BeachTrapStatusComponent* TrapStatus = UTN_BeachTrapStatusComponent::FindOn(this); TrapStatus && TrapStatus->IsEscapeArmed())
+	{
+		TrapStatus->PressEscape();
+		return;
+	}
 	if (bIsKnockedDown || bIsDead || IsInShell()) { return; }
 	// Levantándose del derribo: la animación termina antes de volver a saltar.
 	if (GetWorld() && GetWorld()->GetTimeSeconds() < GetUpLockUntil) { return; }

@@ -378,6 +378,7 @@ void ATN_BeachRaceGenerator::TickRoundBuild(bool bNow)
 			{
 				return;
 			}
+			SpawnTankTrapGuard();
 			Build->Stage = EStage::Finish;
 			break;
 		}

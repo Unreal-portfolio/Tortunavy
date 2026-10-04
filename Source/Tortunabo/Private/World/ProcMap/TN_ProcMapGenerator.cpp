@@ -223,6 +223,7 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 			{
 				SpawnHazards();
 				SpawnSurvivalTraps();
+				SpawnShelters();
 				// Después de los peligros: las conchas del plan no pisan lo que estos han puesto (HazardSpots).
 				SpawnShells();
 			}

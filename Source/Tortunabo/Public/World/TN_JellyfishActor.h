@@ -133,7 +133,39 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jellyfish|Art", meta = (ClampMin = "0.5", ClampMax = "3.0"))
 	float CodeArtSizeFactor = 1.25f;
 
+	/**
+	 * Tentáculos (#683): alcance (cm) por la arena más allá del borde de la campana. Tocarlos desde el suelo aturde un
+	 * momento y ralentiza (TNTrampolineRules::TentacleContact); encima de la campana se rebota como siempre.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Jellyfish|Tentacles", meta = (ClampMin = "0.0"))
+	float TentacleReach = 110.f;
+
+	/** Picotazo de los tentáculos (en todas las máquinas). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jellyfish|Tentacles")
+	TObjectPtr<USoundBase> StingSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jellyfish|Tentacles")
+	TObjectPtr<UNiagaraSystem> StingVFX;
+
 private:
+	/** Servidor: los tentáculos pican a quien los toca desde la arena (cada 0,1 s, sin Tick). */
+	void CheckTentacles();
+
+	/** Tentáculos tendidos en la arena alrededor de la campana (malla de código, sin colisión). */
+	void BuildTentacles();
+
+	/** Radio (cm) de la campana en planta. */
+	float BellRadius() const;
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSting(FVector_NetQuantize At);
+
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> TentacleMesh;
+
+	FTimerHandle TentacleTimer;
+	TMap<TWeakObjectPtr<ATortugaCharacter>, double> LastSting;
+
 	// ── Overlap ──────────────────────────────────────────────────────────────────
 
 	UFUNCTION()

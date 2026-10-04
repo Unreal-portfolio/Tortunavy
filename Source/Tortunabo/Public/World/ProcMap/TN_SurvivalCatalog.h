@@ -42,7 +42,15 @@ namespace TNSurvivalCatalog
 		Seagull,          ///< Gaviotas (ATN_SeagullSpawnZone) con sombrillas.
 		Quad,             ///< Quad que cruza el camino (ATN_QuadActor).
 		BreakableBridge,  ///< Puente que se rompe (ATN_BreakablePlatform), en lugar de la viga de un hueco.
-		PressurePlate     ///< Placa que abre el atajo de la rama (ATN_PressurePlate), resoluble con un jugador.
+		PressurePlate,    ///< Placa que abre el atajo de la rama (ATN_PressurePlate), resoluble con un jugador.
+		// Criaturas y peligros del Excel de diseño (lote #691): al final, para no mover los valores de las anteriores.
+		Quicksand,        ///< Arenas movedizas (ATN_Quicksand): ralentizan cada vez más y atrapan (#684).
+		DragCrab,         ///< Cangrejo arrastrador (ATN_BeachDragCrab) (#685).
+		BurrowCrab,       ///< Cangrejo subterráneo (ATN_BeachBurrowCrab) (#686).
+		UrchinSpikes,     ///< Erizo enterrado (ATN_BeachUrchinSpikes) (#687).
+		TankTrap,         ///< Erizo checo (ATN_BeachTankTrap) (#688).
+		TrashPile,        ///< Montón de basura que se rompe (ATN_BeachTrashPile) (#690).
+		Trench            ///< Agujero de trinchera con rampa (ATN_BeachTrench) (#690).
 	};
 
 	/** Una trampa del catálogo: en un punto (From == To) o a lo largo de un tramo del recorrido. */
@@ -160,8 +168,10 @@ namespace TNSurvivalCatalog
 		{ 147, Jellyfish, 13, 13 }, { 147, BananaPeel, 28, 28, 3 }, { 147, Seagull, 40, 75, 1, 2 }, { 147, Crab, 81, 81 },
 		{  11, BananaPeel, 14, 14, 3 }, {  11, BananaPeel, 37, 37, 3 }, {  11, PressurePlate, 57, 57, 2 }, {  11, Quad, 65, 65 },
 		// ── Dificultad 3 ──
+		{  40, TrashPile, 45, 45 }, {  40, UrchinSpikes, 55, 55 },
 		{  40, Crab, 7, 7, 2 }, {  40, BananaPeel, 14, 14, 3 }, {  40, SlowZone, 18, 18 }, {  40, Jellyfish, 22, 22 }, {  40, Crab, 26, 26, 2 }, {  40, Seagull, 30, 70, 1, 2 }, {  40, Quad, 75, 90, 2 },
 		{  70, Jellyfish, 14, 14 }, {  70, Crab, 21, 21 }, {  70, Jellyfish, 32, 32 }, {  70, Crab, 43, 43 }, {  70, Jellyfish, 51, 51 }, {  70, Crab, 60, 60, 2 }, {  70, BananaPeel, 70, 70, 3 }, {  70, Crab, 86, 86, 2 },
+		{  57, BurrowCrab, 64, 64 },
 		{  57, BananaPeel, 12, 12, 3 }, {  57, SlowZone, 24, 24 }, {  57, BananaPeel, 37, 37, 3 }, {  57, Jellyfish, 45, 45 }, {  57, SlowZone, 58, 58 }, {  57, Crab, 70, 70 }, {  57, SlowZone, 82, 82 },
 		{  49, BreakableBridge, 8, 8 }, {  49, Crab, 10, 30, 2 }, {  49, BananaPeel, 37, 37, 3 }, {  49, BananaPeel, 65, 65, 3 }, {  49, BananaPeel, 83, 83, 3 },
 		{  32, SlowZone, 3, 3 }, {  32, Crab, 6, 6, 2 }, {  32, Jellyfish, 18, 18 }, {  32, BananaPeel, 27, 27, 3 }, {  32, Seagull, 40, 70, 1, 2 }, {  32, BananaPeel, 82, 82, 3 },
@@ -170,6 +180,7 @@ namespace TNSurvivalCatalog
 		{ 135, BananaPeel, 7, 7, 3 }, { 135, Seagull, 20, 40, 1, 2 }, { 135, Crab, 40, 70, 3 }, { 135, BananaPeel, 74, 74, 3 }, { 135, Quad, 85, 85 },
 		{  35, SlowZone, 15, 15 }, {  35, PressurePlate, 27, 27 }, {  35, Crab, 38, 38, 2 }, {  35, Jellyfish, 48, 48 }, {  35, BananaPeel, 61, 61, 3 }, {  35, Jellyfish, 70, 70 }, {  35, Crab, 82, 82, 2 },
 		// ── Dificultad 4 ──
+		{  74, DragCrab, 35, 35 }, {  74, Trench, 58, 58 },
 		{  74, SlowZone, 4, 4 }, {  74, Seagull, 20, 45, 1, 2 }, {  74, Quad, 50, 50 }, {  74, BananaPeel, 66, 66, 4 }, {  74, Jellyfish, 81, 81 }, {  74, Quad, 85, 85 },
 		{ 144, BreakableBridge, 11, 11 }, { 144, Jellyfish, 22, 22 }, { 144, Crab, 33, 33, 2 }, { 144, SlowZone, 44, 44 }, { 144, Crab, 59, 59 }, { 144, BananaPeel, 60, 60, 3 }, { 144, BananaPeel, 78, 78, 4 },
 		{  95, BananaPeel, 3, 20, 5 }, {  95, Jellyfish, 27, 27 }, {  95, Crab, 34, 34, 2 }, {  95, SlowZone, 42, 42 }, {  95, Jellyfish, 49, 49 }, {  95, Seagull, 50, 60, 1, 2 }, {  95, Crab, 72, 72 }, {  95, BananaPeel, 78, 78, 4 }, {  95, SlowZone, 84, 84 }, {  95, Jellyfish, 90, 90 },
@@ -180,23 +191,31 @@ namespace TNSurvivalCatalog
 		{ 143, BananaPeel, 17, 17, 4 }, { 143, Jellyfish, 29, 29 }, { 143, BananaPeel, 41, 41, 3 }, { 143, Jellyfish, 52, 52 }, { 143, Jellyfish, 70, 70 }, { 143, Crab, 79, 79, 2 },
 		{  72, SlowZone, 26, 26 }, {  72, PressurePlate, 42, 42 }, {  72, Crab, 42, 42, 2 }, {  72, Quad, 50, 60 }, {  72, Jellyfish, 71, 71 }, {  72, BananaPeel, 82, 82, 4 },
 		// ── Dificultad 5 ──
+		{  48, TankTrap, 30, 30 }, {  48, Quicksand, 64, 64 },
 		{  48, Jellyfish, 7, 7 }, {  48, BananaPeel, 18, 18, 3 }, {  48, Seagull, 25, 80, 1, 1 }, {  48, Quad, 40, 40 }, {  48, Jellyfish, 50, 50 }, {  48, Crab, 60, 60, 2 }, {  48, Jellyfish, 71, 71 }, {  48, Crab, 82, 82, 3 }, {  48, Quad, 85, 85 }, {  48, BananaPeel, 91, 91, 4 },
+		{  27, TrashPile, 30, 30 }, {  27, BurrowCrab, 40, 40 }, {  27, UrchinSpikes, 50, 50 },
 		{  27, Crab, 11, 11, 3 }, {  27, Seagull, 20, 60, 1, 2 }, {  27, Crab, 64, 64, 2 }, {  27, SlowZone, 69, 69 }, {  27, BananaPeel, 75, 75, 4 }, {  27, Quad, 85, 85 }, {  27, BananaPeel, 92, 92, 4 },
+		{ 125, DragCrab, 45, 45 },
 		{ 125, Jellyfish, 11, 36, 2 }, { 125, BreakableBridge, 49, 49 }, { 125, BananaPeel, 54, 54, 4 }, { 125, Jellyfish, 62, 62 }, { 125, Crab, 69, 69, 2 }, { 125, SlowZone, 76, 76 }, { 125, Crab, 88, 88, 3 },
 		{ 129, BreakableBridge, 3, 3 }, { 129, Jellyfish, 11, 11 }, { 129, BananaPeel, 19, 19, 4 }, { 129, Crab, 30, 30 }, { 129, Jellyfish, 40, 40 }, { 129, BananaPeel, 51, 51, 3 }, { 129, Crab, 56, 56 }, { 129, Jellyfish, 70, 70 }, { 129, Crab, 84, 84, 3 },
 		{  80, BreakableBridge, 12, 12 }, {  80, Seagull, 14, 35, 1, 1 }, {  80, BananaPeel, 36, 36, 3 }, {  80, Crab, 41, 41, 2 }, {  80, Jellyfish, 52, 52 }, {  80, BananaPeel, 63, 63, 4 }, {  80, Crab, 84, 84, 3 },
+		{  14, TankTrap, 25, 25 },
 		{  14, SlowZone, 5, 5 }, {  14, Jellyfish, 18, 18 }, {  14, Seagull, 30, 40, 1, 1 }, {  14, BananaPeel, 39, 39, 3 }, {  14, Crab, 46, 46, 3 }, {  14, Jellyfish, 54, 54 }, {  14, SlowZone, 62, 62 }, {  14, Crab, 69, 69, 2 }, {  14, BananaPeel, 78, 78, 4 }, {  14, Crab, 85, 85, 3 },
+		{   3, Trench, 50, 50 },
 		{   3, BananaPeel, 3, 3, 3 }, {   3, BananaPeel, 17, 17, 4 }, {   3, Crab, 25, 45, 2 }, {   3, Jellyfish, 58, 58 }, {   3, Crab, 64, 64, 3 }, {   3, SlowZone, 71, 71 }, {   3, Jellyfish, 78, 78 }, {   3, BananaPeel, 84, 84, 4 },
 		{  58, BreakableBridge, 5, 5 }, {  58, Seagull, 22, 32, 1, 1 }, {  58, BananaPeel, 25, 29, 4 }, {  58, Crab, 40, 40, 2 }, {  58, Jellyfish, 51, 51 }, {  58, BananaPeel, 62, 62, 4 }, {  58, BananaPeel, 83, 83, 4 },
 		{  73, Jellyfish, 3, 3 }, {  73, SlowZone, 14, 14 }, {  73, PressurePlate, 23, 23 }, {  73, Jellyfish, 34, 34 }, {  73, SlowZone, 46, 46 }, {  73, BananaPeel, 60, 60, 3 }, {  73, BananaPeel, 82, 82, 4 },
 		{  46, Seagull, 11, 25, 1, 1 }, {  46, SlowZone, 31, 31 }, {  46, BananaPeel, 43, 43, 3 }, {  46, BananaPeel, 56, 56, 4 }, {  46, Crab, 56, 56, 2 }, {  46, SlowZone, 60, 60 }, {  46, Jellyfish, 72, 72 }, {  46, BananaPeel, 83, 83, 4 },
 		{ 149, Seagull, 7, 35, 1, 1 }, { 149, Jellyfish, 14, 22, 2 }, { 149, BananaPeel, 38, 38, 4 }, { 149, BreakableBridge, 59, 59 }, { 149, Jellyfish, 72, 72 }, { 149, Quad, 85, 85 },
 		{ 104, BreakableBridge, 10, 10 }, { 104, BananaPeel, 19, 19, 4 }, { 104, Crab, 30, 30, 2 }, { 104, Jellyfish, 41, 41 }, { 104, Jellyfish, 47, 47 }, { 104, BananaPeel, 48, 48, 3 }, { 104, Seagull, 55, 75, 1, 1 }, { 104, Crab, 83, 83, 3 }, { 104, Jellyfish, 90, 90 },
+		{ 137, Quicksand, 70, 70 },
 		{ 137, SlowZone, 10, 60, 3 }, { 137, PressurePlate, 32, 32 }, { 137, BananaPeel, 37, 37, 3 }, { 137, Crab, 45, 45, 2 }, { 137, BananaPeel, 56, 56, 4 }, { 137, Seagull, 60, 80, 1, 1 }, { 137, Quad, 85, 85 }, { 137, BananaPeel, 92, 92, 4 },
 		{ 142, BananaPeel, 3, 3, 3 }, { 142, BananaPeel, 22, 22, 4 }, { 142, BananaPeel, 38, 38, 4 }, { 142, PressurePlate, 58, 58 }, { 142, Crab, 63, 63, 2 }, { 142, Quad, 85, 85 },
 		// ── Mapa de pruebas (TestMaps) ──
 		{   6, BananaPeel, 5, 5, 3 }, {   6, BreakableBridge, 10, 10 }, {   6, SlowZone, 17, 17 }, {   6, Jellyfish, 24, 24 },
 		{   6, Crab, 30, 30, 2 }, {   6, PressurePlate, 44, 44 }, {   6, Seagull, 62, 76, 1, 2 }, {   6, Quad, 88, 88 },
+		{   6, UrchinSpikes, 38, 38 }, {   6, Quicksand, 48, 48 }, {   6, DragCrab, 52, 52 }, {   6, BurrowCrab, 57, 57 },
+		{   6, TankTrap, 67, 67 }, {   6, TrashPile, 72, 72 }, {   6, Trench, 82, 82 },
 	};
 
 	/** La entrada de una semilla del catálogo o del mapa de pruebas, o nullptr si no está. */

@@ -1,0 +1,186 @@
+#include "World/Beach/TN_BeachTankTrap.h"
+
+#include "Components/StaticMeshComponent.h"
+#include "Core/TN_Log.h"
+#include "Kismet/GameplayStatics.h"
+#include "ProceduralMeshComponent.h"
+#include "TN_BeachTrapKit.h"
+#include "World/Beach/TN_BeachCreatureRules.h"
+
+namespace TNBeachTankTrapDetail
+{
+	/** Distancia (cm) entre la cápsula y el radio del sitio a la que cuenta como choque. */
+	constexpr double ContactSlack = 60.0;
+	constexpr double CooldownSeconds = 1.5;
+
+	/** Las tres vigas de un erizo checo (un «jack»): cruzadas en el centro, a la altura del radio. */
+	TArray<FTransform> BeamFrames(double HalfLen)
+	{
+		const double Z = HalfLen * 0.62;
+		return {
+			FTransform(FRotator(35.0, 0.0, 0.0), FVector(0.0, 0.0, Z)),
+			FTransform(FRotator(35.0, 120.0, 0.0), FVector(0.0, 0.0, Z)),
+			FTransform(FRotator(35.0, 240.0, 0.0), FVector(0.0, 0.0, Z)),
+		};
+	}
+
+	void BuildHog(TNBeachTrapKit::FBuffers& B, TNBeachTrapKit::FHulls& Hulls, double HalfLen)
+	{
+		const FLinearColor Steel = TNPlaygroundKit::Rgb(0x5A5F63, 0.35f);
+		const FLinearColor Rust = TNPlaygroundKit::Rgb(0x8A4B2A, 0.15f);
+		const double Half = FMath::Max(9.0, HalfLen * 0.09);
+		for (const FTransform& Xf : BeamFrames(HalfLen))
+		{
+			TNPlaygroundKit::AddXfBox(B, Xf, FVector::ZeroVector, FVector(HalfLen, Half, Half), Steel);
+			// Remaches oxidados en las puntas.
+			TNPlaygroundKit::AddXfBox(B, Xf, FVector(HalfLen * 0.92, 0.0, Half), FVector(HalfLen * 0.06, Half * 1.1, Half * 0.25), Rust);
+			TNPlaygroundKit::AddXfBox(B, Xf, FVector(-HalfLen * 0.92, 0.0, Half), FVector(HalfLen * 0.06, Half * 1.1, Half * 0.25), Rust);
+			Hulls.Add(TNPlaygroundKit::HullBox(Xf, FVector::ZeroVector, FVector(HalfLen, Half, Half)));
+		}
+	}
+}
+
+ATN_BeachTankTrap::ATN_BeachTankTrap()
+{
+	PrimaryActorTick.bCanEverTick = true;
+
+	HogMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HogMesh"));
+	HogMesh->SetupAttachment(GetRootComponent());
+	TNBeachTrapKit::ConfigureVisual(HogMesh);
+
+	HogCollision = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("HogCollision"));
+	HogCollision->SetupAttachment(GetRootComponent());
+	TNBeachTrapKit::ConfigureSolid(HogCollision, false);
+}
+
+ATN_BeachTankTrap* ATN_BeachTankTrap::SpawnGuard(UWorld* World, const TArray<FVector4>& InSpots)
+{
+	if (!World || InSpots.Num() == 0)
+	{
+		return nullptr;
+	}
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.bDeferConstruction = true;
+	ATN_BeachTankTrap* Guard = World->SpawnActor<ATN_BeachTankTrap>(ATN_BeachTankTrap::StaticClass(), FTransform::Identity, Params);
+	if (!Guard)
+	{
+		return nullptr;
+	}
+	// Solo del servidor: ni malla ni réplica (el decorado de los erizos ya lo monta cada máquina).
+	Guard->bGuard = true;
+	Guard->Spots = InSpots;
+	Guard->Spec.Element = ETNBeachElement::TankTrap;
+	Guard->SetReplicates(false);
+	Guard->FinishSpawning(FTransform::Identity);
+	UE_LOG(LogTortunabo, Log, TEXT("[Playa] Erizos checos: vigilante con %d erizos."), InSpots.Num());
+	return Guard;
+}
+
+ATN_BeachTankTrap* ATN_BeachTankTrap::SpawnStandalone(UWorld* World, const FTransform& Transform, float Radius)
+{
+	if (!World)
+	{
+		return nullptr;
+	}
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.bDeferConstruction = true;
+	ATN_BeachTankTrap* Hog = World->SpawnActor<ATN_BeachTankTrap>(ATN_BeachTankTrap::StaticClass(), Transform, Params);
+	if (!Hog)
+	{
+		return nullptr;
+	}
+	Hog->Spec.Element = ETNBeachElement::TankTrap;
+	Hog->Spec.SizeScale = static_cast<float>(Radius / TNBeach::FootprintRadius(ETNBeachElement::TankTrap));
+	Hog->ApplyRoundNetProfile();
+	Hog->FinishSpawning(Transform);
+	return Hog;
+}
+
+void ATN_BeachTankTrap::ApplySpec()
+{
+	if (bGuard)
+	{
+		return;
+	}
+	StandaloneRadius = static_cast<float>(TNBeachTrapKit::FitRadius(Spec.Element, Spec.SizeScale));
+	TNBeachTrapKit::FBuffers B;
+	TNBeachTrapKit::FHulls Hulls;
+	TNBeachTankTrapDetail::BuildHog(B, Hulls, StandaloneRadius);
+	TNBeachTrapKit::SetMesh(HogMesh, this, B);
+	HogCollision->SetCollisionConvexMeshes(Hulls);
+}
+
+void ATN_BeachTankTrap::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	const UWorld* World = GetWorld();
+	if (!World || GetNetMode() == NM_Client)
+	{
+		return;
+	}
+	const double Now = World->GetTimeSeconds();
+	TArray<ATortugaCharacter*> Turtles;
+	ATN_BeachEnemy::GatherTurtles(this, Turtles);
+	for (ATortugaCharacter* Turtle : Turtles)
+	{
+		if (bGuard)
+		{
+			for (const FVector4& Spot : Spots)
+			{
+				CheckImpact(Turtle, FVector(Spot.X, Spot.Y, Spot.Z), static_cast<float>(Spot.W), Now);
+			}
+		}
+		else
+		{
+			// La colisión es de las vigas: el choque cuenta en la mitad de su largo.
+			CheckImpact(Turtle, GetActorLocation(), StandaloneRadius * 0.55f, Now);
+		}
+		LastVelocity.Add(Turtle, Turtle->GetVelocity() * FVector(1.0, 1.0, 0.0));
+	}
+}
+
+void ATN_BeachTankTrap::CheckImpact(ACharacter* Turtle, const FVector& Center, float Radius, double Now)
+{
+	const FVector Delta = Center - Turtle->GetActorLocation();
+	const double Reach = Radius + Turtle->GetSimpleCollisionRadius() + TNBeachTankTrapDetail::ContactSlack;
+	if (FVector2D(Delta.X, Delta.Y).SizeSquared() > Reach * Reach || FMath::Abs(Delta.Z) > 400.0)
+	{
+		return;
+	}
+	if (const double* Until = CooldownUntil.Find(Turtle); Until && Now < *Until)
+	{
+		return;
+	}
+	const FVector Dir = Delta.GetSafeNormal2D();
+	const FVector* Prev = LastVelocity.Find(Turtle);
+	const FVector Now2D = Turtle->GetVelocity() * FVector(1.0, 1.0, 0.0);
+	const float Toward = static_cast<float>(FMath::Max(FVector::DotProduct(Now2D, Dir), Prev ? FVector::DotProduct(*Prev, Dir) : 0.0));
+	if (TNBeachCreatureRules::TankTrap::Impact(Toward, KnockSpeed) != TNBeachCreatureRules::TankTrap::EImpact::KnockDown)
+	{
+		return;
+	}
+	if (!TNBeachTrapKit::IsFreeTurtle(Turtle))
+	{
+		return;
+	}
+	CooldownUntil.Add(Turtle, Now + TNBeachTankTrapDetail::CooldownSeconds);
+	TNBeach::KnockDownTurtle(Turtle, KnockSeconds, -Dir * BounceBack + FVector(0.0, 0.0, BounceUp));
+	if (!bGuard)
+	{
+		MulticastClang(Turtle->GetActorLocation());
+	}
+	else if (ClangSound)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(this, ClangSound, Turtle->GetActorLocation());
+	}
+}
+
+void ATN_BeachTankTrap::MulticastClang_Implementation(FVector_NetQuantize At)
+{
+	if (ClangSound && GetNetMode() != NM_DedicatedServer)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(this, ClangSound, At);
+	}
+}
