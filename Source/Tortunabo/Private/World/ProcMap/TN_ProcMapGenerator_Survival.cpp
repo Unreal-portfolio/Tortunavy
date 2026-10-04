@@ -15,6 +15,11 @@
 #include "World/TN_SeagullSpawnZone.h"
 #include "World/TN_SlowZoneVolume.h"
 #include "World/TN_UmbrellaInteractable.h"
+#include "World/Beach/TN_BeachCreatureRules.h"
+#include "World/Beach/TN_BeachElement.h"
+#include "World/Beach/TN_BeachShelterVolume.h"
+#include "World/Beach/TN_BeachTankTrap.h"
+#include "World/TN_Quicksand.h"
 #include "World/ProcMap/TN_ProcMapSurvival.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
 #include "World/ProcMap/TN_ProcPuzzleActors.h"
@@ -40,6 +45,35 @@ namespace
 	const TCHAR* UmbrellaPath = TEXT("/Game/Blueprints/Gameplay/Interaction/BP_UmbrellaInteractable.BP_UmbrellaInteractable_C");
 	const TCHAR* QuadPath = TEXT("/Game/Blueprints/Gameplay/Enemies/Quad/BP_QuadActor.BP_QuadActor_C");
 	const TCHAR* PlatePath = TEXT("/Game/Blueprints/Gameplay/Interaction/BP_PressurePlate.BP_PressurePlate_C");
+
+	/** Tamaño (SizeScale de la huella de la carrera) de cada criatura del Excel en los caminos de Supervivencia (3-6 m). */
+	float SurvivalSizeScale(TNSurvivalCatalog::ETrap Trap)
+	{
+		using TNSurvivalCatalog::ETrap;
+		switch (Trap)
+		{
+			case ETrap::DragCrab:     return 0.9f;
+			case ETrap::BurrowCrab:   return 0.7f;
+			case ETrap::UrchinSpikes: return 0.5f;
+			case ETrap::TrashPile:    return 0.45f;
+			case ETrap::Trench:       return 0.5f;
+			default:                  return 1.f;
+		}
+	}
+
+	ETNBeachElement BeachElementOf(TNSurvivalCatalog::ETrap Trap)
+	{
+		using TNSurvivalCatalog::ETrap;
+		switch (Trap)
+		{
+			case ETrap::DragCrab:     return ETNBeachElement::DragCrab;
+			case ETrap::BurrowCrab:   return ETNBeachElement::BurrowCrab;
+			case ETrap::UrchinSpikes: return ETNBeachElement::UrchinSpikes;
+			case ETrap::TrashPile:    return ETNBeachElement::TrashPile;
+			case ETrap::Trench:       return ETNBeachElement::Trench;
+			default:                  return ETNBeachElement::Count;
+		}
+	}
 
 	/** Alto de la compuerta del atajo (cm): no se salta. */
 	constexpr float ShortcutGateHeight = 350.f;
@@ -153,6 +187,40 @@ void ATN_ProcMapGenerator::SpawnSurvivalTraps()
 					Zone->SetSeagullClassIfMissing(LoadClass<ATN_EnemySeagull>(nullptr, SeagullPath));
 				}
 				break;
+			case ETrap::Quicksand:
+				// Como la zona lenta: no se replica, la crea cada máquina (la del servidor decide quién queda atrapada).
+				if (ATN_Quicksand* Sand = Cast<ATN_Quicksand>(SpawnMapActor(ATN_Quicksand::StaticClass(), FTransform(Rot, MapToWorld2D(Where, Ground)), false)))
+				{
+					Sand->SetQuicksandRadius(static_cast<float>(P.Extent.X));
+				}
+				break;
+			case ETrap::TankTrap:
+				if (bServer)
+				{
+					if (ATN_BeachTankTrap* Hog = ATN_BeachTankTrap::SpawnStandalone(World, FTransform(Rot, MapToWorld2D(Where, Ground)),
+						static_cast<float>(TankTrapRadius)))
+					{
+						SpawnedActors.Add(Hog);
+					}
+				}
+				break;
+			case ETrap::DragCrab:
+			case ETrap::BurrowCrab:
+			case ETrap::UrchinSpikes:
+			case ETrap::TrashPile:
+			case ETrap::Trench:
+			{
+				if (!bServer) { break; }
+				FTNBeachElementSpec Spec;
+				Spec.Element = BeachElementOf(P.Trap);
+				Spec.Seed = static_cast<int32>(NetConfig.Seed) * 31 + P.Sample;
+				Spec.SizeScale = SurvivalSizeScale(P.Trap);
+				if (ATN_BeachElement* Element = ATN_BeachElement::SpawnElement(World, FTransform(Rot, MapToWorld2D(Where, Ground)), Spec))
+				{
+					SpawnedActors.Add(Element);
+				}
+				break;
+			}
 			default:
 				break;
 		}
@@ -208,6 +276,35 @@ void ATN_ProcMapGenerator::SpawnSurvivalTraps()
 		{
 			Lock->Setup(Plates, Gate);
 		}
+	}
+}
+
+void ATN_ProcMapGenerator::SpawnShelters()
+{
+	using TNProcMap::EFeature;
+	using TNProcMap::EFormation;
+	const double Yaw0 = GetActorRotation().Yaw;
+	int32 Made = 0;
+	for (const TNProcMap::FFeature& F : Layout.Features)
+	{
+		if (F.Type != EFeature::Formation || static_cast<EFormation>(F.Aux) != EFormation::Bunker)
+		{
+			continue;
+		}
+		// Mismo marco que la malla de la formación: origen en el suelo del camino, +X por su eje.
+		const FVector2D Dx = F.Dir.GetSafeNormal().IsNearlyZero() ? FVector2D(1.0, 0.0) : F.Dir.GetSafeNormal();
+		const TNBeachCreatureRules::Shelter::FBunkerDims Dims = TNBeachCreatureRules::Shelter::FormationBunker(F.Radius, F.Height);
+		const FRotator Rot(0.0, FMath::RadiansToDegrees(FMath::Atan2(Dx.Y, Dx.X)) + Yaw0, 0.0);
+		const FTransform Xf(Rot, MapToWorld2D(FVector2D(F.Location.X, F.Location.Y), F.Location.Z));
+		if (ATN_BeachShelterVolume* Shelter = Cast<ATN_BeachShelterVolume>(SpawnMapActor(ATN_BeachShelterVolume::StaticClass(), Xf, false)))
+		{
+			Shelter->SetShelterExtent(FVector(Dims.Interior.X, Dims.Interior.Y, Dims.Interior.Z * 0.5));
+			++Made;
+		}
+	}
+	if (Made > 0)
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[ProcMap] %d búnkeres con refugio."), Made);
 	}
 }
 

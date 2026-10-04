@@ -24,7 +24,9 @@ namespace TNSurvivalCatalog
 	/** Trampas que coloca #516 (PlaceLooseTraps). Los quads, el puente que se rompe y las placas son de #517 (PlaceTerrainTraps). */
 	inline bool IsLooseTrap(ETrap T)
 	{
-		return T == ETrap::BananaPeel || T == ETrap::SlowZone || T == ETrap::Jellyfish || T == ETrap::Crab || T == ETrap::Seagull;
+		return T == ETrap::BananaPeel || T == ETrap::SlowZone || T == ETrap::Jellyfish || T == ETrap::Crab || T == ETrap::Seagull
+			|| T == ETrap::Quicksand || T == ETrap::DragCrab || T == ETrap::BurrowCrab || T == ETrap::UrchinSpikes || T == ETrap::TankTrap
+			|| T == ETrap::TrashPile || T == ETrap::Trench;
 	}
 
 	/** Paso libre mínimo (cm) que dejan los obstáculos en cualquier sección del camino. */
@@ -35,6 +37,17 @@ namespace TNSurvivalCatalog
 	constexpr double BananaRadius = 60.0;
 	constexpr double JellyfishRadius = 150.0;
 	constexpr double UmbrellaRadius = 50.0;
+	/**
+	 * Criaturas del Excel (lote #691) que estorban en el suelo: el montículo del cangrejo subterráneo, los pinchos del
+	 * erizo enterrado, el erizo checo (bloquea) y el montón de basura (bloquea un poco). El cangrejo arrastrador se mueve
+	 * y la trinchera se cruza por su rampa: no ocupan sección.
+	 */
+	constexpr double BurrowCrabRadius = 130.0;
+	constexpr double UrchinSpikesRadius = 110.0;
+	constexpr double TankTrapRadius = 130.0;
+	constexpr double TrashPileRadius = 120.0;
+	/** Radio (cm) del charco de arenas movedizas como mucho (y no más que el camino). */
+	constexpr double QuicksandMaxRadius = 380.0;
 	/** Separación (cm) a lo largo del camino entre las cáscaras de un grupo. */
 	constexpr double BananaSpacing = 250.0;
 	/** Medio largo (cm) de una zona lenta a lo largo del camino. */
@@ -76,6 +89,10 @@ namespace TNSurvivalCatalog
 		{
 			case ETrap::BananaPeel: return BananaRadius;
 			case ETrap::Jellyfish: return JellyfishRadius;
+			case ETrap::BurrowCrab: return BurrowCrabRadius;
+			case ETrap::UrchinSpikes: return UrchinSpikesRadius;
+			case ETrap::TankTrap: return TankTrapRadius;
+			case ETrap::TrashPile: return TrashPileRadius;
 			default: return 0.0;
 		}
 	}
@@ -304,6 +321,53 @@ namespace TNSurvivalCatalog
 					{
 						PlaceObstacle(M, Out, ETrap::Seagull, true, NearestFree(M, SampleAtDistance(M, S)), UmbrellaRadius, Side,
 							[](double Width) { return Width * 0.5 - UmbrellaRadius - 20.0; });
+					}
+					break;
+				}
+				case ETrap::BurrowCrab:
+				case ETrap::UrchinSpikes:
+				case ETrap::TankTrap:
+				case ETrap::TrashPile:
+				{
+					// Obstáculos de las criaturas: tan al centro como deja el paso libre, alternando de lado.
+					FTrapPlacement Probe;
+					Probe.Trap = Spot.Trap;
+					const double R = ObstacleRadius(Probe);
+					for (const double S : Spread(From, To, Spot.Count, 2.0 * R + 300.0))
+					{
+						PlaceObstacle(M, Out, Spot.Trap, false, NearestFree(M, SampleAtDistance(M, S)), R, Side,
+							[R](double Width) { return CentralOffset(Width, R); });
+					}
+					break;
+				}
+				case ETrap::Quicksand:
+				{
+					// Como la zona lenta: nunca justo antes de un hueco (con la tortuga atrapada o lenta, el salto no llega).
+					for (double S : Spread(From, To, Spot.Count, 2.0 * QuicksandMaxRadius + 500.0))
+					{
+						for (int32 Guard = 0; Guard < 8; ++Guard)
+						{
+							const double GapEnd = GapEndBetween(M, S - QuicksandMaxRadius, S + QuicksandMaxRadius + SlowZoneGapClearance);
+							if (GapEnd < 0.0) { break; }
+							S = GapEnd + QuicksandMaxRadius + 200.0;
+						}
+						const int32 i = NearestFree(M, SampleAtDistance(M, S));
+						if (i == INDEX_NONE) { continue; }
+						FTrapPlacement P = At(M, ETrap::Quicksand, i, 0.0);
+						const double R = FMath::Min(QuicksandMaxRadius, M[i].Width * 0.5 + 50.0);
+						P.Extent = FVector(R, R, 150.0);
+						Out.Add(P);
+					}
+					break;
+				}
+				case ETrap::DragCrab:
+				case ETrap::Trench:
+				{
+					// En el centro del camino: el cangrejo ronda desde ahí y la trinchera se cruza por su rampa (+X, hacia la meta).
+					for (const double S : Spread(From, To, Spot.Count, 1500.0))
+					{
+						const int32 i = NearestFree(M, SampleAtDistance(M, S));
+						if (i != INDEX_NONE) { Out.Add(At(M, Spot.Trap, i, 0.0)); }
 					}
 					break;
 				}

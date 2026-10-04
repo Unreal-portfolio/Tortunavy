@@ -1595,6 +1595,30 @@ namespace TNBeachLayout
 				R.SizeMax = 1.1;
 				R.CoreFraction = 0.6;
 				break;
+			// Criaturas y peligros del Excel de diseño (lote #691): su pasada (PlaceExcelCreatures), al final del reparto.
+			case ETNBeachElement::Quicksand:
+			case ETNBeachElement::DragCrab:
+			case ETNBeachElement::BurrowCrab:
+			case ETNBeachElement::UrchinSpikes:
+			case ETNBeachElement::TrashPile:
+			case ETNBeachElement::Trench:
+				R.bSpecial = true;
+				R.bBlocking = false;
+				R.MaxPerRound = 40;
+				R.SizeMin = 0.9;
+				R.SizeMax = 1.1;
+				// Los que se mueven (el arrastrador) ocupan poco; los charcos y las trincheras, casi toda su huella.
+				R.CoreFraction = E == ETNBeachElement::DragCrab ? 0.4 : (E == ETNBeachElement::Quicksand || E == ETNBeachElement::Trench ? 0.9 : 0.6);
+				break;
+			case ETNBeachElement::Bunker:
+				R.bSpecial = true;
+				R.bBlocking = true;
+				R.MaxPerRound = 6;
+				R.YawJitter = 15.0;
+				R.SizeMin = 0.95;
+				R.SizeMax = 1.05;
+				R.CoreFraction = 1.0;
+				break;
 			default:
 				break;
 		}
@@ -3976,6 +4000,61 @@ namespace TNBeachLayout
 			}
 		}
 
+		/**
+		 * Criaturas y peligros del Excel de diseño (#683-#690, lote #691): arenas movedizas, trampas de erizo, montones de
+		 * basura y trincheras (por las trampas de la dificultad) y cangrejos arrastradores y subterráneos (por los enemigos)
+		 * en la arena abierta, y búnkeres refugio junto a lo militar (puestos, erizos y sacos). Va tras los lanzadores (que
+		 * conservan su sitio) y antes del relleno por bandas, para que lo grande (charcos, trincheras, búnkeres) aún quepa.
+		 */
+		void PlaceExcelCreatures()
+		{
+			struct FQuota
+			{
+				ETNBeachElement Element;
+				double PerRound;
+				bool bEnemy;
+			};
+			const FQuota Quotas[] = {
+				{ ETNBeachElement::Quicksand, 6.0, false },
+				{ ETNBeachElement::UrchinSpikes, 9.0, false },
+				{ ETNBeachElement::TrashPile, 9.0, false },
+				{ ETNBeachElement::Trench, 4.0, false },
+				{ ETNBeachElement::DragCrab, 6.0, true },
+				{ ETNBeachElement::BurrowCrab, 7.0, true },
+			};
+			for (const FQuota& Q : Quotas)
+			{
+				const int32 Wanted = Scaled(Q.PerRound * LengthScale, Q.bEnemy ? Profile.Enemies : Profile.Traps);
+				int32 Made = 0;
+				for (int32 Try = 0; Try < FMath::Max(120, Wanted * 25) && Made < Wanted; ++Try)
+				{
+					FItem It = Make(Q.Element, FVector2D::ZeroVector, EItemRole::Lair);
+					const double Usable = HalfWidth - SideMargin - It.Radius;
+					It.Pos = FVector2D(XOfProgress(Rng.Range(0.06, 0.94)), Rng.Range(-Usable, Usable));
+					if (TryAdd(It, ItemPad)) { ++Made; }
+				}
+			}
+			TArray<FVector2D> Anchors;
+			for (int32 i = 0; i < Out.Items.Num(); ++i)
+			{
+				const ETNBeachElement E = Out.Items[i].Element;
+				if (Alive[i] && (E == ETNBeachElement::CamoNet || E == ETNBeachElement::TankTrap || E == ETNBeachElement::Sandbags))
+				{
+					Anchors.Add(Out.Items[i].Pos);
+				}
+			}
+			if (Anchors.Num() == 0) { return; }
+			const int32 Bunkers = FMath::Max(1, Scaled(3.0 * LengthScale, 1.0));
+			int32 Made = 0;
+			for (int32 Try = 0; Try < Bunkers * 40 && Made < Bunkers; ++Try)
+			{
+				const FVector2D Anchor = Anchors[Rng.RangeInt(0, Anchors.Num() - 1)];
+				const double Ang = Rng.Range(0.0, TNProcMap::TwoPi);
+				FItem Bunker = Make(ETNBeachElement::Bunker, Anchor + FVector2D(FMath::Cos(Ang), FMath::Sin(Ang)) * Rng.Range(1200.0, 2600.0), EItemRole::Military);
+				if (TryAdd(Bunker, ItemPad)) { ++Made; }
+			}
+		}
+
 		// ── Cofres ──
 
 		/**
@@ -4567,6 +4646,7 @@ namespace TNBeachLayout
 		Builder.PlaceFeaturedTraps(true);
 		Builder.PlaceFeaturedTraps(false);
 		Builder.PlaceLaunchers();
+		Builder.PlaceExcelCreatures();
 		Builder.PlaceGuidePaths();
 		Builder.PlacePoolOctopuses();
 		Builder.PlaceChests();

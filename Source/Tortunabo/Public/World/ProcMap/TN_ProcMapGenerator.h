@@ -297,6 +297,8 @@ private:
 	bool IsSurvivalBreakableGap(int32 Feature) const;
 	/** Crea las trampas del plan: las replicadas y las de lógica de servidor en el servidor; las zonas lentas en cada máquina. */
 	void SpawnSurvivalTraps();
+	/** Refugios de los búnkeres (#689): un ATN_BeachShelterVolume local en cada formación Bunker, en todas las máquinas. */
+	void SpawnShelters();
 	/** Marcadores de las trampas del plan (Debug Draw), también en el editor. */
 	void DrawSurvivalTrapPlan() const;
 	/**
