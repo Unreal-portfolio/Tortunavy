@@ -173,16 +173,23 @@ public:
 	/**
 	 * Pasa al modo por niveles: en vez de chunks, cada nivel es un mapa de Supervivencia generado entero (#274).
 	 * Lo llama ATN_SurvivalGameMode en StartPlay, antes del BeginPlay del manager; en BeginPlay se genera el nivel 1.
-	 * @param InSeed  Semilla del nivel 1; el nivel N usa InSeed + N - 1.
+	 * @param InSeed      Semilla de la partida: decide qué mapa del catálogo juega cada nivel (#518).
+	 * @param InFirstMap  Semilla de un mapa del catálogo para el nivel 1 (?SurvivalMap=); 0 = elegirlo.
 	 */
-	void SetLevelMode(bool bEnable, int32 InSeed) { bLevelMode = bEnable; LevelSeed = InSeed; }
+	void SetLevelMode(bool bEnable, int32 InSeed, uint32 InFirstMap = 0u)
+	{
+		bLevelMode = bEnable;
+		LevelSeed = InSeed;
+		FirstLevelMap = InFirstMap;
+		PlayedLevelMaps.Reset();
+	}
 
 	bool IsLevelMode() const { return bLevelMode; }
 
 	/**
-	 * Genera el mapa del nivel con ATN_ProcMapGenerator (se crea la primera vez, delante del manager): semilla
-	 * LevelSeed + Level - 1 y dificultad TNSurvivalLogic::LevelMapDifficulty(Level). Se replica la semilla y cada
-	 * máquina construye el mismo mapa. Server-only.
+	 * Genera el mapa del nivel con ATN_ProcMapGenerator (se crea la primera vez, delante del manager): una entrada
+	 * del catálogo de su dificultad que no haya salido en la partida (TNSurvivalMapSelection, #518), elegida con la
+	 * semilla de la partida. Se replica la semilla del mapa y cada máquina construye el mismo. Server-only.
 	 * @return true si hay mapa.
 	 */
 	bool BuildLevel(int32 Level);
@@ -198,8 +205,14 @@ private:
 	/** true en Supervivencia: un mapa generado por nivel en vez de chunks. */
 	bool bLevelMode = false;
 
-	/** Semilla del nivel 1. */
+	/** Semilla de la partida: decide el mapa de cada nivel. */
 	int32 LevelSeed = 1;
+
+	/** Mapa del catálogo pedido para el nivel 1 (?SurvivalMap=); 0 = elegirlo. */
+	uint32 FirstLevelMap = 0u;
+
+	/** Mapas del catálogo que han salido en la partida, en orden (se olvidan al agotar los de una dificultad). */
+	TArray<uint32> PlayedLevelMaps;
 
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_ProcMapGenerator> LevelGenerator;
