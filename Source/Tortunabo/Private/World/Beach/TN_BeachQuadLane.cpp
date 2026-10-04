@@ -5,24 +5,29 @@
 #include "TN_BeachEnemyKit.h"
 #include "TN_BeachEnemyMeshes.h"
 #include "Components/StaticMeshComponent.h"
+#include "Core/TN_Log.h"
+#include "HAL/IConsoleManager.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
 
 namespace TNBeachQuad
 {
+#if !UE_BUILD_SHIPPING
+	/** Registro de la posición del quad en cada fotograma (desfase entre anfitrión y cliente; Docs/Comandos_Prueba.md). */
+	TAutoConsoleVariable<int32> CVarQuadTrace(TEXT("TN.Beach.Quad.Trace"), 0,
+		TEXT("1: registra en cada fotograma de una pasada la hora del reloj de trampa, la del servidor sin suavizar y la X del quad."));
+#endif
+
 	/** Aviso antes de salir (s): temblor creciente, motor y humo entre las palmeras. */
 	constexpr float WarnTime = 3.5f;
-	/** Velocidad del quad (cm/s). */
-	constexpr float Speed = 4200.f;
 	/** Tiempo entre pasadas (s, sin contar el aviso) y hasta la primera. */
 	constexpr float IntervalMin = 12.f;
 	constexpr float IntervalMax = 20.f;
 	constexpr float FirstMin = 5.f;
 	constexpr float FirstMax = 14.f;
-	/** Lo que recorre metido entre las palmeras antes de salir y después de entrar (cm). */
-	constexpr float PalmMargin = 1500.f;
 	/**
 	 * Atropello: derribo con ragdoll y mareo (s), espera antes de poder volver a golpear a la misma y lanzamiento del
 	 * ragdoll (cm/s: en el sentido del quad, hacia fuera de la rueda y hacia arriba) dando vueltas (grados/s). Moderado
@@ -43,6 +48,46 @@ namespace TNBeachQuad
 	constexpr double RutBand = 250.0;
 	constexpr double RutLift = 5.0;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FTNQuadPass
+// ─────────────────────────────────────────────────────────────────────────────
+
+float FTNQuadPass::TravelSeconds() const
+{
+	return 2.f * (HalfLength + QuadHalfLen + PalmMargin) / Speed;
+}
+
+bool FTNQuadPass::QuadXAt(double Now, float& OutX) const
+{
+	if (PassTime < 0.0)
+	{
+		return false;
+	}
+	// La resta en double: la hora del servidor crece sin parar y en float perdería milésimas (y centímetros del quad).
+	const double T = Now - PassTime;
+	if (T < 0.0 || T > static_cast<double>(TravelSeconds()))
+	{
+		return false;
+	}
+	const double Sign = Dir >= 0 ? 1.0 : -1.0;
+	const double StartX = -Sign * (static_cast<double>(HalfLength) + QuadHalfLen + PalmMargin);
+	OutX = static_cast<float>(StartX + Sign * Speed * T);
+	return true;
+}
+
+double FTNQuadPass::HitEvalTime(double Now, bool bLocallyControlled, float PingMs)
+{
+	if (bLocallyControlled)
+	{
+		return Now;
+	}
+	return Now - FMath::Clamp(static_cast<double>(PingMs) * 0.001, 0.0, MaxLagCompensation);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ATN_BeachQuadLane
+// ─────────────────────────────────────────────────────────────────────────────
 
 ATN_BeachQuadLane::ATN_BeachQuadLane()
 {
@@ -213,7 +258,7 @@ bool ATN_BeachQuadLane::BuildRuts()
 
 void ATN_BeachQuadLane::SchedulePass(double Now, float Delay)
 {
-	PassTime = static_cast<float>(Now + Delay + TNBeachQuad::WarnTime);
+	PassTime = Now + Delay + TNBeachQuad::WarnTime;
 	PassDir = static_cast<int8>(ServerRng.FRand() < 0.5f ? 1 : -1);
 	LastHit.Reset();
 	ForceNetUpdate();
@@ -228,26 +273,14 @@ void ATN_BeachQuadLane::DebugPassNow()
 	SchedulePass(ServerNow(this), 0.f);
 }
 
-float ATN_BeachQuadLane::TravelSeconds() const
+FTNQuadPass ATN_BeachQuadLane::CurrentPass() const
 {
-	return 2.f * (HalfLength + QuadHalfLen + TNBeachQuad::PalmMargin) / TNBeachQuad::Speed;
-}
-
-bool ATN_BeachQuadLane::QuadXAt(double Now, float& OutX) const
-{
-	if (PassTime < 0.f)
-	{
-		return false;
-	}
-	const float T = static_cast<float>(Now - static_cast<double>(PassTime));
-	if (T < 0.f || T > TravelSeconds())
-	{
-		return false;
-	}
-	const float Dir = PassDir >= 0 ? 1.f : -1.f;
-	const float StartX = -Dir * (HalfLength + QuadHalfLen + TNBeachQuad::PalmMargin);
-	OutX = StartX + Dir * TNBeachQuad::Speed * T;
-	return true;
+	FTNQuadPass Pass;
+	Pass.PassTime = PassTime;
+	Pass.Dir = PassDir;
+	Pass.HalfLength = HalfLength;
+	Pass.QuadHalfLen = QuadHalfLen;
+	return Pass;
 }
 
 FVector ATN_BeachQuadLane::WheelLocal(int32 Index, float QuadX) const
@@ -263,7 +296,7 @@ FVector ATN_BeachQuadLane::WheelLocal(int32 Index, float QuadX) const
 void ATN_BeachQuadLane::ServerTick(float DeltaSeconds)
 {
 	const double Now = ServerNow(this);
-	if (PassTime < 0.f)
+	if (PassTime < 0.0)
 	{
 		SchedulePass(Now, TNBeachQuad::FirstMin);
 		return;
@@ -273,8 +306,9 @@ void ATN_BeachQuadLane::ServerTick(float DeltaSeconds)
 		SchedulePass(Now, ServerRng.FRandRange(TNBeachQuad::IntervalMin, TNBeachQuad::IntervalMax));
 		return;
 	}
+	const FTNQuadPass Pass = CurrentPass();
 	float QuadX = 0.f;
-	if (!QuadXAt(Now, QuadX))
+	if (!Pass.QuadXAt(Now, QuadX))
 	{
 		if (IsDebugDraw())
 		{
@@ -312,9 +346,18 @@ void ATN_BeachQuadLane::ServerTick(float DeltaSeconds)
 					continue;
 				}
 			}
+			// La tortuga de un cliente se juzga contra el quad que ese cliente veía (un ping antes): esquivar en su pantalla
+			// es esquivar de verdad.
+			const APlayerState* State = Turtle->GetPlayerState();
+			const double Eval = FTNQuadPass::HitEvalTime(Now, Turtle->IsLocallyControlled(), State ? State->GetPingInMilliseconds() : 0.f);
+			float SeenX = QuadX;
+			if (Eval != Now && !Pass.QuadXAt(Eval, SeenX))
+			{
+				continue;
+			}
 			for (int32 i = 0; i < 4; ++i)
 			{
-				const FVector W = WheelLocal(i, QuadX);
+				const FVector W = WheelLocal(i, SeenX);
 				if (FMath::Abs(L.Y - W.Y) > HalfW || FMath::Abs(L.X - W.X) > Contact)
 				{
 					continue;
@@ -378,7 +421,8 @@ void ATN_BeachQuadLane::VisualTick(float DeltaSeconds)
 	{
 		return;
 	}
-	const double Now = ServerNow(this);
+	// Reloj de trampa compartido: la hora del servidor suavizada, sin saltos cuando el GameState la corrige.
+	const double Now = Clock.Advance(GetWorld(), DeltaSeconds);
 	const float Dir = PassDir >= 0 ? 1.f : -1.f;
 	const FTransform LaneXf = GetActorTransform();
 	FVector View = GetActorLocation();
@@ -390,7 +434,7 @@ void ATN_BeachQuadLane::VisualTick(float DeltaSeconds)
 		bCrashOut = false;
 		GroundTimer = 0.f;
 	}
-	const float T = static_cast<float>(Now - static_cast<double>(PassTime));
+	const float T = static_cast<float>(Now - PassTime);
 	const FVector ViewLocal = LaneXf.InverseTransformPosition(View);
 	const FVector Nearest = LaneXf.TransformPosition(FVector(FMath::Clamp(ViewLocal.X, -static_cast<double>(HalfLength), static_cast<double>(HalfLength)), 0.0, 0.0));
 	const FVector StartEdge = LaneXf.TransformPosition(FVector(-Dir * (HalfLength + 1200.f), 0.0, 800.0));
@@ -425,6 +469,14 @@ void ATN_BeachQuadLane::VisualTick(float DeltaSeconds)
 
 	float QuadX = 0.f;
 	const bool bPassing = QuadXAt(Now, QuadX);
+#if !UE_BUILD_SHIPPING
+	if (bPassing && TNBeachQuad::CVarQuadTrace.GetValueOnGameThread() != 0)
+	{
+		// Reloj de pared común a los procesos del mismo equipo: permite comparar anfitrión y cliente en el mismo instante.
+		UE_LOG(LogTortunabo, Log, TEXT("[Quad] %s %s wall=%.4f clock=%.4f raw=%.4f pass=%.4f x=%.1f"), HasAuthority() ? TEXT("server") : TEXT("client"),
+			*GetName(), FPlatformTime::Seconds(), Now, ServerNow(this), PassTime, QuadX);
+	}
+#endif
 	if (bPassing)
 	{
 		// Suelo bajo cada rueda (diez veces por segundo): el quad se inclina con las dunas. Del generador, sin trazas: entre
@@ -458,7 +510,7 @@ void ATN_BeachQuadLane::VisualTick(float DeltaSeconds)
 			QuadRoot->SetVisibility(true, true);
 		}
 		// Ruedas que giran con lo recorrido y un poco de suspensión.
-		WheelSpin = FMath::Fmod(WheelSpin + TNBeachQuad::Speed * DeltaSeconds / static_cast<float>(TNBeachMeshes::QuadWheelR * S) * (180.f / PI), 360.f);
+		WheelSpin = FMath::Fmod(WheelSpin + FTNQuadPass::Speed * DeltaSeconds / static_cast<float>(TNBeachMeshes::QuadWheelR * S) * (180.f / PI), 360.f);
 		for (int32 i = 0; i < Wheels.Num(); ++i)
 		{
 			const double X = (i < 2 ? 1.0 : -1.0) * TNBeachMeshes::QuadBaseHalf * TNBeach::Scale;

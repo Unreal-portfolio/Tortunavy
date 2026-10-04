@@ -7,6 +7,7 @@
 #include "Lobby/TN_LobbyMission.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Multiplayer/TN_RoomNames.h"
+#include "Multiplayer/TN_SteamGamepadInput.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
@@ -29,9 +30,11 @@
 #include "Engine/Console.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
+#include "Framework/Application/SlateApplication.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "InputCoreTypes.h"
 #include "Styling/SlateTypes.h"
+#include "Widgets/SWindow.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
 // del bloque. Las mismas piezas que el menú de pausa (TNPauseUI), con las mismas medidas.
@@ -265,6 +268,74 @@ void UTN_RoomCodeField::PasteFromClipboard()
 	PlaySound(ETNPauseSound::Press);
 }
 
+bool UTN_RoomCodeField::OpenSteamKeyboard()
+{
+	FTNSteamKeyboardRequest Request;
+	Request.Description = NSLOCTEXT("TNRooms", "CodeRow", "Código de la sala");
+	Request.ExistingText = GetCode();
+	Request.MaxChars = TNRoomCode::Length;
+	Request.FieldRect = RectInWindow();
+	TWeakObjectPtr<UTN_RoomCodeField> WeakThis(this);
+	const TOptional<ETNSteamKeyboard> Opened = TNSteamGamepadInput::OpenKeyboard(Request, true,
+		[WeakThis](bool bSubmitted, const FString& Text)
+		{
+			if (UTN_RoomCodeField* Field = WeakThis.Get()) { Field->HandleSteamText(bSubmitted, Text); }
+		});
+	if (!Opened.IsSet())
+	{
+		return false;
+	}
+	// El flotante escribe como un teclado: desde la primera casilla vacía.
+	if (Opened.GetValue() == ETNSteamKeyboard::Floating)
+	{
+		CaretIndex = FMath::Clamp(GetCode().Len(), 0, TNRoomCode::Length - 1);
+		RefreshCells();
+	}
+	return true;
+}
+
+void UTN_RoomCodeField::HandleSteamText(bool bSubmitted, const FString& Text)
+{
+	if (!bSubmitted)
+	{
+		return;
+	}
+	const FString Code = TNRoomCode::FromPasted(Text);
+	if (Code.IsEmpty())
+	{
+		PlaySound(ETNPauseSound::Hover);
+		if (!Text.TrimStartAndEnd().IsEmpty() && OnHint)
+		{
+			OnHint(NSLOCTEXT("TNRooms", "CodeBadChar", "Los códigos nunca llevan O, 0, I, 1 ni L: fíjate bien en el código."));
+		}
+		return;
+	}
+	SetCode(Code);
+	PlaySound(ETNPauseSound::Press);
+	// «Hecho» en el teclado de Steam es como Intro: con el código entero, se entra.
+	if (IsComplete() && OnSubmit)
+	{
+		OnSubmit();
+	}
+}
+
+FIntRect UTN_RoomCodeField::RectInWindow() const
+{
+	const FGeometry& Geometry = GetCachedGeometry();
+	FVector2D Position = Geometry.GetAbsolutePosition();
+	const FVector2D Size = Geometry.GetAbsoluteSize();
+	const TSharedPtr<SWidget> Cached = GetCachedWidget();
+	if (Cached.IsValid() && FSlateApplication::IsInitialized())
+	{
+		if (const TSharedPtr<SWindow> Window = FSlateApplication::Get().FindWidgetWindow(Cached.ToSharedRef()))
+		{
+			Position -= Window->GetPositionInScreen();
+		}
+	}
+	const FIntPoint Min(FMath::RoundToInt(Position.X), FMath::RoundToInt(Position.Y));
+	return FIntRect(Min, Min + FIntPoint(FMath::RoundToInt(Size.X), FMath::RoundToInt(Size.Y)));
+}
+
 FText UTN_RoomCodeField::GetDescription() const
 {
 	return bEditing
@@ -433,7 +504,11 @@ FReply UTN_RoomCodeField::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 	{
 		if (!InKeyEvent.IsRepeat())
 		{
-			SetEditing(!bEditing);
+			// Con Steam, el teclado en pantalla; sin él, se escribe con las casillas.
+			if (bEditing || !OpenSteamKeyboard())
+			{
+				SetEditing(!bEditing);
+			}
 			PlaySound(ETNPauseSound::Press);
 		}
 		return FReply::Handled();

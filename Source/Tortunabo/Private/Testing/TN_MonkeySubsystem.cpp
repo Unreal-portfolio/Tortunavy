@@ -13,7 +13,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CoreDelegates.h"
 #include "Misc/DateTime.h"
+#include "Misc/CommandLine.h"
 #include "Testing/TN_MonkeyComponent.h"
+#include "Testing/TN_MonkeyNetStart.h"
 
 namespace TNMonkeySubsystemDetail
 {
@@ -83,6 +85,15 @@ void UTN_MonkeySubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	const FString Spec = TNTestReport::CommandLineValue(TEXT("-TNMonkey"));
 	if (Spec.IsEmpty())
 	{
+		return;
+	}
+	// [-TNMonkeyNet=client|server|any]: un cliente pasa antes por el mapa por defecto sin jugadores; el monkey espera a su mundo.
+	const TNMonkey::ENetFilter NetFilter =
+		TNMonkey::ResolveNetFilter(TNTestReport::CommandLineValue(TEXT("-TNMonkeyNet")), TNMonkey::FirstUrlToken(FCommandLine::Get()));
+	if (!TNMonkey::ShouldStartIn(NetFilter, InWorld.GetNetMode()))
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Monkey] -TNMonkey espera a un mundo «%s»; %s es %s: no arranca aquí."), TNMonkey::NetFilterName(NetFilter),
+			*InWorld.GetMapName(), *TNTestReport::NetModeName(&InWorld));
 		return;
 	}
 	FString SecondsText;
@@ -159,6 +170,7 @@ void UTN_MonkeySubsystem::BeginRunning()
 	LastScan = 0.0;
 	Frames.Reset();
 	MemoryStartMB = TNTestReport::UsedPhysicalMB();
+	SessionNetMode = TNTestReport::NetModeName(GetWorld());
 
 	if (!bSinkAttached && GLog)
 	{
@@ -264,7 +276,7 @@ TSharedRef<FJsonObject> UTN_MonkeySubsystem::BuildReport(const TCHAR* Reason, bo
 	Root->SetStringField(TEXT("date"), FDateTime::Now().ToString());
 	Root->SetStringField(TEXT("map"), World ? World->GetMapName() : FString());
 	Root->SetStringField(TEXT("build"), TNTestReport::BuildConfigName());
-	Root->SetStringField(TEXT("net_mode"), TNTestReport::NetModeName(World));
+	Root->SetStringField(TEXT("net_mode"), SessionNetMode.IsEmpty() ? TNTestReport::NetModeName(World) : SessionNetMode);
 	Root->SetStringField(TEXT("end_reason"), Reason);
 	Root->SetBoolField(TEXT("crashed"), bCrashed);
 	Root->SetNumberField(TEXT("seed"), Config.Seed);

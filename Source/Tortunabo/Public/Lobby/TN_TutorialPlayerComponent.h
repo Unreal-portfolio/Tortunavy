@@ -151,6 +151,9 @@ private:
 	TMap<uint8, FText> KeyTexts;
 	TMap<uint8, TArray<FKey>> KeyKeys;
 	bool bGamepad = false;
+	/** Con mando, el botón de cada acción para dibujarlo (#347) y la familia del mando con la que se leyó. */
+	TMap<uint8, FKey> KeyPadKeys;
+	uint8 KeyPadFamily = 0;
 
 	APlayerController* GetPC() const;
 	bool IsLocal() const;

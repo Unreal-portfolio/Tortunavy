@@ -20,6 +20,7 @@
 #include "Player/MP_GamePlayerController.h"
 #include "Player/TN_SpectatorGhost.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
+#include "Settings/TN_InputDeviceSubsystem.h"
 #include "VR/TN_VRMode.h"
 
 namespace TNGhostHUDDetail
@@ -265,9 +266,14 @@ void UTN_GhostHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 		SetTextIfChanged(CameraText, Mine->IsFreeCamera()
 			? NSLOCTEXT("TNGhost", "FreeCamera", "Cámara libre: gira alrededor de la tortuga")
 			: FText::Format(NSLOCTEXT("TNGhost", "FixedCamera", "Cámara fija: lo que ve {0}"), SubjectName));
+		// Con mando, los nombres de los botones del que se tiene en las manos: LB/RB/RS en Xbox, L1/R1/R3 en PlayStation (#347).
 		const bool bPad = UTN_GameSettingsSubsystem::IsUsingGamepad(PC);
+		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(PC);
+		const ETNPadFamily Family = Devices ? Devices->GetPadFamily() : ETNPadFamily::Xbox;
+		auto PadName = [Family](const FKey& Key) { return TNInputGlyphs::GlyphFor(Key, Family).Label; };
 		SetTextIfChanged(KeysText, bPad
-			? NSLOCTEXT("TNGhost", "KeysPad", "LB / RB  cambiar   ·   R3  cámara   ·   gatillos  zoom")
+			? FText::Format(NSLOCTEXT("TNGhost", "KeysPadButtons", "{0} / {1}  cambiar   ·   {2}  cámara   ·   gatillos  zoom"),
+				PadName(EKeys::Gamepad_LeftShoulder), PadName(EKeys::Gamepad_RightShoulder), PadName(EKeys::Gamepad_RightThumbstick))
 			: NSLOCTEXT("TNGhost", "KeysMouse", "← / →  cambiar   ·   C  cámara   ·   rueda  zoom"));
 		// Quién más mira a esa tortuga.
 		TArray<FText> Others;

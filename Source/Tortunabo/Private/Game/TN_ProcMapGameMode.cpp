@@ -800,7 +800,7 @@ void ATN_ProcMapGameMode::BeginRespawn(APlayerController* PlayerController, ATor
 	ReleaseCarry(Turtle);
 	if (Turtle->IsKnockedDown())
 	{
-		Turtle->RecoverFromKnockdown();
+		Turtle->RecoverFromKnockdownSilently();
 	}
 	if (UTN_ShellComponent* Shell = Turtle->GetShellComponent())
 	{
@@ -877,6 +877,35 @@ void ATN_ProcMapGameMode::FinishRespawn(TWeakObjectPtr<APlayerController> WeakPC
 	}
 	PC->ClientSetRotation(At.Rotator(), true);
 	PS->DeathZoneTimeRemaining = -1.f;
+}
+
+ETNLateJoinPolicy ATN_ProcMapGameMode::GetLateJoinPolicy() const
+{
+	return Mode == ETNProcGameMode::Coop ? ETNLateJoinPolicy::ResumeOnPath : ETNLateJoinPolicy::SpectateUntilNextRound;
+}
+
+bool ATN_ProcMapGameMode::PlaceMidMatchJoiner(APlayerController* PlayerController)
+{
+	APawn* Pawn = PlayerController ? PlayerController->GetPawn() : nullptr;
+	FTransform At;
+	if (!Pawn || !FindRespawnTransform(PlayerController, At))
+	{
+		return false;
+	}
+
+	// Como una reaparición en la pila: sale ya colocado, con la inmunidad breve y cayendo (sin quedarse sin movimiento).
+	Pawn->SetActorLocationAndRotation(At.GetLocation(), At.GetRotation(), false, nullptr, ETeleportType::TeleportPhysics);
+	const ACharacter* Character = Cast<ACharacter>(Pawn);
+	if (UCharacterMovementComponent* Move = Character ? Character->GetCharacterMovement() : nullptr)
+	{
+		Move->StopMovementImmediately();
+		Move->SetMovementMode(MOVE_Falling);
+	}
+	PlayerController->ClientSetRotation(At.Rotator(), true);
+	GrantReviveImmunity(PlayerController);
+	UE_LOG(LogTortunabo, Log, TEXT("[Join] %s entra a mitad de ronda en %s (pila del equipo %d)."),
+		*GetNameSafe(PlayerController), *At.GetLocation().ToCompactString(), TeamBestNest);
+	return true;
 }
 
 void ATN_ProcMapGameMode::ReleaseCarry(ATortugaCharacter* Turtle) const
@@ -1101,6 +1130,8 @@ void ATN_ProcMapGameMode::StartNextRound()
 			PS->ResetForNewRace();
 		}
 	}
+	// Quien miraba la ronda anterior por entrar a mitad juega esta (PlacePlayersAtStart le da pawn).
+	SitOutPlayerIds.Reset();
 	NextFinishRank = 1;
 	if (ATN_CoopGameState* GS = GetGameState<ATN_CoopGameState>())
 	{

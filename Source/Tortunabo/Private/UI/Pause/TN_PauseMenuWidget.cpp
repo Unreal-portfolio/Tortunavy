@@ -2486,6 +2486,12 @@ void UTN_PauseMenuWidget::FillControlsTab()
 		{
 			if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([bOn](FTNGameSettings& D) { D.bInvertGamepadY = bOn; }); }
 		});
+	AddToggleRow(NSLOCTEXT("TNPause", "PadVibration", "Vibración del mando"),
+		NSLOCTEXT("TNPause", "PadVibrationDesc", "El mando vibra al recibir un golpe, más fuerte cuanto más fuerte es."),
+		Data.bGamepadVibration, [WeakSettings](bool bOn)
+		{
+			if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([bOn](FTNGameSettings& D) { D.bGamepadVibration = bOn; }); }
+		});
 	AddListNote(SettingsList, NSLOCTEXT("TNPause", "DeviceNote", "La cámara usa la sensibilidad del último aparato que hayas tocado: ratón o mando."));
 	if (UTN_PauseRow* Row = AddListRow(SettingsList))
 	{

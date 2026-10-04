@@ -17,6 +17,9 @@ class UMaterialInstanceDynamic;
 class UOverlay;
 class UProgressBar;
 class UTextBlock;
+class APlayerController;
+class ATortugaCharacter;
+class UTN_ButtonGlyphWidget;
 class UTN_HoldRingWidget;
 class UTN_ScoreShellSynthComponent;
 
@@ -135,7 +138,10 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UProgressBar> ReviveBar;
 	/** Aviso de interacción: tecla y texto del interactuable al alcance. */
 	UPROPERTY(Transient) TObjectPtr<UBorder> PromptCard;
+	/** La tecla dibujada (con teclado) y el botón del mando (con mando, #347): solo se ve uno. */
+	UPROPERTY(Transient) TObjectPtr<UBorder> PromptKeyCap;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> PromptKeyText;
+	UPROPERTY(Transient) TObjectPtr<UTN_ButtonGlyphWidget> PromptGlyph;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> PromptLabel;
 	/** Aro de progreso alrededor de la tecla en las interacciones de mantener (rebuscar un decorado). */
 	UPROPERTY(Transient) TObjectPtr<UTN_HoldRingWidget> HoldRing;
@@ -157,11 +163,16 @@ private:
 	float LookupTimer = 0.f;
 	float PromptPop = 0.f;
 	float PromptKeyTimer = 0.f;
+	/** Aparato y familia del mando con los que se pintó la tecla del aviso: si cambian, se repinta al momento. */
+	uint8 PromptKeyDevice = 0xFF;
+	uint8 PromptKeyFamily = 0xFF;
 	TWeakObjectPtr<AActor> PromptTarget;
 	/** Si el aviso mostraba una interacción de mantener en curso (para el rebote al empezar). */
 	bool bPromptHolding = false;
 
 	void TickPrompt(float DeltaTime);
+	/** La tecla o el botón de interactuar con el aparato de ahora (con lo reasignado en Ajustes). */
+	void RefreshPromptKey(const APlayerController* PC, const ATortugaCharacter* Turtle);
 
 	// ── Contador de conchas ──
 	/** Número que se ve (lo que ya ha llegado) y la concha del contador (destino de los iconos, rebota al sumar). */
@@ -197,6 +208,9 @@ private:
 	int32 GainShown = 0;
 	float GainAge = 10.f;
 	bool bShellPaintDirty = false;
+	/** Punto blanco del centro de la pantalla: a donde irá lo que se lance (objeto lanzable, tinta o el compañero cogido). */
+	bool bAimDotShown = false;
+	bool ShouldShowAimDot() const;
 };
 
 /**
@@ -286,5 +300,7 @@ private:
 
 	FText PendingTitle;
 	int32 ShownSelection = -2;
+	/** Si la ayuda de la rueda se escribió para el mando (apuntar con el stick) o para el ratón. */
+	bool bShownPad = false;
 	float Time = 0.f;
 };

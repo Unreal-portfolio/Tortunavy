@@ -18,6 +18,7 @@
 #include "Player/TN_ShellImpactFXComponent.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
+#include "Player/TN_HeadLook.h"
 #include "Player/TN_TurtleFaceComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_WadingComponent.h"
@@ -27,6 +28,7 @@
 #include "Player/TN_TurtleDustComponent.h"
 #include "Player/TN_TurtleFoleyComponent.h"
 #include "Player/TN_TurtleMovementComponent.h"
+#include "Player/TN_TurtleActionSfx.h"
 #include "World/TN_InteractableBase.h"
 #include "World/Beach/TN_BeachTrampoline.h"
 #include "GameFramework/PlayerState.h"
@@ -64,6 +66,12 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 {
 	PrimaryActorTick.bCanEverTick = true;   // needed for leg animation
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	// Sonidos de acción de serie (Docs/Sonido_Tortuga.md, «Acciones»); el Blueprint puede cambiarlos.
+	KillSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Kill);
+	PickupSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Pickup);
+	ThrowSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Throw);
+	ConsumeSound = TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx::Consume);
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -355,22 +363,6 @@ void ATortugaCharacter::ResolveAnimationBones()
 	InitBone(TEXT("Cola"),   ColaBone,   ColaRestRot,   ColaRestLoc);
 	InitBone(TEXT("Cabeza"), CabezaBone, CabezaRestRot, CabezaRestLoc);
 
-	// NeckFollow: capturar rest rot del hueso del cuello/tronco (si está configurado)
-	// para poder aplicar rotación parcial en ApplyHeadLookToCabeza.
-	if (NeckFollowBone != NAME_None && GetMesh())
-	{
-		if (GetMesh()->GetBoneIndex(NeckFollowBone) != INDEX_NONE)
-		{
-			// Rest rot en component space usando socket transform (igual que InitBone).
-			NeckFollowRestRot = GetMesh()->GetSocketTransform(NeckFollowBone, RTS_Component).Rotator();
-		}
-		else
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("[TortugaCharacter] NeckFollowBone '%s' no existe en el skeleton — head-neck follow DESACTIVADO."),
-				*NeckFollowBone.ToString());
-		}
-	}
-
 	// Bone scale at rest is (1,1,1) in all UE5 skeletons — no query needed.
 	CabezaRestScale = FVector::OneVector;
 
@@ -531,7 +523,8 @@ void ATortugaCharacter::StartCosmeticRetryTimer()
 void ATortugaCharacter::PlaySfxAtSelf(USoundBase* Sound) const
 {
 	if (!Sound || !GetWorld()) { return; }
-	UGameplayStatics::SpawnSoundAtLocation(this, Sound, GetActorLocation());
+	// Con la atenuación natural de los sonidos del derribo si el recurso no trae la suya (antes sonaba en 2D en todo el mapa).
+	TNTurtleActionSfx::PlayAt(GetWorld(), Sound, GetActorLocation(), ReviveAudioInnerRadius, ReviveAudioOuterRadius);
 }
 
 void ATortugaCharacter::MulticastPlaySfx_Implementation(USoundBase* Sound)
@@ -576,7 +569,7 @@ void ATortugaCharacter::Tick(float DeltaTime)
 	TickCameraInterp(DeltaTime);   // cinematic camera zoom/FOV interpolation
 	TickVRView(DeltaTime);         // VR con gafas: el giro del mando sigue a la cabeza (TortugaCharacter_VR.cpp)
 	TickFirstPersonView(DeltaTime); // primera persona (con o sin gafas): ojos en la cabeza y cuerpo sin cabeza (TortugaCharacter_FirstPerson.cpp)
-	TickHeadLook(DeltaTime);       // head tracks camera direction, replicated a todos los clientes
+	// La cabeza que sigue a la cámara va en UTN_TurtleAnimInstance (GetViewRelativeToBody y ReplicatedViewYaw).
 	TickFallRules(DeltaTime);      // caída larga → caparazón (servidor)
 	TickShellVisual(DeltaTime);    // encoger/estirar extremidades al entrar/salir del caparazón
 	TickEyes(DeltaTime);           // parpadeo y ojos en espiral (cosmético)
@@ -1648,6 +1641,7 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Replicar a todos los clientes para que el visual sea visible en todos
 	DOREPLIFETIME(ATortugaCharacter, bIsKnockedDown);
 	DOREPLIFETIME(ATortugaCharacter, bIsDead);
+	DOREPLIFETIME(ATortugaCharacter, DeathGroundLocation);
 	// Freeze del ragdoll de muerte — JIP-safe: llegan en el bunch inicial.
 	DOREPLIFETIME(ATortugaCharacter, bRagdollFrozen);
 	DOREPLIFETIME(ATortugaCharacter, RagdollFrozenLoc);
@@ -1665,9 +1659,8 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ATortugaCharacter, bDiveYawInterpActive);
 	// Umbrella protection (#29)
 	DOREPLIFETIME(ATortugaCharacter, bHasUmbrellaProtection);
-	// Head look — SkipOwner: el owner aplica la rotación localmente sin pasar por la red
-	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReplicatedHeadYaw,   COND_SkipOwner);
-	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReplicatedHeadPitch, COND_SkipOwner);
+	// La cabeza que sigue a la cámara (#623). SkipOwner: el dueño usa su propio giro del mando.
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReplicatedViewYaw, COND_SkipOwner);
 	// Modo VR del dueño: la tortuga gira con la cabeza (Docs/Modo_VR.md). SkipOwner: el dueño lo pone él mismo al momento
 	// (SetVRView) y un valor viejo del servidor, al alternar deprisa, pisaría el suyo.
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, bVRPlayer, COND_SkipOwner);
@@ -1699,6 +1692,30 @@ void ATortugaCharacter::PreReplication(IRepChangedPropertyTracker& ChangedProper
 		RepBased.Location = FVector::ZeroVector;
 		RepBased.Rotation = FRotator::ZeroRotator;
 	}
+
+	// La cabeza que sigue a la cámara (#623): la guiñada de la vista respecto del cuerpo, con el giro del mando (el de un
+	// cliente llega con su movimiento), en un byte y solo si se ha movido unos grados. Como RemoteViewPitch16 del motor.
+	if (const AController* ViewController = GetController())
+	{
+		const uint8 ViewYaw = TNHeadLook::EncodeYaw(static_cast<float>(ViewController->GetControlRotation().Yaw - GetActorRotation().Yaw));
+		if (TNHeadLook::ShouldSend(ReplicatedViewYaw, ViewYaw))
+		{
+			ReplicatedViewYaw = ViewYaw;
+		}
+	}
+}
+
+void ATortugaCharacter::GetViewRelativeToBody(float& OutYaw, float& OutPitch) const
+{
+	if (const AController* ViewController = GetController())
+	{
+		const FRotator View = ViewController->GetControlRotation();
+		OutYaw = static_cast<float>(FRotator::NormalizeAxis(View.Yaw - GetActorRotation().Yaw));
+		OutPitch = static_cast<float>(FRotator::NormalizeAxis(View.Pitch));
+		return;
+	}
+	OutYaw = TNHeadLook::DecodeYaw(ReplicatedViewYaw);
+	OutPitch = static_cast<float>(FRotator::NormalizeAxis(FRotator::DecompressAxisFromShort(GetRemoteViewPitch())));
 }
 
 // ── Big Head Consumable ───────────────────────────────────────────────────────
@@ -1799,116 +1816,6 @@ void ATortugaCharacter::TickJumpAnim(float DeltaTime)
 	}
 }
 
-// ── Head Look ─────────────────────────────────────────────────────────────────
-
-void ATortugaCharacter::TickHeadLook(float DeltaTime)
-{
-	// No animar la cabeza durante emotes, blend-out, knockdown, muerte, dive o jump anim.
-	// Esos sistemas son dueños de Cabeza durante su ciclo de vida.
-	if (ActiveEmoteIndex >= 0 || bEmoteBlendingOut) { return; }
-	if (bIsKnockedDown || bIsDead)                  { return; }
-	if (bIsDiving || DiveTiltAlpha > 0.f)           { return; }
-	if (bJumpAnimActive)                             { return; }
-	if (CabezaBone == NAME_None)                     { return; }
-
-	if (IsLocallyControlled())
-	{
-		// Calcular offset de la cámara respecto al cuerpo
-		const APlayerController* PC = Cast<APlayerController>(GetController());
-		if (!PC) { return; }
-
-		const FRotator ControlRot = PC->GetControlRotation();
-		const float ActorYaw      = GetActorRotation().Yaw;
-
-		// Yaw relativo del control respecto al cuerpo, siempre normalizado a [-180, 180].
-		// NOTA: antes manteníamos un acumulador (LastHeadRawYaw) para "continuidad",
-		// pero si el usuario giraba la cámara continuamente en la misma dirección, el
-		// acumulador crecía sin tope y la cabeza quedaba encallada en ±90°: había que
-		// rotar el mismo número de vueltas en sentido opuesto para desbloquearla.
-		// NormalizeAxis + Clamp es suficiente: la cabeza simplemente se queda en el
-		// tope visual cuando la cámara está >90° detrás del cuerpo. Sin latch.
-		const float RawYaw   = FRotator::NormalizeAxis(ControlRot.Yaw - ActorYaw);
-		LocalHeadRelativeYaw = FMath::Clamp(RawYaw, -90.f, 90.f);
-
-		// Pitch: en UE el pitch es negativo al mirar arriba; lo invertimos para nuestra convención
-		const float RawPitch = FRotator::NormalizeAxis(ControlRot.Pitch);
-		LocalHeadPitch       = FMath::Clamp(-RawPitch, -80.f, 80.f);
-
-		// Interpolación local: suaviza snaps cuando el cuerpo rota hacia la cámara.
-		// Velocidad alta (20/s) → no se nota para input directo de cámara,
-		// pero evita el snap de 90° cuando el character body rota.
-		SmoothedHeadYaw   = FMath::FInterpTo(SmoothedHeadYaw,   LocalHeadRelativeYaw, DeltaTime, 20.f);
-		SmoothedHeadPitch = FMath::FInterpTo(SmoothedHeadPitch, LocalHeadPitch,        DeltaTime, 20.f);
-		ApplyHeadLookToCabeza(SmoothedHeadYaw, SmoothedHeadPitch);
-
-		// Al servidor, en grados enteros (los demás la suavizan). El anfitrión escribe directo; un cliente, por RPC no fiable,
-		// como mucho 12 veces por segundo y solo si ha cambiado (antes, un RPC por fotograma y jugador), y una vez por segundo
-		// aunque no cambie por si se perdió el último.
-		const int8 QuantYaw   = static_cast<int8>(FMath::Clamp(FMath::RoundToInt(LocalHeadRelativeYaw), -90, 90));
-		const int8 QuantPitch = static_cast<int8>(FMath::Clamp(FMath::RoundToInt(LocalHeadPitch), -80, 80));
-		if (HasAuthority())
-		{
-			ReplicatedHeadYaw   = QuantYaw;
-			ReplicatedHeadPitch = QuantPitch;
-		}
-		else
-		{
-			constexpr float HeadSendRate = 12.f;
-			HeadSendCooldown -= DeltaTime;
-			HeadSinceSend += DeltaTime;
-			const bool bChanged = QuantYaw != SentHeadYaw || QuantPitch != SentHeadPitch;
-			if (HeadSendCooldown <= 0.f && (bChanged || HeadSinceSend >= 1.f))
-			{
-				HeadSendCooldown = 1.f / HeadSendRate;
-				HeadSinceSend = 0.f;
-				SentHeadYaw = QuantYaw;
-				SentHeadPitch = QuantPitch;
-				ServerUpdateHeadRotation(QuantYaw, QuantPitch);
-			}
-		}
-	}
-	else
-	{
-		// Cliente remoto: interpolar hacia los valores replicados para suavidad
-		SmoothedHeadYaw   = FMath::FInterpTo(SmoothedHeadYaw,   static_cast<float>(ReplicatedHeadYaw),   DeltaTime, 15.f);
-		SmoothedHeadPitch = FMath::FInterpTo(SmoothedHeadPitch, static_cast<float>(ReplicatedHeadPitch), DeltaTime, 15.f);
-		ApplyHeadLookToCabeza(SmoothedHeadYaw, SmoothedHeadPitch);
-	}
-}
-
-void ATortugaCharacter::ApplyHeadLookToCabeza(float Yaw, float Pitch)
-{
-	if (CabezaBone == NAME_None) { return; }
-
-	const FQuat RestQ (FVector(0.f, 0.f, 1.f), FMath::DegreesToRadians(HeadRestYawDeg));
-	const FQuat YawQ  (FVector(0.f, 0.f, 1.f), FMath::DegreesToRadians(Yaw));
-	const FQuat PitchQ(FVector(-1.f, 0.f, 0.f), FMath::DegreesToRadians(Pitch));
-	SetAnimBoneRot(CabezaBone, (RestQ * YawQ * PitchQ * FQuat(CabezaRestRot)).Rotator());
-
-	// Head-neck follow workaround: rotar el hueso del cuello/tronco por una fracción
-	// del yaw/pitch para arrastrar la piel del cuello (que está pesada a ese hueso).
-	// Configurar NeckFollowBone + NeckFollowRatio en BP si la cara del cuello se queda fija.
-	if (NeckFollowBone != NAME_None && NeckFollowRatio > 0.f)
-	{
-		const FQuat NeckYawQ  (FVector(0.f, 0.f, 1.f),  FMath::DegreesToRadians(Yaw   * NeckFollowRatio));
-		const FQuat NeckPitchQ(FVector(-1.f, 0.f, 0.f), FMath::DegreesToRadians(Pitch * NeckFollowRatio));
-		SetAnimBoneRot(NeckFollowBone, (NeckYawQ * NeckPitchQ * FQuat(NeckFollowRestRot)).Rotator());
-	}
-}
-
-bool ATortugaCharacter::ServerUpdateHeadRotation_Validate(int8 /*Yaw*/, int8 /*Pitch*/)
-{
-	// Grados enteros en un byte: no hay NaN ni infinitos que colar; el rango lo acota _Implementation.
-	return true;
-}
-
-void ATortugaCharacter::ServerUpdateHeadRotation_Implementation(int8 Yaw, int8 Pitch)
-{
-	// Validar rangos en el servidor para prevenir manipulación del cliente
-	ReplicatedHeadYaw   = static_cast<int8>(FMath::Clamp(static_cast<int32>(Yaw),   -90,  90));
-	ReplicatedHeadPitch = static_cast<int8>(FMath::Clamp(static_cast<int32>(Pitch), -80,  80));
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Tótem auto-revive — feedback visual/sonoro en todas las máquinas
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1917,7 +1824,11 @@ void ATortugaCharacter::Multicast_OnTotemAutoRevive_Implementation()
 {
 	if (TotemSelfReviveSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, TotemSelfReviveSound, GetActorLocation());
+		PlaySfxAtSelf(TotemSelfReviveSound);
+	}
+	else if (UTN_TurtleActionSynthComponent* Synth = UTN_TurtleActionSynthComponent::FindOrAddTo(this))
+	{
+		Synth->PlayRevive(/*bTotem=*/true);
 	}
 	if (TotemSelfReviveVFX)
 	{

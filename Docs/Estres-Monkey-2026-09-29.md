@@ -17,7 +17,7 @@ Notas de uso:
 - Solo compilaciones que no son Shipping. Código en `Source/Tortunabo/{Public,Private}/Testing/`.
 - El monkey sube el tope de 4 jugadores locales del motor (`MaxSplitscreenPlayers`) para poder llegar a 8.
 - Pausa/reanudar solo actúa con interfaz real: en `-nullrhi` se cuenta como `pause_skipped_no_ui`.
-- Red local con dos procesos: ambos con `-NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver -ini:Engine:[OnlineSubsystem]:DefaultPlatformService=Null -NoSteam`; servidor con mapa `?listen`, cliente con `127.0.0.1`.
+- Red local con varios procesos: `Scripts/tools/red_local.py` ([`Pruebas_Red_Local.md`](Pruebas_Red_Local.md)). A mano, todos con `-NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver -ini:Engine:[OnlineSubsystem]:DefaultPlatformService=Null -NoSteam`; servidor con mapa `?listen`, cliente con `127.0.0.1`.
 
 ## Resultados del monkey (3 × 60 s)
 
@@ -35,7 +35,7 @@ Correcciones de red: 0 (todo en un proceso; ver "Pendiente").
 1. **Bola del caparazón: salto de velocidad al nacer sobre el terreno del generador** (11 avisos en 3 runs, ~1,8 s de edad). La caja aparece con su parte de abajo 14-127 cm bajo `ProceduralMeshComponent_16/17` de `TN_BeachRaceGenerator_0` y la depenetración le da 940-1470 cm/s de golpe (impulso de contacto 21 000-76 000). `TN_ShellBody.cpp` (instrumento en `~l.300-338`). Probable causa: la caja se crea con la parte baja dentro de la malla. No se ha corregido.
 2. **Caja del caparazón 93 cm bajo el terreno junto a una fortaleza** (semilla 202, caja 11, 0,93 s de edad, contacto con `TN_BeachFortress_0.CastleCollision` y `ProceduralMeshComponent_17`, impulso 432 690). Posición (58,5; 10,5; 34,1) m. Sin corregir.
 3. **Lanzables con tope por clase**: `ATN_RaceMine::MaxInWorld = 12` (`TN_RaceMine.cpp:39`), `ATN_RaceFrisbee::MaxInWorld = 6` (`TN_RaceFrisbee.cpp:30`). De 100 o 500 pedidos solo viven 28 a la vez. No es un fallo: el escenario los repone cada 0,5 s.
-4. **Cliente remoto sin monkey**: con `-TNMonkey` en un cliente, la sesión arranca en `LVL_Menu` (antes del viaje) y no ve jugadores; el informe sale vacío (`players: 0`, falla por diseño). Hay que arrancar la sesión desde la consola una vez dentro (`TN.Monkey 60 9`).
+4. **Cliente remoto sin monkey** (resuelto en #80): con `-TNMonkey` en un cliente, si no llegaba a conectar (el servidor aún no escuchaba) volvía a `LVL_Menu`, la sesión arrancaba ahí sin jugadores y el informe salía vacío. Ahora `-TNMonkeyNet=client` (o un primer argumento que es una dirección) espera al mundo conectado; ver [`Pruebas_Red_Local.md`](Pruebas_Red_Local.md).
 5. Aviso de datos en cada arranque: `DT_Helmets` no tiene `Helmet_Default` (`[PC] ServerSyncUnlockedHelmets`), y la malla no tiene los sockets `Pata1/Pata2/Brazo1/Brazo2/Cola/Cabeza` (animación de huesos desactivada en cada tortuga). Ruido de arranque, no de partida.
 
 Sin asserts, ensures, errores de log, caídas bajo el mapa, atascos ni rescates en ~13 minutos de juego aleatorio acumulado.
@@ -84,7 +84,7 @@ Actores replicados: ~634-665 en la base, 968 (heavy) con todo. Muy por debajo de
 ## Pendiente
 
 - ~~Render y GPU no medidos~~: medidos con ventana el 2026-10-02 en [`Rendimiento_GPU_2026-10-02.md`](Rendimiento_GPU_2026-10-02.md) (#58). En reposo limita la GPU (9,7 ms de 11,5); con `heavy`, el hilo de render (17,2 ms) y el de juego (11,7 ms). Script: `Scripts/tools/medir_render_gpu.py`.
-- El monkey del cliente remoto (para `net_corrections`) no arrancó, ver hallazgo 4. Hacerlo a mano con `TN.Monkey 60 9` en la ventana del cliente mientras el servidor corre `heavy`.
+- ~~El monkey del cliente remoto (para `net_corrections`) no arrancó~~: resuelto en #80, medido en [`Pruebas_Red_Local.md`](Pruebas_Red_Local.md).
 - ~~Sin `stat unit` de verdad~~: hilos de juego y render, RHI y GPU por separado en [`Rendimiento_GPU_2026-10-02.md`](Rendimiento_GPU_2026-10-02.md). Las cifras de este informe son de DebugGame headless; en Development el hilo de juego cuesta 2,5-3 veces menos.
 - Pausa/reanudar sin probar (solo con interfaz).
 - Sin perfil por clase de coste de Tick: los costes por grupo salen de restar fases. Falta Insights.

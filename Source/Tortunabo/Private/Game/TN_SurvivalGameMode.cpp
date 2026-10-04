@@ -108,7 +108,8 @@ AActor* ATN_SurvivalGameMode::ChoosePlayerStart_Implementation(AController* Play
 
 void ATN_SurvivalGameMode::Logout(AController* Exiting)
 {
-	if (const APlayerState* ExitingPS = Exiting ? Exiting->PlayerState : nullptr)
+	// Irse en la espera no cuenta: quien vuelve antes de empezar juega la partida entera.
+	if (const APlayerState* ExitingPS = Exiting && bMatchStarted ? Exiting->PlayerState : nullptr)
 	{
 		LeftPlayerIds.Add(ExitingPS->GetPlayerId());
 		FinishedPawns.Remove(ExitingPS->GetPlayerId());
@@ -179,7 +180,8 @@ TArray<FTNSurvivalPlayer> ATN_SurvivalGameMode::GatherPlayers() const
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
 		const ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(BasePS);
-		if (!TNPS || LeftPlayerIds.Contains(TNPS->GetPlayerId()))
+		// Fuera quien se fue y quien entró con la partida en marcha (SitOutPlayerIds): ni sigue ni gana.
+		if (!TNPS || LeftPlayerIds.Contains(TNPS->GetPlayerId()) || SitOutPlayerIds.Contains(TNPS->GetPlayerId()))
 		{
 			continue;
 		}

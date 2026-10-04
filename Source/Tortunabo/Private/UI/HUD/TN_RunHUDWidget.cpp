@@ -41,10 +41,16 @@
 #include "World/TN_ScoreShells.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
+#include "Core/TN_InventoryTypes.h"
+#include "Player/TN_CarryComponent.h"
+#include "World/Beach/TN_RaceItems.h"
+#include "Player/TN_InventoryComponent.h"
 #include "InputAction.h"
 #include "Voice/ProximityVoiceComponent.h"
 #include "World/ProcMap/TN_PathStorm.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
+#include "Settings/TN_InputDeviceSubsystem.h"
+#include "UI/HUD/TN_ButtonGlyphWidget.h"
 
 // Con nombre (no anónimo): un using-directive dentro de un namespace anónimo se ve en todo el resto del bloque
 // unity y los nombres de TNHUDStyle (Edge, Text, Sand...) chocaban con variables del mapa procedural (C4459).
@@ -59,6 +65,8 @@ namespace TNRunHUDDetail
 	TAutoConsoleVariable<int32> CVarHUDTalk(TEXT("tn.HUD.Talk"), -1, TEXT("HUD: 1 fuerza el bocadillo de voz, 0 lo apaga; -1 = el real."));
 	TAutoConsoleVariable<int32> CVarHUDCrew(TEXT("tn.HUD.CrewPreview"), 0,
 		TEXT("HUD: rellena N filas de la tripulación con tu propia tortuga (la 1.ª dice una frase y la 2.ª habla) para ver el diseño sin más jugadores."));
+	TAutoConsoleVariable<int32> CVarHUDPrompt(TEXT("tn.HUD.Prompt"), 0,
+		TEXT("HUD: 1 enseña el aviso de interacción sin nada al alcance (con la tecla o el botón del aparato de ahora)."));
 
 	/** Pista de la playa al mar: tamaño y tramo útil (del nido a la orilla), en fracción de su ancho. */
 	constexpr float TrackW = 520.f;
@@ -551,6 +559,8 @@ void UTN_RunHUDWidget::BuildTree()
 
 	// ── Aviso de interacción: tecla en un botón azul marino y el texto del interactuable al alcance ──
 	{
+		/** Alto de la tecla y del botón del mando (px). */
+		constexpr float PromptKeyHeight = 42.f;
 		UHorizontalBox* Row = Make<UHorizontalBox>(Tree);
 		PromptKeyText = MakeText(Tree, nullptr, INVTEXT("E"), TEXT("Black"), 22, TNHUDArt::Cream, false);
 		PromptKeyText->SetJustification(ETextJustify::Center);
@@ -560,10 +570,16 @@ void UTN_RunHUDWidget::BuildTree()
 		KeyCap->SetHorizontalAlignment(HAlign_Center);
 		KeyCap->SetVerticalAlignment(VAlign_Center);
 		KeyCap->SetContent(PromptKeyText);
+		PromptKeyCap = KeyCap;
+		// Con mando, el botón dibujado en lugar de la tecla (RefreshPromptKey elige cuál se ve).
+		PromptGlyph = Make<UTN_ButtonGlyphWidget>(Tree);
+		PromptGlyph->SetGlyphHeight(PromptKeyHeight);
+		PromptGlyph->SetVisibility(ESlateVisibility::Collapsed);
 		// La tecla, con el aro de mantener alrededor: solo se ve en las interacciones de mantener (rebuscar un
 		// decorado) y se llena en dorado mientras la tecla siga pulsada. Plegado no cuenta en el tamaño del aviso.
 		UOverlay* KeyStack = Make<UOverlay>(Tree);
-		AddAt(KeyStack, MakeSize(Tree, KeyCap, 0.f, 42.f), HAlign_Center, VAlign_Center);
+		AddAt(KeyStack, MakeSize(Tree, KeyCap, 0.f, PromptKeyHeight), HAlign_Center, VAlign_Center);
+		AddAt(KeyStack, PromptGlyph, HAlign_Center, VAlign_Center);
 		HoldRing = Make<UTN_HoldRingWidget>(Tree);
 		HoldRing->SetRingSize(66.f, 6.f);
 		HoldRing->SetVisibility(ESlateVisibility::Collapsed);
@@ -602,6 +618,40 @@ void UTN_RunHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 		Invalidate(EInvalidateWidgetReason::Paint);
 	}
 	bShellPaintDirty = bShellsOnScreen;
+	const bool bWantsDot = ShouldShowAimDot();
+	if (bWantsDot != bAimDotShown)
+	{
+		bAimDotShown = bWantsDot;
+		Invalidate(EInvalidateWidgetReason::Paint);
+	}
+}
+
+bool UTN_RunHUDWidget::ShouldShowAimDot() const
+{
+	const APlayerController* PC = GetOwningPlayer();
+	const ATortugaCharacter* Turtle = PC ? Cast<ATortugaCharacter>(PC->GetPawn()) : nullptr;
+	if (!Turtle || PC->ShouldShowMouseCursor() || Turtle->UsesCameraThrowAim() == false)
+	{
+		return false;
+	}
+	if (Turtle->GetCarryComponent() && Turtle->GetCarryComponent()->IsCarrying())
+	{
+		return true;
+	}
+	const UTN_InventoryComponent* Inv = Turtle->GetInventoryComponent();
+	if (!Inv || !Inv->HasEquippedItem())
+	{
+		return false;
+	}
+	const FTN_InventoryItem& Equipped = Inv->GetEquippedItem();
+	const ETN_ItemUseType Use = Equipped.UseType;
+	if (Use == ETN_ItemUseType::RaceItem)
+	{
+		// De la carrera, los que se lanzan a mano (el cangrejo va solo hacia su rival y el resto no se lanza).
+		const ETNRaceItem Kind = TNRaceItems::KindOf(Equipped);
+		return Kind == ETNRaceItem::SandMine || Kind == ETNRaceItem::Frisbee;
+	}
+	return Use == ETN_ItemUseType::Throwable || Use == ETN_ItemUseType::InkThrower;
 }
 
 void UTN_RunHUDWidget::NativeDestruct()
@@ -621,7 +671,15 @@ void UTN_RunHUDWidget::TickPrompt(float DeltaTime)
 	const bool bShow = Target && Target->CanInteract(Turtle) && !PC->ShouldShowMouseCursor() && !Target->GetPromptText().IsEmpty();
 	if (!bShow)
 	{
-		PromptCard->SetVisibility(ESlateVisibility::Collapsed);
+		// Vista previa (tn.HUD.Prompt 1): el aviso sin nada al alcance, con la tecla o el botón de interactuar de verdad.
+		const bool bPreview = Turtle && CVarHUDPrompt.GetValueOnGameThread() > 0;
+		PromptCard->SetVisibility(bPreview ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		if (bPreview)
+		{
+			PromptLabel->SetText(NSLOCTEXT("Tortunabo", "InteractPrompt", "Interactuar"));
+			PromptKeyTimer -= DeltaTime;
+			RefreshPromptKey(PC, Turtle);
+		}
 		PromptTarget.Reset();
 		bPromptHolding = false;
 		return;
@@ -632,21 +690,8 @@ void UTN_RunHUDWidget::TickPrompt(float DeltaTime)
 		PromptLabel->SetText(Target->GetPromptText());
 		PromptPop = 1.f;
 	}
-	// Tecla de verdad de la acción de interactuar (la primera de teclado), mirada de vez en cuando.
 	PromptKeyTimer -= DeltaTime;
-	if (PromptKeyTimer <= 0.f)
-	{
-		PromptKeyTimer = 2.f;
-		const ULocalPlayer* LP = PC->GetLocalPlayer();
-		const UEnhancedInputLocalPlayerSubsystem* Input = LP ? LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>() : nullptr;
-		if (Input && Turtle->GetInteractAction())
-		{
-			for (const FKey& Key : Input->QueryKeysMappedToAction(Turtle->GetInteractAction()))
-			{
-				if (Key.IsValid() && !Key.IsGamepadKey()) { PromptKeyText->SetText(UTN_GameSettingsSubsystem::KeyDisplayName(Key)); break; }
-			}
-		}
-	}
+	RefreshPromptKey(PC, Turtle);
 	PromptCard->SetVisibility(ESlateVisibility::HitTestInvisible);
 	// Interacciones de mantener (rebuscar): el aro se llena con el progreso que cuenta el servidor (estado replicado);
 	// recién pulsada la tecla, mientras llega su respuesta, sale vacío. Al empezar, el aviso da un saltito.
@@ -665,6 +710,31 @@ void UTN_RunHUDWidget::TickPrompt(float DeltaTime)
 	const float Bob = 1.f + 0.03f * FMath::Sin(Time * 4.f);
 	const float Pop = 1.f + 0.25f * PromptPop * PromptPop;
 	PromptCard->SetRenderScale(FVector2D(Bob * Pop, Bob * Pop));
+}
+
+void UTN_RunHUDWidget::RefreshPromptKey(const APlayerController* PC, const ATortugaCharacter* Turtle)
+{
+	// Al cambiar de teclado a mando (o de mando), al momento; si no, de vez en cuando, por si se reasigna en Ajustes.
+	constexpr float PromptKeyRefreshSeconds = 2.f;
+	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(PC);
+	const ETNInputDevice Device = Devices ? Devices->GetDevice(PC) : ETNInputDevice::KeyboardMouse;
+	const ETNPadFamily Family = Devices ? Devices->GetPadFamily() : ETNPadFamily::Xbox;
+	const bool bChanged = PromptKeyDevice != static_cast<uint8>(Device) || PromptKeyFamily != static_cast<uint8>(Family);
+	if (!bChanged && PromptKeyTimer > 0.f)
+	{
+		return;
+	}
+	PromptKeyTimer = PromptKeyRefreshSeconds;
+	PromptKeyDevice = static_cast<uint8>(Device);
+	PromptKeyFamily = static_cast<uint8>(Family);
+	const FKey Key = Devices ? Devices->KeyForAction(PC, Turtle->GetInteractAction()) : FKey();
+	const bool bGlyph = PromptGlyph && TNInputGlyphs::DeviceOfKey(Key) == ETNInputDevice::Gamepad && PromptGlyph->SetKey(Key, Family);
+	if (PromptGlyph) { PromptGlyph->SetVisibility(bGlyph ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed); }
+	if (PromptKeyCap) { PromptKeyCap->SetVisibility(bGlyph ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible); }
+	if (!bGlyph && Key.IsValid())
+	{
+		PromptKeyText->SetText(UTN_GameSettingsSubsystem::KeyDisplayName(Key));
+	}
 }
 
 void UTN_RunHUDWidget::TickBadge(float DeltaTime)
@@ -1104,8 +1174,22 @@ int32 UTN_RunHUDWidget::NativePaint(const FPaintArgs& Args, const FGeometry& All
 	FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
 {
 	const int32 Layer = Super::NativePaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
-	if (Flights.Num() == 0 && CounterGlow <= 0.f) { return Layer; }
 	const FLinearColor Tint = InWidgetStyle.GetColorAndOpacityTint();
+	int32 DotLayer = Layer;
+	if (bAimDotShown)
+	{
+		// Punto blanco en el centro de la pantalla (con un borde negro para que se vea sobre cualquier fondo).
+		// El color va en MakeBox: el tinte del brush no llega al relleno del RoundedBox y el aro salía blanco (#264).
+		static const FSlateRoundedBoxBrush DotRim(FLinearColor::White, 8.25f);
+		static const FSlateRoundedBoxBrush Dot(FLinearColor::White, 5.25f);
+		const FVector2f Center = AllottedGeometry.GetLocalSize() * 0.5f;
+		FSlateDrawElement::MakeBox(OutDrawElements, Layer + 1, AllottedGeometry.ToPaintGeometry(FVector2f(16.5f, 16.5f),
+			FSlateLayoutTransform(Center - FVector2f(8.25f, 8.25f))), &DotRim, ESlateDrawEffect::None, FLinearColor(0.f, 0.f, 0.f, Tint.A));
+		FSlateDrawElement::MakeBox(OutDrawElements, Layer + 2, AllottedGeometry.ToPaintGeometry(FVector2f(10.5f, 10.5f),
+			FSlateLayoutTransform(Center - FVector2f(5.25f, 5.25f))), &Dot, ESlateDrawEffect::None, FLinearColor::White * Tint);
+		DotLayer = Layer + 2;
+	}
+	if (Flights.Num() == 0 && CounterGlow <= 0.f) { return DotLayer; }
 	// Al acabar una grande o una reina, su icono crece desde la concha del contador y se apaga.
 	if (CounterGlow > 0.f && !CounterTarget.IsNearlyZero())
 	{
@@ -1661,14 +1745,18 @@ void UTN_RunRadialWheelWidget::NativeTick(const FGeometry& MyGeometry, float InD
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	Time += InDeltaTime;
 	const int32 Sel = GetSelectedIndex();
-	if (Sel != ShownSelection)
+	// Con mando se apunta con el stick: la ayuda cambia al momento si se cambia de aparato con la rueda abierta (#347).
+	const bool bPad = UTN_GameSettingsSubsystem::IsUsingGamepad(GetOwningPlayer());
+	if (Sel != ShownSelection || bPad != bShownPad)
 	{
 		ShownSelection = Sel;
+		bShownPad = bPad;
 		if (DiscMID) { DiscMID->SetScalarParameterValue(TEXT("Selected"), static_cast<float>(Sel)); }
 		const TArray<FTN_RadialWheelEntryView>& List = GetEntries();
 		if (ChoiceText)
 		{
-			ChoiceText->SetText(List.IsValidIndex(Sel) ? List[Sel].Label : NSLOCTEXT("TNHUD", "WheelHint", "Apunta con el ratón"));
+			const FText Hint = bPad ? NSLOCTEXT("TNHUD", "WheelHintPad", "Apunta con el stick") : NSLOCTEXT("TNHUD", "WheelHint", "Apunta con el ratón");
+			ChoiceText->SetText(List.IsValidIndex(Sel) ? List[Sel].Label : Hint);
 		}
 		for (int32 i = 0; i < SlotLabels.Num(); ++i)
 		{

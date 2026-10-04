@@ -82,6 +82,7 @@ necesita espera a que esté lista.
 | `Automation RunTests Tortunabo.Beach.Hold` / `Automation RunTests Tortunabo.Beach.Gull` / `Automation RunTests Tortunabo.Beach.Crab` | Pruebas automáticas de lógica pura (en la consola del editor o en Session Frontend), con las velocidades de verdad (2 y 4 m/s): quién mueve a la tortuga y la sujeción de los enemigos con agarres seguidos; el nerf de las gaviotas (andando o corriendo recto te pilla; girando corriendo al lanzarse te libras; la plancha libra de la cagada); el cangrejo gigante (persigue entre andar y correr, su mazazo se salta). |
 | `TN.Beach.Place GiantCrab` | Un cangrejo gigante delante: andando te alcanza, corriendo se te escapa poco a poco; al levantar la pinza, salta (lo pasa por encima: `salta por encima del mazazo` en el registro) o corre hacia otro lado. |
 | `TN.Beach.Quad.Now` | Todos los pasos de quads avisan y pasan ya. |
+| `TN.Beach.Quad.Trace 1` | En cada máquina (anfitrión y clientes, no en Shipping), registra en cada fotograma de una pasada `[Quad] server|client <paso> wall=<reloj de pared> clock=<reloj de trampa> raw=<hora del servidor sin suavizar> pass=<salida> x=<cm>`. Para medir el desfase: con los dos procesos en el mismo equipo, `wall` es común; a la misma `clock`, la `x` del anfitrión y la del cliente coinciden. Desde la línea de comandos, `-ExecCmds` separa con comas: `-ExecCmds="TN.Beach.Quad.Trace 1, p.NetShowCorrections 1, NetEmulation.PktLag 150"`. |
 | `TN.Beach.Storm.Start [metros detrás=30] [cm/s=180]` | Arranca la tormenta de bañistas. |
 | `TN.Beach.Storm.Here [jugador] [metros=4]` | Pone el frente de la tormenta 4 m (o `metros`) por delante de tu tortuga o de la del jugador N (índice en `PlayerArray`: así se prueba la del cliente desde el anfitrión): se queda dentro y un bañista le da la patada. Acaba sí o sí en arena abierta ~20 m por delante del frente, siempre en bola por el aire: con arco libre, chocando; si no (una pared delante, nadando o a más de 45 m), atravesando lo que haya hasta bajar sobre su sitio. Con `metros` = 30 o 60 se prueban la patada larga y la que atraviesa; pegada a la pared de un castillo o de una fortaleza, la que no tiene arco libre. Sin tormenta, crea una. Ver `Docs/Modo_Carrera.md`, «La patada que no puede entrar en bucle». |
 | `TN.Beach.Storm.Stop` | La para. |
@@ -137,6 +138,8 @@ necesita espera a que esté lista.
 
 | Comando | Qué hace |
 |---|---|
+| `TN.Stress caos [segundos por fase=20]` | Peor caso de juego real en el anfitrión: cuatro tortugas (las que faltan entran como jugadores extra, con la pantalla partida apagada) usan catapultas, se cogen y se lanzan, ruedan en su bola y lanzan objetos en ráfagas con cangrejos, gaviotas y tanques encima, en 7 fases que suman carga. Informe en `Saved/Stress/caos_<fecha>.json` (p50/p95/p99 de fotograma, juego, render, RHI y GPU, RAM, memoria comprometida, VRAM, KB/s, correcciones y acciones por fase) y regiones `TNChaos_<fase>` en Unreal Insights. `TN.Stress stop` lo para. Análisis: `Docs/Analisis/2026-10-03-Estres-caos.md`. |
+| `-TNStress=caos [-TNStressSeconds=20] [-TNStressWarmup=20] [-TNChaosEnemies=1] [-TNChaosVerbose] [-TNQuitWhenDone]` | Lo mismo desde la línea de órdenes (con `-game`). En un cliente (`127.0.0.1 -TNStress=caos`), su tortuga juega igual por red y escribe `caos_cliente_<fecha>.json` con sus correcciones. `-TNChaosEnemies` multiplica los enemigos (12 cangrejos, 4 gaviotas y 4 tanques por tanda); `-TNChaosVerbose` escribe en el registro qué hace cada tortuga. En el Coop para la tormenta mientras dura. |
 | `TN.Beach.Perf` | Tiempos de la última ronda (reparto, asientos, decorado, actores, botín y fotogramas), decorado local (piezas, instancias, con colisión y con sombra, partes que se mueven, componentes), actores de la playa (con dormancy, siempre relevantes, relevancia media), rebuscables (puntos, usados, actores ahora), objetos, conchas y la lista de red. En la ventana donde se escribe y, en PIE, también el servidor. |
 | `TN.Beach.BuildBudgetMs 6` | Milisegundos por fotograma para montar la ronda (asientos, decorado local y actores). |
 | `TN.Beach.AsyncBuild 0` | Monta la ronda entera en un fotograma, como antes (para comparar); `1` vuelve a por partes. |
@@ -329,6 +332,10 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `TN.Voice.Pant 1` / `TN.Voice.Pant 2` | Jadeo de prueba: `1` suave, `2` agotada; `0` lo apaga. |
 | `TN.Voice.Drag 1` / `TN.Voice.Drag 2` | Arrastre de panzazo de prueba: `1` lento, `2` rápido; `0` lo apaga. |
 | `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo. |
+| `TN.HeadLook.Shots [carpeta]` | Fotos sin interfaz de la cabeza siguiendo a la vista (al frente, 45° a la derecha, 60° a la izquierda, en el tope, arriba, abajo y detrás), el giro medido en el hueso en el registro, y cierra el juego. En `-game -RenderOffScreen -UseFixedTimeStep -FPS=30`. |
+| `TN.HeadLook.Sweep 20` | Mueve sola la vista del jugador local 20 s (guiñada ±60°, cabeceo ±25°) para ver el giro de la cabeza en las demás máquinas. |
+| `TN.HeadLook.Log 1` | Cada tortuga escribe una vez por segundo su vista respecto del cuerpo (del mando o replicada) y el giro de su cabeza. |
+| `TN.Debug.Knockdown [segundos=2] [jugador=0] [empujón=0] [retraso=0]` | En el anfitrión: derriba a esa tortuga (empujón hacia arriba en cm/s; retraso en s, para lanzarlo con `-ExecCmds`). Suena el «¡clonc!» del derribo, el latido (solo en su máquina) y el arpegio al levantarse; en su máquina, sacudida y vibración según el empujón (`[HitFeedback]` en el log; con `-LogCmds="LogTortunabo Verbose"`, también `[ActionSfx]`). |
 | `TN.Music.Play Victoria` | Hace sonar una pista: `Victoria`, `Derrota`, `Eliminado`, `Tienda`, `Probador` o `Silencio`. |
 
 ## Tutorial de la primera partida
@@ -344,3 +351,23 @@ reiniciarlo al arrancar sin consola, `Saved/ResetTutorial.txt` (vacío = todas l
 | `TN.Tutorial.Skip` | Lo salta como el menú de pausa: baja a la plaza del castillo y queda apuntado como hecho. |
 | `TN.Tutorial.Station 12` | Lleva a la estación 12 (1-19) y mete en el tutorial si hace falta. Sin número, escribe la lista. |
 | `TN.Tutorial.Info` | Ranura del guardado, hecho o no, dentro o fuera, estación y cuántos hay dentro (en el servidor). |
+
+## Mando y avisos de botones
+
+Los avisos (aviso de interacción del HUD, cartel del tutorial, ayuda de las ruedas y del fantasma) enseñan la tecla con teclado
+y ratón y el botón dibujado con mando, según el último aparato tocado (stick y gatillos pasado un 35 %; el ratón, si se mueve
+más de 3 px). La familia del mando sale de Steam Input con Steam y, sin él, del nombre del aparato; por defecto, Xbox. Con
+mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala abre el teclado en pantalla de Steam.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Input.Device 0\|1\|2` | Aparato de los avisos: 0 el último usado, 1 teclado y ratón, 2 mando. |
+| `TN.Input.PadFamily 0\|1\|2\|3` | Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck. |
+| `TN.Input.Press <tecla> [segundos]` | Pulsa (y mantiene) una tecla o un botón como si viniera del aparato, por Slate: `TN.Input.Press Gamepad_DPad_Up` pasa los avisos a mando y `TN.Input.Press ScrollLock`, a teclado. |
+| `TN.Later <segundos> <comando>` | Ejecuta el comando pasado ese tiempo, como escrito en la consola del jugador (para encadenar pruebas en `-ExecCmds`, también `shot showui`). |
+| `tn.HUD.Prompt 1` | Enseña el aviso de interacción sin nada al alcance, con la tecla o el botón de interactuar del aparato de ahora. |
+| `TN.Steam.FakeKeyboard 1\|2` | Teclado de Steam simulado (sin Steam Deck ni Big Picture): con mando, A en las casillas del código de sala lo «abre» (1 el de pantalla completa, 2 el flotante). |
+| `TN.Steam.KeyboardText <texto\|cancelar>` | Cierra el teclado simulado con ese texto: `TN.Steam.KeyboardText k7m2p` deja K7M2P en las casillas y entra en la sala, como «Hecho» en el de Steam. |
+
+Ejemplo sin mando (captura de cada estado en `Saved/Screenshots`):
+`-ExecCmds="tn.HUD.Prompt 1, TN.Later 8 TN.Tutorial.Station 7, TN.Later 12 shot showui, TN.Later 13 TN.Input.Press Gamepad_DPad_Up, TN.Later 13.3 shot showui, TN.Later 15 TN.Input.PadFamily 2, TN.Later 16 shot showui"`.
