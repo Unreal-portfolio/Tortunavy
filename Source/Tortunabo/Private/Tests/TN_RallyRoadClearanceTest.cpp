@@ -6,7 +6,8 @@
 //  - Plan: la barrera planificada de todos los circuitos del Rally (TNLobbyMission::RallyMapOptions) no entra en la calzada; caso
 //    negativo: pegada al borde sin margen, sí entra.
 //  - Rail: el carril de un paso superior que entra en la calzada de debajo se parte y solo pierde lo que entra; caso negativo:
-//    el tramo entero entra.
+//    el tramo entero entra. El gálibo del carril es el buggy con la artillera más 0,5 m (decisión del 04-10): un paso
+//    superior a 5 m conserva el carril entero aunque caiga dentro del gálibo de túnel de 6 m de las piezas que se ven.
 //  - Built: con el terreno de cada circuito y el decorado construido como en la carrera, ninguna pieza colocada entra en la
 //    calzada ni tiene un techo encima, y no se ha quitado ningún trozo del carril de colisión. Caso negativo (#698): el mismo
 //    decorado sin el filtro (SetRoadClearanceEnabled(false)) sí deja piezas en la calzada o bajo un techo en algún circuito.
@@ -21,6 +22,7 @@
 #include "Rally/TN_RallyLogic.h"
 #include "Rally/TN_RallyTrack.h"
 #include "Rally/TN_RallyTrackDressing.h"
+#include "Vehicles/TN_Buggy.h"
 #include "World/TN_MapVariantLoader.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
@@ -243,19 +245,26 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyRoadClearRailTest, "Tortunabo.Rally.Dre
 bool FTNRallyRoadClearRailTest::RunTest(const FString& Parameters)
 {
 	using namespace TNRallyRoadClearanceTest;
-	// Calzada de debajo por +X, de 10 m de ancho, y un paso superior por +Y a 5 m: el fondo de su carril (Z - 40) cae dentro del
-	// gálibo de 6 m de la calzada de debajo, solo donde la cruza.
+	// El gálibo del carril sale del buggy de verdad: la cabeza de la artillera sentada y la boca de la torreta caben debajo.
+	TestTrue(TEXT("El gálibo del carril cubre la cabeza de la artillera"), BuggyWithGunnerHeightCm >= ATN_Buggy::GunnerSeatLocal.Z + 72.0);
+	TestTrue(TEXT("El gálibo del carril cubre la boca de la torreta"), BuggyWithGunnerHeightCm >= ATN_Buggy::MuzzleLocal.Z);
+	const FRoadClearance Defaults;
+	TestEqual(TEXT("Gálibo del carril: buggy con la artillera más 0,5 m"), Defaults.RailAboveCm, BuggyWithGunnerHeightCm + 50.0);
+	TestTrue(TEXT("El gálibo del carril es más bajo que el de túnel"), Defaults.RailAboveCm < Defaults.AboveCm);
+
+	// Calzada de debajo por +X, de 10 m de ancho, y un paso superior por +Y a 2,5 m: el fondo de su carril (Z - 40) cae dentro
+	// del gálibo del carril (2,5 m) de la calzada de debajo, solo donde la cruza.
 	FTrackData Lower;
 	Lower.StepCm = SampleStepCm;
 	AddLine(Lower, FVector(-4000.0, 0.0, 0.0), FVector(4400.0, 0.0, 0.0), 1000.0);
 	const FRoadFootprint Road(Lower, ActorParams());
 	const FRailParams Rail;
-	const FVector A(0.0, -4000.0, 500.0);
-	const FVector B(0.0, 4000.0, 500.0);
+	const FVector A(0.0, -4000.0, 250.0);
+	const FVector B(0.0, 4000.0, 250.0);
 	// Caso negativo: el tramo entero entra en la calzada de debajo (antes se quitaba entero y quedaba un agujero de 80 m).
 	TestTrue(TEXT("El tramo entero del carril entra en la calzada de debajo"), RailProbes(A, B, Rail).ContainsByPredicate([&Road](const FBarrierPiece& Probe)
 	{
-		return Road.Intrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
+		return Road.RailIntrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
 	}));
 	int32 Dropped = 0;
 	const TArray<FRailSpan> Spans = ClearRailSpans(Road, A, B, Rail, Dropped);
@@ -274,7 +283,7 @@ bool FTNRallyRoadClearRailTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Los trozos salen en orden de A a B"), Index == 0 || Spans[Index].A.Y >= Spans[Index - 1].B.Y - 1.0);
 		for (const FBarrierPiece& Probe : RailProbes(Spans[Index].A, Spans[Index].B, Rail))
 		{
-			Intruding += Road.Intrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ) ? 1 : 0;
+			Intruding += Road.RailIntrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ) ? 1 : 0;
 		}
 	}
 	TestEqual(TEXT("Ningún trozo conservado entra en la calzada"), Intruding, 0);
@@ -283,11 +292,28 @@ bool FTNRallyRoadClearRailTest::RunTest(const FString& Parameters)
 	AddInfo(FString::Printf(TEXT("Carril conservado: %.0f de 8000 cm en %d trozos; %d trozos quitados."), KeptCm, Spans.Num(), Dropped));
 	TestTrue(TEXT("Solo se pierde el carril sobre la calzada de debajo"), KeptCm >= 8000.0 - MaxLostCm && KeptCm < 8000.0);
 
-	// Por encima del gálibo (paso superior a 8 m) no entra en nada: un solo trozo, sin quitar.
-	int32 HighDropped = 0;
-	const TArray<FRailSpan> High = ClearRailSpans(Road, A + FVector(0.0, 0.0, 300.0), B + FVector(0.0, 0.0, 300.0), Rail, HighDropped);
-	TestEqual(TEXT("Por encima del gálibo, el tramo entero"), High.Num(), 1);
-	TestEqual(TEXT("Por encima del gálibo, nada quitado"), HighDropped, 0);
+	// Paso superior a 5 m (#693, decisión del 04-10): el fondo del carril (4,6 m) entra en el gálibo de túnel de 6 m, que es el
+	// que se usaba antes y quitaba el trozo (caso negativo), pero queda por encima del buggy con la artillera: se conserva entero.
+	const FVector MidA(A.X, A.Y, 500.0);
+	const FVector MidB(B.X, B.Y, 500.0);
+	TestTrue(TEXT("A 5 m, el carril entra en el gálibo de túnel de 6 m"), RailProbes(MidA, MidB, Rail).ContainsByPredicate([&Road](const FBarrierPiece& Probe)
+	{
+		return Road.Intrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
+	}));
+	int32 MidDropped = 0;
+	const TArray<FRailSpan> Mid = ClearRailSpans(Road, MidA, MidB, Rail, MidDropped);
+	TestEqual(TEXT("A 5 m, el tramo entero (no estorba al buggy de abajo)"), Mid.Num(), 1);
+	TestEqual(TEXT("A 5 m, nada quitado"), MidDropped, 0);
+
+	// En el borde: el fondo del carril justo por encima del gálibo del carril se conserva; justo por debajo, se parte.
+	const double EdgeZ = Defaults.RailAboveCm + Rail.SinkCm;
+	int32 AboveDropped = 0;
+	const TArray<FRailSpan> JustAbove = ClearRailSpans(Road, FVector(A.X, A.Y, EdgeZ + 1.0), FVector(B.X, B.Y, EdgeZ + 1.0), Rail, AboveDropped);
+	TestEqual(TEXT("Fondo del carril 1 cm por encima del gálibo: entero"), JustAbove.Num(), 1);
+	TestEqual(TEXT("Fondo del carril 1 cm por encima del gálibo: nada quitado"), AboveDropped, 0);
+	int32 BelowDropped = 0;
+	ClearRailSpans(Road, FVector(A.X, A.Y, EdgeZ - 1.0), FVector(B.X, B.Y, EdgeZ - 1.0), Rail, BelowDropped);
+	TestTrue(TEXT("Fondo del carril 1 cm por debajo del gálibo: se quita lo que entra"), BelowDropped > 0);
 	return true;
 }
 

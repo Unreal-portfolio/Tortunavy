@@ -284,14 +284,25 @@ namespace TNRallyDressing
 	TORTUNABO_API bool IsClearOfTrack(const FTrackData& Track, const FVector& Point, double ClearCm);
 
 	/**
+	 * Altura del buggy con la artillera sentada (cm, desde el suelo): cadera de la artillera (ATN_Buggy::GunnerSeatLocal.Z,
+	 * 127,4) más la coronilla sobre la cadera (72,2, seat_measure_m de Art/Source/Vehicles/Buggy/manifest.json).
+	 */
+	inline constexpr double BuggyWithGunnerHeightCm = 200.0;
+	/** Aire que se deja sobre la artillera al medir el carril de colisión de un paso superior (decisión del 04-10 en #693). */
+	inline constexpr double RailHeadroomMarginCm = 50.0;
+
+	/**
 	 * Gálibo de la calzada (#693): el espacio por el que pasa el buggy, que ninguna pieza de la barrera puede ocupar. En planta,
 	 * el ancho de cada tramo (FAxisSample::RoadWidthCm o el del trazado); en altura, de BelowCm por debajo de la calzada a
-	 * AboveCm por encima (el gálibo de los túneles del generador, 6 m).
+	 * AboveCm por encima (el gálibo de los túneles del generador, 6 m) para las piezas que se ven, y a RailAboveCm (el buggy
+	 * con la artillera más 0,5 m) para el carril de colisión invisible: en un cruce a dos alturas solo se quita el trozo del
+	 * carril del paso superior que de verdad estorba al buggy de abajo.
 	 */
 	struct FRoadClearance
 	{
 		double BelowCm = 100.0;
 		double AboveCm = 600.0;
+		double RailAboveCm = BuggyWithGunnerHeightCm + RailHeadroomMarginCm;
 		/** Lo que una pieza puede entrar sin contar (cm): la cuerda de la barrera por fuera de las curvas cerradas. */
 		double ToleranceCm = 5.0;
 	};
@@ -309,12 +320,21 @@ namespace TNRallyDressing
 		 * Lo que entra (cm, en planta) en la calzada de algún tramo un cilindro vertical de radio RadiusCm centrado en Center,
 		 * de BottomZ a TopZ, si a esa altura corta su gálibo; 0 si no entra.
 		 */
-		double IntrusionCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const;
+		double IntrusionCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
+		{
+			return IntrusionUnderCm(Center, RadiusCm, BottomZ, TopZ, Clearance.AboveCm);
+		}
 
 		/** IntrusionCm por encima de la tolerancia de FRoadClearance. */
 		bool Intrudes(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
 		{
 			return IntrusionCm(Center, RadiusCm, BottomZ, TopZ) > Clearance.ToleranceCm;
+		}
+
+		/** Intrudes para el carril de colisión: el gálibo llega a RailAboveCm sobre la calzada, no a AboveCm. */
+		bool RailIntrudes(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
+		{
+			return IntrusionUnderCm(Center, RadiusCm, BottomZ, TopZ, Clearance.RailAboveCm) > Clearance.ToleranceCm;
 		}
 
 		/**
@@ -336,6 +356,8 @@ namespace TNRallyDressing
 		};
 
 		FIntPoint CellOf(double X, double Y) const;
+		/** IntrusionCm con un gálibo que llega a AboveCm sobre la calzada. */
+		double IntrusionUnderCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ, double AboveCm) const;
 
 		FRoadClearance Clearance;
 		double CellCm = 2000.0;

@@ -65,7 +65,7 @@ namespace TNRallyDressing
 		return FIntPoint(FMath::FloorToInt32(X / CellCm), FMath::FloorToInt32(Y / CellCm));
 	}
 
-	double FRoadFootprint::IntrusionCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
+	double FRoadFootprint::IntrusionUnderCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ, double AboveCm) const
 	{
 		const double Radius = FMath::Max(0.0, RadiusCm);
 		const FIntPoint Low = CellOf(Center.X - Radius, Center.Y - Radius);
@@ -91,7 +91,7 @@ namespace TNRallyDressing
 					const double T = LengthSq > UE_KINDA_SMALL_NUMBER ? FMath::Clamp(FVector2D::DotProduct(Point - A, AB) / LengthSq, 0.0, 1.0) : 0.0;
 					const double RoadZ = FMath::Lerp(Segment.A.Z, Segment.B.Z, T);
 					// Solo cuenta si la pieza corta el gálibo de ese tramo: una barrera de otro tramo muy por encima (un puente) no.
-					if (TopZ < RoadZ - Clearance.BelowCm || BottomZ > RoadZ + Clearance.AboveCm)
+					if (TopZ < RoadZ - Clearance.BelowCm || BottomZ > RoadZ + AboveCm)
 					{
 						continue;
 					}
@@ -165,7 +165,7 @@ namespace TNRallyDressing
 			const FRailSpan Span = Pending.Pop(EAllowShrinking::No);
 			const bool bFits = !RailProbes(Span.A, Span.B, Rail).ContainsByPredicate([&Road](const FBarrierPiece& Probe)
 			{
-				return Road.Intrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
+				return Road.RailIntrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
 			});
 			if (bFits)
 			{
@@ -234,7 +234,10 @@ bool ATN_RallyTrackDressing::PassesRoadClearance(TConstArrayView<TNRallyDressing
 	}
 	for (const TNRallyDressing::FBarrierPiece& Piece : Pieces)
 	{
-		if (RoadFootprint.IsValid() && RoadFootprint->Intrudes(Piece.Center, Piece.RadiusCm, Piece.BottomZ, Piece.TopZ))
+		const bool bOnRoad = RoadFootprint.IsValid() && (Piece.bRail
+			? RoadFootprint->RailIntrudes(Piece.Center, Piece.RadiusCm, Piece.BottomZ, Piece.TopZ)
+			: RoadFootprint->Intrudes(Piece.Center, Piece.RadiusCm, Piece.BottomZ, Piece.TopZ));
+		if (bOnRoad)
 		{
 			++BlockedOnRoadCount;
 			return false;
