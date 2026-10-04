@@ -18,6 +18,7 @@ class UTexture2D;
 class UVerticalBox;
 class UWidget;
 class UWidgetSwitcher;
+class UTN_CreditsWidget;
 class UTN_GameSettingsSubsystem;
 class UTN_ScoreShellSynthComponent;
 
@@ -78,6 +79,8 @@ enum class ETNPausePage : uint8
 	Controls,
 	/** La sala: nombre, código, cerrar y abrir, y quién está dentro (con el «⋮» para expulsar, el anfitrión). */
 	Room,
+	/** Créditos y licencias (UTN_CreditsWidget, Docs/Creditos.md). */
+	Credits,
 };
 
 /** Pestañas de los ajustes. */
@@ -395,6 +398,10 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_PauseRow> RoomHomeRow;
+
+	/** Página «Créditos» (su botón es el cuarto de la portada, HomeRows[3]). */
+	UPROPERTY(Transient)
+	TObjectPtr<UTN_CreditsWidget> CreditsPage;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> HelpText;

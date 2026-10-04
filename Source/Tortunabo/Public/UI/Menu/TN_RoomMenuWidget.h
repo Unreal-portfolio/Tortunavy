@@ -102,6 +102,16 @@ private:
 	void SetEditing(bool bInEditing);
 	int32 CellAt(const FVector2D& ScreenPosition) const;
 	void PlaySound(ETNPauseSound Sound, float Pitch = 0.f) const;
+
+	/**
+	 * Con mando y Steam (Steam Deck o Big Picture), A abre el teclado en pantalla de Steam (#354): el flotante escribe en
+	 * las casillas como un teclado y el de pantalla completa deja el código al cerrarlo. false si no hay teclado de Steam
+	 * (sin Steam, en el escritorio normal...): entonces A escribe con las casillas, como siempre.
+	 */
+	bool OpenSteamKeyboard();
+	void HandleSteamText(bool bSubmitted, const FString& Text);
+	/** El rectángulo de las casillas en la ventana del juego (px), para que el teclado flotante no lo tape. */
+	FIntRect RectInWindow() const;
 };
 
 /**

@@ -4,6 +4,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
+#include "Player/TN_HitFeedback.h"
 #include "Core/ITN_EnemyTargetInterface.h"
 #include "World/TN_PickupInteractableBase.h"
 #include "World/Beach/TN_BeachEnemy.h"
@@ -328,6 +329,8 @@ void ATN_ThrowableItemActor::OnMeshHit(UPrimitiveComponent* HitComponent, AActor
 		if (CurrentSpeed >= MinKnockdownSpeed)
 		{
 			AlreadyHitPlayers.Add(HitPlayer);
+			// Antes que el derribo: la sacudida y la vibración van con la velocidad del impacto, no con el empujón (#350).
+			HitPlayer->NotifyHitFeedback(TNHitFeedback::StrengthFromImpulse(CurrentSpeed));
 			HitPlayer->ApplyKnockdown(KnockbackDuration);
 			UE_LOG(LogTortunabo, Log, TEXT("[ThrowableItem] Hit %s at %.0f cm/s → KNOCKDOWN (threshold=%.0f)"),
 				*GetNameSafe(HitPlayer), CurrentSpeed, MinKnockdownSpeed);

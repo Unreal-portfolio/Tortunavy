@@ -55,6 +55,9 @@ protected:
 
 	virtual void OnWaitingTimeout() override;
 
+	/** Quien no estaba al empezar, o se fue, no puede ganar: espera como espectador (#345). */
+	virtual ETNLateJoinPolicy GetLateJoinPolicy() const override { return ETNLateJoinPolicy::SpectateUntilMatchEnds; }
+
 	/** «?game=» vacío: sin él, el lobby heredaría ?game=Survival y cargaría con este GameMode en vez del HQ (#156). */
 	virtual FString GetLobbyTravelOptions() const override { return TEXT("?game="); }
 

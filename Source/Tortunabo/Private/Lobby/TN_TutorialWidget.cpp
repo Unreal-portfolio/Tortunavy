@@ -10,6 +10,7 @@
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "UI/HUD/TN_ButtonGlyphWidget.h"
 
 // Con nombre (no anónimo): en la compilación por bloques los nombres de un espacio anónimo se ven en el resto del bloque.
 namespace TNTutorialWidgetDetail
@@ -19,6 +20,8 @@ namespace TNTutorialWidgetDetail
 	constexpr float RightMargin = 28.f;
 	/** Tareas que caben en el cartel (las estaciones tienen una o dos). */
 	constexpr int32 MaxRows = 3;
+	/** Alto del botón del mando dibujado en cada tarea (px), como la tecla dibujada. */
+	constexpr float TaskGlyphHeight = 32.f;
 	/** Saltito del cartel al aprender algo, y cuánto se ve el «¡Bien!». */
 	constexpr float PopSeconds = 0.45f;
 	constexpr float CheerSeconds = 1.6f;
@@ -114,6 +117,15 @@ void UTN_TutorialWidget::BuildTree()
 			S->SetVerticalAlignment(VAlign_Center);
 			S->SetPadding(FMargin(0.f, 0.f, 10.f, 0.f));
 		}
+		// Con mando, el botón dibujado en lugar de la tecla (SetView elige cuál se ve).
+		UTN_ButtonGlyphWidget* Glyph = Make<UTN_ButtonGlyphWidget>(Tree);
+		Glyph->SetGlyphHeight(TaskGlyphHeight);
+		Glyph->SetVisibility(ESlateVisibility::Collapsed);
+		if (UHorizontalBoxSlot* S = Row->AddChildToHorizontalBox(Glyph))
+		{
+			S->SetVerticalAlignment(VAlign_Center);
+			S->SetPadding(FMargin(0.f, 0.f, 10.f, 0.f));
+		}
 		// Qué hay que hacer.
 		UTextBlock* Text = MakeText(Tree, TEXT("Bold"), 18, TNHUDStyle::Text);
 		Text->SetAutoWrapText(true);
@@ -127,6 +139,7 @@ void UTN_TutorialWidget::BuildTree()
 		TaskChecks.Add(Check);
 		TaskKeys.Add(Key);
 		TaskKeyTexts.Add(KeyText);
+		TaskKeyGlyphs.Add(Glyph);
 		TaskTexts.Add(Text);
 		ShownDone.Add(false);
 	}
@@ -205,6 +218,7 @@ void UTN_TutorialWidget::ApplyTaskStyle(int32 Index, bool bDone)
 	TaskChecks[Index]->SetBrush(TNTutorialWidgetDetail::CheckBrush(bDone));
 	TaskTexts[Index]->SetColorAndOpacity(FSlateColor(bDone ? TNHUDStyle::TextDim : TNHUDStyle::Text));
 	TaskKeys[Index]->SetRenderOpacity(bDone ? 0.55f : 1.f);
+	if (TaskKeyGlyphs.IsValidIndex(Index)) { TaskKeyGlyphs[Index]->SetRenderOpacity(bDone ? 0.55f : 1.f); }
 }
 
 void UTN_TutorialWidget::SetView(const FTNTutorialView& InView)
@@ -234,7 +248,9 @@ void UTN_TutorialWidget::SetView(const FTNTutorialView& InView)
 		const FTNTutorialTaskView& Task = View.Tasks[i];
 		TaskTexts[i]->SetText(Task.Text);
 		TaskKeyTexts[i]->SetText(Task.Key);
-		TaskKeys[i]->SetVisibility(Task.Key.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
+		const bool bGlyph = Task.PadKey.IsValid() && TaskKeyGlyphs[i]->SetKey(Task.PadKey, Task.PadFamily);
+		TaskKeyGlyphs[i]->SetVisibility(bGlyph ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		TaskKeys[i]->SetVisibility(bGlyph || Task.Key.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
 		if (bNewStation || ShownDone[i] != Task.bDone)
 		{
 			ShownDone[i] = Task.bDone;

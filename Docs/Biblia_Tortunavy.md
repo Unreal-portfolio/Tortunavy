@@ -1304,8 +1304,9 @@ Abajo, la ayuda de la opción enfocada y los atajos. Una línea dorada de **avis
 |---|---|
 | Sensibilidad del ratón · del mando | 20–300 % (100 % = la de siempre); se usa la del último aparato tocado |
 | Invertir eje Y (ratón) · (mando) | Sí / No |
+| Vibración del mando | Sí / No (**Sí de serie**): al recibir un golpe (derribo, aturdimiento que mete en el caparazón, impacto de un lanzable) el mando vibra, más fuerte y más largo cuanto más fuerte es el golpe; solo en la máquina de quien lo recibe |
 | Cambiar teclas y botones | Abre la página de controles |
-| Restablecer los controles | Sensibilidad al 100 % y sin invertir (las teclas se restablecen en su página) |
+| Restablecer los controles | Sensibilidad al 100 %, sin invertir y con vibración (las teclas se restablecen en su página) |
 
 *Pestaña JUEGO*
 
@@ -2385,15 +2386,20 @@ existe): `TNGhost::ReviveIntoEgg(PC, EggTransform)`, `OnHatched()`, `IsReviving`
 
 ## 24. Cabeza que mira, cara y caras del HUD
 
-### 24.1 La cabeza que mira (`TickHeadLook`)
+### 24.1 La cabeza que mira (#623, `UTN_TurtleAnimInstance` y `TNHeadLook`)
 
-- La cabeza sigue a la **cámara** del jugador: giro horizontal relativo al cuerpo limitado a **±90°** y cabeceo a **±80°**
-  (positivo mirando arriba), suavizado a 20/s en local y a 15/s en los demás.
-- **Red**: el dueño manda grados enteros (`int8`) al servidor como mucho **12 veces por segundo** y solo si cambian (y una vez por
-  segundo por si se perdió el último); el anfitrión escribe directo; los demás lo reciben en un byte cada uno
-  (`ReplicatedHeadYaw`, `ReplicatedHeadPitch`, sin el dueño).
-- **No se anima la cabeza** durante un emote (ni su mezcla de salida), derribada, muerta, en plancha ni durante la animación del
-  salto: esos sistemas son dueños del hueso.
+- En tercera persona la cabeza sigue a la **cámara** del jugador (el giro del mando respecto del cuerpo): guiñada hasta
+  **±70°** y cabeceo de **-35° a +45°** (positivo mirando arriba). Pasado el tope se queda en él hasta **95°**; de ahí a
+  **140°** vuelve al frente con una curva suave y, mirando hacia atrás, mira al frente (sin saltar de un lado a otro).
+- El giro se reparte **40 % en el cuello y 60 % en la cabeza** (huesos `Neck` y `Head`), encima de la pose de todo lo demás, y
+  lo sigue un **muelle crítico** de 0,2 s (unos 10 por segundo). El casco y la cara, enganchados a la cabeza, la siguen.
+- **Red**: el servidor conoce el giro del mando de cada cliente por su movimiento (ServerMove) y escribe la guiñada relativa en
+  un byte (`ReplicatedViewYaw`, pasos de 1,4°, sin el dueño) solo cuando se mueve 2 pasos o más; el cabeceo es el del motor
+  (`RemoteViewPitch16`). Sin RPC propio.
+- **No se aplica** (su peso se funde a 0): ragdoll, derribo y levantarse, caparazón y bola, panzazo y levantarse de la tripa,
+  emotes, celebraciones del podio, zambullida del acantilado, primera persona y VR (manda el visor), dentro del probador y en
+  lo que no es un jugador (copias del tendero, el general, el podio y el escaparate, tortugas de práctica). Pruebas:
+  `TN.HeadLook.Shots`, `TN.HeadLook.Sweep` y `TN.HeadLook.Log` (`Docs/Comandos_Prueba.md`).
 
 ### 24.2 La cara 3D (`UTN_TurtleFaceComponent`)
 

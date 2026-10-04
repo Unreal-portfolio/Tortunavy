@@ -61,5 +61,15 @@ public class Tortunabo : ModuleRules
 		{
 			DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
 		}
+
+		// Mando y Steam Deck (#347, #354): tipo de mando de Steam Input y teclado en pantalla de ISteamUtils. Solo en Win64
+		// (también la Steam Deck, que corre la build de Windows con Proton): steam_api64.dll va con carga diferida y el juego
+		// solo la llama con el subsistema de Steam en marcha (TNSteamGamepadInput::IsSteamActive).
+		bool bWithSteamworks = Target.Platform == UnrealTargetPlatform.Win64;
+		if (bWithSteamworks)
+		{
+			AddEngineThirdPartyPrivateStaticDependencies(Target, "Steamworks");
+		}
+		PrivateDefinitions.Add("TN_WITH_STEAMWORKS=" + (bWithSteamworks ? "1" : "0"));
 	}
 }

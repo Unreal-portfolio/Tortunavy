@@ -2,12 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/TN_InputGlyphs.h"
 #include "TN_TutorialWidget.generated.h"
 
 class UBorder;
 class UCanvasPanel;
 class UImage;
 class UTextBlock;
+class UTN_ButtonGlyphWidget;
 class UVerticalBox;
 class UWidget;
 
@@ -15,6 +17,9 @@ class UWidget;
 struct FTNTutorialTaskView
 {
 	FText Key;
+	/** Con mando, el botón que se dibuja en lugar del texto de la tecla (vacío: se enseña Key). */
+	FKey PadKey;
+	ETNPadFamily PadFamily = ETNPadFamily::Xbox;
 	FText Text;
 	bool bDone = false;
 };
@@ -98,6 +103,10 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTextBlock>> TaskKeyTexts;
+
+	/** El botón del mando de cada tarea (#347): con mando sustituye a la tecla dibujada. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTN_ButtonGlyphWidget>> TaskKeyGlyphs;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTextBlock>> TaskTexts;
