@@ -73,10 +73,20 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Crab")
 	TObjectPtr<USphereComponent> BodyCollision;
 
-	/** Radio de la esfera de cuerpo. Ajustar al tamaño visual del cangrejo. */
+	/**
+	 * Escala del cangrejo entero (malla y esferas). SKM_MiniCangrejo mide 65 × 20 × 33 cm; a escala 2, 130 × 40 × 66 cm.
+	 * BodyCollisionRadius y DetectionRadius son medidas del mundo: no crecen con la escala.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab", meta = (ClampMin = "0.25"))
+	float VisualScale = 2.f;
+
+	/**
+	 * Radio de la esfera de cuerpo en el mundo (cm), a media altura del caparazón. Algo más pequeña que el cuerpo a escala 2:
+	 * hay que darle al cangrejo, no al aire de al lado (antes 80, centrada en las patas y medio enterrada).
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab",
 		meta = (ClampMin = "20.0"))
-	float BodyCollisionRadius = 80.f;
+	float BodyCollisionRadius = 35.f;
 
 	// ── Movimiento ───────────────────────────────────────────────────────────────
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Movement")
@@ -88,6 +98,20 @@ protected:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Movement")
 	float ChaseSpeed = 350.f;
+
+	/**
+	 * Suelo y paredes: el cangrejo anda pegado al suelo (sube escalones de hasta MaxStepHeight y baja hasta MaxDropHeight),
+	 * no atraviesa paredes (WallProbeRadius) y no se tira por un hueco o un cortado: ahí se para. En los chunks planos del
+	 * Clásico no cambia nada; en el terreno generado antes flotaba a la altura de nacer y cruzaba las paredes.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Movement", meta = (ClampMin = "0.0"))
+	float MaxStepHeight = 45.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Movement", meta = (ClampMin = "0.0"))
+	float MaxDropHeight = 120.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Movement", meta = (ClampMin = "5.0"))
+	float WallProbeRadius = 30.f;
 
 	// ── Detección ────────────────────────────────────────────────────────────────
 	/** Radio de la esfera de detección para iniciar persecución. */
@@ -104,10 +128,18 @@ protected:
 	float MaxChaseDistance = 2000.f;
 
 	// ── Ataque ───────────────────────────────────────────────────────────────────
-	/** Distancia a la que se aplica el knockdown. */
+	/**
+	 * Distancia horizontal (centro a centro) a la que ataca. A escala 2 el contacto con la tortuga (radio 34) está a unos
+	 * 55 cm de frente y 100 de lado, donde tiene las pinzas (antes 120 con el cangrejo pequeño: mataba a medio metro).
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Attack",
 		meta = (ClampMin = "50.0"))
-	float AttackRadius = 120.f;
+	float AttackRadius = 100.f;
+
+	/** Diferencia de altura máxima entre las patas del cangrejo y las de la tortuga para atacarla. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Attack",
+		meta = (ClampMin = "20.0"))
+	float AttackHeight = 60.f;
 
 	/** Duración del knockdown (s). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crab|Attack")
@@ -202,7 +234,14 @@ private:
 	void TickChase(float DeltaTime);
 	void TickAttack();
 	void TickCooldown(float DeltaTime);
-	void MoveTowards(const FVector& Target, float Speed, float DeltaTime);
+	/** Avanza hacia Target por el suelo. false si una pared, un hueco o un cortado no le deja (se queda donde está). */
+	bool MoveTowards(const FVector& Target, float Speed, float DeltaTime);
+	/** El paso From + Delta: deslizando por la pared si choca, y con la altura del suelo en el destino. */
+	bool TryStep(const FVector& From, const FVector& Delta, FVector& Out) const;
+	/** Altura del suelo bajo XY entre Z + Up y Z - Down, si es suelo pisable. */
+	bool FindFloor(const FVector& At, float Up, float Down, float& OutZ) const;
+	/** ¿Puede atacar a Char? Misma altura (AttackHeight) y sin pared en medio. */
+	bool CanReach(const ATortugaCharacter* Char) const;
 	int32 FindNearestPatrolIndex() const;
 	bool IsAliveAndValid(ATortugaCharacter* Char) const;
 

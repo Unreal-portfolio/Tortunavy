@@ -30,6 +30,9 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	/** Semiejes del volumen al crear la zona desde código (mapa de Supervivencia, #516). */
+	void SetZoneExtent(const FVector& Extent);
+
 protected:
 	/** Volumen que define el área de detección de jugadores para el spawn. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpawnZone")

@@ -100,6 +100,9 @@ public:
 	/** Servidor: levanta la compuerta durante Duration segundos. */
 	void Raise(float Duration);
 
+	/** Servidor: levantada (corta el paso) o enterrada sin plazo. El atajo de Supervivencia la abre con sus placas (#517). */
+	void SetBlocking(bool bBlock);
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gate")
 	TObjectPtr<USceneComponent> Root;

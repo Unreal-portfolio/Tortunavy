@@ -2658,8 +2658,9 @@ void ATN_ProcMapGenerator::BuildStructures()
 							break;
 					}
 				}
-				// Troncos de equilibrio de labio a labio (uno o dos), con la cima 10 cm sobre el suelo.
-				if (GapStyleOf(F) == EGapStyle::Beam)
+				// Troncos de equilibrio de labio a labio (uno o dos), con la cima 10 cm sobre el suelo. En Supervivencia, un
+				// hueco del catálogo lleva en su lugar el puente que se rompe (ATN_ProcBreakableBridge, #517).
+				if (GapStyleOf(F) == EGapStyle::Beam && !IsSurvivalBreakableGap(static_cast<int32>(&F - Layout.Features.GetData())))
 				{
 					const FVector2D Nn = LeftNormal(D);
 					const int32 Logs = F.Width > 1400.0 ? 2 : 1;

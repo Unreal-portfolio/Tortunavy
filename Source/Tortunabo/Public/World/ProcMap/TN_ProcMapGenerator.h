@@ -7,6 +7,7 @@
 #include "World/ProcMap/TN_ProcMapLayout.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
 #include "World/ProcMap/TN_ProcMapTerrainDetail.h"
+#include "World/ProcMap/TN_SurvivalTrapPlacement.h"
 #include "TN_ProcMapGenerator.generated.h"
 
 class UProceduralMeshComponent;
@@ -255,6 +256,17 @@ private:
 	void SpawnSearchSpots();
 	void SpawnHazards();
 	/**
+	 * Supervivencia (#516, #517): calcula dónde van las trampas del mapa del catálogo (en todas las máquinas y en el
+	 * editor). Antes de las mallas: el hueco con puente que se rompe se construye sin su viga.
+	 */
+	void PlanSurvivalTraps();
+	/** ¿El hueco Feature lleva puente que se rompe en lugar de viga? */
+	bool IsSurvivalBreakableGap(int32 Feature) const;
+	/** Crea las trampas del plan: las replicadas y las de lógica de servidor en el servidor; las zonas lentas en cada máquina. */
+	void SpawnSurvivalTraps();
+	/** Marcadores de las trampas del plan (Debug Draw), también en el editor. */
+	void DrawSurvivalTrapPlan() const;
+	/**
 	 * Servidor: conchas de puntos del plan puro (TNProcMap::PlanShells: rachas de 1, arcos de salto, cornisas y
 	 * especiales de 50 y 100) y las especiales de los tramos hundidos de los puentes (BrokenSpanPrizes). Después de
 	 * SpawnHazards: no pisan lo que este ha puesto (HazardSpots). No en el modo de solo terreno.
@@ -347,6 +359,11 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AActor>> SpawnedActors;
+
+	/** Trampas del mapa del catálogo de Supervivencia (vacío fuera de Supervivencia o con una semilla fuera del catálogo). */
+	TArray<TNSurvivalCatalog::FTrapPlacement> SurvivalTrapPlan;
+	/** Quads, puentes que se rompen y placas del mapa del catálogo (#517). */
+	TNSurvivalCatalog::FTerrainTrapPlan SurvivalTerrainPlan;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UPrimitiveComponent>> BoundaryWalls;

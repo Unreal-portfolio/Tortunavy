@@ -59,11 +59,20 @@ ATN_CrabActor::ATN_CrabActor()
 	BodyCollision->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
 	BodyCollision->SetGenerateOverlapEvents(true);
 	BodyCollision->SetNotifyRigidBodyCollision(true);
+	// El pivote de la malla está en las patas: la esfera va a media altura del caparazón (16,5 cm de la malla sin escalar),
+	// no medio enterrada.
+	BodyCollision->SetRelativeLocation(FVector(0.f, 0.f, 16.5f));
 }
 
 void ATN_CrabActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// En todas las máquinas: la escala no se replica. Las esferas escalan con el actor, así que sus radios se dividen
+	// para que midan en el mundo lo que dicen BodyCollisionRadius y DetectionRadius.
+	SetActorScale3D(FVector(VisualScale));
+	DetectionSphere->SetSphereRadius(DetectionRadius / VisualScale);
+	BodyCollision->SetSphereRadius(BodyCollisionRadius / VisualScale);
 
 	// Solo el servidor hace tick de lógica
 	SetActorTickEnabled(HasAuthority());
@@ -76,8 +85,6 @@ void ATN_CrabActor::BeginPlay()
 	Delegate.BindUObject(this, &ATN_CrabActor::InitializePatrolPoints);
 	GetWorldTimerManager().SetTimer(InitTimerHandle, Delegate, TNWorldTuning::ChunkChildActorSettleDelay, false);
 
-	DetectionSphere->SetSphereRadius(DetectionRadius);
-	BodyCollision->SetSphereRadius(BodyCollisionRadius);
 	// OnDetectionBeginOverlap se registra en InitializePatrolPoints (deferred 1 tick)
 	// para garantizar que SpawnLocation está inicializado antes de que pueda dispararse.
 }
@@ -94,6 +101,12 @@ void ATN_CrabActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ATN_CrabActor::InitializePatrolPoints()
 {
+	// Al suelo: la zona lo crea a su altura, que sobre el terreno generado puede quedar por encima o por debajo.
+	float FloorZ = 0.f;
+	if (FindFloor(GetActorLocation(), 300.f, 1000.f, FloorZ))
+	{
+		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, FloorZ));
+	}
 	SpawnLocation = GetActorLocation();
 	WorldPatrolPoints.Reset();
 
@@ -181,9 +194,10 @@ void ATN_CrabActor::TickPatrol(float DeltaTime)
 	if (WorldPatrolPoints.Num() <= 1) { return; }
 
 	const FVector& Target = WorldPatrolPoints[CurrentPatrolIndex];
-	MoveTowards(Target, PatrolSpeed, DeltaTime);
+	// Un punto tras una pared o al otro lado de un hueco no se alcanza: pasa al siguiente.
+	const bool bMoved = MoveTowards(Target, PatrolSpeed, DeltaTime);
 
-	if (FVector::Dist2D(GetActorLocation(), Target) < 50.f)
+	if (!bMoved || FVector::Dist2D(GetActorLocation(), Target) < 50.f)
 	{
 		CurrentPatrolIndex = (CurrentPatrolIndex + 1) % WorldPatrolPoints.Num();
 	}
@@ -199,7 +213,12 @@ void ATN_CrabActor::TickChase(float DeltaTime)
 	// validez del target, y ejecuta la transición resultante.
 	const bool  bAlive              = IsAliveAndValid(Target);
 	const float DistTargetFromSpawn = bAlive ? FVector::Dist2D(Target->GetActorLocation(), SpawnLocation) : 0.f;
-	const float DistToTarget        = bAlive ? FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()) : 0.f;
+	float DistToTarget              = bAlive ? FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()) : 0.f;
+	// A otra altura o tras una pared no ataca aunque esté cerca: sigue persiguiendo.
+	if (bAlive && DistToTarget <= AttackRadius && !CanReach(Target))
+	{
+		DistToTarget = AttackRadius + 1.f;
+	}
 
 	using TNCrabLogic::EChaseTransition;
 	switch (TNCrabLogic::DecideChaseTransition(bAlive, DistTargetFromSpawn, MaxChaseDistance,
@@ -256,19 +275,113 @@ void ATN_CrabActor::TickCooldown(float DeltaTime)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-void ATN_CrabActor::MoveTowards(const FVector& Target, float Speed, float DeltaTime)
+bool ATN_CrabActor::MoveTowards(const FVector& Target, float Speed, float DeltaTime)
 {
 	const FVector CurrentLoc = GetActorLocation();
 	const FVector Dir        = (Target - CurrentLoc).GetSafeNormal2D();
 	const float   Step       = Speed * DeltaTime;
 	const float   Dist       = FVector::Dist2D(CurrentLoc, Target);
-
-	SetActorLocation(CurrentLoc + Dir * FMath::Min(Step, Dist));
-
-	if (!Dir.IsNearlyZero())
+	if (Dir.IsNearlyZero())
 	{
-		SetActorRotation(Dir.Rotation());
+		return true;
 	}
+	SetActorRotation(Dir.Rotation());
+
+	FVector Next;
+	if (!TryStep(CurrentLoc, Dir * FMath::Min(Step, Dist), Next))
+	{
+		return false;
+	}
+	SetActorLocation(Next);
+	return true;
+}
+
+namespace
+{
+	/** Suelo y paredes del cangrejo: lo estático y lo dinámico del mundo (no las tortugas ni otros cangrejos). */
+	FCollisionObjectQueryParams CrabWorldObjects()
+	{
+		FCollisionObjectQueryParams Objects;
+		Objects.AddObjectTypesToQuery(ECC_WorldStatic);
+		Objects.AddObjectTypesToQuery(ECC_WorldDynamic);
+		return Objects;
+	}
+}
+
+bool ATN_CrabActor::FindFloor(const FVector& At, float Up, float Down, float& OutZ) const
+{
+	const UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(TNCrabFloor), false, this);
+	FHitResult Hit;
+	if (World->LineTraceSingleByObjectType(Hit, At + FVector(0.f, 0.f, Up), At - FVector(0.f, 0.f, Down), CrabWorldObjects(), Query)
+		&& !Hit.bStartPenetrating && Hit.ImpactNormal.Z > 0.6f)
+	{
+		OutZ = Hit.ImpactPoint.Z;
+		return true;
+	}
+	return false;
+}
+
+bool ATN_CrabActor::TryStep(const FVector& From, const FVector& Delta, FVector& Out) const
+{
+	const UWorld* World = GetWorld();
+	if (!World || Delta.IsNearlyZero())
+	{
+		Out = From;
+		return World != nullptr;
+	}
+	// La pared se busca por encima de lo que sube de un paso: un escalón bajo no para, un muro sí.
+	const FVector Lift(0.f, 0.f, MaxStepHeight + WallProbeRadius);
+	const FCollisionShape Probe = FCollisionShape::MakeSphere(WallProbeRadius);
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(TNCrabWall), false, this);
+	FVector Move = Delta;
+	FHitResult Hit;
+	if (World->SweepSingleByObjectType(Hit, From + Lift, From + Lift + Move, FQuat::Identity, CrabWorldObjects(), Probe, Query))
+	{
+		// Desliza a lo largo de la pared con lo que quede de paso; si tampoco cabe, no se mueve.
+		const FVector Normal2D = FVector(Hit.ImpactNormal.X, Hit.ImpactNormal.Y, 0.f).GetSafeNormal();
+		Move = FVector::VectorPlaneProject(Move, Normal2D) * (1.f - Hit.Time);
+		if (Move.Size2D() < 1.f
+			|| World->SweepSingleByObjectType(Hit, From + Lift, From + Lift + Move, FQuat::Identity, CrabWorldObjects(), Probe, Query))
+		{
+			return false;
+		}
+	}
+	// Suelo en el destino: ni hueco ni cortado (más de MaxDropHeight hacia abajo) ni rampa demasiado empinada.
+	const FVector Candidate = From + FVector(Move.X, Move.Y, 0.f);
+	float FloorZ = 0.f;
+	if (!FindFloor(Candidate, MaxStepHeight, MaxDropHeight, FloorZ))
+	{
+		return false;
+	}
+	Out = FVector(Candidate.X, Candidate.Y, FloorZ);
+	return true;
+}
+
+bool ATN_CrabActor::CanReach(const ATortugaCharacter* Char) const
+{
+	const UWorld* World = GetWorld();
+	if (!World || !Char)
+	{
+		return false;
+	}
+	// Patas con patas: el centro de la tortuga está media cápsula por encima del suelo.
+	const float CharFeetZ = Char->GetActorLocation().Z - Char->GetSimpleCollisionHalfHeight();
+	if (FMath::Abs(CharFeetZ - GetActorLocation().Z) > AttackHeight)
+	{
+		return false;
+	}
+	// Sin pared en medio, a la altura del caparazón.
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(TNCrabReach), false, this);
+	Query.AddIgnoredActor(Char);
+	FHitResult Hit;
+	const FVector Up(0.f, 0.f, 25.f);
+	return !World->LineTraceSingleByObjectType(Hit, GetActorLocation() + Up, FVector(Char->GetActorLocation().X, Char->GetActorLocation().Y, CharFeetZ) + Up,
+		FCollisionObjectQueryParams(ECC_WorldStatic), Query);
 }
 
 int32 ATN_CrabActor::FindNearestPatrolIndex() const

@@ -182,6 +182,14 @@ void ATN_ProcSabotageGate::Raise(float Duration)
 	GetWorldTimerManager().SetTimer(GateTimer, this, &ATN_ProcSabotageGate::Lower, Duration, false);
 }
 
+void ATN_ProcSabotageGate::SetBlocking(bool bBlock)
+{
+	if (!HasAuthority()) { return; }
+	GetWorldTimerManager().ClearTimer(GateTimer);
+	bRaised = bBlock;
+	OnRep_Raised();
+}
+
 void ATN_ProcSabotageGate::Lower()
 {
 	bRaised = false;
