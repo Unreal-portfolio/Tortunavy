@@ -4,6 +4,7 @@
 #include "Game/TN_TctGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_Log.h"
+#include "Lobby/TN_LobbyMission.h"
 #include "World/TN_TctArena.h"
 
 #include "Components/CapsuleComponent.h"
@@ -34,12 +35,32 @@ void ATN_TctGameMode::OnWaitingTimeout()
 	{
 		return;
 	}
+	if (!bArenaReady)
+	{
+		AbortWithoutArena();
+		return;
+	}
 	ResetMatchScores();
 	CurrentRound = 1;
 	// Las que llegaron antes de medir la arena (viaje sin cortes) salieron en el PlayerStart del nivel: todas a su sitio.
 	PlaceAllForRound();
 	Super::OnWaitingTimeout();
 	BeginRound(true);
+}
+
+void ATN_TctGameMode::AbortWithoutArena()
+{
+	// Sin arena no hay salidas, límites ni plan del agua: ninguna ronda. Una sola vez (bMatchStarted corta las demás llamadas).
+	bMatchStarted = true;
+	bMatchOver = true;
+	UE_LOG(LogTortunabo, Error, TEXT("[TcT] Sin arena (%s): no se juega y se vuelve al lobby."), *DefaultArenaVariant.ToString());
+	for (APlayerController* PC : GetPlayingControllers())
+	{
+		FreezePlayer(PC);
+	}
+	// La misión vuelve al cooperativo: el lobby no vuelve a mandar aquí a la tropa.
+	TNLobbyMission::SetMode(this, ETNProcGameMode::Coop);
+	LeaveAfterDelay([this]() { FinishRoundAndReturnToLobby(); });
 }
 
 void ATN_TctGameMode::PrepareRound()
