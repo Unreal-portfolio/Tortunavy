@@ -1671,6 +1671,7 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Dive
 	DOREPLIFETIME(ATortugaCharacter, bIsDiving);
 	DOREPLIFETIME(ATortugaCharacter, DiveSerial);
+	DOREPLIFETIME(ATortugaCharacter, DiveSplatDizzyUntil);
 	DOREPLIFETIME(ATortugaCharacter, DiveTargetYaw);
 	DOREPLIFETIME(ATortugaCharacter, bDiveYawInterpActive);
 	// Umbrella protection (#29)

@@ -1309,9 +1309,20 @@ protected:
 	};
 	FTNPendingDiveSplat PendingDiveSplat;
 
-	/** Todas las máquinas: polvo y golpe sintetizado contra la pared, y los pajaritos DiveSplatDizzySeconds. Cosmético, pero fiable: es un evento raro (uno por panzazo) y con pérdida de paquetes no debe faltar el mareo. */
-	UFUNCTION(NetMulticast, Reliable)
+	/** Todas las máquinas: polvo y golpe sintetizado contra la pared. Efecto de entrada, no fiable (#78); el mareo va por DiveSplatDizzyUntil. */
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_DiveSplatFX(FVector_NetQuantize Where, FVector_NetQuantizeNormal WallNormal, float Strength);
+
+	/**
+	 * Hora del servidor (AGameStateBase::GetServerWorldTimeSeconds) hasta la que dura el mareo del último estampado: estado
+	 * replicado, así los pajaritos salen aunque se pierda el multicast y quien entra tarde los ve el tiempo que les quede.
+	 */
+	UPROPERTY(ReplicatedUsing = OnRep_DiveSplatDizzyUntil)
+	float DiveSplatDizzyUntil = 0.f;
+
+	/** Enciende los pajaritos el tiempo que le quede a DiveSplatDizzyUntil (el servidor lo llama a mano). */
+	UFUNCTION()
+	void OnRep_DiveSplatDizzyUntil();
 
 	/** Fin de los pajaritos del estampado en esta máquina (los deja si está derribada). */
 	void EndDiveSplatDizzy();

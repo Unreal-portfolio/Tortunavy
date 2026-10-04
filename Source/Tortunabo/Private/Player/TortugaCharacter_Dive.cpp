@@ -20,6 +20,7 @@
 #include "Components/SceneComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "GameFramework/GameStateBase.h"
 #include "HAL/IConsoleManager.h"
 
 namespace TNDiveNet
@@ -430,8 +431,8 @@ void ATortugaCharacter::EndDive()
 // En el vuelo del panzazo, contra una pared a DiveSplatMinSpeed (650 cm/s) o más: el movimiento rebota igual que en #63 (en
 // el servidor y en el dueño, también al repetir) y el servidor lo apunta (NoteDiveSplat). En el siguiente TickDive, ya fuera
 // del movimiento del cliente, ServerDiveSplat acaba el panzazo y la lanza como bola de caparazón con la velocidad reflejada:
-// la caja de física se replica sola y la bola sale sola del caparazón al pararse. El golpe (polvo, sonido y pajaritos) lo
-// hace cada máquina con Multicast_DiveSplatFX.
+// la caja de física se replica sola y la bola sale sola del caparazón al pararse. El golpe (polvo y sonido) lo hace cada
+// máquina con Multicast_DiveSplatFX (no fiable, #78); los pajaritos, con DiveSplatDizzyUntil replicado.
 
 void ATortugaCharacter::NoteDiveSplat(const FVector& BallVelocity, const FVector& Where, const FVector& WallNormal, float Strength)
 {
@@ -467,6 +468,13 @@ void ATortugaCharacter::ServerDiveSplat()
 	}
 	EndDive();
 	Multicast_DiveSplatFX(Splat.Where, Splat.WallNormal, Splat.Strength);
+	if (DiveSplatDizzySeconds > 0.f)
+	{
+		const AGameStateBase* GameState = GetWorld()->GetGameState();
+		const float Now = GameState ? static_cast<float>(GameState->GetServerWorldTimeSeconds()) : GetWorld()->GetTimeSeconds();
+		DiveSplatDizzyUntil = Now + DiveSplatDizzySeconds;
+		OnRep_DiveSplatDizzyUntil();
+	}
 
 	// Como las bolas lanzadas (catapulta, trampolín): sin cuerpo al entrar, StartBody la crea tumbada donde está; no se sale
 	// en el aire y sale sola al pararse (ForceExitShell la desbloquea).
@@ -494,12 +502,25 @@ void ATortugaCharacter::Multicast_DiveSplatFX_Implementation(FVector_NetQuantize
 	{
 		ImpactFX->PlayWallSplat(Where, WallNormal, Strength);
 	}
-	if (DizzyBirds && DiveSplatDizzySeconds > 0.f)
+}
+
+void ATortugaCharacter::OnRep_DiveSplatDizzyUntil()
+{
+	const UWorld* World = GetWorld();
+	if (!World || !DizzyBirds || GetNetMode() == NM_DedicatedServer)
 	{
-		DizzyBirds->SetDizzy(true);
-		GetWorldTimerManager().SetTimer(DiveSplatDizzyTimerHandle,
-			FTimerDelegate::CreateUObject(this, &ATortugaCharacter::EndDiveSplatDizzy), DiveSplatDizzySeconds, false);
+		return;
 	}
+	const AGameStateBase* GameState = World->GetGameState();
+	const float Now = GameState ? static_cast<float>(GameState->GetServerWorldTimeSeconds()) : World->GetTimeSeconds();
+	const float Remaining = DiveSplatDizzyUntil - Now;
+	if (Remaining <= 0.f)
+	{
+		return;
+	}
+	DizzyBirds->SetDizzy(true);
+	GetWorldTimerManager().SetTimer(DiveSplatDizzyTimerHandle,
+		FTimerDelegate::CreateUObject(this, &ATortugaCharacter::EndDiveSplatDizzy), Remaining, false);
 }
 
 void ATortugaCharacter::EndDiveSplatDizzy()
