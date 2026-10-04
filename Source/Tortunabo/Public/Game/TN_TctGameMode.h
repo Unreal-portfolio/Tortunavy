@@ -199,6 +199,7 @@ private:
 	TSet<int32> LeftPlayerIds;
 	int32 CurrentRound = 0;
 	int32 StartingPlayers = 0;
+	/** Partida de prueba con una sola tortuga: ninguna ronda tiene ganadora y las rondas se encadenan hasta salir al lobby (a propósito). */
 	bool bSoloMatch = false;
 	bool bRoundLive = false;
 	bool bMatchOver = false;
