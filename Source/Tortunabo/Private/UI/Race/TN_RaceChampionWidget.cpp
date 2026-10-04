@@ -57,6 +57,42 @@ namespace TNRaceChampionDetail
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Foco con mando y teclado (lógica pura)
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace TNRaceChampionFocus
+{
+	bool IsEnabled(int32 Button, bool bCanChoose, bool bChoiceMade)
+	{
+		if (bChoiceMade || Button < 0 || Button >= ButtonCount) { return false; }
+		return Button == Quit || bCanChoose;
+	}
+
+	int32 PickFocus(int32 Current, bool bCanChoose, bool bChoiceMade)
+	{
+		if (IsEnabled(Current, bCanChoose, bChoiceMade)) { return Current; }
+		const int32 Start = (Current >= 0 && Current < ButtonCount) ? Current + 1 : 0;
+		for (int32 Step = 0; Step < ButtonCount; ++Step)
+		{
+			const int32 Candidate = (Start + Step) % ButtonCount;
+			if (IsEnabled(Candidate, bCanChoose, bChoiceMade)) { return Candidate; }
+		}
+		return INDEX_NONE;
+	}
+
+	EBackAction OnBack(int32 Current, bool bChoiceMade)
+	{
+		if (bChoiceMade) { return EBackAction::None; }
+		return Current == Quit ? EBackAction::Quit : EBackAction::FocusQuit;
+	}
+
+	bool IsBackKey(const FKey& Key)
+	{
+		return Key == EKeys::Gamepad_FaceButton_Right || Key == EKeys::Escape || Key == EKeys::Virtual_Back;
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Construcción
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -64,6 +100,8 @@ void UTN_RaceChampionWidget::NativeOnInitialized()
 {
 	BuildTree();
 	Super::NativeOnInitialized();
+	// Enfocable: un clic en una zona vacía le da el foco a la pantalla (que lo pasa a un botón) y no al juego.
+	SetIsFocusable(true);
 }
 
 void UTN_RaceChampionWidget::BuildTree()
@@ -291,6 +329,8 @@ void UTN_RaceChampionWidget::Setup(const FTNRaceChampionSetup& InSetup)
 		if (PodiumMID) { PodiumMID->SetTextureParameterValue(TEXT("Capture"), PodiumStage->GetRenderTarget()); }
 	}
 	RefreshButtons();
+	// Con mando no hay ratón: el primer botón activo (Salir en un cliente) se lleva el foco al abrir.
+	UpdateFocus(true);
 }
 
 void UTN_RaceChampionWidget::SetSecondsLeft(float InSeconds)
@@ -301,10 +341,12 @@ void UTN_RaceChampionWidget::SetSecondsLeft(float InSeconds)
 void UTN_RaceChampionWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	// Ratón a la vista para los botones (sin quitarle el teclado al juego).
+	// Ratón a la vista para los botones y el foco en la pantalla (NativeOnFocusReceived lo pasa a un botón): con el foco
+	// en un botón, la A lo pulsa y no llega al juego (la tortuga no salta).
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		FInputModeGameAndUI Mode;
+		Mode.SetWidgetToFocus(TakeWidget());
 		Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		Mode.SetHideCursorDuringCapture(false);
 		PC->SetInputMode(Mode);
@@ -384,12 +426,27 @@ void UTN_RaceChampionWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 		ChampionShells[k]->SetRenderTransformAngle(8.f * FMath::Sin(Time * 2.5f + k));
 	}
 
-	// Botones: se inflan un poco bajo el ratón; quién puede elegir se mira de vez en cuando (llega por red).
+	// Botones: se inflan un poco bajo el ratón o con el foco del mando; quién puede elegir se mira de vez en cuando (llega
+	// por red). Mover el foco con el mando suena como pasar el ratón por encima.
 	if (FMath::FloorToInt(Before * 2.f) != FMath::FloorToInt(Time * 2.f)) { RefreshButtons(); }
-	for (UButton* Button : { PlayAgainButton.Get(), ChangeModeButton.Get(), QuitButton.Get() })
+	const int32 Focused = GetFocusedButton();
+	if (Focused != LastFocusedButton)
 	{
+		if (Focused != INDEX_NONE && !bQuietFocusChange) { HandleHovered(); }
+		bQuietFocusChange = false;
+		LastFocusedButton = Focused;
+		// El botón enfocado se tiñe como bajo el ratón (el estilo de UButton no tiene estado «enfocado»).
+		for (int32 Index = 0; Index < TNRaceChampionFocus::ButtonCount; ++Index)
+		{
+			if (UButton* Button = GetButton(Index)) { Button->SetBackgroundColor(Index == Focused ? TNHUDArt::Hex(0xFFE08A) : FLinearColor::White); }
+		}
+	}
+	for (int32 Index = 0; Index < TNRaceChampionFocus::ButtonCount; ++Index)
+	{
+		UButton* Button = GetButton(Index);
 		if (!Button) { continue; }
-		const float Want = (Button->IsHovered() && Button->GetIsEnabled()) ? 1.05f + 0.01f * FMath::Sin(Time * 8.f) : 1.f;
+		const bool bHighlighted = Button->IsHovered() || Index == Focused;
+		const float Want = (bHighlighted && Button->GetIsEnabled()) ? 1.05f + 0.01f * FMath::Sin(Time * 8.f) : 1.f;
 		const float Now = static_cast<float>(Button->GetRenderTransform().Scale.X);
 		const float Next = FMath::FInterpTo(Now, Want, Dt, 14.f);
 		Button->SetRenderScale(FVector2D(Next, Next));
@@ -515,6 +572,81 @@ void UTN_RaceChampionWidget::RefreshButtons()
 	{
 		if (Button) { Button->SetRenderOpacity(Button->GetIsEnabled() ? 1.f : 0.6f); }
 	}
+	// Si el botón enfocado se acaba de apagar (ya se ha elegido, o ha cambiado quién elige), el foco pasa al siguiente.
+	UpdateFocus(false);
+}
+
+UButton* UTN_RaceChampionWidget::GetButton(int32 Index) const
+{
+	switch (Index)
+	{
+	case TNRaceChampionFocus::PlayAgain:  return PlayAgainButton;
+	case TNRaceChampionFocus::ChangeMode: return ChangeModeButton;
+	case TNRaceChampionFocus::Quit:       return QuitButton;
+	default:                              return nullptr;
+	}
+}
+
+int32 UTN_RaceChampionWidget::GetFocusedButton() const
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) { return INDEX_NONE; }
+	for (int32 Index = 0; Index < TNRaceChampionFocus::ButtonCount; ++Index)
+	{
+		const UButton* Button = GetButton(Index);
+		if (Button && Button->HasUserFocus(PC)) { return Index; }
+	}
+	return INDEX_NONE;
+}
+
+void UTN_RaceChampionWidget::UpdateFocus(bool bForce)
+{
+	const int32 Current = GetFocusedButton();
+	if (!bForce && Current == INDEX_NONE) { return; }
+	const int32 Wanted = TNRaceChampionFocus::PickFocus(Current, bCanChoose, bChoiceMade);
+	if (Wanted != INDEX_NONE && Wanted != Current) { FocusButton(Wanted); }
+}
+
+void UTN_RaceChampionWidget::FocusButton(int32 Index)
+{
+	UButton* Button = GetButton(Index);
+	APlayerController* PC = GetOwningPlayer();
+	if (!Button || !PC) { return; }
+	bQuietFocusChange = true;
+	Button->SetUserFocus(PC);
+}
+
+FReply UTN_RaceChampionWidget::NativeOnFocusReceived(const FGeometry& InGeometry, const FFocusEvent& InFocusEvent)
+{
+	// La pantalla en sí no se usa: el foco (al abrir, o con un clic en una zona vacía) pasa al botón que toca.
+	const int32 Wanted = TNRaceChampionFocus::PickFocus(INDEX_NONE, bCanChoose, bChoiceMade);
+	if (UButton* Button = GetButton(Wanted))
+	{
+		bQuietFocusChange = true;
+		return FReply::Handled().SetUserFocus(Button->TakeWidget(), InFocusEvent.GetCause());
+	}
+	return Super::NativeOnFocusReceived(InGeometry, InFocusEvent);
+}
+
+FReply UTN_RaceChampionWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	// Le llegan las teclas que los botones no usan (la A y la cruceta las atienden ellos y la navegación de Slate).
+	if (TNRaceChampionFocus::IsBackKey(InKeyEvent.GetKey()))
+	{
+		switch (TNRaceChampionFocus::OnBack(GetFocusedButton(), bChoiceMade))
+		{
+		case TNRaceChampionFocus::EBackAction::FocusQuit:
+			FocusButton(TNRaceChampionFocus::Quit);
+			bQuietFocusChange = false;
+			return FReply::Handled();
+		case TNRaceChampionFocus::EBackAction::Quit:
+			HandleQuit();
+			return FReply::Handled();
+		default:
+			return FReply::Handled();
+		}
+	}
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
 void UTN_RaceChampionWidget::HandlePlayAgain()

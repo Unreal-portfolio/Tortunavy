@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Core/TN_InventoryTypes.h"
 #include "TN_ConchPickup.generated.h"
 
 class USphereComponent;
@@ -10,18 +11,19 @@ class UStaticMesh;
 class USoundBase;
 class UNiagaraSystem;
 class ATortugaCharacter;
+class ATN_PickupInteractableBase;
 
 /**
- * Concha marina — trampa pasiva + ítem recogible (#22).
+ * Concha marina — trampa pasiva y reciclable (#22, #568).
  *
- * MODO ÍTEM (bIsPlacedTrap = false, estado por defecto):
- *   El jugador camina encima → la concha se destruye (consumida como ítem).
- *   La integración con el inventario se realiza desde el sistema de pickup externo.
+ * SIN COLOCAR (bIsPlacedTrap = false, estado por defecto):
+ *   No hace nada al pisarla. Lo que se recoge del suelo es un ATN_PickupInteractableBase (con E), no esta clase.
  *
  * MODO TRAMPA (bIsPlacedTrap = true):
  *   Al pisar la concha → inmoviliza al jugador durante TrapDurationSeconds.
  *   Tras el timer: restaura MOVE_Walking.
- *   Una vez colocada como trampa, no puede volver al modo ítem.
+ *   Con bDestroyAfterActivation, al gastarse deja en su sitio un pickup de PickupActorClass con el ítem que se gastó
+ *   al colocarla (SetRecycledItem): quien lo coja con E vuelve a tener la concha.
  *
  * PlaceAsTrap(Location) se llama desde el sistema de ítems cuando el jugador
  * equipa la concha y pulsa Interact.
@@ -48,6 +50,19 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Conch")
 	void PlaceAsTrap(const FVector& WorldLocation);
+
+	/**
+	 * Servidor: el ítem de inventario que se gastó al colocar esta concha (lo pasa HandleUseConch antes de PlaceAsTrap).
+	 * Al gastarse la trampa se devuelve al mundo como un pickup de Item.PickupActorClass; sin ítem o sin esa clase, la
+	 * concha no se recicla.
+	 */
+	void SetRecycledItem(const FTN_InventoryItem& Item);
+
+	/**
+	 * Servidor: deja en el sitio de la concha el pickup reciclado (ver SetRecycledItem) y la destruye con SetLifeSpan.
+	 * Devuelve el pickup creado, o nullptr si no había nada que reciclar.
+	 */
+	ATN_PickupInteractableBase* SpawnRecycledPickup();
 
 protected:
 	// ── Componentes ──────────────────────────────────────────────────────────
@@ -166,14 +181,6 @@ private:
 	void RearmTrap();
 
 	/**
-	 * Spawnea una concha de repuesto reciclable en la posición/rotación actual
-	 * (sin Owner, con GetClass() para preservar el BP hijo) y se autodestruye
-	 * con SetLifeSpan(0.2f). Compartido por el modo trampa-vs-enemigo y por
-	 * RestoreMovement cuando bDestroyAfterActivation es true.
-	 */
-	void SpawnReplacementConch();
-
-	/**
 	 * Modo persistente: re-arma tras ResetCooldownSeconds (o inmediatamente si
 	 * es 0). Compartido por el modo trampa-vs-enemigo y por RestoreMovement
 	 * cuando bDestroyAfterActivation es false.
@@ -185,4 +192,8 @@ private:
 
 	/** Evita que la trampa se active dos veces mientras el personaje sigue en overlap. */
 	bool bTrapUsed = false;
+
+	/** Ítem que vuelve al mundo como pickup al gastarse la trampa (solo servidor, no se replica). */
+	UPROPERTY(Transient)
+	FTN_InventoryItem RecycledItem;
 };
