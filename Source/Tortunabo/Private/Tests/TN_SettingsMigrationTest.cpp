@@ -56,13 +56,22 @@ bool FTNSettingsVersionMigrateTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("2 → 3: idioma del sistema"), FromV2.Language.IsEmpty());
 	TestFalse(TEXT("2 → 3: ojo de pez de serie (apagado, #634)"), FromV2.bFisheye);
 
+	// Un guardado de la 3: no trae la vibración del mando (4) y se queda la de serie (encendida).
+	FTNGameSettings FromV3;
+	FromV3.bFisheye = false;
+	Migrate(FromV3, 3);
+	TestFalse(TEXT("3 → 4 conserva el ojo de pez apagado"), FromV3.bFisheye);
+	TestTrue(TEXT("3 → 4: vibración del mando de serie (encendida)"), FromV3.bGamepadVibration);
+
 	// Un guardado sin número que en realidad es de la 3: no se pierde lo elegido de la 3.
 	FTNGameSettings Unnumbered;
 	Unnumbered.Language = TEXT("en");
 	Unnumbered.bFisheye = true;
+	Unnumbered.bGamepadVibration = false;
 	Migrate(Unnumbered, 0);
 	TestEqual(TEXT("Sin número: se queda el idioma elegido"), Unnumbered.Language, FString(TEXT("en")));
-	TestTrue(TEXT("Sin número: se queda el ojo de pez encendido"), Unnumbered.bFisheye);
+	TestTrue(TEXT("Sin número: se queda el ojo de pez encendido (lo eligió el jugador)"), Unnumbered.bFisheye);
+	TestFalse(TEXT("Sin número: se queda la vibración apagada"), Unnumbered.bGamepadVibration);
 	return true;
 }
 

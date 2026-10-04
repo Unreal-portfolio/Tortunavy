@@ -83,7 +83,11 @@ namespace TNBeachTrapCommonDetail
 
 double FTNTrapClock::Advance(const UWorld* World, float DeltaSeconds)
 {
-	const double Target = TNBeachTrapKit::ServerNow(World);
+	return AdvanceTo(TNBeachTrapKit::ServerNow(World), DeltaSeconds);
+}
+
+double FTNTrapClock::AdvanceTo(double Target, float DeltaSeconds)
+{
 	// Avanza con el fotograma y se acerca poco a poco a la hora del servidor: sin saltos cuando esta se corrige.
 	if (!bValid || FMath::Abs(Target - Clock) > 1.0)
 	{

@@ -63,8 +63,10 @@ void ATN_ProcMapGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Cliente que entra con el mapa ya pedido: construir lo que diga la réplica.
-	if (!HasAuthority() && NetConfig.Generation > 0 && BuiltGeneration != NetConfig.Generation)
+	// Cliente que entra con el mapa ya pedido: construir lo que diga la réplica. El generador colocado en el nivel trae la
+	// NetConfig guardada en el mapa, que el servidor nunca usa (siempre genera una posterior): construirla costaba a quien
+	// entra tarde ~25 s de mapa equivocado antes del bueno. Ese espera a su OnRep_NetConfig (#345).
+	if (!HasAuthority() && !IsNetStartupActor() && NetConfig.Generation > 0 && BuiltGeneration != NetConfig.Generation)
 	{
 		BuildFromNetConfig();
 	}

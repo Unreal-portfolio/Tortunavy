@@ -1,11 +1,10 @@
 #include "Core/TN_CoopPlayerState.h"
-#include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
+#include "Game/TN_LateJoinRules.h"
 #include "Player/TortugaCharacter.h"
 #include "World/TN_ScoreShellBurst.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
-#include "TimerManager.h"
 #include "Engine/World.h"
 
 ATN_CoopPlayerState::ATN_CoopPlayerState()
@@ -48,23 +47,6 @@ void ATN_CoopPlayerState::OnRep_EquippedHelmetId()
 	}
 }
 
-void ATN_CoopPlayerState::MulticastForceApplyHelmet_Implementation(FName HelmId)
-{
-	EquippedHelmetId = HelmId;
-
-	if (ATortugaCharacter* TurtleChar = Cast<ATortugaCharacter>(GetPawn()))
-	{
-		TurtleChar->UpdateHelmetMesh(HelmId);
-	}
-	else
-	{
-		RetryApplyCosmetic([HelmId](ATortugaCharacter* TurtleChar2)
-		{
-			TurtleChar2->UpdateHelmetMesh(HelmId);
-		}, TEXT("MulticastForceApplyHelmet"));
-	}
-}
-
 void ATN_CoopPlayerState::OnRep_EquippedSkinId()
 {
 	if (ATortugaCharacter* TurtleChar = Cast<ATortugaCharacter>(GetPawn()))
@@ -87,59 +69,6 @@ void ATN_CoopPlayerState::OnRep_EquippedEyesId()
 	{
 		TurtleChar->UpdateSkinVisual(EquippedSkinId);
 	}
-}
-
-void ATN_CoopPlayerState::MulticastForceApplySkin_Implementation(FName SkinId)
-{
-	EquippedSkinId = SkinId;
-
-	if (ATortugaCharacter* TurtleChar = Cast<ATortugaCharacter>(GetPawn()))
-	{
-		TurtleChar->UpdateSkinVisual(SkinId);
-	}
-	else
-	{
-		RetryApplyCosmetic([SkinId](ATortugaCharacter* TurtleChar2)
-		{
-			TurtleChar2->UpdateSkinVisual(SkinId);
-		}, TEXT("MulticastForceApplySkin"));
-	}
-}
-
-void ATN_CoopPlayerState::RetryApplyCosmetic(TFunction<void(ATortugaCharacter*)> Applier, const TCHAR* LogTag)
-{
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return;
-	}
-
-	// Pawn no está disponible aún (race condition post-seamless-travel).
-	// Reintentamos con margen amplio: 15 intentos × 0.2s = 3s de ventana.
-	TWeakObjectPtr<ATN_CoopPlayerState> WeakThis(this);
-	struct FRetryState { int32 Remaining = 15; };
-	TSharedPtr<FRetryState> Retry = MakeShared<FRetryState>();
-	TSharedPtr<FTimerHandle> RetryHandle = MakeShared<FTimerHandle>();
-	World->GetTimerManager().SetTimer(*RetryHandle, [WeakThis, Applier, Retry, RetryHandle, World, LogTag]()
-	{
-		if (!WeakThis.IsValid())
-		{
-			World->GetTimerManager().ClearTimer(*RetryHandle);
-			return;
-		}
-		if (ATortugaCharacter* TurtleChar2 = Cast<ATortugaCharacter>(WeakThis->GetPawn()))
-		{
-			Applier(TurtleChar2);
-			World->GetTimerManager().ClearTimer(*RetryHandle);
-			return;
-		}
-		if (--Retry->Remaining <= 0)
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("[CoopPlayerState] %s: agotados reintentos para '%s'."),
-				LogTag, *WeakThis->GetPlayerName());
-			World->GetTimerManager().ClearTimer(*RetryHandle);
-		}
-	}, 0.2f, true);
 }
 
 void ATN_CoopPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -209,6 +138,46 @@ void ATN_CoopPlayerState::MulticastScoreShellCollected_Implementation(FVector_Ne
 	{
 		OnScoreShellCollected.Broadcast(Value, Tier, WorldLocation);
 	}
+}
+
+void ATN_CoopPlayerState::SeamlessTravelTo(APlayerState* NewPlayerState)
+{
+	TGuardValue<bool> TravelGuard(bCopyingForSeamlessTravel, true);
+	Super::SeamlessTravelTo(NewPlayerState);
+}
+
+void ATN_CoopPlayerState::CopyProperties(APlayerState* PlayerState)
+{
+	Super::CopyProperties(PlayerState);
+
+	ATN_CoopPlayerState* Target = Cast<ATN_CoopPlayerState>(PlayerState);
+	if (!Target || bCopyingForSeamlessTravel)
+	{
+		return;
+	}
+
+	// Lo copia AGameMode::AddInactivePlayer (Duplicate) al desconectarse: es lo que recupera quien vuelve a la sala.
+	FTNReconnectState State;
+	State.bIsAlive = bIsAlive;
+	State.bIsDBNO = bIsDBNO;
+	State.bHasFinishedRun = bHasFinishedRun;
+	State.bIsEliminated = bIsEliminated;
+	const FTNReconnectState Saved = TNLateJoinLogic::SanitizeForReconnect(State);
+
+	Target->bIsAlive = Saved.bIsAlive;
+	Target->bIsDBNO = Saved.bIsDBNO;
+	Target->bHasFinishedRun = Saved.bHasFinishedRun;
+	Target->bIsEliminated = Saved.bIsEliminated;
+	Target->FinishRank = FinishRank;
+	Target->FinishTimeSeconds = FinishTimeSeconds;
+	Target->RaceScore = RaceScore;
+	Target->RoundWins = RoundWins;
+	Target->RaceShellHalves = RaceShellHalves;
+	Target->TeamIndex = TeamIndex;
+	Target->EquippedHelmetId = EquippedHelmetId;
+	Target->EquippedSkinId = EquippedSkinId;
+	Target->EquippedShellId = EquippedShellId;
+	Target->EquippedEyesId = EquippedEyesId;
 }
 
 void ATN_CoopPlayerState::ResetForNewRace()

@@ -17,6 +17,7 @@
 #include "Testing/TN_CpuCoreProbe.h"
 #include "Testing/TN_MonkeyPlan.h"
 #include "Testing/TN_MonkeySubsystem.h"
+#include "Testing/TN_StressChaos.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachTypes.h"
@@ -76,13 +77,26 @@ namespace TNStressDetail
 		}
 		if (Args.Num() > 0 && Args[0].Equals(TEXT("stop"), ESearchCase::IgnoreCase))
 		{
+			if (UTN_StressChaosSubsystem* Chaos = World->GetSubsystem<UTN_StressChaosSubsystem>())
+			{
+				Chaos->StopChaos(TEXT("parado a mano"));
+			}
 			Stress->StopSession(TEXT("parado a mano"));
+			return;
+		}
+		// caos (TN_StressChaos.h): lo lleva su propio subsistema; segundos = por fase (20 por defecto).
+		if (Args.Num() > 0 && TNChaos::IsChaosName(Args[0]))
+		{
+			if (UTN_StressChaosSubsystem* Chaos = World->GetSubsystem<UTN_StressChaosSubsystem>())
+			{
+				Chaos->StartChaos(Args.IsValidIndex(1) ? FMath::Clamp(FCString::Atof(*Args[1]), 5.f, 300.f) : 20.f, 0.f, 1.f, false);
+			}
 			return;
 		}
 		TNStress::FScenario Scenario;
 		if (Args.Num() < 1 || !TNStress::Parse(Args[0], Scenario))
 		{
-			UE_LOG(LogTortunabo, Display, TEXT("[Estrés] Uso: TN.Stress <light|heavy|race8|control> [segundos=60] | TN.Stress stop. light = 50 enemigos, 100 lanzables, 20 cajas; heavy = 200/500/100; race8 = 8 tortugas."));
+			UE_LOG(LogTortunabo, Display, TEXT("[Estrés] Uso: TN.Stress <light|heavy|race8|control> [segundos=60] | TN.Stress caos [segundos por fase=20] | TN.Stress stop. light = 50 enemigos, 100 lanzables, 20 cajas; heavy = 200/500/100; race8 = 8 tortugas."));
 			return;
 		}
 		const float Total = Args.IsValidIndex(1) ? FMath::Clamp(FCString::Atof(*Args[1]), 6.f, 600.f) : 60.f;
@@ -90,7 +104,7 @@ namespace TNStressDetail
 	}
 
 	static FAutoConsoleCommandWithWorldAndArgs CmdStress(TEXT("TN.Stress"),
-		TEXT("Prueba de estrés: TN.Stress <light|heavy|race8|control> [segundos=60] | TN.Stress stop. Informe en Saved/Stress/."),
+		TEXT("Prueba de estrés: TN.Stress <light|heavy|race8|control> [segundos=60] | TN.Stress caos [segundos por fase=20] | TN.Stress stop. Informe en Saved/Stress/."),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunCommand), ECVF_Cheat);
 }
 

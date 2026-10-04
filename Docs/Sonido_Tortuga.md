@@ -443,3 +443,29 @@ trocitos según la fuerza) y solo se mueven con partículas vivas: un golpe sin 
 
 Los timbres también se pueden oír sin el juego: `Tools/RaceMusic/build.bat` compila `shell.exe`, que escribe un WAV con los
 siete timbres a tres fuerzas y da el pico, el nivel y la duración de cada uno.
+
+## Acciones: derribo, muerte, recoger, lanzar, consumir, latido, reanimar y tótem
+
+Cada acción es un `UPROPERTY(EditDefaultsOnly)` de `ATortugaCharacter` (`KnockdownSound`, `KillSound`, `PickupSound`,
+`ThrowSound`, `ConsumeSound`, `DBNOHeartbeatSound`, `ReviveSuccessSound`, `TotemSelfReviveSound`) y de
+`UTN_CarryComponent` (`GrabSound`, `ThrowSound`) que el Blueprint puede cambiar (`Player/TN_TurtleActionSfx.h`).
+
+| Acción | Suena | De dónde |
+|---|---|---|
+| Muerte | `Audio/EffectSounds/Kill/KillSound` | De serie en el constructor de C++ |
+| Recoger un objeto y coger a otra tortuga | `Audio/EffectSounds/Pickup/Pickup` | Ídem (no hay un sonido propio de coger a otra tortuga: el de recoger es el más cercano) |
+| Lanzar un objeto o a otra tortuga | `Audio/EffectSounds/Throw/SC_Throw` | Ídem |
+| Consumir | `Audio/EffectSounds/Consume/Consume` | Ídem |
+| Derribo | «¡Clonc!» de caparazón (`UTN_ShellImpactSynthComponent`, timbre Otra tortuga, fuerza 0,85, tono ×0,85) | Sintetizado: no hay archivo |
+| Levantarse o reanimar | Arpegio de campanitas del «¡plin!» de las conchas grandes (`UTN_ScoreShellSynthComponent`), 5 semitonos más grave para no confundirlo | Sintetizado |
+| Tótem | El mismo arpegio, el de las conchas reina | Sintetizado |
+| Latido del derribo | «Pom-pom» del contador dos octavas abajo, cada 0,9 s, en 2D y solo para el jugador derribado | Sintetizado |
+
+- Los sintetizados los lleva `UTN_TurtleActionSynthComponent`, que la tortuga crea la primera vez que hace falta (solo en
+  máquinas con audio). Si el Blueprint asigna un recurso, suena el recurso.
+- Los recursos de `Content/Audio/EffectSounds` no traen atenuación: sin ella, el motor los tocaba en 2D y los oía todo el
+  mapa igual de fuerte. `TNTurtleActionSfx::PlayAt` les pone la natural de los sonidos del derribo (pleno hasta 3 m,
+  silencio a 25 m: `ReviveAudioInnerRadius` y `ReviveAudioOuterRadius`).
+- El test `Tortunabo.Audio.TurtleActionSounds` falla si alguna acción queda sin recurso en el CDO de `BP_TortugaCharacter`
+  y sin sustituto sintetizado; `Tortunabo.Audio.TurtleActionAssets`, si se mueve un recurso.
+- Para oírlo: `TN.Debug.Knockdown` (derribo, latido y levantarse) y `TN.Race.Item <objeto>` (recoger).

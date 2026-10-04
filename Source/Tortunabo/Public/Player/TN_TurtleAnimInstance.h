@@ -6,6 +6,7 @@
 #include "TN_TurtleAnimInstance.generated.h"
 
 class AActor;
+class ATortugaCharacter;
 class UAnimSequence;
 
 /**
@@ -108,6 +109,12 @@ struct FTNTurtleAnimFrame
 	float VRArmRW = 0.f;
 	FVector VRHandL = FVector::ZeroVector;
 	FVector VRHandR = FVector::ZeroVector;
+	/**
+	 * La cabeza que sigue a la cámara en tercera persona (#623, TNHeadLook): guiñada (+ a su derecha) y cabeceo (+ arriba)
+	 * en grados, ya con sus topes, suavizados y multiplicados por su peso. Se reparten entre el cuello y la cabeza.
+	 */
+	float LookYaw = 0.f;
+	float LookPitch = 0.f;
 };
 
 /** Evaluación en C++ de la pose de la tortuga (clips de Mixamo y poses procedurales encima). */
@@ -194,6 +201,11 @@ public:
 	/** Cuánto sujetan ahora los brazos lo que lleva en las aletas (0..1): con menos, el objeto solo sigue a la aleta. */
 	float GetHoldWeight() const { return Frame.HoldW; }
 
+	/** Giro de la cabeza que sigue a la cámara en este fotograma (grados, con su peso) y su peso (0..1). */
+	float GetHeadLookYaw() const { return Frame.LookYaw; }
+	float GetHeadLookPitch() const { return Frame.LookPitch; }
+	float GetHeadLookWeight() const { return HeadLookW; }
+
 protected:
 	virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
 	virtual void DestroyAnimInstanceProxy(FAnimInstanceProxy* InProxy) override;
@@ -244,4 +256,19 @@ private:
 	/** Generador de la playa que dice dónde está el borde del acantilado y cuándo volver a buscarlo. */
 	TWeakObjectPtr<AActor> CliffZoneSource;
 	double NextCliffZoneLookup = 0.0;
+
+	/**
+	 * La cabeza que sigue a la cámara: giro (muelle crítico hacia TNHeadLook::Target, con su velocidad) y peso, que se funde
+	 * a 0 donde no se aplica (ragdoll, caparazón, panzazo, emotes, primera persona, VR, probador, sin jugador).
+	 */
+	float HeadLookYaw = 0.f;
+	float HeadLookYawRate = 0.f;
+	float HeadLookPitch = 0.f;
+	float HeadLookPitchRate = 0.f;
+	float HeadLookW = 0.f;
+	/** TN.HeadLook.Log (fuera de Shipping): segundos hasta la siguiente línea del registro. */
+	float HeadLookLogIn = 0.f;
+
+	/** Lo que hace la cabeza que sigue a la cámara en este fotograma (lo llama NativeUpdateAnimation). */
+	void UpdateHeadLook(const ATortugaCharacter* Turtle, float Dt, bool bLookAllowed);
 };

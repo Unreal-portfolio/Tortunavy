@@ -1,4 +1,6 @@
 #include "World/TN_ConchPickup.h"
+#include "Core/TN_Log.h"
+#include "World/TN_PickupInteractableBase.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_RaceItems.h"
@@ -64,6 +66,14 @@ void ATN_ConchPickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ATN_ConchPickup, bIsPlacedTrap);
 }
 
+// ── Reciclado ──────────────────────────────────────────────────────────────────
+
+void ATN_ConchPickup::SetRecycledItem(const FTN_InventoryItem& Item)
+{
+	if (!HasAuthority()) { return; }
+	RecycledItem = Item;
+}
+
 // ── PlaceAsTrap ────────────────────────────────────────────────────────────────
 
 void ATN_ConchPickup::PlaceAsTrap(const FVector& WorldLocation)
@@ -102,7 +112,7 @@ void ATN_ConchPickup::OnSphereBeginOverlap(UPrimitiveComponent* /*OverlappedComp
 			// un pickup recogible en la posición — la concha es reciclable.
 			if (bDestroyAfterActivation)
 			{
-				SpawnReplacementConch();
+				SpawnRecycledPickup();
 			}
 			else
 			{
@@ -115,14 +125,9 @@ void ATN_ConchPickup::OnSphereBeginOverlap(UPrimitiveComponent* /*OverlappedComp
 	ATortugaCharacter* Character = Cast<ATortugaCharacter>(OtherActor);
 	if (!Character) { return; }
 
-	if (!bIsPlacedTrap)
-	{
-		// ── Modo ítem recogible ────────────────────────────────────────────────
-		// La concha se destruye; la integración con el inventario la gestiona
-		// el sistema de pickup externo (TN_PickupInteractableBase / GameMode).
-		Destroy();
-		return;
-	}
+	// Sin colocar no hace nada: lo que se recoge es el pickup reciclado (ATN_PickupInteractableBase, con E). Antes se
+	// destruía al pisarla sin dar nada a nadie (#568).
+	if (!bIsPlacedTrap) { return; }
 
 	// ── Modo trampa ───────────────────────────────────────────────────────────
 	if (bTrapUsed) { return; }
@@ -163,7 +168,7 @@ void ATN_ConchPickup::RestoreMovement(TWeakObjectPtr<ATortugaCharacter> WeakChar
 		// Antes de auto-destruirse, dejar un pickup-ítem en la misma ubicación para
 		// que la trampa sea recuperable como recurso y el flujo de rescate del item
 		// no acabe en "trampa consumida y nada en el suelo".
-		SpawnReplacementConch();
+		SpawnRecycledPickup();
 		return;
 	}
 
@@ -171,24 +176,33 @@ void ATN_ConchPickup::RestoreMovement(TWeakObjectPtr<ATortugaCharacter> WeakChar
 	ScheduleRearm();
 }
 
-void ATN_ConchPickup::SpawnReplacementConch()
+ATN_PickupInteractableBase* ATN_ConchPickup::SpawnRecycledPickup()
 {
-	if (UWorld* World = GetWorld())
+	if (!HasAuthority()) { return nullptr; }
+
+	// La concha gastada vuelve como el mismo pickup que sale al soltarla (ServerDropEquippedItem): uno de
+	// PickupActorClass con el ítem que se gastó, que se coge con E. Antes se creaba otra ATN_ConchPickup sin colocar,
+	// que desaparecía al pisarla sin dar el objeto (#568).
+	ATN_PickupInteractableBase* Pickup = nullptr;
+	UWorld* World = GetWorld();
+	if (World && RecycledItem.IsValid() && RecycledItem.PickupActorClass)
 	{
 		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride =
-			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-		// Sin Owner: heredar el pawn lanzador como Owner ataba la concha
-		// reciclada a su ciclo de vida (pawn muere/respawnea → GC destruye
-		// la concha en cascada). El mundo es el dueño. GetClass() preserva
-		// el BP hijo configurado (mesh/audio/VFX) en lugar de spawnear el
-		// ATN_ConchPickup nativo "pelado".
-		World->SpawnActor<ATN_ConchPickup>(
-			GetClass(), GetActorLocation(), GetActorRotation(), SpawnParams);
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		// Sin Owner: heredar el pawn lanzador como Owner ataba el pickup a su ciclo de vida (muere o reaparece → se
+		// destruye en cascada). El mundo es el dueño.
+		Pickup = World->SpawnActor<ATN_PickupInteractableBase>(
+			RecycledItem.PickupActorClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+		if (Pickup) { Pickup->InitializeFromInventoryItem(RecycledItem); }
+	}
+	else
+	{
+		UE_LOG(LogTortunabo, Verbose, TEXT("[Concha] %s se gasta sin reciclarse (sin ítem o sin PickupActorClass)."), *GetName());
 	}
 
 	// SetLifeSpan permite que cualquier callback pendiente termine en paz.
 	SetLifeSpan(0.2f);
+	return Pickup;
 }
 
 void ATN_ConchPickup::ScheduleRearm()

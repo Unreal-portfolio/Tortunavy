@@ -124,6 +124,11 @@ namespace TNProcRuntimeMesh
 		StaticMaterial.UVChannelData = FMeshUVChannelInfo(0.f);
 		StaticMaterial.UVChannelData.LocalUVDensities[0] = ComputeUVDensity(B);
 		Mesh->GetStaticMaterials().Add(StaticMaterial);
+		// Chaos cocina la colisión compleja (malla de triángulos) leyendo los índices y posiciones en CPU: sin
+		// bAllowCPUAccess, el editor y el cook avisan «GetPhysicsTriMeshData: CPU data not available» y la build
+		// empaquetada rechaza la malla («cannot be accessed at runtime»), y la pieza se queda sin colisión compleja
+		// (issue #344). BuildFromMeshDescriptions la usa también para dejar en CPU el índice de cada LOD.
+		Mesh->bAllowCPUAccess = true;
 		UStaticMesh::FBuildMeshDescriptionsParams Params;
 		Params.bMarkPackageDirty = false;
 		Params.bBuildSimpleCollision = bBoxCollision;
