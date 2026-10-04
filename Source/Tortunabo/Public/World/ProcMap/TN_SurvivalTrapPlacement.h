@@ -54,6 +54,9 @@ namespace TNSurvivalCatalog
 	constexpr double SlowZoneHalfLength = 500.0;
 	/** Medio largo (cm) de cada zona de cangrejos: un tramo largo se parte en varias, que en una curva no se salen del camino. */
 	constexpr double CrabZoneHalfLength = 800.0;
+	/** Lo que se acorta como mucho (cm) una zona de cangrejos en una curva y el semiancho que se le busca. */
+	constexpr double CrabZoneMinHalfLength = 200.0;
+	constexpr double CrabZoneMinHalfWidth = 150.0;
 
 	/** Zonas en que se parte un grupo de Count cangrejos del tramo [From, To] (cm): una por cada 16 m, sin pasar de Count. */
 	inline int32 CrabZoneCount(double From, double To, int32 Count)
@@ -166,6 +169,23 @@ namespace TNSurvivalCatalog
 				Out.Add(To > From ? From + (To - From) * (k + 0.5) / N : From + (k - (N - 1) * 0.5) * PointSpacing);
 			}
 			return Out;
+		}
+
+		/**
+		 * Semiancho (cm) de una caja recta de semilargo HalfLength centrada en la muestra i y orientada con ella que cabe en el
+		 * camino: en cada muestra que cubre, su medio ancho menos lo que el eje se aparta del de la caja (curvas y estrechamientos).
+		 */
+		inline double BoxHalfWidthInPath(const TArray<TNProcMap::FPathSample>& M, int32 i, double HalfLength)
+		{
+			double Half = M[i].Width * 0.5;
+			for (int32 j = 0; j < M.Num(); ++j)
+			{
+				if (FMath::Abs(M[j].S - M[i].S) > 2.0 * HalfLength) { continue; }
+				const FVector2D D = M[j].P - M[i].P;
+				if (FMath::Abs(FVector2D::DotProduct(M[i].Dir, D)) > HalfLength) { continue; }
+				Half = FMath::Min(Half, M[j].Width * 0.5 - FMath::Abs(FVector2D::CrossProduct(M[i].Dir, D)));
+			}
+			return Half;
 		}
 
 		/** Paso libre (cm) que quedaría en la sección de un obstáculo nuevo (Along, Lateral, R) con los ya puestos. */
@@ -301,8 +321,16 @@ namespace TNSurvivalCatalog
 						const int32 i = NearestFree(M, SampleAtDistance(M, S));
 						if (i == INDEX_NONE) { continue; }
 						FTrapPlacement P = At(M, ETrap::Crab, i, 0.0);
-						// Solo el ancho del camino: fuera de él caerían en las paredes.
-						P.Extent = FVector(CrabZoneHalfLength, M[i].Width * 0.5, 300.0);
+						// Solo dentro del camino (fuera caerían en las paredes): la caja se acorta en una curva cerrada o un
+						// estrechamiento hasta que le queda un ancho razonable.
+						double HalfLength = CrabZoneHalfLength;
+						double HalfWidth = BoxHalfWidthInPath(M, i, HalfLength);
+						while (HalfWidth < CrabZoneMinHalfWidth && HalfLength > CrabZoneMinHalfLength)
+						{
+							HalfLength = FMath::Max(CrabZoneMinHalfLength, HalfLength * 0.5);
+							HalfWidth = BoxHalfWidthInPath(M, i, HalfLength);
+						}
+						P.Extent = FVector(HalfLength, FMath::Max(CrabZoneMinHalfWidth * 0.5, HalfWidth), 300.0);
 						P.Count = FMath::Max(1, Crabs);
 						Out.Add(P);
 					}
