@@ -24,7 +24,7 @@ Lo decides y lo haces tú, sin preguntar; solo preguntas, en una línea, si duda
 - Se prueba **en la rama del lote**, antes de fusionar (#282).
 - In progress o In review: Editor = Funciona.
 - Con la revisión aprobada y la PR sin fusionar (lote o issue suelta): pasa a Validada. Con todo el lote en Validada, a Done y se fusiona (`tortu-revisar`).
-- Lo fusionado antes de #282 sin probar (QA editor): pasa a Done y se cierra. Deja el resumen: `tablero.py resumen <n> --que "<qué fallaba>" [--por-que "<causa>"] --como "<arreglo>"`.
+- En QA editor (revisión IA aprobada, falta la prueba): sin fusionar pasa a Validada; lo fusionado antes de #282 pasa a Done y se cierra. Deja el resumen: `tablero.py resumen <n> --que "<qué fallaba>" [--por-que "<causa>"] --como "<arreglo>"`.
 
 ## Validación implícita
 

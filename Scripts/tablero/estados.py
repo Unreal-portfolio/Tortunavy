@@ -27,7 +27,7 @@ DESCRIPCIONES = {
     "In progress": "Alguien (o su Claude) la está haciendo o la dejó a medias",
     "In review": "Terminada: la revisa la IA de otro miembro del equipo",
     "Revisiones": "La revisión o la prueba encontraron un fallo, comentado en la issue",
-    "QA editor": "Aprobada y fusionada en dev; falta probarla en el editor",
+    "QA editor": "Aprobada por la IA; falta probarla en el editor",
     "Validada": "Aprobada y probada; espera a las demás issues de su lote",
     "Done": "Fusionada en dev, aprobada y probada en el editor; cerrada",
 }

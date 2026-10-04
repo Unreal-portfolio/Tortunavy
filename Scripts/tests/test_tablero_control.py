@@ -174,7 +174,16 @@ def test_grave_lote_fusionado_sin_validar_va_a_revisiones_con_p0():
 def test_grave_qa_editor_con_pr_sin_fusionar_y_tarea_de_prueba_sin_pr_en_orden():
     con_pr = _issue("QA editor", con_pr=True, valores={"Editor": "Sin probar"})
     assert auditoria.problemas(con_pr, AHORA)[0]["tipo"] == "grave"
+    aprobada = _issue("QA editor", con_pr=True, valores={"Editor": "Sin probar", "Revisión IA": "Aprobada",
+                                                         "Revisor": "Mokius"})
+    assert auditoria.problemas(aprobada, AHORA) == []
     assert auditoria.problemas(_issue("QA editor", valores={"Editor": "Sin probar"}), AHORA) == []
+
+
+def test_in_review_aprobada_sin_probar_se_mueve_a_qa_editor():
+    issue = _issue("In review", con_pr=True, valores={"Revisor": "Mokius", "Revisión IA": "Aprobada",
+                                                     "Editor": "Sin probar"})
+    assert auditoria.columna_correcta(issue) == "QA editor"
 
 
 def test_grave_ya_en_revisiones_no_se_repite():
