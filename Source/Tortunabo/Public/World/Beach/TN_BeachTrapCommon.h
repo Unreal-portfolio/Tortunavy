@@ -22,6 +22,8 @@ class UWorld;
 struct FTNTrapClock
 {
 	double Advance(const UWorld* World, float DeltaSeconds);
+	/** Lo mismo con la hora del servidor ya leída (Advance la lee del GameState): sin mundo, para las pruebas. */
+	double AdvanceTo(double ServerTime, float DeltaSeconds);
 	double Now() const { return Clock; }
 
 private:
