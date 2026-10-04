@@ -39,6 +39,10 @@ labio a la cresta de la recepción), `v_ai_kmh` y `land_ai_s_m` (el piloto IA ll
 `baches` (`pattern` whoops o tabla_lavar, amplitud, longitud de onda, tramo de las ondas `train_s_m`), `baden`
 (profundidad, largo, `dip_s_m`, barro) y `banqueta` (horquilla con caballón por fuera); `suspension`: la del buggy
 con la que se acotan los baches; `generator.profile`: "tierra".
+
+Baches (#696): la calzada de los trenes de baches no se suaviza (RallyCircuitModel.unsmoothed_mask), para que la malla
+no aplane la tabla de lavar, y ninguna recta de baches va justo antes de una horquilla (rally_circuit_plan); el
+validador mide las dos cosas (`bumps` y `bumps_braking`).
 """
 
 from __future__ import annotations

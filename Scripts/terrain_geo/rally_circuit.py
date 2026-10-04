@@ -30,7 +30,7 @@ from terrain_vol.layout import CELL_M, MAP_MIN_M, WATER_M, ZRange
 
 from .heightfield import ZONES, HeightfieldModel
 from .layout import RASTER_PX_M
-from .rally_circuit_dirt import (BERM_END_M, DIP_DEPTH_M, DIP_LEAD_M, DIP_PIECE_M, MUD_COLOR, MUD_STRENGTH,
+from .rally_circuit_dirt import (BERM_END_M, BUMP_LEAD_M, DIP_DEPTH_M, DIP_LEAD_M, DIP_PIECE_M, MUD_COLOR, MUD_STRENGTH,
                                  BumpDesign, DipDesign, berm_lift, design_dip)
 from .rally_circuit_elements import (BANK_RAMP_M, CrestDesign, JumpDesign, JumpParams, bank_profile, design_crest,
                                      design_jump)
@@ -54,6 +54,7 @@ SHOULDER_M = 3.0
 BERM_M = 26.0
 TALUD_DEG = 33.0
 MARGIN_M = 110.0
+BUMP_UNSMOOTHED_MARGIN_M = 4.0      # calzada sin suavizar antes y después de cada tren de baches (#696)
 ROAD_MIN_M = WATER_M + 7.0
 GRID_ZONE_M = (-60.0, 25.0)        # parrilla (detrás de la línea) y arrancada: llano y sin peralte
 MAX_BASE_GRADE_DEG = 5.0
@@ -305,6 +306,7 @@ class RallyCircuitModel(HeightfieldModel):
         near = self._nearest(Xg, Yg)
         natural = self._natural(Xg, Yg, near, np.random.default_rng([seed, 7]))
         height, self.trail = self._carve(natural, near)
+        self.unsmoothed = near["bump"] * (np.abs(near["lateral"]) <= near["half"] + SHOULDER_M) * (near["dist"] <= BERM_M)
         self.z_range = ZRange.covering(float(height.max()))
         super().__init__(height)
 
@@ -322,11 +324,12 @@ class RallyCircuitModel(HeightfieldModel):
         idx = np.arange(len(self.road) + 1)
         z = np.interp(frac, idx, np.append(track.z, track.z[0]))
         bank = np.interp(frac, idx, np.append(track.bank_deg, track.bank_deg[0]))
-        berm, mud, half = self.berm_dir(), self.mud_axis(), self.half_width()
+        berm, mud, half, bump = self.berm_dir(), self.mud_axis(), self.half_width(), self.bump_axis()
         shape = X.shape
         return {"dist": dist.reshape(shape), "lateral": lateral.reshape(shape), "z": z.reshape(shape),
                 "bank": bank.reshape(shape), "berm": np.interp(frac, idx, np.append(berm, berm[0])).reshape(shape),
                 "mud": np.interp(frac, idx, np.append(mud, mud[0])).reshape(shape),
+                "bump": np.interp(frac, idx, np.append(bump, bump[0])).reshape(shape),
                 "half": np.interp(frac, idx, np.append(half, half[0])).reshape(shape)}
 
     def half_width(self) -> np.ndarray:
@@ -357,6 +360,21 @@ class RallyCircuitModel(HeightfieldModel):
         for d in self.track.dips:
             out[cyclic_mask(arc, total, d.s0 + DIP_LEAD_M - 3.0, d.s0 + DIP_LEAD_M + d.design.length_m + 3.0)] = 1.0
         return out
+
+    def bump_axis(self) -> np.ndarray:
+        """Por muestra del eje: 1 en los trenes de baches (y BUMP_UNSMOOTHED_MARGIN_M a cada lado), 0 fuera."""
+        arc, total = self.track.arc, self.track.total
+        out = np.zeros(len(arc))
+        for b in self.track.bumps:
+            s0 = b.s0 + BUMP_LEAD_M - BUMP_UNSMOOTHED_MARGIN_M
+            out[cyclic_mask(arc, total, s0, s0 + b.design.train_m + 2.0 * BUMP_UNSMOOTHED_MARGIN_M)] = 1.0
+        return out
+
+    def unsmoothed_mask(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Calzada de los trenes de baches (#696): terrain_vol.mesh no la suaviza, porque el Taubin aplana las ondas
+        cortas (la tabla de lavar salía al 31-60 % de su amplitud). El marching cubes de un campo de alturas ya pone
+        los vértices a la cota exacta del campo."""
+        return self._sample(self.unsmoothed, np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64)) > 0.5
 
     def _natural(self, X, Y, near: dict, rng: np.random.Generator) -> np.ndarray:
         """Relieve alrededor (dunas en el tema base): la cota de la calzada difuminada, más relieve que crece lejos

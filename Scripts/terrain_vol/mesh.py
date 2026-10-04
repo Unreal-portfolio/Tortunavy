@@ -222,9 +222,14 @@ def build_chunk(model: MapModel, col: int, row: int, z_range: ZRange | None = No
     edge = CELL_SAMPLES - 1
     pinned = (verts[:, 0] < 1e-6) | (verts[:, 0] > edge * STEP_XY_M - 1e-6) \
         | (verts[:, 1] < 1e-6) | (verts[:, 1] > edge * STEP_XY_M - 1e-6)
+    x0, _, y0, _ = cell_bounds(col, row)
+    # Zonas que el modelo pide sin suavizar (unsmoothed_mask(x, y) en metros del mundo, opcional): el Taubin es un
+    # paso bajo y aplana las ondas de pocos metros, como la tabla de lavar de los circuitos de Rally (#696).
+    unsmoothed = getattr(model, "unsmoothed_mask", None)
+    if unsmoothed is not None and len(verts):
+        pinned = pinned | np.asarray(unsmoothed(verts[:, 0] + x0, verts[:, 1] + y0), dtype=bool)
     smoothed = taubin(verts, faces, pinned, SMOOTH_ITERATIONS)
     # (las normales de la malla se calculan tras orientar las caras: ver mesh_normals)
-    x0, _, y0, _ = cell_bounds(col, row)
     world = smoothed + np.array([x0, y0, zr.z_min_m])
 
     grad = np.gradient(D_pad, STEP_XY_M, STEP_XY_M, zr.step_m)

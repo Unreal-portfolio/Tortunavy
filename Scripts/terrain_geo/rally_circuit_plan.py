@@ -14,7 +14,9 @@ chicanes, rectas con salto y rectas con cambio de rasante. Reglas de colocación
   - las longitudes libres (la recta de salida y los enlaces) se resuelven por mínimos cuadrados con cotas para que
     el lazo cierre; la curvatura se suaviza (sigma CURVATURE_SIGMA_M) para no tener quiebros de volante;
   - dos tramos del lazo que estén a más de SEPARATION_ARC_M por el arco quedan a SEPARATION_MIN_M o más en planta
-    (sin cruces y con sitio para las dos barreras); si no, se repite el sorteo con el intento siguiente.
+    (sin cruces y con sitio para las dos barreras); si no, se repite el sorteo con el intento siguiente;
+  - una recta de baches nunca va justo antes de una horquilla (#696): sus baches caerían en la frenada (con la
+    semilla 6938, el piloto IA se pasó la horquilla). El orden que lo hace se descarta (bumps_before_hairpin).
 
 Perfil «tierra» (#682, make_plan(seed, "tierra")): las mismas reglas y además cuatro saltos de tres formas
 (rally_circuit_jumps: doble y cresta en el zigzag de las horquillas, la mesa tras la chicane y el salto largo sobre
@@ -295,8 +297,16 @@ def separation_ok(pts: np.ndarray, step: float) -> bool:
     return bool((d[gap > SEPARATION_ARC_M] >= SEPARATION_MIN_M).all())
 
 
+def bumps_before_hairpin(pieces: list[Piece]) -> bool:
+    """Si alguna recta de baches va justo antes (tras su enlace) de una horquilla: sus baches caerían en la frenada."""
+    n = len(pieces)
+    return any(p.kind == "baches" and pieces[(i + 1) % n].kind == "horquilla" for i, p in enumerate(pieces))
+
+
 def _candidate(seed: int, attempt: int, pieces: list[Piece],
                profile: str = "dunas") -> tuple[float, Plan, list] | None:
+    if bumps_before_hairpin(pieces):
+        return None
     segs = close_loop(build_segs(pieces))
     if segs is None:
         return None

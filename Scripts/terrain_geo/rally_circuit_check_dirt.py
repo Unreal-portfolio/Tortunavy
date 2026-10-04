@@ -1,6 +1,7 @@
 """Validador de los elementos de tierra (#682) sobre la variante YA ESCRITA, como rally_circuit_check (que lo llama):
 saltos de forma (el piloto IA, a 0,9 · v, salva el hueco), baches (solo en recta, amplitud medida en la malla dentro
-del recorrido de la suspensión del manifest), badén (profundidad medida, no despega ni con turbo) y banqueta
+del recorrido de la suspensión del manifest y al menos al 60 % de la de diseño, y fuera de la frenada de las horquillas,
+#696), badén (profundidad medida, no despega ni con turbo) y banqueta
 (caballón medido por fuera de la horquilla y peralte). Solo añade criterios al veredicto si el manifest es del perfil
 «tierra».
 """
@@ -18,8 +19,14 @@ from .rally_circuit_width import WIDTH_NORMAL_M
 
 LIMITS_TIERRA = {"jumps": 4, "jump_kinds": 2, "bumps": 2, "straight_k": 1.0 / 400.0, "bump_measured_min": 0.6,
                  "amplitude_tol_m": 0.02, "dip_depth_tol_m": 0.15, "dip_g": DIP_MAX_G + 0.15,
-                 "berm_min_ratio": 0.6, "banqueta_bank_deg": 8.0, "impact_ai_ms": 6.0}
+                 "berm_min_ratio": 0.6, "banqueta_bank_deg": 8.0, "impact_ai_ms": 6.0, "hairpin_brake_gap_m": 0.0}
 SAMPLE_M = 0.25
+# Piloto IA (ATN_RallyAIController.h y FBrakeTuning de TN_RallyCircuit.h): frenada, horquillas y punta. Un test los lee
+# del C++ para que no se desincronicen.
+AI_BRAKE_G = 0.5
+AI_HAIRPIN_G = 0.6
+AI_MAX_KMH = 90.0
+AI_MIN_KMH = 25.0
 
 
 def is_tierra(manifest: dict) -> bool:
@@ -70,9 +77,31 @@ def _straight(ctx: dict, span) -> float:
     return float(np.abs(ctx["curvature"][idx]).max())
 
 
-def bump_report(e: dict, ctx: dict, sampler, max_amplitude_m: float) -> dict:
+def ai_brake_m(v_ms: float, hairpin_radius_m: float) -> float:
+    """m que necesita el piloto IA para frenar de v_ms (como mucho AI_MAX_KMH) a la velocidad de una horquilla de ese
+    radio (TNRallyCircuit::FeatureSpeedLimitKmh: HairpinLateralG y BrakeDecelG de ATN_RallyAIController)."""
+    v = min(v_ms, AI_MAX_KMH / 3.6)
+    v_hairpin = max(math.sqrt(AI_HAIRPIN_G * G * max(hairpin_radius_m, 0.0)), AI_MIN_KMH / 3.6)
+    return max(0.0, (v * v - v_hairpin * v_hairpin) / (2.0 * AI_BRAKE_G * G))
+
+
+def hairpin_brake_gap(train_end_m: float, ctx: dict, hairpins: list[dict]) -> float | None:
+    """m entre el final del tren de baches y el punto en el que el piloto IA empieza a frenar para la siguiente horquilla,
+    llegando a la velocidad de la línea ideal (ctx["speed"]) del final del tren (negativo: los baches caen en la frenada,
+    #696). None sin horquillas."""
+    if not hairpins:
+        return None
+    total, step, n = ctx["total"], ctx["step"], len(ctx["pts"])
+    nxt = min(hairpins, key=lambda h: (h["s_m"][0] - train_end_m) % total)
+    v = float(ctx["speed"][_arc_index(train_end_m, step, n)])
+    return (nxt["s_m"][0] - train_end_m) % total - ai_brake_m(v, nxt["radius_m"])
+
+
+def bump_report(e: dict, ctx: dict, sampler, max_amplitude_m: float, hairpins: list[dict] | None = None) -> dict:
     out = {"id": e["id"], "pattern": e["pattern"], "amplitude_m": e["amplitude_m"],
            "wavelength_m": e["wavelength_m"], "max_curvature": round(_straight(ctx, e["s_m"]), 5)}
+    gap = hairpin_brake_gap(e["train_s_m"][1], ctx, hairpins or [])
+    out["hairpin_brake_gap_m"] = None if gap is None else round(gap, 1)
     measured = []
     for lateral in (-4.0, 0.0, 4.0):
         s, z = _along(ctx, sampler, e["train_s_m"], lateral)
@@ -119,7 +148,8 @@ def banqueta_report(e: dict, ctx: dict, sampler) -> dict:
 def tierra_report(manifest: dict, ctx: dict, sampler) -> dict:
     max_amp = manifest["suspension"]["max_amplitude_m"]
     els = manifest["elements"]
-    return {"bumps": [bump_report(e, ctx, sampler, max_amp) for e in els if e["type"] == "baches"],
+    hairpins = [e for e in els if e["type"] == "horquilla"]
+    return {"bumps": [bump_report(e, ctx, sampler, max_amp, hairpins) for e in els if e["type"] == "baches"],
             "dips": [dip_report(e, ctx, sampler) for e in els if e["type"] == "baden"],
             "banquetas": [banqueta_report(e, ctx, sampler) for e in els if e["type"] == "banqueta"],
             "suspension": manifest["suspension"]}
@@ -136,6 +166,8 @@ def tierra_verdict(r: dict) -> dict[str, bool]:
         "bumps": len(t["bumps"]) >= L["bumps"] and len({b["pattern"] for b in t["bumps"]}) >= 2 and all(
             b["max_curvature"] <= L["straight_k"] and b["within_suspension"] and b["wheel_fits"]
             and b["measured_amplitude_m"] >= L["bump_measured_min"] * b["amplitude_m"] for b in t["bumps"]),
+        "bumps_braking": all(b.get("hairpin_brake_gap_m") is None or b["hairpin_brake_gap_m"] >= L["hairpin_brake_gap_m"]
+                             for b in t["bumps"]),
         "dip": len(t["dips"]) >= 1 and all(
             abs(d["measured_depth_m"] - d["depth_m"]) <= L["dip_depth_tol_m"] and d["curvature_g"] <= L["dip_g"]
             and d["max_curvature"] <= L["straight_k"] for d in t["dips"]),
