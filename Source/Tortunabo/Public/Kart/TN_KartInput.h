@@ -21,7 +21,11 @@ public:
 	/** Por encima de los contextos del buggy (UTN_BuggyInputSet::ContextPriority): el objeto se queda con su botón. */
 	static constexpr int32 ContextPriority = 11;
 
-	static UTN_KartInputSet* Create(UObject* Outer);
+	/**
+	 * Acciones y contextos de la conductora y la artillera. bWithItems = false (Rally, #629): sin las teclas de usar objeto
+	 * ni el disparo propio de la conductora, para que pasen al buggy (disparo y munición especial de la torreta).
+	 */
+	static UTN_KartInputSet* Create(UObject* Outer, bool bWithItems = true);
 
 	static void AddContext(const APlayerController* PC, const UInputMappingContext* Context);
 	static void RemoveContext(const APlayerController* PC, const UInputMappingContext* Context);

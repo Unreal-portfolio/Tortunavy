@@ -123,6 +123,7 @@ void ATN_ProcMapGameMode::ResolveModeAndDifficulty()
 	{
 		if (GI->SelectedProcMode != ETNProcGameMode::Classic && GI->SelectedProcMode != ETNProcGameMode::Survival
 			&& GI->SelectedProcMode != ETNProcGameMode::Karts && GI->SelectedProcMode != ETNProcGameMode::FreeForAll
+			&& GI->SelectedProcMode != ETNProcGameMode::Rally
 			&& GI->SelectedProcMode != ETNProcGameMode::Count)
 		{
 			Mode = GI->SelectedProcMode;
@@ -147,7 +148,8 @@ void ATN_ProcMapGameMode::ResolveModeAndDifficulty()
 	UrlSeed = SeedOption.IsEmpty() ? 0 : FCString::Atoi(*SeedOption);
 
 	// Supervivencia sí (su mapa procedural, #273); los karts tienen su propio GameMode.
-	if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Karts || Mode == ETNProcGameMode::Count)
+	if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Karts || Mode == ETNProcGameMode::Rally
+		|| Mode == ETNProcGameMode::Count)
 	{
 		Mode = ETNProcGameMode::Coop;
 	}

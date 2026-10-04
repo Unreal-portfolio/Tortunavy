@@ -361,12 +361,15 @@ namespace TNRally
 		Weights.Burbuja = FMath::Lerp(1.f, 3.f, T);
 		Weights.Mortero = FMath::Lerp(1.f, 4.f, T);
 		Weights.Ancla = FMath::Lerp(0.5f, 1.5f, T);
+		// Conchas de las cajas «?» (#629): la recta, sobre todo delante; la teledirigida, sobre todo detrás.
+		Weights.Concha = FMath::Lerp(3.f, 1.5f, T);
+		Weights.ConchaGuiada = FMath::Lerp(0.5f, 2.5f, T);
 		return Weights;
 	}
 
 	ETNRallyAmmo PickAmmo(const FAmmoWeights& Weights, float Roll01)
 	{
-		const float Total = Weights.Alga + Weights.Burbuja + Weights.Mortero + Weights.Ancla + Weights.Tinta;
+		const float Total = Weights.Total();
 		if (Total <= 0.f)
 		{
 			return ETNRallyAmmo::Alga;
@@ -376,6 +379,8 @@ namespace TNRally
 		if ((Pick -= Weights.Burbuja) < 0.f) { return ETNRallyAmmo::Burbuja; }
 		if ((Pick -= Weights.Mortero) < 0.f) { return ETNRallyAmmo::Mortero; }
 		if ((Pick -= Weights.Ancla) < 0.f) { return ETNRallyAmmo::Ancla; }
+		if ((Pick -= Weights.Concha) < 0.f) { return ETNRallyAmmo::Concha; }
+		if ((Pick -= Weights.ConchaGuiada) < 0.f) { return ETNRallyAmmo::ConchaGuiada; }
 		return ETNRallyAmmo::Tinta;
 	}
 
@@ -386,13 +391,44 @@ namespace TNRally
 		case ETNRallyAmmo::Alga:
 		case ETNRallyAmmo::Tinta:
 		case ETNRallyAmmo::Ancla:
+		case ETNRallyAmmo::Concha:
 			return 2;
 		case ETNRallyAmmo::Burbuja:
 		case ETNRallyAmmo::Mortero:
+		case ETNRallyAmmo::ConchaGuiada:
 			return 1;
 		default:
 			return 0;
 		}
+	}
+
+	EBotSpecialShot ShouldBotFireSpecial(ETNRallyAmmo Ammo, float HeldSeconds, float AheadCm, float BehindCm)
+	{
+		if (Ammo == ETNRallyAmmo::None || Ammo == ETNRallyAmmo::Coco)
+		{
+			return EBotSpecialShot::Hold;
+		}
+		const bool bAheadInRange = AheadCm >= 0.f && AheadCm <= BotSpecialRangeCm;
+		const bool bBehindInRange = BehindCm >= 0.f && BehindCm <= BotAlgaBehindRangeCm;
+		EBotSpecialShot Shot = EBotSpecialShot::Hold;
+		switch (Ammo)
+		{
+		case ETNRallyAmmo::Alga:
+			Shot = bBehindInRange ? EBotSpecialShot::AtBehind : (bAheadInRange ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold);
+			break;
+		case ETNRallyAmmo::Burbuja:
+			Shot = HeldSeconds >= BotBubbleDelaySeconds ? EBotSpecialShot::Free : EBotSpecialShot::Hold;
+			break;
+		default:
+			Shot = bAheadInRange ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold;
+			break;
+		}
+		if (Shot == EBotSpecialShot::Hold && HeldSeconds >= BotMaxHoldSeconds)
+		{
+			// Guardada demasiado tiempo: al que haya delante o detrás y, si no hay nadie, hacia delante.
+			Shot = AheadCm >= 0.f ? EBotSpecialShot::AtAhead : (BehindCm >= 0.f ? EBotSpecialShot::AtBehind : EBotSpecialShot::Free);
+		}
+		return Shot;
 	}
 
 	double WrapArc(double S, double Length, bool bClosed)

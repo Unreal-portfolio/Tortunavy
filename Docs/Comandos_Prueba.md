@@ -317,10 +317,11 @@ cada 250 m, salida en el claro y meta en la playa (más en `Docs/Karts.md`). Al 
 |---|---|
 | `open LVL_ProcMap?game=Karts?ProcDifficulty=Easy` | Karts sin pasar por el lobby (`Easy`, `Normal` o `Hard`; sin la opción, la del lobby). |
 | `...?ProcSeed=4242` | Mapa fijo (misma pista siempre). |
-| `...?Bots=3` / `TN.Kart.Bots 3` | Bots de la parrilla; sin ninguno de los dos se completa hasta 4 karts (`TN.Kart.Bots -1`). |
+| `...?Bots=3` / `TN.Kart.Bots 3` | Bots de la parrilla; sin ninguno de los dos se completa hasta 4 karts (`TN.Kart.Bots -1`; si no, manda `TN.Rally.Bots`). |
 | `...?Seats=1` / `TN.Kart.Seats 1` | Un kart por tortuga (sin artillera); `2` (por defecto) empareja a la segunda de artillera. |
 | `TN.Rally.Status` | Fase, puestos, ocupantes y cajas en el log (`LogTNRally`). |
 | `TN.Kart.GiveItem Coco` | Da un objeto al kart propio sin ruleta (`Coco`, `TripleCoco`, `Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Estrella`; servidor o partida sola). |
+| `TN.Rally.GiveAmmo Concha [cargas]` | Munición especial de las cajas «?» del Rally para el buggy propio (`Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Burbuja`, `Mortero`, `Ancla`; sin cargas, las de una caja). Servidor o partida sola. |
 | `TN.Kart.Place Geyser\|Cascada\|Agua [equipo] [s]` | Pone el kart (el tuyo con `-1` o sin equipo; el de un bot con su número) encima de un géiser, en lo alto de una cascada o en el agua, tras esos segundos. Servidor o partida sola, fuera de Shipping. |
 | `TN.Kart.ProbeArc 790` | Con `LogTNRally Verbose`, perfil del suelo a lo ancho del camino alrededor de ese arco (m) al empezar (atascos). |
 | `log LogTNRally Verbose` | Objetos que salen y se usan (`[KartItems]`), géiseres, obstáculos y puertas de la pista y los karts del primer tramo. |
@@ -341,7 +342,9 @@ parrilla 2 × 4 detrás de la línea y 3 vueltas por defecto (el `laps` del mani
 | Comando | Qué hace |
 |---|---|
 | `open LVL_Rally?Variant=R01_circuito_dunas` | El circuito con las vueltas del manifest (3). En PIE: abrir `LVL_Rally` y escribirlo en la consola. |
-| `...?Laps=5` / `...?Bots=3` / `...?Seats=1` | Vueltas (1-9), buggies con piloto IA y un buggy por jugadora. |
+| `...?Laps=5` / `...?Bots=3` / `...?Seats=1` | Vueltas (1-9), buggies con piloto IA y un buggy por jugadora. Sin `?Bots=`, la parrilla se completa con bots hasta 4 buggies (`TN.Rally.Bots N` lo fuerza; #631). Sin `?Seats=`, las plazas del anfitrión (`TN.Rally.Seats 1\|2`). |
+| `...?ProcDifficulty=Easy\|Normal\|Hard` | Dificultad de los bots (velocidad, cadencia y munición especial), la misma tabla que en Karts (#631). Sin ella, la del lobby. |
+| `...?Bots=5?AutoStart?Spectate` | Carrera solo de bots y la jugadora mirando (#631). |
 | `log LogTNRally Verbose` | Cada puerta válida («puerta N (vuelta V) a los S s») y las que no cuentan porque se cruza su plano fuera de ella. |
 | `Automation RunTests Tortunabo.Rally.Circuit` | Lectura del manifest, puertas con peralte, notas de salto y cresta, frenada de la IA, R01 como circuito y E01B e I03R como antes. |
 

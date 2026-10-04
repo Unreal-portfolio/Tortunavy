@@ -17,8 +17,9 @@ enum class ETNRallySeat : uint8
 
 /**
  * Munición de la torreta. Coco es la básica (infinita, con calentamiento); el resto son cargas
- * especiales que dan las cajas de munición. Todas afectan también al buggy propio (retroceso,
- * charcos, burbujas o explosiones cercanas).
+ * especiales que dan las cajas «?» (ATN_KartItemBox, #629) según el puesto. Todas empujan al buggy propio
+ * con su retroceso. Concha y ConchaGuiada no vuelan: corren pegadas al suelo (ATN_KartShell). Los valores
+ * se añaden al final para no cambiar los que ya están guardados o replicados.
  */
 UENUM(BlueprintType)
 enum class ETNRallyAmmo : uint8
@@ -29,7 +30,11 @@ enum class ETNRallyAmmo : uint8
 	Burbuja,
 	Mortero,
 	Tinta,
-	Ancla
+	Ancla,
+	/** Concha que corre recta por el suelo, rebota en las paredes y hace trompear al primero que toca. */
+	Concha,
+	/** Concha que persigue al buggy de justo delante. */
+	ConchaGuiada
 };
 
 UINTERFACE(MinimalAPI, meta = (CannotImplementInterfaceInBlueprint))

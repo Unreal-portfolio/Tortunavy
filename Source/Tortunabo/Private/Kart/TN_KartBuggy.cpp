@@ -119,7 +119,7 @@ UTN_KartInputSet* ATN_KartBuggy::GetKartInput()
 {
 	if (!KartInput)
 	{
-		KartInput = UTN_KartInputSet::Create(this);
+		KartInput = UTN_KartInputSet::Create(this, bDriverItems);
 	}
 	return KartInput;
 }
@@ -133,12 +133,15 @@ void ATN_KartBuggy::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		return;
 	}
 	const UTN_KartInputSet* Set = GetKartInput();
-	Input->BindAction(Set->UseItem, ETriggerEvent::Started, this, &ATN_KartBuggy::OnUseItem);
 	Input->BindAction(Set->Backward, ETriggerEvent::Started, this, &ATN_KartBuggy::OnBackwardPressed);
 	Input->BindAction(Set->Backward, ETriggerEvent::Completed, this, &ATN_KartBuggy::OnBackwardReleased);
 	Input->BindAction(Set->LookMouse, ETriggerEvent::Triggered, this, &ATN_KartBuggy::OnLookMouse);
 	Input->BindAction(Set->LookStick, ETriggerEvent::Triggered, this, &ATN_KartBuggy::OnLookStick);
-	Input->BindAction(Set->Fire, ETriggerEvent::Triggered, this, &ATN_KartBuggy::OnFire);
+	if (bDriverItems)
+	{
+		Input->BindAction(Set->UseItem, ETriggerEvent::Started, this, &ATN_KartBuggy::OnUseItem);
+		Input->BindAction(Set->Fire, ETriggerEvent::Triggered, this, &ATN_KartBuggy::OnFire);
+	}
 }
 
 void ATN_KartBuggy::NotifyControllerChanged()
@@ -159,7 +162,7 @@ void ATN_KartBuggy::NotifyControllerChanged()
 
 bool ATN_KartBuggy::MayUseItems(const AController* Requester) const
 {
-	if (!Requester)
+	if (!Requester || !bDriverItems)
 	{
 		return false;
 	}
@@ -261,7 +264,7 @@ void ATN_KartBuggy::ServerSoloFire_Implementation(FVector_NetQuantizeNormal Dir)
 	using namespace TNKartBuggyDetail;
 	UTN_BuggyTurretComponent* Gun = GetTurret();
 	UWorld* World = GetWorld();
-	if (!Gun || !World || HasGunner() || Dir.IsNearlyZero())
+	if (!Gun || !World || !bDriverItems || HasGunner() || Dir.IsNearlyZero())
 	{
 		return;
 	}

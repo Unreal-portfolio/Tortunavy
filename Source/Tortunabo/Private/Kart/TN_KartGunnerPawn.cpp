@@ -13,7 +13,7 @@ UTN_KartInputSet* ATN_KartGunnerPawn::GetKartInput()
 {
 	if (!KartInput)
 	{
-		KartInput = UTN_KartInputSet::Create(this);
+		KartInput = UTN_KartInputSet::Create(this, bItemControls);
 	}
 	return KartInput;
 }
@@ -27,9 +27,12 @@ void ATN_KartGunnerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		return;
 	}
 	const UTN_KartInputSet* Set = GetKartInput();
-	Input->BindAction(Set->UseItem, ETriggerEvent::Started, this, &ATN_KartGunnerPawn::OnUseItem);
-	Input->BindAction(Set->Backward, ETriggerEvent::Started, this, &ATN_KartGunnerPawn::OnBackwardPressed);
-	Input->BindAction(Set->Backward, ETriggerEvent::Completed, this, &ATN_KartGunnerPawn::OnBackwardReleased);
+	if (bItemControls)
+	{
+		Input->BindAction(Set->UseItem, ETriggerEvent::Started, this, &ATN_KartGunnerPawn::OnUseItem);
+		Input->BindAction(Set->Backward, ETriggerEvent::Started, this, &ATN_KartGunnerPawn::OnBackwardPressed);
+		Input->BindAction(Set->Backward, ETriggerEvent::Completed, this, &ATN_KartGunnerPawn::OnBackwardReleased);
+	}
 	Input->BindAction(Set->Lean, ETriggerEvent::Triggered, this, &ATN_KartGunnerPawn::OnLean);
 	Input->BindAction(Set->Lean, ETriggerEvent::Completed, this, &ATN_KartGunnerPawn::OnLean);
 }

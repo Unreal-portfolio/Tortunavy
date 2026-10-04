@@ -2,6 +2,8 @@
 
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/HitResult.h"
+#include "Engine/World.h"
 #include "TN_RallyMeshUtils.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -55,9 +57,38 @@ void ATN_RallyGate::LayoutArch()
 	LeftPost->SetStaticMesh(PostMesh);
 	RightPost->SetStaticMesh(PostMesh);
 	Beam->SetStaticMesh(BeamMesh);
-	LeftPost->SetRelativeTransform(TNRallyMesh::FitToBox(PostMesh, FVector(0.0, -HalfSpan, Height * 0.5), FVector(PostSize, PostSize, Height)));
-	RightPost->SetRelativeTransform(TNRallyMesh::FitToBox(PostMesh, FVector(0.0, HalfSpan, Height * 0.5), FVector(PostSize, PostSize, Height)));
+	// Cada pata baja hasta el suelo que tiene debajo (peralte o ladera: una flotaba, #665); el travesaño no se mueve.
+	const double LeftDrop = MeasureFootDrop(FVector(0.0, -HalfSpan, 0.0));
+	const double RightDrop = MeasureFootDrop(FVector(0.0, HalfSpan, 0.0));
+	LeftPost->SetRelativeTransform(TNRallyMesh::FitToBox(PostMesh, FVector(0.0, -HalfSpan, (Height - LeftDrop) * 0.5),
+		FVector(PostSize, PostSize, Height + LeftDrop)));
+	RightPost->SetRelativeTransform(TNRallyMesh::FitToBox(PostMesh, FVector(0.0, HalfSpan, (Height - RightDrop) * 0.5),
+		FVector(PostSize, PostSize, Height + RightDrop)));
 	Beam->SetRelativeTransform(TNRallyMesh::FitToBox(BeamMesh, FVector(0.0, 0.0, Height), FVector(PostSize, 2.0 * HalfSpan + PostSize, bFinish ? 150.0 : 80.0)));
+}
+
+double ATN_RallyGate::MeasureFootDrop(const FVector& LocalFoot) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return 0.0;
+	}
+	// Traza vertical desde un poco por encima del pie: lo que haya entre el pie y el suelo, a lo largo del eje de la pata.
+	const FVector Foot = GetActorTransform().TransformPosition(LocalFoot);
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNRallyGateFoot), false, this);
+	if (AActor* TrackOwner = GetOwner())
+	{
+		Params.AddIgnoredActor(TrackOwner);
+	}
+	FHitResult Hit;
+	if (!World->LineTraceSingleByObjectType(Hit, Foot + FVector(0.0, 0.0, FootProbeUpCm), Foot - FVector(0.0, 0.0, FootProbeDownCm),
+		FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+	{
+		return 0.0;
+	}
+	const double UpZ = FMath::Max(0.2, static_cast<double>(GetActorUpVector().Z));
+	return TNRallyGateFit::FootDropAlongPost(Foot.Z, Hit.ImpactPoint.Z, UpZ, FootProbeDownCm);
 }
 
 FTransform ATN_RallyGate::GetCrossingTransform() const

@@ -252,7 +252,8 @@ namespace TNBuggyDebug
 
 	void FireAll(UWorld* World, bool bBackward)
 	{
-		const ETNRallyAmmo Order[] = { ETNRallyAmmo::Coco, ETNRallyAmmo::Alga, ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Tinta };
+		const ETNRallyAmmo Order[] = { ETNRallyAmmo::Coco, ETNRallyAmmo::Alga, ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Tinta,
+			ETNRallyAmmo::Ancla, ETNRallyAmmo::Concha, ETNRallyAmmo::ConchaGuiada };
 		for (int32 Index = 0; Index < UE_ARRAY_COUNT(Order); ++Index)
 		{
 			const ETNRallyAmmo Ammo = Order[Index];
@@ -317,6 +318,36 @@ namespace TNBuggyDebug
 		{
 			const bool bBackward = FloatArg(Args, 1, 0.f) != 0.f;
 			After(World, FloatArg(Args, 0, 0.f), [bBackward](UWorld* Alive) { FireAll(Alive, bBackward); });
+		}));
+
+	/** El buggy en el que va el primer jugador (de conductora o de artillera) o, si no va en ninguno, FindBuggy. */
+	ATN_Buggy* FindPlayerBuggy(UWorld* World)
+	{
+		const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		const ATN_RallyGameState* RallyState = World ? World->GetGameState<ATN_RallyGameState>() : nullptr;
+		const FTNRallyStanding* Mine = RallyState && PC ? RallyState->FindStandingForPlayer(PC->PlayerState) : nullptr;
+		if (ATN_Buggy* Seated = Mine ? Cast<ATN_Buggy>(Mine->Vehicle) : nullptr)
+		{
+			return Seated;
+		}
+		return FindBuggy(World);
+	}
+
+	FAutoConsoleCommandWithWorldAndArgs CmdGiveAmmo(TEXT("TN.Rally.GiveAmmo"),
+		TEXT("Rally y karts (servidor o partida sola): TN.Rally.GiveAmmo Concha|ConchaGuiada|Alga|Tinta|Burbuja|Mortero|Ancla [cargas]: munición especial de las cajas «?» para el buggy del jugador (sin cargas, las de una caja)."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			ATN_Buggy* Buggy = FindPlayerBuggy(World);
+			const int64 Value = Args.Num() > 0 ? StaticEnum<ETNRallyAmmo>()->GetValueByNameString(Args[0]) : INDEX_NONE;
+			const ETNRallyAmmo Ammo = Value == INDEX_NONE ? ETNRallyAmmo::None : static_cast<ETNRallyAmmo>(Value);
+			if (!Buggy || !Buggy->HasAuthority() || !TNRallyTurret::IsSpecial(Ammo))
+			{
+				UE_LOG(LogTNRally, Display, TEXT("TN.Rally.GiveAmmo: hace falta un buggy propio en el servidor y una munición especial (Concha, ConchaGuiada, Alga, Tinta, Burbuja, Mortero o Ancla)."));
+				return;
+			}
+			const int32 Charges = Args.Num() > 1 ? FMath::Max(1, FCString::Atoi(*Args[1])) : TNRally::ChargesFor(Ammo);
+			Buggy->GiveSpecialAmmo(Ammo, Charges);
+			UE_LOG(LogTNRally, Display, TEXT("TN.Rally.GiveAmmo: %s ×%d para %s."), *UEnum::GetValueAsString(Ammo), Charges, *Buggy->GetName());
 		}));
 
 	/** Vida fijada y turbo pisado en el buggy del jugador, para ver el humo (#296) y la llama (#294) sin combate ni mando. */

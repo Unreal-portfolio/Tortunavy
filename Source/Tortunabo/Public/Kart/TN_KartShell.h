@@ -1,6 +1,7 @@
-// Concha de los karts (#304): sale del kart y corre pegada al suelo; la recta rebota en las paredes y la teledirigida
-// persigue al kart de delante (TNKart::SteerShell). Al primer kart que toca lo hace trompear (UTN_KartItemComponent::
-// SpinOut, que respeta su escudo, la estrella y el fantasma). La mueve el servidor y se replica su movimiento.
+// Concha (#304, #629): munición especial de la torreta del buggy (ETNRallyAmmo::Concha y ::ConchaGuiada, de las cajas «?»).
+// Sale de la boca de la torreta hacia donde apunta y corre pegada al suelo; la recta rebota en las paredes y la
+// teledirigida persigue al buggy de justo delante (TNKart::SteerShell). Al primer buggy que toca lo hace trompear
+// (SpinOut, que respeta su escudo y el fantasma). La mueve el servidor y se replica su movimiento.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -21,6 +22,15 @@ public:
 	/** Servidor: crea una concha en Where hacia Direction (con Target, teledirigida). Shooter no recibe su propia concha al salir. */
 	static ATN_KartShell* LaunchShell(UWorld* World, ATN_Buggy* Shooter, const FVector& Where, const FVector& Direction,
 		ATN_Buggy* Target, bool bHoming);
+
+	/**
+	 * Servidor: blanco de la teledirigida de Shooter disparada hacia Direction: el buggy de justo delante en la carrera
+	 * (TNKart::HomingTargetPlace) si dispara hacia delante; nullptr si va primero, dispara hacia atrás o no hay carrera.
+	 */
+	static ATN_Buggy* FindHomingTarget(const UWorld* World, const ATN_Buggy* Shooter, const FVector& Direction);
+
+	/** Servidor: lo que hace una concha al buggy que toca: frenazo y trompo (respeta su escudo y el fantasma). */
+	static bool SpinOut(ATN_Buggy& Victim, const FVector& HitDir);
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

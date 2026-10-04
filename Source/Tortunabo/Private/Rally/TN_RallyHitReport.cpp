@@ -14,6 +14,8 @@ FText TNRallyHitLog::AmmoName(ETNRallyAmmo Ammo)
 	case ETNRallyAmmo::Mortero: return NSLOCTEXT("Rally", "AmmoMortero", "Mortero");
 	case ETNRallyAmmo::Tinta: return NSLOCTEXT("Rally", "AmmoTinta", "Tinta");
 	case ETNRallyAmmo::Ancla: return NSLOCTEXT("Rally", "AmmoAncla", "Ancla");
+	case ETNRallyAmmo::Concha: return NSLOCTEXT("Rally", "AmmoConcha", "Concha");
+	case ETNRallyAmmo::ConchaGuiada: return NSLOCTEXT("Rally", "AmmoConchaGuiada", "Concha teledirigida");
 	default: return FText::GetEmpty();
 	}
 }

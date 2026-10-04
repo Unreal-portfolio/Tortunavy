@@ -8,7 +8,7 @@
 #include "Misc/Crc.h"
 #include "Net/UnrealNetwork.h"
 #include "ProceduralMeshComponent.h"
-#include "Rally/TN_RallyAmmoBox.h"
+#include "Kart/TN_KartItemBox.h"
 #include "Rally/TN_RallyLogic.h"
 #include "Rally/TN_RallyPlayerState.h"
 #include "Rally/TN_RallyTrack.h"
@@ -160,13 +160,13 @@ ATN_RallyTrack* ATN_RallyGameState::PrepareTrack(FName InVariant)
 FString ATN_RallyGameState::DescribeStatus() const
 {
 	const UEnum* PhaseEnum = StaticEnum<ETNRallyPhase>();
-	// Cajas de munición en este mundo: propias (autoridad local) y replicadas. Un cliente solo debe tener replicadas (las
+	// Cajas «?» en este mundo: propias (autoridad local) y replicadas. Un cliente solo debe tener replicadas (las
 	// relevantes, a menos de NetCullDistance); una propia en un cliente es una caja local duplicada.
 	int32 OwnBoxes = 0;
 	int32 ReplicatedBoxes = 0;
 	if (const UWorld* World = GetWorld())
 	{
-		for (TActorIterator<ATN_RallyAmmoBox> It(World); It; ++It)
+		for (TActorIterator<ATN_KartItemBox> It(World); It; ++It)
 		{
 			++(It->GetLocalRole() == ROLE_Authority ? OwnBoxes : ReplicatedBoxes);
 		}

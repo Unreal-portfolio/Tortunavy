@@ -1,5 +1,10 @@
 // Carrera del Rally (Docs/Rally_MVP.md): opciones de URL, emparejado en buggies, fases, puertas en orden, vueltas, puestos a
 // 5 Hz, contramano, reaparición, meta y resultados. Todo lo decide el servidor; el estado sale por ATN_RallyGameState.
+//
+// Un solo modo Rally (#631, decisión de #627): esta carrera juega en los circuitos de LVL_Rally (?Variant=) y, con
+// ATN_KartGameMode (que hereda de ella), en el mapa generado del cooperativo. Lo común está aquí: el buggy con mirada libre
+// y peso de la artillera (ATN_KartBuggy), el HUD del buggy (ATN_KartPlayerController), los bots con la dificultad del
+// lobby (ConfigureBot), la parrilla completada con bots hasta MinTeams, las plazas del anfitrión y la vuelta al lobby.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -8,6 +13,7 @@
 #include "Rally/TN_RallyGameState.h"
 #include "Rally/TN_RallyTrack.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "World/ProcMap/TN_ProcMapEnums.h"
 #include "TN_RallyGameMode.generated.h"
 
 class ATN_RallyAIController;
@@ -33,6 +39,36 @@ namespace TNRallyRace
 	 */
 	TORTUNABO_API ETNRallyRespawnReason ResolveRespawn(const FRespawnSignals& Signals, bool bRacing, bool bFinished, bool bRetired,
 		bool bImmune);
+
+	/** Bloqueos del buggy de un equipo: motor cortado y freno de carrera (freno de estacionamiento y anclaje en el sitio). */
+	struct FVehicleHold
+	{
+		bool bEngineLocked = false;
+		bool bRaceBrake = false;
+	};
+
+	/**
+	 * Bloqueos que tocan a un equipo en cada fase (#667). Antes de la salida, motor cortado y freno de carrera en su hueco. En
+	 * carrera, ninguno, aunque cruce la meta (en un circuito la salida y la meta son el mismo arco) o la haya cruzado ya por
+	 * última vez y espere a que lo aparquen; solo el aparcado en el podio lleva los dos y el retirado, el motor cortado. En
+	 * resultados, motor cortado para todos y freno de carrera solo para los aparcados.
+	 */
+	TORTUNABO_API FVehicleHold DecideVehicleHold(ETNRallyPhase Phase, bool bParked, bool bRetired);
+
+	/** Dificultad de ?ProcDifficulty= (Easy, Normal o Hard, sin distinguir mayúsculas); vacía o desconocida, Fallback. */
+	TORTUNABO_API ETNProcDifficulty ParseDifficulty(const FString& Option, ETNProcDifficulty Fallback);
+
+	/** Índice 0..2 de la dificultad para las tablas por dificultad (fácil, normal, difícil). */
+	TORTUNABO_API int32 DifficultyIndex(ETNProcDifficulty Difficulty);
+
+	/**
+	 * Bots de la parrilla sin ?Bots= en la URL: Forced si es >= 0 (CVar TN.Rally.Bots); si no, los que faltan para MinTeams
+	 * buggies con ExpectedHumans tortugas de Seats en Seats. Nunca más de los huecos que dejan libres las jugadoras.
+	 */
+	TORTUNABO_API int32 DefaultBotCount(int32 ExpectedHumans, int32 Seats, int32 MinTeams, int32 Forced);
+
+	/** Velocidad máxima de un bot (km/h): la de su dificultad con ±4 km/h según su ordinal, para que no vayan en fila. */
+	TORTUNABO_API float BotMaxSpeedKmh(const FVector& PerDifficulty, ETNProcDifficulty Difficulty, int32 Ordinal);
 }
 
 /**
@@ -63,11 +99,17 @@ public:
 	virtual bool PlayerCanRestart_Implementation(APlayerController* Player) override { return false; }
 	virtual void Logout(AController* Exiting) override;
 
-	/** Munición de una caja según el puesto del buggy (TNRally::AmmoWeightsForPlace). */
-	bool RollAmmoFor(AActor* Vehicle, ETNRallyAmmo& OutAmmo, int32& OutCharges) const;
-
 	UFUNCTION(BlueprintPure, Category = "Rally")
 	FName GetVariant() const { return Variant; }
+
+	UFUNCTION(BlueprintPure, Category = "Rally")
+	ETNProcDifficulty GetProcDifficulty() const { return Difficulty; }
+
+	/** Ajusta un piloto IA a la dificultad de la partida (al sentarlo): velocidad con algo de variedad, puntería y munición. */
+	void ConfigureBot(ATN_RallyAIController& Pilot);
+
+	/** Acaba la carrera y lleva a todas al lobby del que salieron (fin de los resultados o menú de pausa del anfitrión). */
+	void ReturnToLobbyNow();
 
 	/** Buggy (ATN_Buggy, de Vehicles/): clase blanda para no depender de ella al compilar el Rally. */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally")
@@ -113,6 +155,45 @@ public:
 	/** Periodo de los puestos y de las comprobaciones (contramano, atasco, fuera de pista): 5 Hz. */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Tiempos")
 	float EvaluateInterval = 0.2f;
+
+	/** Buggies mínimos en la parrilla: si faltan tortugas, los completan bots (sin ?Bots= en la URL ni TN.Rally.Bots). */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Bots", meta = (ClampMin = "0", ClampMax = "8"))
+	int32 MinTeams = 4;
+
+	/** Velocidad máxima de los bots en recta por dificultad (km/h): fácil, normal y difícil. */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Bots")
+	FVector BotMaxSpeedKmh = FVector(74.f, 84.f, 94.f);
+
+	/** Probabilidad de que un bot gaste su munición especial al disparar, por dificultad. */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Bots")
+	FVector BotSpecialFireChance = FVector(0.15f, 0.3f, 0.45f);
+
+	/** Segundos entre disparos de la torreta de los bots y su alcance (cm), por dificultad. */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Bots")
+	FVector BotFireIntervalSeconds = FVector(2.5f, 1.6f, 1.0f);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Bots")
+	FVector BotFireRangeCm = FVector(2500.f, 3000.f, 3500.f);
+
+	/** Plazas por buggy si ni la URL (?Seats=) ni el anfitrión (UMP_GameInstance::SelectedKartSeats) dicen otra cosa. */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally", meta = (ClampMin = "1", ClampMax = "2"))
+	int32 DefaultSeats = 2;
+
+protected:
+	/** Dificultad de la partida: la del lobby (UMP_GameInstance::SelectedProcDifficulty); ?ProcDifficulty= manda. */
+	ETNProcDifficulty Difficulty = ETNProcDifficulty::Normal;
+	/** Tortugas que vienen del lobby (al menos 1). */
+	int32 ExpectedHumans = 1;
+	/** Al acabar los resultados, al lobby en vez de otra carrera: viniendo del lobby (?FromLobby) y sin ?Races=N. */
+	bool bReturnToLobbyAfterResults = false;
+	/** Ya se viaja al lobby: la carrera deja de avanzar. */
+	bool bReturning = false;
+
+	/** Plazas por buggy forzadas por consola para la próxima partida (TN.Rally.Seats; 0 = sin forzar). */
+	virtual int32 GetForcedSeats() const;
+
+	/** Bots forzados por consola para la próxima partida (TN.Rally.Bots; -1 = los que falten hasta MinTeams). */
+	virtual int32 GetForcedBots() const;
 
 private:
 	static constexpr int32 RespawnReasonCount = static_cast<int32>(ETNRallyRespawnReason::Destroyed) + 1;
@@ -163,6 +244,14 @@ private:
 		bool bWasFlipped = false;
 	};
 
+	// TN_RallyGameModeLobby.cpp (#631)
+	/**
+	 * Lo que viene del lobby (dificultad, tortugas esperadas, vuelta al lobby) y las opciones de la parrilla que no dice la
+	 * URL: plazas del anfitrión y bots hasta MinTeams. Devuelve las opciones con ?Seats= y ?Bots= completadas.
+	 */
+	FString ResolveLobbyOptions(const FString& Options);
+
+
 	ATN_RallyGameState* GetRallyGameState() const;
 	double Now() const;
 	TNRally::FLapRules MakeLapRules() const;
@@ -210,9 +299,16 @@ private:
 
 	/** Calentamiento y semáforo: pone el freno de carrera a cada buggy en su hueco (ITN_RallyVehicle::SetRaceBrakeHeld). */
 	void HoldBuggiesOnGrid();
+	/**
+	 * Cada fotograma, motor y freno de carrera de cada buggy según TNRallyRace::DecideVehicleHold: un bloqueo que se haya
+	 * quedado puesto (el freno de la parrilla, el motor cortado de la reaparición del podio) se suelta en cuanto la fase no
+	 * lo pide (#667).
+	 */
+	void ApplyVehicleHolds(ETNRallyPhase Phase);
 	void TickProgress();
 	void HandleGateCrossing(FTeamRuntime& Team, int32 GateIndex, bool bForward, double Alpha, float DeltaSeconds);
-	void CheckAmmoBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To);
+	/** Cajas «?» (#629) por las que ha pasado el buggy del equipo entre From y To: le dan munición según su puesto. */
+	void CheckItemBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To);
 	void EvaluateTeams(double DeltaSeconds);
 	void EvaluateTeam(FTeamRuntime& Team, double DeltaSeconds);
 	/** Avance dentro del tramo actual (desde la última puerta, o desde la parrilla antes de la salida). */
@@ -259,6 +355,8 @@ private:
 	double FirstSeatTime = -1.0;
 	/** Fin del calentamiento (hora del servidor; 0 = sin fijar). No se replica: el HUD solo enseña «esperando». */
 	double WarmupEndTime = 0.0;
+	/** Bots ya ajustados a la dificultad (para la variedad de velocidad entre ellos). */
+	int32 NextBotOrdinal = 0;
 	/** ?BotDriver en la URL (la CVar TN.Rally.BotDriver se lee al sentar a cada jugadora). */
 	bool bBotDriverFromUrl = false;
 	double EvaluateAccumulator = 0.0;

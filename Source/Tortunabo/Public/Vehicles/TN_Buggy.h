@@ -168,6 +168,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool IsBoosting() const;
 
+	/**
+	 * Fuerza del turbo en [0, 1] (#630): sube poco a poco mientras se pisa (UTN_BuggyData::BoostRampUpSeconds y su curva) y
+	 * baja suave al soltarlo. La avanza cada máquina con IsBoosting; el empuje, el par, el FOV, la llama y el sonido la siguen.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
+	float GetBoostStrength() const { return BoostStrength01; }
+
 	/** Sacudida (0..1) para la cámara de la conductora local; en otras máquinas no hace nada. Para impactos y disparos. */
 	UFUNCTION(BlueprintCallable, Category = "Rally|Buggy")
 	void AddCameraTrauma(float Amount);
@@ -364,13 +371,15 @@ private:
 	void ApplyStability();
 	/** Gasto y recarga de la barra del turbo (solo servidor). */
 	void UpdateBoost(float DeltaSeconds);
-	/** Empuje del turbo hacia la punta aumentada, en cada máquina que simula el chasis. */
+	/** Rampa del turbo (#630) en cada máquina: avanza con IsBoosting y da GetBoostStrength. */
+	void UpdateBoostRamp(float DeltaSeconds);
+	/** Empuje del turbo hacia la punta aumentada, por su fuerza, en cada máquina que simula el chasis. */
 	void ApplyBoostPush();
-	/** Llama y sonido del turbo según IsBoosting (solo en máquinas con pantalla). */
+	/** Llama y sonido del turbo mientras empuja o se apaga (solo en máquinas con pantalla). */
 	void RefreshBoostEffects();
 	/** Enseña u oculta las llamas de malla propia (las crea la primera vez). */
 	void ShowBoostFlames(bool bShow);
-	/** Coloca y hace parpadear las llamas visibles; cada fotograma con el turbo. */
+	/** Coloca y hace parpadear las llamas visibles y ajusta el sonido a la fuerza del turbo; cada fotograma con el turbo. */
 	void UpdateBoostFlames();
 	void SetBoostHeld(bool bHeld);
 	/** Freno de carrera en el servidor y en la conductora local: acelerador a 0 y freno a fondo cada fotograma. */
@@ -614,7 +623,11 @@ private:
 	bool bWheelFrictionApplied = false;
 	float AppliedGripMultiplier = 1.f;
 	bool bEngineTorqueLockedApplied = false;
-	bool bBoostTorqueApplied = false;
+	/** Fuerza del turbo con la que se puso el par del motor por última vez. */
+	float AppliedBoostStrength = 0.f;
+	/** Avance lineal de la rampa del turbo [0, 1] y fuerza que da (UTN_BuggyData::EvaluateBoostRamp). */
+	float BoostRampProgress01 = 0.f;
+	float BoostStrength01 = 0.f;
 	/** Botón del turbo: el de la conductora local y, en el servidor, el último que pidió por RPC. */
 	bool bBoostHeld = false;
 	bool bAirborne = false;

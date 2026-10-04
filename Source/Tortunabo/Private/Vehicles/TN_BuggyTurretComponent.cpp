@@ -1,4 +1,5 @@
 #include "Vehicles/TN_BuggyTurretComponent.h"
+#include "Kart/TN_KartShell.h"
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyGunnerPawn.h"
 #include "Vehicles/TN_BuggyMath.h"
@@ -291,7 +292,7 @@ bool UTN_BuggyTurretComponent::TryFire(bool bSpecial, const FVector& WorldDir)
 	const FVector Dir = TNRallyTurret::AimWorldDirection(Buggy->GetActorRotation(), Relative);
 	const FVector Muzzle = TNRallyTurret::MuzzleWorldLocation(GetComponentLocation(), Buggy->GetActorRotation(), Relative,
 		MuzzleDistanceCm, MuzzleSideCm);
-	if (!SpawnProjectile(Ammo, Dir, Muzzle))
+	if (!LaunchAmmo(Ammo, Dir, Muzzle))
 	{
 		return false;
 	}
@@ -302,6 +303,25 @@ bool UTN_BuggyTurretComponent::TryFire(bool bSpecial, const FVector& WorldDir)
 	UE_LOG(LogTNBuggy, Verbose, TEXT("%s: disparo %s dir=(%.2f, %.2f, %.2f) calor=%.2f cargas=%d"), *Buggy->GetName(),
 		*UEnum::GetValueAsString(Ammo), Dir.X, Dir.Y, Dir.Z, HeatState.Heat, Special.Charges);
 	return true;
+}
+
+bool UTN_BuggyTurretComponent::LaunchAmmo(ETNRallyAmmo Ammo, const FVector& Dir, const FVector& Muzzle)
+{
+	if (!TNRallyTurret::IsGroundShell(Ammo))
+	{
+		return SpawnProjectile(Ammo, Dir, Muzzle) != nullptr;
+	}
+	// Conchas de las cajas «?» (#629): salen de la boca hacia donde apunta la torreta y corren pegadas al suelo; la
+	// teledirigida persigue al buggy de justo delante si se dispara hacia delante.
+	ATN_Buggy* Buggy = GetBuggy();
+	const bool bHoming = Ammo == ETNRallyAmmo::ConchaGuiada;
+	ATN_Buggy* Target = bHoming ? ATN_KartShell::FindHomingTarget(GetWorld(), Buggy, Dir) : nullptr;
+	const ATN_KartShell* Shell = ATN_KartShell::LaunchShell(GetWorld(), Buggy, Muzzle, Dir, Target, bHoming);
+	if (!Shell)
+	{
+		UE_LOG(LogTNBuggy, Error, TEXT("%s: no se ha podido crear la concha de %s"), *Buggy->GetName(), *UEnum::GetValueAsString(Ammo));
+	}
+	return Shell != nullptr;
 }
 
 ATN_RallyProjectile* UTN_BuggyTurretComponent::SpawnProjectile(ETNRallyAmmo Ammo, const FVector& Dir, const FVector& Muzzle)

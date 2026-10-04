@@ -17,8 +17,6 @@ namespace TNKart
 		constexpr double GateSinkCm = 200.0;
 		/** La meta, como poco esto por encima del mar (cm): en la arena seca, no en la orilla. */
 		constexpr double FinishAboveSeaCm = 40.0;
-		/** Altura de las cajas sobre el suelo (cm). */
-		constexpr double ItemBoxLiftCm = 90.0;
 	}
 
 	FRoutePlanParams MakePlanParams(double SeaLevelZ)
@@ -94,27 +92,8 @@ ATN_KartTrack::ATN_KartTrack()
 {
 	// Un punto de la spline por muestra del camino (4 m): no recorta las curvas cerradas ni las cuevas.
 	RoadSampleStepCm = 400.f;
-	// Sin cajas de munición del Rally: las de objetos las pone esta pista.
+	// Sin las filas del Rally tras las puertas: las cajas «?» las pone esta pista a lo ancho del camino (SpawnItemRows).
 	AmmoBoxesPerRow = 0;
-	ItemBoxClass = ATN_KartItemBox::StaticClass();
-}
-
-void ATN_KartTrack::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	ClearItemBoxes();
-	Super::EndPlay(EndPlayReason);
-}
-
-void ATN_KartTrack::ClearItemBoxes()
-{
-	for (ATN_KartItemBox* Box : ItemBoxes)
-	{
-		if (IsValid(Box))
-		{
-			Box->Destroy();
-		}
-	}
-	ItemBoxes.Reset();
 }
 
 double ATN_KartTrack::GetRoadHalfWidthAtArc(double Arc) const
@@ -279,7 +258,7 @@ void ATN_KartTrack::SpawnItemRows(const TNKart::FRoutePlan& Plan, double LineSta
 			// Suelo sin trazas (la colisión del terreno puede estar aún cocinándose); sobre el agua, a flor de agua.
 			const double GroundZ = FMath::Max(static_cast<double>(Generator.GetTerrainHeightAt(OnRow)), static_cast<double>(Generator.GetSeaLevelWorldZ()));
 			const FVector Ground(OnRow.X, OnRow.Y, GroundZ);
-			if (ATN_KartItemBox* Box = World->SpawnActor<ATN_KartItemBox>(Class, Ground + FVector(0.0, 0.0, TNKart::ItemBoxLiftCm),
+			if (ATN_KartItemBox* Box = World->SpawnActor<ATN_KartItemBox>(Class, Ground + FVector(0.0, 0.0, ItemBoxLiftCm),
 				FRotator(0.0, Direction.Rotation().Yaw, 0.0), Params))
 			{
 				ItemBoxes.Add(Box);

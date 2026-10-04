@@ -394,6 +394,7 @@ void ATN_Buggy::Tick(float DeltaSeconds)
 		UpdateBoost(DeltaSeconds);
 	}
 
+	UpdateBoostRamp(DeltaSeconds);
 	const bool bLocalPlayer = IsLocallyControlled() && IsPlayerControlled();
 	if (bLocalPlayer)
 	{
@@ -441,7 +442,10 @@ void ATN_Buggy::TickDrivePhysics()
 	{
 		ApplyWheelFriction();
 	}
-	if (IsEngineLocked() != bEngineTorqueLockedApplied || IsBoosting() != bBoostTorqueApplied)
+	// El par sigue a la fuerza del turbo (#630): se vuelve a poner a saltos de 0,02 y siempre al llegar a 0 o a 1.
+	const bool bBoostTorqueStale = FMath::Abs(BoostStrength01 - AppliedBoostStrength) > 0.02f
+		|| ((BoostStrength01 <= 0.f || BoostStrength01 >= 1.f) && BoostStrength01 != AppliedBoostStrength);
+	if (IsEngineLocked() != bEngineTorqueLockedApplied || bBoostTorqueStale)
 	{
 		ApplyEngineTorque();
 	}
@@ -524,13 +528,13 @@ void ATN_Buggy::ApplyEngineTorque()
 		return;
 	}
 	const bool bLocked = IsEngineLocked();
-	const bool bBoost = IsBoosting();
 	const UTN_BuggyData* Tuning = GetData();
-	// El par es parte de la simulación (no de la entrada): así el corte y el turbo valen también en el servidor.
-	const float Torque = Tuning->MaxTorque * (bBoost ? Tuning->BoostTorqueMultiplier : 1.f);
+	// El par es parte de la simulación (no de la entrada): así el corte y el turbo valen también en el servidor. Con el
+	// turbo, crece con su fuerza (#630).
+	const float Torque = Tuning->MaxTorque * TNBuggy::BoostTorqueScale(BoostStrength01, Tuning->BoostTorqueMultiplier);
 	Move->SetMaxEngineTorque(bLocked ? 0.f : Torque);
 	bEngineTorqueLockedApplied = bLocked;
-	bBoostTorqueApplied = bBoost;
+	AppliedBoostStrength = BoostStrength01;
 }
 
 void ATN_Buggy::HoldLockedInPlace()
@@ -811,7 +815,9 @@ void ATN_Buggy::RallyTeleport(const FTransform& Where, float LockSeconds, float 
 
 void ATN_Buggy::SetEngineLocked(bool bLocked)
 {
-	if (!HasAuthority())
+	// La carrera lo pide cada fotograma (ATN_RallyGameMode::ApplyVehicleHolds): solo actúa si cambia. El par lo vuelve a
+	// poner TickDrivePhysics si la simulación no estaba lista.
+	if (!HasAuthority() || bEngineLockedByRace == bLocked)
 	{
 		return;
 	}

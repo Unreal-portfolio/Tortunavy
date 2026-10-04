@@ -239,34 +239,8 @@ void UTN_KartItemComponent::SpillInk()
 
 bool UTN_KartItemComponent::SpinOut(ATN_Buggy& Victim, const FVector& HitDir)
 {
-	if (!Victim.HasAuthority() || Victim.IsRespawnProtected())
-	{
-		return false;
-	}
-	if (const UTN_KartItemComponent* VictimItems = Victim.FindComponentByClass<UTN_KartItemComponent>())
-	{
-		// Con la estrella de mar no le pasa nada.
-		if (VictimItems->GetStarSecondsLeft() > 0.f)
-		{
-			return false;
-		}
-	}
-	if (Victim.TryConsumeShield())
-	{
-		return false;
-	}
-	// Bamboleo y empujón del coco, frenazo y vuelta sobre sí mismo.
-	Victim.ApplyCocoHit(FVector::ZeroVector);
-	const FVector Velocity = Victim.GetVelocity();
-	Victim.ApplyVelocityImpulse(-FVector(Velocity.X, Velocity.Y, 0.f) * (1.f - TNKart::SpinOutKeepSpeed) + HitDir.GetSafeNormal2D() * 250.f);
-	USkeletalMeshComponent* Chassis = Victim.GetMesh();
-	if (Chassis && Chassis->IsSimulatingPhysics())
-	{
-		const float Sign = FMath::RandBool() ? 1.f : -1.f;
-		Chassis->SetPhysicsAngularVelocityInDegrees(FVector(0.f, 0.f, Sign * TNKart::SpinOutYawDegPerSecond));
-	}
-	ATN_RallyBurstFX::Broadcast(&Victim, ETNRallyBurstKind::CocoHit, Victim.GetActorLocation() + FVector(0.f, 0.f, 80.f), 200.f);
-	return true;
+	// La misma que la de las conchas de la torreta (respeta la estrella, el escudo y el fantasma).
+	return ATN_KartShell::SpinOut(Victim, HitDir);
 }
 
 void UTN_KartItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

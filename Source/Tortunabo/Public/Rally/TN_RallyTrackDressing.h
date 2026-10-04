@@ -352,6 +352,24 @@ namespace TNRallyDressing
 
 	/** Muestrea la pista ya construida cada StepCm (eje, puertas, meta y agua). */
 	TORTUNABO_API FTrackData SampleTrack(const ATN_RallyTrack& Track, double StepCm);
+
+	/** Apoyo de un pórtico de una pieza sobre el suelo de sus dos patas (#665): inclinación lateral y cota del pie central. */
+	struct FArchFit
+	{
+		/** Giro alrededor del sentido de la carrera (grados): positivo sube la pata derecha. */
+		double RollDeg = 0.0;
+		/** Cota del punto medio entre las patas, ya girado el pórtico. */
+		double BaseZ = 0.0;
+	};
+
+	/**
+	 * Inclina el pórtico para que las dos patas (a FootOffsetCm del centro, a cada lado) pisen su suelo, sin pasar de
+	 * MaxRollDeg. Con más desnivel, lo baja hasta que ninguna pata flote (la alta queda algo enterrada).
+	 */
+	TORTUNABO_API FArchFit FitArchToFeet(double LeftGroundZ, double RightGroundZ, double FootOffsetCm, double MaxRollDeg);
+
+	/** Gira la transformación del pórtico derecho (Upright, apoyado en Base) RollDeg alrededor de Forward con Base fijo. */
+	TORTUNABO_API FTransform RollAboutBase(const FTransform& Upright, const FVector& Base, const FVector& Forward, double RollDeg);
 }
 
 /**

@@ -40,6 +40,8 @@ enum class ETNProcGameMode : uint8
 	Survival  UMETA(DisplayName = "Supervivencia"),
 	Karts     UMETA(DisplayName = "Karts (en el mapa del cooperativo)"),
 	FreeForAll UMETA(DisplayName = "Todos contra Todos"),
+	/** Rally (#632): un circuito de LVL_Rally (ATN_RallyGameMode), aparte de Karts. */
+	Rally     UMETA(DisplayName = "Rally"),
 	Count     UMETA(Hidden)
 };
 

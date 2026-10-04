@@ -7,7 +7,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerState.h"
-#include "Rally/TN_RallyAmmoBox.h"
+#include "Kart/TN_KartItemBox.h"
 #include "Rally/TN_RallyPlayerState.h"
 #include "Rally/TN_RallyTrack.h"
 #include "Rally/TN_RallyVehicle.h"
@@ -41,6 +41,43 @@ ETNRallyRespawnReason TNRallyRace::ResolveRespawn(const FRespawnSignals& Signals
 	return ETNRallyRespawnReason::None;
 }
 
+TNRallyRace::FVehicleHold TNRallyRace::DecideVehicleHold(ETNRallyPhase Phase, bool bParked, bool bRetired)
+{
+	FVehicleHold Hold;
+	switch (Phase)
+	{
+	case ETNRallyPhase::Warmup:
+	case ETNRallyPhase::Countdown:
+		Hold.bEngineLocked = true;
+		Hold.bRaceBrake = true;
+		break;
+	case ETNRallyPhase::Racing:
+	case ETNRallyPhase::Finishing:
+		Hold.bEngineLocked = bParked || bRetired;
+		Hold.bRaceBrake = bParked;
+		break;
+	default:
+		Hold.bEngineLocked = true;
+		Hold.bRaceBrake = bParked;
+		break;
+	}
+	return Hold;
+}
+
+void ATN_RallyGameMode::ApplyVehicleHolds(ETNRallyPhase Phase)
+{
+	// SetRaceBrakeHeld y SetEngineLocked no hacen nada si el valor no cambia: se puede llamar cada fotograma.
+	for (const FTeamRuntime& Team : Teams)
+	{
+		if (ITN_RallyVehicle* RallyVehicle = Cast<ITN_RallyVehicle>(Team.Vehicle.Get()))
+		{
+			const TNRallyRace::FVehicleHold Hold = TNRallyRace::DecideVehicleHold(Phase, Team.bParked, Team.bRetired);
+			RallyVehicle->SetRaceBrakeHeld(Hold.bRaceBrake);
+			RallyVehicle->SetEngineLocked(Hold.bEngineLocked);
+		}
+	}
+}
+
 void ATN_RallyGameMode::ConsumeRespawnRequests(bool bRacing)
 {
 	const double Time = Now();
@@ -65,16 +102,6 @@ void ATN_RallyGameMode::ConsumeRespawnRequests(bool bRacing)
 			Team.bParked ? ParkTeam(Team) : RespawnTeam(Team, Reason);
 		}
 	}
-}
-
-bool ATN_RallyGameMode::RollAmmoFor(AActor* Vehicle, ETNRallyAmmo& OutAmmo, int32& OutCharges) const
-{
-	const FTeamRuntime* Team = FindTeamByVehicle(Vehicle);
-	const int32 Active = FMath::Max(1, Teams.FilterByPredicate([](const FTeamRuntime& Entry) { return !Entry.bRetired; }).Num());
-	const int32 Place = Team && Team->Place > 0 ? Team->Place : 1;
-	OutAmmo = TNRally::PickAmmo(TNRally::AmmoWeightsForPlace(Place, Active), FMath::FRand());
-	OutCharges = TNRally::ChargesFor(OutAmmo);
-	return OutCharges > 0;
 }
 
 void ATN_RallyGameMode::HoldBuggiesOnGrid()
@@ -131,7 +158,7 @@ void ATN_RallyGameMode::TickProgress()
 					Team.TeamIndex, NextGate, Hit.Y, Hit.Z);
 			}
 		}
-		CheckAmmoBoxes(Team, Previous, Current);
+		CheckItemBoxes(Team, Previous, Current);
 	}
 }
 
@@ -172,14 +199,20 @@ void ATN_RallyGameMode::HandleGateCrossing(FTeamRuntime& Team, int32 GateIndex, 
 	RebuildStandings();
 }
 
-void ATN_RallyGameMode::CheckAmmoBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To)
+void ATN_RallyGameMode::CheckItemBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To)
 {
-	for (ATN_RallyAmmoBox* Box : Track->GetAmmoBoxes())
+	int32 Active = 0;
+	for (const FTeamRuntime& Entry : Teams)
+	{
+		Active += Entry.bRetired ? 0 : 1;
+	}
+	const int32 Place = Team.Place > 0 ? Team.Place : 1;
+	for (ATN_KartItemBox* Box : Track->GetItemBoxes())
 	{
 		if (IsValid(Box) && Box->IsAvailable()
 			&& FMath::PointDistToSegment(Box->GetActorLocation(), From, To) <= Box->PickupRadiusCm)
 		{
-			Box->TryCollect(Team.Vehicle.Get());
+			Box->TryCollect(Team.Vehicle.Get(), Place, FMath::Max(1, Active));
 		}
 	}
 }

@@ -269,6 +269,85 @@ bool FTNRallyDriveBoostTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyDriveBoostRampTest,
+	"Tortunabo.Rally.Drive.BoostRamp",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyDriveBoostRampTest::RunTest(const FString& Parameters)
+{
+	using namespace TNBuggy;
+	// #630: el turbo crece poco a poco. Se simula a 60 Hz con el ajuste de serie del buggy (lo mismo que hace
+	// ATN_Buggy::UpdateBoostRamp) y se mide la aceleración que manda: el empuje y el par extra, por la fuerza del turbo.
+	const UTN_BuggyData* Data = GetDefault<UTN_BuggyData>();
+	FBoostRampTuning Ramp;
+	Ramp.UpSeconds = Data->BoostRampUpSeconds;
+	Ramp.DownSeconds = Data->BoostRampDownSeconds;
+	Ramp.Exponent = Data->BoostRampExponent;
+	constexpr float Dt = 1.f / 60.f;
+	const float Top = TNRallyTurret::BuggyTopSpeedCms * Data->BoostTopSpeedMultiplier;
+	const float FullPush = BoostPushAccel(1500.f, Top, Data->BoostPushAccel, Data->BoostPushFadeBandCms);
+	// Aceleración del turbo tras Seconds pisándolo (a 54 km/h, lejos de la punta): empuje más el par extra, en cm/s².
+	const auto AccelAfter = [&](float Seconds, float& OutStrength)
+	{
+		float Progress = 0.f;
+		for (float Time = 0.f; Time < Seconds - 0.5f * Dt; Time += Dt)
+		{
+			Progress = AdvanceBoostRamp(Progress, true, false, Dt, Ramp);
+		}
+		OutStrength = Data->EvaluateBoostRamp(Progress);
+		return OutStrength * FullPush + (BoostTorqueScale(OutStrength, Data->BoostTorqueMultiplier) - 1.f) * FullPush;
+	};
+	float QuarterStrength = 0.f;
+	float SecondStrength = 0.f;
+	const float AtQuarter = AccelAfter(0.25f, QuarterStrength);
+	const float AtSecond = AccelAfter(1.f, SecondStrength);
+	AddInfo(FString::Printf(TEXT("aceleración del turbo: %.0f cm/s² a 0,25 s y %.0f cm/s² a 1 s"), AtQuarter, AtSecond));
+	TestTrue(TEXT("a 0,25 s ya empuja algo"), AtQuarter > 0.f);
+	TestTrue(TEXT("la aceleración a 0,25 s es menor que a 1 s"), AtQuarter < AtSecond);
+	TestTrue(TEXT("a 0,25 s, menos de la mitad"), QuarterStrength < 0.5f);
+	TestEqual(TEXT("a 1 s, el empuje completo"), SecondStrength, 1.f, 0.001f);
+
+	bool bMonotonic = true;
+	float Progress = 0.f;
+	float Previous = 0.f;
+	for (int32 Step = 0; Step < 90; ++Step)
+	{
+		Progress = AdvanceBoostRamp(Progress, true, false, Dt, Ramp);
+		const float Strength = Data->EvaluateBoostRamp(Progress);
+		bMonotonic &= Strength >= Previous;
+		Previous = Strength;
+	}
+	TestTrue(TEXT("sube sin saltos hacia atrás"), bMonotonic);
+	const float AfterRelease = Data->EvaluateBoostRamp(AdvanceBoostRamp(1.f, false, false, 0.1f, Ramp));
+	TestTrue(TEXT("al soltar baja suave, no de golpe"), AfterRelease > 0.f && AfterRelease < 1.f);
+	TestEqual(TEXT("y se apaga del todo en su tiempo"), AdvanceBoostRamp(1.f, false, false, Ramp.DownSeconds + Dt, Ramp), 0.f);
+	TestEqual(TEXT("con el motor cortado cae a 0 al momento"), AdvanceBoostRamp(1.f, true, true, Dt, Ramp), 0.f);
+	TestEqual(TEXT("sin turbo, el par de siempre"), BoostTorqueScale(0.f, Data->BoostTorqueMultiplier), 1.f);
+	TestEqual(TEXT("a tope, el par del turbo"), BoostTorqueScale(1.f, Data->BoostTorqueMultiplier), Data->BoostTorqueMultiplier);
+
+	// Curva propia del asset: manda sobre la potencia.
+	UTN_BuggyData* Custom = NewObject<UTN_BuggyData>(GetTransientPackage());
+	Custom->BoostRampCurve.GetRichCurve()->AddKey(0.f, 0.f);
+	Custom->BoostRampCurve.GetRichCurve()->AddKey(1.f, 1.f);
+	TestEqual(TEXT("con curva propia, la curva (recta)"), Custom->EvaluateBoostRamp(0.5f), 0.5f, 0.01f);
+	TestEqual(TEXT("sin curva, la potencia"), Data->EvaluateBoostRamp(0.5f), BoostRampStrength(0.5f, Data->BoostRampExponent), 0.001f);
+
+	// La cámara acompaña la subida: menos FOV con media fuerza.
+	const FDriverCameraTuning& Camera = DefaultDriverCamera();
+	FDriverCameraInput Half;
+	Half.Dt = Dt;
+	Half.ForwardSpeedCms = 3000.f;
+	Half.bBoosting = true;
+	Half.BoostStrength01 = 0.5f;
+	FDriverCameraState State;
+	for (int32 Step = 0; Step < 240; ++Step)
+	{
+		State = AdvanceDriverCamera(State, Half, Camera);
+	}
+	TestEqual(TEXT("con media fuerza, medio FOV extra"), State.BoostFovDeg, 0.5f * Camera.BoostFovDeg, 0.1f);
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyDriveCameraTest,
 	"Tortunabo.Rally.Drive.Camera",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)

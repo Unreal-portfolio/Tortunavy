@@ -10,6 +10,19 @@ class UBoxComponent;
 class UStaticMeshComponent;
 class UStaticMesh;
 
+namespace TNRallyGateFit
+{
+	/**
+	 * Cuánto hay que alargar la pata (a lo largo de su eje, que sube UpZ por cada cm) para que su pie, a FootZ, llegue al
+	 * suelo a GroundZ (#665): nada si el suelo está a su altura o por encima, nunca más de MaxCm.
+	 */
+	inline double FootDropAlongPost(double FootZ, double GroundZ, double UpZ, double MaxCm)
+	{
+		const double Gap = FootZ - GroundZ;
+		return Gap <= 0.0 ? 0.0 : FMath::Min(Gap / FMath::Max(0.2, UpZ), MaxCm);
+	}
+}
+
 UCLASS(Blueprintable)
 class TORTUNABO_API ATN_RallyGate : public AActor
 {
@@ -66,6 +79,12 @@ protected:
 
 private:
 	void LayoutArch();
+	/** Distancia, a lo largo de la pata, del pie (en ejes de la puerta) al suelo que tiene debajo; 0 si apoya o no hay suelo. */
+	double MeasureFootDrop(const FVector& LocalFoot) const;
+
+	/** La traza del pie empieza este tanto por encima y baja hasta este tanto por debajo (cm). */
+	static constexpr double FootProbeUpCm = 300.0;
+	static constexpr double FootProbeDownCm = 1500.0;
 
 	int32 GateIndex = 0;
 	bool bFinish = false;

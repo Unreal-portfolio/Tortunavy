@@ -70,6 +70,12 @@ public:
 	 */
 	bool MayUseItems(const AController* Requester) const;
 
+	/** Objetos de Karts y disparo propio de la conductora sola (false en el Rally: ATN_RallyKartBuggy, #629). */
+	bool UsesDriverItems() const { return bDriverItems; }
+
+	/** Peón de la artillera que crea al sentarla (el de Karts o, en el Rally, el que no tiene las teclas de objeto). */
+	TSubclassOf<ATN_BuggyGunnerPawn> GetGunnerPawnClass() const { return GunnerPawnClass; }
+
 	/** Conductora local: lo que se ha girado la cámara (guiñada y cabeceo, grados). */
 	FRotator GetLookOffset() const { return FRotator(LookPitch, LookYaw, 0.f); }
 
@@ -88,6 +94,14 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	/**
+	 * Karts: las cajas «?» dan objetos (UTN_KartItemComponent) que usa la artillera o, si va sola, la conductora, y la
+	 * conductora sola dispara hacia donde mira. False en el Rally (ATN_RallyKartBuggy, #629): las cajas dan munición de la
+	 * torreta y se dispara con los controles del buggy (apuntado automático si va sola).
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Karts")
+	bool bDriverItems = true;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UTN_KartItemComponent> Items;

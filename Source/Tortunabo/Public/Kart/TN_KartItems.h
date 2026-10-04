@@ -5,6 +5,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Kart/TN_KartShellLogic.h"
 #include "TN_KartItems.generated.h"
 
 UENUM(BlueprintType)
@@ -48,15 +49,8 @@ namespace TNKart
 	inline constexpr float StarAccelCms2 = 700.f;
 	inline constexpr float StarTopSpeedCms = 3200.f;
 	inline constexpr float StarBumpRadiusCm = 380.f;
-	/** Conchas: velocidad (cm/s), vida (s), radio de impacto (cm) y giro máximo de la teledirigida (grados por segundo). */
+	/** Velocidad de las conchas (cm/s); su vida, su guiado y el trompo están en TN_KartShellLogic.h (también de la torreta). */
 	inline constexpr float ShellSpeedCms = 4600.f;
-	inline constexpr float ShellLifeSeconds = 6.f;
-	inline constexpr float HomingShellLifeSeconds = 12.f;
-	inline constexpr float ShellHitRadiusCm = 260.f;
-	inline constexpr float ShellTurnDegPerSecond = 150.f;
-	/** Al trompear (concha o estrella), el kart conserva esto de su velocidad y gira sobre sí mismo (grados por segundo). */
-	inline constexpr float SpinOutKeepSpeed = 0.35f;
-	inline constexpr float SpinOutYawDegPerSecond = 420.f;
 	/** El charco de alga cae a esta distancia detrás del kart (cm). */
 	inline constexpr float AlgaBehindCm = 500.f;
 
@@ -85,10 +79,7 @@ namespace TNKart
 	/** Nombre en pantalla (HUD). */
 	TORTUNABO_API FText ItemName(ETNKartItem Item);
 
-	// ---- Uso ----
-
-	/** Puesto al que va la concha teledirigida: el de justo delante; INDEX_NONE si va la primera (sale recta). */
-	TORTUNABO_API int32 HomingTargetPlace(int32 Place);
+	// ---- Uso (guiado de la concha en TN_KartShellLogic.h) ----
 
 	/**
 	 * Bot: ¿usa ya el objeto? HeldSeconds desde que acabó la ruleta; AheadCm y BehindCm, distancia al kart de delante y al
@@ -96,10 +87,4 @@ namespace TNKart
 	 * de 40 m; el resto, al rato. Pasados 8 s lo usa igual.
 	 */
 	TORTUNABO_API bool ShouldBotUseItem(ETNKartItem Item, float HeldSeconds, float AheadCm, float BehindCm);
-
-	/**
-	 * Nueva dirección de la concha teledirigida: gira de Current hacia ToTarget como mucho MaxTurnDeg (en el plano; la
-	 * altura la pone el suelo). Unitaria.
-	 */
-	TORTUNABO_API FVector SteerShell(const FVector& Current, const FVector& ToTarget, float MaxTurnDeg);
 }

@@ -9,8 +9,10 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
+#include "Kart/TN_KartPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Rally/TN_RallyAIController.h"
+#include "Rally/TN_RallyKartBuggy.h"
 #include "Rally/TN_RallyPlayerController.h"
 #include "Rally/TN_RallyPlayerState.h"
 #include "Rally/TN_RallyTrack.h"
@@ -65,17 +67,22 @@ ATN_RallyGameMode::ATN_RallyGameMode()
 
 	GameStateClass = ATN_RallyGameState::StaticClass();
 	PlayerStateClass = ATN_RallyPlayerState::StaticClass();
-	PlayerControllerClass = ATN_RallyPlayerController::StaticClass();
+	// El del Rally más el HUD del buggy (peso de la artillera y, en el mapa generado, los kilómetros que quedan).
+	PlayerControllerClass = ATN_KartPlayerController::StaticClass();
 	// Nadie nace como tortuga: cada jugador se sienta en un buggy (o mira la carrera).
 	DefaultPawnClass = nullptr;
 	AIControllerClass = ATN_RallyAIController::StaticClass();
-	// ATN_Buggy vive en Vehicles/ (otra rama): se resuelve por nombre al juntar las dos.
-	VehicleClass = TSoftClassPtr<APawn>(FSoftClassPath(TEXT("/Script/Tortunabo.TN_Buggy")));
+	// #631: el buggy de Karts (mirada libre de la conductora y peso de la artillera) sin sus objetos: las cajas «?» dan
+	// munición de la torreta (#629). ATN_KartGameMode pone el de Karts, con objetos.
+	VehicleClass = TSoftClassPtr<APawn>(ATN_RallyKartBuggy::StaticClass());
+	// Del lobby se llega y al lobby se vuelve sin cortar la conexión.
+	bUseSeamlessTravel = true;
 }
 
-void ATN_RallyGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+void ATN_RallyGameMode::InitGame(const FString& MapName, const FString& UrlOptions, FString& ErrorMessage)
 {
-	Super::InitGame(MapName, Options, ErrorMessage);
+	Super::InitGame(MapName, UrlOptions, ErrorMessage);
+	const FString Options = ResolveLobbyOptions(UrlOptions);
 	const FString VariantOption = UGameplayStatics::ParseOption(Options, TEXT("Variant"));
 	Variant = VariantOption.IsEmpty() ? DefaultVariant : FName(*VariantOption);
 	Seats = FMath::Clamp(UGameplayStatics::GetIntOption(Options, TEXT("Seats"), 2), 1, 2);
@@ -86,8 +93,8 @@ void ATN_RallyGameMode::InitGame(const FString& MapName, const FString& Options,
 	RaceTimeoutSeconds = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("RaceTimeout"), 0));
 	RaceLimit = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("Races"), 0));
 	bBotDriverFromUrl = UGameplayStatics::HasOption(Options, TEXT("BotDriver"));
-	UE_LOG(LogTNRally, Log, TEXT("[RallyGameMode] %s: variante %s, %d plaza(s) por buggy, %d bots, %d vueltas%s%s."),
-		*MapName, *Variant.ToString(), Seats, Bots, Laps, bAutoStart ? TEXT(", salida sin jugadoras") : TEXT(""),
+	UE_LOG(LogTNRally, Log, TEXT("[RallyGameMode] %s: variante %s, %d plaza(s) por buggy, %d bots (%s), %d vueltas%s%s."),
+		*MapName, *Variant.ToString(), Seats, Bots, *UEnum::GetValueAsString(Difficulty), Laps, bAutoStart ? TEXT(", salida sin jugadoras") : TEXT(""),
 		bBotDriverFromUrl ? TEXT(", artilleras con piloto IA") : TEXT(""));
 }
 
@@ -271,6 +278,12 @@ void ATN_RallyGameMode::AssignPlayer(APlayerController* Player)
 	{
 		return;
 	}
+	// ?Spectate: la jugadora solo mira (con ?AutoStart la carrera de bots sale sin ella).
+	if (UGameplayStatics::HasOption(OptionsString, TEXT("Spectate")))
+	{
+		Spectate(Player);
+		return;
+	}
 	if (Seats == 2 && TrySeatAsGunner(Player, *RallyPlayer))
 	{
 		return;
@@ -363,6 +376,10 @@ AController* ATN_RallyGameMode::SpawnPilotFor(int32 Index, const FText& PilotNam
 	if (APlayerState* PilotState = Pilot->GetPlayerState<APlayerState>())
 	{
 		PilotState->SetPlayerName(PilotName.ToString());
+	}
+	if (ATN_RallyAIController* RallyPilot = Cast<ATN_RallyAIController>(Pilot))
+	{
+		ConfigureBot(*RallyPilot);
 	}
 	return Pilot;
 }
@@ -564,7 +581,7 @@ void ATN_RallyGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	ATN_RallyGameState* RallyState = GetRallyGameState();
-	if (!bTrackReady || !RallyState)
+	if (!bTrackReady || !RallyState || bReturning)
 	{
 		return;
 	}
@@ -577,6 +594,7 @@ void ATN_RallyGameMode::Tick(float DeltaSeconds)
 	const bool bRacing = Phase == ETNRallyPhase::Racing || Phase == ETNRallyPhase::Finishing;
 	ParkFinishedTeams();
 	ConsumeRespawnRequests(bRacing);
+	ApplyVehicleHolds(Phase);
 	if (bRacing)
 	{
 		TickProgress();
@@ -648,6 +666,11 @@ void ATN_RallyGameMode::RestartOrQuit()
 	{
 		UE_LOG(LogTNRally, Log, TEXT("[RallyStats] %d carreras hechas (?Races=%d): fin."), RacesRun, RaceLimit);
 		FPlatformMisc::RequestExit(false, TEXT("TN Rally ?Races"));
+		return;
+	}
+	if (bReturnToLobbyAfterResults)
+	{
+		ReturnToLobbyNow();
 		return;
 	}
 	// ?Restart reutiliza la URL actual: mismo mapa y mismas opciones (?Variant, ?Seats, ?Bots, ?Laps, ?BotDriver).

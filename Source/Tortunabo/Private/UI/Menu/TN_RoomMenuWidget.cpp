@@ -776,6 +776,36 @@ UWidget* UTN_RoomMenuWidget::BuildCreatePage()
 			Menu->RefreshCreateRows();
 		});
 	}
+	RallyMapRow = AddRow();
+	if (RallyMapRow)
+	{
+		TArray<FText> Maps;
+		for (const FName Map : TNLobbyMission::RallyMapOptions()) { Maps.Add(TNLobbyMission::RallyMapName(Map)); }
+		RallyMapRow->SetupChoice(NSLOCTEXT("TNRooms", "RallyCircuitRow", "Circuito del Rally"), Maps, 0, [WeakThis](int32 Choice)
+		{
+			UTN_RoomMenuWidget* Menu = WeakThis.Get();
+			const TArray<FName>& Options = TNLobbyMission::RallyMapOptions();
+			if (!Menu || !Options.IsValidIndex(Choice)) { return; }
+			Menu->Draft.RallyVariant = Options[Choice];
+			Menu->RefreshCreateRows();
+		});
+		RallyMapRow->SetDescription(NSLOCTEXT("TNRooms", "RallyCircuitDesc",
+			"El circuito del Rally: puertas en orden, vueltas y saltos de autor."));
+	}
+	RallySeatsRow = AddRow();
+	if (RallySeatsRow)
+	{
+		RallySeatsRow->SetupChoice(NSLOCTEXT("TNRooms", "RallySeatsRow", "Tortugas por buggy"),
+			{ TNLobbyMission::RallySeatsName(1), TNLobbyMission::RallySeatsName(2) }, 1, [WeakThis](int32 Choice)
+		{
+			UTN_RoomMenuWidget* Menu = WeakThis.Get();
+			if (!Menu) { return; }
+			Menu->Draft.RallySeats = FMath::Clamp(Choice + 1, 1, 2);
+			Menu->RefreshCreateRows();
+		});
+		RallySeatsRow->SetDescription(NSLOCTEXT("TNRooms", "BuggySeatsDesc",
+			"Rally y Karts. Una por buggy: cada tortuga conduce y dispara. Por parejas: la segunda va de artillera, dispara y carga el peso en las curvas. Los bots completan la parrilla."));
+	}
 	VisibilityRow = AddRow();
 	if (VisibilityRow)
 	{
@@ -1062,7 +1092,26 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 	if (ModeRow)
 	{
 		ModeRow->SetChoiceIndex(ModeIndex);
-		ModeRow->SetDescription(TNLobbyMission::ModeBlurb(Draft.Mode));
+		ModeRow->SetDescription(Draft.Mode == ETNProcGameMode::TwoVsTwo
+			? FText::Format(NSLOCTEXT("TNRooms", "Mode2v2Desc", "{0} Si al salir del lobby no sois cuatro, se juega Carrera."),
+				TNLobbyMission::ModeBlurb(Draft.Mode))
+			: TNLobbyMission::ModeBlurb(Draft.Mode));
+	}
+	// El circuito, solo en el Rally; las plazas por buggy, en el Rally y en Karts.
+	const bool bRally = Draft.Mode == ETNProcGameMode::Rally;
+	const bool bBuggySeats = bRally || Draft.Mode == ETNProcGameMode::Karts;
+	const TArray<FName>& RallyMaps = TNLobbyMission::RallyMapOptions();
+	Draft.RallyVariant = TNLobbyMission::ResolveRallyMap(Draft.RallyVariant, RallyMaps);
+	Draft.RallySeats = FMath::Clamp(Draft.RallySeats, 1, 2);
+	if (RallyMapRow)
+	{
+		RallyMapRow->SetChoiceIndex(FMath::Max(0, RallyMaps.IndexOfByKey(Draft.RallyVariant)));
+		RallyMapRow->SetVisibility(bRally ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+	if (RallySeatsRow)
+	{
+		RallySeatsRow->SetChoiceIndex(Draft.RallySeats - 1);
+		RallySeatsRow->SetVisibility(bBuggySeats ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
 	if (VisibilityRow) { VisibilityRow->SetChoiceIndex(Draft.bPrivate ? 1 : 0); }
 	if (SizeRow)
@@ -1102,9 +1151,9 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 	{
 		CreateSummary->SetText(Draft.bPrivate
 			? FText::Format(NSLOCTEXT("TNRooms", "SummaryPrivate", "Sala privada de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): no sale en la lista y tus amigos entran con el código {2} (o por invitación de Steam)."),
-				TNLobbyMission::ModeName(Draft.Mode), Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
+				TNLobbyMission::MissionTitle(Draft.Mode, Draft.RallyVariant), Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
 			: FText::Format(NSLOCTEXT("TNRooms", "SummaryPublic", "Sala pública de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): sale en la lista de «Unirse» y entra quien quiera (puedes cerrarla desde el menú de pausa)."),
-				TNLobbyMission::ModeName(Draft.Mode), Draft.MaxPlayers));
+				TNLobbyMission::MissionTitle(Draft.Mode, Draft.RallyVariant), Draft.MaxPlayers));
 	}
 }
 

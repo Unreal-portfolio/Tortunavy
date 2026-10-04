@@ -3,7 +3,7 @@
 // final) y la spline de ATN_RallyTrack es la línea del piloto IA (TNKart::PlanRacingLineOffsets), que rodea los obstáculos
 // del camino y pasa centrada por las puertas, los arcos y los géiseres. A los lados de cada puerta, un ala de rocas hasta
 // el borde del camino: nadie se salta una puerta por fuera del arco (en la salida y en la playa el camino es más ancho que
-// él). Sin cajas de munición del Rally: las filas de cajas de objetos (ATN_KartItemBox) las pone el servidor. Cada máquina
+// él). Las filas de cajas «?» (ATN_KartItemBox, las mismas del Rally) van a lo ancho del camino y las pone el servidor. Cada máquina
 // la construye con su generador (el mismo mapa con la semilla replicada), así que todas tienen la misma pista.
 #pragma once
 
@@ -12,7 +12,6 @@
 #include "Rally/TN_RallyTrack.h"
 #include "TN_KartTrack.generated.h"
 
-class ATN_KartItemBox;
 class ATN_ProcMapGenerator;
 struct FTNProcPathPoint;
 
@@ -45,8 +44,6 @@ class TORTUNABO_API ATN_KartTrack : public ATN_RallyTrack
 public:
 	ATN_KartTrack();
 
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
 	/** Construye la pista con el mapa que tiene Generator en esta máquina. False si no hay mapa o no da para una pista. */
 	bool BuildFromMap(ATN_ProcMapGenerator& Generator);
 
@@ -58,9 +55,6 @@ public:
 
 	/** Semiancho del camino en ese arco de la spline (cm). */
 	double GetRoadHalfWidthAtArc(double Arc) const;
-
-	/** Cajas de objetos (solo en el servidor; los clientes las reciben replicadas). */
-	const TArray<TObjectPtr<ATN_KartItemBox>>& GetItemBoxes() const { return ItemBoxes; }
 
 	/** Separación entre filas de cajas (cm). */
 	UPROPERTY(EditAnywhere, Category = "Karts|Cajas", meta = (ClampMin = "5000"))
@@ -96,19 +90,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Karts|Puertas", meta = (ClampMin = "60"))
 	float GateWingSpacingCm = 130.f;
 
-protected:
-	UPROPERTY(EditAnywhere, Category = "Karts|Cajas")
-	TSubclassOf<ATN_KartItemBox> ItemBoxClass;
-
 private:
-	/** Servidor: las filas de cajas de objetos a lo ancho del camino. */
+	/** Servidor: las filas de cajas «?» a lo ancho del camino (en ItemBoxes de ATN_RallyTrack). */
 	void SpawnItemRows(const TNKart::FRoutePlan& Plan, double LineStartArc, const ATN_ProcMapGenerator& Generator);
-	void ClearItemBoxes();
 	/** Las alas de rocas a los lados de cada puerta (todas las máquinas: tienen colisión). */
 	void BuildGateWings(const TNKart::FRoutePlan& Plan, const ATN_ProcMapGenerator& Generator);
-
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<ATN_KartItemBox>> ItemBoxes;
 
 	/** Arco (en el eje del plan) y semiancho de cada punto del eje, para GetRoadHalfWidthAtArc. */
 	TArray<double> RoadArcs;
