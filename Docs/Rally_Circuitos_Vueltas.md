@@ -81,3 +81,50 @@ Límites conocidos:
 - Uso en el juego (saltos, rasantes y horquillas para el copiloto y el piloto IA): `Docs/Rally_MVP.md`, «Circuitos por vueltas».
 - Con una barra entera de turbo, los saltos se pasan de la recepción y caen en la escapatoria llana. Cerca de 120 km/h, el choque es de unos 14 m/s (`impact_boost_ms`), dentro de la calzada. El juego no se ha probado en el editor; sin editor, el piloto IA da 5 vueltas sin atascarse.
 - Las barreras de #303 las coloca el C++ a partir de `road_uu`; el validador solo comprueba que haya suelo a su cota.
+
+## Circuitos de tierra (#682)
+
+`--profile tierra` amplía el generador con elementos de circuito de tierra (por defecto, `R02_circuito_tierra`, semilla 682):
+
+```bash
+uv run --with pyfqmr --with matplotlib python Scripts/gen_terrain_rally_circuit.py --profile tierra   # unos 170 s
+uv run pytest Scripts/tests/test_terrain_rally_tierra.py
+```
+
+El perfil `dunas` (R01) no cambia: los sorteos nuevos van con su propio generador (`[seed, 682]`) y misma semilla da el mismo trazado.
+
+| Módulo | Qué hace |
+|---|---|
+| `Scripts/terrain_geo/rally_circuit_jumps.py` | Saltos de forma: doble, cresta y salto largo sobre hueco |
+| `Scripts/terrain_geo/rally_circuit_dirt.py` | Baches (whoops y tabla de lavar), badén con barro, banqueta y la suspensión del buggy |
+| `Scripts/terrain_geo/rally_circuit_check_dirt.py` | Validador de esos elementos sobre la malla escrita |
+
+### Reglas de colocación
+
+- Cuatro saltos: la **doble** y la **cresta** en el zigzag de las horquillas, la **mesa** de #622 tras la chicane y el **salto largo sobre hueco** detrás de una curva peraltada, donde se llega más rápido.
+- Tras las curvas peraltadas (todas llevan algo detrás) se reparten el hueco (el primero de su curva), los dos rasantes, las dos rectas de baches y el badén.
+- Baches y badén son rectas propias, con 10-12 m llanos a cada lado: nunca caen en curva (el validador lo mide en `road_uu`).
+- Las dos horquillas llevan banqueta: peralte de 10-13° y caballón por fuera.
+
+### Elementos
+
+- **Saltos de forma**: rampa como la de la mesa hasta el labio (7-13°) y después, en la doble y el hueco, cara trasera de 24°, vaguada (a la cota del pie en la doble y 2 m por debajo en el hueco) y cara de subida hasta la cresta de la recepción, 0,3 m (doble) o 0,9 m (hueco) por debajo del labio. La cresta está donde la trayectoria a 0,8 · v pasa 0,4 m por encima: el piloto IA, que llega a 0,9 · v, salva el hueco. La cara de recepción es convexa (de 2° a 12-20°) y se busca para el menor choque a v y a 0,9 · v; si pasa de 4 m/s (4,5 a la velocidad de la IA), se baja el labio de grado en grado. La cresta no tiene hueco: la cima redondeada cae directa a la cara. Las caras del hueco se suben andando si alguien cae dentro.
+- **Baches**: ondas `A · (1 − cos(2πx/λ))` (montículos de 2A de pico a pico). Whoops: A 0,14-0,19 m, λ 8-11 m; tabla de lavar: A 0,07-0,10 m, λ 4,5-6 m. Límites: A ≤ 0,8 · min(SuspensionMaxRaise, SuspensionMaxDrop) = 0,20 m (25 cm en `TN_BuggyWheel.cpp`, que lee el test), radio del valle ≥ radio de la rueda (0,504 m), λ ≥ 4,5 m (vóxel de 1 m). Los trozos con baches o badén se deciman a 0,02 m para no perder la tabla de lavar.
+- **Badén**: coseno hacia abajo de 0,45-0,65 m con el largo justo para 0,8 g de curvatura vertical a la velocidad con turbo (ni despega ni hunde la suspensión); el color de los vértices pasa a barro (`mud_mask`, `terrain_vol/mesh.py`).
+- **Banqueta**: caballón de 0,9 m que sube desde 6 m del eje hasta 10,5 m y vuelve a la berma en 14 m, antes de las barreras de #303.
+
+### Campos nuevos del manifest
+
+- Saltos: `jump_kind` (`mesa`, `doble`, `cresta`, `hueco`); los de forma, `gap_s_m` (labio y cresta de la recepción), `v_ai_kmh`, `land_ai_s_m` e `impact_ai_ms`. Siguen siendo `type: "salto"`, así que el copiloto y el piloto IA los leen como antes.
+- `baches` (`pattern`, `amplitude_m`, `wavelength_m`, `count`, `peak_to_peak_m`, `train_s_m`, `liftoff_kmh`), `baden` (`depth_m`, `length_m`, `dip_s_m`, `surface: "barro"`, `curvature_g`) y `banqueta` (`outside`, `bank_deg`, `berm_rise_m`). El C++ los lee como `EElementKind::Other`: no frenan a la IA ni tienen nota del copiloto.
+- `suspension` (subida, bajada, radio de rueda y amplitud máxima) y `generator.profile: "tierra"`.
+
+### Validador
+
+Además de lo de #622, con el perfil tierra el veredicto pide (`rally_circuit_check_dirt.tierra_verdict`): al menos 4 saltos de al menos 2 tipos y, en la doble y el hueco, que el vuelo medido a 0,9 · v caiga en la cara de recepción con un choque ≤ 6 m/s; dos tramos de baches (whoops y tabla de lavar) en recta (curvatura ≤ 1/400 m), con la amplitud medida en la malla a −4, 0 y +4 m del eje entre el 60 % del diseño y el límite de la suspensión (+2 cm); el badén con la profundidad medida a ±0,15 m y ≤ 0,95 g con turbo; y la banqueta con al menos el 60 % del caballón medido y peralte ≥ 8°.
+
+### R02_circuito_tierra (semilla 682)
+
+Vuelta de 2 281 m (3 vueltas) en 9 × 8 trozos y 124 000 triángulos; la vuelta ideal dura 82 s. Saltos: doble a 94 km/h (hueco de 16,5 m, 1,5 s en el aire), cresta a 93 km/h (1,2 s), mesa a 94 km/h (0,8 s) y hueco a 104 km/h (hueco de 20,6 m, 1,5 s); choque medido de 3,3-3,8 m/s y, a la velocidad de la IA, 2,9-4,4 m/s. Whoops de 7 ondas (A 0,18 m, λ 9,6 m, medida 0,17 m) y tabla de lavar de 11 (A 0,08 m, λ 5,9 m, medida 0,07 m); badén de 0,61 m y 43 m; banquetas de 12,4° y 11,6° con 0,77-0,81 m de caballón medido. Cinco curvas peraltadas (9-13°) y dos rasantes (2,9 y 2,4 m). El validador sale todo en verde. Sin editor (04-10, 1 bot, `-server -nullrhi`), el piloto IA da 3 vueltas en 336 s (112 s por vuelta) con `terminados 1/1, atascos 0, vuelcos 0, caidas 0`. No se ha probado en el editor.
+
+`open LVL_Rally?Variant=R02_circuito_tierra` (con `?Laps=N` y `?Bots=N`) la carga como R01. `Automation RunTests Tortunabo.Rally.Tierra` comprueba que se construye como circuito con 4 saltos, sus notas, la frenada de la IA y la barrera continua.

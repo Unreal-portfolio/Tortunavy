@@ -3,6 +3,7 @@ vistas y lámina de revisión) y lo añade a index.json. El juego lo carga con L
 
     uv run --with pyfqmr --with matplotlib python Scripts/gen_terrain_rally_circuit.py [--seed 622] [--name R01_...]
         [--no-decimate] [--no-sheet]
+    uv run --with pyfqmr --with matplotlib python Scripts/gen_terrain_rally_circuit.py --profile tierra   # R02 (#682)
 
 El trazado, los elementos y el terreno están en terrain_geo/rally_circuit*.py; la validación, sobre la variante ya
 escrita, en terrain_geo/rally_circuit_check.py (la repite Scripts/tests/test_terrain_rally_circuit.py).
@@ -19,6 +20,12 @@ salida, start_uu = end_uu, start_yaw, kill_boxes_uu) y, nuevo en #622 (Docs/Rall
   - markers_uu: "parrilla" (los 8 huecos 2 x 4 de TNRally::GridSlotOffset), y labio y aterrizaje de cada salto y
     cima de cada rasante.
   - physics: la BuggySpec con la que se han dimensionado; checks: el informe del validador y su veredicto.
+
+Perfil tierra (#682): los saltos llevan `jump_kind` (mesa, doble, cresta, hueco) y, los de forma, `gap_s_m` (del
+labio a la cresta de la recepción), `v_ai_kmh` y `land_ai_s_m` (el piloto IA llega a 0,9 · v); elementos nuevos
+`baches` (`pattern` whoops o tabla_lavar, amplitud, longitud de onda, tramo de las ondas `train_s_m`), `baden`
+(profundidad, largo, `dip_s_m`, barro) y `banqueta` (horquilla con caballón por fuera); `suspension`: la del buggy
+con la que se acotan los baches; `generator.profile`: "tierra".
 """
 
 from __future__ import annotations
@@ -33,7 +40,9 @@ from terrain_geo import rally_circuit as rc
 from terrain_geo.build import VARIANTS, dir_size_mb, kill_boxes_uu, update_index, write_credits
 from terrain_geo.heightfield import ZONES
 from terrain_geo.rally_circuit_check import load_report
+from terrain_geo.rally_circuit_dirt import BERM_RISE_M, BUMP_LEAD_M, DIP_LEAD_M, SUSPENSION
 from terrain_geo.rally_circuit_elements import impact_ms
+from terrain_geo.rally_circuit_jumps import AI_FACTOR, ShapedJump
 from terrain_geo.rally_circuit_physics import BUGGY
 from terrain_vol.export import global_top, write_map
 from terrain_vol.layout import CELL_SAMPLES, UU_PER_M
@@ -42,6 +51,7 @@ from terrain_vol.mesh import build_chunk
 CHECKPOINT_EVERY_M = 200.0
 DECIMATE_NEAR_M = 0.08
 DECIMATE_FAR_M = 0.25
+DECIMATE_FINE_M = 0.02           # trozos con baches o badén: el decimado normal se come la tabla de lavar
 NEAR_M = 30.0
 # Parrilla 2 x 4 (TN_RallyLogic.h): primera fila a 10 m de la salida, 8 m entre filas, 3,5 m a cada lado del eje.
 GRID_FIRST_ROW_M, GRID_ROW_M, GRID_HALF_M = 10.0, 8.0, 3.5
@@ -91,6 +101,8 @@ def elements(track: rc.Track) -> list[dict]:
     out, counts = [], {}
     jumps = {j.piece: j for j in track.jumps}
     crests = {c.piece: c for c in track.crests}
+    bumps = {b.piece: b for b in track.bumps}
+    dips = {d.piece: d for d in track.dips}
     for piece, s0, s1 in plan.spans:
         p = plan.pieces[piece]
         counts[p.kind] = counts.get(p.kind, 0) + 1
@@ -116,11 +128,49 @@ def elements(track: rc.Track) -> list[dict]:
                      v_design_kmh=round(d.v_design * 3.6, 1), v_boost_kmh=round(d.v_boost * 3.6, 1),
                      airtime_s=land.airtime_s, apex_m=land.apex_m, impact_ms=round(impact_ms(d, d.v_design), 2),
                      impact_boost_ms=round(impact_ms(d, d.v_boost), 2), drop_m=round(d.drop_m, 2), design=d.as_dict())
+            e.update(_jump_kind_fields(j.s0, d))
+        if p.kind == "baches":
+            b = bumps[piece]
+            e.update(train_s_m=_span(b.s0 + BUMP_LEAD_M, b.s0 + BUMP_LEAD_M + b.design.train_m, total),
+                     **b.design.as_dict())
+        if p.kind == "baden":
+            dip = dips[piece]
+            e.update(dip_s_m=_span(dip.s0 + DIP_LEAD_M, dip.s0 + DIP_LEAD_M + dip.design.length_m, total),
+                     surface="barro", **dip.design.as_dict())
         if p.kind == "rasante":
             c = crests[piece]
             e.update(crest_s_m=round(c.s0 + c.design.length_m / 2.0, 2), **c.design.as_dict(),
                      v_boost_kmh=round(c.design.v_boost * 3.6, 1))
         out.append(e)
+        if p.variant == "banqueta":
+            out.append({"type": "banqueta", "id": f"banqueta_{counts[p.kind]}", "s_m": e["s_m"], "side": e["side"],
+                        "outside": "izquierda" if p.angle_deg > 0 else "derecha", "bank_deg": e["bank_deg"],
+                        "berm_rise_m": BERM_RISE_M})
+    return out
+
+
+def _jump_kind_fields(s0: float, d) -> dict:
+    """Forma del salto (#682); en los de forma, el hueco y el aterrizaje del piloto IA (a AI_FACTOR · v)."""
+    if not isinstance(d, ShapedJump):
+        return {"jump_kind": "mesa"}
+    lip = s0 + d.lip_x
+    ai = d.fly(AI_FACTOR * d.v_design)
+    return {"jump_kind": d.kind, "gap_s_m": [round(lip, 2), round(lip + d.crest_x_m, 2)],
+            "v_ai_kmh": round(AI_FACTOR * d.v_design * 3.6, 1),
+            "land_ai_s_m": round(lip + ai.x_land_m, 2) if ai else None,
+            "impact_ai_ms": round(impact_ms(d, AI_FACTOR * d.v_design), 2)}
+
+
+def fine_cells(model: rc.RallyCircuitModel) -> set:
+    """Trozos (col, row) que tocan los baches o el badén (con 20 m de margen)."""
+    track, out = model.track, set()
+    spans = [(b.s0, b.design.piece_m) for b in track.bumps] + [(d.s0, rc.DIP_PIECE_M) for d in track.dips]
+    for s0, length in spans:
+        for s in np.arange(s0, s0 + length, 2.0):
+            p = model.road[track.index(s)]
+            for dx in (-20.0, 0.0, 20.0):
+                for dy in (-20.0, 0.0, 20.0):
+                    out.add((int(round((p[1] + dy) / 100.0)), int(round((p[0] + dx) / 100.0))))
     return out
 
 
@@ -129,9 +179,11 @@ def build_chunks(model: rc.RallyCircuitModel, decimate: bool) -> dict:
     if not decimate:
         return chunks
     from terrain_vol.decimate import decimate_chunks
-    near = {c: m for c, m in chunks.items() if model.cell_gap(*c) <= NEAR_M}
-    far = {c: m for c, m in chunks.items() if c not in near}
-    return {**decimate_chunks(near, DECIMATE_NEAR_M), **decimate_chunks(far, DECIMATE_FAR_M)}
+    fine = fine_cells(model)
+    near = {c: m for c, m in chunks.items() if model.cell_gap(*c) <= NEAR_M and c not in fine}
+    far = {c: m for c, m in chunks.items() if c not in near and c not in fine}
+    return {**decimate_chunks(near, DECIMATE_NEAR_M), **decimate_chunks(far, DECIMATE_FAR_M),
+            **decimate_chunks({c: m for c, m in chunks.items() if c in fine}, DECIMATE_FINE_M)}
 
 
 def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed: int, decimate: bool) -> dict:
@@ -145,16 +197,18 @@ def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed
     for e in [e for e in elements(track) if e["type"] == "rasante"]:
         k = track.index(e["crest_s_m"])
         marks[f"{e['id']}_cima"] = [uu(road[k], track.z[k])]
+    tierra = track.profile == "tierra"
     return {
-        "description": rc.DESCRIPTION, "mode": "rally", "closed": True, "laps": rc.LAPS,
+        "description": rc.TIERRA_DESCRIPTION if tierra else rc.DESCRIPTION, "mode": "rally", "closed": True, "laps": rc.LAPS,
         "kill_boxes_uu": kill_boxes_uu(model.frame.grid),
         "z_range": [model.z_range.z_min_m, model.z_range.levels, model.z_range.step_m],
-        "generator": {"generator": "rally_circuit_vueltas", "seed": seed, "attempt": track.plan.attempt,
+        "generator": {"generator": "rally_circuit_vueltas", "profile": track.profile, "seed": seed,
+                      "attempt": track.plan.attempt,
                       "pieces": [p.__dict__ for p in track.plan.pieces], "road_w_m": rc.ROAD_W_M,
                       "shoulder_m": rc.SHOULDER_M, "berm_m": rc.BERM_M, "talud_deg": rc.TALUD_DEG,
                       "rows": model.frame.rows, "cols": model.frame.cols, "shift_m": model.frame.shift.tolist(),
                       "decimate_m": [DECIMATE_NEAR_M, DECIMATE_FAR_M] if decimate else 0.0, "near_m": NEAR_M},
-        "physics": BUGGY.as_dict(),
+        "physics": BUGGY.as_dict(), **({"suspension": SUSPENSION.as_dict()} if tierra else {}),
         "road_width_m": rc.ROAD_W_M, "road_uu": [uu(p, zz) for p, zz in zip(road, track.z)],
         "bank_deg": [round(float(b), 2) for b in track.bank_deg],
         "checkpoints_uu": [uu(road[k], track.z[k], yaw_deg(track.plan.psi[k])) for k in cps],
@@ -165,9 +219,9 @@ def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed
     }
 
 
-def build(seed: int, name: str, decimate: bool = True, sheet: bool = True) -> dict:
+def build(seed: int, name: str, decimate: bool = True, sheet: bool = True, profile: str = "dunas") -> dict:
     t0 = time.time()
-    track = rc.build_track(seed)
+    track = rc.build_track(seed, profile)
     model = rc.RallyCircuitModel(track, seed)
     chunks = build_chunks(model, decimate)
     grid = model.frame.grid
@@ -177,7 +231,8 @@ def build(seed: int, name: str, decimate: bool = True, sheet: bool = True) -> di
     zones = {zone: (np.ones((size, size)) if zone == "cliffs" else np.zeros((size, size))) for zone in ZONES}
     start = (*model.road[0], float(track.z[0]))
     write_map(out, name, seed, chunks, start, start, zones, model.road, extra_manifest=extra, grid=grid)
-    write_credits(out, f"Circuito de Rally por vueltas {name}: Scripts/gen_terrain_rally_circuit.py (semilla {seed}, #622).\n")
+    issue = "#682" if profile == "tierra" else "#622"
+    write_credits(out, f"Circuito de Rally por vueltas {name}: Scripts/gen_terrain_rally_circuit.py (semilla {seed}, {issue}).\n")
     report, checks = load_report(out)
     ok = all(checks.values())
     data = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
@@ -188,7 +243,7 @@ def build(seed: int, name: str, decimate: bool = True, sheet: bool = True) -> di
         from terrain_geo.rally_circuit_sheet import render_circuit_sheet
         render_circuit_sheet(out / "lamina.png", name, data, global_top(chunks, grid=grid), track, model)
     size_mb = dir_size_mb(out)
-    update_index(name, seed, ok, size_mb, rc.DESCRIPTION, {"mode": "rally"})
+    update_index(name, seed, ok, size_mb, extra["description"], {"mode": "rally"})
     return {"ok": ok, "time_s": round(time.time() - t0, 1), "grid": [model.frame.rows, model.frame.cols],
             "cells": len(chunks), "triangles": int(sum(len(c.triangles) for c in chunks.values())),
             "size_mb": size_mb, "checks": checks}
@@ -196,12 +251,17 @@ def build(seed: int, name: str, decimate: bool = True, sheet: bool = True) -> di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Genera un circuito de Rally por vueltas (#622).")
-    parser.add_argument("--seed", type=int, default=rc.SEED)
-    parser.add_argument("--name", default=rc.NAME)
+    parser.add_argument("--profile", choices=("dunas", "tierra"), default="dunas",
+                        help="dunas (#622) o tierra (#682: saltos con forma, baches, badén y banqueta)")
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--name", default=None)
     parser.add_argument("--no-decimate", action="store_true", help="no decimar los trozos (no necesita pyfqmr)")
     parser.add_argument("--no-sheet", action="store_true", help="sin lámina (no necesita matplotlib)")
     args = parser.parse_args()
-    r = build(args.seed, args.name, decimate=not args.no_decimate, sheet=not args.no_sheet)
+    tierra = args.profile == "tierra"
+    seed = args.seed if args.seed is not None else (rc.TIERRA_SEED if tierra else rc.SEED)
+    name = args.name or (rc.TIERRA_NAME if tierra else rc.NAME)
+    r = build(seed, name, decimate=not args.no_decimate, sheet=not args.no_sheet, profile=args.profile)
     print(json.dumps(r, indent=1, ensure_ascii=False))
 
 

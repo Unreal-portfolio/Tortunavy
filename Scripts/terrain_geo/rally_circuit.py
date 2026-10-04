@@ -30,14 +30,22 @@ from terrain_vol.layout import CELL_M, MAP_MIN_M, WATER_M, ZRange
 
 from .heightfield import HeightfieldModel
 from .layout import RASTER_PX_M
-from .rally_circuit_elements import (CrestDesign, JumpDesign, JumpParams, bank_profile, design_crest,
+from .rally_circuit_dirt import (BERM_END_M, DIP_DEPTH_M, DIP_LEAD_M, DIP_PIECE_M, MUD_COLOR, MUD_STRENGTH,
+                                 BumpDesign, DipDesign, berm_lift, design_dip)
+from .rally_circuit_elements import (BANK_RAMP_M, CrestDesign, JumpDesign, JumpParams, bank_profile, design_crest,
                                      design_jump)
+from .rally_circuit_jumps import SHAPED_KINDS, ShapedJump, ShapedParams, design_shaped
 from .rally_circuit_physics import boost_arrival, speed_profile
 from .rally_circuit_plan import JUMP_APPROACH_M, JUMP_RESERVE_M, Plan, make_plan
 from .rally_spain import value_noise
 
 NAME = "R01_circuito_dunas"
 SEED = 622
+TIERRA_NAME = "R02_circuito_tierra"
+TIERRA_SEED = 682
+TIERRA_DESCRIPTION = ("Circuito de Rally por vueltas de tierra generado (#682): lazo cerrado con cuatro saltos (doble, "
+                      "cresta, mesa y salto largo sobre hueco), whoops y tabla de lavar en recta, badén con barro, "
+                      "banqueta de tierra en las horquillas, curvas peraltadas, chicane y cambios de rasante.")
 LAPS = 3
 ROAD_W_M = 14.0
 SHOULDER_M = 3.0
@@ -59,7 +67,21 @@ DESCRIPTION = ("Circuito de Rally por vueltas generado (#622): lazo cerrado entr
 class PlacedJump:
     piece: int
     s0: float                       # pie de la rampa (m desde la línea de salida)
-    design: JumpDesign
+    design: JumpDesign | ShapedJump
+
+
+@dataclass
+class PlacedBump:
+    piece: int
+    s0: float                       # principio de la recta de baches
+    design: BumpDesign
+
+
+@dataclass
+class PlacedDip:
+    piece: int
+    s0: float
+    design: DipDesign
 
 
 @dataclass
@@ -79,6 +101,9 @@ class Track:
     airborne: np.ndarray
     jumps: list[PlacedJump] = field(default_factory=list)
     crests: list[PlacedCrest] = field(default_factory=list)
+    bumps: list[PlacedBump] = field(default_factory=list)
+    dips: list[PlacedDip] = field(default_factory=list)
+    profile: str = "dunas"
     base_free: np.ndarray | None = None
     inward_tan: np.ndarray | None = None
     grade_sin: np.ndarray | None = None
@@ -126,6 +151,10 @@ def _elements_rel(track: Track) -> np.ndarray:
         rel += np.where(arc >= j.s0, j.design.profile(arc - j.s0), 0.0)
     for c in track.crests:
         rel += np.where(arc >= c.s0, c.design.profile(arc - c.s0), 0.0)
+    for b in track.bumps:
+        rel += np.where(arc >= b.s0, b.design.profile(arc - b.s0), 0.0)
+    for d in track.dips:
+        rel += np.where(arc >= d.s0, d.design.profile(arc - d.s0), 0.0)
     return rel
 
 
@@ -138,6 +167,10 @@ def _base_free(track: Track) -> np.ndarray:
         w[cyclic_mask(arc, total, j.s0 - 15.0, j.s0 + j.design.length_m + 15.0)] = 0.0
     for c in track.crests:
         w[cyclic_mask(arc, total, c.s0 - 5.0, c.s0 + c.design.length_m + 5.0)] = 0.0
+    for b in track.bumps:                       # baches y badén sobre base llana: solo su propio perfil
+        w[cyclic_mask(arc, total, b.s0 - 5.0, b.s0 + b.design.piece_m + 5.0)] = 0.0
+    for d in track.dips:
+        w[cyclic_mask(arc, total, d.s0 - 5.0, d.s0 + DIP_PIECE_M + 5.0)] = 0.0
     w[np.abs(track.bank_deg) > 0.5] = 0.0
     return np.clip(ndimage.gaussian_filter1d(w, 6.0 / track.plan.step_m, mode="wrap"), 0.0, 1.0) * (w > 0)
 
@@ -176,19 +209,33 @@ def _airborne(track: Track) -> np.ndarray:
     return air
 
 
-def build_track(seed: int = SEED) -> Track:
-    plan = make_plan(seed)
+def _design(prm: JumpParams | ShapedParams, v: float, v_boost: float) -> JumpDesign | ShapedJump:
+    if isinstance(prm, ShapedParams):
+        return design_shaped(prm, v, v_boost, JUMP_RESERVE_M)
+    return design_jump(prm, v, v_boost, JUMP_RESERVE_M)
+
+
+def build_track(seed: int = SEED, profile: str = "dunas") -> Track:
+    """Perfil, peralte y velocidades del circuito. El perfil «tierra» (#682) añade los saltos con forma, los baches,
+    el badén y la banqueta; sus sorteos van con su propio generador ([seed, 682]) y el de «dunas» no cambia."""
+    plan = make_plan(seed, profile)
     rng = np.random.default_rng([seed, 622])
+    rng_dirt = np.random.default_rng([seed, 682])
     arc, n = plan.arc, len(plan.pts)
     bank = bank_profile(arc, plan.length_m, _bank_curves(plan))
-    track = Track(plan, np.zeros(n), bank, np.zeros(n), np.zeros(n), np.zeros(n, dtype=bool))
-    jump_params, crest_heights = {}, {}
+    track = Track(plan, np.zeros(n), bank, np.zeros(n), np.zeros(n), np.zeros(n, dtype=bool), profile=profile)
+    jump_params, crest_heights, dip_depths = {}, {}, {}
     for piece, s0, _ in plan.spans:
-        kind = plan.pieces[piece].kind
-        if kind == "salto":
-            jump_params[piece] = (s0 + JUMP_APPROACH_M, JumpParams.draw(rng))
-        elif kind == "rasante":
+        p = plan.pieces[piece]
+        if p.kind == "salto":
+            prm = ShapedParams.draw(p.variant, rng_dirt) if p.variant in SHAPED_KINDS else JumpParams.draw(rng)
+            jump_params[piece] = (s0 + JUMP_APPROACH_M, prm)
+        elif p.kind == "rasante":
             crest_heights[piece] = (s0, rng.uniform(*CREST_HEIGHT_M))
+        elif p.kind == "baches":
+            track.bumps.append(PlacedBump(piece, s0, BumpDesign(p.variant, p.amplitude_m, p.wavelength_m, p.count)))
+        elif p.kind == "baden":
+            dip_depths[piece] = (s0, float(rng_dirt.uniform(*DIP_DEPTH_M)))
     waves = ((rng.uniform(200.0, 350.0), rng.uniform(0, 2 * math.pi)), (rng.uniform(90.0, 150.0), rng.uniform(0, 2 * math.pi)))
     _speeds(track)
     lip_x = {p: 20.0 for p in jump_params}
@@ -196,13 +243,14 @@ def build_track(seed: int = SEED) -> Track:
         track.jumps = []
         for p, (s, prm) in jump_params.items():
             k = track.index(s + lip_x[p])
-            track.jumps.append(PlacedJump(p, s, design_jump(prm, float(track.speed[k]), track.boost_at(k),
-                                                            JUMP_RESERVE_M)))
+            track.jumps.append(PlacedJump(p, s, _design(prm, float(track.speed[k]), track.boost_at(k))))
             lip_x[p] = track.jumps[-1].design.lip_x
         track.crests = []
         for p, (s, h) in crest_heights.items():
             top = track.index(s + plan.pieces[p].length_m / 2.0)
             track.crests.append(PlacedCrest(p, s, design_crest(plan.pieces[p].length_m, h, float(track.speed_boost[top]))))
+        track.dips = [PlacedDip(p, s, design_dip(d, float(track.speed_boost[track.index(s + DIP_PIECE_M / 2.0)])))
+                      for p, (s, d) in dip_depths.items()]
         drops = sum(j.design.drop_m for j in track.jumps)
         z = _base(track, waves, drops) + _elements_rel(track)
         track.z = z + (ROAD_MIN_M - z.min())
@@ -265,9 +313,35 @@ class RallyCircuitModel(HeightfieldModel):
         idx = np.arange(len(self.road) + 1)
         z = np.interp(frac, idx, np.append(track.z, track.z[0]))
         bank = np.interp(frac, idx, np.append(track.bank_deg, track.bank_deg[0]))
+        berm, mud = self.berm_dir(), self.mud_axis()
         shape = X.shape
         return {"dist": dist.reshape(shape), "lateral": lateral.reshape(shape), "z": z.reshape(shape),
-                "bank": bank.reshape(shape)}
+                "bank": bank.reshape(shape), "berm": np.interp(frac, idx, np.append(berm, berm[0])).reshape(shape),
+                "mud": np.interp(frac, idx, np.append(mud, mud[0])).reshape(shape)}
+
+    def berm_dir(self) -> np.ndarray:
+        """Por muestra del eje: peso (0..1) de la banqueta con el signo del lado de fuera de la curva (+1 derecha),
+        en las horquillas con banqueta y con rampas de BANK_RAMP_M a cada lado."""
+        plan, arc, total = self.track.plan, self.track.arc, self.track.total
+        out = np.zeros(len(arc))
+        for piece, s0, s1 in plan.spans:
+            p = plan.pieces[piece]
+            if p.variant != "banqueta":
+                continue
+            inside = cyclic_mask(arc, total, s0, s1)
+            d = np.minimum(np.abs((arc - s0 + total / 2.0) % total - total / 2.0),
+                           np.abs((arc - s1 + total / 2.0) % total - total / 2.0))
+            w = np.where(inside, 1.0, np.clip(1.0 - d / BANK_RAMP_M, 0.0, 1.0))
+            out = np.where(w > np.abs(out), -math.copysign(1.0, p.angle_deg) * w, out)
+        return out
+
+    def mud_axis(self) -> np.ndarray:
+        """Por muestra del eje: 1 en el badén (y 3 m a cada lado), 0 fuera."""
+        arc, total = self.track.arc, self.track.total
+        out = np.zeros(len(arc))
+        for d in self.track.dips:
+            out[cyclic_mask(arc, total, d.s0 + DIP_LEAD_M - 3.0, d.s0 + DIP_LEAD_M + d.design.length_m + 3.0)] = 1.0
+        return out
 
     def _natural(self, X, Y, near: dict, rng: np.random.Generator) -> np.ndarray:
         """Dunas alrededor: la cota de la calzada difuminada, más relieve que crece lejos del eje y un cordón de
@@ -285,6 +359,10 @@ class RallyCircuitModel(HeightfieldModel):
     def _carve(self, natural: np.ndarray, near: dict) -> tuple[np.ndarray, np.ndarray]:
         d, lat = near["dist"], near["lateral"]
         road_like = near["z"] - np.clip(lat, -PLATFORM_M, PLATFORM_M) * np.tan(np.radians(near["bank"]))
+        berm = near["berm"]
+        road_like = road_like + np.abs(berm) * berm_lift(lat * np.sign(berm)) * (d <= BERM_END_M + 1.0)
+        mud = near["mud"] * (1.0 - smooth(ROAD_W_M / 2.0, ROAD_W_M / 2.0 + 2.0, np.abs(lat))) * (d <= BERM_M)
+        self.mud = mud
         reach = np.clip(d - BERM_M, 0.0, None) * math.tan(math.radians(TALUD_DEG))
         height = np.where(d <= BERM_M, road_like, np.clip(natural, road_like - reach, road_like + reach))
         trail = 1.0 - smooth(ROAD_W_M / 2.0 - 1.0, ROAD_W_M / 2.0 + 0.5, np.abs(lat) * (d <= BERM_M) + 99.0 * (d > BERM_M))
@@ -292,6 +370,13 @@ class RallyCircuitModel(HeightfieldModel):
 
     def trail_mask(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         return np.clip(self._sample(self.trail, x, y), 0.0, 1.0)
+
+    mud_color = MUD_COLOR
+    mud_strength = MUD_STRENGTH
+
+    def mud_mask(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Barro del badén (#682): terrain_vol.mesh oscurece ahí el color de los vértices."""
+        return np.clip(self._sample(self.mud, x, y), 0.0, 1.0)
 
     def cells(self) -> list[tuple[int, int]]:
         return [(col, row) for row in range(self.frame.rows) for col in range(self.frame.cols)]

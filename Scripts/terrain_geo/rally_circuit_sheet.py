@@ -14,9 +14,10 @@ from terrain_vol.layout import MAP_MIN_M, UU_PER_M, WATER_M
 from terrain_vol.sheet import _colormap, _save_small
 
 COLORS = {"recta": "#1f77b4", "curva_peraltada": "#d62728", "horquilla": "#9467bd", "chicane": "#ff7f0e",
-          "salto": "#2ca02c", "rasante": "#8c564b"}
+          "salto": "#2ca02c", "rasante": "#8c564b", "baches": "#e377c2", "baden": "#5a3b1c", "banqueta": "#17becf"}
 LABELS = {"recta": "recta de salida", "curva_peraltada": "curva peraltada", "horquilla": "horquilla",
-          "chicane": "chicane", "salto": "salto", "rasante": "cambio de rasante"}
+          "chicane": "chicane", "salto": "salto", "rasante": "cambio de rasante", "baches": "baches",
+          "baden": "badén con barro", "banqueta": "banqueta de tierra"}
 
 
 def _mask(arc: np.ndarray, total: float, span) -> np.ndarray:
@@ -45,7 +46,9 @@ def _plan_panel(ax, top: np.ndarray, data: dict, road: np.ndarray, arc: np.ndarr
         if e["type"] == "curva_peraltada":
             text += f" {e['bank_deg']:.0f}°"
         if e["type"] == "salto":
-            text += f" {e['v_design_kmh']:.0f} km/h"
+            text += f" {e.get('jump_kind', '')} {e['v_design_kmh']:.0f} km/h".replace("  ", " ")
+        if e["type"] == "baches":
+            text += f" {e['pattern'].replace('_', ' ')} {2 * e['amplitude_m']:.2f} m / {e['wavelength_m']:.1f} m"
         ax.annotate(text, (mid[1], mid[0]), xytext=(6, 6), textcoords="offset points", fontsize=7,
                     backgroundcolor=(1, 1, 1, 0.65))
     slots = np.asarray(data["markers_uu"]["parrilla"]) / UU_PER_M
@@ -124,7 +127,7 @@ def render_circuit_sheet(path: Path, name: str, data: dict, top: np.ndarray, tra
     fig = plt.figure(figsize=(18, 10), dpi=80)
     checks = data["checks"]["verdict"]
     lap = data["lap"]
-    fig.suptitle(f"{name}: circuito de Rally por vueltas (#622), semilla {data['seed']}", fontsize=14,
+    fig.suptitle(f"{name}: circuito de Rally por vueltas ({'#682' if data['generator'].get('profile') == 'tierra' else '#622'}), semilla {data['seed']}", fontsize=14,
                  fontweight="bold", x=0.01, ha="left")
     jumps = [e for e in data["elements"] if e["type"] == "salto"]
     banked = [e for e in data["elements"] if e["type"] == "curva_peraltada"]

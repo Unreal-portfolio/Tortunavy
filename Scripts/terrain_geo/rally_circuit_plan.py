@@ -16,6 +16,13 @@ chicanes, rectas con salto y rectas con cambio de rasante. Reglas de colocación
   - dos tramos del lazo que estén a más de SEPARATION_ARC_M por el arco quedan a SEPARATION_MIN_M o más en planta
     (sin cruces y con sitio para las dos barreras); si no, se repite el sorteo con el intento siguiente.
 
+Perfil «tierra» (#682, make_plan(seed, "tierra")): las mismas reglas y además cuatro saltos de tres formas
+(rally_circuit_jumps: doble y cresta en el zigzag de las horquillas, la mesa tras la chicane y el salto largo sobre
+hueco tras una curva peraltada, donde se llega rápido), dos rectas de baches (whoops y tabla de lavar) y un badén
+con barro (rally_circuit_dirt), repartidos con los rasantes detrás de las curvas peraltadas, y banqueta de tierra
+en las dos horquillas (peralte de BANQUETA_BANK_DEG y caballón por fuera). El perfil por defecto («dunas», #622)
+no cambia: misma semilla, mismo trazado.
+
 Coordenadas: X = Norte, Y = Este (terrain_vol/layout.py); rumbo psi desde el Norte hacia el Este (el yaw de
 Unreal), positivo = giro a la derecha.
 """
@@ -29,7 +36,10 @@ import numpy as np
 from scipy import ndimage
 from scipy.optimize import lsq_linear
 
-PIECE_KINDS = ("recta", "curva_peraltada", "horquilla", "chicane", "salto", "rasante")
+from .rally_circuit_dirt import BANQUETA_BANK_DEG, DIP_PIECE_M, BumpDesign
+
+PIECE_KINDS = ("recta", "curva_peraltada", "horquilla", "chicane", "salto", "rasante", "baches", "baden")
+PROFILES = ("dunas", "tierra")
 LINK_MIN_M = 25.0
 LINK_PREF_M = 35.0
 MAIN_MIN_M = 170.0
@@ -49,6 +59,8 @@ JUMPS = 3
 BANKED_DEG = (45.0, 150.0)
 HAIRPIN_DEG = (150.0, 170.0)         # menos de 180: las dos ramas de la horquilla se abren en V
 CRESTS = 2
+TIERRA_LENGTH_M = (1500.0, 3000.0)
+TIERRA_MAX_SPAN_M = 950.0
 
 
 @dataclass(frozen=True)
@@ -57,7 +69,11 @@ class Piece:
     radius_m: float = 0.0
     angle_deg: float = 0.0          # giro con signo (positivo a la derecha); en la chicane, el de cada mitad
     bank_deg: float = 0.0
-    length_m: float = 0.0           # recta del rasante
+    length_m: float = 0.0           # recta del rasante, de los baches y del badén
+    variant: str = ""               # forma del salto (rally_circuit_jumps), patrón de baches o "banqueta" (#682)
+    amplitude_m: float = 0.0        # baches: amplitud, longitud de onda y número de ondas
+    wavelength_m: float = 0.0
+    count: int = 0
 
 
 @dataclass(frozen=True)
@@ -103,7 +119,8 @@ def _banked_angles(rng: np.random.Generator, count: int, target: float) -> list[
     return None
 
 
-def draw_pieces(rng: np.random.Generator) -> tuple[list[Piece], list[Piece], tuple[Piece, Piece]] | None:
+def draw_pieces(rng: np.random.Generator,
+                profile: str = "dunas") -> tuple[list[Piece], list[Piece], tuple[Piece, Piece]] | None:
     """Curvas peraltadas y chicane, rectas con elemento y la pareja de horquillas (sin ordenar). Las curvas giran
     todas hacia el mismo lado (el del lazo) y las horquillas forman un zigzag hacia fuera, de giro neto casi nulo."""
     direction = 1.0 if rng.random() < 0.5 else -1.0
@@ -118,7 +135,24 @@ def draw_pieces(rng: np.random.Generator) -> tuple[list[Piece], list[Piece], tup
     turns.append(Piece("chicane", rng.uniform(28.0, 40.0), (1 if rng.random() < 0.5 else -1) * rng.uniform(28.0, 40.0)))
     straights = [Piece("salto") for _ in range(JUMPS)]
     straights += [Piece("rasante", length_m=rng.uniform(75.0, 100.0)) for _ in range(CRESTS)]
+    if profile == "tierra":
+        return _tierra_pieces(rng, turns, straights, hairpins)
     return turns, straights, hairpins
+
+
+def _tierra_pieces(rng: np.random.Generator, turns: list[Piece], straights: list[Piece],
+                   hairpins: tuple[Piece, Piece]) -> tuple[list[Piece], list[Piece], tuple[Piece, Piece]]:
+    """Perfil tierra (#682): banqueta en las horquillas, saltos con forma, baches y badén."""
+    hairpins = tuple(Piece("horquilla", h.radius_m, h.angle_deg, float(rng.uniform(*BANQUETA_BANK_DEG)),
+                           variant="banqueta") for h in hairpins)
+    jumps = [Piece("salto", variant=v) for v in ("doble", "cresta", "mesa", "hueco")]
+    crests = [p for p in straights if p.kind == "rasante"]
+    bumps = []
+    for pattern in ("whoops", "tabla_lavar"):
+        b = BumpDesign.draw(pattern, rng)
+        bumps.append(Piece("baches", length_m=b.piece_m, variant=pattern, amplitude_m=b.amplitude_m,
+                           wavelength_m=b.wavelength_m, count=b.count))
+    return turns, jumps + crests + bumps + [Piece("baden", length_m=DIP_PIECE_M, variant="barro")], hairpins
 
 
 def arrange(rng: np.random.Generator, turns: list[Piece], straights: list[Piece],
@@ -131,10 +165,34 @@ def arrange(rng: np.random.Generator, turns: list[Piece], straights: list[Piece]
     crests = [p for p in straights if p.kind == "rasante"]
     banked = [t for t in turns if t.kind == "curva_peraltada"]
     chicane = [t for t in turns if t.kind == "chicane"]
+    if len(jumps) > JUMPS:
+        return _arrange_tierra(rng, banked, chicane, straights, hairpins)
     units: list[list[Piece]] = [[hairpins[0], jumps[0], hairpins[1], jumps[1]], chicane + [jumps[2]]]
     with_crest = set(rng.choice(len(banked), size=len(crests), replace=False).tolist())
     crest_iter = iter(crests)
     units += [[t, next(crest_iter)] if i in with_crest else [t] for i, t in enumerate(banked)]
+    seq = [Piece("recta")]
+    for i in rng.permutation(len(units)):
+        seq += units[i]
+    return seq
+
+
+def _arrange_tierra(rng: np.random.Generator, banked: list[Piece], chicane: list[Piece], straights: list[Piece],
+                    hairpins: tuple[Piece, Piece]) -> list[Piece]:
+    """Perfil tierra: zigzag con la doble y la cresta (se llega despacio, desde una horquilla), la mesa tras la
+    chicane y, tras las curvas peraltadas (todas con algo detrás), el salto largo sobre hueco (el primero de su
+    curva: se llega rápido), los rasantes, los baches y el badén."""
+    jumps = {p.variant: p for p in straights if p.kind == "salto"}
+    followers = [p for p in straights if p.kind in ("rasante", "baches", "baden")]
+    units: list[list[Piece]] = [[hairpins[0], jumps["doble"], hairpins[1], jumps["cresta"]],
+                                chicane + [jumps["mesa"]]]
+    slots: list[list[Piece]] = [[] for _ in banked]
+    order = [jumps["hueco"]] + [followers[i] for i in rng.permutation(len(followers))]
+    for i, k in enumerate(rng.permutation(len(order))):
+        slots[i % len(banked)].append(order[k])
+    for slot in slots:
+        slot.sort(key=lambda p: p.kind != "salto")
+    units += [[t] + slot for t, slot in zip(banked, slots)]
     seq = [Piece("recta")]
     for i in rng.permutation(len(units)):
         seq += units[i]
@@ -152,7 +210,7 @@ def piece_segs(index: int, piece: Piece) -> list[Seg]:
                 Seg("A", arc, -piece.angle_deg, piece=index)]
     if piece.kind == "salto":
         return [Seg("S", JUMP_APPROACH_M + JUMP_RESERVE_M, piece=index)]
-    if piece.kind == "rasante":
+    if piece.kind in ("rasante", "baches", "baden"):
         return [Seg("S", piece.length_m, piece=index)]
     raise ValueError(piece.kind)
 
@@ -237,7 +295,8 @@ def separation_ok(pts: np.ndarray, step: float) -> bool:
     return bool((d[gap > SEPARATION_ARC_M] >= SEPARATION_MIN_M).all())
 
 
-def _candidate(seed: int, attempt: int, pieces: list[Piece]) -> tuple[float, Plan, list] | None:
+def _candidate(seed: int, attempt: int, pieces: list[Piece],
+               profile: str = "dunas") -> tuple[float, Plan, list] | None:
     segs = close_loop(build_segs(pieces))
     if segs is None:
         return None
@@ -245,24 +304,25 @@ def _candidate(seed: int, attempt: int, pieces: list[Piece]) -> tuple[float, Pla
     pts, psi, k, step, spans = sample(segs, turn_sign)
     total = step * len(pts)
     span = pts.max(axis=0) - pts.min(axis=0)
-    if not (LENGTH_M[0] <= total <= LENGTH_M[1]) or span.max() > MAX_SPAN_M or not separation_ok(pts, step):
+    length, max_span = (TIERRA_LENGTH_M, TIERRA_MAX_SPAN_M) if profile == "tierra" else (LENGTH_M, MAX_SPAN_M)
+    if not (length[0] <= total <= length[1]) or span.max() > max_span or not separation_ok(pts, step):
         return None
     return total, Plan(seed, attempt, pieces, segs, pts, psi, k, step), spans
 
 
-def make_plan(seed: int) -> Plan:
+def make_plan(seed: int, profile: str = "dunas") -> Plan:
     """Primer sorteo (semilla, intento) con algún orden de piezas (de ORDERINGS) que da un lazo cerrado, sin cruces,
     de LENGTH_M y que cabe en MAX_SPAN_M; de sus órdenes válidos, el más corto."""
     for attempt in range(MAX_ATTEMPTS):
         rng = np.random.default_rng([seed, attempt])
-        drawn = draw_pieces(rng)
+        drawn = draw_pieces(rng, profile)
         if drawn is None:
             continue
-        found = [c for c in (_candidate(seed, attempt, arrange(rng, *drawn)) for _ in range(ORDERINGS)) if c]
+        found = [c for c in (_candidate(seed, attempt, arrange(rng, *drawn), profile) for _ in range(ORDERINGS)) if c]
         if found:
             _, plan, spans = min(found, key=lambda c: c[0])
             return _rotate_to_start(plan, spans)
-    raise RuntimeError(f"semilla {seed}: ningún trazado válido en {MAX_ATTEMPTS} intentos")
+    raise RuntimeError(f"semilla {seed} ({profile}): ningún trazado válido en {MAX_ATTEMPTS} intentos")
 
 
 def _rotate_to_start(plan: Plan, spans: list) -> Plan:

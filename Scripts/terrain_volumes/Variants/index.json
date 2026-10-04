@@ -147,5 +147,13 @@
   "recorrible": true,
   "size_mb": 1.56,
   "mode": "rally"
+ },
+ {
+  "name": "R02_circuito_tierra",
+  "seed": 682,
+  "description": "Circuito de Rally por vueltas de tierra generado (#682): lazo cerrado con cuatro saltos (doble, cresta, mesa y salto largo sobre hueco), whoops y tabla de lavar en recta, badén con barro, banqueta de tierra en las horquillas, curvas peraltadas, chicane y cambios de rasante.",
+  "recorrible": true,
+  "size_mb": 2.36,
+  "mode": "rally"
  }
 ]
