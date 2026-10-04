@@ -594,6 +594,7 @@ void ATN_RallyGameMode::Tick(float DeltaSeconds)
 	const bool bRacing = Phase == ETNRallyPhase::Racing || Phase == ETNRallyPhase::Finishing;
 	ParkFinishedTeams();
 	ConsumeRespawnRequests(bRacing);
+	ApplyVehicleHolds(Phase);
 	if (bRacing)
 	{
 		TickProgress();

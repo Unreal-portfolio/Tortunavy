@@ -41,6 +41,43 @@ ETNRallyRespawnReason TNRallyRace::ResolveRespawn(const FRespawnSignals& Signals
 	return ETNRallyRespawnReason::None;
 }
 
+TNRallyRace::FVehicleHold TNRallyRace::DecideVehicleHold(ETNRallyPhase Phase, bool bParked, bool bRetired)
+{
+	FVehicleHold Hold;
+	switch (Phase)
+	{
+	case ETNRallyPhase::Warmup:
+	case ETNRallyPhase::Countdown:
+		Hold.bEngineLocked = true;
+		Hold.bRaceBrake = true;
+		break;
+	case ETNRallyPhase::Racing:
+	case ETNRallyPhase::Finishing:
+		Hold.bEngineLocked = bParked || bRetired;
+		Hold.bRaceBrake = bParked;
+		break;
+	default:
+		Hold.bEngineLocked = true;
+		Hold.bRaceBrake = bParked;
+		break;
+	}
+	return Hold;
+}
+
+void ATN_RallyGameMode::ApplyVehicleHolds(ETNRallyPhase Phase)
+{
+	// SetRaceBrakeHeld y SetEngineLocked no hacen nada si el valor no cambia: se puede llamar cada fotograma.
+	for (const FTeamRuntime& Team : Teams)
+	{
+		if (ITN_RallyVehicle* RallyVehicle = Cast<ITN_RallyVehicle>(Team.Vehicle.Get()))
+		{
+			const TNRallyRace::FVehicleHold Hold = TNRallyRace::DecideVehicleHold(Phase, Team.bParked, Team.bRetired);
+			RallyVehicle->SetRaceBrakeHeld(Hold.bRaceBrake);
+			RallyVehicle->SetEngineLocked(Hold.bEngineLocked);
+		}
+	}
+}
+
 void ATN_RallyGameMode::ConsumeRespawnRequests(bool bRacing)
 {
 	const double Time = Now();

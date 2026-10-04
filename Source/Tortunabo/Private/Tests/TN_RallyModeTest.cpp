@@ -88,4 +88,51 @@ bool FTNRallyModeLeanAndRecoilTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyModeFinishLineHoldTest, "Tortunabo.Rally.Mode.FinishLineNeverParksMidRace",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyModeFinishLineHoldTest::RunTest(const FString& Parameters)
+{
+	using TNRallyRace::DecideVehicleHold;
+	// #667: circuito de 5 puertas a 3 vueltas; la puerta 0 es salida y meta. El buggy sale frenado de la parrilla y cruza la
+	// línea varias veces: solo se bloquea al aparcarlo en el podio después de la última.
+	TNRally::FLapRules Rules;
+	Rules.NumGates = 5;
+	Rules.bCircuit = true;
+	Rules.Laps = 3;
+	TNRallyRace::FVehicleHold Applied = DecideVehicleHold(ETNRallyPhase::Countdown, false, false);
+	TestTrue(TEXT("En el semáforo, motor cortado y freno de carrera"), Applied.bEngineLocked && Applied.bRaceBrake);
+
+	int32 LineCrossings = 0;
+	bool bParked = false;
+	for (int32 GatesPassed = 1; !Rules.IsFinished(GatesPassed - 1); ++GatesPassed)
+	{
+		const bool bFinished = Rules.IsFinished(GatesPassed);
+		LineCrossings += Rules.LastGateIndex(GatesPassed) == 0 ? 1 : 0;
+		Applied = DecideVehicleHold(ETNRallyPhase::Racing, bParked, false);
+		if (!bFinished)
+		{
+			TestFalse(FString::Printf(TEXT("Puerta %d (vuelta %d): sin freno de carrera"), Rules.LastGateIndex(GatesPassed),
+				Rules.LapForGates(GatesPassed)), Applied.bRaceBrake);
+			TestFalse(FString::Printf(TEXT("Puerta %d (vuelta %d): con motor"), Rules.LastGateIndex(GatesPassed),
+				Rules.LapForGates(GatesPassed)), Applied.bEngineLocked);
+			continue;
+		}
+		// Recién llegado y aún sin aparcar (plano lateral): sigue rodando por la meta.
+		Applied = DecideVehicleHold(ETNRallyPhase::Finishing, false, false);
+		TestFalse(TEXT("En meta y sin aparcar: no se queda clavado en la línea"), Applied.bRaceBrake || Applied.bEngineLocked);
+		bParked = true;
+		Applied = DecideVehicleHold(ETNRallyPhase::Finishing, bParked, false);
+		TestTrue(TEXT("Aparcado en el podio: motor cortado y freno de carrera"), Applied.bEngineLocked && Applied.bRaceBrake);
+	}
+	TestEqual(TEXT("Cruza la línea de salida y meta una vez por vuelta más la salida"), LineCrossings, Rules.Laps + 1);
+	TestTrue(TEXT("Termina aparcado"), bParked);
+
+	const TNRallyRace::FVehicleHold Retired = DecideVehicleHold(ETNRallyPhase::Racing, false, true);
+	TestTrue(TEXT("Retirado: motor cortado sin freno de carrera"), Retired.bEngineLocked && !Retired.bRaceBrake);
+	const TNRallyRace::FVehicleHold Results = DecideVehicleHold(ETNRallyPhase::Results, false, false);
+	TestTrue(TEXT("Resultados: motor cortado para todos"), Results.bEngineLocked && !Results.bRaceBrake);
+	return true;
+}
+
 #endif

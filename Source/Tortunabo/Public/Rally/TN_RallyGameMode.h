@@ -40,6 +40,21 @@ namespace TNRallyRace
 	TORTUNABO_API ETNRallyRespawnReason ResolveRespawn(const FRespawnSignals& Signals, bool bRacing, bool bFinished, bool bRetired,
 		bool bImmune);
 
+	/** Bloqueos del buggy de un equipo: motor cortado y freno de carrera (freno de estacionamiento y anclaje en el sitio). */
+	struct FVehicleHold
+	{
+		bool bEngineLocked = false;
+		bool bRaceBrake = false;
+	};
+
+	/**
+	 * Bloqueos que tocan a un equipo en cada fase (#667). Antes de la salida, motor cortado y freno de carrera en su hueco. En
+	 * carrera, ninguno, aunque cruce la meta (en un circuito la salida y la meta son el mismo arco) o la haya cruzado ya por
+	 * última vez y espere a que lo aparquen; solo el aparcado en el podio lleva los dos y el retirado, el motor cortado. En
+	 * resultados, motor cortado para todos y freno de carrera solo para los aparcados.
+	 */
+	TORTUNABO_API FVehicleHold DecideVehicleHold(ETNRallyPhase Phase, bool bParked, bool bRetired);
+
 	/** Dificultad de ?ProcDifficulty= (Easy, Normal o Hard, sin distinguir mayúsculas); vacía o desconocida, Fallback. */
 	TORTUNABO_API ETNProcDifficulty ParseDifficulty(const FString& Option, ETNProcDifficulty Fallback);
 
@@ -284,6 +299,12 @@ private:
 
 	/** Calentamiento y semáforo: pone el freno de carrera a cada buggy en su hueco (ITN_RallyVehicle::SetRaceBrakeHeld). */
 	void HoldBuggiesOnGrid();
+	/**
+	 * Cada fotograma, motor y freno de carrera de cada buggy según TNRallyRace::DecideVehicleHold: un bloqueo que se haya
+	 * quedado puesto (el freno de la parrilla, el motor cortado de la reaparición del podio) se suelta en cuanto la fase no
+	 * lo pide (#667).
+	 */
+	void ApplyVehicleHolds(ETNRallyPhase Phase);
 	void TickProgress();
 	void HandleGateCrossing(FTeamRuntime& Team, int32 GateIndex, bool bForward, double Alpha, float DeltaSeconds);
 	/** Cajas «?» (#629) por las que ha pasado el buggy del equipo entre From y To: le dan munición según su puesto. */

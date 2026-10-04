@@ -815,7 +815,9 @@ void ATN_Buggy::RallyTeleport(const FTransform& Where, float LockSeconds, float 
 
 void ATN_Buggy::SetEngineLocked(bool bLocked)
 {
-	if (!HasAuthority())
+	// La carrera lo pide cada fotograma (ATN_RallyGameMode::ApplyVehicleHolds): solo actúa si cambia. El par lo vuelve a
+	// poner TickDrivePhysics si la simulación no estaba lista.
+	if (!HasAuthority() || bEngineLockedByRace == bLocked)
 	{
 		return;
 	}
