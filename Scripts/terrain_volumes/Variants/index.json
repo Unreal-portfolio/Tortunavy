@@ -141,22 +141,6 @@
   "mode": "rally"
  },
  {
-  "name": "R01_circuito_dunas",
-  "seed": 622,
-  "description": "Circuito de Rally por vueltas generado (#622): lazo cerrado entre dunas con tres saltos con recepción, curvas peraltadas, horquillas en zigzag, chicane y cambios de rasante; parrilla 2 x 4.",
-  "recorrible": true,
-  "size_mb": 1.56,
-  "mode": "rally"
- },
- {
-  "name": "R02_circuito_tierra",
-  "seed": 682,
-  "description": "Circuito de Rally por vueltas de tierra generado (#682): lazo cerrado con cuatro saltos (doble, cresta, mesa y salto largo sobre hueco), whoops y tabla de lavar en recta, badén con barro, banqueta de tierra en las horquillas, curvas peraltadas, chicane y cambios de rasante.",
-  "recorrible": true,
-  "size_mb": 2.36,
-  "mode": "rally"
- },
- {
   "name": "N01_coliseo",
   "seed": 4001,
   "description": "Coliseo (Todos contra Todos): arena de 40 m rodeada por un foso de 9 m, podio y tres gradas en anillo a +4,5, +6,75 y +9 m; 4 puertas (túnel bajo la corona y puente sobre el foso), 4 escaleras en las diagonales y talud de tierra por fuera hasta la playa.",
@@ -251,5 +235,21 @@
   "recorrible": true,
   "size_mb": 0.81,
   "mode": "tct"
+ },
+ {
+  "name": "R01_circuito_dunas",
+  "seed": 622,
+  "description": "Circuito de Rally por vueltas generado (#622): lazo cerrado entre dunas con tres saltos con recepción, curvas peraltadas, horquillas en zigzag, chicane y cambios de rasante; parrilla 2 x 4.",
+  "recorrible": true,
+  "size_mb": 1.59,
+  "mode": "rally"
+ },
+ {
+  "name": "R02_circuito_tierra",
+  "seed": 682,
+  "description": "Circuito de Rally por vueltas de tierra generado (#682): lazo cerrado con cuatro saltos (doble, cresta, mesa y salto largo sobre hueco), whoops y tabla de lavar en recta, badén con barro, banqueta de tierra en las horquillas, curvas peraltadas, chicane y cambios de rasante.",
+  "recorrible": true,
+  "size_mb": 2.42,
+  "mode": "rally"
  }
 ]
