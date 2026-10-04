@@ -21,6 +21,7 @@ from scipy import ndimage
 
 from terrain_vol.layout import UU_PER_M, WATER_M
 
+from .rally_circuit_check_dirt import is_tierra, jump_ai_fields, tierra_report, tierra_verdict
 from .rally_circuit_physics import G, boost_arrival, speed_profile, takeoff_flight
 from .rally_corridor import MeshSampler, radii
 
@@ -99,7 +100,8 @@ def _jump_report(e: dict, ctx: dict, sampler: MeshSampler) -> dict:
             "landing_lateral_m": round(lateral(land), 2), "boost_lateral_m": round(lateral(land_b), 2),
             "impact_ms": round(impact(land, v, launch), 2), "impact_boost_ms": round(impact(land_b, v_boost, launch_b), 2),
             "in_zone": bool(land and zone[0] <= land.x_land_m <= zone[1]),
-            "boost_on_straight": bool(land_b and land_b.x_land_m <= straight_end - 5.0)}
+            "boost_on_straight": bool(land_b and land_b.x_land_m <= straight_end - 5.0),
+            **jump_ai_fields(e, x, line, v, takeoff_flight)}
 
 
 def _crest_report(e: dict, ctx: dict) -> dict:
@@ -156,7 +158,7 @@ def circuit_report(variant_dir: Path, sampler: MeshSampler | None = None) -> dic
     speed_boost = speed_profile(curvature, inward, grade, air, step, boost=True)
     ctx = {"pts": pts, "tan": tan, "right": right, "curvature": curvature, "inward": inward, "grade": grade,
            "arc": arc, "step": step, "z": zf, "bank": bank, "speed": speed, "speed_boost": speed_boost,
-           "road_w": m["road_width_m"]}
+           "road_w": m["road_width_m"], "total": total}
     exempt = _in_spans(arc, total, [tuple(e["s_m"]) for e in jumps])
     steps = np.abs(np.roll(zf, -1) - zf)
     win = int(round(SUSTAINED_M / step))
@@ -188,7 +190,7 @@ def circuit_report(variant_dir: Path, sampler: MeshSampler | None = None) -> dic
     cps = np.asarray(m["checkpoints_uu"], dtype=np.float64) / UU_PER_M
     cp_arcs = [arc[int(np.argmin(np.hypot(*(pts - c[:2]).T)))] for c in cps]
     cp_gaps = np.diff(cp_arcs + [total + cp_arcs[0]])
-    return {"road_m": round(total, 1), "step_m": round(step, 3), "samples": len(pts),
+    report = {"road_m": round(total, 1), "step_m": round(step, 3), "samples": len(pts),
             "wrap_gap_m": round(float(seg[-1]), 3), "max_seg_m": round(float(seg.max()), 3),
             "min_seg_m": round(float(seg.min()), 3), "missing_samples": int(np.isnan(z).sum()),
             "min_above_water_m": round(float(zf.min() - WATER_M), 2),
@@ -206,12 +208,15 @@ def circuit_report(variant_dir: Path, sampler: MeshSampler | None = None) -> dic
                             "gap_min_m": round(float(cp_gaps.min()), 1), "gap_max_m": round(float(cp_gaps.max()), 1),
                             "ordered": bool((np.diff(cp_arcs) > 0).all())},
             "lap_time_s": round(float((step / np.maximum(speed, 1.0)).sum()), 1)}
+    if is_tierra(m):
+        report["tierra"] = tierra_report(m, ctx, sampler)
+    return report
 
 
 def verdict(r: dict, manifest: dict) -> dict[str, bool]:
     L = LIMITS
     cp = r["checkpoints"]
-    return {
+    checks = {
         "closed": manifest["closed"] is True and r["wrap_gap_m"] <= L["wrap_gap_m"] and r["max_seg_m"] <= L["wrap_gap_m"]
         and r["min_seg_m"] >= 0.5,
         "on_mesh": r["missing_samples"] == 0 and r["min_above_water_m"] > 1.0,
@@ -231,6 +236,9 @@ def verdict(r: dict, manifest: dict) -> dict[str, bool]:
         "checkpoints": cp["first_at_start"] and cp["ordered"] and L["checkpoint_gap_m"][0] <= cp["gap_min_m"]
         and cp["gap_max_m"] <= L["checkpoint_gap_m"][1],
     }
+    if is_tierra(manifest):
+        checks.update(tierra_verdict(r))
+    return checks
 
 
 def load_report(variant_dir: Path) -> tuple[dict, dict]:
