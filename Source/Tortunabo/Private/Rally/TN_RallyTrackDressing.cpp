@@ -318,25 +318,16 @@ TArray<uint8> ATN_RallyTrackDressing::ProbeDrops(const TNRallyDressing::FTrackDa
 TArray<FVector> ATN_RallyTrackDressing::RunPoints(const TNRallyDressing::FTrackData& Track, const TNRallyDressing::FBarrierSide& Barrier,
 	const TArray<int32>& Run, int32 Side, TArray<FVector>& OutEdge) const
 {
+	OutEdge = TNRallyDressing::RunEdge(Track, Barrier, Run, Side);
 	TArray<FVector> Points;
-	OutEdge.Reset();
-	for (const int32 Index : Run)
+	Points.Reserve(OutEdge.Num());
+	for (const FVector& Edge : OutEdge)
 	{
-		const TNRallyDressing::FAxisSample& Sample = Track.Samples[Index];
-		const FVector Edge = TNRallyDressing::LateralPoint(Sample, Side, Barrier.OffsetCm[Index]);
+		// La cota de la línea es la de su muestra del eje (LateralPoint).
 		FVector Ground;
-		const bool bGrounded = FindGroundNear(Track, Edge, Sample.Location.Z, Ground);
+		const bool bGrounded = FindGroundNear(Track, Edge, Edge.Z, Ground);
 		// Con el suelo más bajo que la calzada (talud o caída), el carril sigue a la cota de la calzada: tapa igual.
 		Points.Add(bGrounded && Ground.Z > Edge.Z ? Ground : Edge);
-		OutEdge.Add(Edge);
-	}
-	if (Track.bClosed && Run.Num() == Track.Samples.Num() && Points.Num() > 0)
-	{
-		// Copias antes de añadir: Add de un elemento del propio array salta el assert de TArray (CheckAddress).
-		const FVector FirstPoint = Points[0];
-		const FVector FirstEdge = OutEdge[0];
-		Points.Add(FirstPoint);
-		OutEdge.Add(FirstEdge);
 	}
 	return Points;
 }
@@ -409,9 +400,10 @@ void ATN_RallyTrackDressing::AddRails(const TNRallyDressing::FTrackData& Track, 
 				continue;
 			}
 			// Toda la barrera visible, también sobre los taludes y las caídas (#303: antes se quitaba donde no había suelo
-			// cerca y quedaban tramos sin neumáticos). Cada pieza busca su suelo; el estilo cambia por trozos sin hueco.
+			// cerca y quedaban tramos sin neumáticos). Cada pieza busca su suelo. Con un solo estilo, el tramo entero con la
+			// misma separación (#666); con varios, cambia por trozos sin hueco.
 			const int32 RunSeed = TNRallyDressing::SubSeed(Seed, Side, RunIndex);
-			const TArray<TArray<FVector>> Chunks = TNRallyDressing::ChunkPolyline(Edge, StyleSectionCm);
+			const TArray<TArray<FVector>> Chunks = TNRallyDressing::BarrierSections(Edge, BarrierStyles.Num(), StyleSectionCm);
 			for (int32 Chunk = 0; Chunk < Chunks.Num(); ++Chunk)
 			{
 				const int32 ChunkSeed = TNRallyDressing::SubSeed(RunSeed, 0, 3 + 8 * Chunk);

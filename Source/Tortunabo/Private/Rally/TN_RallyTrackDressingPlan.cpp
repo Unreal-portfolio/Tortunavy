@@ -624,6 +624,35 @@ namespace TNRallyDressing
 		return Gaps;
 	}
 
+	TArray<FVector> RunEdge(const FTrackData& Track, const FBarrierSide& Barrier, const TArray<int32>& Run, int32 Side)
+	{
+		TArray<FVector> Edge;
+		Edge.Reserve(Run.Num() + 1);
+		for (const int32 Index : Run)
+		{
+			if (Track.Samples.IsValidIndex(Index) && Barrier.OffsetCm.IsValidIndex(Index))
+			{
+				Edge.Add(LateralPoint(Track.Samples[Index], Side, Barrier.OffsetCm[Index]));
+			}
+		}
+		if (Track.bClosed && Run.Num() == Track.Samples.Num() && Edge.Num() > 0)
+		{
+			// Copia antes de añadir: Add de un elemento del propio array salta el assert de TArray (CheckAddress).
+			const FVector First = Edge[0];
+			Edge.Add(First);
+		}
+		return Edge;
+	}
+
+	TArray<TArray<FVector>> BarrierSections(const TArray<FVector>& Edge, int32 NumStyles, double SectionCm)
+	{
+		if (NumStyles <= 1)
+		{
+			return Edge.Num() >= 2 ? TArray<TArray<FVector>>{ Edge } : TArray<TArray<FVector>>();
+		}
+		return ChunkPolyline(Edge, SectionCm);
+	}
+
 	TArray<TArray<FVector>> ChunkPolyline(const TArray<FVector>& Points, double MaxLengthCm)
 	{
 		TArray<TArray<FVector>> Chunks;

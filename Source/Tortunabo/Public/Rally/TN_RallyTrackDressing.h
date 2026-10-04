@@ -261,6 +261,18 @@ namespace TNRallyDressing
 	 */
 	TORTUNABO_API TArray<TArray<FVector>> ChunkPolyline(const TArray<FVector>& Points, double MaxLengthCm);
 
+	/**
+	 * Línea del límite de un tramo (Run) por el lado Side, a la cota del eje: un punto por muestra y, si el tramo da la vuelta
+	 * entera a un circuito, el primero otra vez al final (la barrera se cierra en la salida).
+	 */
+	TORTUNABO_API TArray<FVector> RunEdge(const FTrackData& Track, const FBarrierSide& Barrier, const TArray<int32>& Run, int32 Side);
+
+	/**
+	 * Trozos del límite que llevan cada uno un estilo. Con un solo estilo (neumáticos, #666), el tramo entero: las piezas se
+	 * reparten con la misma separación en todo el borde, sin el reajuste de cada corte. Con varios, ChunkPolyline(SectionCm).
+	 */
+	TORTUNABO_API TArray<TArray<FVector>> BarrierSections(const TArray<FVector>& Edge, int32 NumStyles, double SectionCm);
+
 	/** True si Point (en planta) está a ClearCm o más de todas las muestras del eje. */
 	TORTUNABO_API bool IsClearOfTrack(const FTrackData& Track, const FVector& Point, double ClearCm);
 
@@ -439,7 +451,8 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Rally|Límites")
 	TArray<FTNRallyDressingGap> ShortcutGaps;
 
-	/** Estilos que se reparten por trozo de límite (con la semilla). Por defecto, solo neumáticos apilados (#303, director). */
+	/** Estilos que se reparten por trozo de límite (con la semilla). Por defecto, solo neumáticos apilados (#303, director), repartidos
+	 * con la misma separación por todo el borde (#666, TNRallyDressing::BarrierSections). */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Límites")
 	TArray<ETNRallyBarrierStyle> BarrierStyles;
 
