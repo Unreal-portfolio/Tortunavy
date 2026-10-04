@@ -6,7 +6,12 @@
 
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "FoliageInstancedStaticMeshComponent.h"
+#include "InstancedFoliageActor.h"
 #include "Rally/TN_RallyTrack.h"
+#include "World/Beach/TN_BeachDecor.h"
+#include "World/Beach/TN_BeachDecorField.h"
+#include "World/TN_MapPlacementSpawner.h"
 
 namespace TNRallyDressingClearance
 {
@@ -221,8 +226,12 @@ void ATN_RallyTrackDressing::PlaceRail(UStaticMesh* Cube, const FVector& A, cons
 	}
 }
 
-bool ATN_RallyTrackDressing::TryPlaceBarrierPieces(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side)
+bool ATN_RallyTrackDressing::PassesRoadClearance(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side)
 {
+	if (!bRoadClearance)
+	{
+		return true;
+	}
 	for (const TNRallyDressing::FBarrierPiece& Piece : Pieces)
 	{
 		if (RoadFootprint.IsValid() && RoadFootprint->Intrudes(Piece.Center, Piece.RadiusCm, Piece.BottomZ, Piece.TopZ))
@@ -237,8 +246,19 @@ bool ATN_RallyTrackDressing::TryPlaceBarrierPieces(TConstArrayView<TNRallyDressi
 			return false;
 		}
 	}
-	BarrierPieces.Append(Pieces.GetData(), Pieces.Num());
 	return true;
+}
+
+bool ATN_RallyTrackDressing::CanBeRoof(const AActor* Actor, const UPrimitiveComponent* Component)
+{
+	// El follaje (pintado en el nivel o instanciado en otro actor) nunca es un techo.
+	if ((Component && Component->IsA<UFoliageInstancedStaticMeshComponent>()) || (Actor && Actor->IsA<AInstancedFoliageActor>()))
+	{
+		return false;
+	}
+	// Ni el decorado: piezas de playa sueltas, su campo instanciado, la vegetación del manifest ni el decorado del Rally.
+	return !(Actor && (Actor->IsA<ATN_BeachDecor>() || Actor->IsA<ATN_BeachDecorField>() || Actor->IsA<ATN_MapPlacementSpawner>()
+		|| Actor->IsA<ATN_RallyTrackDressing>()));
 }
 
 bool ATN_RallyTrackDressing::IsUnderRoof(const FVector& Center, double RadiusCm, double TopZ, double YawDeg, int32 Side) const
@@ -269,11 +289,25 @@ bool ATN_RallyTrackDressing::IsUnderRoof(const FVector& Center, double RadiusCm,
 		// Desde encima de la calzada (en un salto, su rampa sube por encima de la pila) para no empezar dentro del suelo.
 		const double RoadZ = RoadFootprint.IsValid() ? RoadFootprint->RoadZAt(Probe, TopZ, TopZ) : TopZ;
 		Probe.Z = FMath::Max(TopZ, RoadZ) + RoofProbeLiftCm;
-		FHitResult Hit;
-		if (World->LineTraceSingleByObjectType(Hit, Probe, Probe + FVector(0.0, 0.0, RoofProbeCm), FCollisionObjectQueryParams(ECC_WorldStatic),
-			Params) && Hit.ImpactPoint.Z - Probe.Z >= RoofMinGapCm)
+		if (HasRoofAbove(*World, Probe, RoofProbeCm, RoofMinGapCm, Params))
 		{
 			return true;
+		}
+	}
+	return false;
+}
+
+bool ATN_RallyTrackDressing::HasRoofAbove(const UWorld& World, const FVector& From, double UpCm, double MinGapCm,
+	const FCollisionQueryParams& Params)
+{
+	// Con objetos, la traza múltiple devuelve todo lo que toca por orden: manda lo primero que puede ser techo (CanBeRoof).
+	TArray<FHitResult> Hits;
+	World.LineTraceMultiByObjectType(Hits, From, From + FVector(0.0, 0.0, UpCm), FCollisionObjectQueryParams(ECC_WorldStatic), Params);
+	for (const FHitResult& Hit : Hits)
+	{
+		if (CanBeRoof(Hit.GetActor(), Hit.GetComponent()))
+		{
+			return Hit.ImpactPoint.Z - From.Z >= MinGapCm;
 		}
 	}
 	return false;

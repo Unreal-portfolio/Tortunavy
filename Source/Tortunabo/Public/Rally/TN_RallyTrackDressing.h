@@ -16,6 +16,9 @@ class ATN_RallyTrack;
 class UInstancedStaticMeshComponent;
 class UMaterialInterface;
 class UPhysicalMaterial;
+class UPrimitiveComponent;
+class UWorld;
+struct FCollisionQueryParams;
 class UStaticMesh;
 struct FTNRallyDressingBatches;
 
@@ -560,6 +563,24 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Decorado")
 	int32 GetRoofBlockedBarrierCount() const { return BlockedUnderRoofCount; }
 
+	/**
+	 * Solo para pruebas: con false, el próximo Build pone la barrera y el carril sin el gálibo de #693 (ni calzada ni techo).
+	 * Tortunabo.Rally.Dressing.RoadClear.Built lo usa para comprobar que sin el filtro sí hay piezas que lo incumplen.
+	 */
+	void SetRoadClearanceEnabled(bool bEnabled) { bRoadClearance = bEnabled; }
+
+	/**
+	 * Si lo que toca una sonda de techo (#693) puede ser un techo: el terreno y las estructuras sí; el follaje y el decorado
+	 * (ATN_BeachDecor, ATN_BeachDecorField, la vegetación de ATN_MapPlacementSpawner y el propio decorado del Rally), no.
+	 */
+	static bool CanBeRoof(const AActor* Actor, const UPrimitiveComponent* Component);
+
+	/**
+	 * Hay techo encima de From: lo primero que puede serlo (CanBeRoof) en la vertical, hasta UpCm por encima, deja al menos
+	 * MinGapCm de aire (más cerca es el propio suelo). Lo usan las sondas de IsUnderRoof y los tests de #693.
+	 */
+	static bool HasRoofAbove(const UWorld& World, const FVector& From, double UpCm, double MinGapCm, const FCollisionQueryParams& Params);
+
 protected:
 	// ── Límites ──
 
@@ -753,12 +774,15 @@ private:
 	void AddPieceRun(const TArray<FVector>& Points, ETNBeachElement First, ETNBeachElement Second, float Size, int32 Side, int32 RunSeed,
 		FTNRallyDressingBatches& Batches);
 	/**
-	 * Todas o ninguna (#693): las piezas (con rumbo YawDeg, en el lado Side) se ponen si ninguna invade la calzada de ningún
-	 * tramo ni, las que se ven (no el carril), queda bajo un techo sobre la calzada. Si se ponen, las apunta en BarrierPieces;
-	 * si no, cuenta el motivo.
+	 * Todas o ninguna (#693): las piezas (con rumbo YawDeg, en el lado Side) caben si ninguna invade la calzada de ningún
+	 * tramo ni, las que se ven (no el carril), queda bajo un techo sobre la calzada. Si no, cuenta el motivo. No las apunta:
+	 * quien las coloca las añade a BarrierPieces solo si de verdad pone la pieza.
 	 */
-	bool TryPlaceBarrierPieces(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side);
-	/** Algo por encima (RoofProbeCm) entre la pieza y la calzada, en su sitio y un poco antes y después. */
+	bool PassesRoadClearance(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side);
+	/**
+	 * Algo por encima (RoofProbeCm) entre la pieza y la calzada, en su sitio y un poco antes y después. Solo cuentan el
+	 * terreno y las estructuras (CanBeRoof): una palmera o una sombrilla encima no son un techo.
+	 */
 	bool IsUnderRoof(const FVector& Center, double RadiusCm, double TopZ, double YawDeg, int32 Side) const;
 	/** Pilas de neumáticos a lo largo de Points (a la cota de la calzada), cada una apoyada en su suelo. */
 	void AddTireRun(const TNRallyDressing::FTrackData& Track, const TArray<FVector>& Points, int32 Side, FTNRallyDressingBatches& Batches);
@@ -824,6 +848,8 @@ private:
 	void CollectRoofIgnoredActors();
 
 	bool bVisuals = true;
+	/** Gálibo de #693 activo en Build (SetRoadClearanceEnabled, solo pruebas). */
+	bool bRoadClearance = true;
 	int32 RailSegmentCount = 0;
 	int32 BarrierPieceCount = 0;
 	int32 BlockedOnRoadCount = 0;

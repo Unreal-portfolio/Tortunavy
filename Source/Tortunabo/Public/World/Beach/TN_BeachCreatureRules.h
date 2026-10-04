@@ -282,6 +282,54 @@ namespace TNBeachCreatureRules
 			if (SpeedToward <= 30.f) { return EImpact::None; }
 			return SpeedToward >= Threshold ? EImpact::KnockDown : EImpact::Block;
 		}
+
+		/** Lo que choca contra el erizo. */
+		enum class EBody : uint8
+		{
+			/** Tortuga a pie (andando o corriendo). */
+			Walker,
+			/** Tortuga rodando en su bola de caparazón. */
+			Ball,
+			/** Buggy (conducido por una tortuga o por la IA). */
+			Buggy,
+		};
+
+		/** Cómo se aplica el derribo según lo que choca. */
+		enum class EResponse : uint8
+		{
+			/** Sin derribo: no va contra él o solo lo para la colisión. */
+			None,
+			/** Tortuga a pie: derribo con ragdoll y rebote. */
+			KnockDownWalker,
+			/** Bola: rebota y la tortuga queda mareada dentro del caparazón. */
+			StunBall,
+			/** Buggy: rebote del chasis y bamboleo de la dirección. */
+			BounceBuggy,
+		};
+
+		inline EResponse ResponseFor(EBody Body, float SpeedToward, float Threshold = KnockSpeed)
+		{
+			if (Impact(SpeedToward, Threshold) != EImpact::KnockDown)
+			{
+				return EResponse::None;
+			}
+			switch (Body)
+			{
+			case EBody::Ball: return EResponse::StunBall;
+			case EBody::Buggy: return EResponse::BounceBuggy;
+			default: return EResponse::KnockDownWalker;
+			}
+		}
+
+		/**
+		 * Distancia (cm) del centro de un buggy a su contorno en la dirección LocalDir (en sus ejes, plana): el apoyo de su
+		 * caja en planta (semilargo HalfLength en X, semiancho HalfWidth en Y). De morro cuenta el largo; de lado, el ancho.
+		 */
+		inline double BuggyReachCm(const FVector& LocalDir, double HalfLength, double HalfWidth)
+		{
+			const FVector Flat = FVector(LocalDir.X, LocalDir.Y, 0.0).GetSafeNormal();
+			return FMath::Abs(Flat.X) * HalfLength + FMath::Abs(Flat.Y) * HalfWidth;
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────

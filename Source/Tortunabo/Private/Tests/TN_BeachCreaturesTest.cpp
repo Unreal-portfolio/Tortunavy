@@ -209,6 +209,20 @@ bool FTNBeachCreaturesTankTrapTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("corriendo contra él: rebote y derribo"), Impact(TNBeachCreaturesTest::RunSpeed) == EImpact::KnockDown);
 	TestTrue(TEXT("justo en el umbral: derribo"), Impact(KnockSpeed) == EImpact::KnockDown);
 	TestTrue(TEXT("el umbral está entre andar y correr"), KnockSpeed > TNBeachCreaturesTest::WalkSpeed && KnockSpeed < TNBeachCreaturesTest::RunSpeed);
+	// #698: también derriba la bola de caparazón y el buggy, cada uno con su respuesta; despacio, ninguno.
+	TestTrue(TEXT("a pie y deprisa: derribo con ragdoll"), ResponseFor(EBody::Walker, TNBeachCreaturesTest::RunSpeed) == EResponse::KnockDownWalker);
+	TestTrue(TEXT("bola deprisa: rebote y mareo en la bola"), ResponseFor(EBody::Ball, TNBeachCreaturesTest::RunSpeed) == EResponse::StunBall);
+	TestTrue(TEXT("buggy deprisa: rebote del chasis"), ResponseFor(EBody::Buggy, TNBeachCreaturesTest::RunSpeed) == EResponse::BounceBuggy);
+	for (const EBody Body : { EBody::Walker, EBody::Ball, EBody::Buggy })
+	{
+		TestTrue(TEXT("despacio no derriba nada"), ResponseFor(Body, TNBeachCreaturesTest::WalkSpeed) == EResponse::None);
+		TestTrue(TEXT("parado no derriba nada"), ResponseFor(Body, 0.f) == EResponse::None);
+	}
+	// El contorno del buggy: de morro, su semilargo; de lado, su semiancho; en diagonal, entre los dos.
+	TestEqual(TEXT("buggy de morro"), BuggyReachCm(FVector(1.0, 0.0, 0.0), 190.0, 95.0), 190.0, 0.01);
+	TestEqual(TEXT("buggy de lado"), BuggyReachCm(FVector(0.0, -1.0, 0.3), 190.0, 95.0), 95.0, 0.01);
+	const double Diagonal = BuggyReachCm(FVector(1.0, 1.0, 0.0), 190.0, 95.0);
+	TestTrue(TEXT("buggy en diagonal"), Diagonal > 95.0 && Diagonal < 190.0 + 95.0);
 	return true;
 }
 

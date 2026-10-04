@@ -1,5 +1,6 @@
 // Lotes de instancias del decorado del Rally y ayudas para apoyar mallas en el suelo. Lo comparten
-// TN_RallyTrackDressing.cpp (límites, decorado cercano, público y pórticos) y TN_RallyTrackDressingFar.cpp (decorado lejano).
+// TN_RallyTrackDressing.cpp (decorado cercano, público y pórticos), TN_RallyTrackDressingBarrier.cpp (límites) y
+// TN_RallyTrackDressingFar.cpp (decorado lejano).
 #pragma once
 
 #include "CoreMinimal.h"
@@ -53,6 +54,11 @@ struct FTNRallyDressingBatches
 
 namespace TNRallyDressingPlace
 {
+	/** Trazas de suelo: por encima y por debajo de la cota de referencia, y desnivel máximo para darlo por bueno (cm). */
+	constexpr double GroundUpCm = 800.0;
+	constexpr double GroundDownCm = 3000.0;
+	constexpr double MaxGroundStepCm = 600.0;
+
 	/** Caja de la malla girada y escalada (sin trasladar). */
 	inline FBox PlacedBox(const UStaticMesh* Mesh, const FQuat& Rotation, double Scale)
 	{

@@ -21,6 +21,7 @@
 #include "Kart/TN_KartGameState.h"
 #include "Lobby/TN_LobbyMission.h"
 #include "Rally/TN_RallyGameMode.h"
+#include "World/TN_TctArena.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
@@ -1800,8 +1801,16 @@ void UTN_PauseMenuWidget::RefreshHeader()
 			Mode = FText::Format(NSLOCTEXT("TNPause", "Mode2v2", "2 contra 2 · ronda {0} · gana la pareja que llegue a {1}"), Round, Target);
 			break;
 		case ETNProcGameMode::FreeForAll:
-			Mode = FText::Format(NSLOCTEXT("TNPause", "ModeFreeForAll", "Todos contra Todos · ronda {0} · gana quien llegue a {1} rondas"), Round, Target);
+		{
+			// La arena (replicada en ATN_TctArena); hasta que llega, sin ella.
+			const ATN_TctArena* Arena = ATN_TctArena::Find(World);
+			const FName ArenaVariant = Arena ? Arena->GetArenaVariant() : NAME_None;
+			Mode = ArenaVariant.IsNone()
+				? FText::Format(NSLOCTEXT("TNPause", "ModeFreeForAll", "Todos contra Todos · ronda {0} · gana quien llegue a {1} rondas"), Round, Target)
+				: FText::Format(NSLOCTEXT("TNPause", "ModeFreeForAllArena", "Todos contra Todos · {2} · ronda {0} · gana quien llegue a {1} rondas"),
+					Round, Target, TNLobbyMission::TctArenaName(ArenaVariant));
 			break;
+		}
 		default:
 		{
 			static const FText Difficulties[] = { NSLOCTEXT("TNPause", "DiffEasy", "fácil"), NSLOCTEXT("TNPause", "DiffNormal", "normal"),
