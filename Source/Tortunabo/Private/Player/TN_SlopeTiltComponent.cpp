@@ -168,6 +168,8 @@ bool UTN_SlopeTiltComponent::TraceFloorNormal(const ACharacter& Character, FVect
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNSlopeTiltTrace), false, &Character);
 	FCollisionResponseParams Response;
 	Capsule->InitSweepCollisionParams(Params, Response);
+	// Solo el escenario: otra tortuga debajo daría una inclinación distinta de la del anfitrión.
+	Response.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
 	FHitResult Hit;
 	bCachedTraceHit = World->LineTraceSingleByChannel(Hit, Location, End, Capsule->GetCollisionObjectType(), Params, Response);
 	const UCharacterMovementComponent* Move = Character.GetCharacterMovement();
