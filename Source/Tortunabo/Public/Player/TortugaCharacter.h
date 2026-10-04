@@ -1309,8 +1309,8 @@ protected:
 	};
 	FTNPendingDiveSplat PendingDiveSplat;
 
-	/** Todas las máquinas: polvo y golpe sintetizado contra la pared, y los pajaritos DiveSplatDizzySeconds. Cosmético. */
-	UFUNCTION(NetMulticast, Unreliable)
+	/** Todas las máquinas: polvo y golpe sintetizado contra la pared, y los pajaritos DiveSplatDizzySeconds. Cosmético, pero fiable: es un evento raro (uno por panzazo) y con pérdida de paquetes no debe faltar el mareo. */
+	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_DiveSplatFX(FVector_NetQuantize Where, FVector_NetQuantizeNormal WallNormal, float Strength);
 
 	/** Fin de los pajaritos del estampado en esta máquina (los deja si está derribada). */
