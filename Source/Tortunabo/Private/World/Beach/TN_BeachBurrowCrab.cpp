@@ -188,6 +188,21 @@ void ATN_BeachBurrowCrab::ReleaseVictim(bool bThrow)
 	IgnoreTurtle(Victim, Times.Recharge);
 }
 
+void ATN_BeachBurrowCrab::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// Destruido con una tortuga agarrada (p. ej., al cerrar una ronda): se le desarma el forcejeo; si no, cada salto
+	// suyo seguiría siendo forcejeo el resto de la vida del peón.
+	if (HasAuthority() && Grabbed)
+	{
+		if (UTN_BeachTrapStatusComponent* Status = UTN_BeachTrapStatusComponent::FindOn(Grabbed))
+		{
+			Status->ServerArmEscape(false);
+		}
+	}
+	Grabbed = nullptr;
+	Super::EndPlay(EndPlayReason);
+}
+
 void ATN_BeachBurrowCrab::OnHoldAborted(ATortugaCharacter* Turtle)
 {
 	if (!HasAuthority() || !Turtle || Grabbed != Turtle)

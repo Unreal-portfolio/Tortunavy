@@ -89,6 +89,16 @@ public:
 	void ServerArmEscape(bool bArmed);
 	bool IsEscapeArmed() const { return bEscapeArmed; }
 
+	/**
+	 * Servidor, red de seguridad del forcejeo: con el forcejeo armado sin trampa ni enemigo que la sujete en dos miradas
+	 * seguidas (quien la agarró desapareció sin desarmarlo), lo desarma. Devuelve true si lo ha desarmado. Lo llama un
+	 * temporizador cada EscapeWatchSeconds mientras está armado.
+	 */
+	bool ServerCheckOrphanEscape();
+
+	/** Segundos entre dos miradas de ServerCheckOrphanEscape. */
+	static constexpr float EscapeWatchSeconds = 0.5f;
+
 	/** Dueño (o servidor con la tortuga local): una pulsación de salto con el forcejeo armado. */
 	void PressEscape();
 
@@ -141,6 +151,9 @@ private:
 	FTimerHandle SlowTimer;
 	FTimerHandle DizzyTimer;
 	FTimerHandle WatchdogTimer;
+	FTimerHandle EscapeWatchTimer;
+	/** Miradas seguidas con el forcejeo armado sin nada que la retenga. */
+	int32 OrphanEscapeLooks = 0;
 	double TrappedAt = 0.0;
 	double LastPressSent = -1.0;
 	uint8 AppliedTrapSerial = 0;

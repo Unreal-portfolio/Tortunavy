@@ -41,6 +41,7 @@ void UTN_BeachTrapStatusComponent::EndPlay(const EEndPlayReason::Type EndPlayRea
 		World->GetTimerManager().ClearTimer(SlowTimer);
 		World->GetTimerManager().ClearTimer(DizzyTimer);
 		World->GetTimerManager().ClearTimer(WatchdogTimer);
+		World->GetTimerManager().ClearTimer(EscapeWatchTimer);
 	}
 	if (APlayerController* PC = IgnoringController.Get())
 	{
@@ -320,6 +321,43 @@ void UTN_BeachTrapStatusComponent::ServerArmEscape(bool bArmed)
 		bEscapeArmed = bArmed;
 		GetOwner()->ForceNetUpdate();
 	}
+	OrphanEscapeLooks = 0;
+	if (UWorld* World = GetWorld())
+	{
+		FTimerManager& Timers = World->GetTimerManager();
+		if (!bArmed)
+		{
+			Timers.ClearTimer(EscapeWatchTimer);
+		}
+		else if (!Timers.IsTimerActive(EscapeWatchTimer))
+		{
+			Timers.SetTimer(EscapeWatchTimer, FTimerDelegate::CreateWeakLambda(this, [this]() { ServerCheckOrphanEscape(); }),
+				EscapeWatchSeconds, true);
+		}
+	}
+}
+
+bool UTN_BeachTrapStatusComponent::ServerCheckOrphanEscape()
+{
+	const AActor* Owner = GetOwner();
+	if (!bEscapeArmed || !Owner || !Owner->HasAuthority())
+	{
+		OrphanEscapeLooks = 0;
+		return false;
+	}
+	if (TrapState.bTrapped || ATN_BeachEnemy::IsTurtleHeld(Cast<ATortugaCharacter>(Owner)))
+	{
+		OrphanEscapeLooks = 0;
+		return false;
+	}
+	// Una mirada suelta no cuenta: entre el agarre y la primera sujeción puede pasar un fotograma.
+	if (++OrphanEscapeLooks < 2)
+	{
+		return false;
+	}
+	UE_LOG(LogTortunabo, Warning, TEXT("[Playa] %s: forcejeo armado sin nadie que la sujete; se desarma."), *GetNameSafe(Owner));
+	ServerArmEscape(false);
+	return true;
 }
 
 void UTN_BeachTrapStatusComponent::PressEscape()
