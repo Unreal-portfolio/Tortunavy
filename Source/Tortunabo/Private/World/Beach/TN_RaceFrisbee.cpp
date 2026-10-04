@@ -14,6 +14,7 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 #include "Templates/Function.h"
 #include "UObject/Package.h"
 
@@ -51,12 +52,9 @@ namespace TNRaceFrisbeeDetail
 	constexpr double HitRadius = 90.0;
 	/** En la vuelta, a menos de esto (cm) de quien lo lanzó lo caza. */
 	constexpr double CatchRadius = 200.0;
-	/** Tortugas: segundos de derribo y empujón (cm/s) en el sentido del disco y hacia arriba. */
-	constexpr float KnockSeconds = 1.9f;
+	/** Tortugas: empujón (cm/s) en el sentido del disco y hacia arriba (el derribo, en UTN_CombatTuning). */
 	constexpr double KnockPush = 550.0;
 	constexpr double KnockLift = 300.0;
-	/** Enemigos: segundos de mareo. */
-	constexpr float EnemyStunSeconds = 4.f;
 	/** Segundos que sigue el actor tras acabar (para que se vea la nubecilla y suene el «clap»). */
 	constexpr float FinishLingerSeconds = 0.3f;
 
@@ -357,7 +355,7 @@ void ATN_RaceFrisbee::ServerSweepHits(const FVector& Prev, const FVector& Cur)
 			continue;
 		}
 		HitThisPass.Add(VictimKey);
-		TNBeach::KnockDownTurtle(Victim, KnockSeconds, Heading * KnockPush + FVector(0.0, 0.0, KnockLift));
+		TNBeach::KnockDownTurtle(Victim, UTN_CombatTuning::Get().FrisbeeKnockSeconds, Heading * KnockPush + FVector(0.0, 0.0, KnockLift));
 		MulticastHit(FVector_NetQuantize10(OnTurtle));
 		UE_LOG(LogTortunabo, Log, TEXT("[Carrera] El disco de %s derriba a %s."), *GetNameSafe(Thrower), *GetNameSafe(Victim));
 	}
@@ -390,7 +388,7 @@ void ATN_RaceFrisbee::ServerSweepHits(const FVector& Prev, const FVector& Cur)
 			continue;
 		}
 		HitThisPass.Add(EnemyKey);
-		Enemy->ApplyHitStun(EnemyStunSeconds, GetOwnerTurtle());
+		Enemy->ApplyHitStun(UTN_CombatTuning::Get().FrisbeeEnemyStunSeconds, GetOwnerTurtle());
 		MulticastHit(FVector_NetQuantize10(OnEnemy));
 	}
 }

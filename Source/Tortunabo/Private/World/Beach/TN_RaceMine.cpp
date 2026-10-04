@@ -17,6 +17,7 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 #include "Templates/Function.h"
 #include "UObject/Package.h"
 
@@ -67,14 +68,12 @@ namespace TNRaceMineDetail
 	constexpr double BlastRadius = 550.0;
 	constexpr double BlastHeight = 450.0;
 	constexpr double CulpritReachFactor = 2.0;
-	constexpr float StunSeconds = 3.f;
 	/** Lanzamiento de las aturdidas: hacia fuera (cm/s), hacia arriba (cm/s) y un poco hacia atrás en la carrera (cm/s). */
 	constexpr double LaunchOut = 420.0;
 	constexpr double LaunchUp = 950.0;
 	constexpr double LaunchBackBias = 150.0;
-	/** Enemigos a menos de esto de su cuerpo (cm) quedan mareados estos segundos. */
+	/** Enemigos a menos de esto de su cuerpo (cm) quedan mareados (segundos en UTN_CombatTuning). */
 	constexpr double EnemyBlastGap = 1300.0;
-	constexpr float EnemyStunSeconds = 5.f;
 	/** Segundos que sigue el actor tras explotar (cráter, humo, sonidos). */
 	constexpr float LingerSeconds = 3.5f;
 
@@ -461,7 +460,7 @@ void ATN_RaceMine::Explode()
 			Away = Back;
 		}
 		const FVector Launch = Away * LaunchOut + Back * LaunchBackBias + FVector(0.0, 0.0, LaunchUp);
-		TNBeach::StunTurtle(Victim, StunSeconds, Launch);
+		TNBeach::StunTurtle(Victim, UTN_CombatTuning::Get().MineStunSeconds, Launch);
 		++Stunned;
 	}
 
@@ -485,7 +484,7 @@ void ATN_RaceMine::Explode()
 		{
 			continue;
 		}
-		Enemy->ApplyHitStun(EnemyStunSeconds, Thrower);
+		Enemy->ApplyHitStun(UTN_CombatTuning::Get().MineEnemyStunSeconds, Thrower);
 		++Dizzy;
 	}
 	TriggerTurtle.Reset();

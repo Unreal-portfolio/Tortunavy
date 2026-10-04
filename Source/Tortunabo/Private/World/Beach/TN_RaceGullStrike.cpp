@@ -16,6 +16,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del
 // bloque.
@@ -67,12 +68,9 @@ namespace TNRaceGullStrikeDetail
 	/** Radio del impacto en planta (cm; antes 330) y altura máxima (cm) sobre la arena. */
 	constexpr float ImpactRadius = TNBeachGullTuning::StrikeImpactRadius;
 	constexpr float ImpactHeight = 300.f;
-	/** Derribo (s), empujón hacia fuera (cm/s) y hacia arriba (cm/s). */
-	constexpr float KnockSeconds = 2.6f;
+	/** Empujón hacia fuera (cm/s) y hacia arriba (cm/s); el derribo y el mareo, en UTN_CombatTuning. */
 	constexpr float KnockPush = 260.f;
 	constexpr float KnockUp = 150.f;
-	/** Mareo del enemigo (s). */
-	constexpr float EnemyStunSeconds = 4.f;
 	/** Cada cuánto se comprueba que la tortuga a la que sigue el blanco sigue en carrera (s). */
 	constexpr float RacerCheckSeconds = 0.25f;
 
@@ -453,7 +451,7 @@ void ATN_RaceGullStrike::ServerImpact()
 			FVector Away = RacerAt - Impact;
 			Away.Z = 0.0;
 			Away = Away.IsNearlyZero() ? -Racer->GetActorForwardVector().GetSafeNormal2D() : Away.GetSafeNormal();
-			TNBeach::KnockDownTurtle(Racer, KnockSeconds, Away * static_cast<double>(KnockPush) + FVector(0.0, 0.0, static_cast<double>(KnockUp)));
+			TNBeach::KnockDownTurtle(Racer, UTN_CombatTuning::Get().GullStrikeKnockSeconds, Away * static_cast<double>(KnockPush) + FVector(0.0, 0.0, static_cast<double>(KnockUp)));
 			Victims.Add(Racer);
 		}
 		// Si iba a por un enemigo, se marea si el pegote le cae encima (su cuerpo, no solo su centro).
@@ -469,7 +467,7 @@ void ATN_RaceGullStrike::ServerImpact()
 				if (FVector::Dist2D(Nearest, Impact) <= static_cast<double>(ImpactRadius) + Reach
 					&& FMath::Abs(Nearest.Z - Impact.Z) < static_cast<double>(ImpactHeight) + Reach)
 				{
-					Enemy->ApplyHitStun(EnemyStunSeconds, GetOwnerTurtle());
+					Enemy->ApplyHitStun(UTN_CombatTuning::Get().GullStrikeEnemyStunSeconds, GetOwnerTurtle());
 				}
 			}
 		}

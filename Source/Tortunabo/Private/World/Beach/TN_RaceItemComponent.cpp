@@ -12,6 +12,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del
 // bloque.
@@ -338,7 +339,7 @@ void UTN_RaceItemComponent::ServerStarContacts(float DeltaTime)
 		{
 			Away = Self->GetActorForwardVector();
 		}
-		TNBeach::KnockDownTurtle(Other, TNRaceItems::StarKnockSeconds, Away * StarKnockPush + FVector(0.0, 0.0, StarKnockLift));
+		TNBeach::KnockDownTurtle(Other, UTN_CombatTuning::Get().StarKnockSeconds, Away * StarKnockPush + FVector(0.0, 0.0, StarKnockLift));
 	}
 
 	// Enemigos: mareados con pajaritos (los que se dejan marear).
@@ -368,7 +369,7 @@ void UTN_RaceItemComponent::ServerStarContacts(float DeltaTime)
 			continue;
 		}
 		StarHitUntil.Add(TWeakObjectPtr<AActor>(Enemy), WorldNow + StarHitCooldown);
-		Enemy->ApplyHitStun(TNRaceItems::StarEnemyStunSeconds, Self);
+		Enemy->ApplyHitStun(UTN_CombatTuning::Get().StarEnemyStunSeconds, Self);
 	}
 
 	// De vez en cuando, fuera los que ya no existen.

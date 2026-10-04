@@ -597,6 +597,9 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_TutorialSaveGame> TutorialProfile;
 
+	/** SteamID64 de la cuenta dueña del perfil cosmético; vacío sin Steam (ranura _Local). Se fija al cargarlo. */
+	FString CosmeticAccountId;
+
 	/** El perfil cosmético del disco no se pudo leer ni apartar: no se escribe encima en esta sesión. */
 	bool bCosmeticSaveBlocked = false;
 

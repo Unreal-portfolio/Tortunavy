@@ -13,6 +13,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del
 // bloque.
@@ -48,12 +49,9 @@ namespace TNRaceHomingCrabDetail
 	constexpr float HitHeight = 260.f;
 	/** Altura del centro del cuerpo sobre la arena, sin contar el salto (cm), para medir la distancia vertical. */
 	constexpr float BodyLift = 30.f;
-	/** Derribo de la tortuga (s), su empujón hacia donde corría el cangrejo (cm/s) y hacia arriba (cm/s). */
-	constexpr float KnockSeconds = 2.2f;
+	/** Empujón de la tortuga hacia donde corría el cangrejo (cm/s) y hacia arriba (cm/s); el derribo y el mareo, en UTN_CombatTuning. */
 	constexpr float KnockPush = 700.f;
 	constexpr float KnockUp = 400.f;
-	/** Mareo del enemigo (s). */
-	constexpr float EnemyStunSeconds = 4.f;
 	/** Segundos que sigue vivo el actor tras acabar (para que llegue el multicast y suene el «bonk»). */
 	constexpr float FinishDelay = 1.f;
 	/** Cada cuánto se comprueba que la tortuga perseguida sigue en carrera (s). */
@@ -346,13 +344,13 @@ void ATN_RaceHomingCrab::ApplyHit(const FVector& Where)
 		// Invulnerable (protector, pelícano) o ya aturdida o derribada: rebota sin más.
 		if (TNRaceItems::CanBeHurt(Victim) && ATN_BeachEnemy::CanBeHit(Victim))
 		{
-			TNBeach::KnockDownTurtle(Victim, KnockSeconds, RunDir * static_cast<double>(KnockPush) + FVector(0.0, 0.0, static_cast<double>(KnockUp)));
+			TNBeach::KnockDownTurtle(Victim, UTN_CombatTuning::Get().HomingCrabKnockSeconds, RunDir * static_cast<double>(KnockPush) + FVector(0.0, 0.0, static_cast<double>(KnockUp)));
 			bBounced = false;
 		}
 	}
 	else if (ATN_BeachEnemy* Enemy = Cast<ATN_BeachEnemy>(Chased.Get()))
 	{
-		Enemy->ApplyHitStun(EnemyStunSeconds, GetOwnerTurtle());
+		Enemy->ApplyHitStun(UTN_CombatTuning::Get().HomingCrabEnemyStunSeconds, GetOwnerTurtle());
 		bBounced = false;
 	}
 	UE_LOG(LogTortunabo, Log, TEXT("[Carrera] El cangrejo teledirigido de %s da a %s%s."), *GetNameSafe(GetOwnerTurtle()), *GetNameSafe(Chased.Get()),

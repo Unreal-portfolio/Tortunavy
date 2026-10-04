@@ -23,6 +23,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Misc/PackageName.h"
 #include "TimerManager.h"
+#include "Multiplayer/TN_CosmeticSlot.h"
 #include "Multiplayer/TN_CosmeticSaveGame.h"
 #include "Multiplayer/TN_LocalPlayRules.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
@@ -1439,6 +1440,9 @@ namespace
 
 void UMP_GameInstance::LoadCosmeticProfile()
 {
+	// Un perfil por cuenta de Steam (#83); la primera que entra hereda el _Local de antes.
+	CosmeticAccountId = TNCosmeticSlot::SteamAccountIdOf(MPGameInstance_GetPreferredOnlineSubsystem());
+	TNCosmeticSlot::MigrateLocalToAccount(CosmeticSaveSlotPrefix, CosmeticAccountId);
 	const FString SlotName = BuildCosmeticSaveSlot();
 	const TNSaveGameIO::FLoadResult Loaded = TNSaveGameIO::LoadOrQuarantine(SlotName, 0, UTN_CosmeticSaveGame::StaticClass(),
 		[](const USaveGame& Save) { return CastChecked<UTN_CosmeticSaveGame>(&Save)->IsIntact(); },
@@ -1502,10 +1506,9 @@ void UMP_GameInstance::SaveCosmeticProfile() const
 
 FString UMP_GameInstance::BuildCosmeticSaveSlot() const
 {
-	// Un solo perfil por máquina y siempre el mismo nombre. Antes se cargaba de "_Local" (en Init aún no hay jugador
-	// local) y se guardaba con el nick, que con el subsistema NULL lleva un GUID distinto cada sesión: lo desbloqueado
-	// se perdía al reiniciar.
-	return FString::Printf(TEXT("%s_Local"), *CosmeticSaveSlotPrefix);
+	// La cuenta se lee del subsistema en línea en Init (no del nick del jugador, que aún no existe y que con el
+	// subsistema NULL lleva un GUID distinto cada sesión): misma ranura al cargar y al guardar.
+	return TNCosmeticSlot::SlotFor(CosmeticSaveSlotPrefix, CosmeticAccountId);
 }
 
 // ── Race Score ────────────────────────────────────────────────────────────────

@@ -83,12 +83,10 @@ namespace TNRaceItems
 	constexpr float TurboSeconds = 3.f;
 	/** Coco dorado: turbo sin parar durante estos segundos (y energía sin fin). */
 	constexpr float GoldenSeconds = 7.f;
-	/** Protector solar: segundos, multiplicador de velocidad, radio de contacto (cm) y derribos. */
+	/** Protector solar: segundos, multiplicador de velocidad y radio de contacto (cm); los derribos, en UTN_CombatTuning. */
 	constexpr float StarSeconds = 8.f;
 	constexpr float StarMultiplier = 1.25f;
 	constexpr float StarContactRadius = 320.f;
-	constexpr float StarKnockSeconds = 2.f;
-	constexpr float StarEnemyStunSeconds = 4.f;
 	/** Tope de la velocidad al sumar efectos (por ejemplo, turbo con el protector puesto). */
 	constexpr float MaxSpeedMultiplier = 2.4f;
 	/** Silbato del sargento: radio (cm) y segundos de mareo a los enemigos de alrededor. */
