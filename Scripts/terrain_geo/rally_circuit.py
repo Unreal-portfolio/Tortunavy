@@ -28,7 +28,7 @@ from scipy.spatial import cKDTree
 from terrain_vol.density import smooth
 from terrain_vol.layout import CELL_M, MAP_MIN_M, WATER_M, ZRange
 
-from .heightfield import HeightfieldModel
+from .heightfield import ZONES, HeightfieldModel
 from .layout import RASTER_PX_M
 from .rally_circuit_dirt import (BERM_END_M, DIP_DEPTH_M, DIP_LEAD_M, DIP_PIECE_M, MUD_COLOR, MUD_STRENGTH,
                                  BumpDesign, DipDesign, berm_lift, design_dip)
@@ -37,6 +37,7 @@ from .rally_circuit_elements import (BANK_RAMP_M, CrestDesign, JumpDesign, JumpP
 from .rally_circuit_jumps import SHAPED_KINDS, ShapedJump, ShapedParams, design_shaped
 from .rally_circuit_physics import boost_arrival, speed_profile
 from .rally_circuit_plan import JUMP_APPROACH_M, JUMP_RESERVE_M, Plan, make_plan
+from .rally_circuit_themes import Theme, theme as get_theme
 from .rally_circuit_width import width_profile
 from .rally_spain import value_noise
 
@@ -285,12 +286,18 @@ def make_frame(track: Track) -> Frame:
 
 
 class RallyCircuitModel(HeightfieldModel):
-    """Campo de alturas de la variante (rows x cols trozos) con la calzada tallada y peraltada."""
+    """Campo de alturas de la variante (rows x cols trozos) con la calzada tallada y peraltada; el tema
+    (rally_circuit_themes, #692) da el relieve de alrededor y los colores."""
     trail_color = (0.42, 0.30, 0.17)
     trail_strength = 0.55
 
-    def __init__(self, track: Track, seed: int = SEED):
+    def __init__(self, track: Track, seed: int = SEED, theme: str = "base"):
         self.track, self.frame = track, make_frame(track)
+        self.theme: Theme = get_theme(theme)
+        self.trail_color, self.trail_strength = self.theme.trail_color, self.theme.trail_strength
+        self.wall_strata = self.theme.wall_strata
+        if self.theme.mud_strength is not None:
+            self.mud_strength = self.theme.mud_strength
         self.road = track.plan.pts + self.frame.shift
         X = self.frame.axis(self.frame.rows)[:, None]
         Y = self.frame.axis(self.frame.cols)[None, :]
@@ -352,17 +359,29 @@ class RallyCircuitModel(HeightfieldModel):
         return out
 
     def _natural(self, X, Y, near: dict, rng: np.random.Generator) -> np.ndarray:
-        """Dunas alrededor: la cota de la calzada difuminada, más relieve que crece lejos del eje y un cordón de
-        dunas en el borde de la rejilla (cierra la vista)."""
+        """Relieve alrededor (dunas en el tema base): la cota de la calzada difuminada, más relieve que crece lejos
+        del eje y un cordón en el borde de la rejilla (cierra la vista)."""
+        t = self.theme
         regional = ndimage.gaussian_filter(near["z"], 40.0 / RASTER_PX_M, mode="nearest")
         extent = self.frame.grid * CELL_M
-        hills = 0.5 + 0.5 * value_noise(rng, 110.0, extent, octaves=3)(X, Y)
+        hills = 0.5 + 0.5 * value_noise(rng, t.hills_scale_m, extent, octaves=3)(X, Y)
         ripples = value_noise(rng, 22.0, extent, octaves=2)(X, Y)
-        amp = 2.0 + 10.0 * smooth(35.0, 150.0, near["dist"])
+        amp = t.near_m + t.hills_m * smooth(35.0, 150.0, near["dist"])
         edge = np.minimum.reduce([X - MAP_MIN_M, Y - MAP_MIN_M, MAP_MIN_M + self.frame.rows * CELL_M - X,
                                   MAP_MIN_M + self.frame.cols * CELL_M - Y])
-        rim = 14.0 * smooth(0.7 * MARGIN_M, 0.0, edge)
-        return np.maximum(regional - 1.0 + amp * hills + 0.4 * ripples + rim, WATER_M + 1.5)
+        rim = t.rim_m * smooth(0.7 * MARGIN_M, 0.0, edge)
+        return np.maximum(regional - 1.0 + amp * hills + t.ripples_m * ripples + rim, WATER_M + 1.5)
+
+    def color_weights(self, x: np.ndarray, y: np.ndarray) -> dict[str, np.ndarray]:
+        """Playa junto al agua y la paleta del tema en el resto; con el tema base, la de HeightfieldModel."""
+        beach = smooth(WATER_M + self.theme.shore_m, WATER_M + 0.6, self.ground_height(x, y))
+        zone = self.theme.color_zone
+        rest = np.zeros(len(x)) if zone == "beach" else 1.0 - beach
+        out = {z: np.zeros(len(x)) for z in ZONES}
+        out["beach"] = beach if zone != "beach" else np.ones(len(x))
+        if zone != "beach":
+            out[zone] = rest
+        return out
 
     def _carve(self, natural: np.ndarray, near: dict) -> tuple[np.ndarray, np.ndarray]:
         d, lat, half = near["dist"], near["lateral"], near["half"]

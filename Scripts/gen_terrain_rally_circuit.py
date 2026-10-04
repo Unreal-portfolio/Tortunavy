@@ -4,6 +4,12 @@ vistas y lámina de revisión) y lo añade a index.json. El juego lo carga con L
     uv run --with pyfqmr --with matplotlib python Scripts/gen_terrain_rally_circuit.py [--seed 622] [--name R01_...]
         [--no-decimate] [--no-sheet]
     uv run --with pyfqmr --with matplotlib python Scripts/gen_terrain_rally_circuit.py --profile tierra   # R02 (#682)
+    uv run --with pyfqmr --with matplotlib python Scripts/gen_terrain_rally_circuit.py --circuit R04_circuito_cantera
+    uv run --with pyfqmr --with matplotlib python Scripts/gen_terrain_rally_circuit.py --all-circuits     # R03..R06
+
+Catálogo del Rally (#692): los circuitos R03 a R06 de terrain_geo/rally_circuit_themes.CIRCUITS fijan semilla,
+perfil y tema (relieve y colores de alrededor; el trazado y los elementos no cambian con el tema). El tema va en
+generator.theme del manifest.
 
 El trazado, los elementos y el terreno están en terrain_geo/rally_circuit*.py; la validación, sobre la variante ya
 escrita, en terrain_geo/rally_circuit_check.py (la repite Scripts/tests/test_terrain_rally_circuit.py).
@@ -51,6 +57,7 @@ from terrain_geo.rally_circuit_dirt import BERM_RISE_M, BUMP_LEAD_M, DIP_LEAD_M,
 from terrain_geo.rally_circuit_elements import impact_ms
 from terrain_geo.rally_circuit_jumps import AI_FACTOR, ShapedJump
 from terrain_geo.rally_circuit_physics import BUGGY
+from terrain_geo.rally_circuit_themes import CIRCUITS
 from terrain_geo.rally_circuit_width import RULES_M, TAPER_M, width_sections
 from terrain_vol.export import global_top, write_map
 from terrain_vol.layout import CELL_SAMPLES, UU_PER_M
@@ -199,7 +206,8 @@ def build_chunks(model: rc.RallyCircuitModel, decimate: bool) -> dict:
             **decimate_chunks({c: m for c, m in chunks.items() if c in fine}, DECIMATE_FINE_M)}
 
 
-def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed: int, decimate: bool) -> dict:
+def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed: int, decimate: bool,
+                   description: str | None = None) -> dict:
     road = model.road
     cps = checkpoints(track)
     marks = {"parrilla": grid_slots(track, road)}
@@ -211,11 +219,13 @@ def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed
         k = track.index(e["crest_s_m"])
         marks[f"{e['id']}_cima"] = [uu(road[k], track.z[k])]
     tierra = track.profile == "tierra"
+    default_description = rc.TIERRA_DESCRIPTION if tierra else rc.DESCRIPTION
     return {
-        "description": rc.TIERRA_DESCRIPTION if tierra else rc.DESCRIPTION, "mode": "rally", "closed": True, "laps": rc.LAPS,
+        "description": description or default_description, "mode": "rally", "closed": True, "laps": rc.LAPS,
         "kill_boxes_uu": kill_boxes_uu(model.frame.grid),
         "z_range": [model.z_range.z_min_m, model.z_range.levels, model.z_range.step_m],
-        "generator": {"generator": "rally_circuit_vueltas", "profile": track.profile, "seed": seed,
+        "generator": {"generator": "rally_circuit_vueltas", "profile": track.profile, "theme": model.theme.key,
+                      "seed": seed,
                       "attempt": track.plan.attempt,
                       "pieces": [p.__dict__ for p in track.plan.pieces], "road_w_m": rc.ROAD_W_M,
                       "shoulder_m": rc.SHOULDER_M, "berm_m": rc.BERM_M, "talud_deg": rc.TALUD_DEG,
@@ -235,20 +245,22 @@ def manifest_extra(track: rc.Track, model: rc.RallyCircuitModel, name: str, seed
     }
 
 
-def build(seed: int, name: str, decimate: bool = True, sheet: bool = True, profile: str = "dunas") -> dict:
+def build(seed: int, name: str, decimate: bool = True, sheet: bool = True, profile: str = "dunas",
+          theme: str = "base", description: str | None = None) -> dict:
     t0 = time.time()
     track = rc.build_track(seed, profile)
-    model = rc.RallyCircuitModel(track, seed)
+    model = rc.RallyCircuitModel(track, seed, theme)
     chunks = build_chunks(model, decimate)
     grid = model.frame.grid
-    extra = manifest_extra(track, model, name, seed, decimate)
+    extra = manifest_extra(track, model, name, seed, decimate, description)
     out = VARIANTS / name
     size = grid * (CELL_SAMPLES - 1) + 1
     zones = {zone: (np.ones((size, size)) if zone == "cliffs" else np.zeros((size, size))) for zone in ZONES}
     start = (*model.road[0], float(track.z[0]))
     write_map(out, name, seed, chunks, start, start, zones, model.road, extra_manifest=extra, grid=grid)
-    issue = "#682" if profile == "tierra" else "#622"
-    write_credits(out, f"Circuito de Rally por vueltas {name}: Scripts/gen_terrain_rally_circuit.py (semilla {seed}, {issue}).\n")
+    issue = "#692" if name in CIRCUITS else ("#682" if profile == "tierra" else "#622")
+    write_credits(out, f"Circuito de Rally por vueltas {name}: Scripts/gen_terrain_rally_circuit.py (semilla {seed}, "
+                       f"perfil {profile}, tema {theme}, {issue}).\n")
     report, checks = load_report(out)
     ok = all(checks.values())
     data = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
@@ -269,11 +281,22 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Genera un circuito de Rally por vueltas (#622).")
     parser.add_argument("--profile", choices=("dunas", "tierra"), default="dunas",
                         help="dunas (#622) o tierra (#682: saltos con forma, baches, badén y banqueta)")
+    parser.add_argument("--circuit", choices=sorted(CIRCUITS), default=None,
+                        help="circuito del catálogo del Rally (#692): semilla, perfil y tema fijados")
+    parser.add_argument("--all-circuits", action="store_true", help="genera todos los del catálogo (R03..R06)")
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--name", default=None)
     parser.add_argument("--no-decimate", action="store_true", help="no decimar los trozos (no necesita pyfqmr)")
     parser.add_argument("--no-sheet", action="store_true", help="sin lámina (no necesita matplotlib)")
     args = parser.parse_args()
+    chosen = sorted(CIRCUITS) if args.all_circuits else ([args.circuit] if args.circuit else [])
+    for key in chosen:
+        c = CIRCUITS[key]
+        r = build(c.seed, c.name, decimate=not args.no_decimate, sheet=not args.no_sheet, profile=c.profile,
+                  theme=c.theme, description=c.description)
+        print(json.dumps({c.name: r}, indent=1, ensure_ascii=False))
+    if chosen:
+        return
     tierra = args.profile == "tierra"
     seed = args.seed if args.seed is not None else (rc.TIERRA_SEED if tierra else rc.SEED)
     name = args.name or (rc.TIERRA_NAME if tierra else rc.NAME)

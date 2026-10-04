@@ -101,44 +101,12 @@
   "mode": "tct"
  },
  {
-  "name": "I03R_tortuga_magna",
-  "seed": 2103,
-  "description": "Tortuga Magna (Rally): lazo de 1,4 km por el borde del caparazón de una isla-tortuga gigante; entra por la boca de la cabeza y sale por la cola en túnel, con el caparazón escalonado en el centro (hasta +18 m) y las aletas como cabos; calzada de +3 a +9 m.",
-  "recorrible": true,
-  "size_mb": 5.15,
-  "mode": "rally"
- },
- {
-  "name": "I04_volcan_hueco",
-  "seed": 2104,
-  "description": "Volcán Hueco (Rally): sube por el flanco hasta el borde de la caldera a +18 m, baja por el otro flanco, entra bajo el borde en túnel, cruza el lago de lava (agua de muerte) en viaducto a +6 m y sale bajo el borde sur hasta la playa; 1,5 km por vuelta.",
-  "recorrible": true,
-  "size_mb": 5.46,
-  "mode": "rally"
- },
- {
   "name": "I05_santorini",
   "seed": 1005,
   "description": "Santorini (Todos contra Todos): anillo de caldera de 150 m con el borde interior en acantilado a +10 m y bajada suave a +2 m hacia fuera; dos puentes naturales cruzan la caldera, Thirasia queda separada por dos canales (uno con puente) y 8 cúpulas dan cobertura.",
   "recorrible": true,
   "size_mb": 0.82,
   "mode": "tct"
- },
- {
-  "name": "I06_feroe",
-  "seed": 2106,
-  "description": "Islas Feroe (Rally, paramétrica: sin MDE): tres islas alargadas con cresta y acantilados al oeste; el lazo salta los estrechos en cuatro viaductos y cruza cada isla por su collado, bajo las crestas (sin túnel: no hay 8 m de roca encima); 1,2 km por vuelta.",
-  "recorrible": true,
-  "size_mb": 5.14,
-  "mode": "rally"
- },
- {
-  "name": "E01B_espana_rally",
-  "seed": 20261001,
-  "description": "España para el Rally (punto a punto): del Pirineo aragonés a la playa de Málaga por el Ebro, la Meseta, el Tajo y Despeñaperros, con el relieve real (1 m de juego = 0,4 km, exageración 4,5x); calzada tallada de 14 m y, fuera del corredor, la península entera y Baleares de fondo (sin colisión).",
-  "recorrible": true,
-  "size_mb": 15.09,
-  "mode": "rally"
  },
  {
   "name": "N01_coliseo",
@@ -250,6 +218,38 @@
   "description": "Circuito de Rally por vueltas de tierra generado (#682): lazo cerrado con cuatro saltos (doble, cresta, mesa y salto largo sobre hueco), whoops y tabla de lavar en recta, badén con barro, banqueta de tierra en las horquillas, curvas peraltadas, chicane y cambios de rasante.",
   "recorrible": true,
   "size_mb": 2.42,
+  "mode": "rally"
+ },
+ {
+  "name": "R03_circuito_dunas_costeras",
+  "seed": 6928,
+  "description": "Circuito de Rally por vueltas de tierra entre dunas costeras (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y dunas altas de arena de playa.",
+  "recorrible": true,
+  "size_mb": 2.6,
+  "mode": "rally"
+ },
+ {
+  "name": "R04_circuito_cantera",
+  "seed": 6929,
+  "description": "Circuito de Rally por vueltas de tierra en una cantera (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y taludes altos con estratos.",
+  "recorrible": true,
+  "size_mb": 2.95,
+  "mode": "rally"
+ },
+ {
+  "name": "R06_circuito_lomas",
+  "seed": 6933,
+  "description": "Circuito de Rally por vueltas de tierra entre lomas secas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y colinas redondas.",
+  "recorrible": true,
+  "size_mb": 2.19,
+  "mode": "rally"
+ },
+ {
+  "name": "R05_circuito_marismas",
+  "seed": 6927,
+  "description": "Circuito de Rally por vueltas de tierra por las marismas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con más barro, banquetas en las horquillas y un llano de arena húmeda.",
+  "recorrible": true,
+  "size_mb": 2.23,
   "mode": "rally"
  }
 ]
