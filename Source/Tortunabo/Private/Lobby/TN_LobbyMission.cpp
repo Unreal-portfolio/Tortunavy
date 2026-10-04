@@ -123,7 +123,7 @@ FText TNLobbyMission::ModeBlurb(ETNProcGameMode Mode)
 	case ETNProcGameMode::Karts:
 		return NSLOCTEXT("Tortunabo", "MissionBlurbKarts", "en kart por el camino del cooperativo, sola o de dos en dos (una conduce y la otra dispara y usa los objetos); gana quien llega antes a la playa.");
 	case ETNProcGameMode::Rally:
-		return NSLOCTEXT("Tortunabo", "MissionBlurbRally", "en buggy por un circuito de autor, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes.");
+		return NSLOCTEXT("Tortunabo", "MissionBlurbRally", "en buggy por circuitos de vueltas generados, con saltos y baches, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes.");
 	case ETNProcGameMode::FreeForAll:
 		return NSLOCTEXT("Tortunabo", "MissionBlurbFreeForAll", "de 2 a 8 en una arena que se inunda; gana la ronda la última en pie y la partida, quien gane tres.");
 	default:

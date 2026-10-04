@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-04 15:26\n"
-"PO-Revision-Date: 2026-10-04 15:26\n"
+"POT-Creation-Date: 2026-10-04 16:25\n"
+"PO-Revision-Date: 2026-10-04 16:25\n"
 "Language-Team: \n"
 "Language: pt-BR\n"
 "MIME-Version: 1.0\n"
@@ -1179,8 +1179,8 @@ msgstr "de kart pelo caminho do cooperativo, sozinha ou em dupla (uma dirige e a
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(126)
 #: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(126)
 msgctxt "Tortunabo,MissionBlurbRally"
-msgid "en buggy por un circuito de autor, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes."
-msgstr "de buggy por um circuito feito à mão, sozinha ou em duplas (uma dirige e a outra atira a munição das caixas “?” e joga o peso nas curvas); vence quem chegar primeiro."
+msgid "en buggy por circuitos de vueltas generados, con saltos y baches, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes."
+msgstr "de buggy por circuitos de voltas gerados, com saltos e lombadas, sozinha ou em duplas (uma dirige e a outra atira a munição das caixas “?” e joga o peso nas curvas); vence quem chegar primeiro."
 
 #. Key:	MissionBlurbFreeForAll
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(128)
@@ -11422,3 +11422,4 @@ msgstr "{0}:{1}"
 msgctxt "Tortunabo,CastleGateName"
 msgid "TORTUNAVY"
 msgstr "TORTUNAVY"
+
