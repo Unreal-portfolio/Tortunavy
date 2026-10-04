@@ -90,9 +90,10 @@ public:
 	/**
 	 * Construye con las puertas dadas. Con RoadAxis (road_uu) la spline sigue la calzada y cada puerta se proyecta en ella;
 	 * sin él, la spline pasa por las puertas con su rumbo. RoadWidthCm (0 = desconocido) acerca los bordes a la calzada.
+	 * RoadBankDeg (bank_deg, uno por punto de RoadAxis) inclina las puertas con el peralte (#622).
 	 */
 	bool BuildFromGates(const TArray<TNRally::FGateDef>& GateDefs, bool bCircuit, const TArray<FVector>& RoadAxis = TArray<FVector>(),
-		double RoadWidthCm = 0.0);
+		double RoadWidthCm = 0.0, TConstArrayView<double> RoadBankDeg = TConstArrayView<double>());
 
 	UFUNCTION(BlueprintCallable, Category = "Rally")
 	void ClearTrack();
@@ -145,6 +146,12 @@ public:
 	double FindArcGlobal(const FVector& Location) const;
 	FVector GetLocationAtArc(double Arc) const;
 	FVector GetDirectionAtArc(double Arc) const;
+
+	/** Peralte (grados, positivo: la derecha de la marcha más baja) en el arco; 0 si el manifest no trae bank_deg. */
+	double GetBankDegAtArc(double Arc) const;
+
+	/** Saltos, rasantes, horquillas... del manifest (elements) con los arcos en la spline; vacío si no los trae (#622). */
+	const TArray<TNRallyCircuit::FFeatureArc>& GetFeatures() const { return Features; }
 
 	/** Vueltas que pide el manifest (laps); 0 si no lo dice. */
 	int32 GetManifestLaps() const { return ManifestLaps; }
@@ -219,6 +226,12 @@ private:
 
 	TArray<double> GateArcs;
 	TArray<double> AmmoRowArcs;
+	/** Peralte de road_uu: arco de la spline de cada punto y su peralte (vacíos sin bank_deg). */
+	TArray<double> BankSampleArcs;
+	TArray<double> BankSampleDeg;
+	TArray<TNRallyCircuit::FFeatureArc> Features;
+	/** Longitud de la polilínea road_uu (cm; 0 sin ella): pasa los metros de elements a arcos de la spline. */
+	double RoadLengthCm = 0.0;
 	bool bClosed = false;
 	bool bBuilt = false;
 	bool bHasWater = false;

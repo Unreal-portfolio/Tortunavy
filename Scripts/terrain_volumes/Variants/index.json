@@ -139,5 +139,13 @@
   "recorrible": true,
   "size_mb": 15.09,
   "mode": "rally"
+ },
+ {
+  "name": "R01_circuito_dunas",
+  "seed": 622,
+  "description": "Circuito de Rally por vueltas generado (#622): lazo cerrado entre dunas con tres saltos con recepción, curvas peraltadas, horquillas en zigzag, chicane y cambios de rasante; parrilla 2 x 4.",
+  "recorrible": true,
+  "size_mb": 1.56,
+  "mode": "rally"
  }
 ]

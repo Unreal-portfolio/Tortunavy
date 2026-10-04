@@ -6,7 +6,7 @@ Fuentes: plan maestro §3.3 y §7.2, `Docs/Rally_Sistemas.md`, `Docs/Rally_E01B_
 
 ## Cómo se juega
 
-- `open LVL_Rally` abre E01B (`?Variant=E01B_espana_rally`, por defecto); también `?Variant=I03R_tortuga_magna`, `C01_camino` y las demás variantes con `checkpoints_uu`). Opciones: `?Seats=1` (un buggy por jugador), `?Bots=N` (buggies con piloto IA), `?Laps=N`.
+- `open LVL_Rally` abre E01B (`?Variant=E01B_espana_rally`, por defecto); también `?Variant=I03R_tortuga_magna`, `R01_circuito_dunas` (circuito por vueltas generado, `Docs/Rally_Circuitos_Vueltas.md`), `C01_camino` y las demás variantes con `checkpoints_uu`). Opciones: `?Seats=1` (un buggy por jugador), `?Bots=N` (buggies con piloto IA), `?Laps=N`.
 - Biplaza (por defecto): los jugadores se emparejan por orden de llegada; la 1.ª de cada pareja conduce y la 2.ª es la artillera. Si una tortuga va sola, conduce y dispara ella con apuntado automático.
 - Semáforo de 3 s; salir antes corta el motor 1 s. Cuando llega el primer buggy quedan 20 s; después, resultados y, a los 15 s, carrera nueva en el mismo mapa.
 
@@ -42,6 +42,15 @@ El retroceso es la mecánica central: cada disparo empuja al buggy propio en sen
 | Ancla | caja (rara), 2 cargas | se engancha al buggy alcanzado y lo frena 2 s | 200 cm/s |
 
 Cajas de munición: filas en las puertas pares y a mitad de tramo; reaparecen a los 3 s; el reparto pondera por puesto (los últimos, más Mortero y Burbuja; los primeros, más Alga y Tinta; el Ancla es rara en todos los puestos, algo menos para los primeros).
+
+## Circuitos por vueltas (#622)
+
+`open LVL_Rally?Variant=R01_circuito_dunas` (con `?Laps=N`, `?Bots=N`) carga el circuito generado (`Docs/Rally_Circuitos_Vueltas.md`): circuito cerrado con la salida y la meta en la puerta 0, 9 puertas en orden, parrilla 2 × 4 detrás de la línea, barrera continua y las vueltas del manifest (3) si la URL no dice otra cosa. Lo que el C++ hace con los campos nuevos del manifest (`TNRallyCircuit`, `Rally/TN_RallyCircuit.h`):
+
+- `bank_deg`: cada puerta se inclina con el peralte de su arco (`ATN_RallyTrack::GetBankDegAtArc`). Antes, quien iba por el lado bajo de una curva peraltada pasaba por debajo del volumen y la puerta no contaba. El volumen baja además 3 m por debajo de la calzada (`ATN_RallyGate::BelowRoadCm`) para los buggies con la suspensión hundida en una vaguada.
+- `elements`: las notas de «salto» y «cresta» del copiloto y de la tableta salen del labio y la cima del manifest, no de la forma del eje. El piloto IA llega a cada labio a la velocidad de diseño × 0,9 (`JumpLipSpeedFactor`) y a cada horquilla a la de su radio con 0,6 g (`HairpinLateralG`), frenando con `BrakeDecelG`.
+- E01B e I03R no traen esos campos y funcionan como antes.
+- Medida (04-10, 1 bot, sin editor): 5 vueltas en 466 s (93 s por vuelta; la ideal del generador es de 67 s), sin atascos, vuelcos ni puertas perdidas.
 
 ## Arquitectura
 

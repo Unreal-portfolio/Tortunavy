@@ -114,9 +114,22 @@ void ATN_RallyGameMode::TickProgress()
 		const int32 NextGate = Rules.NextGateIndex(Team.GatesPassed);
 		double Alpha = 0.0;
 		bool bForward = false;
-		if (TNRally::SegmentCrossesGate(Previous, Current, Track->GetGateCrossingTransform(NextGate), Track->GetGateHalfExtent(), Alpha, bForward))
+		const FTransform Gate = Track->GetGateCrossingTransform(NextGate);
+		if (TNRally::SegmentCrossesGate(Previous, Current, Gate, Track->GetGateHalfExtent(), Alpha, bForward))
 		{
 			HandleGateCrossing(Team, NextGate, bForward, Alpha, GetWorld()->GetDeltaSeconds());
+		}
+		else if (UE_LOG_ACTIVE(LogTNRally, Verbose))
+		{
+			// Diagnóstico de puertas que no cuentan: cruza el plano de la puerta fuera de su rectángulo (#622, peraltes).
+			const FVector A = Gate.InverseTransformPositionNoScale(Previous);
+			const FVector B = Gate.InverseTransformPositionNoScale(Current);
+			if (A.X < 0.0 && B.X >= 0.0)
+			{
+				const FVector Hit = FMath::Lerp(A, B, A.X / (A.X - B.X));
+				UE_LOG(LogTNRally, Verbose, TEXT("[RallyGameMode] Equipo %d: cruza el plano de la puerta %d fuera de ella (lateral %.0f cm, altura %.0f cm sobre el centro)."),
+					Team.TeamIndex, NextGate, Hit.Y, Hit.Z);
+			}
 		}
 		CheckAmmoBoxes(Team, Previous, Current);
 	}
@@ -138,6 +151,8 @@ void ATN_RallyGameMode::HandleGateCrossing(FTeamRuntime& Team, int32 GateIndex, 
 	++Team.GatesPassed;
 	Team.LastGate = GateIndex;
 	Team.OdometerCm = 0.0;
+	UE_LOG(LogTNRally, Verbose, TEXT("[RallyGameMode] Equipo %d: puerta %d (vuelta %d) a los %.1f s."), Team.TeamIndex, GateIndex,
+		Rules.LapForGates(Team.GatesPassed), Now() - GetRallyGameState()->StartServerTime);
 	if (Rules.IsFinished(Team.GatesPassed))
 	{
 		ATN_RallyGameState* RallyState = GetRallyGameState();

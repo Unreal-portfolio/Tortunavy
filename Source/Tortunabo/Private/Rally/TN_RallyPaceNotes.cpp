@@ -366,7 +366,35 @@ namespace TNRallyPaceNotes
 		{
 			Axis.Add(Track.GetLocationAtArc(FMath::Min(Length, Index * Length / Count)));
 		}
-		return Build(Axis, Track.IsCircuit(), Track.HasWaterZ(), Track.GetWaterZ(), Params);
+		FTrackNotes Notes = Build(Axis, Track.IsCircuit(), Track.HasWaterZ(), Track.GetWaterZ(), Params);
+		ApplyAuthoredVerticalNotes(Notes, Track.GetFeatures());
+		return Notes;
+	}
+
+	void ApplyAuthoredVerticalNotes(FTrackNotes& Track, TConstArrayView<TNRallyCircuit::FFeatureArc> Features)
+	{
+		using TNRallyCircuit::EElementKind;
+		TArray<FPaceNote> Authored;
+		for (const TNRallyCircuit::FFeatureArc& Feature : Features)
+		{
+			if (Feature.Kind != EElementKind::Jump && Feature.Kind != EElementKind::Crest)
+			{
+				continue;
+			}
+			FPaceNote Note;
+			Note.Kind = Feature.Kind == EElementKind::Jump ? ENoteKind::Jump : ENoteKind::Crest;
+			Note.ArcCm = Track.LengthCm > 0.0 && Track.bClosed ? FMath::Fmod(Feature.KeyCm, Track.LengthCm) : Feature.KeyCm;
+			Authored.Add(Note);
+		}
+		if (Authored.Num() == 0 || !Track.IsValid())
+		{
+			return;
+		}
+		// El generador sabe dónde están el labio y la cima: lo que detecta la forma del eje (rampas de la recepción, la mesa)
+		// sobra y cantaría saltos donde no los hay.
+		Track.Notes.RemoveAll([](const FPaceNote& Note) { return Note.Kind == ENoteKind::Jump || Note.Kind == ENoteKind::Crest; });
+		Track.Notes.Append(Authored);
+		Track.Notes.StableSort([](const FPaceNote& A, const FPaceNote& B) { return A.ArcCm < B.ArcCm; });
 	}
 
 	FVector LocationAtArc(const FTrackNotes& Track, double ArcCm)
