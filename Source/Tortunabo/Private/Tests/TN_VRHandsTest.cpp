@@ -480,6 +480,11 @@ bool FTNVRGrabThroughWallTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Delante de la pared: despejado"), UTN_VRGrabComponent::HasClearReach(Test.World, Eyes, FVector(-30.0, 0.0, 200.0), Params));
 	TestTrue(TEXT("A 1 cm dentro de la pared (tolerancia): despejado"),
 		UTN_VRGrabComponent::HasClearReach(Test.World, Eyes, FVector(-20.0, 0.0, 200.0), Params));
+	// Con los ojos dentro de la pared: el dueño lo da por despejado, el servidor (bPenetratingBlocks) por tapado.
+	const FVector EyesInWall(-20.0, 0.0, 200.0);
+	TestTrue(TEXT("Ojos en la pared, dueño: despejado"), UTN_VRGrabComponent::HasClearReach(Test.World, EyesInWall, FVector(-15.0, 0.0, 200.0), Params));
+	TestFalse(TEXT("Ojos en la pared, servidor: tapado"),
+		UTN_VRGrabComponent::HasClearReach(Test.World, EyesInWall, FVector(-15.0, 0.0, 200.0), Params, true));
 
 	// Antes la cogía a través de la pared.
 	TestFalse(TEXT("Con la mano parada en la pared: no la coge"), Grabber->TryGrab(1, FTransform(FVector(-25.0, 0.0, 200.0))));

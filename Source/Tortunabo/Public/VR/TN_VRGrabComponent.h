@@ -86,9 +86,11 @@ public:
 	/**
 	 * ¿Nada del escenario (canal ECC_Camera, el mismo que para las manos) entre los ojos y Point? Lo que se corta a menos de
 	 * ReachTolerance de Point cuenta como despejado (el suelo bajo lo que se toca por abajo); con los ojos ya dentro de algo
-	 * también, como las manos (ATN_VRRig::BlockHandLocation). Params dice qué no cuenta (la tortuga, el propio objetivo).
+	 * también, como las manos (ATN_VRRig::BlockHandLocation), salvo con bPenetratingBlocks (el servidor: con la cabeza metida
+	 * en una pared no se coge lo de detrás). Params dice qué no cuenta (la tortuga, el propio objetivo).
 	 */
-	static bool HasClearReach(const UWorld* World, const FVector& Eyes, const FVector& Point, const FCollisionQueryParams& Params);
+	static bool HasClearReach(const UWorld* World, const FVector& Eyes, const FVector& Point, const FCollisionQueryParams& Params,
+		bool bPenetratingBlocks = false);
 
 	/**
 	 * ¿Llega la mano al punto Point de Target sin atravesar el escenario? Los ojos (la cámara VR de la tortuga, o el punto de
@@ -96,7 +98,7 @@ public:
 	 * alrededor de su punta (GrabRadius, VRHandReach) no puede quedar al otro lado. No cuentan la tortuga, lo que lleva
 	 * encima o en las manos ni Target.
 	 */
-	bool CanReach(const AActor* Target, const FVector& Point) const;
+	bool CanReach(const AActor* Target, const FVector& Point, bool bPenetratingBlocks = false) const;
 
 	/** Tolerancia (cm) de HasClearReach al final del trazo. */
 	static constexpr float ReachTolerance = 3.f;

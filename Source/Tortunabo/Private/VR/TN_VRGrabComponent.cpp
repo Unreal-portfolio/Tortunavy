@@ -256,7 +256,8 @@ bool UTN_VRGrabComponent::IsGrabbableHere(UPrimitiveComponent* Component) const
 	return IsGrabbable(Component, GetOwner(), MaxMass);
 }
 
-bool UTN_VRGrabComponent::HasClearReach(const UWorld* World, const FVector& Eyes, const FVector& Point, const FCollisionQueryParams& Params)
+bool UTN_VRGrabComponent::HasClearReach(const UWorld* World, const FVector& Eyes, const FVector& Point, const FCollisionQueryParams& Params,
+	bool bPenetratingBlocks)
 {
 	const double Length = FVector::Dist(Eyes, Point);
 	if (!World || Length <= ReachTolerance)
@@ -268,7 +269,7 @@ bool UTN_VRGrabComponent::HasClearReach(const UWorld* World, const FVector& Eyes
 	{
 		return true;
 	}
-	return Hit.bStartPenetrating || Hit.Distance >= Length - ReachTolerance;
+	return Hit.bStartPenetrating ? !bPenetratingBlocks : Hit.Distance >= Length - ReachTolerance;
 }
 
 FVector UTN_VRGrabComponent::GetReachEyes() const
@@ -316,13 +317,13 @@ FCollisionQueryParams UTN_VRGrabComponent::MakeReachParams(const AActor* Target)
 	return Params;
 }
 
-bool UTN_VRGrabComponent::CanReach(const AActor* Target, const FVector& Point) const
+bool UTN_VRGrabComponent::CanReach(const AActor* Target, const FVector& Point, bool bPenetratingBlocks) const
 {
 	if (!GetOwner())
 	{
 		return true;
 	}
-	return HasClearReach(GetWorld(), GetReachEyes(), Point, MakeReachParams(Target));
+	return HasClearReach(GetWorld(), GetReachEyes(), Point, MakeReachParams(Target), bPenetratingBlocks);
 }
 
 UPrimitiveComponent* UTN_VRGrabComponent::FindGrabbable(const FVector& At) const
@@ -629,9 +630,14 @@ void UTN_VRGrabComponent::ServerGrab_Implementation(uint8 Hand, UPrimitiveCompon
 	}
 	// Que se vea, como en el dueño (un cliente no coge a través de una pared): desde los ojos del peón o, como los de verdad
 	// pueden estar algo apartados de la cápsula, pasando por la mano que manda (los ojos ven la mano y la mano ve el objeto).
+	// Aquí un trazo que empieza dentro de algo cuenta como tapado (cabeza o mano metidas en una pared); entonces vale que lo
+	// vea el centro de la cápsula, que el movimiento no deja dentro del escenario.
 	const AActor* TargetActor = Target->GetOwner();
-	if (!CanReach(TargetActor, Closest)
-		&& !(CanReach(TargetActor, HandLocation) && HasClearReach(GetWorld(), HandLocation, Closest, MakeReachParams(TargetActor))))
+	const FCollisionQueryParams ReachParams = MakeReachParams(TargetActor);
+	const bool bSeen = CanReach(TargetActor, Closest, true)
+		|| (CanReach(TargetActor, HandLocation, true) && HasClearReach(GetWorld(), HandLocation, Closest, ReachParams, true))
+		|| HasClearReach(GetWorld(), Owner->GetActorLocation(), Closest, ReachParams, true);
+	if (!bSeen)
 	{
 		UE_LOG(LogTortunabo, Verbose, TEXT("[VR] %s: agarre de %s rechazado (algo en medio)."), *GetNameSafe(Owner), *GetNameSafe(TargetActor));
 		ClientGrabLost(Hand, Target);
