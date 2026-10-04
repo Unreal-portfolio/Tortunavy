@@ -992,7 +992,7 @@ La puerta doble da a la laguna. Desde la azotea de la torre del homenaje se ven 
 
 Por cliente en una carrera de 4: tortugas ≈ 2–4 KB/s (5–8 KB/s con 8), PlayerState casi 1 Hz, enemigos a menos de 300 m a 10 Hz cerca y 3 Hz
 lejos, voz 16 KB/s por cada una que te hable. Subida del anfitrión con 8: juego ~40–60 KB/s más la voz (de 0 a ~0,5 MB/s
-según cuántas hablen a la vez). **Pendiente**: medir con `stat net` con 4 y con 8 y pasar la voz a Opus ([`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), «Pendiente de antes»).
+según cuántas hablen a la vez). **Pendiente**: medir con `stat net` con 4 y con 8 y pasar la voz a Opus (`Docs/Plan_Carrera_Ronda4.md` (eliminado), «Pendiente de antes»).
 
 ### 5.5 Voz de proximidad
 
@@ -1695,7 +1695,7 @@ Pendiente de completar.
 
 Pendiente de completar.
 
-*Lo ha hecho otro agente y está en [`Docs/Tutorial.md`](Tutorial.md), sin subir a git (punto 14 de [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md): pasillo de tutorial en
+*Lo ha hecho otro agente y está en [`Docs/Tutorial.md`](Tutorial.md), sin subir a git (punto 14 de `Docs/Plan_Carrera_Ronda4.md` (eliminado): pasillo de tutorial en
 el cielo, por jugador, con cascada final que deja caer al lobby). Este apartado se completará a partir de ese documento; mientras, lo que existe
 y hace de tutorial en `af3f7229` es lo que cuenta el §2.7.*
 
@@ -1827,7 +1827,7 @@ carga (330), el de mareo (250), el nado (625), la caja del caparazón y todo lo 
 | Caparazón | 0 | metida en el caparazón (el freno entra por aquí) | [C] `TN_ShellComponent.cpp` |
 | Llevando a alguien | 330 cm/s | mientras carga a un compañero | [C] `CarrySpeedCap` |
 | Mareo de la cabezota | 250 cm/s | 3 s al acabarse (o perder) la cabezota | [C] `MareoSpeedCap`, `MareoDurationSeconds` |
-| Zona lenta | el de la zona | dentro de un `TN_SlowZoneVolume` | [D] [`Docs/Inventario_Scripts.md`](Inventario_Scripts.md) |
+| Zona lenta | el de la zona | dentro de un `TN_SlowZoneVolume` | [D] `Docs/Inventario_Scripts.md` (eliminado) |
 | Algas, etc. | el suyo | trampas de la playa (§35) | [D] |
 
 - **Qué bloquea moverse**: derribada (`Move` sale), los 0,75 s de levantarse del derribo (`GetUpLockUntil`), llevada por otra
@@ -4940,7 +4940,7 @@ importante para quien lo necesite. Ninguno se cuenta como existente en el resto 
 | 11 | **Los montículos que vibran solo existen en la playa** (en el cooperativo, pendiente) | §34.12 | Llevarlos al mapa procedural |
 | 12 | **El 2 vs 2 no tiene entrada normal** (ni el menú de crear ni el general lo ofrecen) | §2.5 | Ofrecerlo o retirarlo |
 | 13 | **Sin sonido de nadar ni de meterse y salir del caparazón**; los sonidos del personaje que el Blueprint podría asignar están todos vacíos | §9.6 | Asignar o sintetizar |
-| 14 | **Lo común de la carrera aún no está en el cooperativo**: salas, menú de pausa, fantasma, pausa del huevo, brillo de objetos (y ahora idioma, ojo de pez y Círculo/B) | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), «Pendiente de antes» | Llevarlo al cooperativo |
+| 14 | **Lo común de la carrera aún no está en el cooperativo**: salas, menú de pausa, fantasma, pausa del huevo, brillo de objetos (y ahora idioma, ojo de pez y Círculo/B) | `Docs/Plan_Carrera_Ronda4.md` (eliminado), «Pendiente de antes» | Llevarlo al cooperativo |
 | 15 | **Servidor dedicado sin declarar**: varias piezas evitan construir lo visual y lo sonoro en un servidor dedicado, pero ningún documento ni configuración lo da por soportado | §5.1 | Decidir |
 | 16 | **Voz sin Opus** y ancho de banda sin medir con `stat net` (con 4 y con 8) | §5.4, §26 | Pendiente |
 | 17 | **Con Steam, una sala llena no sale en la lista ni por código** (Steam oculta los lobbies llenos) | §3.4 | Pendiente conocido |
@@ -4976,8 +4976,8 @@ Dónde una fuente dice una cosa y el código otra. **Manda el código**; la colu
 | 14 | Comentario de la cara «mareada» del HUD | «Panza arriba o eliminada» | Solo en DBNO (inactivo) o eliminada; una derribada no cambia de cara ni ve el cartel «¡Panza arriba!» |
 | 15 | Comentario de `TortugaCharacter.h` | Las teclas 0–9 deberían mapearse a los emotes | No están en `IMC_Player`; los bailes solo salen por la rueda |
 | 16 | Pestaña «Reglas» del general (`TN_BriefingWidget.cpp`) | «Cada ronda dura como mucho 6 minutos»; reaparición «en Carrera y 2 vs 2, la tuya» | 9 min (`RoundTimeLimitSeconds` 540); en la playa no se muere |
-| 17 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 10 | Ojo de pez con `r.Upscale.Panini.D` y `.S` | En UE 5.6 los cvars son `r.LensDistortion.Panini.*` ([`Docs/Menu_Pausa.md`](Menu_Pausa.md)) |
-| 18 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 11 | Círculo/B «de serie» en `IMC_Player` | El asset todavía no la trae: la pone el código (`PendingCodeDefaults`) hasta que se ejecute `Scripts/imc_player_shell_b.py` (§6.1) |
+| 17 | `Docs/Plan_Carrera_Ronda4.md` (eliminado), tarea 10 | Ojo de pez con `r.Upscale.Panini.D` y `.S` | En UE 5.6 los cvars son `r.LensDistortion.Panini.*` ([`Docs/Menu_Pausa.md`](Menu_Pausa.md)) |
+| 18 | `Docs/Plan_Carrera_Ronda4.md` (eliminado), tarea 11 | Círculo/B «de serie» en `IMC_Player` | El asset todavía no la trae: la pone el código (`PendingCodeDefaults`) hasta que se ejecute `Scripts/imc_player_shell_b.py` (§6.1) |
 | 19 | [`Docs/Modo_Carrera.md`](Modo_Carrera.md), «Algas» | «Hasta 4 a la vez» | `MaxCatches = 8` (y el propio documento, en «Hecho para 8 jugadores», dice 8) |
 | 20 | `TN_CrabSpawnZone.h` (comentario) | «Default 3» | `SpawnCountOnEnter = 5` |
 | 21 | LDD | Gaviota con «bombardeo en zona aleatoria cada ~8 s» y «agarra si quieto más de 2 s» | `ATN_EnemySeagull` tiene cronómetro de 8 s y círculo que se encoge; no hay regla de «quieto 2 s» |
@@ -4991,7 +4991,7 @@ Dónde una fuente dice una cosa y el código otra. **Manda el código**; la colu
 | 24 | [`Docs/Modo_Carrera.md`](Modo_Carrera.md), «Bucle de juego» 1 | El menú pregunta el modo en dos pasos | La pantalla «Crear partida» ([`Docs/Salas.md`](Salas.md)) |
 | 25 | [`Docs/Tienda_Probador.md`](Tienda_Probador.md) | Pestañas con «gatillos» | LB/RB (`TN_ShopWidgets.cpp`) |
 | 26 | README | `GameInstanceClass=/Script/Tortunabo.MP_GameInstance`; «73 archivos .h» | `BP_GameInstance` (subclase Blueprint); 286 cabeceras (Public + Private) y 236 `.cpp` |
-| 27 | [`Docs/Inventario_Scripts.md`](Inventario_Scripts.md) | Inventario de 73 cabeceras | Desactualizado |
+| 27 | `Docs/Inventario_Scripts.md` (eliminado) | Inventario de 73 cabeceras | Desactualizado |
 | 28 | [`Docs/Mapa_Procedural.md`](Mapa_Procedural.md) §1.7 | `LVL_ProcMap` y `Content/ProcMap` no están en el repositorio | Los `.umap` de `LVL_ProcMap` y `LVL_ProcMap_Terrain` y `Content/ProcMap` están versionados |
 | 29 | [`Docs/LDD_Tortunabo.md`](LDD_Tortunabo.md) | Diseño de 5 rondas de 6 módulos con bañistas | Es el modo Clásico (§1.6) |
 | 30 | `Config/DefaultEngine.ini` | `bUseSplitscreen=True` con tres diseños | No hay soporte documentado para pantalla dividida (no confirmado que funcione) |
@@ -5141,6 +5141,6 @@ Enlaces relativos a `Docs/`.
 | [`Docs/Sonido_Tortuga.md`](Sonido_Tortuga.md) | Foley de la tortuga, música de fondo de la carrera («Marcha de la Playa») y golpes del caparazón |
 | [`Docs/Animacion_Tortuga.md`](Animacion_Tortuga.md), [`Docs/Botin_Decorados.md`](Botin_Decorados.md) | Animación y plancha de la tortuga; botín de los decorados |
 | [`Docs/Comandos_Prueba.md`](Comandos_Prueba.md) | Todos los comandos de consola |
-| [`Docs/Plan_Carrera_Ronda3.md`](Plan_Carrera_Ronda3.md), [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md) | Planes de la carrera (la ronda 4 está hecha; quedan los puntos de «Pendiente de antes») |
+| [`Docs/Plan_Carrera_Ronda3.md`](Plan_Carrera_Ronda3.md), `Docs/Plan_Carrera_Ronda4.md` (eliminado) | Planes de la carrera (la ronda 4 está hecha; quedan los puntos de «Pendiente de antes») |
 | [`Docs/Tutorial.md`](Tutorial.md) | Tutorial de primera partida: recorrido por dos islas sobre el lobby (sin subir; §11) |
-| [`Docs/Plan_Correccion_Fases.md`](Plan_Correccion_Fases.md), [`Docs/Traspaso_Sesion_Cloud.md`](Traspaso_Sesion_Cloud.md), [`Docs/Mapa_Procedural_Traspaso.md`](Mapa_Procedural_Traspaso.md), [`Docs/Inventario_Scripts.md`](Inventario_Scripts.md) | Históricos |
+| [`Docs/Plan_Correccion_Fases.md`](Plan_Correccion_Fases.md), [`Docs/Traspaso_Sesion_Cloud.md`](Traspaso_Sesion_Cloud.md), [`Docs/Mapa_Procedural_Traspaso.md`](Mapa_Procedural_Traspaso.md), `Docs/Inventario_Scripts.md` (eliminado) | Históricos |

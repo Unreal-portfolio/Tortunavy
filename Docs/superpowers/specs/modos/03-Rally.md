@@ -1,7 +1,7 @@
 # Rally Tortuga: especificación completa
 
 Fecha: 2026-09-29 · Rama: `macro-update` · Estado: borrador para revisión del director.
-Consolida, sin sustituirlos: `Docs/Rally_E01B_y_Biplaza.md` (= [E]), `Docs/Archivo/Rally_Sistemas.md` (= [S]), `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md` §3.3 y §7 (= [P]), `Docs/Catalogo-Mapas-2026-09-29.md` con su decisión final «países enteros» (= [C]), `Docs/Analisis/2026-09-29/B_buggy_sync.md` (= [B]), `Docs/Modos-UI-FX-2026-09-29.md` (= [U]), `Art/Library/IA/INDEX.md` y el borrador `Art/Source/Vehicles/Buggy/`.
+Consolida, sin sustituirlos: `Docs/Rally_E01B_y_Biplaza.md` (= [E]), `Docs/Archivo/Rally_Sistemas.md` (= [S]), `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md` §3.3 y §7 (= [P]), `Docs/Catalogo-Mapas-2026-09-29.md` con su decisión final «países enteros» (= [C]), `Docs/Analisis/2026-09-29/B_buggy_sync.md` (eliminado) (= [B]), `Docs/Modos-UI-FX-2026-09-29.md` (= [U]), `Art/Library/IA/INDEX.md` y el borrador `Art/Source/Vehicles/Buggy/`.
 Notación: «1.ª pasada» = valor de ajuste para playtest; «est.» = estimación propia sin medir; estado **MVP / Después / Fuera**. Los conflictos entre documentos están en el Anexo A, no resueltos en silencio.
 
 ## Decisiones del director que rigen este documento
