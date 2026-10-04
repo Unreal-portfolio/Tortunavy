@@ -617,6 +617,8 @@ private:
 	FString SpawnRoundElements();
 	/** Crea el elemento Index del reparto (salvo el decorado) y cuenta las clases que faltan. */
 	void SpawnRoundElement(int32 Index, TArray<int8>& HasClass, TMap<FString, int32>& MissingByClass);
+	/** Servidor: el vigilante de los erizos checos de la ronda (#688): derriban al chocar deprisa (ATN_BeachTankTrap). */
+	void SpawnTankTrapGuard();
 	static FString DescribeMissing(const TMap<FString, int32>& MissingByClass);
 	void DestroyRoundElements();
 	void TickTurtles(float DeltaSeconds);
