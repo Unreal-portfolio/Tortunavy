@@ -155,5 +155,101 @@
   "recorrible": true,
   "size_mb": 2.36,
   "mode": "rally"
+ },
+ {
+  "name": "N01_coliseo",
+  "seed": 4001,
+  "description": "Coliseo (Todos contra Todos): arena de 40 m rodeada por un foso de 9 m, podio y tres gradas en anillo a +4,5, +6,75 y +9 m; 4 puertas (túnel bajo la corona y puente sobre el foso), 4 escaleras en las diagonales y talud de tierra por fuera hasta la playa.",
+  "recorrible": true,
+  "size_mb": 0.79,
+  "mode": "tct"
+ },
+ {
+  "name": "N02_anfiteatro",
+  "seed": 4002,
+  "description": "Anfiteatro (Todos contra Todos): cuatro gradas en semicírculo a +4, +6, +8 y +10 m talladas en una ladera que bajan a la orquesta y al escenario, a +2 m junto al agua; tres escaleras, dos muelles laterales al pie del muro y la ladera trasera bajando a la playa.",
+  "recorrible": true,
+  "size_mb": 0.46,
+  "mode": "tct"
+ },
+ {
+  "name": "N03_volcan_arena",
+  "seed": 4003,
+  "description": "Volcán-arena (Todos contra Todos): cráter de 72 m a +3 m con el borde a +10 m y un río de lava de 7 m (agua: caer es la muerte) que lo parte en dos; tres pasos en el fondo, dos arcos en el borde y cuatro rampas que bajan del borde a la arena.",
+  "recorrible": true,
+  "size_mb": 0.77,
+  "mode": "tct"
+ },
+ {
+  "name": "N04_atolon",
+  "seed": 4004,
+  "description": "Atolón (Todos contra Todos): anillo de arena de 140 m a +2,5 m con tres pasos de agua (dos con puente), laguna interior con un islote central de +5 m y tres islotes unidos por puentes; seis motus dan relieve al anillo.",
+  "recorrible": true,
+  "size_mb": 0.56,
+  "mode": "tct"
+ },
+ {
+  "name": "N17_fortaleza_estrella",
+  "seed": 4017,
+  "description": "Fortaleza en estrella (Todos contra Todos): cinco baluartes con adarve a +7 m alrededor de una plaza de armas a +4 m con un cerro central; foso de 9 m con cinco puentes en las puertas de los entrantes, camino cubierto y glacis que baja a la playa.",
+  "recorrible": true,
+  "size_mb": 0.76,
+  "mode": "tct"
+ },
+ {
+  "name": "N18_yin_yang",
+  "seed": 4018,
+  "description": "Yin-yang (Todos contra Todos): disco de 140 m partido por un canal en S de 8 m en dos lóbulos, el yang a +5 m con una colina de +9,4 m como ojo y el yin a +2,5 m con un estanque como ojo; tres puentes en rampa cruzan el canal.",
+  "recorrible": true,
+  "size_mb": 0.48,
+  "mode": "tct"
+ },
+ {
+  "name": "A07_panal_piramide",
+  "seed": 3007,
+  "description": "Panal en pirámide (Todos contra Todos): 37 columnas hexagonales de 12 m de lado separadas por 2 m de agua que suben por anillos de +2 a +5, +8 y +11 m en la central; istmos dentro de cada anillo y rampas a 16° entre anillos. Quien manda arriba ve todo el panal; caer entre columnas es la muerte.",
+  "recorrible": true,
+  "size_mb": 0.87,
+  "mode": "tct"
+ },
+ {
+  "name": "A08_panal_roto",
+  "seed": 3008,
+  "description": "Panal roto (Todos contra Todos): 24 hexágonos de 10 m de lado sueltos sobre el agua a +2, +4,5, +7 y +9,5 m, separados 9 m y unidos por puentes naturales de 3,5 m de ancho; cada puente es un duelo y el que cae, muere.",
+  "recorrible": true,
+  "size_mb": 0.68,
+  "mode": "tct"
+ },
+ {
+  "name": "A09_colmena",
+  "seed": 3009,
+  "description": "Colmena (Todos contra Todos): 61 celdas hexagonales de 9 m de lado a +3 m separadas por 2 m de agua; 10 celdas hundidas son charcas de muerte y tres celdas reales a +5 m, con rampa, guardan el botín. Istmos de 4 m unen las celdas secas; el resto de huecos se salta.",
+  "recorrible": true,
+  "size_mb": 0.81,
+  "mode": "tct"
+ },
+ {
+  "name": "A10_ajedrez",
+  "seed": 3010,
+  "description": "Ajedrez (Todos contra Todos): tablero de 8 × 8 casillas de 18 m pegadas, las claras a +2 m y las oscuras a +5 m con escalón vertical entre ellas; rampas de 4 m a caballo de las aristas y cuatro torres macizas de +9 m en las esquinas como cobertura. El borde del tablero cae al agua.",
+  "recorrible": true,
+  "size_mb": 0.58,
+  "mode": "tct"
+ },
+ {
+  "name": "A11_zigurat",
+  "seed": 3011,
+  "description": "Zigurat (Todos contra Todos): pirámide escalonada de losas de 16 m con terrazas a +5, +8 y +11 m, rodeada por un foso de agua de 16 m y una ribera cuadrada a +2 m; cuatro puentes naturales cruzan el foso y las rampas entre terrazas cambian de sitio con la semilla.",
+  "recorrible": true,
+  "size_mb": 0.37,
+  "mode": "tct"
+ },
+ {
+  "name": "A12_damas",
+  "seed": 3012,
+  "description": "Damas (Todos contra Todos): de un tablero de 8 × 8 solo existen las 32 casillas oscuras, mesetas de 15 m a +3, +5,5 y +8 m; las claras son agua. Se avanza como una ficha, en diagonal, por pasarelas naturales de 3,5 m de esquina a esquina.",
+  "recorrible": true,
+  "size_mb": 0.81,
+  "mode": "tct"
  }
 ]

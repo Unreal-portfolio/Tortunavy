@@ -1,0 +1,279 @@
+{
+ "name": "N02_anfiteatro",
+ "seed": 4002,
+ "format": "TNTM2",
+ "cell_uu": 10000.0,
+ "grid": 2,
+ "water_uu": -400.0,
+ "start_uu": [
+  800.0,
+  5000.0,
+  -200.0
+ ],
+ "end_uu": [
+  800.0,
+  5000.0,
+  -200.0
+ ],
+ "cells": [
+  {
+   "name": "M_N02_anfiteatro_r0c0",
+   "col": 0,
+   "row": 0,
+   "file": "Chunks/r0c0.bin",
+   "center_uu": [
+    0.0,
+    0.0
+   ],
+   "vertices": 13670,
+   "triangles": 26886,
+   "instances": 0
+  },
+  {
+   "name": "M_N02_anfiteatro_r1c0",
+   "col": 0,
+   "row": 1,
+   "file": "Chunks/r1c0.bin",
+   "center_uu": [
+    10000.0,
+    0.0
+   ],
+   "vertices": 13006,
+   "triangles": 25546,
+   "instances": 0
+  },
+  {
+   "name": "M_N02_anfiteatro_r0c1",
+   "col": 1,
+   "row": 0,
+   "file": "Chunks/r0c1.bin",
+   "center_uu": [
+    0.0,
+    10000.0
+   ],
+   "vertices": 13660,
+   "triangles": 26866,
+   "instances": 0
+  },
+  {
+   "name": "M_N02_anfiteatro_r1c1",
+   "col": 1,
+   "row": 1,
+   "file": "Chunks/r1c1.bin",
+   "center_uu": [
+    10000.0,
+    10000.0
+   ],
+   "vertices": 13008,
+   "triangles": 25550,
+   "instances": 0
+  }
+ ],
+ "description": "Anfiteatro (Todos contra Todos): cuatro gradas en semic\u00edrculo a +4, +6, +8 y +10 m talladas en una ladera que bajan a la orquesta y al escenario, a +2 m junto al agua; tres escaleras, dos muelles laterales al pie del muro y la ladera trasera bajando a la playa.",
+ "mode": "tct",
+ "kill_boxes_uu": [
+  {
+   "center": [
+    5000.0,
+    5000.0,
+    -690.0
+   ],
+   "extent": [
+    10000.0,
+    10000.0,
+    310.0
+   ],
+   "yaw": 0.0
+  }
+ ],
+ "generator": {
+  "name": "N02_anfiteatro",
+  "seed": 4002,
+  "description": "Anfiteatro (Todos contra Todos): cuatro gradas en semic\u00edrculo a +4, +6, +8 y +10 m talladas en una ladera que bajan a la orquesta y al escenario, a +2 m junto al agua; tres escaleras, dos muelles laterales al pie del muro y la ladera trasera bajando a la playa.",
+  "grid": 2,
+  "mode": "tct",
+  "centre": [
+   0.0,
+   -30.0
+  ],
+  "orchestra_r": 14.0,
+  "floor_h": 2.0,
+  "tiers": [
+   [
+    9.0,
+    4.0
+   ],
+   [
+    9.0,
+    6.0
+   ],
+   [
+    9.0,
+    8.0
+   ],
+   [
+    11.0,
+    10.0
+   ]
+  ],
+  "back_deg": 17.0,
+  "beach_m": 5.0,
+  "quay_m": 7.0,
+  "stage": [
+   22.0,
+   24.0
+  ],
+  "columns": 4,
+  "column_h": 4.0,
+  "stairs_deg": [
+   45.0,
+   90.0,
+   135.0
+  ],
+  "stair_w_m": 5.0,
+  "generator": "anfiteatro"
+ },
+ "z_range": [
+  -10.0,
+  128,
+  0.5
+ ],
+ "bridges": [],
+ "points_uu": {
+  "escenario": [
+   800.0,
+   5000.0
+  ],
+  "orquesta": [
+   2000.0,
+   5000.0
+  ],
+  "cresta": [
+   6510.5,
+   6641.7
+  ],
+  "playa": [
+   10066.7,
+   5000.0
+  ],
+  "muelle_este": [
+   1650.0,
+   11000.0
+  ],
+  "muelle_oeste": [
+   1650.0,
+   -1000.0
+  ]
+ },
+ "unreachable_ok_uu": [],
+ "recorrible": true,
+ "nests_uu": [
+  [
+   800.0,
+   5000.0,
+   -200.0
+  ],
+  [
+   9900.0,
+   5900.0,
+   -200.0
+  ],
+  [
+   5900.0,
+   -1800.0,
+   -199.1
+  ],
+  [
+   4700.0,
+   12300.0,
+   -189.8
+  ],
+  [
+   5600.0,
+   3300.0,
+   400.0
+  ],
+  [
+   1800.0,
+   400.0,
+   -200.0
+  ],
+  [
+   4500.0,
+   7700.0,
+   439.2
+  ],
+  [
+   8200.0,
+   9800.0,
+   -199.2
+  ]
+ ],
+ "tunnels": [],
+ "decks": [],
+ "markers_uu": {
+  "columna": [
+   [
+    100.0,
+    3300.0,
+    200.0
+   ],
+   [
+    100.0,
+    4433.3,
+    200.0
+   ],
+   [
+    100.0,
+    5566.7,
+    200.0
+   ],
+   [
+    100.0,
+    6700.0,
+    200.0
+   ]
+  ],
+  "catapulta": [
+   [
+    2000.0,
+    5000.0,
+    -200.0
+   ]
+  ],
+  "trampolin": [
+   [
+    3641.7,
+    9510.5,
+    600.0
+   ],
+   [
+    6510.5,
+    3358.3,
+    600.0
+   ],
+   [
+    3641.7,
+    489.5,
+    600.0
+   ]
+  ]
+ },
+ "checks": {
+  "cotas": {
+   "ok": true,
+   "max_m": 10.0,
+   "summary": "m\u00e1x. +10.0 m"
+  },
+  "rampas": {
+   "ok": true,
+   "max_deg": 17.0,
+   "summary": "m\u00e1x. 17.0\u00b0"
+  },
+  "nests": {
+   "wanted": 8,
+   "found": 8,
+   "ok": true
+  }
+ }
+}
