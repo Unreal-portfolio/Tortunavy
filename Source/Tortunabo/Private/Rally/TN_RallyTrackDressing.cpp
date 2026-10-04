@@ -209,6 +209,11 @@ bool ATN_RallyTrackDressing::Build(const TNRallyDressing::FTrackData& InTrack, i
 		Seed, RailSegmentCount, BarrierPieceCount, DecorCount, FarDecorCount, SpectatorCount, GateMeshCount);
 	UE_LOG(LogTNRally, Log, TEXT("[RallyDressing] Piezas de la barrera quitadas (#693): %d invadían la calzada y %d quedaban bajo un techo sobre ella."),
 		BlockedOnRoadCount, BlockedUnderRoofCount);
+	if (BlockedRailCount > 0)
+	{
+		UE_LOG(LogTNRally, Warning, TEXT("[RallyDressing] Semilla %d: %d trozos del carril de colisión quitados porque entraban en la calzada de otro tramo: HAY AGUJEROS en el límite."),
+			Seed, BlockedRailCount);
+	}
 	// Comprobación de #303 con el trazado de verdad: ningún hueco de la barrera más ancho que una tortuga.
 	for (int32 Side = LeftSide; Side <= RightSide; ++Side)
 	{
@@ -241,6 +246,7 @@ void ATN_RallyTrackDressing::ClearDressing()
 	BarrierPieceCount = 0;
 	BlockedOnRoadCount = 0;
 	BlockedUnderRoofCount = 0;
+	BlockedRailCount = 0;
 	DecorCount = 0;
 	FarDecorCount = 0;
 	SpectatorCount = 0;
@@ -418,19 +424,9 @@ void ATN_RallyTrackDressing::AddRails(const TNRallyDressing::FTrackData& Track, 
 			const TArray<FVector> Points = RunPoints(Track, Barrier, Barrier.Runs[RunIndex], Side, Edge);
 			for (int32 Point = 0; Point + 1 < Points.Num(); ++Point)
 			{
-				// El carril tampoco entra en la calzada de otro tramo (#693): el de un paso superior sobre la de debajo.
-				const FVector& A = Points[Point];
-				const FVector& B = Points[Point + 1];
-				const double Yaw = FMath::RadiansToDegrees(FMath::Atan2(B.Y - A.Y, B.X - A.X));
-				TArray<FBarrierPiece, TInlineAllocator<3>> Probes;
-				for (const FVector& At : { A, 0.5 * (A + B), B })
-				{
-					Probes.Add(TNRallyDressingActor::MakeBarrierPiece(At, 0.5 * RailThicknessCm, At.Z - RailSinkCm, At.Z - RailSinkCm + RailHeightCm, true));
-				}
-				if (TryPlaceBarrierPieces(Probes, Yaw, Side))
-				{
-					AddRailSegment(Cube, A, B, Batches);
-				}
+				// El carril tampoco entra en la calzada de otro tramo (#693), pero solo se quita el trozo que entra: el resto se
+				// conserva para no dejar un agujero entero por el que salirse de la pista.
+				PlaceRail(Cube, Points[Point], Points[Point + 1], Batches);
 			}
 			if (!bVisuals || BarrierStyles.Num() == 0)
 			{

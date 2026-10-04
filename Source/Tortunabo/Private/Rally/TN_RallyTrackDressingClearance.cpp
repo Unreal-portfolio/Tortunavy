@@ -129,6 +129,55 @@ namespace TNRallyDressing
 		}
 		return Best;
 	}
+
+	TArray<FBarrierPiece> RailProbes(const FVector& A, const FVector& B, const FRailParams& Rail)
+	{
+		const double Spacing = FMath::Max(1.0, 2.0 * Rail.RadiusCm);
+		const int32 Intervals = FMath::Max(1, FMath::CeilToInt32(FVector::Dist2D(A, B) / Spacing));
+		TArray<FBarrierPiece> Probes;
+		Probes.Reserve(Intervals + 1);
+		for (int32 Index = 0; Index <= Intervals; ++Index)
+		{
+			FBarrierPiece Probe;
+			Probe.Center = FMath::Lerp(A, B, static_cast<double>(Index) / Intervals);
+			Probe.RadiusCm = Rail.RadiusCm;
+			Probe.BottomZ = Probe.Center.Z - Rail.SinkCm;
+			Probe.TopZ = Probe.BottomZ + Rail.HeightCm;
+			Probe.bRail = true;
+			Probes.Add(Probe);
+		}
+		return Probes;
+	}
+
+	TArray<FRailSpan> ClearRailSpans(const FRoadFootprint& Road, const FVector& A, const FVector& B, const FRailParams& Rail, int32& OutDropped)
+	{
+		TArray<FRailSpan> Kept;
+		// Pila de trozos por probar: se saca primero la mitad de A, así los trozos conservados salen en orden.
+		TArray<FRailSpan, TInlineAllocator<16>> Pending;
+		Pending.Add({ A, B });
+		while (Pending.Num() > 0)
+		{
+			const FRailSpan Span = Pending.Pop(EAllowShrinking::No);
+			const bool bFits = !RailProbes(Span.A, Span.B, Rail).ContainsByPredicate([&Road](const FBarrierPiece& Probe)
+			{
+				return Road.Intrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
+			});
+			if (bFits)
+			{
+				Kept.Add(Span);
+				continue;
+			}
+			if (FVector::Dist2D(Span.A, Span.B) < 2.0 * FMath::Max(1.0, Rail.MinSpanCm))
+			{
+				++OutDropped;
+				continue;
+			}
+			const FVector Mid = 0.5 * (Span.A + Span.B);
+			Pending.Add({ Mid, Span.B });
+			Pending.Add({ Span.A, Mid });
+		}
+		return Kept;
+	}
 }
 
 void ATN_RallyTrackDressing::CollectRoofIgnoredActors()
@@ -145,6 +194,30 @@ void ATN_RallyTrackDressing::CollectRoofIgnoredActors()
 		{
 			RoofIgnoredActors.Add(*It);
 		}
+	}
+}
+
+void ATN_RallyTrackDressing::PlaceRail(UStaticMesh* Cube, const FVector& A, const FVector& B, FTNRallyDressingBatches& Batches)
+{
+	TNRallyDressing::FRailParams Rail;
+	Rail.RadiusCm = 0.5 * RailThicknessCm;
+	Rail.SinkCm = RailSinkCm;
+	Rail.HeightCm = RailHeightCm;
+	Rail.MinSpanCm = RailThicknessCm;
+	// El carril no se ve y va fuera de la calzada: no se mira el techo (dentro de la pared de un túnel sigue cerrando el paso).
+	TArray<TNRallyDressing::FRailSpan> Spans;
+	if (RoadFootprint.IsValid())
+	{
+		Spans = TNRallyDressing::ClearRailSpans(*RoadFootprint, A, B, Rail, BlockedRailCount);
+	}
+	else
+	{
+		Spans.Add({ A, B });
+	}
+	for (const TNRallyDressing::FRailSpan& Span : Spans)
+	{
+		BarrierPieces.Append(TNRallyDressing::RailProbes(Span.A, Span.B, Rail));
+		AddRailSegment(Cube, Span.A, Span.B, Batches);
 	}
 }
 

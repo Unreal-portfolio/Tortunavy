@@ -360,6 +360,33 @@ namespace TNRallyDressing
 		bool bRail = false;
 	};
 
+	/** Carril de colisión (#303, #693): radio en planta, cuánto se hunde y alto (cm), y el trozo más corto que se prueba al partirlo. */
+	struct FRailParams
+	{
+		double RadiusCm = 60.0;
+		double SinkCm = 40.0;
+		double HeightCm = 300.0;
+		double MinSpanCm = 120.0;
+	};
+
+	/** Trozo recto del carril de colisión, de A a B (a la cota de la calzada). */
+	struct FRailSpan
+	{
+		FVector A = FVector::ZeroVector;
+		FVector B = FVector::ZeroVector;
+	};
+
+	/** Sondas del carril de A a B: una en cada extremo y las de en medio a no más de un diámetro entre sí, sin huecos. */
+	TORTUNABO_API TArray<FBarrierPiece> RailProbes(const FVector& A, const FVector& B, const FRailParams& Rail);
+
+	/**
+	 * Trozos del carril de A a B que no entran en la calzada de ningún tramo (#693). Un tramo que entra se parte por la mitad
+	 * hasta MinSpanCm y se conserva lo que queda fuera: solo se quita lo que de verdad entra. Los trozos salen en orden de A a
+	 * B; OutDropped suma los que se han quitado (cada uno, un agujero en el único límite que choca).
+	 */
+	TORTUNABO_API TArray<FRailSpan> ClearRailSpans(const FRoadFootprint& Road, const FVector& A, const FVector& B, const FRailParams& Rail,
+		int32& OutDropped);
+
 	/** Sitio de una pieza del decorado (a la cota del eje: el actor busca el suelo). Entry: índice de la entrada o variante. */
 	struct FSpot
 	{
@@ -515,9 +542,19 @@ public:
 	/** Piezas de la barrera colocadas (pilas, piezas de valla y tramos del carril), con lo que ocupan. La usan los tests de #693. */
 	const TArray<TNRallyDressing::FBarrierPiece>& GetBarrierPieces() const { return BarrierPieces; }
 
-	/** Piezas de la barrera que no se han puesto porque invadían la calzada o quedaban bajo un techo sobre ella (#693). */
+	/**
+	 * Piezas visibles de la barrera que no se han puesto porque invadían la calzada o quedaban bajo un techo sobre ella (#693).
+	 * El carril de colisión va aparte: GetBlockedRailCount.
+	 */
 	UFUNCTION(BlueprintPure, Category = "Rally|Decorado")
 	int32 GetBlockedBarrierCount() const { return BlockedOnRoadCount + BlockedUnderRoofCount; }
+
+	/**
+	 * Trozos del carril de colisión quitados porque entraban en la calzada de otro tramo (#693). Cada uno es un agujero en el
+	 * único límite que choca: un circuito del Rally tiene que dar 0 (Tortunabo.Rally.Dressing.RoadClear.Built).
+	 */
+	UFUNCTION(BlueprintPure, Category = "Rally|Decorado")
+	int32 GetBlockedRailCount() const { return BlockedRailCount; }
 
 	/** De GetBlockedBarrierCount, las que quedaban bajo un techo sobre la calzada (túnel o su boca). */
 	UFUNCTION(BlueprintPure, Category = "Rally|Decorado")
@@ -708,6 +745,8 @@ private:
 	double TireStackGroundZ(const TNRallyDressing::FTrackData& Track, const FVector& Center, double YawDeg, double RadiusCm) const;
 	void AddRails(const TNRallyDressing::FTrackData& Track, const TNRallyDressing::FBarrierPlan& Plan, int32 Seed, FTNRallyDressingBatches& Batches);
 	void AddRailSegment(UStaticMesh* Cube, const FVector& A, const FVector& B, FTNRallyDressingBatches& Batches);
+	/** El carril de A a B fuera de la calzada de todos los tramos (TNRallyDressing::ClearRailSpans); cuenta lo que quita. */
+	void PlaceRail(UStaticMesh* Cube, const FVector& A, const FVector& B, FTNRallyDressingBatches& Batches);
 	void AddBarrierRun(const TNRallyDressing::FTrackData& Track, const TArray<FVector>& Points, ETNRallyBarrierStyle Style, int32 Side,
 		int32 RunSeed, FTNRallyDressingBatches& Batches);
 	void AddPostRopeRun(const TArray<TNRallyDressing::FPolySpot>& Spots, int32 Side, int32 RunSeed, FTNRallyDressingBatches& Batches);
@@ -789,6 +828,7 @@ private:
 	int32 BarrierPieceCount = 0;
 	int32 BlockedOnRoadCount = 0;
 	int32 BlockedUnderRoofCount = 0;
+	int32 BlockedRailCount = 0;
 	int32 DecorCount = 0;
 	int32 FarDecorCount = 0;
 	int32 SpectatorCount = 0;
