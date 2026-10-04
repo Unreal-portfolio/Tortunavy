@@ -6,7 +6,12 @@
 
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "FoliageInstancedStaticMeshComponent.h"
+#include "InstancedFoliageActor.h"
 #include "Rally/TN_RallyTrack.h"
+#include "World/Beach/TN_BeachDecor.h"
+#include "World/Beach/TN_BeachDecorField.h"
+#include "World/TN_MapPlacementSpawner.h"
 
 namespace TNRallyDressingClearance
 {
@@ -60,7 +65,7 @@ namespace TNRallyDressing
 		return FIntPoint(FMath::FloorToInt32(X / CellCm), FMath::FloorToInt32(Y / CellCm));
 	}
 
-	double FRoadFootprint::IntrusionCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
+	double FRoadFootprint::IntrusionUnderCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ, double AboveCm) const
 	{
 		const double Radius = FMath::Max(0.0, RadiusCm);
 		const FIntPoint Low = CellOf(Center.X - Radius, Center.Y - Radius);
@@ -86,7 +91,7 @@ namespace TNRallyDressing
 					const double T = LengthSq > UE_KINDA_SMALL_NUMBER ? FMath::Clamp(FVector2D::DotProduct(Point - A, AB) / LengthSq, 0.0, 1.0) : 0.0;
 					const double RoadZ = FMath::Lerp(Segment.A.Z, Segment.B.Z, T);
 					// Solo cuenta si la pieza corta el gálibo de ese tramo: una barrera de otro tramo muy por encima (un puente) no.
-					if (TopZ < RoadZ - Clearance.BelowCm || BottomZ > RoadZ + Clearance.AboveCm)
+					if (TopZ < RoadZ - Clearance.BelowCm || BottomZ > RoadZ + AboveCm)
 					{
 						continue;
 					}
@@ -160,7 +165,7 @@ namespace TNRallyDressing
 			const FRailSpan Span = Pending.Pop(EAllowShrinking::No);
 			const bool bFits = !RailProbes(Span.A, Span.B, Rail).ContainsByPredicate([&Road](const FBarrierPiece& Probe)
 			{
-				return Road.Intrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
+				return Road.RailIntrudes(Probe.Center, Probe.RadiusCm, Probe.BottomZ, Probe.TopZ);
 			});
 			if (bFits)
 			{
@@ -221,11 +226,18 @@ void ATN_RallyTrackDressing::PlaceRail(UStaticMesh* Cube, const FVector& A, cons
 	}
 }
 
-bool ATN_RallyTrackDressing::TryPlaceBarrierPieces(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side)
+bool ATN_RallyTrackDressing::PassesRoadClearance(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side)
 {
+	if (!bRoadClearance)
+	{
+		return true;
+	}
 	for (const TNRallyDressing::FBarrierPiece& Piece : Pieces)
 	{
-		if (RoadFootprint.IsValid() && RoadFootprint->Intrudes(Piece.Center, Piece.RadiusCm, Piece.BottomZ, Piece.TopZ))
+		const bool bOnRoad = RoadFootprint.IsValid() && (Piece.bRail
+			? RoadFootprint->RailIntrudes(Piece.Center, Piece.RadiusCm, Piece.BottomZ, Piece.TopZ)
+			: RoadFootprint->Intrudes(Piece.Center, Piece.RadiusCm, Piece.BottomZ, Piece.TopZ));
+		if (bOnRoad)
 		{
 			++BlockedOnRoadCount;
 			return false;
@@ -237,8 +249,19 @@ bool ATN_RallyTrackDressing::TryPlaceBarrierPieces(TConstArrayView<TNRallyDressi
 			return false;
 		}
 	}
-	BarrierPieces.Append(Pieces.GetData(), Pieces.Num());
 	return true;
+}
+
+bool ATN_RallyTrackDressing::CanBeRoof(const AActor* Actor, const UPrimitiveComponent* Component)
+{
+	// El follaje (pintado en el nivel o instanciado en otro actor) nunca es un techo.
+	if ((Component && Component->IsA<UFoliageInstancedStaticMeshComponent>()) || (Actor && Actor->IsA<AInstancedFoliageActor>()))
+	{
+		return false;
+	}
+	// Ni el decorado: piezas de playa sueltas, su campo instanciado, la vegetación del manifest ni el decorado del Rally.
+	return !(Actor && (Actor->IsA<ATN_BeachDecor>() || Actor->IsA<ATN_BeachDecorField>() || Actor->IsA<ATN_MapPlacementSpawner>()
+		|| Actor->IsA<ATN_RallyTrackDressing>()));
 }
 
 bool ATN_RallyTrackDressing::IsUnderRoof(const FVector& Center, double RadiusCm, double TopZ, double YawDeg, int32 Side) const
@@ -269,11 +292,25 @@ bool ATN_RallyTrackDressing::IsUnderRoof(const FVector& Center, double RadiusCm,
 		// Desde encima de la calzada (en un salto, su rampa sube por encima de la pila) para no empezar dentro del suelo.
 		const double RoadZ = RoadFootprint.IsValid() ? RoadFootprint->RoadZAt(Probe, TopZ, TopZ) : TopZ;
 		Probe.Z = FMath::Max(TopZ, RoadZ) + RoofProbeLiftCm;
-		FHitResult Hit;
-		if (World->LineTraceSingleByObjectType(Hit, Probe, Probe + FVector(0.0, 0.0, RoofProbeCm), FCollisionObjectQueryParams(ECC_WorldStatic),
-			Params) && Hit.ImpactPoint.Z - Probe.Z >= RoofMinGapCm)
+		if (HasRoofAbove(*World, Probe, RoofProbeCm, RoofMinGapCm, Params))
 		{
 			return true;
+		}
+	}
+	return false;
+}
+
+bool ATN_RallyTrackDressing::HasRoofAbove(const UWorld& World, const FVector& From, double UpCm, double MinGapCm,
+	const FCollisionQueryParams& Params)
+{
+	// Con objetos, la traza múltiple devuelve todo lo que toca por orden: manda lo primero que puede ser techo (CanBeRoof).
+	TArray<FHitResult> Hits;
+	World.LineTraceMultiByObjectType(Hits, From, From + FVector(0.0, 0.0, UpCm), FCollisionObjectQueryParams(ECC_WorldStatic), Params);
+	for (const FHitResult& Hit : Hits)
+	{
+		if (CanBeRoof(Hit.GetActor(), Hit.GetComponent()))
+		{
+			return Hit.ImpactPoint.Z - From.Z >= MinGapCm;
 		}
 	}
 	return false;

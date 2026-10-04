@@ -16,6 +16,9 @@ class ATN_RallyTrack;
 class UInstancedStaticMeshComponent;
 class UMaterialInterface;
 class UPhysicalMaterial;
+class UPrimitiveComponent;
+class UWorld;
+struct FCollisionQueryParams;
 class UStaticMesh;
 struct FTNRallyDressingBatches;
 
@@ -281,14 +284,25 @@ namespace TNRallyDressing
 	TORTUNABO_API bool IsClearOfTrack(const FTrackData& Track, const FVector& Point, double ClearCm);
 
 	/**
+	 * Altura del buggy con la artillera sentada (cm, desde el suelo): cadera de la artillera (ATN_Buggy::GunnerSeatLocal.Z,
+	 * 127,4) más la coronilla sobre la cadera (72,2, seat_measure_m de Art/Source/Vehicles/Buggy/manifest.json).
+	 */
+	inline constexpr double BuggyWithGunnerHeightCm = 200.0;
+	/** Aire que se deja sobre la artillera al medir el carril de colisión de un paso superior (decisión del 04-10 en #693). */
+	inline constexpr double RailHeadroomMarginCm = 50.0;
+
+	/**
 	 * Gálibo de la calzada (#693): el espacio por el que pasa el buggy, que ninguna pieza de la barrera puede ocupar. En planta,
 	 * el ancho de cada tramo (FAxisSample::RoadWidthCm o el del trazado); en altura, de BelowCm por debajo de la calzada a
-	 * AboveCm por encima (el gálibo de los túneles del generador, 6 m).
+	 * AboveCm por encima (el gálibo de los túneles del generador, 6 m) para las piezas que se ven, y a RailAboveCm (el buggy
+	 * con la artillera más 0,5 m) para el carril de colisión invisible: en un cruce a dos alturas solo se quita el trozo del
+	 * carril del paso superior que de verdad estorba al buggy de abajo.
 	 */
 	struct FRoadClearance
 	{
 		double BelowCm = 100.0;
 		double AboveCm = 600.0;
+		double RailAboveCm = BuggyWithGunnerHeightCm + RailHeadroomMarginCm;
 		/** Lo que una pieza puede entrar sin contar (cm): la cuerda de la barrera por fuera de las curvas cerradas. */
 		double ToleranceCm = 5.0;
 	};
@@ -306,12 +320,21 @@ namespace TNRallyDressing
 		 * Lo que entra (cm, en planta) en la calzada de algún tramo un cilindro vertical de radio RadiusCm centrado en Center,
 		 * de BottomZ a TopZ, si a esa altura corta su gálibo; 0 si no entra.
 		 */
-		double IntrusionCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const;
+		double IntrusionCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
+		{
+			return IntrusionUnderCm(Center, RadiusCm, BottomZ, TopZ, Clearance.AboveCm);
+		}
 
 		/** IntrusionCm por encima de la tolerancia de FRoadClearance. */
 		bool Intrudes(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
 		{
 			return IntrusionCm(Center, RadiusCm, BottomZ, TopZ) > Clearance.ToleranceCm;
+		}
+
+		/** Intrudes para el carril de colisión: el gálibo llega a RailAboveCm sobre la calzada, no a AboveCm. */
+		bool RailIntrudes(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
+		{
+			return IntrusionUnderCm(Center, RadiusCm, BottomZ, TopZ, Clearance.RailAboveCm) > Clearance.ToleranceCm;
 		}
 
 		/**
@@ -333,6 +356,8 @@ namespace TNRallyDressing
 		};
 
 		FIntPoint CellOf(double X, double Y) const;
+		/** IntrusionCm con un gálibo que llega a AboveCm sobre la calzada. */
+		double IntrusionUnderCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ, double AboveCm) const;
 
 		FRoadClearance Clearance;
 		double CellCm = 2000.0;
@@ -560,6 +585,24 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Decorado")
 	int32 GetRoofBlockedBarrierCount() const { return BlockedUnderRoofCount; }
 
+	/**
+	 * Solo para pruebas: con false, el próximo Build pone la barrera y el carril sin el gálibo de #693 (ni calzada ni techo).
+	 * Tortunabo.Rally.Dressing.RoadClear.Built lo usa para comprobar que sin el filtro sí hay piezas que lo incumplen.
+	 */
+	void SetRoadClearanceEnabled(bool bEnabled) { bRoadClearance = bEnabled; }
+
+	/**
+	 * Si lo que toca una sonda de techo (#693) puede ser un techo: el terreno y las estructuras sí; el follaje y el decorado
+	 * (ATN_BeachDecor, ATN_BeachDecorField, la vegetación de ATN_MapPlacementSpawner y el propio decorado del Rally), no.
+	 */
+	static bool CanBeRoof(const AActor* Actor, const UPrimitiveComponent* Component);
+
+	/**
+	 * Hay techo encima de From: lo primero que puede serlo (CanBeRoof) en la vertical, hasta UpCm por encima, deja al menos
+	 * MinGapCm de aire (más cerca es el propio suelo). Lo usan las sondas de IsUnderRoof y los tests de #693.
+	 */
+	static bool HasRoofAbove(const UWorld& World, const FVector& From, double UpCm, double MinGapCm, const FCollisionQueryParams& Params);
+
 protected:
 	// ── Límites ──
 
@@ -753,12 +796,15 @@ private:
 	void AddPieceRun(const TArray<FVector>& Points, ETNBeachElement First, ETNBeachElement Second, float Size, int32 Side, int32 RunSeed,
 		FTNRallyDressingBatches& Batches);
 	/**
-	 * Todas o ninguna (#693): las piezas (con rumbo YawDeg, en el lado Side) se ponen si ninguna invade la calzada de ningún
-	 * tramo ni, las que se ven (no el carril), queda bajo un techo sobre la calzada. Si se ponen, las apunta en BarrierPieces;
-	 * si no, cuenta el motivo.
+	 * Todas o ninguna (#693): las piezas (con rumbo YawDeg, en el lado Side) caben si ninguna invade la calzada de ningún
+	 * tramo ni, las que se ven (no el carril), queda bajo un techo sobre la calzada. Si no, cuenta el motivo. No las apunta:
+	 * quien las coloca las añade a BarrierPieces solo si de verdad pone la pieza.
 	 */
-	bool TryPlaceBarrierPieces(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side);
-	/** Algo por encima (RoofProbeCm) entre la pieza y la calzada, en su sitio y un poco antes y después. */
+	bool PassesRoadClearance(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side);
+	/**
+	 * Algo por encima (RoofProbeCm) entre la pieza y la calzada, en su sitio y un poco antes y después. Solo cuentan el
+	 * terreno y las estructuras (CanBeRoof): una palmera o una sombrilla encima no son un techo.
+	 */
 	bool IsUnderRoof(const FVector& Center, double RadiusCm, double TopZ, double YawDeg, int32 Side) const;
 	/** Pilas de neumáticos a lo largo de Points (a la cota de la calzada), cada una apoyada en su suelo. */
 	void AddTireRun(const TNRallyDressing::FTrackData& Track, const TArray<FVector>& Points, int32 Side, FTNRallyDressingBatches& Batches);
@@ -824,6 +870,8 @@ private:
 	void CollectRoofIgnoredActors();
 
 	bool bVisuals = true;
+	/** Gálibo de #693 activo en Build (SetRoadClearanceEnabled, solo pruebas). */
+	bool bRoadClearance = true;
 	int32 RailSegmentCount = 0;
 	int32 BarrierPieceCount = 0;
 	int32 BlockedOnRoadCount = 0;
