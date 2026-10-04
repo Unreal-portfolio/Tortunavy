@@ -233,15 +233,7 @@
   "seed": 6929,
   "description": "Circuito de Rally por vueltas de tierra en una cantera (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y taludes altos con estratos.",
   "recorrible": true,
-  "size_mb": 2.95,
-  "mode": "rally"
- },
- {
-  "name": "R06_circuito_lomas",
-  "seed": 6933,
-  "description": "Circuito de Rally por vueltas de tierra entre lomas secas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y colinas redondas.",
-  "recorrible": true,
-  "size_mb": 2.19,
+  "size_mb": 2.96,
   "mode": "rally"
  },
  {
@@ -250,6 +242,14 @@
   "description": "Circuito de Rally por vueltas de tierra por las marismas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con más barro, banquetas en las horquillas y un llano de arena húmeda.",
   "recorrible": true,
   "size_mb": 2.23,
+  "mode": "rally"
+ },
+ {
+  "name": "R06_circuito_lomas",
+  "seed": 6933,
+  "description": "Circuito de Rally por vueltas de tierra entre lomas secas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y colinas redondas.",
+  "recorrible": true,
+  "size_mb": 2.19,
   "mode": "rally"
  }
 ]

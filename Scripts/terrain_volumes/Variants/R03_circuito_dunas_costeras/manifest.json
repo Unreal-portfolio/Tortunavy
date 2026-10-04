@@ -350,8 +350,8 @@
     70000.0,
     20000.0
    ],
-   "vertices": 2752,
-   "triangles": 5080,
+   "vertices": 2835,
+   "triangles": 5246,
    "instances": 0
   },
   {
@@ -19323,8 +19323,9 @@
       "amplitude_m": 0.076,
       "wavelength_m": 5.72,
       "max_curvature": 3e-05,
-      "measured_amplitude_m": 0.054,
-      "measured_amplitude_max_m": 0.055,
+      "hairpin_brake_gap_m": 1386.0,
+      "measured_amplitude_m": 0.062,
+      "measured_amplitude_max_m": 0.063,
       "within_suspension": true,
       "wheel_fits": true
      },
@@ -19334,8 +19335,9 @@
       "amplitude_m": 0.141,
       "wavelength_m": 10.95,
       "max_curvature": 3e-05,
-      "measured_amplitude_m": 0.129,
-      "measured_amplitude_max_m": 0.131,
+      "hairpin_brake_gap_m": 968.8,
+      "measured_amplitude_m": 0.131,
+      "measured_amplitude_max_m": 0.133,
       "within_suspension": true,
       "wheel_fits": true
      }
@@ -19394,6 +19396,7 @@
    "width_variety": true,
    "jump_kinds": true,
    "bumps": true,
+   "bumps_braking": true,
    "dip": true,
    "banqueta": true
   }

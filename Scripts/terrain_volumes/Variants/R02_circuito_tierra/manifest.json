@@ -980,6 +980,7 @@
  "generator": {
   "generator": "rally_circuit_vueltas",
   "profile": "tierra",
+  "theme": "base",
   "seed": 682,
   "attempt": 0,
   "pieces": [
@@ -18487,8 +18488,9 @@
       "amplitude_m": 0.182,
       "wavelength_m": 9.61,
       "max_curvature": 5e-05,
-      "measured_amplitude_m": 0.17,
-      "measured_amplitude_max_m": 0.171,
+      "hairpin_brake_gap_m": 1521.2,
+      "measured_amplitude_m": 0.169,
+      "measured_amplitude_max_m": 0.17,
       "within_suspension": true,
       "wheel_fits": true
      },
@@ -18498,8 +18500,9 @@
       "amplitude_m": 0.083,
       "wavelength_m": 5.93,
       "max_curvature": 2e-05,
-      "measured_amplitude_m": 0.069,
-      "measured_amplitude_max_m": 0.07,
+      "hairpin_brake_gap_m": 696.2,
+      "measured_amplitude_m": 0.072,
+      "measured_amplitude_max_m": 0.073,
       "within_suspension": true,
       "wheel_fits": true
      }
@@ -18558,6 +18561,7 @@
    "width_variety": true,
    "jump_kinds": true,
    "bumps": true,
+   "bumps_braking": true,
    "dip": true,
    "banqueta": true
   }

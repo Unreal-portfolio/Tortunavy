@@ -766,8 +766,8 @@
     70000.0,
     50000.0
    ],
-   "vertices": 2489,
-   "triangles": 4536,
+   "vertices": 2577,
+   "triangles": 4712,
    "instances": 0
   },
   {
@@ -844,8 +844,8 @@
     30000.0,
     60000.0
    ],
-   "vertices": 2280,
-   "triangles": 4152,
+   "vertices": 2449,
+   "triangles": 4490,
    "instances": 0
   },
   {
@@ -19124,7 +19124,7 @@
    "min_seg_m": 0.996,
    "missing_samples": 0,
    "min_above_water_m": 7.0,
-   "max_step_m": 0.107,
+   "max_step_m": 0.104,
    "max_step_in_jumps_m": 0.447,
    "sustained_grade_deg": 4.28,
    "bank_manifest_max_deg": 13.36,
@@ -19347,8 +19347,9 @@
       "amplitude_m": 0.088,
       "wavelength_m": 4.96,
       "max_curvature": 5e-05,
-      "measured_amplitude_m": 0.053,
-      "measured_amplitude_max_m": 0.053,
+      "hairpin_brake_gap_m": 267.7,
+      "measured_amplitude_m": 0.065,
+      "measured_amplitude_max_m": 0.067,
       "within_suspension": true,
       "wheel_fits": true
      },
@@ -19358,8 +19359,9 @@
       "amplitude_m": 0.18,
       "wavelength_m": 10.17,
       "max_curvature": 2e-05,
-      "measured_amplitude_m": 0.163,
-      "measured_amplitude_max_m": 0.163,
+      "hairpin_brake_gap_m": 816.2,
+      "measured_amplitude_m": 0.166,
+      "measured_amplitude_max_m": 0.167,
       "within_suspension": true,
       "wheel_fits": true
      }
@@ -19418,6 +19420,7 @@
    "width_variety": true,
    "jump_kinds": true,
    "bumps": true,
+   "bumps_braking": true,
    "dip": true,
    "banqueta": true
   }

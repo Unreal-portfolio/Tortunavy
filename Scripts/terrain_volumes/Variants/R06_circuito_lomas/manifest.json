@@ -18298,8 +18298,9 @@
       "amplitude_m": 0.142,
       "wavelength_m": 8.89,
       "max_curvature": 3e-05,
-      "measured_amplitude_m": 0.128,
-      "measured_amplitude_max_m": 0.13,
+      "hairpin_brake_gap_m": 567.4,
+      "measured_amplitude_m": 0.131,
+      "measured_amplitude_max_m": 0.131,
       "within_suspension": true,
       "wheel_fits": true
      },
@@ -18309,8 +18310,9 @@
       "amplitude_m": 0.082,
       "wavelength_m": 5.41,
       "max_curvature": 5e-05,
-      "measured_amplitude_m": 0.059,
-      "measured_amplitude_max_m": 0.059,
+      "hairpin_brake_gap_m": 1463.2,
+      "measured_amplitude_m": 0.069,
+      "measured_amplitude_max_m": 0.069,
       "within_suspension": true,
       "wheel_fits": true
      }
@@ -18369,6 +18371,7 @@
    "width_variety": true,
    "jump_kinds": true,
    "bumps": true,
+   "bumps_braking": true,
    "dip": true,
    "banqueta": true
   }

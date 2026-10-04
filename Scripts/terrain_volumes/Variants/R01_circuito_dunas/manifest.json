@@ -668,6 +668,7 @@
  "generator": {
   "generator": "rally_circuit_vueltas",
   "profile": "dunas",
+  "theme": "base",
   "seed": 622,
   "attempt": 0,
   "pieces": [
