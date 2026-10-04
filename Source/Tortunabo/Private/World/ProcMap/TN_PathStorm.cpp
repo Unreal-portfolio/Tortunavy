@@ -19,6 +19,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Misc/App.h"
+#include "World/Beach/TN_BeachShelterVolume.h"
 
 ATN_PathStorm::ATN_PathStorm()
 {
@@ -176,7 +177,7 @@ void ATN_PathStorm::TickCough(float DeltaTime)
 		}
 		UTN_StormCoughComponent* Cough = UTN_StormCoughComponent::FindOrAddTo(Turtle);
 		if (!Cough) { continue; }
-		const bool bInside = !PS->bHasFinishedRun && IsLocationInside(Turtle->GetActorLocation());
+		const bool bInside = !PS->bHasFinishedRun && IsLocationInside(Turtle->GetActorLocation()) && !ATN_BeachShelterVolume::IsSheltered(Turtle);
 		float& Seconds = CoughInsideTime.FindOrAdd(Turtle);
 		Seconds = bInside ? Seconds + Step : 0.f;
 		Cough->SetStormExposure(bInside, Seconds / FMath::Max(0.1f, SecondsInsideToDie));
@@ -479,7 +480,8 @@ void ATN_PathStorm::ServerCheckPlayers(float Interval)
 			continue;
 		}
 
-		if (IsLocationInside(Turtle->GetActorLocation()))
+		// Dentro de un búnker (#689) la tormenta no cuenta: es refugio.
+		if (IsLocationInside(Turtle->GetActorLocation()) && !ATN_BeachShelterVolume::IsSheltered(Turtle))
 		{
 			float& T = InsideTime.FindOrAdd(PC);
 			T += Interval;

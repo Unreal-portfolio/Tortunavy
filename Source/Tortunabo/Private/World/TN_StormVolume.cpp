@@ -14,6 +14,7 @@
 #include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Engine/StaticMesh.h"
+#include "World/Beach/TN_BeachShelterVolume.h"
 
 ATN_StormVolume::ATN_StormVolume()
 {
@@ -397,6 +398,8 @@ void ATN_StormVolume::TickAllCountdowns()
 		if (const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn()))
 		{
 			if (Turtle->IsKnockedDown()) continue;
+			// Dentro de un búnker (#689) la cuenta atrás se para: es refugio.
+			if (ATN_BeachShelterVolume::IsSheltered(Turtle)) continue;
 		}
 
 		*Remaining = FMath::Max(0.f, *Remaining - CountdownTickInterval);

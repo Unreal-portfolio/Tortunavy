@@ -32,6 +32,7 @@
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "World/Beach/TN_BeachShelterVolume.h"
 
 namespace TNBeachEnemyDebug
 {
@@ -443,7 +444,9 @@ bool ATN_BeachEnemy::CanBeHit(const ATortugaCharacter* Turtle)
 	// Tampoco mientras la patada de la tormenta o la red de seguridad la recolocan (TNBeach::IsTurtleRelocating), ni con el
 	// protector solar puesto (objeto de carrera: los enemigos no la miran).
 	return IsValid(Turtle) && !Turtle->IsDead() && !Turtle->IsKnockedDown() && !TNBeach::IsTurtleStunned(Turtle) && !IsTurtleHeld(Turtle)
-		&& !TNBeach::IsTurtleRelocating(Turtle) && !TNRaceItems::IsInvulnerable(Turtle);
+		&& !TNBeach::IsTurtleRelocating(Turtle) && !TNRaceItems::IsInvulnerable(Turtle)
+		// Dentro de un búnker (#689): zona segura, ningún enemigo la marca ni la agarra.
+		&& !ATN_BeachShelterVolume::IsSheltered(Turtle);
 }
 
 bool ATN_BeachEnemy::ServerKnockDown(ATortugaCharacter* Turtle, float Seconds, const FVector& Push, const FVector& Spin)
