@@ -43,6 +43,12 @@ namespace TNLobbyMission
 	/** El modo si es uno de GetMenuModes; si no (2 vs 2, Clásico o uno que no se puede jugar), Cooperativo. Lo que admite una sala nueva. */
 	TORTUNABO_API ETNProcGameMode NormalizeMenuMode(ETNProcGameMode Mode);
 
+	/**
+	 * Nombre de un circuito del Rally de LVL_Rally (#631): los conocidos tienen nombre traducido y los demás (variantes
+	 * nuevas) salen con su identificador.
+	 */
+	TORTUNABO_API FText RallyMapName(FName Variant);
+
 	/** Nombre de la dificultad («Fácil», «Normal», «Difícil»). */
 	TORTUNABO_API FText DifficultyName(ETNProcDifficulty Difficulty);
 

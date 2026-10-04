@@ -18,8 +18,9 @@
 #include "Multiplayer/TN_RoomNames.h"
 #include "Player/TortugaCharacter.h"
 #include "UI/Credits/TN_CreditsWidget.h"
-#include "Kart/TN_KartGameMode.h"
 #include "Kart/TN_KartGameState.h"
+#include "Lobby/TN_LobbyMission.h"
+#include "Rally/TN_RallyGameMode.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
@@ -1780,6 +1781,10 @@ void UTN_PauseMenuWidget::RefreshHeader()
 		Mode = FText::Format(NSLOCTEXT("TNPause", "ModeKarts", "Karts · el camino del cooperativo · {0} · semilla {1}"),
 			KartDifficulties[Difficulty], FText::AsNumber(Karts->MapSeed, &FNumberFormattingOptions::DefaultNoGrouping()));
 	}
+	else if (const ATN_RallyGameState* Rally = Cast<ATN_RallyGameState>(State))
+	{
+		Mode = FText::Format(NSLOCTEXT("TNPause", "ModeRallyCircuit", "Rally · {0}"), TNLobbyMission::RallyMapName(Rally->Variant));
+	}
 	else if (const ATN_ProcMapGameState* Proc = Cast<ATN_ProcMapGameState>(State))
 	{
 		const FText Round = FText::AsNumber(FMath::Max(1, Proc->CurrentRound));
@@ -3085,11 +3090,11 @@ void UTN_PauseMenuWidget::ReturnToLobby()
 			{
 				return;
 			}
-			// Karts en el mapa del cooperativo: la misma vuelta que al acabar la carrera.
-			if (ATN_KartGameMode* KartMode = World->GetAuthGameMode<ATN_KartGameMode>())
+			// Rally y Karts (ATN_KartGameMode hereda de él): la misma vuelta que al acabar la carrera.
+			if (ATN_RallyGameMode* RallyMode = World->GetAuthGameMode<ATN_RallyGameMode>())
 			{
 				Menu->CloseMenu();
-				KartMode->ReturnToLobbyNow();
+				RallyMode->ReturnToLobbyNow();
 				return;
 			}
 			ATN_RunGameMode* GameMode = World->GetAuthGameMode<ATN_RunGameMode>();
@@ -3887,5 +3892,5 @@ bool UTN_PauseMenuWidget::CanReturnToLobby() const
 	const UWorld* World = GetWorld();
 	const AGameStateBase* State = World ? World->GetGameState() : nullptr;
 	return State && State->GameModeClass && (State->GameModeClass->IsChildOf(ATN_RunGameMode::StaticClass())
-		|| State->GameModeClass->IsChildOf(ATN_KartGameMode::StaticClass()));
+		|| State->GameModeClass->IsChildOf(ATN_RallyGameMode::StaticClass()));
 }

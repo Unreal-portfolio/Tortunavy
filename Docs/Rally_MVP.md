@@ -54,6 +54,16 @@ Cajas «?» (`ATN_KartItemBox`, #629; sustituyen a la antigua caja de munición,
 - E01B e I03R no traen esos campos y funcionan como antes.
 - Medida (04-10, 1 bot, sin editor): 5 vueltas en 466 s (93 s por vuelta; la ideal del generador es de 67 s), sin atascos, vuelcos ni puertas perdidas.
 
+## Lo que el Rally toma de Karts (#631)
+
+Decisión del 04-10 en #627: Karts se queda entero (su modo, su mapa generado, sus objetos y sus bots) y el Rally de
+`LVL_Rally` adopta su cámara, sus bots y su peso. `ATN_RallyGameMode` usa `ATN_RallyKartBuggy` (el `ATN_KartBuggy` sin
+objetos: mirada libre con vuelta al centro y vista trasera, peso de la artillera en el giro) y el PlayerController de
+Karts (HUD del peso). La dificultad del lobby (`?ProcDifficulty=`), las plazas del anfitrión, la parrilla completada con
+bots hasta `MinTeams` y los bots ajustados a la dificultad (`ConfigureBot`) viven en `ATN_RallyGameMode`
+(`TN_RallyGameModeLobby.cpp`) y valen para los dos modos; `ATN_KartGameMode` solo cambia la pista y el buggy. Viniendo
+del lobby (`?FromLobby`), al acabar los resultados se vuelve a él, también desde el menú de pausa.
+
 ## Arquitectura
 
 | Pieza | Carpeta | Qué hace |

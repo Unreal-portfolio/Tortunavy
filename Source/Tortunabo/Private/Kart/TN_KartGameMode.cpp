@@ -5,16 +5,12 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
-#include "Kart/TN_KartAIController.h"
-#include "Kart/TN_KartBuggy.h"
 #include "Vehicles/TN_Buggy.h"
 #include "Kart/TN_KartItemComponent.h"
+#include "Kart/TN_KartBuggy.h"
 #include "Kart/TN_KartGameState.h"
-#include "Kart/TN_KartPlayerController.h"
 #include "Kart/TN_KartTrack.h"
 #include "Kismet/GameplayStatics.h"
-#include "Multiplayer/MP_GameInstance.h"
-#include "Rally/TN_RallyAIController.h"
 #include "Rally/TN_RallyLogic.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
@@ -26,87 +22,53 @@
 namespace TNKartMode
 {
 	TAutoConsoleVariable<int32> CVarKartBots(TEXT("TN.Kart.Bots"), -1,
-		TEXT("Karts: bots de la parrilla (-1 = los que falten hasta MinKarts karts; ?Bots= en la URL manda). Vale para la próxima partida."));
+		TEXT("Karts: bots de la parrilla (-1 = TN.Rally.Bots o los que falten hasta MinTeams karts; ?Bots= en la URL manda). Vale para la próxima partida."));
+
+	TAutoConsoleVariable<int32> CVarKartSeats(TEXT("TN.Kart.Seats"), 0,
+		TEXT("Karts: tortugas por kart (1 o 2; 0 = TN.Rally.Seats o las del anfitrión; ?Seats= en la URL manda). Vale para la próxima partida."));
 
 	TAutoConsoleVariable<int32> CVarKartProbeArc(TEXT("TN.Kart.ProbeArc"), 0,
 		TEXT("Karts (diagnóstico, LogTNRally Verbose): perfil del suelo a lo ancho del camino alrededor de este arco (m) al empezar."));
 
-	TAutoConsoleVariable<int32> CVarKartSeats(TEXT("TN.Kart.Seats"), 0,
-		TEXT("Karts: tortugas por kart (1 o 2; 0 = las de por defecto; ?Seats= en la URL manda). Vale para la próxima partida."));
-
 	const TCHAR* const DefaultSettingsPath = TEXT("/Game/ProcMap/DA_ProcMapSettings.DA_ProcMapSettings");
-	const TCHAR* const DefaultLobbyPath = TEXT("/Game/Maps/Lobby/LVL_Lobby");
 	/** Cada cuánto se mira si todas tienen el mapa (s). */
 	constexpr double ReadyCheckIntervalSeconds = 0.5;
-
-	int32 DifficultyIndex(ETNProcDifficulty Difficulty)
-	{
-		return FMath::Clamp(static_cast<int32>(Difficulty), 0, 2);
-	}
 }
 
 ATN_KartGameMode::ATN_KartGameMode()
 {
+	// El PlayerController, los bots, las plazas y la vuelta al lobby son los del Rally (ATN_RallyGameMode, #631); aquí
+	// cambian de dónde sale la pista y el buggy, que es el de Karts con sus objetos.
 	GameStateClass = ATN_KartGameState::StaticClass();
-	PlayerControllerClass = ATN_KartPlayerController::StaticClass();
-	AIControllerClass = ATN_KartAIController::StaticClass();
-	// El buggy de SkiTemplar con los objetos, la artillera que se inclina y la torreta que sigue a la cámara.
 	VehicleClass = TSoftClassPtr<APawn>(ATN_KartBuggy::StaticClass());
 	// Sin variante del manifest: la pista sale del mapa generado (ATN_KartGameState::PrepareTrack).
 	DefaultVariant = NAME_None;
-	// Del lobby se llega y al lobby se vuelve sin cortar la conexión.
-	bUseSeamlessTravel = true;
-	// Pistas de varios kilómetros con cajas y conchas: más margen para llegar tras la primera que en el Rally.
+	// Pistas de varios kilómetros: más margen para llegar tras la primera que en los circuitos.
 	FinishGraceSeconds = 45.f;
 	MapSettings = TSoftObjectPtr<UTN_ProcMapSettings>(FSoftObjectPath(TNKartMode::DefaultSettingsPath));
 }
 
 void ATN_KartGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
-	// La dificultad del lobby (como en el cooperativo); ?ProcDifficulty= manda para probar sin lobby.
-	const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance());
-	if (GI)
-	{
-		Difficulty = GI->SelectedProcDifficulty;
-		ExpectedHumans = FMath::Max(1, GI->PendingTravelPlayerCount);
-	}
-	const FString DifficultyOption = UGameplayStatics::ParseOption(Options, TEXT("ProcDifficulty"));
-	if (DifficultyOption.Equals(TEXT("Easy"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Easy; }
-	else if (DifficultyOption.Equals(TEXT("Normal"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Normal; }
-	else if (DifficultyOption.Equals(TEXT("Hard"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Hard; }
-	if (Difficulty == ETNProcDifficulty::Count)
-	{
-		Difficulty = ETNProcDifficulty::Normal;
-	}
 	UrlSeed = UGameplayStatics::GetIntOption(Options, TEXT("ProcSeed"), 0);
+	Super::InitGame(MapName, Options, ErrorMessage);
+	// Al mapa generado solo se llega desde el lobby (o abriéndolo a mano): al acabar, al lobby, salvo con ?Races=N.
 	bReturnToLobbyAfterResults = !UGameplayStatics::HasOption(Options, TEXT("Races"));
+	UE_LOG(LogTNRally, Log, TEXT("[Karts] Karts en el mapa del cooperativo: dificultad %s, semilla %s, %d tortuga(s) esperada(s)."),
+		*UEnum::GetValueAsString(Difficulty), UrlSeed != 0 ? *FString::FromInt(UrlSeed) : TEXT("aleatoria"), ExpectedHumans);
+}
 
-	// Plazas y bots: lo que no diga la URL lo pone el modo (la carrera del Rally lo lee de las opciones).
-	FString KartOptions = Options;
-	int32 KartSeats = FMath::Clamp(DefaultSeats, 1, 2);
-	if (UGameplayStatics::HasOption(Options, TEXT("Seats")))
-	{
-		KartSeats = FMath::Clamp(UGameplayStatics::GetIntOption(Options, TEXT("Seats"), KartSeats), 1, 2);
-	}
-	else
-	{
-		// Lo que eligió el anfitrión con el general; TN.Kart.Seats manda para probar.
-		KartSeats = GI ? FMath::Clamp(GI->SelectedKartSeats, 1, 2) : KartSeats;
-		const int32 Forced = TNKartMode::CVarKartSeats.GetValueOnGameThread();
-		KartSeats = Forced == 1 || Forced == 2 ? Forced : KartSeats;
-		KartOptions += FString::Printf(TEXT("?Seats=%d"), KartSeats);
-	}
-	if (!UGameplayStatics::HasOption(Options, TEXT("Bots")))
-	{
-		const int32 Forced = TNKartMode::CVarKartBots.GetValueOnGameThread();
-		const int32 HumanKarts = FMath::DivideAndRoundUp(ExpectedHumans, KartSeats);
-		const int32 KartBots = Forced >= 0 ? FMath::Min(Forced, TNRally::MaxGridSlots)
-			: FMath::Clamp(MinKarts - HumanKarts, 0, TNRally::MaxGridSlots - HumanKarts);
-		KartOptions += FString::Printf(TEXT("?Bots=%d"), KartBots);
-	}
-	UE_LOG(LogTNRally, Log, TEXT("[Karts] Karts en el mapa del cooperativo: dificultad %s, semilla %s, %d tortuga(s) esperada(s), %d por kart."),
-		*UEnum::GetValueAsString(Difficulty), UrlSeed != 0 ? *FString::FromInt(UrlSeed) : TEXT("aleatoria"), ExpectedHumans, KartSeats);
-	Super::InitGame(MapName, KartOptions, ErrorMessage);
+int32 ATN_KartGameMode::GetForcedSeats() const
+{
+	// TN.Kart.Seats manda en Karts; si no, la del Rally.
+	const int32 Forced = TNKartMode::CVarKartSeats.GetValueOnGameThread();
+	return Forced == 1 || Forced == 2 ? Forced : Super::GetForcedSeats();
+}
+
+int32 ATN_KartGameMode::GetForcedBots() const
+{
+	const int32 Forced = TNKartMode::CVarKartBots.GetValueOnGameThread();
+	return Forced >= 0 ? Forced : Super::GetForcedBots();
 }
 
 ATN_KartGameState* ATN_KartGameMode::GetKartState() const
@@ -152,17 +114,6 @@ ATN_ProcMapGenerator* ATN_KartGameMode::GenerateMap()
 	UE_LOG(LogTNRally, Log, TEXT("[Karts] Mapa %d generado (semilla %d, %s)."), Map->GetBuiltGeneration(), MapSeed,
 		*UEnum::GetValueAsString(Difficulty));
 	return Map->IsMapReady() ? Map : nullptr;
-}
-
-void ATN_KartGameMode::ConfigureBot(ATN_RallyAIController& Pilot)
-{
-	const int32 Index = TNKartMode::DifficultyIndex(Difficulty);
-	// Un poco de variedad entre bots: ±4 km/h alrededor de la velocidad de la dificultad.
-	const float Spread = static_cast<float>((NextBotOrdinal++ % 3) - 1) * 4.f;
-	Pilot.MaxSpeedKmh = static_cast<float>(BotMaxSpeedKmh[Index]) + Spread;
-	Pilot.SpecialFireChance = FMath::Clamp(static_cast<float>(BotSpecialFireChance[Index]), 0.f, 1.f);
-	Pilot.FireIntervalSeconds = FMath::Max(0.2f, static_cast<float>(BotFireIntervalSeconds[Index]));
-	Pilot.FireRangeCm = FMath::Max(500.f, static_cast<float>(BotFireRangeCm[Index]));
 }
 
 void ATN_KartGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
@@ -248,19 +199,11 @@ void ATN_KartGameMode::Tick(float DeltaSeconds)
 			ReleaseWaitingPlayers(TEXT("tope de espera"));
 		}
 	}
-	// Fin de los resultados: al lobby, antes de que el Rally empiece otra carrera en el mismo mapa.
-	if (bReturnToLobbyAfterResults && KartState && KartState->Phase == ETNRallyPhase::Results
-		&& KartState->GetServerWorldTimeSeconds() >= KartState->PhaseEndServerTime - LobbyTravelLeadSeconds)
+	// La vuelta al lobby al acabar los resultados es la del Rally (ATN_RallyGameMode::RestartOrQuit).
+	Super::Tick(DeltaSeconds);
+	if (!bReturning && UE_LOG_ACTIVE(LogTNRally, Verbose))
 	{
-		ReturnToLobbyNow();
-	}
-	if (!bReturning)
-	{
-		Super::Tick(DeltaSeconds);
-		if (UE_LOG_ACTIVE(LogTNRally, Verbose))
-		{
-			LogStartDiagnostics();
-		}
+		LogStartDiagnostics();
 	}
 }
 
@@ -330,35 +273,6 @@ void ATN_KartGameMode::Logout(AController* Exiting)
 	WaitingPlayers.Remove(Player);
 	ClientTrackGeneration.Remove(Player);
 	Super::Logout(Exiting);
-}
-
-void ATN_KartGameMode::ReturnToLobbyNow()
-{
-	UWorld* World = GetWorld();
-	if (bReturning || !World || World->IsInSeamlessTravel())
-	{
-		return;
-	}
-	bReturning = true;
-	// Peones fuera antes del viaje (karts, peones de artillera y espectadores): al lobby no llega nada de los karts.
-	TArray<APawn*> Pawns;
-	for (TActorIterator<APawn> It(World); It; ++It)
-	{
-		Pawns.Add(*It);
-	}
-	for (APawn* Pawn : Pawns)
-	{
-		if (IsValid(Pawn))
-		{
-			Pawn->Destroy();
-		}
-	}
-	// Al lobby del que se salió (lo apunta ATN_HQGameMode); «?game=» quita el alias de los karts de la URL.
-	const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance());
-	const FString Lobby = GI && !GI->LobbyReturnMapPath.IsEmpty() ? GI->LobbyReturnMapPath : FString(TNKartMode::DefaultLobbyPath);
-	const FString TravelURL = Lobby + TEXT("?game=");
-	UE_LOG(LogTNRally, Log, TEXT("[Karts] Vuelta al lobby: %s"), *TravelURL);
-	World->ServerTravel(TravelURL);
 }
 
 #if !UE_BUILD_SHIPPING

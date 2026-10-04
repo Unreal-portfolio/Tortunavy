@@ -73,6 +73,9 @@ public:
 	/** Objetos de Karts y disparo propio de la conductora sola (false en el Rally: ATN_RallyKartBuggy, #629). */
 	bool UsesDriverItems() const { return bDriverItems; }
 
+	/** Peón de la artillera que crea al sentarla (el de Karts o, en el Rally, el que no tiene las teclas de objeto). */
+	TSubclassOf<ATN_BuggyGunnerPawn> GetGunnerPawnClass() const { return GunnerPawnClass; }
+
 	/** Conductora local: lo que se ha girado la cámara (guiñada y cabeceo, grados). */
 	FRotator GetLookOffset() const { return FRotator(LookPitch, LookYaw, 0.f); }
 

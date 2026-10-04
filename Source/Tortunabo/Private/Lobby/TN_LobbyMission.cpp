@@ -1,4 +1,6 @@
 #include "Lobby/TN_LobbyMission.h"
+
+#include "Core/TN_LocText.h"
 #include "Core/TN_GameModeSpawnUtils.h"
 #include "Core/TN_Log.h"
 #include "Game/TN_TctGameMode.h"
@@ -69,6 +71,17 @@ TArray<ETNProcGameMode> TNLobbyMission::GetMenuModes()
 ETNProcGameMode TNLobbyMission::NormalizeMenuMode(ETNProcGameMode Mode)
 {
 	return GetMenuModes().Contains(Mode) ? Mode : ETNProcGameMode::Coop;
+}
+
+FText TNLobbyMission::RallyMapName(FName Variant)
+{
+	const FString Id = Variant.ToString();
+	if (Id.Equals(TEXT("E01B_espana_rally"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapE01B", "España"); }
+	if (Id.Equals(TEXT("I03R_tortuga_magna"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapI03R", "Tortuga Magna"); }
+	if (Id.Equals(TEXT("I04_volcan_hueco"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapI04", "Volcán Hueco"); }
+	if (Id.Equals(TEXT("I06_feroe"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapI06", "Islas Feroe"); }
+	// Una variante que aún no tiene nombre traducido: su identificador, tal cual.
+	return TNLocText::Literal(Variant.IsNone() ? FString() : Id);
 }
 
 FText TNLobbyMission::DifficultyName(ETNProcDifficulty Difficulty)
