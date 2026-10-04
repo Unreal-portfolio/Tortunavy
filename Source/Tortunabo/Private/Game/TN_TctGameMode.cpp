@@ -257,6 +257,12 @@ void ATN_TctGameMode::PostLogin(APlayerController* NewPlayer)
 
 void ATN_TctGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
+	// Reconexión: AGameMode::PostLogin (FindInactivePlayer) ya le ha devuelto su PlayerState, con el PlayerId de antes. Deja de
+	// contar como ida antes de que la base pueda arrancar la ronda, para que GatherFighters y GetPlayingControllers la incluyan.
+	if (const APlayerState* PS = NewPlayer ? NewPlayer->PlayerState.Get() : nullptr)
+	{
+		LeftPlayerIds.Remove(PS->GetPlayerId());
+	}
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	if (!bRoundLive)
 	{
