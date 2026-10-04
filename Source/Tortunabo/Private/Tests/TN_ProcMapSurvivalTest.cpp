@@ -63,7 +63,9 @@ bool FTNProcMapCoopUnchangedTest::RunTest(const FString& Parameters)
 {
 	using namespace TNProcMap;
 	struct FCase { uint32 Seed; int32 Grid; uint64 Expected; };
-	// Huellas tomadas con el generador antes de admitir rejillas rectangulares (dev a1ced1de).
+	// Huellas del generador antes de admitir rejillas rectangulares (dev a1ced1de). Son las mismas en DebugGame y en
+	// Development: la de grid 6 y semilla 21 salía 0x787A8D4838D3FD94 en DebugGame y 0x06BAEAE6AA08AC97 en Development
+	// porque una senda tenía un punto de más o de menos según el redondeo (#579, arreglado en AppendHermite).
 	const FCase Cases[] = {
 		{ 11u, 3, 0xFD5CBBA920111AD3ull },
 		{ 12u, 3, 0xD8A940E8D5C2E22Dull },

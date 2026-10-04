@@ -742,7 +742,9 @@ namespace TNProcMap
 					double Gap = Rng.Range(P.IsletGapMin, GapMaxW);
 					double Len = Rng.Range(LiMin, LiMax);
 					const double Remaining = S1 - Cursor;
-					if (Remaining <= GapMaxW) { break; }
+					// Tras la última isleta con el hueco topado en GapMaxW queda justo GapMaxW hasta tierra: sin el margen, el
+					// redondeo (distinto en DebugGame y Development, #579) decidía si salía otra isleta de más pisando la orilla.
+					if (Remaining <= GapMaxW + 1e-6) { break; }
 					if (Remaining < Gap + Len + P.IsletGapMin)
 					{
 						// Última isleta: reparte el resto para que el salto final a tierra sea válido.

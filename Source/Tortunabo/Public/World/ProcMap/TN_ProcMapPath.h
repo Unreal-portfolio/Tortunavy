@@ -1538,7 +1538,10 @@ namespace TNProcMap
 		inline void AppendHermite(const FVector2D& A, const FVector2D& TA, const FVector2D& B, const FVector2D& TB, TArray<FVector2D>& Out)
 		{
 			const double Len = FVector2D::Distance(A, B);
-			const int32 N = FMath::Max(2, FMath::CeilToInt(Len / 300.0));
+			// Las salidas de las sendas (TrailDeparture) están a 30, 60, 90 o 120 m exactos: Len / 300 cae en un entero
+			// salvo el último bit, que no es igual en DebugGame y en Development (#579). Sin el margen, el techo daba un
+			// punto más o menos según la compilación y cambiaba la senda.
+			const int32 N = FMath::Max(2, FMath::CeilToInt(Len / 300.0 - 1e-6));
 			for (int32 k = 0; k < N; ++k)
 			{
 				const double T = static_cast<double>(k) / N;
