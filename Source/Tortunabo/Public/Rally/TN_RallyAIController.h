@@ -23,6 +23,12 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void Tick(float DeltaSeconds) override;
 
+	/**
+	 * No viaja con el seamless travel (vuelta al lobby o ?Restart), aunque tenga PlayerState: cada partida crea sus bots
+	 * (SpawnBots) y en el lobby un bot ocupaba plaza y nunca se ponía listo (#694).
+	 */
+	virtual bool ShouldParticipateInSeamlessTravel() const override { return false; }
+
 	/** Velocidad máxima en recta y mínima en la curva más cerrada (km/h). */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|IA")
 	float MaxSpeedKmh = 90.f;

@@ -491,6 +491,16 @@ void ATN_HQGameMode::SetFlowState(ETNMatchFlowState NewState) const
 
 void ATN_HQGameMode::HandleSeamlessTravelPlayer(AController*& C)
 {
+	// Un bot de la partida (piloto IA del Rally) no tiene sitio en el lobby: ni peón ni plaza en «todos listos» (#694).
+	// El Rally ya no los deja viajar; esto cubre a cualquier controlador sin jugador que llegue igualmente.
+	if (C && !C->IsA<APlayerController>())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] HandleSeamlessTravelPlayer: %s es un bot, fuera del lobby."), *GetNameSafe(C));
+		C->Destroy();
+		C = nullptr;
+		return;
+	}
+
 	// Limpiar estado espectador ANTES de Super — jugadores que murieron/terminaron
 	// en la carrera estaban en modo espectador. Sin esto, PlayerCanRestart() devuelve
 	// false y Super no les spawnea pawn.

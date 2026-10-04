@@ -323,6 +323,20 @@ bool TN_IsPlayerStateLeaving(const APlayerState* PlayerState)
 	return Owner && Owner->IsActorBeingDestroyed();
 }
 
+bool TN_IsBotPlayerState(const APlayerState* PlayerState)
+{
+	if (!PlayerState)
+	{
+		return false;
+	}
+	if (PlayerState->IsABot())
+	{
+		return true;
+	}
+	const AController* Owner = Cast<AController>(PlayerState->GetOwner());
+	return Owner && !Owner->IsA<APlayerController>();
+}
+
 int32 TN_CountConnectedCoopPlayers(const AGameStateBase* GameState)
 {
 	if (!GameState)
@@ -332,7 +346,7 @@ int32 TN_CountConnectedCoopPlayers(const AGameStateBase* GameState)
 	int32 Count = 0;
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
-		if (Cast<ATN_CoopPlayerState>(BasePS) && !TN_IsPlayerStateLeaving(BasePS))
+		if (Cast<ATN_CoopPlayerState>(BasePS) && !TN_IsPlayerStateLeaving(BasePS) && !TN_IsBotPlayerState(BasePS))
 		{
 			++Count;
 		}
@@ -371,7 +385,7 @@ FTNLobbyReadyCount TN_CountLobbyReady(const AGameStateBase* GameState)
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
 		const ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS);
-		if (!PS || TN_IsPlayerStateLeaving(PS))
+		if (!PS || TN_IsPlayerStateLeaving(PS) || TN_IsBotPlayerState(PS))
 		{
 			continue;
 		}
