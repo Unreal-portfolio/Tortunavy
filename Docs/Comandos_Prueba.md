@@ -297,6 +297,10 @@ aparecen en las `Salida_*` y del quinto al octavo, junto a ellas (`[Lobby] Todos
 el log del anfitrión); ocho huevos en la pila y «Sala: 8/8»; al viajar, ocho sitios en la sala o en los huevos y, al acabar,
 los resultados con ocho filas. `TN.Proc.StartStyle 0|1` fuerza cómo se sale.
 
+Las huellas de los layouts de supervivencia (`Tortunabo.ProcMap.Survival*` y `Tortunabo.Survival.Catalogo.*`) se validan en
+DebugGame y en Development: con `/fp:fast`, `/Od` y `/O2` pueden redondear distinto en un límite exacto (#579). Un cambio en el
+generador pasa esos tests en las dos configuraciones antes de actualizar una huella.
+
 | Comando | Qué hace |
 |---|---|
 | `TN.Proc.StartStyle 0` / `TN.Proc.StartStyle 1` | Salida por puerta doble (`0`) o con huevos (`1`) desde la siguiente generación del mapa; `-1` = lo del lobby. |
