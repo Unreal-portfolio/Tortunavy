@@ -351,3 +351,23 @@ reiniciarlo al arrancar sin consola, `Saved/ResetTutorial.txt` (vacío = todas l
 | `TN.Tutorial.Skip` | Lo salta como el menú de pausa: baja a la plaza del castillo y queda apuntado como hecho. |
 | `TN.Tutorial.Station 12` | Lleva a la estación 12 (1-19) y mete en el tutorial si hace falta. Sin número, escribe la lista. |
 | `TN.Tutorial.Info` | Ranura del guardado, hecho o no, dentro o fuera, estación y cuántos hay dentro (en el servidor). |
+
+## Mando y avisos de botones
+
+Los avisos (aviso de interacción del HUD, cartel del tutorial, ayuda de las ruedas y del fantasma) enseñan la tecla con teclado
+y ratón y el botón dibujado con mando, según el último aparato tocado (stick y gatillos pasado un 35 %; el ratón, si se mueve
+más de 3 px). La familia del mando sale de Steam Input con Steam y, sin él, del nombre del aparato; por defecto, Xbox. Con
+mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala abre el teclado en pantalla de Steam.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Input.Device 0\|1\|2` | Aparato de los avisos: 0 el último usado, 1 teclado y ratón, 2 mando. |
+| `TN.Input.PadFamily 0\|1\|2\|3` | Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck. |
+| `TN.Input.Press <tecla> [segundos]` | Pulsa (y mantiene) una tecla o un botón como si viniera del aparato, por Slate: `TN.Input.Press Gamepad_DPad_Up` pasa los avisos a mando y `TN.Input.Press ScrollLock`, a teclado. |
+| `TN.Later <segundos> <comando>` | Ejecuta el comando pasado ese tiempo, como escrito en la consola del jugador (para encadenar pruebas en `-ExecCmds`, también `shot showui`). |
+| `tn.HUD.Prompt 1` | Enseña el aviso de interacción sin nada al alcance, con la tecla o el botón de interactuar del aparato de ahora. |
+| `TN.Steam.FakeKeyboard 1\|2` | Teclado de Steam simulado (sin Steam Deck ni Big Picture): con mando, A en las casillas del código de sala lo «abre» (1 el de pantalla completa, 2 el flotante). |
+| `TN.Steam.KeyboardText <texto\|cancelar>` | Cierra el teclado simulado con ese texto: `TN.Steam.KeyboardText k7m2p` deja K7M2P en las casillas y entra en la sala, como «Hecho» en el de Steam. |
+
+Ejemplo sin mando (captura de cada estado en `Saved/Screenshots`):
+`-ExecCmds="tn.HUD.Prompt 1, TN.Later 8 TN.Tutorial.Station 7, TN.Later 12 shot showui, TN.Later 13 TN.Input.Press Gamepad_DPad_Up, TN.Later 13.3 shot showui, TN.Later 15 TN.Input.PadFamily 2, TN.Later 16 shot showui"`.

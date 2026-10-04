@@ -56,6 +56,7 @@
 #include "Sound/SoundWaveProcedural.h"
 #include "UObject/UObjectHash.h"
 #include "VR/TN_VRMode.h"
+#include "Settings/TN_InputDeviceSubsystem.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
 // del bloque.
@@ -1089,12 +1090,10 @@ bool UTN_GameSettingsSubsystem::IsLookYInverted(bool bGamepad) const
 
 bool UTN_GameSettingsSubsystem::IsUsingGamepad(const APlayerController* PC)
 {
-	const UInputDeviceSubsystem* Devices = UInputDeviceSubsystem::Get();
-	if (!PC || !Devices)
-	{
-		return false;
-	}
-	return Devices->GetMostRecentlyUsedHardwareDevice(PC->GetPlatformUserId()).PrimaryDeviceType == EHardwareDevicePrimaryType::Gamepad;
+	// El mismo aparato que los avisos de botones (#347): el UInputDeviceSubsystem del motor no volvía a «teclado» después
+	// de tocar el mando (el teclado y el primer mando son el mismo aparato 0).
+	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(PC);
+	return PC && Devices && Devices->IsUsingGamepad(PC);
 }
 
 float UTN_GameSettingsSubsystem::GetLookSensitivityFor(const APlayerController* PC, bool bGamepad) const

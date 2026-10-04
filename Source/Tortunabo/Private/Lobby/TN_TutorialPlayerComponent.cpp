@@ -22,6 +22,7 @@
 #include "InputCoreTypes.h"
 #include "Net/UnrealNetwork.h"
 #include "VR/TN_VRMode.h"
+#include "Settings/TN_InputDeviceSubsystem.h"
 
 namespace TNTutorialPlayerDetail
 {
@@ -476,8 +477,12 @@ void UTN_TutorialPlayerComponent::TickLocal(float DeltaTime)
 		}
 	}
 
+	// Las teclas se releen cada segundo (por si se reasignan en Ajustes) y al momento si se cambia de teclado a mando.
 	KeyRefreshTimer -= DeltaTime;
-	if (KeyRefreshTimer <= 0.f && (bInTutorial || Widget))
+	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(this);
+	const bool bDeviceChanged = Devices && (Devices->IsUsingGamepad(GetPC()) != bGamepad
+		|| static_cast<uint8>(Devices->GetPadFamily()) != KeyPadFamily);
+	if ((KeyRefreshTimer <= 0.f || bDeviceChanged) && (bInTutorial || Widget))
 	{
 		KeyRefreshTimer = 1.f;
 		RefreshKeys();
@@ -767,6 +772,9 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 	using namespace TNTutorialPlayerDetail;
 	APlayerController* PC = GetPC();
 	bGamepad = PC && UTN_GameSettingsSubsystem::IsUsingGamepad(PC);
+	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(this);
+	KeyPadFamily = static_cast<uint8>(Devices ? Devices->GetPadFamily() : ETNPadFamily::Xbox);
+	KeyPadKeys.Reset();
 	const int32 Device = bGamepad ? 1 : 0;
 	KeyTexts.Reset();
 	KeyKeys.Reset();
@@ -790,6 +798,7 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 	{
 		const EKey Key = static_cast<EKey>(K);
 		FText Label = FallbackLabel(Key, bGamepad);
+		FKey PadKey;
 		TArray<FKey> Keys;
 		if (Settings)
 		{
@@ -813,6 +822,7 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 				if (bGamepad && Stick.IsValid())
 				{
 					Label = UTN_GameSettingsSubsystem::KeyDisplayName(Stick);
+					PadKey = Stick;
 				}
 				else if (!bGamepad && Parts.Num() == 4)
 				{
@@ -826,6 +836,7 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 					if (Fixed.Id == TEXT("IA_Look") && Fixed.FixedKeys[Device].IsValid())
 					{
 						Label = UTN_GameSettingsSubsystem::KeyDisplayName(Fixed.FixedKeys[Device]);
+						PadKey = bGamepad ? Fixed.FixedKeys[Device] : FKey();
 					}
 				}
 			}
@@ -840,6 +851,7 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 				const FKey Shown = KeyOf(Row, Device);
 				if (Row)
 				{
+					PadKey = bGamepad ? Shown : FKey();
 					if (Key == EKey::Pause && !bGamepad && GIsEditor && Shown == EKeys::Escape)
 					{
 						// En el editor Escape corta la partida: el menú va con el Tabulador.
@@ -854,6 +866,7 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 		}
 		KeyTexts.Add(K, Label);
 		KeyKeys.Add(K, MoveTemp(Keys));
+		KeyPadKeys.Add(K, PadKey);
 	}
 }
 
@@ -904,6 +917,8 @@ void UTN_TutorialPlayerComponent::RefreshWidget()
 		Task.Text = TNTutorialTexts::Task(Def.Id, t);
 		const FText* KeyText = KeyTexts.Find(static_cast<uint8>(Def.Keys[t]));
 		Task.Key = (Def.Keys[t] != EKey::None && KeyText) ? *KeyText : FText::GetEmpty();
+		Task.PadKey = Def.Keys[t] != EKey::None ? KeyPadKeys.FindRef(static_cast<uint8>(Def.Keys[t])) : FKey();
+		Task.PadFamily = static_cast<ETNPadFamily>(KeyPadFamily);
 		Task.bDone = IsTaskDone(Here, t);
 	}
 	const FText* PauseText = KeyTexts.Find(static_cast<uint8>(EKey::Pause));
