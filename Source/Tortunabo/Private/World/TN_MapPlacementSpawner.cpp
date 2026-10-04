@@ -138,9 +138,9 @@ void ATN_MapPlacementSpawner::CollectLevelActors(bool bServer)
 		{
 			continue;
 		}
-		// En un cliente, lo replicado que ya ha llegado del servidor no es del nivel: puede ser lo que coloca este mismo
-		// sistema allí. Así el decorado local sale igual en todas las máquinas.
-		if (!bServer && Actor->GetIsReplicated() && !Actor->IsNetStartupActor())
+		// Lo replicado que no es del nivel (lo que ha llegado del servidor o lo creado en partida) no cuenta, en el servidor
+		// ni en el cliente: con el mismo criterio, el decorado local (con colisión) sale igual en todas las máquinas.
+		if (Actor->GetIsReplicated() && !Actor->IsNetStartupActor())
 		{
 			continue;
 		}
