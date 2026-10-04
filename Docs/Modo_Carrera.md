@@ -1453,7 +1453,7 @@ del aturdimiento es solo de la malla; la cápsula de su tortuga solo solapa y su
 
 **Arreglos de la auditoría**, por orden de impacto:
 - **Voz** (lo que más pesaba): mu-law a 24 kHz = 24 KB/s por quien habla, reenviados por el anfitrión a cada oyente a
-  menos de 25 m. Provisional: **16 kHz** (`VoiceDownsampleFactor` 3: 16 KB/s) y como mucho **4 oyentes**, los más cercanos
+  menos de 25 m. Provisional: **16 kHz** (`VoiceTargetSampleRate` 16000: 16 KB/s) y como mucho **4 oyentes**, los más cercanos
   (`MaxVoiceListeners`). Peor caso con ocho hablando juntos: ~0,5 MB/s de subida del anfitrión (antes ~1,3 MB/s).
   Pendiente: Opus.
 - `UTN_StaminaComponent::SetSprintRequested`: el RPC fiable `ServerSetSprintRequested` iba **en cada fotograma** al moverse

@@ -2499,7 +2499,7 @@ Las frases son `FText` del catálogo (`DA_QuickChatWheelCatalog`) y salen en el 
 | Captura | El micrófono elegido (o el predeterminado de Windows; se abre al empezar la voz y no se cambia en caliente) a 48 kHz mono | `VoiceSampleRate` 48000 |
 | Detección | Habla si el nivel RMS supera el umbral; se mantiene 0,3 s tras el último sonido | `SpeakingThreshold` 0,01 (−40 dB), `SilenceHoldOffSeconds` 0,3 |
 | Ganancia | La del componente × 25–300 % del menú | `VoiceGain` 6 |
-| Compresión | Se baja a **16 kHz** (`VoiceDownsampleFactor` 3, filtro de caja) y se comprime a **mu-law de 8 bits** (1 byte por muestra): **16 KB/s** por quien habla | |
+| Compresión | Se baja a **16 kHz** con 48 kHz de captura (factor entero `max(1, captura / VoiceTargetSampleRate)` sobre la frecuencia real medida, `VoiceTargetSampleRate` 16000; filtro de caja) y se comprime a **mu-law de 8 bits** (1 byte por muestra): **16 KB/s** por quien habla | |
 | Envío | Paquetes cada 80 ms (12,5 por segundo); el servidor acepta como mucho 25 por segundo y rechaza más de 8192 bytes | `SendInterval` 0,08; `MinVoicePacketInterval` 0,04 |
 | Retransmisión | El servidor reenvía solo a quien esté a menos de **25 m** (`OuterRadius` 2500) y, si son más de **4**, a los 4 más cercanos (`MaxVoiceListeners`) | Peor caso con ocho hablando juntos: ~0,5 MB/s de subida del anfitrión |
 | Reproducción | Onda procedural 3D en la tortuga que habla: volumen pleno hasta **3 m** (`InnerRadius` 300), caída natural hasta los 25 m | `PlaybackVolume` 3 |

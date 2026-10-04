@@ -248,6 +248,7 @@ void UProximityVoiceComponent::CleanupRuntimeResources(bool bForceLeakAudio)
 		FScopeLock Lock(&CaptureBufferLock);
 		CaptureBuffer.Reset();
 	}
+	DecimationCarry.Reset();
 
 	SendTimer = 0.f;
 	bIsSpeaking = false;
@@ -335,19 +336,11 @@ void UProximityVoiceComponent::SetupPlayback(int32 InSampleRate)
 
 	const int32 ActualSampleRate = (InSampleRate > 0) ? InSampleRate : VoiceSampleRate;
 
-	ProceduralSoundWave = NewObject<USoundWaveProcedural>(this);
+	ProceduralSoundWave = CreateVoiceWave(ActualSampleRate);
 	if (!ProceduralSoundWave)
 	{
 		return;
 	}
-
-	ProceduralSoundWave->SetSampleRate(ActualSampleRate);
-	ProceduralSoundWave->NumChannels = VoiceNumChannels;
-	ProceduralSoundWave->Duration = INDEFINITELY_LOOPING_DURATION;
-	ProceduralSoundWave->SoundGroup = SOUNDGROUP_Voice;
-	ProceduralSoundWave->bLooping = false;
-	ProceduralSoundWave->bProcedural = true;
-	ProceduralSoundWave->Volume = PlaybackVolume;
 
 	PlaybackAudioComponent = NewObject<UAudioComponent>(Owner);
 	if (!PlaybackAudioComponent)
@@ -375,6 +368,58 @@ void UProximityVoiceComponent::SetupPlayback(int32 InSampleRate)
 	PlaybackAudioComponent->SetVolumeMultiplier(PlaybackVolume);
 	PlaybackAudioComponent->SetSound(ProceduralSoundWave);
 	PlaybackAudioComponent->Play();
+}
+
+USoundWaveProcedural* UProximityVoiceComponent::CreateVoiceWave(int32 InSampleRate)
+{
+	USoundWaveProcedural* Wave = NewObject<USoundWaveProcedural>(this);
+	if (!Wave)
+	{
+		return nullptr;
+	}
+	Wave->SetSampleRate(InSampleRate);
+	Wave->NumChannels = VoiceNumChannels;
+	Wave->Duration = INDEFINITELY_LOOPING_DURATION;
+	Wave->SoundGroup = SOUNDGROUP_Voice;
+	Wave->bLooping = false;
+	Wave->bProcedural = true;
+	Wave->Volume = PlaybackVolume;
+	PlaybackSampleRate = InSampleRate;
+	return Wave;
+}
+
+void UProximityVoiceComponent::ApplySendPlan(int32 CaptureRate)
+{
+	// Lo acumulado estaba reducido con el factor anterior: enviarlo con la frecuencia nueva lo reproduciría a otra velocidad.
+	{
+		FScopeLock Lock(&CaptureBufferLock);
+		CaptureBuffer.Reset();
+	}
+	DecimationCarry.Reset();
+	ActiveSendPlan = TNVoiceRate::MakeSendPlan(CaptureRate, VoiceTargetSampleRate);
+
+	const bool bMeasured = CaptureRateMeter.Rate > 0;
+	if (!ActiveSendPlan.IsValid())
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Voice] Captura a %d Hz: reducida por %d queda a %d Hz, fuera de %d-%d Hz: no se envía voz."),
+			CaptureRate, ActiveSendPlan.Factor, ActiveSendPlan.SendRate, TNVoiceRate::MinVoiceRate, TNVoiceRate::MaxVoiceRate);
+	}
+	else if (!bMeasured)
+	{
+		// Dispositivo raro: la captura no cuadra con ninguna frecuencia estándar. Se usa la que dice el dispositivo.
+		UE_LOG(LogTortunabo, Warning, TEXT("[Voice] No se pudo medir la frecuencia de la captura en %.0f s: se usa la del dispositivo, %d Hz (%d canales): se reduce por %d y se envía a %d Hz."),
+			TNVoiceRate::FCaptureRateMeter::GiveUpSeconds, CaptureRate, CaptureNumChannels, ActiveSendPlan.Factor, ActiveSendPlan.SendRate);
+	}
+	else if (CaptureRate != VoiceSampleRate)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Voice] La captura llega a %d Hz en mono, no a los %d Hz del dispositivo (%d canales): se reduce por %d y se envía a %d Hz."),
+			CaptureRate, VoiceSampleRate, CaptureNumChannels, ActiveSendPlan.Factor, ActiveSendPlan.SendRate);
+	}
+	else
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Voice] Captura a %d Hz (medida, %d canales): se reduce por %d y se envía a %d Hz."),
+			CaptureRate, CaptureNumChannels, ActiveSendPlan.Factor, ActiveSendPlan.SendRate);
+	}
 }
 
 void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -410,6 +455,17 @@ void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 			MonoData = MoveTemp(NewAudioData);
 		}
 
+		// Frecuencia real: muestras mono que llegan por segundo (antes de reducirlas). Si no es la que dice el dispositivo
+		// (cancelación de eco de Windows a 16 kHz, canales distintos), la voz se etiquetaba mal y se oía de ardilla. El factor
+		// de reducción y la frecuencia de envío salen los dos del mismo plan (ActiveSendPlan), que se rehace, vaciando lo
+		// acumulado, en cuanto cambia la frecuencia de la captura. Hasta la primera medida (~0,5 s de audio) no hay frecuencia
+		// con la que etiquetar: GetCaptureSampleRate() da 0, no hay plan y no se envía nada (ver más abajo).
+		CaptureRateMeter.Add(MonoData.Num(), FPlatformTime::Seconds());
+		if (const int32 CaptureRate = GetCaptureSampleRate(); CaptureRate != ActiveSendPlan.CaptureRate)
+		{
+			ApplySendPlan(CaptureRate);
+		}
+
 		for (float& Sample : MonoData)
 		{
 			Sample = FMath::Clamp(Sample * VoiceGain, -1.0f, 1.0f);
@@ -425,45 +481,33 @@ void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 			MicLevel = MonoData.Num() > 0 ? FMath::Sqrt(BlockSquares / MonoData.Num()) : 0.f;
 		}
 
-		// ── Downsampling con box filter (anti-aliasing) ───────────────────
-		// Promedia DSFactor muestras antes de decimar → evita el efecto "lata"
-		// que produce la decimación simple (nth-sample sin filtro pasa-bajos).
-		// Factor=3 (de serie) → 48kHz a 16kHz: el paquete, a 1/3.
-		const int32 DSFactor = FMath::Max(1, VoiceDownsampleFactor);
-		if (DSFactor > 1 && MonoData.Num() > DSFactor)
+		// Sin primera medida de la frecuencia no se sabe con cuál etiquetar lo capturado: se descarta (como mucho ~0,5 s la
+		// primera vez) en vez de enviarlo con una frecuencia que puede no ser la suya.
+		if (ActiveSendPlan.CaptureRate > 0)
 		{
-			TArray<float> Downsampled;
-			Downsampled.Reserve(MonoData.Num() / DSFactor + 1);
-			for (int32 i = 0; i < MonoData.Num(); i += DSFactor)
+			// ── Reducción con box filter (anti-aliasing) ───────────────────────
+			// Promedia Factor muestras → evita el efecto "lata" de la decimación simple (nth-sample sin filtro pasa-bajos).
+			// El factor es el del plan de envío, max(1, captura / VoiceTargetSampleRate): 48 kHz → 3 (16 kHz), 44,1 kHz → 2
+			// (22,05 kHz), 16 kHz → 1 (sin reducir). Lo que sobra de un bloque pasa al siguiente (Decimate): el plan es exacto.
+			TArray<float> Reduced;
+			TNVoiceRate::Decimate(MonoData, ActiveSendPlan.Factor, DecimationCarry, Reduced);
+
+			FScopeLock Lock(&CaptureBufferLock);
+			CaptureBuffer.Append(Reduced);
+
+			// ── Cap buffer size ──────────────────────────────────────────────────
+			// Si el SendInterval no se cumplió en mucho tiempo (lag spike, pawn
+			// estaba pausado durante death/revive), CaptureBuffer crece sin control
+			// y el RPC siguiente excede el límite UE5 de 65535 elementos por array
+			// replicado (UE5 ensure crash en RepLayout::ValidateArraySize).
+			// Cap a 8000 samples (0,5 s a 16 kHz, ≥ 83 ms a cualquier frecuencia aceptada) → siempre cabe en RPC tras compress.
+			constexpr int32 MaxBufferedSamples = 8000;
+			if (CaptureBuffer.Num() > MaxBufferedSamples)
 			{
-				float Sum = 0.f;
-				int32 Count = 0;
-				const int32 End = FMath::Min(i + DSFactor, MonoData.Num());
-				for (int32 k = i; k < End; ++k)
-				{
-					Sum += MonoData[k];
-					++Count;
-				}
-				Downsampled.Add(Count > 0 ? Sum / Count : 0.f);
+				const int32 Excess = CaptureBuffer.Num() - MaxBufferedSamples;
+				CaptureBuffer.RemoveAt(0, Excess, EAllowShrinking::No);
+				UE_LOG(LogTortunabo, Verbose, TEXT("[Voice] CaptureBuffer cap: dropped %d old samples"), Excess);
 			}
-			MonoData = MoveTemp(Downsampled);
-		}
-
-		FScopeLock Lock(&CaptureBufferLock);
-		CaptureBuffer.Append(MonoData);
-
-		// ── Cap buffer size ──────────────────────────────────────────────────
-		// Si el SendInterval no se cumplió en mucho tiempo (lag spike, pawn
-		// estaba pausado durante death/revive), CaptureBuffer crece sin control
-		// y el RPC siguiente excede el límite UE5 de 65535 elementos por array
-		// replicado (UE5 ensure crash en RepLayout::ValidateArraySize).
-		// Cap a 8000 samples (~330ms a 24kHz) → siempre cabe en RPC tras compress.
-		constexpr int32 MaxBufferedSamples = 8000;
-		if (CaptureBuffer.Num() > MaxBufferedSamples)
-		{
-			const int32 Excess = CaptureBuffer.Num() - MaxBufferedSamples;
-			CaptureBuffer.RemoveAt(0, Excess, EAllowShrinking::No);
-			UE_LOG(LogTortunabo, Verbose, TEXT("[Voice] CaptureBuffer cap: dropped %d old samples"), Excess);
 		}
 	}
 
@@ -534,7 +578,9 @@ void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 			}
 		}
 
-		if (SamplesToSend.Num() > 0 && bIsSpeaking)
+		// Las muestras de CaptureBuffer son siempre del plan vigente (cada cambio de plan lo vacía): se etiquetan con su
+		// frecuencia y con ninguna otra. Un plan fuera de 8000-96000 Hz no se envía (el destino lo descartaría).
+		if (SamplesToSend.Num() > 0 && bIsSpeaking && ActiveSendPlan.IsValid())
 		{
 			TArray<uint8> Compressed = CompressSamples(SamplesToSend);
 
@@ -546,8 +592,7 @@ void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 			constexpr int32 ClientPayloadCap = MaxVoicePayloadBytes;
 			if (Compressed.Num() > 0 && Compressed.Num() <= ClientPayloadCap)
 			{
-				const int32 EffectiveSampleRate = FMath::Max(1, VoiceSampleRate / FMath::Max(1, VoiceDownsampleFactor));
-				Server_SendVoiceData(Compressed, EffectiveSampleRate);
+				Server_SendVoiceData(Compressed, ActiveSendPlan.SendRate);
 			}
 			else if (Compressed.Num() > ClientPayloadCap)
 			{
@@ -562,7 +607,7 @@ bool UProximityVoiceComponent::Server_SendVoiceData_Validate(const TArray<uint8>
 {
 	// Red de seguridad a nivel de engine: rechaza payloads absurdos o sample rates
 	// fuera de todo rango humano (INT_MAX de un cliente manipulado). Cotas generosas
-	// para no desconectar clientes legítimos; el _Implementation ya acota con precisión.
+	// para no desconectar clientes legítimos; el _Implementation descarta con precisión lo que no esté en 8000-96000 Hz.
 	return CompressedData.Num() <= MaxVoicePayloadBytes && SenderSampleRate > 0 && SenderSampleRate <= 192000;
 }
 
@@ -580,8 +625,14 @@ void UProximityVoiceComponent::Server_SendVoiceData_Implementation(const TArray<
 	// Sanitizar el sample rate reportado por el cliente antes de reenviarlo: un valor
 	// fuera de rango (p.ej. INT_MAX de un cliente manipulado) llega a
 	// USoundWaveProcedural::SetSampleRate en los receptores y corrompe/crashea su audio.
-	// Acotar al rango humano de voz.
-	SenderSampleRate = FMath::Clamp(SenderSampleRate, 8000, 96000);
+	// Fuera del rango humano de voz se DESCARTA el paquete: acotarlo lo dejaría con una etiqueta que no es la de sus
+	// muestras (sonaría acelerado o lento). Un cliente normal nunca lo manda así: su plan de envío (TNVoiceRate) lo evita.
+	if (!TNVoiceRate::IsRateAccepted(SenderSampleRate))
+	{
+		UE_LOG(LogTortunabo, Verbose, TEXT("[Voice] Server_SendVoiceData: %d Hz fuera de %d-%d Hz de %s — descartado."),
+			SenderSampleRate, TNVoiceRate::MinVoiceRate, TNVoiceRate::MaxVoiceRate, *GetNameSafe(GetOwner()));
+		return;
+	}
 
 	// Server-side rate limit: allow at most 25 Hz (min 40ms between packets).
 	// The client enforces 80ms (12.5 Hz) via SendInterval, so 40ms gives 2× headroom for jitter.
@@ -673,11 +724,16 @@ void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedDa
 		return;
 	}
 
-	LastRemoteVoiceTime = GetWorld() ? GetWorld()->GetRealTimeSeconds() : 0.0;
+	// Defensa en el consumidor: un sample rate recibido por red fuera del rango humano (el mismo que acepta el servidor) se
+	// descarta, no se acota ni se cambia por otro de serie: con una etiqueta que no es la de sus muestras sonaría distinto.
+	if (!TNVoiceRate::IsRateAccepted(SenderSampleRate))
+	{
+		UE_LOG(LogTortunabo, Verbose, TEXT("[Voice] PlayRemoteVoice: %d Hz fuera de %d-%d Hz en %s — descartado."),
+			SenderSampleRate, TNVoiceRate::MinVoiceRate, TNVoiceRate::MaxVoiceRate, *GetNameSafe(GetOwner()));
+		return;
+	}
 
-	// Defensa en el consumidor: acotar el sample rate recibido por red al rango
-	// humano antes de configurar el playback.
-	SenderSampleRate = FMath::Clamp(SenderSampleRate <= 0 ? 48000 : SenderSampleRate, 8000, 96000);
+	LastRemoteVoiceTime = GetWorld() ? GetWorld()->GetRealTimeSeconds() : 0.0;
 
 	// Si quien escucha lo tiene silenciado, ni se descodifica ni se reproduce. Bajarle el volumen a 0 cada fotograma
 	// (UTN_GameSettingsSubsystem::UpdateSounds) no basta por sí solo: un componente de reproducción recién creado suena a
@@ -696,6 +752,15 @@ void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedDa
 	if (!ProceduralSoundWave || !PlaybackAudioComponent)
 	{
 		SetupPlayback(SenderSampleRate);
+	}
+	else if (PlaybackSampleRate != SenderSampleRate)
+	{
+		// El que habla ya ha medido su frecuencia real (TNVoiceRate) y es otra: onda nueva a esa frecuencia. Con la de
+		// antes se oía más aguda y acelerada (o más grave y lenta).
+		UE_LOG(LogTortunabo, Log, TEXT("[Voice] La voz de %s pasa de %d a %d Hz."), *GetNameSafe(GetOwner()), PlaybackSampleRate, SenderSampleRate);
+		PlaybackAudioComponent->Stop();
+		ProceduralSoundWave = CreateVoiceWave(SenderSampleRate);
+		PlaybackAudioComponent->SetSound(ProceduralSoundWave);
 	}
 
 	if (!ProceduralSoundWave || !PlaybackAudioComponent)

@@ -5,6 +5,7 @@
 #include "Sound/SoundWaveProcedural.h"
 #include "Components/AudioComponent.h"
 #include "AudioCaptureCore.h"
+#include "Voice/TN_VoiceRate.h"
 #include "ProximityVoiceComponent.generated.h"
 
 class APlayerState;
@@ -135,13 +136,14 @@ public:
 	float SendInterval = 0.08f;
 
 	/**
-	 * Factor de downsampling antes de comprimir y enviar.
-	 * 3 = 48kHz → 16kHz (voz de banda ancha, como un teléfono bueno: 16 KB/s por quien habla en vez de 24; box filter evita
-	 * aliasing). Con ocho jugadores hablando a la vez el anfitrión reenviaba más de 1 MB/s.
-	 * 2 = 48kHz → 24kHz. 1 = sin downsampling.
+	 * Frecuencia objetivo (Hz) a la que se envía la voz. El micrófono se reduce por el factor entero
+	 * max(1, frecuencia REAL de la captura / esta) y se etiqueta con la frecuencia que resulta (TNVoiceRate::MakeSendPlan):
+	 * 48 kHz → 16 kHz (voz de banda ancha, como un teléfono bueno: 16 KB/s por quien habla en vez de 24), 44,1 kHz → 22,05 kHz,
+	 * 16 kHz → 16 kHz (sin reducir). Lo enviado queda entre esta frecuencia y el doble, nunca por debajo (el servidor y el
+	 * receptor solo aceptan de 8000 a 96000 Hz). Con ocho jugadores hablando a la vez el anfitrión reenviaba más de 1 MB/s.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voice|Network", meta = (ClampMin = "1", ClampMax = "6"))
-	int32 VoiceDownsampleFactor = 3;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voice|Network", meta = (ClampMin = "8000", ClampMax = "48000"))
+	int32 VoiceTargetSampleRate = TNVoiceRate::DefaultTargetRate;
 
 	/**
 	 * Oyentes como mucho por paquete: el servidor reenvía la voz solo a los más cercanos dentro de OuterRadius (con ocho
@@ -196,6 +198,40 @@ private:
 	float SendTimer = 0.f;
 	float SilenceHoldOffTimer = 0.f;
 	int32 CaptureNumChannels = 1;
+
+	/**
+	 * Frecuencia real de lo que entrega la captura, medida con las muestras que llegan (#154): la del dispositivo
+	 * (VoiceSampleRate) puede no ser la del flujo, y la voz etiquetada con ella se oía aguda y acelerada.
+	 */
+	TNVoiceRate::FCaptureRateMeter CaptureRateMeter;
+
+	/**
+	 * Frecuencia de la captura con la que se hace el plan de envío, o 0 si todavía no se puede enviar voz: la medida en cuanto
+	 * hay primera medida (unos 0,5 s de audio); si en FCaptureRateMeter::GiveUpSeconds no la hay, la del dispositivo.
+	 */
+	int32 GetCaptureSampleRate() const { return TNVoiceRate::ResolveCaptureRate(CaptureRateMeter.Rate, CaptureRateMeter.bGaveUp, VoiceSampleRate); }
+
+	/**
+	 * Cómo se reduce y se etiqueta lo que se captura ahora (#154): ÚNICA fuente del factor con el que se reducen las muestras
+	 * y de la frecuencia con la que salen. Solo cambia en ApplySendPlan, que vacía lo acumulado: un paquete nunca mezcla
+	 * muestras reducidas con dos factores distintos ni sale con una frecuencia que no es la suya.
+	 */
+	TNVoiceRate::FSendPlan ActiveSendPlan;
+
+	/** Muestras que sobraron en la última reducción (menos que el factor); se suman al bloque siguiente. */
+	TArray<float> DecimationCarry;
+
+	/**
+	 * @brief Adopta el plan de envío de una captura a CaptureRate Hz: vacía CaptureBuffer y el sobrante de la reducción
+	 *        (eran del plan anterior) y lo anota en el registro.
+	 */
+	void ApplySendPlan(int32 CaptureRate);
+
+	/** Frecuencia de la onda con la que se reproduce la voz de esta tortuga en esta máquina (0 sin onda). */
+	int32 PlaybackSampleRate = 0;
+
+	/** La onda procedural de la voz a InSampleRate, mono y en bucle indefinido. */
+	USoundWaveProcedural* CreateVoiceWave(int32 InSampleRate);
 
 	UPROPERTY()
 	TObjectPtr<UAudioComponent> PlaybackAudioComponent;
