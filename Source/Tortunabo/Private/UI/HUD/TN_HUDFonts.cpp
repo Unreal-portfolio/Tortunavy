@@ -68,6 +68,14 @@ namespace TNHUDFontsDetail
 		}
 	}
 
+	/** Cultures de una fuente es una lista separada por «;» («zh-Hans;zh-Hant»). */
+	bool CulturesInclude(const FString& Cultures, const FString& Culture)
+	{
+		TArray<FString> Names;
+		Cultures.ParseIntoArray(Names, TEXT(";"));
+		return Names.ContainsByPredicate([&Culture](const FString& Name) { return Name.TrimStartAndEnd().Equals(Culture, ESearchCase::IgnoreCase); });
+	}
+
 	TSharedRef<const FCompositeFont> Build()
 	{
 		// Una copia de la fuente de serie del motor (Roboto, la reserva CJK y las de rangos sueltos)...
@@ -80,28 +88,31 @@ namespace TNHUDFontsDetail
 
 		// ...más una fuente de reserva por idioma cuyos archivos existan. El motor la usa solo cuando el juego está en ese idioma
 		// (Cultures) y solo para los caracteres de su escritura (CharacterRanges); lo demás sigue con Roboto.
-		const FString Folder = FPaths::ProjectContentDir() / FontFolder;
+		const FString Folder = TNHUDFonts::GetFontFolder();
 		for (const FTNLanguageEntry& Entry : TNLanguage::GetLanguages())
 		{
 			if (Entry.FontRegular.IsEmpty())
 			{
 				continue;
 			}
-			const FString Regular = Folder / Entry.FontRegular;
-			if (!FPaths::FileExists(Regular))
+			const TNHUDFonts::FFallbackFiles Files = TNHUDFonts::ResolveFallback(Entry, Folder);
+			if (!Files.bFound)
 			{
-				UE_LOG(LogTortunabo, Verbose, TEXT("[Fuentes] %s: no está %s; se queda con la de reserva del motor."), *Entry.Culture, *Regular);
+				UE_LOG(LogTortunabo, Verbose, TEXT("[Fuentes] %s: no está %s; se queda con la de reserva del motor."), *Entry.Culture,
+					*(Folder / Entry.FontRegular));
 				continue;
 			}
-			FString Bold = Entry.FontBold.IsEmpty() ? Regular : Folder / Entry.FontBold;
-			if (!FPaths::FileExists(Bold))
+			// En el editor (también en PIE) la fuente del motor ya trae una propia para ja, ko y zh-Hans (GenEiGothicPro,
+			// NanumGothic, Droid Sans Fallback). Con dos fuentes de la misma cultura para los mismos caracteres, el motor no
+			// garantiza cuál usa: se quita la suya para que mande la nuestra.
+			Composite->SubTypefaces.RemoveAll([&Entry](const FCompositeSubFont& Existing)
 			{
-				Bold = Regular;
-			}
+				return CulturesInclude(Existing.Cultures, Entry.Culture);
+			});
 			FCompositeSubFont SubFont;
 			SubFont.Cultures = Entry.Culture;
 			AddScriptRanges(SubFont, Entry.FontScript);
-			AddWeights(SubFont.Typeface, Regular, Bold);
+			AddWeights(SubFont.Typeface, Files.Regular, Files.Bold);
 			Composite->SubTypefaces.Add(MoveTemp(SubFont));
 			UE_LOG(LogTortunabo, Log, TEXT("[Fuentes] %s: fuente de reserva %s."), *Entry.Culture, *Entry.FontRegular);
 		}
@@ -114,6 +125,30 @@ namespace TNHUDFontsDetail
 
 namespace TNHUDFonts
 {
+	FString GetFontFolder()
+	{
+		return FPaths::ProjectContentDir() / TNHUDFontsDetail::FontFolder;
+	}
+
+	FFallbackFiles ResolveFallback(const FTNLanguageEntry& Entry, const FString& Folder)
+	{
+		FFallbackFiles Files;
+		if (Entry.FontRegular.IsEmpty())
+		{
+			return Files;
+		}
+		const FString Regular = Folder / Entry.FontRegular;
+		if (!FPaths::FileExists(Regular))
+		{
+			return Files;
+		}
+		const FString Bold = Entry.FontBold.IsEmpty() ? FString() : Folder / Entry.FontBold;
+		Files.bFound = true;
+		Files.Regular = Regular;
+		Files.Bold = !Bold.IsEmpty() && FPaths::FileExists(Bold) ? Bold : Regular;
+		return Files;
+	}
+
 	TSharedRef<const FCompositeFont> GetComposite()
 	{
 		static const TSharedRef<const FCompositeFont> Composite = TNHUDFontsDetail::Build();

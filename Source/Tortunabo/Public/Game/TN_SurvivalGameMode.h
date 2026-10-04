@@ -104,6 +104,9 @@ private:
 	/** Siguiente nivel: lo genera y devuelve a los vivos a la salida. */
 	void AdvanceLevel();
 
+	/** Copia CurrentLevel al GameState, que lo replica a los invitados. */
+	void PublishLevel();
+
 	/** Fin de partida: puestos en el marcador y Resultados. */
 	void FinishSurvival(int32 WinnerId);
 };

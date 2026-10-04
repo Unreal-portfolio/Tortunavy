@@ -1,5 +1,6 @@
 #include "UI/HUD/TN_GhostHatchWidget.h"
 #include "TN_HUDArt.h"
+#include "TN_HUDFonts.h"
 #include "../Loading/STN_EggLoadingScreen.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanel.h"
@@ -13,7 +14,6 @@
 #include "Misc/App.h"
 #include "Rendering/DrawElements.h"
 #include "Rendering/SlateRenderer.h"
-#include "Styling/CoreStyle.h"
 #include "TimerManager.h"
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
 #include "VR/TN_VRMode.h"
@@ -258,7 +258,7 @@ void UTN_GhostHatchWidget::BuildShell()
 	{
 		SetImageBrush(ShardBrushes[i], TNEggLoadingArt::Shard(i % TNEggLoadingArt::NumShardShapes));
 	}
-	PumFont = FCoreStyle::GetDefaultFontStyle(TEXT("Black"), 64);
+	PumFont = TNHUDFonts::Make(TEXT("Black"), 64);
 	PumFont.OutlineSettings.OutlineSize = 4;
 	PumFont.OutlineSettings.OutlineColor = FLinearColor(0.02f, 0.02f, 0.05f, 1.f);
 

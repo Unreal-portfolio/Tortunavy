@@ -128,6 +128,7 @@ void ATN_CoopGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// (el listen-server ya lo calcula localmente)
 	DOREPLIFETIME_CONDITION(ATN_CoopGameState, ServerMatchElapsedTime, COND_SkipOwner);
 	DOREPLIFETIME(ATN_CoopGameState, FinishedPlayers);
+	DOREPLIFETIME(ATN_CoopGameState, CurrentLevel);
 	DOREPLIFETIME(ATN_CoopGameState, RaceResults);
 }
 

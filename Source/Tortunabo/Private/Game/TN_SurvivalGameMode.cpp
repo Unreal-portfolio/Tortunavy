@@ -57,6 +57,15 @@ void ATN_SurvivalGameMode::StartPlay()
 	}
 
 	Super::StartPlay();
+	PublishLevel();
+}
+
+void ATN_SurvivalGameMode::PublishLevel()
+{
+	if (ATN_CoopGameState* TNGS = GetGameState<ATN_CoopGameState>())
+	{
+		TNGS->CurrentLevel = CurrentLevel;
+	}
 }
 
 ATN_ChunkManager* ATN_SurvivalGameMode::FindChunkManager() const
@@ -254,6 +263,7 @@ void ATN_SurvivalGameMode::AdvanceLevel()
 	}
 
 	++CurrentLevel;
+	PublishLevel();
 	NextFinishRank = 1;
 
 	// Los cuerpos del nivel anterior se quedarían cayendo al desaparecer su mapa.

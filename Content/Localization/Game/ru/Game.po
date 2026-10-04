@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-04 00:39\n"
-"PO-Revision-Date: 2026-10-04 00:39\n"
+"POT-Creation-Date: 2026-10-04 00:44\n"
+"PO-Revision-Date: 2026-10-04 00:44\n"
 "Language-Team: \n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -1769,6 +1769,90 @@ msgstr "Готовим локальную игру…"
 msgctxt "TNLocal,PlayerName"
 msgid "Jugador {0}"
 msgstr "Игрок {0}"
+
+#. Key:	Menu
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(116)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(116)
+msgctxt "TNPresence,Menu"
+msgid "En el menú"
+msgstr "В меню"
+
+#. Key:	CoopLevel
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(121)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(121)
+msgctxt "TNPresence,CoopLevel"
+msgid "Coop, nivel {Level}"
+msgstr "Кооператив, уровень {Level}"
+
+#. Key:	Coop
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(122)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(122)
+msgctxt "TNPresence,Coop"
+msgid "Coop"
+msgstr "Кооператив"
+
+#. Key:	RaceRound
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(125)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(125)
+msgctxt "TNPresence,RaceRound"
+msgid "Carrera, ronda {Round}"
+msgstr "Гонка, раунд {Round}"
+
+#. Key:	Race
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(126)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(126)
+msgctxt "TNPresence,Race"
+msgid "Carrera"
+msgstr "Гонка"
+
+#. Key:	TwoVsTwoRound
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(129)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(129)
+msgctxt "TNPresence,TwoVsTwoRound"
+msgid "2 contra 2, ronda {Round}"
+msgstr "2 на 2, раунд {Round}"
+
+#. Key:	TwoVsTwo
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(131)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(131)
+msgctxt "TNPresence,TwoVsTwo"
+msgid "2 contra 2"
+msgstr "2 на 2"
+
+#. Key:	SurvivalLevel
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(134)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(134)
+msgctxt "TNPresence,SurvivalLevel"
+msgid "Supervivencia, nivel {Level}"
+msgstr "Выживание, уровень {Level}"
+
+#. Key:	Survival
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(136)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(136)
+msgctxt "TNPresence,Survival"
+msgid "Supervivencia"
+msgstr "Выживание"
+
+#. Key:	Playing
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(138)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(138)
+msgctxt "TNPresence,Playing"
+msgid "En partida"
+msgstr "В игре"
+
+#. Key:	Lobby
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(39)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(39)
+msgctxt "TNPresence,Lobby"
+msgid "En el lobby"
+msgstr "В лобби"
+
+#. Key:	LobbyCount
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(47)
+#: Source/Tortunabo/Private/Multiplayer/TN_RichPresenceRules.cpp(47)
+msgctxt "TNPresence,LobbyCount"
+msgid "En el lobby ({Players}/{Max})"
+msgstr "В лобби ({Players}/{Max})"
 
 #. Key:	Room_062
 #. SourceLocation:	Source/Tortunabo/Private/Multiplayer/TN_RoomNames.cpp(100)

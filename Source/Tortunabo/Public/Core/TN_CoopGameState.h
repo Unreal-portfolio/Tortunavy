@@ -104,6 +104,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop")
 	int32 FinishedPlayers = 0;
 
+	/**
+	 * Nivel en curso en los modos que van por niveles (Supervivencia: lo pone ATN_SurvivalGameMode), desde 1; 0 si el modo
+	 * no va por niveles. Lo leen los invitados, que no tienen el GameMode (presencia de Steam, UTN_RichPresenceSubsystem).
+	 */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop")
+	int32 CurrentLevel = 0;
+
 	// ── Scoreboard global ─────────────────────────────────────────────────────
 
 	/**

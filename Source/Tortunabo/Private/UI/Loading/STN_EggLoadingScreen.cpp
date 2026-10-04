@@ -1,6 +1,7 @@
 #include "STN_EggLoadingScreen.h"
 
 #include "../HUD/TN_HUDArt.h"
+#include "../HUD/TN_HUDFonts.h"
 #include "Engine/Texture2D.h"
 #include "Fonts/FontMeasure.h"
 #include "Framework/Application/SlateApplication.h"
@@ -8,7 +9,6 @@
 #include "Math/RandomStream.h"
 #include "Rendering/DrawElements.h"
 #include "Rendering/SlateRenderer.h"
-#include "Styling/CoreStyle.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Medidas y arte (hilo de juego, una vez)
@@ -664,10 +664,10 @@ void FTNGoBannerPainter::Init()
 	WordText = NSLOCTEXT("TNLoading", "GoWord", "¡ADELANTE!").ToString();
 	// A 1080 de alto la palabra sale casi a este tamaño; la escala de maquetación la ajusta al ancho de la pantalla. Todas
 	// las capas usan este contorno y solo cambian su color, que no cuenta para la caché de letras: se rasterizan una vez.
-	WordFont = FCoreStyle::GetDefaultFontStyle("Bold", 220);
+	WordFont = TNHUDFonts::Make("Bold", 220);
 	WordFont.OutlineSettings.OutlineSize = 12;
 	WordFont.OutlineSettings.OutlineColor = TNHUDArt::Ink;
-	LineFont = FCoreStyle::GetDefaultFontStyle("Bold", 50);
+	LineFont = TNHUDFonts::Make("Bold", 50);
 	LineFont.OutlineSettings.OutlineSize = 4;
 	LineFont.OutlineSettings.OutlineColor = TNHUDArt::Ink;
 	PickLine();
@@ -883,16 +883,16 @@ void STN_EggLoadingScreen::Construct(const FArguments& InArgs)
 	}
 
 	// Rótulos a 1080 de alto (se escalan con la pantalla al pintarlos).
-	TitleFont = FCoreStyle::GetDefaultFontStyle("Bold", 84);
+	TitleFont = TNHUDFonts::Make("Bold", 84);
 	TitleFont.OutlineSettings.OutlineSize = 6;
 	TitleFont.OutlineSettings.OutlineColor = TNHUDArt::Ink;
 	TitleShadowFont = TitleFont;
 	TitleShadowFont.OutlineSettings.OutlineColor = FLinearColor(TNHUDArt::Ink.R, TNHUDArt::Ink.G, TNHUDArt::Ink.B, 0.3f);
-	StatusFont = FCoreStyle::GetDefaultFontStyle("Bold", 36);
+	StatusFont = TNHUDFonts::Make("Bold", 36);
 	StatusFont.OutlineSettings.OutlineSize = 3;
 	StatusFont.OutlineSettings.OutlineColor = TNHUDArt::Cream;
-	TipFont = FCoreStyle::GetDefaultFontStyle("Regular", 22);
-	PumFont = FCoreStyle::GetDefaultFontStyle("Bold", 72);
+	TipFont = TNHUDFonts::Make("Regular", 22);
+	PumFont = TNHUDFonts::Make("Bold", 72);
 	PumFont.OutlineSettings.OutlineSize = 5;
 	PumFont.OutlineSettings.OutlineColor = TNHUDArt::Ink;
 	GoBanner.Init();

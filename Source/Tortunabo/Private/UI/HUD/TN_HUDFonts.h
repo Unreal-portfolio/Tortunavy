@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "Fonts/SlateFontInfo.h"
 
+struct FTNLanguageEntry;
+
 /**
  * Fuentes de la interfaz de Tortunavy (Docs/Localizacion.md, «Fuentes»).
  *
@@ -14,6 +16,23 @@
  */
 namespace TNHUDFonts
 {
+	/** Los archivos de la fuente de reserva de un idioma, ya resueltos contra el disco. */
+	struct FFallbackFiles
+	{
+		/** Hay fuente de reserva: el idioma la pide y su archivo normal existe. */
+		bool bFound = false;
+		/** Ruta completa del archivo normal. */
+		FString Regular;
+		/** Ruta completa de la negrita: la normal si el idioma no trae negrita o su archivo no existe. */
+		FString Bold;
+	};
+
+	/** Carpeta donde se buscan las fuentes de reserva: Content/Slate/Fonts (se empaqueta como archivos sueltos). */
+	FString GetFontFolder();
+
+	/** Qué archivos usaría la fuente de reserva de un idioma dentro de Folder (sin cargarlos). */
+	FFallbackFiles ResolveFallback(const FTNLanguageEntry& Entry, const FString& Folder);
+
 	/** La fuente compuesta del juego: la del motor más las fuentes de reserva por idioma que existan en disco. */
 	TSharedRef<const FCompositeFont> GetComposite();
 
