@@ -27,6 +27,27 @@ namespace TNRoomKeys
 	inline FName Locked() { static const FName Key(TEXT("LOCKED")); return Key; }
 	/** Modo elegido (ETNProcGameMode como número). */
 	inline FName Mode() { static const FName Key(TEXT("MODE")); return Key; }
+	/** Versión de la numeración de MODE con la que anuncia la sala (ModeSchemaVersion). */
+	inline FName ModeSchema() { static const FName Key(TEXT("MODESCHEMA")); return Key; }
+	/**
+	 * Numeración vigente de ETNProcGameMode en las salas. 1 (sin clave): las compilaciones anteriores, en las que solo
+	 * Coop..Survival (0-4) significaban lo mismo que ahora; 2: la numeración fija de TN_ProcMapEnums.h (Karts 5,
+	 * FreeForAll 6, Rally 7).
+	 */
+	constexpr int32 ModeSchemaVersion = 2;
+	/** Último modo cuya numeración comparten todas las versiones del esquema. */
+	constexpr int32 LegacySharedModeMax = static_cast<int32>(ETNProcGameMode::Survival);
+
+	/**
+	 * Modo que se lee de una sala: el número con su esquema. Uno fuera de rango, o de otro esquema fuera de la parte común
+	 * (p. ej., un 5 que en otra rama era Todos contra Todos), no se interpreta: sale como cooperativo, el modo por defecto.
+	 */
+	inline ETNProcGameMode DecodeMode(bool bHasMode, int32 Value, int32 Schema)
+	{
+		const bool bInRange = bHasMode && Value >= 0 && Value < static_cast<int32>(ETNProcGameMode::Count);
+		const bool bSameMeaning = Schema == ModeSchemaVersion || Value <= LegacySharedModeMax;
+		return bInRange && bSameMeaning ? static_cast<ETNProcGameMode>(Value) : ETNProcGameMode::Coop;
+	}
 	/** Tortugas dentro (el anfitrión incluido). */
 	inline FName Players() { static const FName Key(TEXT("PLAYERS")); return Key; }
 

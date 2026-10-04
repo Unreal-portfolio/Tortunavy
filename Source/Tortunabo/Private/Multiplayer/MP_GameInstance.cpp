@@ -2186,8 +2186,10 @@ bool UMP_GameInstance::ReadRoomListing(const FOnlineSession& Session, int32 Inde
 	Value = 0;
 	Out.bLocked = Settings.Get(TNRoomKeys::Locked(), Value) && Value != 0;
 	Value = 0;
-	Out.Mode = Settings.Get(TNRoomKeys::Mode(), Value) && Value >= 0 && Value < static_cast<int32>(ETNProcGameMode::Count)
-		? static_cast<ETNProcGameMode>(Value) : ETNProcGameMode::Coop;
+	const bool bHasMode = Settings.Get(TNRoomKeys::Mode(), Value);
+	int32 Schema = 1;
+	Settings.Get(TNRoomKeys::ModeSchema(), Schema);
+	Out.Mode = TNRoomKeys::DecodeMode(bHasMode, Value, Schema);
 	Out.MaxPlayers = Settings.NumPublicConnections;
 	Value = 0;
 	Out.Players = Settings.Get(TNRoomKeys::Players(), Value) ? Value
@@ -2596,6 +2598,7 @@ void UMP_GameInstance::ApplyRoomSettings(FOnlineSessionSettings& Settings, int32
 	Settings.Set(TNRoomKeys::Private(), ActiveRoom.bPrivate ? 1 : 0, Advertise);
 	Settings.Set(TNRoomKeys::Locked(), ActiveRoom.bLocked ? 1 : 0, Advertise);
 	Settings.Set(TNRoomKeys::Mode(), static_cast<int32>(SelectedProcMode), Advertise);
+	Settings.Set(TNRoomKeys::ModeSchema(), TNRoomKeys::ModeSchemaVersion, Advertise);
 	Settings.Set(TNRoomKeys::Players(), FMath::Max(1, Players), Advertise);
 }
 
