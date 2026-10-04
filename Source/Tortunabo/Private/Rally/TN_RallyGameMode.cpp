@@ -122,6 +122,7 @@ void ATN_RallyGameMode::StartPlay()
 	}
 
 	Super::StartPlay();
+	PlayStartTime = Now();
 
 	TArray<TWeakObjectPtr<APlayerController>> Waiting = MoveTemp(PendingPlayers);
 	PendingPlayers.Reset();
@@ -571,8 +572,14 @@ void ATN_RallyGameMode::OnHumanSeated()
 	}
 	// Cada llegada da unos segundos más para que la siguiente se siente, con tope desde la primera. La espera no se publica
 	// en el GameState: el único temporizador visible de la salida es el semáforo (#289).
+	// Viniendo del lobby, el tope cuenta también desde el principio de la partida: la que tarda en cargar recibe sus segundos.
+	double Cap = FirstSeatTime + WarmupMaxSeconds;
+	if (ShouldWaitForLobby() && PlayStartTime >= 0.0)
+	{
+		Cap = FMath::Max(Cap, PlayStartTime + LobbyArrivalMaxSeconds);
+	}
 	const double Wanted = FMath::Max(WarmupEndTime, Time + WarmupSeconds);
-	WarmupEndTime = FMath::Min(Wanted, FirstSeatTime + WarmupMaxSeconds);
+	WarmupEndTime = FMath::Min(Wanted, Cap);
 }
 
 // ---- Fases ----
@@ -619,11 +626,32 @@ void ATN_RallyGameMode::UpdatePhase()
 	switch (RallyState->Phase)
 	{
 	case ETNRallyPhase::Warmup:
-		if (WarmupEndTime > 0.0 && Time >= WarmupEndTime && Teams.Num() > 0)
+	{
+		TNRallyRace::FWarmupGate Gate;
+		Gate.Now = Time;
+		Gate.WarmupEndTime = WarmupEndTime;
+		Gate.bHasTeams = Teams.Num() > 0;
+		Gate.bWaitForLobby = ShouldWaitForLobby();
+		Gate.ExpectedHumans = ExpectedHumans;
+		Gate.ArrivedHumans = Gate.bWaitForLobby ? CountArrivedHumans() : 0;
+		Gate.WaitedSeconds = PlayStartTime >= 0.0 ? Time - PlayStartTime : 0.0;
+		Gate.WaitMaxSeconds = LobbyArrivalMaxSeconds;
+		if (TNRallyRace::ShouldEndWarmup(Gate))
 		{
+			if (Gate.bWaitForLobby && Gate.ArrivedHumans < ExpectedHumans)
+			{
+				UE_LOG(LogTNRally, Warning, TEXT("[RallyGameMode] Tope de espera: salen %d de %d tortugas del lobby."),
+					Gate.ArrivedHumans, ExpectedHumans);
+			}
 			StartCountdown();
 		}
+		else if (Gate.bWaitForLobby && !bLoggedLobbyWait && Gate.bHasTeams && WarmupEndTime > 0.0 && Time >= WarmupEndTime)
+		{
+			bLoggedLobbyWait = true;
+			UE_LOG(LogTNRally, Log, TEXT("[RallyGameMode] Esperando a las del lobby: %d de %d dentro."), Gate.ArrivedHumans, ExpectedHumans);
+		}
 		break;
+	}
 	case ETNRallyPhase::Countdown:
 		if (Time >= RallyState->StartServerTime)
 		{

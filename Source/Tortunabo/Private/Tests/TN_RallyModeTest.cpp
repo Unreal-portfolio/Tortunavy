@@ -135,4 +135,45 @@ bool FTNRallyModeFinishLineHoldTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyModeWarmupLobbyTest, "Tortunabo.Rally.Mode.WarmupWaitsForLobby",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyModeWarmupLobbyTest::RunTest(const FString& Parameters)
+{
+	using namespace TNRallyRace;
+	FWarmupGate Gate;
+	Gate.Now = 10.0;
+	Gate.WarmupEndTime = 6.0;
+	Gate.bHasTeams = true;
+	Gate.ExpectedHumans = 2;
+	Gate.ArrivedHumans = 1;
+	Gate.WaitedSeconds = 10.0;
+	Gate.WaitMaxSeconds = 45.0;
+
+	TestTrue(TEXT("Sin lobby: pasado el fin del calentamiento, sale"), ShouldEndWarmup(Gate));
+	Gate.bWaitForLobby = true;
+	TestFalse(TEXT("Del lobby, 1 de 2 dentro a los 10 s: espera a la que carga"), ShouldEndWarmup(Gate));
+	Gate.ArrivedHumans = 2;
+	TestTrue(TEXT("Del lobby, 2 de 2 dentro: sale"), ShouldEndWarmup(Gate));
+	Gate.ArrivedHumans = 1;
+	Gate.Now = 50.0;
+	Gate.WaitedSeconds = 45.0;
+	TestTrue(TEXT("Del lobby, 1 de 2 pero pasado el tope desde el principio: sale con las que hay"), ShouldEndWarmup(Gate));
+
+	Gate.ArrivedHumans = 2;
+	Gate.Now = 5.0;
+	Gate.WaitedSeconds = 5.0;
+	TestFalse(TEXT("Todas dentro pero antes del fin del calentamiento: aún no"), ShouldEndWarmup(Gate));
+	Gate.Now = 10.0;
+	Gate.WarmupEndTime = 0.0;
+	TestFalse(TEXT("Sin nadie sentado (fin sin fijar): no sale"), ShouldEndWarmup(Gate));
+	Gate.WarmupEndTime = 6.0;
+	Gate.bHasTeams = false;
+	TestFalse(TEXT("Sin equipos: no sale"), ShouldEndWarmup(Gate));
+
+	TestTrue(TEXT("Esperar a las del lobby tiene tope (y más largo que el calentamiento)"),
+		GetDefault<ATN_RallyGameMode>()->LobbyArrivalMaxSeconds > GetDefault<ATN_RallyGameMode>()->WarmupMaxSeconds);
+	return true;
+}
+
 #endif

@@ -67,6 +67,29 @@ namespace TNRallyRace
 	 */
 	TORTUNABO_API int32 DefaultBotCount(int32 ExpectedHumans, int32 Seats, int32 MinTeams, int32 Forced);
 
+	/** Lo que decide el fin del calentamiento. */
+	struct FWarmupGate
+	{
+		/** Hora del servidor y fin del calentamiento (0 = sin fijar). */
+		double Now = 0.0;
+		double WarmupEndTime = 0.0;
+		bool bHasTeams = false;
+		/** Viniendo del lobby (?FromLobby, sin ?AutoStart): se espera a las que vienen. */
+		bool bWaitForLobby = false;
+		int32 ExpectedHumans = 1;
+		/** Tortugas que ya han llegado (sentadas o mirando). */
+		int32 ArrivedHumans = 0;
+		/** Segundos desde que empezó la partida (StartPlay) y tope de espera a las que faltan. */
+		double WaitedSeconds = 0.0;
+		double WaitMaxSeconds = 0.0;
+	};
+
+	/**
+	 * true si el calentamiento se cierra ya (#632): con equipos y pasado su fin; viniendo del lobby, además, con todas las
+	 * esperadas dentro o pasado el tope de espera contado desde el principio de la partida (no desde la primera sentada).
+	 */
+	TORTUNABO_API bool ShouldEndWarmup(const FWarmupGate& Gate);
+
 	/** Velocidad máxima de un bot (km/h): la de su dificultad con ±4 km/h según su ordinal, para que no vayan en fila. */
 	TORTUNABO_API float BotMaxSpeedKmh(const FVector& PerDifficulty, ETNProcDifficulty Difficulty, int32 Ordinal);
 }
@@ -131,6 +154,13 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Tiempos")
 	float WarmupMaxSeconds = 20.f;
+
+	/**
+	 * Viniendo del lobby: tope (s, desde el principio de la partida) para esperar a las tortugas que aún cargan el circuito.
+	 * Mientras falte alguna, el calentamiento no se cierra; pasado el tope, sale con las que haya.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Tiempos", meta = (ClampMin = "0"))
+	float LobbyArrivalMaxSeconds = 45.f;
 
 	/** Semáforo: motores cortados y buggies frenados en su hueco hasta el verde. */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Tiempos")
@@ -280,6 +310,10 @@ private:
 	const FTeamRuntime* FindTeamByVehicle(const AActor* Vehicle) const;
 	void Spectate(APlayerController* Player);
 	int32 CountSeatedHumans() const;
+	/** Tortugas ya dentro: sentadas en un buggy o mirando la carrera. */
+	int32 CountArrivedHumans() const;
+	/** Viniendo del lobby y sin ?AutoStart: el calentamiento espera a las ExpectedHumans. */
+	bool ShouldWaitForLobby() const;
 	void OnHumanSeated();
 
 	void UpdatePhase();
@@ -353,6 +387,12 @@ private:
 	bool bLapsFromUrl = false;
 	int32 NextTeamIndex = 0;
 	double FirstSeatTime = -1.0;
+	/** Hora del servidor al empezar la partida (StartPlay): desde ella cuenta LobbyArrivalMaxSeconds. */
+	double PlayStartTime = -1.0;
+	/** ?FromLobby en la URL. */
+	bool bFromLobby = false;
+	/** Ya se ha avisado en el registro de que el calentamiento espera a las que faltan. */
+	bool bLoggedLobbyWait = false;
 	/** Fin del calentamiento (hora del servidor; 0 = sin fijar). No se replica: el HUD solo enseña «esperando». */
 	double WarmupEndTime = 0.0;
 	/** Bots ya ajustados a la dificultad (para la variedad de velocidad entre ellos). */

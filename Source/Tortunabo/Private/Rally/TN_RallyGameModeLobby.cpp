@@ -6,6 +6,8 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "HAL/IConsoleManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Multiplayer/MP_GameInstance.h"
@@ -57,6 +59,35 @@ float TNRallyRace::BotMaxSpeedKmh(const FVector& PerDifficulty, ETNProcDifficult
 	return static_cast<float>(PerDifficulty[DifficultyIndex(Difficulty)]) + Spread;
 }
 
+bool TNRallyRace::ShouldEndWarmup(const FWarmupGate& Gate)
+{
+	if (!Gate.bHasTeams || Gate.WarmupEndTime <= 0.0 || Gate.Now < Gate.WarmupEndTime)
+	{
+		return false;
+	}
+	if (!Gate.bWaitForLobby)
+	{
+		return true;
+	}
+	return Gate.ArrivedHumans >= FMath::Max(1, Gate.ExpectedHumans) || Gate.WaitedSeconds >= Gate.WaitMaxSeconds;
+}
+
+bool ATN_RallyGameMode::ShouldWaitForLobby() const
+{
+	return bFromLobby && !bAutoStart;
+}
+
+int32 ATN_RallyGameMode::CountArrivedHumans() const
+{
+	int32 Spectators = 0;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const APlayerController* Player = It->Get();
+		Spectators += Player && Player->PlayerState && Player->PlayerState->IsOnlyASpectator() ? 1 : 0;
+	}
+	return CountSeatedHumans() + Spectators;
+}
+
 int32 ATN_RallyGameMode::GetForcedSeats() const
 {
 	return TNRallyLobby::CVarRallySeats.GetValueOnGameThread();
@@ -73,8 +104,8 @@ FString ATN_RallyGameMode::ResolveLobbyOptions(const FString& Options)
 	ExpectedHumans = GI ? FMath::Max(1, GI->PendingTravelPlayerCount) : 1;
 	Difficulty = TNRallyRace::ParseDifficulty(UGameplayStatics::ParseOption(Options, TEXT("ProcDifficulty")),
 		GI ? GI->SelectedProcDifficulty : ETNProcDifficulty::Normal);
-	bReturnToLobbyAfterResults = UGameplayStatics::HasOption(Options, TEXT("FromLobby"))
-		&& !UGameplayStatics::HasOption(Options, TEXT("Races"));
+	bFromLobby = UGameplayStatics::HasOption(Options, TEXT("FromLobby"));
+	bReturnToLobbyAfterResults = bFromLobby && !UGameplayStatics::HasOption(Options, TEXT("Races"));
 
 	// Plazas y bots: lo que no diga la URL lo ponen el anfitrión (con el general o al crear la sala) y la parrilla mínima.
 	FString Resolved = Options;
