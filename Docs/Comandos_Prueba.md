@@ -349,6 +349,10 @@ Sin editor, el piloto IA da 5 vueltas (unos 8 min; criterio: `terminados 1/1, at
 `UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Rally/LVL_Rally?Variant=R01_circuito_dunas?Bots=1?AutoStart?Races=1?Laps=5?RaceTimeout=900" -server -nullrhi -NoSteam -ExecCmds="log LogTNRally Verbose"`.
 No vale `-benchmark`: con el paso fijo sin límite, el buggy no avanza como en tiempo real.
 
+Circuito de tierra (#682, `R02_circuito_tierra`): `open LVL_Rally?Variant=R02_circuito_tierra` (doble, cresta, mesa y salto
+largo sobre hueco; whoops, tabla de lavar, badén con barro y banqueta en las horquillas). Sin editor:
+`Automation RunTests Tortunabo.Rally.Tierra` y la carrera de la IA con `?Variant=R02_circuito_tierra?Laps=3?RaceTimeout=700`.
+
 ## Capturas de arte sin abrir el editor
 
 Desde la línea de órdenes (no Shipping), con `-game -windowed`. Por cada clase encuadra el ejemplar del mapa más
