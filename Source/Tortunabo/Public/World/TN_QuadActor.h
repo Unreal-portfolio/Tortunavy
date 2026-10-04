@@ -9,6 +9,12 @@ class UCapsuleComponent;
 class ATortugaCharacter;
 
 /**
+ * @deprecated Usar ATN_BeachQuadLane (ETNBeachElement::QuadLane), el paso de quads de la playa (#353).
+ *
+ * Se queda compilando en Source/Tortunabo y no en Deprecado/ porque BP_QuadActor hereda de ella, y BP_QuadSpawner,
+ * BP_Chunk_Easy_05, BP_Chunk_Hard_02, BP_Chunk_Medium_Personaliced y LVL_TestMap la usan: sin la clase esos assets no
+ * cargan. Se mueve cuando se retiren los chunks (Docs/Limpieza-2026-09-29.md, 2.6). No crear instancias nuevas.
+ *
  * Quad gigante que cruza el mapa matando con sus ruedas.
  *
  * QuadMesh: puramente visual, sin colisión con pawns.
@@ -23,7 +29,8 @@ class ATortugaCharacter;
  *   El servidor mueve el actor; los clientes reciben posición replicada.
  *   El kill se aplica solo en servidor (HasAuthority guard en overlap).
  */
-UCLASS(Blueprintable)
+// NotPlaceable impide colocar instancias nuevas; las ya guardadas en mapas y chunks siguen cargando.
+UCLASS(Blueprintable, NotPlaceable, meta = (DisplayName = "Quad Actor (DEPRECATED)"))
 class TORTUNABO_API ATN_QuadActor : public AActor
 {
 	GENERATED_BODY()
@@ -131,13 +138,15 @@ private:
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * @deprecated Va con ATN_QuadActor (ver arriba): lo sustituye ATN_BeachQuadLane, que programa sus propias pasadas (#353).
+ *
  * Spawner que crea ATN_QuadActor periódicamente.
  *
  * Coloca este actor en el nivel donde el quad debe aparecer.
  * Ajusta EndLocation (en world space) al otro extremo de la pista.
  * Solo activo en servidor.
  */
-UCLASS(Blueprintable)
+UCLASS(Blueprintable, NotPlaceable, meta = (DisplayName = "Quad Spawner (DEPRECATED)"))
 class TORTUNABO_API ATN_QuadSpawner : public AActor
 {
 	GENERATED_BODY()

@@ -128,14 +128,12 @@ void ATN_RunGameMode::PostLogin(APlayerController* NewPlayer)
 		*GetNameSafe(NewPlayer),
 		NewPlayer ? *GetNameSafe(NewPlayer->GetPawn()) : TEXT("NULL"));
 
-	EnsurePlayerSpawned(NewPlayer);
-
-	// Inicializar el PlayerState del jugador que acaba de conectarse.
-	// En non-seamless travel, los PlayerStates se recrean; esto garantiza que
-	// todos los clientes (no solo los que estaban en BeginPlay) arranquen limpiamente.
-	if (ATN_CoopPlayerState* TNPS = NewPlayer ? NewPlayer->GetPlayerState<ATN_CoopPlayerState>() : nullptr)
+	// El estado del PlayerState (de cero, el que traía al volver o fuera de la partida) ya lo dejó FindInactivePlayer,
+	// dentro de Super. Quien entra a mirar no lleva pawn.
+	const bool bSpectating = NewPlayer && NewPlayer->PlayerState && NewPlayer->PlayerState->IsOnlyASpectator();
+	if (!bSpectating)
 	{
-		TNPS->ResetForNewRace();
+		EnsurePlayerSpawned(NewPlayer);
 	}
 
 	// Actualizar el conteo de jugadores conectados en el GameState
@@ -184,6 +182,7 @@ void ATN_RunGameMode::Logout(AController* Exiting)
 		}
 	}
 
+	PendingJoins.Remove(Cast<APlayerController>(Exiting));
 	Super::Logout(Exiting);
 
 	// Actualizar conteo tras desconexión
@@ -259,10 +258,150 @@ void ATN_RunGameMode::OnWaitingTimeout()
 	UE_LOG(LogTortunabo, Log, TEXT("[RunGameMode] ═══ MATCH STARTED! ═══  (waited for players or timeout)"));
 }
 
+void ATN_RunGameMode::DropStaleConnectionOf(const APlayerController* NewPlayer)
+{
+	const FUniqueNetIdRepl NewId = NewPlayer && NewPlayer->PlayerState ? NewPlayer->PlayerState->GetUniqueId() : FUniqueNetIdRepl();
+	if (!NewId.IsValid())
+	{
+		return;
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* Other = It->Get();
+		if (!Other || Other == NewPlayer || Other->IsLocalController() || !Other->PlayerState || Other->PlayerState->GetUniqueId() != NewId)
+		{
+			continue;
+		}
+		// Se cerró el juego y vuelve antes de que el servidor dé su conexión por perdida (ConnectionTimeout): la vieja
+		// se despide ya, como en AGameSession::KickPlayer, para que su Logout guarde el PlayerState que se va a recuperar.
+		UE_LOG(LogTortunabo, Log, TEXT("[Join] %s vuelve con la conexión anterior aún abierta: se cierra %s."),
+			*Other->PlayerState->GetPlayerName(), *GetNameSafe(Other));
+		Other->Destroy();
+		return;
+	}
+}
+
+bool ATN_RunGameMode::FindInactivePlayer(APlayerController* PC)
+{
+	DropStaleConnectionOf(PC);
+	const bool bReactivated = Super::FindInactivePlayer(PC);
+	const ATN_CoopPlayerState* TNPS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
+	if (!TNPS)
+	{
+		return bReactivated;
+	}
+
+	FTNJoinContext Context;
+	Context.Policy = GetLateJoinPolicy();
+	Context.bMatchInProgress = IsMatchInProgressForJoin();
+	Context.bReactivated = bReactivated;
+	Context.bWasAlive = TNPS->bIsAlive;
+	Context.bHadFinished = TNPS->bHasFinishedRun;
+	const FTNJoinDecision Decision = TNLateJoinLogic::DecideJoin(Context);
+	ApplyJoinDecision(PC, Decision);
+	PendingJoins.Add(PC, Decision);
+
+	UE_LOG(LogTortunabo, Log, TEXT("[Join] %s · %s · partida %s · rol %d · reinicia %d · fuera %d · vivo %d · meta %d · puntos %d"),
+		*TNPS->GetPlayerName(), bReactivated ? TEXT("vuelve") : TEXT("nuevo"), Context.bMatchInProgress ? TEXT("en juego") : TEXT("sin empezar"),
+		static_cast<int32>(Decision.Role), Decision.bResetRaceState, Decision.bSitsOut, TNPS->bIsAlive, TNPS->bHasFinishedRun, TNPS->RaceScore);
+	return bReactivated;
+}
+
+void ATN_RunGameMode::AddInactivePlayer(APlayerState* PlayerState, APlayerController* PC)
+{
+	// AGameMode no guarda a quien MustSpectate: los muertos y los que llegaron a la meta, que esperan como espectadores.
+	// Siguen en la partida y su estado tiene que volver con ellos. Quien entró solo a mirar (SitOut) no se guarda.
+	const bool bRaceSpectator = PlayerState && PlayerState->IsOnlyASpectator() && !SitOutPlayerIds.Contains(PlayerState->GetPlayerId());
+	if (!bRaceSpectator)
+	{
+		Super::AddInactivePlayer(PlayerState, PC);
+		return;
+	}
+	PlayerState->SetIsOnlyASpectator(false);
+	Super::AddInactivePlayer(PlayerState, PC);
+	PlayerState->SetIsOnlyASpectator(true);
+}
+
+void ATN_RunGameMode::ApplyJoinDecision(APlayerController* PlayerController, const FTNJoinDecision& Decision)
+{
+	ATN_CoopPlayerState* TNPS = PlayerController ? PlayerController->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
+	if (!TNPS)
+	{
+		return;
+	}
+	// En el viaje no sin cortes los PlayerStates se recrean: el reinicio garantiza que todos arranquen limpios.
+	if (Decision.bResetRaceState)
+	{
+		TNPS->ResetForNewRace();
+	}
+	if (Decision.bSitsOut)
+	{
+		TNPS->bIsAlive = false;
+		SitOutPlayerIds.Add(TNPS->GetPlayerId());
+	}
+	else
+	{
+		SitOutPlayerIds.Remove(TNPS->GetPlayerId());
+	}
+	TNPS->ForceNetUpdate();
+}
+
+bool ATN_RunGameMode::StartJoiningPlayer(APlayerController* PlayerController, const FTNJoinDecision& Decision)
+{
+	if (Decision.Role != ETNJoinRole::Spectate)
+	{
+		return false;
+	}
+	if (Decision.bSitsOut)
+	{
+		SitOutAsSpectator(PlayerController);
+	}
+	else
+	{
+		MovePlayerToSpectator(PlayerController);
+	}
+	return true;
+}
+
+void ATN_RunGameMode::SitOutAsSpectator(APlayerController* PlayerController)
+{
+	if (!PlayerController)
+	{
+		return;
+	}
+	if (ATN_CoopPlayerState* TNPS = PlayerController->GetPlayerState<ATN_CoopPlayerState>())
+	{
+		TNPS->bIsAlive = false;
+		TNPS->bIsDBNO = false;
+		SitOutPlayerIds.Add(TNPS->GetPlayerId());
+		TNPS->ForceNetUpdate();
+	}
+	if (APawn* Pawn = PlayerController->GetPawn())
+	{
+		PlayerController->UnPossess();
+		Pawn->Destroy();
+	}
+	MovePlayerToSpectator(PlayerController);
+}
+
 void ATN_RunGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
+	// Solo los que llegan por PostLogin traen decisión; el viaje sin cortes arranca como siempre.
+	FTNJoinDecision Decision;
+	const bool bFromLogin = PendingJoins.RemoveAndCopyValue(NewPlayer, Decision);
+	if (bFromLogin && StartJoiningPlayer(NewPlayer, Decision))
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Join] %s entra como espectador."), *GetNameSafe(NewPlayer));
+		return;
+	}
+
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	EnsurePlayerSpawned(NewPlayer);
+	if (bFromLogin && Decision.Role == ETNJoinRole::PlayOnPath && !PlaceMidMatchJoiner(NewPlayer))
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Join] %s: sin sitio seguro en el camino, espera como espectador."), *GetNameSafe(NewPlayer));
+		SitOutAsSpectator(NewPlayer);
+	}
 
 	UE_LOG(LogTortunabo, Log, TEXT("[RunGameMode] HandleStartingNewPlayer: %s  (Pawn=%s)"),
 		*GetNameSafe(NewPlayer),
@@ -523,7 +662,8 @@ void ATN_RunGameMode::ApplyDeathVisuals(APawn* Pawn, APlayerController* PlayerCo
 {
 	if (ATortugaCharacter* Character = Cast<ATortugaCharacter>(Pawn))
 	{
-		Character->RecoverFromKnockdown();
+		// Sin el arpegio de reanimar: muere, no se levanta (#348).
+		Character->RecoverFromKnockdownSilently();
 	}
 
 	if (ACharacter* Ch = Cast<ACharacter>(Pawn))
@@ -1252,23 +1392,18 @@ void ATN_RunGameMode::PostSeamlessTravel()
 		// Reset PlayerState para la carrera
 		if (ATN_CoopPlayerState* TNPS = PC->GetPlayerState<ATN_CoopPlayerState>())
 		{
-			const FName SavedHelmet = TNPS->EquippedHelmetId;
-			const FName SavedSkin   = TNPS->EquippedSkinId;
 
 			TNPS->ResetForNewRace();
 
 			// Asegurar que tiene pawn
 			EnsurePlayerSpawned(PC);
 
-			// Forzar aplicación del helmet y skin en todos los clientes.
-			// El Multicast incluye un retry deferred para cubrir la race condition
-			// donde el pawn aún no ha replicado en los clientes cuando el RPC llega.
-			if (SavedHelmet != NAME_None)
+			// Casco y skin llegan a los clientes por OnRep_Equipped* y el pawn nuevo los aplica desde el PlayerState
+			// (BeginPlay, PawnClientRestart y OnRep_PlayerState); en el anfitrión, aquí (#78: sin multicast fiable).
+			if (ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn()))
 			{
-				TNPS->MulticastForceApplyHelmet(SavedHelmet);
+				Turtle->ApplyCosmeticsFromPlayerState();
 			}
-			// Skin siempre se fuerza (NAME_None = sin skin, también válido de restaurar)
-			TNPS->MulticastForceApplySkin(SavedSkin);
 		}
 		else
 		{

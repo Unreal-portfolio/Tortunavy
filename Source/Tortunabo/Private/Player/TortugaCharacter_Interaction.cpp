@@ -453,6 +453,8 @@ void ATortugaCharacter::HandleUseConch(const FTN_InventoryItem& EquippedItem)
 	if (ATN_ConchPickup* Conch = GetWorld()->SpawnActor<ATN_ConchPickup>(
 		ConsumedItem.ConchData.ActorClass, PlaceLoc, FRotator::ZeroRotator, SpawnParams))
 	{
+		// Al gastarse vuelve al suelo como pickup de este mismo ítem (#568).
+		Conch->SetRecycledItem(ConsumedItem);
 		Conch->PlaceAsTrap(PlaceLoc);
 	}
 }

@@ -11,6 +11,7 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
+#include "Player/TN_HitFeedback.h"
 #include "Player/TN_ShellBody.h"
 #include "Player/TN_ShellComponent.h"
 #include "Components/BoxComponent.h"
@@ -514,6 +515,8 @@ void UTN_BeachStunComponent::StartStun(float Seconds, const FVector& Launch)
 
 	if (ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(Owner))
 	{
+		// El golpe que la mete a la fuerza en el caparazón: sacudida y vibración en su máquina (#350).
+		Turtle->NotifyHitFeedback(TNHitFeedback::StrengthFromImpulse(Launch.Size()));
 		UTN_CarryComponent* Carry = Turtle->GetCarryComponent();
 		const bool bCarried = TNBeachStunDetail::IsCarried(Turtle);
 		// Suelta a quien lleve; si la lleva otra, sigue en sus brazos (ya va metida en el caparazón).
