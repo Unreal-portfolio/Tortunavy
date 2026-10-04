@@ -963,8 +963,9 @@ void ATN_ProcMapGameMode::UpdateRoundProgressAndMaybeFinish()
 	TArray<APlayerController*> Finishers;
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
+		// Sin el que se está yendo: desde Logout su PlayerState sigue en el PlayerArray (#558).
 		const ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS);
-		if (!PS)
+		if (!PS || TN_IsPlayerStateLeaving(PS))
 		{
 			continue;
 		}

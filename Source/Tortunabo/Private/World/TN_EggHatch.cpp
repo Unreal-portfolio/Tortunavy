@@ -611,6 +611,7 @@ bool UTN_EggHatchComponent::TickBits(float DeltaTime)
 			: FQuat(Bit.SpinAxis, FMath::DegreesToRadians(Bit.Angle));
 		BitXf[i] = FTransform(Spin, Bit.Position, FVector(Bit.Size * Shrink));
 	}
-	Comp->BatchUpdateInstancesTransforms(0, BitXf, true, true, false);
+	// Cada fotograma, sin MarkRenderStateDirty: TransformChanged ya actualiza instancias y límites al final del fotograma sin rehacer el proxy (#566).
+	Comp->BatchUpdateInstancesTransforms(0, BitXf, true, false, false);
 	return bAny;
 }

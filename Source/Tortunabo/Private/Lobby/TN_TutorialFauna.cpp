@@ -395,7 +395,7 @@ void ATN_TutorialFauna::Tick(float DeltaSeconds)
 			{
 				// El tramo que ha cambiado (con el ajuste de la malla de arte, si la pieza la tiene).
 				const TArrayView<const FTransform> Range(PartXf[Part].GetData() + First, Count);
-				TNArt::UpdateInstances(ISM, First, Range, false, true, false);
+				TNArt::UpdateInstances(ISM, First, Range, false, false, false);
 			}
 		}
 		K.DirtyMin = MAX_int32;

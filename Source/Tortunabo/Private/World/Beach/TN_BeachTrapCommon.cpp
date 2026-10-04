@@ -231,7 +231,8 @@ bool FTNTrapBurst::Tick(float DeltaSeconds)
 		}
 		Xf[i] = FTransform(Rot, Pt.P, Scale3D);
 	}
-	Comp->BatchUpdateInstancesTransforms(0, Xf, true, true, false);
+	// Cada fotograma, sin MarkRenderStateDirty: TransformChanged ya actualiza instancias y límites al final del fotograma sin rehacer el proxy (#566).
+	Comp->BatchUpdateInstancesTransforms(0, Xf, true, false, false);
 	bLive = bAny;
 	return bAny;
 }

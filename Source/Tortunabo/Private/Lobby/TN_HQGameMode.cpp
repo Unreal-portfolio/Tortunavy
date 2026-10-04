@@ -262,19 +262,10 @@ void ATN_HQGameMode::RefreshLobbyState()
 		return;
 	}
 
-	int32 ConnectedPlayers = 0;
-	int32 ReadyPlayers = 0;
-	for (APlayerState* BasePS : GameState->PlayerArray)
-	{
-		if (ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(BasePS))
-		{
-			++ConnectedPlayers;
-			if (TNPS->bIsInReadyZone)
-			{
-				++ReadyPlayers;
-			}
-		}
-	}
+	// Sin el que se está yendo: desde Logout su PlayerState sigue en el PlayerArray (#559).
+	const FTNLobbyReadyCount Count = TN_CountLobbyReady(GameState);
+	const int32 ConnectedPlayers = Count.Connected;
+	const int32 ReadyPlayers = Count.Ready;
 
 	// Plazas de la sala: las de la sesión (ocho) salvo que LobbyExpectedPlayers fije otras.
 	const UMP_GameInstance* SessionGI = Cast<UMP_GameInstance>(GetGameInstance());
@@ -291,7 +282,7 @@ void ATN_HQGameMode::RefreshLobbyState()
 
 	// Countdown starts when ALL connected players are inside the ready zone.
 	// This allows solo testing (1/1) and adapts to any party size (2/2, 3/3, etc.).
-	if (ConnectedPlayers >= LobbyMinPlayersForStart && ReadyPlayers >= ConnectedPlayers)
+	if (Count.AllReady(LobbyMinPlayersForStart))
 	{
 		if (!bCountdownRunning)
 		{
@@ -329,22 +320,9 @@ void ATN_HQGameMode::TickCountdown()
 		return;
 	}
 
-	int32 ConnectedNow = 0;
-	int32 ReadyNow = 0;
-	for (APlayerState* BasePS : GameState->PlayerArray)
-	{
-		if (const ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(BasePS))
-		{
-			++ConnectedNow;
-			if (TNPS->bIsInReadyZone)
-			{
-				++ReadyNow;
-			}
-		}
-	}
-
 	// Cancel countdown if any connected player left the zone
-	if (ConnectedNow <= 0 || ReadyNow < ConnectedNow)
+	const FTNLobbyReadyCount Count = TN_CountLobbyReady(GameState);
+	if (Count.Connected <= 0 || Count.Ready < Count.Connected)
 	{
 		ResetCountdown();
 		return;
