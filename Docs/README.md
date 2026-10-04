@@ -22,6 +22,7 @@ Un documento de referencia por tema. Lo retirado o superado está en [`Archivo/`
 |---|---|---|
 | Git y ramas | [`Flujo_Git.md`](Flujo_Git.md) | Flujo de ramas y reglas de `main`. |
 | Comandos de prueba | [`Comandos_Prueba.md`](Comandos_Prueba.md) | Comandos de consola y tests. |
+| Red local e informe de bug | [`Pruebas_Red_Local.md`](Pruebas_Red_Local.md) | 8 instancias locales con emulación de red, monkey en clientes remotos e informe con F8. |
 | Localización | [`Localizacion.md`](Localizacion.md) | Idiomas, glosario y flujo de traducción. |
 | Arte y assets | [`Inventario-Objetos-Arte-2026-09-29.md`](Inventario-Objetos-Arte-2026-09-29.md) | Inventario de objetos y presupuesto de arte. |
 | Inventario de scripts | [`Inventario_Scripts.md`](Inventario_Scripts.md) | Cabeceras C++ por dominio (apoyo a la defensa). |
