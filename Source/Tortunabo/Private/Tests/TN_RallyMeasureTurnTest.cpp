@@ -9,7 +9,7 @@
 #include "Misc/AutomationTest.h"
 #include "TN_RallyPhysicsTestKit.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Rally/TN_RallyAIController.h"
+#include "TN_RallyAIRaceKit.h"
 #include "UObject/Package.h"
 #include "Vehicles/TN_BuggyMath.h"
 
@@ -112,71 +112,6 @@ namespace TNRallyMeasureTurn
 		return FString::Printf(TEXT("%s: radio %.2f m a %.1f km/h de media en el giro, alabeo máximo %.0f grados, %s%s"), Label, Turn.RadiusM,
 			Turn.MeanKmh, Turn.MaxRollDeg, Turn.bFlipped ? TEXT("VUELCA") : TEXT("no vuelca"),
 			Turn.bReachedSpeed ? TEXT("") : TEXT(" (no llegó a la velocidad)"));
-	}
-
-	struct FRace
-	{
-		bool bFinished = false;
-		float Seconds = 0.f;
-		float ProgressM = 0.f;
-		int32 Flips = 0;
-		float MaxKmh = 0.f;
-		float StoppedSeconds = 0.f;
-	};
-
-	/**
-	 * Un recorrido del piloto IA desde el hueco Slot de la parrilla hasta 30 m de la meta (o TimeoutSeconds). En un circuito
-	 * la parrilla está detrás de la línea (arco cerca del final): se cuenta lo avanzado con la vuelta y se para a 30 m de
-	 * completar una vuelta desde la parrilla.
-	 */
-	FRace RunAIRace(const FPhysicsWorld& Test, ATN_RallyTrack& Track, int32 Slot, float TimeoutSeconds)
-	{
-		FRace Out;
-		UWorld& World = *Test.World;
-		ATN_Buggy* Buggy = SpawnBuggy(World, Track.GetGridSlotTransform(Slot));
-		ATN_RallyAIController* Pilot = Buggy ? World.SpawnActor<ATN_RallyAIController>() : nullptr;
-		if (!Buggy || !Pilot)
-		{
-			return Out;
-		}
-		Pilot->Possess(Buggy);
-		const double LengthCm = Track.GetTrackLengthCm();
-		double Arc = Track.FindArcGlobal(Buggy->GetActorLocation());
-		const double GoalCm = Track.IsCircuit() ? LengthCm - 3000.0 : LengthCm - 3000.0 - Arc;
-		double ProgressCm = 0.0;
-		bool bWasFlipped = false;
-		for (int32 Step = 1; Step <= FMath::RoundToInt32(TimeoutSeconds * StepsPerSecond); ++Step)
-		{
-			Test.Step();
-			const bool bFlipped = Buggy->IsFlipped();
-			Out.Flips += (bFlipped && !bWasFlipped) ? 1 : 0;
-			bWasFlipped = bFlipped;
-			const float Speed = FMath::Abs(Kmh(*Buggy));
-			Out.MaxKmh = FMath::Max(Out.MaxKmh, Speed);
-			Out.StoppedSeconds += Speed < 3.f ? StepSeconds : 0.f;
-			const double Now = Track.FindArcNear(Buggy->GetActorLocation(), Arc);
-			double Delta = Now - Arc;
-			if (Track.IsCircuit())
-			{
-				Delta += Delta < -0.5 * LengthCm ? LengthCm : (Delta > 0.5 * LengthCm ? -LengthCm : 0.0);
-			}
-			if (Delta > 0.0)
-			{
-				ProgressCm += Delta;
-				Arc = Now;
-			}
-			Out.Seconds = Step * StepSeconds;
-			if (ProgressCm >= GoalCm)
-			{
-				Out.bFinished = true;
-				break;
-			}
-		}
-		Out.ProgressM = static_cast<float>(ProgressCm / 100.0);
-		Pilot->UnPossess();
-		Pilot->Destroy();
-		Buggy->Destroy();
-		return Out;
 	}
 }
 

@@ -246,8 +246,8 @@
     70000.0,
     10000.0
    ],
-   "vertices": 768,
-   "triangles": 1110,
+   "vertices": 684,
+   "triangles": 942,
    "instances": 0
   },
   {
@@ -350,8 +350,8 @@
     50000.0,
     20000.0
    ],
-   "vertices": 732,
-   "triangles": 1008,
+   "vertices": 731,
+   "triangles": 1006,
    "instances": 0
   },
   {
@@ -363,8 +363,8 @@
     60000.0,
     20000.0
    ],
-   "vertices": 3381,
-   "triangles": 6288,
+   "vertices": 5796,
+   "triangles": 11118,
    "instances": 0
   },
   {
@@ -376,8 +376,8 @@
     70000.0,
     20000.0
    ],
-   "vertices": 3357,
-   "triangles": 6260,
+   "vertices": 4837,
+   "triangles": 9220,
    "instances": 0
   },
   {
@@ -389,8 +389,8 @@
     80000.0,
     20000.0
    ],
-   "vertices": 1504,
-   "triangles": 2566,
+   "vertices": 2733,
+   "triangles": 5024,
    "instances": 0
   },
   {
@@ -493,8 +493,8 @@
     60000.0,
     30000.0
    ],
-   "vertices": 850,
-   "triangles": 1276,
+   "vertices": 1270,
+   "triangles": 2116,
    "instances": 0
   },
   {
@@ -506,8 +506,8 @@
     70000.0,
     30000.0
    ],
-   "vertices": 2468,
-   "triangles": 4492,
+   "vertices": 3577,
+   "triangles": 6708,
    "instances": 0
   },
   {
@@ -519,8 +519,8 @@
     80000.0,
     30000.0
    ],
-   "vertices": 1704,
-   "triangles": 2956,
+   "vertices": 3445,
+   "triangles": 6436,
    "instances": 0
   },
   {
@@ -636,8 +636,8 @@
     70000.0,
     40000.0
    ],
-   "vertices": 1535,
-   "triangles": 2642,
+   "vertices": 1445,
+   "triangles": 2464,
    "instances": 0
   },
   {
@@ -766,8 +766,8 @@
     70000.0,
     50000.0
    ],
-   "vertices": 2489,
-   "triangles": 4536,
+   "vertices": 2671,
+   "triangles": 4910,
    "instances": 0
   },
   {
@@ -779,8 +779,8 @@
     80000.0,
     50000.0
    ],
-   "vertices": 1706,
-   "triangles": 2972,
+   "vertices": 1594,
+   "triangles": 2756,
    "instances": 0
   },
   {
@@ -844,8 +844,8 @@
     30000.0,
     60000.0
    ],
-   "vertices": 2280,
-   "triangles": 4152,
+   "vertices": 2449,
+   "triangles": 4490,
    "instances": 0
   },
   {
@@ -922,7 +922,7 @@
     90000.0,
     60000.0
    ],
-   "vertices": 546,
+   "vertices": 545,
    "triangles": 652,
    "instances": 0
   },
@@ -1086,6 +1086,7 @@
   "profile": "tierra",
   "theme": "marismas",
   "seed": 6927,
+  "warning_bumps": true,
   "attempt": 0,
   "pieces": [
    {
@@ -1117,7 +1118,7 @@
     "bank_deg": 0.0,
     "length_m": 88.46587096106654,
     "variant": "tabla_lavar",
-    "amplitude_m": 0.08846274442927762,
+    "amplitude_m": 0.07230849628618508,
     "wavelength_m": 4.958913150851273,
     "count": 13
    },
@@ -2670,297 +2671,297 @@
   [
    73235.2,
    50866.8,
-   838.3
+   838.1
   ],
   [
    73259.8,
    50769.5,
-   847.8
+   845.9
   ],
   [
    73284.4,
    50672.3,
-   854.8
+   851.6
   ],
   [
    73309.0,
    50575.0,
-   849.4
+   847.2
   ],
   [
    73333.6,
    50477.7,
-   839.2
+   838.9
   ],
   [
    73358.2,
    50380.4,
-   838.5
+   838.3
   ],
   [
    73382.8,
    50283.2,
-   848.3
+   846.3
   ],
   [
    73407.4,
    50185.9,
-   854.8
+   851.6
   ],
   [
    73432.0,
    50088.6,
-   849.0
+   846.8
   ],
   [
    73456.6,
    49991.4,
-   838.9
+   838.6
   ],
   [
    73481.2,
    49894.1,
-   838.8
+   838.5
   ],
   [
    73505.8,
    49796.8,
-   848.7
+   846.6
   ],
   [
    73530.4,
    49699.5,
-   854.8
+   851.6
   ],
   [
    73555.0,
    49602.3,
-   848.5
+   846.5
   ],
   [
    73579.6,
    49505.0,
-   838.7
+   838.4
   ],
   [
    73604.2,
    49407.7,
-   839.1
+   838.7
   ],
   [
    73628.8,
    49310.4,
-   849.2
+   847.0
   ],
   [
    73653.4,
    49213.2,
-   854.8
+   851.6
   ],
   [
    73678.0,
    49115.9,
-   848.1
+   846.1
   ],
   [
    73702.6,
    49018.6,
-   838.4
+   838.2
   ],
   [
    73727.2,
    48921.3,
-   839.4
+   839.0
   ],
   [
    73751.8,
    48824.1,
-   849.6
+   847.3
   ],
   [
    73776.4,
    48726.8,
-   854.8
+   851.6
   ],
   [
    73801.0,
    48629.5,
-   847.6
+   845.7
   ],
   [
    73825.6,
    48532.3,
-   838.2
+   838.0
   ],
   [
    73850.2,
    48435.0,
-   839.7
+   839.2
   ],
   [
    73874.8,
    48337.7,
-   850.0
+   847.7
   ],
   [
    73899.4,
    48240.4,
-   854.7
+   851.5
   ],
   [
    73924.0,
    48143.2,
-   847.2
+   845.3
   ],
   [
    73948.6,
    48045.9,
-   838.0
+   837.8
   ],
   [
    73973.2,
    47948.6,
-   840.0
+   839.5
   ],
   [
    73997.8,
    47851.3,
-   850.4
+   848.0
   ],
   [
    74022.4,
    47754.1,
-   854.6
+   851.4
   ],
   [
    74047.0,
    47656.8,
-   846.7
+   844.9
   ],
   [
    74071.6,
    47559.5,
-   837.8
+   837.7
   ],
   [
    74096.2,
    47462.2,
-   840.4
+   839.8
   ],
   [
    74120.8,
    47365.0,
-   850.8
+   848.3
   ],
   [
    74145.4,
    47267.7,
-   854.5
+   851.3
   ],
   [
    74170.0,
    47170.4,
-   846.2
+   844.6
   ],
   [
    74194.6,
    47073.1,
-   837.6
+   837.5
   ],
   [
    74219.1,
    46975.9,
-   840.8
+   840.1
   ],
   [
    74243.7,
    46878.6,
-   851.2
+   848.7
   ],
   [
    74268.3,
    46781.3,
-   854.4
+   851.2
   ],
   [
    74292.9,
    46684.1,
-   845.7
+   844.2
   ],
   [
    74317.5,
    46586.8,
-   837.5
+   837.4
   ],
   [
    74342.1,
    46489.5,
-   841.1
+   840.4
   ],
   [
    74366.7,
    46392.2,
-   851.6
+   849.0
   ],
   [
    74391.3,
    46295.0,
-   854.2
+   851.1
   ],
   [
    74415.9,
    46197.7,
-   845.3
+   843.8
   ],
   [
    74440.5,
    46100.4,
-   837.4
+   837.3
   ],
   [
    74465.1,
    46003.1,
-   841.5
+   840.7
   ],
   [
    74489.7,
    45905.9,
-   852.0
+   849.3
   ],
   [
    74514.3,
    45808.6,
-   854.0
+   850.9
   ],
   [
    74538.9,
    45711.3,
-   844.8
+   843.4
   ],
   [
    74563.5,
    45614.0,
-   837.3
+   837.2
   ],
   [
    74588.1,
    45516.8,
-   842.0
+   841.1
   ],
   [
    74612.7,
    45419.5,
-   852.3
+   849.5
   ],
   [
    74637.3,
    45322.2,
-   853.8
+   850.8
   ],
   [
    74661.9,
    45225.0,
-   844.3
+   843.0
   ],
   [
    74686.5,
@@ -2970,22 +2971,22 @@
   [
    74711.1,
    45030.4,
-   842.4
+   841.4
   ],
   [
    74735.7,
    44933.1,
-   852.6
+   849.8
   ],
   [
    74760.3,
    44835.9,
-   853.6
+   850.6
   ],
   [
    74784.9,
    44738.6,
-   843.9
+   842.7
   ],
   [
    74809.5,
@@ -4460,77 +4461,77 @@
   [
    60281.7,
    22516.1,
-   1160.0
+   1163.7
   ],
   [
    60205.5,
    22451.0,
-   1165.5
+   1176.6
   ],
   [
    60129.3,
    22385.9,
-   1170.9
+   1183.5
   ],
   [
    60053.1,
    22320.9,
-   1176.3
+   1182.4
   ],
   [
    59976.9,
    22255.8,
-   1181.7
+   1181.9
   ],
   [
    59900.7,
    22190.7,
-   1187.0
+   1189.8
   ],
   [
    59824.5,
    22125.6,
-   1192.1
+   1202.5
   ],
   [
    59748.3,
    22060.5,
-   1197.1
+   1210.0
   ],
   [
    59672.1,
    21995.4,
-   1202.0
+   1209.0
   ],
   [
    59595.9,
    21930.3,
-   1206.5
+   1207.1
   ],
   [
    59519.7,
    21865.3,
-   1210.9
+   1212.9
   ],
   [
    59443.5,
    21800.2,
-   1214.9
+   1224.4
   ],
   [
    59367.3,
    21735.1,
-   1218.5
+   1231.6
   ],
   [
    59291.1,
    21670.0,
-   1221.8
+   1229.8
   ],
   [
    59214.9,
    21604.9,
-   1224.8
+   1225.8
   ],
   [
    59138.7,
@@ -5725,27 +5726,27 @@
   [
    75282.5,
    26679.1,
-   1030.7
+   1032.0
   ],
   [
    75368.1,
    26730.4,
-   1034.7
+   1042.7
   ],
   [
    75453.8,
    26781.7,
-   1038.5
+   1051.7
   ],
   [
    75539.5,
    26833.0,
-   1042.3
+   1052.8
   ],
   [
    75625.1,
    26884.3,
-   1045.8
+   1049.1
   ],
   [
    75710.8,
@@ -5755,27 +5756,27 @@
   [
    75796.5,
    26986.9,
-   1052.3
+   1056.9
   ],
   [
    75882.1,
    27038.2,
-   1055.1
+   1066.7
   ],
   [
    75967.8,
    27089.6,
-   1057.7
+   1070.4
   ],
   [
    76053.5,
    27140.9,
-   1060.0
+   1066.6
   ],
   [
    76139.2,
    27192.2,
-   1060.0
+   1060.6
   ],
   [
    76224.8,
@@ -18549,13 +18550,13 @@
     325.1
    ],
    "pattern": "tabla_lavar",
-   "amplitude_m": 0.088,
+   "amplitude_m": 0.072,
    "wavelength_m": 4.96,
    "count": 13,
-   "peak_to_peak_m": 0.177,
+   "peak_to_peak_m": 0.145,
    "train_m": 64.5,
-   "valley_radius_m": 7.04,
-   "liftoff_kmh": 29.9
+   "valley_radius_m": 8.61,
+   "liftoff_kmh": 33.1
   },
   {
    "type": "curva_peraltada",
@@ -18585,6 +18586,27 @@
    "radius_m": 175.6,
    "v_boost": 35.07,
    "v_boost_kmh": 126.3
+  },
+  {
+   "type": "baches_aviso",
+   "id": "baches_aviso_1",
+   "s_m": [
+    618.2,
+    633.56
+   ],
+   "train_s_m": [
+    618.2,
+    633.56
+   ],
+   "hairpin": "horquilla_1",
+   "pattern": "aviso",
+   "amplitude_m": 0.066,
+   "wavelength_m": 5.12,
+   "count": 3,
+   "peak_to_peak_m": 0.132,
+   "train_m": 15.4,
+   "valley_radius_m": 10.1,
+   "liftoff_kmh": 35.8
   },
   {
    "type": "horquilla",
@@ -18676,6 +18698,27 @@
    "v_ai_kmh": 79.5,
    "land_ai_s_m": 768.36,
    "impact_ai_ms": 3.96
+  },
+  {
+   "type": "baches_aviso",
+   "id": "baches_aviso_2",
+   "s_m": [
+    871.59,
+    882.52
+   ],
+   "train_s_m": [
+    871.59,
+    882.52
+   ],
+   "hairpin": "horquilla_2",
+   "pattern": "aviso",
+   "amplitude_m": 0.066,
+   "wavelength_m": 5.46,
+   "count": 2,
+   "peak_to_peak_m": 0.133,
+   "train_m": 10.9,
+   "valley_radius_m": 11.41,
+   "liftoff_kmh": 38.1
   },
   {
    "type": "horquilla",
@@ -19124,8 +19167,8 @@
    "min_seg_m": 0.996,
    "missing_samples": 0,
    "min_above_water_m": 7.0,
-   "max_step_m": 0.107,
-   "max_step_in_jumps_m": 0.447,
+   "max_step_m": 0.111,
+   "max_step_in_jumps_m": 0.45,
    "sustained_grade_deg": 4.28,
    "bank_manifest_max_deg": 13.36,
    "bank_mesh_max_deg": 13.41,
@@ -19165,63 +19208,63 @@
     {
      "id": "salto_1",
      "lip_s_m": 743.52,
-     "launch_deg": 12.98,
-     "takeoff_x_m": -1.75,
+     "launch_deg": 13.12,
+     "takeoff_x_m": -2.0,
      "design_lip_deg": 12.77,
      "v_ms": 24.67,
      "v_design_ms": 24.55,
      "v_boost_ms": 31.41,
      "speed_rel_err": 0.005,
-     "x_land_m": 31.48,
-     "x_land_boost_m": 59.7,
+     "x_land_m": 31.06,
+     "x_land_boost_m": 59.64,
      "zone_m": [
       16.5,
       41.65
      ],
-     "airtime_s": 1.382,
-     "landing_lateral_m": 0.48,
-     "boost_lateral_m": 0.22,
+     "airtime_s": 1.376,
+     "landing_lateral_m": 0.1,
+     "boost_lateral_m": 0.28,
      "landing_half_m": 7.58,
      "boost_half_m": 7.58,
-     "impact_ms": 3.85,
-     "impact_boost_ms": 12.63,
+     "impact_ms": 3.49,
+     "impact_boost_ms": 12.64,
      "in_zone": true,
      "boost_on_straight": true,
      "jump_kind": "doble",
      "gap_m": 16.5,
-     "x_land_ai_m": 21.84,
-     "impact_ai_ms": 3.57,
+     "x_land_ai_m": 21.42,
+     "impact_ai_ms": 3.76,
      "ai_clears_gap": true
     },
     {
      "id": "salto_2",
      "lip_s_m": 1053.35,
-     "launch_deg": 6.55,
+     "launch_deg": 6.36,
      "takeoff_x_m": -1.0,
      "design_lip_deg": 6.38,
      "v_ms": 27.29,
      "v_design_ms": 27.27,
      "v_boost_ms": 35.07,
      "speed_rel_err": 0.001,
-     "x_land_m": 29.44,
-     "x_land_boost_m": 53.89,
+     "x_land_m": 28.63,
+     "x_land_boost_m": 53.05,
      "zone_m": [
       1.0,
       38.84
      ],
-     "airtime_s": 1.123,
-     "landing_lateral_m": 0.39,
-     "boost_lateral_m": 0.21,
+     "airtime_s": 1.092,
+     "landing_lateral_m": 0.42,
+     "boost_lateral_m": 0.05,
      "landing_half_m": 7.78,
      "boost_half_m": 7.78,
-     "impact_ms": 3.44,
-     "impact_boost_ms": 11.44,
+     "impact_ms": 3.35,
+     "impact_boost_ms": 11.17,
      "in_zone": true,
      "boost_on_straight": true,
      "jump_kind": "cresta",
      "gap_m": 0.5,
-     "x_land_ai_m": 21.18,
-     "impact_ai_ms": 3.03,
+     "x_land_ai_m": 20.58,
+     "impact_ai_ms": 2.98,
      "ai_clears_gap": true
     },
     {
@@ -19288,7 +19331,7 @@
      "id": "rasante_1",
      "crest_s_m": 535.84,
      "height_m": 2.72,
-     "radius_m": 184.8,
+     "radius_m": 184.3,
      "v_boost_ms": 35.07,
      "takeoff_radius_m": 125.4,
      "keeps_ground": true
@@ -19308,7 +19351,7 @@
    "grid_slope_deg": 0.0,
    "grid_slots": 8,
    "grid_room_m": 5.56,
-   "barrier_dz_m": 0.3,
+   "barrier_dz_m": 0.29,
    "checkpoints": {
     "count": 12,
     "first_at_start": true,
@@ -19344,11 +19387,12 @@
      {
       "id": "baches_1",
       "pattern": "tabla_lavar",
-      "amplitude_m": 0.088,
+      "amplitude_m": 0.072,
       "wavelength_m": 4.96,
       "max_curvature": 5e-05,
-      "measured_amplitude_m": 0.053,
-      "measured_amplitude_max_m": 0.053,
+      "hairpin_brake_gap_m": 267.7,
+      "measured_amplitude_m": 0.054,
+      "measured_amplitude_max_m": 0.054,
       "within_suspension": true,
       "wheel_fits": true
      },
@@ -19358,12 +19402,45 @@
       "amplitude_m": 0.18,
       "wavelength_m": 10.17,
       "max_curvature": 2e-05,
-      "measured_amplitude_m": 0.163,
-      "measured_amplitude_max_m": 0.163,
+      "hairpin_brake_gap_m": 816.2,
+      "measured_amplitude_m": 0.166,
+      "measured_amplitude_max_m": 0.167,
       "within_suspension": true,
       "wheel_fits": true
      }
     ],
+    "warnings": [
+     {
+      "id": "baches_aviso_1",
+      "hairpin": "horquilla_1",
+      "amplitude_m": 0.066,
+      "wavelength_m": 5.12,
+      "max_curvature": 0.00041,
+      "before_hairpin_m": 12.0,
+      "brake_m": 52.8,
+      "braking_overlap_m": 15.4,
+      "measured_amplitude_m": 0.055,
+      "measured_amplitude_max_m": 0.109,
+      "within_suspension": true,
+      "wheel_fits": true
+     },
+     {
+      "id": "baches_aviso_2",
+      "hairpin": "horquilla_2",
+      "amplitude_m": 0.066,
+      "wavelength_m": 5.46,
+      "max_curvature": 0.00039,
+      "before_hairpin_m": 12.0,
+      "brake_m": 50.9,
+      "braking_overlap_m": 10.9,
+      "measured_amplitude_m": 0.055,
+      "measured_amplitude_max_m": 0.109,
+      "within_suspension": true,
+      "wheel_fits": true
+     }
+    ],
+    "warnings_on": true,
+    "hairpins": 2,
     "dips": [
      {
       "id": "baden_1",
@@ -19380,14 +19457,14 @@
       "id": "banqueta_1",
       "outside": "izquierda",
       "berm_rise_m": 0.9,
-      "measured_rise_m": 0.785,
+      "measured_rise_m": 0.789,
       "bank_deg": 11.18
      },
      {
       "id": "banqueta_2",
       "outside": "derecha",
       "berm_rise_m": 0.9,
-      "measured_rise_m": 0.785,
+      "measured_rise_m": 0.797,
       "bank_deg": 12.35
      }
     ],
@@ -19418,6 +19495,8 @@
    "width_variety": true,
    "jump_kinds": true,
    "bumps": true,
+   "bumps_braking": true,
+   "warning_bumps": true,
    "dip": true,
    "banqueta": true
   }

@@ -101,7 +101,7 @@ def test_reproducible_desde_la_semilla(name):
     if not _generated(name):
         pytest.skip(f"{name} sin generar")
     c, data = CIRCUITS[name], _manifest(name)
-    track = rc.build_track(c.seed, c.profile)
+    track = rc.build_track(c.seed, c.profile, warning_bumps=theme(c.theme).warning_bumps)
     road = track.plan.pts + rc.make_frame(track).shift
     got = np.asarray(data["road_uu"], dtype=np.float64)
     assert len(got) == len(road) and np.abs(got[:, :2] - road * UU_PER_M).max() < 0.1

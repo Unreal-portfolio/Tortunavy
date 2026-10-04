@@ -11,7 +11,8 @@ empiezan y acaban a cota 0 con pendiente nula), solo en rectas. Límites:
   - recorrido: con el chasis a media altura, la rueda sube y baja A: A <= SUSPENSION_USE · min(subida, bajada);
   - la rueda cabe en el valle: radio de curvatura del valle lambda² / (4 pi² A) >= radio de rueda;
   - la malla lo representa: lambda >= MIN_WAVELENGTH_M (vóxel de 1 m) y A >= MIN_AMPLITUDE_M (decimado fino).
-  Whoops: A 0,14-0,19 m y lambda 8-11 m; tabla de lavar: A 0,07-0,10 m y lambda 4,5-6 m.
+  Whoops: A 0,14-0,19 m y lambda 8-11 m; tabla de lavar: A 0,06-0,08 m y lambda 4,5-6 m (#696: con 0,09 m, el buggy a
+  fondo despegaba 0,4 s en R04; lo mide Tortunabo.Rally.Measure.BumpsFullThrottle).
 
 Badén (DipDesign): coseno hacia abajo de depth_m y length_m, con barro (vértices más oscuros). El largo sale de la
 velocidad de la línea ideal: la curvatura en el fondo y en los bordes, 2 pi² d / L², por v² no pasa de
@@ -38,7 +39,17 @@ MIN_WAVELENGTH_M = 4.5
 MIN_AMPLITUDE_M = 0.06
 BUMP_LEAD_M = 12.0               # recta llana antes y después del tren de baches
 BUMP_PATTERNS = {"whoops": {"amplitude_m": (0.14, 0.19), "wavelength_m": (8.0, 11.0), "count": (6, 9)},
-                 "tabla_lavar": {"amplitude_m": (0.07, 0.10), "wavelength_m": (4.5, 6.0), "count": (10, 15)}}
+                 "tabla_lavar": {"amplitude_m": (0.06, 0.08), "wavelength_m": (4.5, 6.0), "count": (10, 15)}}
+# Baches de aviso (#696): dos o tres ondas bajas en la frenada de cada horquilla, si el tema las activa. El tren acaba
+# WARNING_END_M antes de la horquilla (en recta, antes de casi toda la rampa de su peralte; el piloto IA frena desde
+# unos 50 m antes) y empieza al menos WARNING_CLEAR_M después de la pieza anterior. Tres ondas si caben; si no, dos;
+# si ni dos de WARNING_WAVELENGTH_M[0] caben, esa horquilla no lleva (el validador lo marca).
+WARNING_PATTERN = "aviso"
+WARNING_AMPLITUDE_M = (0.06, 0.07)
+WARNING_WAVELENGTH_M = (5.0, 6.0)
+WARNING_COUNT = (2, 3)
+WARNING_END_M = 12.0
+WARNING_CLEAR_M = 2.0
 DIP_PIECE_M = 70.0
 DIP_DEPTH_M = (0.45, 0.65)
 DIP_MAX_G = 0.8
@@ -83,6 +94,20 @@ class BumpDesign:
         lo, hi = p["count"]
         return cls(pattern, float(rng.uniform(*p["amplitude_m"])), float(rng.uniform(*p["wavelength_m"])),
                    int(rng.integers(lo, hi + 1)))
+
+    @classmethod
+    def draw_warning(cls, rng: np.random.Generator, room_m: float) -> BumpDesign | None:
+        """Baches de aviso que caben en room_m de recta: tantas ondas como quepan (de WARNING_COUNT), acortando la onda
+        si hace falta para meter el mínimo; None si ni así caben."""
+        amplitude = float(rng.uniform(*WARNING_AMPLITUDE_M))
+        wavelength = float(rng.uniform(*WARNING_WAVELENGTH_M))
+        low, high = WARNING_COUNT
+        count = min(high, int(room_m // wavelength))
+        if count < low:
+            count, wavelength = low, room_m / low
+        if wavelength < WARNING_WAVELENGTH_M[0]:
+            return None
+        return cls(WARNING_PATTERN, amplitude, min(wavelength, WARNING_WAVELENGTH_M[1]), count)
 
     @property
     def train_m(self) -> float:

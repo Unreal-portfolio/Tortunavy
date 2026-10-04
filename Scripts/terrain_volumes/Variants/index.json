@@ -217,7 +217,7 @@
   "seed": 682,
   "description": "Circuito de Rally por vueltas de tierra generado (#682): lazo cerrado con cuatro saltos (doble, cresta, mesa y salto largo sobre hueco), whoops y tabla de lavar en recta, badén con barro, banqueta de tierra en las horquillas, curvas peraltadas, chicane y cambios de rasante.",
   "recorrible": true,
-  "size_mb": 2.42,
+  "size_mb": 2.41,
   "mode": "rally"
  },
  {
@@ -225,7 +225,7 @@
   "seed": 6928,
   "description": "Circuito de Rally por vueltas de tierra entre dunas costeras (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y dunas altas de arena de playa.",
   "recorrible": true,
-  "size_mb": 2.6,
+  "size_mb": 2.59,
   "mode": "rally"
  },
  {
@@ -237,19 +237,19 @@
   "mode": "rally"
  },
  {
-  "name": "R06_circuito_lomas",
-  "seed": 6933,
-  "description": "Circuito de Rally por vueltas de tierra entre lomas secas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y colinas redondas.",
-  "recorrible": true,
-  "size_mb": 2.19,
-  "mode": "rally"
- },
- {
   "name": "R05_circuito_marismas",
   "seed": 6927,
   "description": "Circuito de Rally por vueltas de tierra por las marismas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con más barro, banquetas en las horquillas y un llano de arena húmeda.",
   "recorrible": true,
-  "size_mb": 2.23,
+  "size_mb": 2.38,
+  "mode": "rally"
+ },
+ {
+  "name": "R06_circuito_lomas",
+  "seed": 6933,
+  "description": "Circuito de Rally por vueltas de tierra entre lomas secas (#692): saltos con forma y mesa, whoops y tabla de lavar, badén con barro, banquetas en las horquillas y colinas redondas.",
+  "recorrible": true,
+  "size_mb": 2.31,
   "mode": "rally"
  }
 ]

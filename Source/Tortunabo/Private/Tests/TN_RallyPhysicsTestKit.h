@@ -161,8 +161,8 @@ namespace TNRallyPhysicsMeasure
 		return Buggy;
 	}
 
-	/** Pista de MeasureVariant con su terreno y la carrera en marcha (sin GameMode: nadie reaparece ni corta motores). */
-	inline ATN_RallyTrack* PrepareMeasureTrack(const FPhysicsWorld& Test)
+	/** Pista de Variant con su terreno y la carrera en marcha (sin GameMode: nadie reaparece ni corta motores). */
+	inline ATN_RallyTrack* PrepareMeasureTrack(const FPhysicsWorld& Test, FName Variant)
 	{
 		ATN_RallyGameState* RallyState = Test.World->SpawnActor<ATN_RallyGameState>();
 		if (!RallyState)
@@ -170,9 +170,15 @@ namespace TNRallyPhysicsMeasure
 			return nullptr;
 		}
 		Test.World->SetGameState(RallyState);
-		ATN_RallyTrack* Track = RallyState->PrepareTrack(FName(MeasureVariant()));
+		ATN_RallyTrack* Track = RallyState->PrepareTrack(Variant);
 		RallyState->Phase = ETNRallyPhase::Racing;
 		return Track && Track->IsBuilt() ? Track : nullptr;
+	}
+
+	/** Pista de MeasureVariant (R01). */
+	inline ATN_RallyTrack* PrepareMeasureTrack(const FPhysicsWorld& Test)
+	{
+		return PrepareMeasureTrack(Test, FName(MeasureVariant()));
 	}
 
 	inline float Kmh(const ATN_Buggy& Buggy)

@@ -115,6 +115,17 @@ bool FTNRallyCombatRecoilTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("sin retroceso no levanta"), RecoilLift(FVector(1.f, 0.f, 0.f), 0.f, HalfLength).LiftCms, 0.f);
 	const FRecoilLift Diagonal = RecoilLift(FVector(1.f, 1.f, 0.f).GetSafeNormal(), 200.f, HalfLength);
 	TestTrue(TEXT("en diagonal levanta menos"), Diagonal.LiftCms > 0.f && Diagonal.LiftCms < Forward.LiftCms);
+
+	// #695: el mortero (700 cm/s) levantaba 560 cm/s el morro y volcaba el buggy; el levantamiento tiene tope.
+	const float MortarRecoil = SpecFor(ETNRallyAmmo::Mortero).RecoilCms;
+	TestEqual(TEXT("el mortero levanta como mucho el tope"), RecoilLift(FVector(1.f, 0.f, 0.f), MortarRecoil, HalfLength).LiftCms,
+		MaxRecoilLiftCms, 0.01f);
+	TestEqual(TEXT("hacia atrás, el mortero también tiene tope"), RecoilLift(FVector(-1.f, 0.f, 0.f), MortarRecoil, HalfLength).LiftCms,
+		MaxRecoilLiftCms, 0.01f);
+	TestEqual(TEXT("la concha, justo en el tope, no cambia"), RecoilLift(FVector(1.f, 0.f, 0.f), SpecFor(ETNRallyAmmo::Concha).RecoilCms,
+		HalfLength).LiftCms, SpecFor(ETNRallyAmmo::Concha).RecoilCms * RecoilLiftRatio, 0.01f);
+	TestEqual(TEXT("el frenazo horizontal del mortero no cambia"), static_cast<float>(-RecoilVelocity(FVector(1.f, 0.f, 0.f), MortarRecoil).X),
+		MortarRecoil, 0.01f);
 	return true;
 }
 
