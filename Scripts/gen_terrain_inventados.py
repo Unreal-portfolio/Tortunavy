@@ -63,7 +63,7 @@ def _load_lots() -> None:
     """Los lotes se registran en sus modulos (cada uno añade sus ids a MAPS)."""
     import importlib
     for module in ("terrain_shapes.lots_islands", "terrain_shapes.lots_rally", "terrain_shapes.lots_arenas",
-                   "terrain_shapes.lots_giants", "terrain_shapes.lots_routes"):
+                   "terrain_shapes.lots_giants", "terrain_shapes.lots_routes", "terrain_shapes.lots_boards"):
         try:
             mod = importlib.import_module(module)
         except ModuleNotFoundError as exc:
