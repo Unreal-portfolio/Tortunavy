@@ -46,6 +46,8 @@ namespace TNRoomUI
 	constexpr float CreateCardWidth = 1120.f;
 	constexpr float JoinCardWidth = 1240.f;
 	constexpr float RoomListHeight = 390.f;
+	/** Ancho de la franja de abajo (aviso y ayuda): sus textos se parten en líneas a este ancho. */
+	constexpr float FooterWidth = 1180.f;
 	constexpr float CellWidth = 58.f;
 	constexpr float CellHeight = 70.f;
 	constexpr float CellGap = 8.f;
@@ -78,6 +80,19 @@ namespace TNRoomUI
 		Brush.Margin = Margin;
 		if (Tex) { Brush.ImageSize = FVector2D(Tex->GetSizeX(), Tex->GetSizeY()); }
 		return Brush;
+	}
+
+	/**
+	 * Texto centrado que se parte en líneas a lo ancho de la franja de abajo. Con el ancho fijo (WrapTextAt), su alto es el
+	 * de todas sus líneas desde el primer fotograma, sin esperar a que lo coloquen.
+	 */
+	UTextBlock* WrappedLabel(UWidgetTree* Tree, FName Weight, int32 FontSize, const FLinearColor& Color)
+	{
+		UTextBlock* Out = Label(Tree, FText::GetEmpty(), Weight, FontSize, Color);
+		Out->SetJustification(ETextJustify::Center);
+		Out->SetAutoWrapText(true);
+		Out->SetWrapTextAt(FooterWidth);
+		return Out;
 	}
 
 	USizeBox* Sized(UWidgetTree* Tree, UWidget* Content, float W, float H)
@@ -703,18 +718,18 @@ void UTN_RoomMenuWidget::BuildTree()
 	}
 	TNRoomUI::Pin(Canvas, Pages, FVector2D(0.5f, 0.f), FVector2D(0.f, 140.f));
 
-	// Ayuda de la opción enfocada, atajos y avisos, abajo (como en el menú de pausa).
-	HelpText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Regular"), 18, TNHUDArt::Foam);
-	HelpText->SetJustification(ETextJustify::Center);
-	HelpText->SetAutoWrapText(true);
-	TNRoomUI::Pin(Canvas, TNRoomUI::Sized(Tree, HelpText, 1180.f, 0.f), FVector2D(0.5f, 1.f), FVector2D(0.f, -54.f));
-	HintText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Bold"), 16, TNHUDStyle::TextDim);
-	TNRoomUI::Pin(Canvas, HintText, FVector2D(0.5f, 1.f), FVector2D(0.f, -20.f));
-	NoticeText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Bold"), 20, TNHUDArt::Gold);
-	NoticeText->SetJustification(ETextJustify::Center);
-	NoticeText->SetAutoWrapText(true);
+	// Abajo, apilados de arriba abajo (como en el menú de pausa): el aviso, la ayuda de la opción enfocada y los atajos.
+	// Cada uno ocupa las líneas que necesite y sube al de encima: un aviso o una ayuda de dos líneas no pisan al vecino
+	// (#245). La ayuda tiene su hueco fijo sobre los atajos, salga aviso o no.
+	UVerticalBox* Footer = TNRoomUI::Make<UVerticalBox>(Tree);
+	NoticeText = TNRoomUI::WrappedLabel(Tree, TEXT("Bold"), 20, TNHUDArt::Gold);
 	NoticeText->SetVisibility(ESlateVisibility::Collapsed);
-	TNRoomUI::Pin(Canvas, TNRoomUI::Sized(Tree, NoticeText, 1180.f, 0.f), FVector2D(0.5f, 1.f), FVector2D(0.f, -96.f));
+	TNRoomUI::AddV(Footer, TNRoomUI::Sized(Tree, NoticeText, TNRoomUI::FooterWidth, 0.f), FMargin(0.f), HAlign_Center);
+	HelpText = TNRoomUI::WrappedLabel(Tree, TEXT("Regular"), 18, TNHUDArt::Foam);
+	TNRoomUI::AddV(Footer, TNRoomUI::Sized(Tree, HelpText, TNRoomUI::FooterWidth, 0.f), FMargin(0.f, 10.f, 0.f, 4.f), HAlign_Center);
+	HintText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Bold"), 16, TNHUDStyle::TextDim);
+	TNRoomUI::AddV(Footer, HintText, FMargin(0.f), HAlign_Center);
+	TNRoomUI::Pin(Canvas, Footer, FVector2D(0.5f, 1.f), FVector2D(0.f, -20.f));
 
 	// Aviso de arriba con la pantalla cerrada (sobre el menú del Blueprint, sin tapar sus clics).
 	UCanvasPanel* ToastCanvas = TNRoomUI::Make<UCanvasPanel>(Tree);

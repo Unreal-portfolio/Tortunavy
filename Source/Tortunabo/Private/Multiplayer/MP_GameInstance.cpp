@@ -75,7 +75,7 @@ namespace
 
 	FAutoConsoleCommandWithWorldAndArgs MPGameInstance_FakeRoomErrorCommand(
 		TEXT("TN.Rooms.FakeError"),
-		TEXT("Simula un fallo al entrar en una sala: TN.Rooms.FakeError <locked|full|kicked|other|checksum|joinfull|gone|noaddress>."),
+		TEXT("Simula un fallo al entrar en una sala: TN.Rooms.FakeError <locked|full|kicked|other|build|checksum|joinfull|gone|noaddress>."),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&MPGameInstance_HandleFakeRoomError));
 #endif
 }
@@ -1793,9 +1793,14 @@ void UMP_GameInstance::HandleChecksumMismatch(const FString& ErrorString)
 {
 	HideLoadingScreen();
 	// Una sola línea: el menú enseña lo que va tras el último salto de línea del estado (#280); la pista de Live Coding va al registro.
-	UpdateStatus(TEXT("ERROR: Versiones incompatibles con el servidor."));
+	UpdateStatus(NSLOCTEXT("TNRooms", "BuildMismatchStatus", "Versiones incompatibles con el servidor.").ToString());
 	// Destruir la sesión huérfana del lado cliente para poder reintentar.
 	DestroyCurrentSession();
+	// El motor vuelve solo al menú (?closed): que diga por qué y no parezca un fallo de la sala (#245).
+	PendingMenuNotice.Text = NSLOCTEXT("TNRooms", "BuildMismatch",
+		"Tu versión del juego no es la misma que la del anfitrión. Poneos los dos en la misma versión y volved a intentarlo.");
+	PendingMenuNotice.bError = true;
+	PendingMenuNotice.bOpenJoin = true;
 	UE_LOG(LogTortunabo, Error,
 		TEXT("[MP] NetChecksumMismatch — El cliente tiene un build distinto al servidor. "
 		     "Recompila sin Live Coding y asegúrate de que todos usan el mismo binario. "
@@ -2605,10 +2610,20 @@ void UMP_GameInstance::DebugFakeRoomError(const FString& Kind)
 	else if (K == TEXT("kicked")) { Reason = TNRoomKeys::RefuseKicked(); }
 	else if (K == TEXT("other")) { Reason = TEXT("TNRoom:Prueba"); }
 
-	if (!Reason.IsEmpty())
+	// Versión distinta a la del anfitrión (NetChecksumMismatch, #245): el aviso de dos líneas en «Unirse».
+	const bool bBuildMismatch = K == TEXT("build");
+	if (bBuildMismatch || !Reason.IsEmpty())
 	{
-		UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: rechazo del servidor «%s»."), *Reason);
-		HandleRoomRefused(Reason);
+		if (bBuildMismatch)
+		{
+			UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: versión distinta a la del anfitrión."));
+			HandleChecksumMismatch(TEXT("prueba (TN.Rooms.FakeError build)"));
+		}
+		else
+		{
+			UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: rechazo del servidor «%s»."), *Reason);
+			HandleRoomRefused(Reason);
+		}
 		// En el menú, HandleRoomRefused no viaja: se recarga como hace el motor tras un fallo al conectar.
 		UWorld* World = GetWorld();
 		if (World && IsMenuWorld(World))
@@ -2635,7 +2650,7 @@ void UMP_GameInstance::DebugFakeRoomError(const FString& Kind)
 	else if (K == TEXT("noaddress")) { Result = EOnJoinSessionCompleteResult::CouldNotRetrieveAddress; }
 	else
 	{
-		UE_LOG(LogTortunabo, Display, TEXT("[Salas] TN.Rooms.FakeError <locked|full|kicked|other|checksum|joinfull|gone|noaddress>"));
+		UE_LOG(LogTortunabo, Display, TEXT("[Salas] TN.Rooms.FakeError <locked|full|kicked|other|build|checksum|joinfull|gone|noaddress>"));
 		return;
 	}
 	UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: JoinSession falla con «%s»."), *K);
