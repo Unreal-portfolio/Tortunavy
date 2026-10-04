@@ -51,7 +51,9 @@ bool ATN_MapPlacementSpawner::SpawnThrowWall(const TNMapPlacements::FPlacement& 
 	bool bOk = true;
 	for (int32 w = 0; w < Walls; ++w)
 	{
-		const double Offset = Walls == 1 ? 0.0 : (w - 0.5) * WallChainGap;
+		// En una huella corta, los dos muros a un cuarto y tres cuartos del largo en vez de amontonarse en los extremos.
+		const double Gap = P.LengthCm > 1.0 ? FMath::Min(WallChainGap, P.LengthCm * 0.5) : WallChainGap;
+		const double Offset = Walls == 1 ? 0.0 : (w - 0.5) * Gap;
 		double Yaw = P.YawDeg;
 		const FVector At = Grounded(TNMapPlacements::PointAlong(P, AlphaAt(P, Offset), Yaw)) - FVector(0.0, 0.0, 20.0);
 		ATN_ProcThrowWall* Wall = Cast<ATN_ProcThrowWall>(SpawnClass(ATN_ProcThrowWall::StaticClass(), At, Yaw));
