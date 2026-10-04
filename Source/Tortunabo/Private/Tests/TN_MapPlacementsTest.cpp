@@ -263,6 +263,8 @@ bool FTNMapPlacementsSpawnTest::RunTest(const FString& Parameters)
 		DestroyGameWorld(World);
 		return false;
 	}
+	// Como si viniera del nivel (ULevel::InitializeNetworkActors): lo replicado creado en partida no tapa nada.
+	HandPlaced->bNetStartup = true;
 	Spawner->Populate(Parsed, true, true);
 	const FTNMapPlacementStats& Stats = Spawner->GetStats();
 
