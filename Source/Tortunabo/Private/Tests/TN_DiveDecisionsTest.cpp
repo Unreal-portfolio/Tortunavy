@@ -3,10 +3,13 @@
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Dive; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
+#include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Player/TN_DiveDecisions.h"
+#include "Player/TN_ShellBody.h"
+#include "Player/TN_ShellComponent.h"
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Serialization/BitReader.h"
@@ -267,6 +270,104 @@ bool FTNDiveWallBounceTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Objeto que viene hacia ella: cuenta la relativa"), ClassifyDiveImpact(Wall, FVector(60.0, 0.0, 0.0), FVector(-200.0, 0.0, 0.0), Air) == EDiveImpact::Bounce);
 	const FVector OutMoving = ReflectDiveVelocity(FVector(60.0, 0.0, 0.0), FVector(-200.0, 0.0, 0.0), Wall, Air);
 	TestTrue(TEXT("Relativa: sale con el objeto más el 45 % de la relativa"), FMath::IsNearlyEqual(OutMoving.X, -200.0 - 0.45 * 260.0, 0.01));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveWallSplatTest,
+	"Tortunabo.Dive.Wall.Splat",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveWallSplatTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	// Estampado (#355): desde 650 cm/s contra la pared; por debajo, el rebote de #63; en una pendiente, nada.
+	const FDiveWallParams Air = GetDefault<UTN_TurtleMovementComponent>()->GetDiveWallParams();
+	TestEqual(TEXT("Se estampa desde 650 cm/s"), Air.SplatMinSpeed, 650.f);
+
+	const FVector Wall(-1.0, 0.0, 0.0);
+	TestTrue(TEXT("Pared a 400 cm/s: rebota"), ClassifyDiveImpact(Wall, FVector(400.0, 0.0, -250.0), FVector::ZeroVector, Air) == EDiveImpact::Bounce);
+	TestTrue(TEXT("Pared a 649 cm/s: aún rebota"), ClassifyDiveImpact(Wall, FVector(649.0, 0.0, -250.0), FVector::ZeroVector, Air) == EDiveImpact::Bounce);
+	TestTrue(TEXT("Pared a 650 cm/s: se estampa"), ClassifyDiveImpact(Wall, FVector(650.0, 0.0, -250.0), FVector::ZeroVector, Air) == EDiveImpact::Splat);
+	const FVector V700(700.0, 150.0, -300.0);
+	TestTrue(TEXT("Pared a 700 cm/s: se estampa"), ClassifyDiveImpact(Wall, V700, FVector::ZeroVector, Air) == EDiveImpact::Splat);
+	// Lo que cuenta es la velocidad contra la pared, no el módulo: 700 casi de lado es un roce.
+	TestTrue(TEXT("700 cm/s rozando la pared (300 contra ella): rebota"),
+		ClassifyDiveImpact(Wall, FVector(300.0, 630.0, 0.0), FVector::ZeroVector, Air) == EDiveImpact::Bounce);
+
+	// La bola sale con la velocidad reflejada (la misma cuenta del rebote): hacia fuera de la pared, la vertical sigue.
+	const FVector Ball = ReflectDiveVelocity(V700, FVector::ZeroVector, WallNormal(Wall, Air.MaxNormalZ), Air);
+	TestTrue(FString::Printf(TEXT("La bola sale hacia fuera de la pared (%.0f)"), Ball.X), FMath::IsNearlyEqual(Ball.X, -315.0, 0.01));
+	TestTrue(TEXT("Con el 60 % a lo largo"), FMath::IsNearlyEqual(Ball.Y, 90.0, 0.01));
+	TestEqual(TEXT("La vertical no cambia"), Ball.Z, V700.Z);
+
+	// Pendientes, suelo y techo, a cualquier velocidad: nada (ni rebote ni estampado).
+	TestTrue(TEXT("Pendiente de 30° a 900 cm/s: nada"), ClassifyDiveImpact(FVector(-0.5, 0.0, 0.866), FVector(900.0, 0.0, -400.0), FVector::ZeroVector, Air) == EDiveImpact::None);
+	TestTrue(TEXT("Pendiente de 60° a 900 cm/s: nada"), ClassifyDiveImpact(FVector(-0.866, 0.0, 0.5), FVector(900.0, 0.0, -400.0), FVector::ZeroVector, Air) == EDiveImpact::None);
+	TestTrue(TEXT("Suelo a 900 cm/s: nada"), ClassifyDiveImpact(FVector::UpVector, FVector(900.0, 0.0, -900.0), FVector::ZeroVector, Air) == EDiveImpact::None);
+
+	// Velocidad relativa: un objeto que viene hacia ella suma.
+	TestTrue(TEXT("400 contra un objeto que viene a 300: se estampa"), ClassifyDiveImpact(Wall, FVector(400.0, 0.0, 0.0), FVector(-300.0, 0.0, 0.0), Air) == EDiveImpact::Splat);
+
+	// Apagado (0) y el arrastre en el suelo: nunca se estampa.
+	FDiveWallParams Off = Air;
+	Off.SplatMinSpeed = 0.f;
+	TestTrue(TEXT("Sin estampado: a 900 rebota"), ClassifyDiveImpact(Wall, FVector(900.0, 0.0, 0.0), FVector::ZeroVector, Off) == EDiveImpact::Bounce);
+	TestEqual(TEXT("El rebote en el suelo no se estampa"), GetDefault<UTN_TurtleMovementComponent>()->GetBellyBounceParams().SplatMinSpeed, 0.f);
+
+	// Fuerza del golpe: 0,55 en el umbral, 1 al doble.
+	TestTrue(TEXT("Fuerza en el umbral"), FMath::IsNearlyEqual(SplatStrength(650.f, Air), 0.55f, 1e-4f));
+	TestTrue(TEXT("Fuerza al doble"), FMath::IsNearlyEqual(SplatStrength(1300.f, Air), 1.f, 1e-4f));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNDiveWallSplatBallTest,
+	"Tortunabo.Dive.Wall.SplatBall",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNDiveWallSplatBallTest::RunTest(const FString& Parameters)
+{
+	using namespace TNDiveLogic;
+	// Estampado (#355) en el servidor: el movimiento solo lo apunta; ServerDiveSplat (fuera del movimiento) acaba el panzazo
+	// y la lanza como bola con la velocidad reflejada.
+	TNDiveDecisionsTestDetail::FTestWorld TestWorld;
+	ATortugaCharacter* Turtle = TestWorld.SpawnTurtle();
+	if (!TestNotNull(TEXT("Tortuga"), Turtle) || !TestNotNull(TEXT("Caparazón"), Turtle->GetShellComponent()))
+	{
+		return false;
+	}
+	const FVector BallVelocity(-315.0, 90.0, -300.0);
+	const FVector Where = Turtle->GetActorLocation() + FVector(40.0, 0.0, 0.0);
+
+	// Sin panzazo no se apunta.
+	Turtle->NoteDiveSplat(BallVelocity, Where, FVector(-1.0, 0.0, 0.0), 0.8f);
+	TestFalse(TEXT("Sin panzazo: nada apuntado"), Turtle->HasPendingDiveSplat());
+
+	FVector Launch = FVector::ZeroVector;
+	Turtle->SetJumpStartHorizontalVelocity(FVector(600.0, 0.0, 0.0));
+	if (!TestTrue(TEXT("Empieza el panzazo"), Turtle->StartDiveFromMove(CompressDiveYaw(FVector::ForwardVector), true, false, true, FVector::ZeroVector, Launch)))
+	{
+		return false;
+	}
+	Turtle->NoteDiveSplat(BallVelocity, Where, FVector(-1.0, 0.0, 0.0), 0.8f);
+	TestTrue(TEXT("El movimiento lo apunta"), Turtle->HasPendingDiveSplat());
+	TestTrue(TEXT("Apuntarlo no crea la bola"), Turtle->GetShellComponent()->GetBody() == nullptr && !Turtle->IsInShell());
+	TestTrue(TEXT("Ni acaba el panzazo"), Turtle->IsDiving());
+
+	Turtle->ServerDiveSplat();
+	TestFalse(TEXT("Hecho: ya no queda apuntado"), Turtle->HasPendingDiveSplat());
+	TestFalse(TEXT("Acaba el panzazo"), Turtle->IsDiving());
+	TestTrue(TEXT("En el caparazón"), Turtle->IsInShell());
+	const ATN_ShellBody* Body = Turtle->GetShellComponent()->GetBody();
+	if (TestNotNull(TEXT("Con bola"), Body) && Body->GetBox())
+	{
+		const FVector BodyVelocity = Body->GetBox()->GetPhysicsLinearVelocity();
+		TestTrue(FString::Printf(TEXT("Con la velocidad reflejada (%s)"), *BodyVelocity.ToString()), BodyVelocity.Equals(BallVelocity, 1.0));
+	}
+	TestTrue(TEXT("Sin salir en el aire"), Turtle->GetShellComponent()->IsExitLocked());
+
+	// Otro estampado apuntado para un panzazo que ya no está: nada.
+	Turtle->NoteDiveSplat(BallVelocity, Where, FVector(-1.0, 0.0, 0.0), 0.8f);
+	TestFalse(TEXT("Tras el estampado no se apunta otro"), Turtle->HasPendingDiveSplat());
 	return true;
 }
 

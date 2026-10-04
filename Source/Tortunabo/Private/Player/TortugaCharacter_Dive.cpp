@@ -9,7 +9,11 @@
 #include "Player/TortugaCharacter.h"
 #include "Core/TN_Log.h"
 #include "Player/TN_CarryComponent.h"
+#include "Player/TN_DizzyBirdsComponent.h"
+#include "Player/TN_ShellComponent.h"
+#include "Player/TN_ShellImpactFXComponent.h"
 #include "Player/TN_TurtleMovementComponent.h"
+#include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -422,6 +426,91 @@ void ATortugaCharacter::EndDive()
 	UE_LOG(LogTortunabo, Log, TEXT("[Dive] %s — dive ended."), *GetNameSafe(this));
 }
 
+// ── Estampado contra la pared (#355) ──────────────────────────────────────────
+// En el vuelo del panzazo, contra una pared a DiveSplatMinSpeed (650 cm/s) o más: el movimiento rebota igual que en #63 (en
+// el servidor y en el dueño, también al repetir) y el servidor lo apunta (NoteDiveSplat). En el siguiente TickDive, ya fuera
+// del movimiento del cliente, ServerDiveSplat acaba el panzazo y la lanza como bola de caparazón con la velocidad reflejada:
+// la caja de física se replica sola y la bola sale sola del caparazón al pararse. El golpe (polvo, sonido y pajaritos) lo
+// hace cada máquina con Multicast_DiveSplatFX.
+
+void ATortugaCharacter::NoteDiveSplat(const FVector& BallVelocity, const FVector& Where, const FVector& WallNormal, float Strength)
+{
+	// El primero de este panzazo: varios movimientos del cliente pueden llegar en el mismo fotograma.
+	if (!HasAuthority() || !bIsDiving || PendingDiveSplat.bPending)
+	{
+		return;
+	}
+	PendingDiveSplat.bPending = true;
+	PendingDiveSplat.Serial = DiveSerial;
+	PendingDiveSplat.BallVelocity = BallVelocity;
+	PendingDiveSplat.Where = Where;
+	PendingDiveSplat.WallNormal = WallNormal;
+	PendingDiveSplat.Strength = Strength;
+}
+
+void ATortugaCharacter::ServerDiveSplat()
+{
+	const FTNPendingDiveSplat Splat = PendingDiveSplat;
+	PendingDiveSplat = FTNPendingDiveSplat();
+	// Si entre el movimiento y ahora ha acabado ese panzazo (o la han derribado, metido en el caparazón o cogido), nada.
+	if (!HasAuthority() || !bIsDiving || DiveSerial != Splat.Serial || IsDiveBlocked() || !ShellComponent)
+	{
+		return;
+	}
+	// La velocidad de ahora: la reflejada del movimiento más lo que haya caído desde entonces.
+	const UCharacterMovementComponent* Move = GetCharacterMovement();
+	const FVector BallVelocity = (Move && !Move->Velocity.IsNearlyZero()) ? Move->Velocity : Splat.BallVelocity;
+
+	if (CarryComponent && CarryComponent->IsCarrying())
+	{
+		CarryComponent->ForceRelease(false);
+	}
+	EndDive();
+	Multicast_DiveSplatFX(Splat.Where, Splat.WallNormal, Splat.Strength);
+
+	// Como las bolas lanzadas (catapulta, trampolín): sin cuerpo al entrar, StartBody la crea tumbada donde está; no se sale
+	// en el aire y sale sola al pararse (ForceExitShell la desbloquea).
+	ShellComponent->ForceEnterShell(false, false);
+	ShellComponent->SetExitLocked(true);
+	ShellComponent->StartBody(BallVelocity, true, true);
+	if (!ShellComponent->GetBody())
+	{
+		// Sin caja (no se ha podido crear): no se queda metida en el caparazón, bloqueada y sin moverse.
+		ShellComponent->ForceExitShell();
+		UE_LOG(LogTortunabo, Warning, TEXT("[Dive] %s: estampado sin bola (no se ha podido crear la caja)."), *GetNameSafe(this));
+		return;
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Dive] %s se estampa contra la pared (fuerza %.2f): sale rodando como bola a %.0f cm/s."),
+		*GetNameSafe(this), Splat.Strength, BallVelocity.Size());
+}
+
+void ATortugaCharacter::Multicast_DiveSplatFX_Implementation(FVector_NetQuantize Where, FVector_NetQuantizeNormal WallNormal, float Strength)
+{
+	if (GetNetMode() == NM_DedicatedServer)
+	{
+		return;
+	}
+	if (UTN_ShellImpactFXComponent* ImpactFX = UTN_ShellImpactFXComponent::FindOrAddTo(this))
+	{
+		ImpactFX->PlayWallSplat(Where, WallNormal, Strength);
+	}
+	if (DizzyBirds && DiveSplatDizzySeconds > 0.f)
+	{
+		DizzyBirds->SetDizzy(true);
+		GetWorldTimerManager().SetTimer(DiveSplatDizzyTimerHandle,
+			FTimerDelegate::CreateUObject(this, &ATortugaCharacter::EndDiveSplatDizzy), DiveSplatDizzySeconds, false);
+	}
+}
+
+void ATortugaCharacter::EndDiveSplatDizzy()
+{
+	// Los pajaritos son también del derribo (y el aturdimiento de la playa los vuelve a encender en su Tick).
+	if (DizzyBirds && !bIsKnockedDown)
+	{
+		DizzyBirds->SetDizzy(false);
+	}
+}
+
 void ATortugaCharacter::TickDive(float DeltaTime)
 {
 	// Servidor: el panzazo que empezó en un movimiento lanza lo que llevaba (fuera del movimiento del cliente, #24).
@@ -432,6 +521,11 @@ void ATortugaCharacter::TickDive(float DeltaTime)
 		{
 			CarryComponent->ThrowWithDive(PendingDiveThrow.DiveDir, PendingDiveThrow.DiveVelocity, PendingDiveThrow.CarrierVelocity);
 		}
+	}
+	// Servidor: el estampado que apuntó el movimiento (#355), aquí ya fuera de él (la bola es un actor nuevo).
+	if (PendingDiveSplat.bPending)
+	{
+		ServerDiveSplat();
 	}
 
 	// ── Guard: si el mesh ya está en ragdoll (knockdown post-dash a plátano,

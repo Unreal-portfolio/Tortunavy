@@ -343,6 +343,7 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo (en el dueño de un cliente, también cuántas correcciones ha recibido y la última). |
 | `TN.Net.DivePredict 0` | En quien la controla: el panzazo vuelve a pedirse por `Server_StartDive` y lo lanza el servidor, como antes de #24 (para comparar el tirón al empezar con `p.NetShowCorrections 1`). |
 | `TN.Dive.SlopeFall 0` / `TN.Dive.WallBounce 0` | Cuesta abajo frena como en llano (antes de #62) / en el vuelo del panzazo resbala por las paredes (antes de #63). Igual en todas las máquinas. |
+| `TN.Dive.Splat 0` | En el vuelo del panzazo, contra una pared a 650 cm/s o más solo rebota: sin estampado, bola ni pajaritos (#355). `1` (lo normal) lo vuelve a encender. Igual en todas las máquinas. |
 | `TN.HeadLook.Shots [carpeta]` | Fotos sin interfaz de la cabeza siguiendo a la vista (al frente, 45° a la derecha, 60° a la izquierda, en el tope, arriba, abajo y detrás), el giro medido en el hueso en el registro, y cierra el juego. En `-game -RenderOffScreen -UseFixedTimeStep -FPS=30`. |
 | `TN.HeadLook.Sweep 20` | Mueve sola la vista del jugador local 20 s (guiñada ±60°, cabeceo ±25°) para ver el giro de la cabeza en las demás máquinas. |
 | `TN.HeadLook.Log 1` | Cada tortuga escribe una vez por segundo su vista respecto del cuerpo (del mando o replicada) y el giro de su cabeza. |

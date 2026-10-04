@@ -217,6 +217,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Dive", meta=(ClampMin="2.0"))
 	float DiveMaxSeconds = 12.f;
 
+	/**
+	 * Estampado contra la pared (#355): segundos con los pajaritos del mareo dando vueltas tras el golpe (en cada máquina;
+	 * si está derribada o aturdida, siguen lo que duren esos estados).
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Dive|Splat", meta=(ClampMin="0.0"))
+	float DiveSplatDizzySeconds = 2.5f;
+
 	/** Velocidad de rotación del actor Yaw hacia DiveDir al iniciar el dash (deg/seg).
 	 *  720 → completa 180° en 250 ms. Subir = más responsivo (más cerca de snap).
 	 *  Bajar = más fluido (puede no completar la rotación durante el dash). */
@@ -1287,6 +1294,30 @@ protected:
 	};
 	FTNPendingDiveThrow PendingDiveThrow;
 
+	/**
+	 * Servidor: estampado contra la pared apuntado por el movimiento (#355; NoteDiveSplat). Lo hace ServerDiveSplat en el
+	 * siguiente TickDive, si sigue en el mismo panzazo.
+	 */
+	struct FTNPendingDiveSplat
+	{
+		bool bPending = false;
+		uint8 Serial = 0;
+		FVector BallVelocity = FVector::ZeroVector;
+		FVector Where = FVector::ZeroVector;
+		FVector WallNormal = FVector::ZeroVector;
+		float Strength = 0.f;
+	};
+	FTNPendingDiveSplat PendingDiveSplat;
+
+	/** Todas las máquinas: polvo y golpe sintetizado contra la pared, y los pajaritos DiveSplatDizzySeconds. Cosmético. */
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_DiveSplatFX(FVector_NetQuantize Where, FVector_NetQuantizeNormal WallNormal, float Strength);
+
+	/** Fin de los pajaritos del estampado en esta máquina (los deja si está derribada). */
+	void EndDiveSplatDizzy();
+
+	FTimerHandle DiveSplatDizzyTimerHandle;
+
 	/** Alpha del tilt del cuerpo [0 = reposo, 1 = pose completa de dive]. Cosmético, local. */
 	float DiveTiltAlpha = 0.f;
 
@@ -1392,6 +1423,23 @@ public:
 	 * movimiento del cliente) y el aviso a todos. VelocityBefore: la de antes de lanzarse (la del salto).
 	 */
 	bool StartDiveFromMove(uint16 DiveYaw, bool bInAir, bool bLaunchPending, bool bReplaying, const FVector& VelocityBefore, FVector& OutLaunchVelocity);
+
+	/**
+	 * Servidor, dentro del movimiento (UTN_TurtleMovementComponent::OnMovementUpdated, #355): en el vuelo del panzazo se ha
+	 * estampado contra la pared. Solo lo apunta (el primero de este panzazo); lo hace ServerDiveSplat en el siguiente
+	 * TickDive. BallVelocity: la reflejada; Where y WallNormal: el choque; Strength (0..1): la fuerza del golpe.
+	 */
+	void NoteDiveSplat(const FVector& BallVelocity, const FVector& Where, const FVector& WallNormal, float Strength);
+
+	/** Servidor: hay un estampado apuntado que aún no se ha hecho. */
+	bool HasPendingDiveSplat() const { return PendingDiveSplat.bPending; }
+
+	/**
+	 * Servidor, fuera del movimiento (lo llama TickDive con el estampado apuntado): si sigue en ese panzazo, lo acaba y la
+	 * lanza como bola de caparazón con la velocidad reflejada (UTN_ShellComponent::StartBody; la caja se replica sola y sale
+	 * del caparazón al pararse). Suelta antes a quien lleve. Avisa a todos del golpe (Multicast_DiveSplatFX).
+	 */
+	void ServerDiveSplat();
 
 	/** Cliente dueño, en una corrección: el panzazo que tenía el servidor en ese movimiento (sin OnRep: la cápsula la pone el movimiento). */
 	void ApplyServerDiveCorrection(bool bDiving, uint8 Serial);

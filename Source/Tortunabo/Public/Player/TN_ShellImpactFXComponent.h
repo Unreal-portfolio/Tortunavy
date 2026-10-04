@@ -64,6 +64,13 @@ public:
 	/** Prueba: un golpe de ese timbre y fuerza delante de la tortuga (sonido y efecto), sin física ni límites. */
 	void PlayTestImpact(ETNShellImpactSound InSound, float InStrength);
 
+	/**
+	 * Estampado del panzazo contra la pared (#355): el golpe (sonido y polvo) en InWhere, con InWallNormal hacia fuera de la
+	 * pared. El timbre sale de lo que hay ahí en esta máquina (una traza corta contra la pared). Cuenta como el último golpe
+	 * de la bola: el primer bote de la bola que nace a continuación no lo repite.
+	 */
+	void PlayWallSplat(const FVector& InWhere, const FVector& InWallNormal, float InStrength);
+
 	/** Velocidad de impacto (cm/s) por debajo de la cual no pasa nada. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShellImpact", meta = (ClampMin = "0.0"))
 	float MinImpactSpeed = 260.f;

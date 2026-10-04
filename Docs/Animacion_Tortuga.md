@@ -147,8 +147,18 @@ como pared una normal con Z por debajo de 0,35 (`DiveWallMaxNormalZ`): el suelo 
 `BellyBounceMinSpeed` (120 cm/s) de velocidad contra la pared, relativa a lo que se toca (un objeto que se aleja igual de
 deprisa no la hace rebotar); otras tortugas y cuerpos con física no cuentan. Lo detectan el choque de la cápsula y el del
 cuerpo tumbado (la cabeza llega antes), y se aplica al final del movimiento, igual en el servidor y en el dueño. El rebote
-arrastrándose en el suelo no cambia (0,35 y 75 %). Pruebas: `Tortunabo.Dive.Wall.*`. `TN.Dive.WallBounce 0` lo apaga. El
-estampado contra la pared (desde 650 cm/s, E9-03) aún no está.
+arrastrándose en el suelo no cambia (0,35 y 75 %). Pruebas: `Tortunabo.Dive.Wall.*`. `TN.Dive.WallBounce 0` lo apaga.
+
+### Estampado contra la pared (#355)
+
+Desde `DiveSplatMinSpeed` (650 cm/s contra la pared, relativa) se estampa: el movimiento rebota igual que arriba (en el
+servidor y en el dueño, también al repetir) y el servidor lo apunta (`ATortugaCharacter::NoteDiveSplat`). En el siguiente
+`TickDive`, ya fuera del movimiento del cliente, `ServerDiveSplat` acaba el panzazo y la lanza como bola de caparazón
+(`UTN_ShellComponent::StartBody`) con la velocidad reflejada: la caja se replica sola, no se sale en el aire y sale sola al
+pararse. Cada máquina hace el golpe (`Multicast_DiveSplatFX`): polvo y sonido sintetizado de `UTN_ShellImpactFXComponent`
+según la pared, y los pajaritos del mareo `DiveSplatDizzySeconds` (2,5 s). Pruebas: `Tortunabo.Dive.Wall.Splat` (400 →
+rebote, 700 → estampado, pendiente → nada) y `Tortunabo.Dive.Wall.SplatBall` (la bola nace fuera del movimiento).
+`TN.Dive.Splat 0` lo apaga.
 
 ### Inicio del panzazo predicho (#24)
 
@@ -199,6 +209,7 @@ solo se mueven con partículas vivas; nada a más de 50 m de la cámara. Ajustes
 | `TN.Dive.Slope <x>` | Multiplica cuánto tiran las pendientes (0 = como en llano) |
 | `TN.Dive.SlopeFall 0\|1` | 0 = cuesta abajo frena como en llano, como antes de #62 |
 | `TN.Dive.WallBounce 0\|1` | 0 = en el vuelo del panzazo resbala por las paredes, como antes de #63 |
+| `TN.Dive.Splat 0\|1` | 0 = en el vuelo del panzazo, contra la pared a 650 cm/s o más solo rebota (sin estampado ni bola, #355) |
 | `TN.Net.DivePredict 0\|1` | En quien la controla. 0 = el panzazo lo pide `Server_StartDive` y lo lanza el servidor (tirón al empezar), como antes de #24 |
 | `TN.Dive.MaxTime <s>` | Tope de segundos arrastrándose (0 = el del componente, 2,6 s) |
 | `TN.Dive.Body 0\|1` | 0 = solo choca la cápsula (la cabeza y las patas vuelven a meterse en las paredes), como antes |
