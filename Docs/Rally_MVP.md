@@ -36,12 +36,14 @@ El retroceso es la mecánica central: cada disparo empuja al buggy propio en sen
 |---|---|---|---|
 | Coco | infinita; 6 disparos seguidos sobrecalientan 2,5 s | impacto: impulso lateral 350 cm/s y bamboleo de dirección 0,4 s | 120 cm/s |
 | Alga | caja, 2 cargas | al tocar buggy o suelo deja un charco de 6 m durante 5 s: agarre ×0,5 y velocidad máx. ×0,6 a **cualquier** buggy dentro, incluido el propio | 60 cm/s |
-| Burbuja | caja, 1 carga | burbuja lenta que flota 6 s; el primer buggy que la toca (propio o rival) gana un escudo de 4 s que anula un impacto o un charco | 0 |
+| Burbuja | caja, 1 carga | burbuja lenta que flota 6 s; el primer buggy que la toca (propio o rival) gana un escudo de 4 s que anula un impacto o un charco | 40 cm/s (#629) |
+| Concha | caja, 2 cargas (#629) | corre por el suelo hacia donde apunta la torreta, rebota en las paredes y hace trompear al primero que toca | 250 cm/s |
+| Concha teledirigida | caja, 1 carga (#629) | igual, pero persigue al buggy de justo delante (disparada hacia atrás sale recta) | 250 cm/s |
 | Mortero | caja, 1 carga | explosión de 5 m: impulso vertical 450 cm/s sin vuelco forzado a todos los buggies dentro, también al propio | 700 cm/s (hacia atrás = turbo) |
 | Tinta | caja, 2 cargas | mancha la pantalla de las dos ocupantes del buggy alcanzado 3 s | 60 cm/s |
 | Ancla | caja (rara), 2 cargas | se engancha al buggy alcanzado y lo frena 2 s | 200 cm/s |
 
-Cajas de munición: filas en las puertas pares y a mitad de tramo; reaparecen a los 3 s; el reparto pondera por puesto (los últimos, más Mortero y Burbuja; los primeros, más Alga y Tinta; el Ancla es rara en todos los puestos, algo menos para los primeros).
+Cajas «?» (`ATN_KartItemBox`, #629; sustituyen a la antigua caja de munición, `ATN_RallyAmmoBox`, ya borrada): filas en las puertas pares y a mitad de tramo; reaparecen a los 3 s; el reparto pondera por puesto (los últimos, más Mortero, Burbuja y Concha teledirigida; los primeros, más Alga, Tinta y Concha; el Ancla es rara en todos los puestos, algo menos para los primeros). Solo dan munición de la torreta: nada de turbos ni estrellas. En Karts (mapa generado) las mismas cajas siguen dando los objetos de Karts (`UTN_KartItemComponent`): la caja da lo que usa el vehículo (`ATN_KartBuggy::UsesDriverItems`).
 
 ## Circuitos por vueltas (#622)
 

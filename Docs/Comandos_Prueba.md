@@ -321,6 +321,7 @@ cada 250 m, salida en el claro y meta en la playa (más en `Docs/Karts.md`). Al 
 | `...?Seats=1` / `TN.Kart.Seats 1` | Un kart por tortuga (sin artillera); `2` (por defecto) empareja a la segunda de artillera. |
 | `TN.Rally.Status` | Fase, puestos, ocupantes y cajas en el log (`LogTNRally`). |
 | `TN.Kart.GiveItem Coco` | Da un objeto al kart propio sin ruleta (`Coco`, `TripleCoco`, `Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Estrella`; servidor o partida sola). |
+| `TN.Rally.GiveAmmo Concha [cargas]` | Munición especial de las cajas «?» del Rally para el buggy propio (`Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Burbuja`, `Mortero`, `Ancla`; sin cargas, las de una caja). Servidor o partida sola. |
 | `TN.Kart.Place Geyser\|Cascada\|Agua [equipo] [s]` | Pone el kart (el tuyo con `-1` o sin equipo; el de un bot con su número) encima de un géiser, en lo alto de una cascada o en el agua, tras esos segundos. Servidor o partida sola, fuera de Shipping. |
 | `TN.Kart.ProbeArc 790` | Con `LogTNRally Verbose`, perfil del suelo a lo ancho del camino alrededor de ese arco (m) al empezar (atascos). |
 | `log LogTNRally Verbose` | Objetos que salen y se usan (`[KartItems]`), géiseres, obstáculos y puertas de la pista y los karts del primer tramo. |

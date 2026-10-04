@@ -5,6 +5,7 @@
 #include "Rally/UI/TN_RallyCopilotTablet.h"
 
 #include "Core/TN_LocText.h"
+#include "Rally/TN_RallyHitReport.h"
 #include "TN_RallyCopilotTabletDraw.h"
 
 namespace TNRallyTabletPaint
@@ -14,16 +15,7 @@ namespace TNRallyTabletPaint
 
 	FText AmmoName(ETNRallyAmmo Ammo)
 	{
-		switch (Ammo)
-		{
-		case ETNRallyAmmo::Coco: return NSLOCTEXT("Rally", "AmmoCoco", "Coco");
-		case ETNRallyAmmo::Alga: return NSLOCTEXT("Rally", "AmmoAlga", "Alga");
-		case ETNRallyAmmo::Burbuja: return NSLOCTEXT("Rally", "AmmoBurbuja", "Burbuja");
-		case ETNRallyAmmo::Mortero: return NSLOCTEXT("Rally", "AmmoMortero", "Mortero");
-		case ETNRallyAmmo::Tinta: return NSLOCTEXT("Rally", "AmmoTinta", "Tinta");
-		case ETNRallyAmmo::Ancla: return NSLOCTEXT("Rally", "AmmoAncla", "Ancla");
-		default: return FText::GetEmpty();
-		}
+		return TNRallyHitLog::AmmoName(Ammo);
 	}
 
 	TArray<FVector2f> RingPoints(const FVector2f& Center, float Radius, int32 Segments)

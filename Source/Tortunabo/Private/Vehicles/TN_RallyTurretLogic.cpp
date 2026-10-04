@@ -14,7 +14,8 @@ namespace TNRallyTurret
 			Spec = { 3500.f, 1.f, 4.f, 60.f, 0.5f, 2 };
 			break;
 		case ETNRallyAmmo::Burbuja:
-			Spec = { 900.f, 0.f, BubbleFloatSeconds, 0.f, 0.5f, 1 };
+			// Retroceso pequeño (#629): todas las municiones empujan al buggy, pero la burbuja sale lenta para poder cogerla.
+			Spec = { 900.f, 0.f, BubbleFloatSeconds, 40.f, 0.5f, 1 };
 			break;
 		case ETNRallyAmmo::Mortero:
 			Spec = { 2800.f, 1.f, 5.f, 700.f, 0.8f, 1 };
@@ -25,6 +26,13 @@ namespace TNRallyTurret
 		case ETNRallyAmmo::Ancla:
 			Spec = { 4500.f, 0.5f, 3.f, 200.f, 0.6f, 2 };
 			break;
+		case ETNRallyAmmo::Concha:
+			// Conchas de las cajas «?» (#629): corren por el suelo a su velocidad (ATN_KartShell), sin gravedad de vuelo.
+			Spec = { ShellSpeedCms, 0.f, 6.f, 250.f, 0.5f, 2 };
+			break;
+		case ETNRallyAmmo::ConchaGuiada:
+			Spec = { ShellSpeedCms, 0.f, 12.f, 250.f, 0.5f, 1 };
+			break;
 		default:
 			break;
 		}
@@ -34,6 +42,11 @@ namespace TNRallyTurret
 	bool IsSpecial(ETNRallyAmmo Ammo)
 	{
 		return Ammo != ETNRallyAmmo::None && Ammo != ETNRallyAmmo::Coco;
+	}
+
+	bool IsGroundShell(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::Concha || Ammo == ETNRallyAmmo::ConchaGuiada;
 	}
 
 	bool IsOverheated(const FHeat& State)

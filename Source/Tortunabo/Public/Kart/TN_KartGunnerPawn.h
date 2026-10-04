@@ -32,6 +32,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Artillera")
 	float LeanSendRate = 12.f;
 
+	/**
+	 * Teclas de usar objeto y de tirarlo hacia atrás (Karts). False en el Rally (ATN_RallyKartGunnerPawn, #629): la
+	 * munición de las cajas «?» se dispara con los controles de la torreta del buggy.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Karts|Artillera")
+	bool bItemControls = true;
+
 private:
 	UTN_KartInputSet* GetKartInput();
 	void OnUseItem(const FInputActionValue& Value);

@@ -1,16 +1,17 @@
-// Caja de objetos de los karts (#304), al estilo de las de la carrera (TN_RaceItem*): el cubo de juguete con la «?» dibujado
-// en código (TNRaceItemArt), grande e inclinado, que flota, gira y brilla con la marca de lo que se coge
-// (UTN_PickupGlowComponent: anillo, columna de luz que se ve de lejos, chispitas y luz). El kart que pasa (lo comprueba el
-// servidor en ATN_KartGameMode) la abre: le da un objeto según su puesto (UTN_KartItemComponent::TryGiveFromBox) y la caja
-// estalla en estrellas en cada máquina; a los RespawnSeconds vuelve a aparecer creciendo. Solo se replica bAvailable (los
-// efectos salen de su OnRep, sin RPC).
+// Caja «?» de los karts (#304) y del Rally (#629), al estilo de las de la carrera (TN_RaceItem*): el cubo de juguete con la
+// «?» dibujado en código (TNRaceItemArt), grande e inclinado, que flota, gira y brilla con la marca de lo que se coge
+// (UTN_PickupGlowComponent: anillo, columna de luz que se ve de lejos, chispitas y luz). El vehículo que pasa (lo comprueba
+// el servidor en ATN_RallyGameMode::CheckItemBoxes) la abre y la caja da lo que ese vehículo usa: en Karts, un objeto según
+// su puesto (UTN_KartItemComponent::TryGiveFromBox); en el Rally, munición especial de la torreta según su puesto
+// (TNRally::AmmoWeightsForPlace). Estalla en estrellas en cada máquina y a los RespawnSeconds vuelve a aparecer creciendo.
+// Solo se replica bAvailable (los efectos salen de su OnRep, sin RPC).
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TN_KartItemBox.generated.h"
 
-class ATN_Buggy;
+class APawn;
 class USceneComponent;
 class UStaticMeshComponent;
 class UTN_PickupGlowComponent;
@@ -28,8 +29,11 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/** Servidor: si está disponible y el kart no lleva objeto, le da uno (según Place de NumKarts) y se oculta un rato. */
-	bool TryCollect(ATN_Buggy* Kart, int32 Place, int32 NumKarts);
+	/**
+	 * Servidor: si está disponible, da al vehículo (puesto Place de NumTeams) un objeto de Karts o, si no los usa
+	 * (ATN_KartBuggy::UsesDriverItems), munición especial de la torreta; luego se oculta un rato.
+	 */
+	bool TryCollect(APawn* Vehicle, int32 Place, int32 NumTeams);
 
 	UFUNCTION(BlueprintPure, Category = "Karts")
 	bool IsAvailable() const { return bAvailable; }

@@ -7,7 +7,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerState.h"
-#include "Rally/TN_RallyAmmoBox.h"
+#include "Kart/TN_KartItemBox.h"
 #include "Rally/TN_RallyPlayerState.h"
 #include "Rally/TN_RallyTrack.h"
 #include "Rally/TN_RallyVehicle.h"
@@ -67,16 +67,6 @@ void ATN_RallyGameMode::ConsumeRespawnRequests(bool bRacing)
 	}
 }
 
-bool ATN_RallyGameMode::RollAmmoFor(AActor* Vehicle, ETNRallyAmmo& OutAmmo, int32& OutCharges) const
-{
-	const FTeamRuntime* Team = FindTeamByVehicle(Vehicle);
-	const int32 Active = FMath::Max(1, Teams.FilterByPredicate([](const FTeamRuntime& Entry) { return !Entry.bRetired; }).Num());
-	const int32 Place = Team && Team->Place > 0 ? Team->Place : 1;
-	OutAmmo = TNRally::PickAmmo(TNRally::AmmoWeightsForPlace(Place, Active), FMath::FRand());
-	OutCharges = TNRally::ChargesFor(OutAmmo);
-	return OutCharges > 0;
-}
-
 void ATN_RallyGameMode::HoldBuggiesOnGrid()
 {
 	// El motor ya está cortado (par 0); el freno de carrera del vehículo frena de verdad en su hueco, sin tocar la
@@ -131,7 +121,7 @@ void ATN_RallyGameMode::TickProgress()
 					Team.TeamIndex, NextGate, Hit.Y, Hit.Z);
 			}
 		}
-		CheckAmmoBoxes(Team, Previous, Current);
+		CheckItemBoxes(Team, Previous, Current);
 	}
 }
 
@@ -172,14 +162,20 @@ void ATN_RallyGameMode::HandleGateCrossing(FTeamRuntime& Team, int32 GateIndex, 
 	RebuildStandings();
 }
 
-void ATN_RallyGameMode::CheckAmmoBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To)
+void ATN_RallyGameMode::CheckItemBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To)
 {
-	for (ATN_RallyAmmoBox* Box : Track->GetAmmoBoxes())
+	int32 Active = 0;
+	for (const FTeamRuntime& Entry : Teams)
+	{
+		Active += Entry.bRetired ? 0 : 1;
+	}
+	const int32 Place = Team.Place > 0 ? Team.Place : 1;
+	for (ATN_KartItemBox* Box : Track->GetItemBoxes())
 	{
 		if (IsValid(Box) && Box->IsAvailable()
 			&& FMath::PointDistToSegment(Box->GetActorLocation(), From, To) <= Box->PickupRadiusCm)
 		{
-			Box->TryCollect(Team.Vehicle.Get());
+			Box->TryCollect(Team.Vehicle.Get(), Place, FMath::Max(1, Active));
 		}
 	}
 }

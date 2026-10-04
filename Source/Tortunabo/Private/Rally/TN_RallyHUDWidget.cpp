@@ -47,16 +47,7 @@ namespace TNRallyHUD
 
 	FText AmmoName(ETNRallyAmmo Ammo)
 	{
-		switch (Ammo)
-		{
-		case ETNRallyAmmo::Coco: return NSLOCTEXT("Rally", "AmmoCoco", "Coco");
-		case ETNRallyAmmo::Alga: return NSLOCTEXT("Rally", "AmmoAlga", "Alga");
-		case ETNRallyAmmo::Burbuja: return NSLOCTEXT("Rally", "AmmoBurbuja", "Burbuja");
-		case ETNRallyAmmo::Mortero: return NSLOCTEXT("Rally", "AmmoMortero", "Mortero");
-		case ETNRallyAmmo::Tinta: return NSLOCTEXT("Rally", "AmmoTinta", "Tinta");
-		case ETNRallyAmmo::Ancla: return NSLOCTEXT("Rally", "AmmoAncla", "Ancla");
-		default: return FText::GetEmpty();
-		}
+		return TNRallyHitLog::AmmoName(Ammo);
 	}
 
 	FText CrewName(const FTNRallyStanding& Entry)

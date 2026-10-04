@@ -117,6 +117,8 @@ namespace TNRallyLook
 		case ETNRallyAmmo::Mortero: return FLinearColor(0.12f, 0.12f, 0.12f);
 		case ETNRallyAmmo::Tinta: return FLinearColor(0.05f, 0.02f, 0.10f);
 		case ETNRallyAmmo::Ancla: return FLinearColor(0.45f, 0.47f, 0.50f);
+		case ETNRallyAmmo::Concha: return FLinearColor(0.25f, 0.85f, 0.45f);
+		case ETNRallyAmmo::ConchaGuiada: return FLinearColor(0.95f, 0.25f, 0.20f);
 		default: return FLinearColor(0.35f, 0.20f, 0.08f);
 		}
 	}

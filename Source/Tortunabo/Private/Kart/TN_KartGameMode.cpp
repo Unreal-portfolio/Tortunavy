@@ -8,7 +8,6 @@
 #include "Kart/TN_KartAIController.h"
 #include "Kart/TN_KartBuggy.h"
 #include "Vehicles/TN_Buggy.h"
-#include "Kart/TN_KartItemBox.h"
 #include "Kart/TN_KartItemComponent.h"
 #include "Kart/TN_KartGameState.h"
 #include "Kart/TN_KartPlayerController.h"
@@ -258,7 +257,6 @@ void ATN_KartGameMode::Tick(float DeltaSeconds)
 	if (!bReturning)
 	{
 		Super::Tick(DeltaSeconds);
-		CheckItemBoxes();
 		if (UE_LOG_ACTIVE(LogTNRally, Verbose))
 		{
 			LogStartDiagnostics();
@@ -322,43 +320,6 @@ void ATN_KartGameMode::LogStartDiagnostics()
 				KartTrack->FindArcGlobal(At) / 100.0, FVector::Dist2D(At, KartTrack->GetLocationAtArc(KartTrack->FindArcGlobal(At))) / 100.0,
 				Kart->GetActorUpVector().Z, bHit ? *GetNameSafe(Hit.GetActor()) : TEXT("-"), bHit ? *GetNameSafe(Hit.GetComponent()) : TEXT("-"),
 				bHit ? Hit.Distance / 100.0 : 0.0);
-		}
-	}
-}
-
-void ATN_KartGameMode::CheckItemBoxes()
-{
-	const ATN_KartGameState* KartState = GetKartState();
-	const ATN_KartTrack* KartTrack = KartState ? KartState->GetKartTrack() : nullptr;
-	const bool bRacing = KartState && (KartState->Phase == ETNRallyPhase::Racing || KartState->Phase == ETNRallyPhase::Finishing);
-	if (!bRacing || !KartTrack)
-	{
-		PreviousKartLocations.Reset();
-		return;
-	}
-	int32 Active = 0;
-	for (const FTNRallyStanding& Entry : KartState->Standings)
-	{
-		Active += Entry.bRetired ? 0 : 1;
-	}
-	for (const FTNRallyStanding& Entry : KartState->Standings)
-	{
-		ATN_Buggy* Kart = Cast<ATN_Buggy>(Entry.Vehicle);
-		if (!Kart || Entry.bRetired || Entry.bFinished)
-		{
-			continue;
-		}
-		const FVector Current = Kart->GetActorLocation();
-		const FVector* Previous = PreviousKartLocations.Find(Kart);
-		const FVector From = Previous && FVector::DistSquared(*Previous, Current) < FMath::Square(3000.0) ? *Previous : Current;
-		PreviousKartLocations.Add(Kart, Current);
-		for (ATN_KartItemBox* Box : KartTrack->GetItemBoxes())
-		{
-			if (IsValid(Box) && Box->IsAvailable()
-				&& FMath::PointDistToSegment(Box->GetActorLocation(), From, Current) <= Box->PickupRadiusCm)
-			{
-				Box->TryCollect(Kart, FMath::Max(1, Entry.Place), FMath::Max(1, Active));
-			}
 		}
 	}
 }

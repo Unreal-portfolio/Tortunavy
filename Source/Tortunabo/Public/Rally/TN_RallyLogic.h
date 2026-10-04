@@ -206,7 +206,7 @@ namespace TNRally
 	/** True si lleva OffTrackGraceSeconds a más de OffTrackDistanceCm del eje (y reinicia el estado). */
 	TORTUNABO_API bool UpdateOffTrack(FOffTrackState& State, double DistanceToAxisCm, double DeltaSeconds);
 
-	// ---- Munición especial ----
+	// ---- Munición especial: cajas «?» (#629) ----
 
 	struct FAmmoWeights
 	{
@@ -215,19 +215,53 @@ namespace TNRally
 		float Mortero = 0.f;
 		float Tinta = 0.f;
 		float Ancla = 0.f;
+		float Concha = 0.f;
+		float ConchaGuiada = 0.f;
+
+		float Total() const { return Alga + Burbuja + Mortero + Tinta + Ancla + Concha + ConchaGuiada; }
 	};
 
 	/**
-	 * Reparto por puesto: los primeros sacan más Alga y Tinta; los últimos, más Mortero y Burbuja. El Ancla es rara en
-	 * todos los puestos (menos que el Mortero) y, como él, algo más frecuente para los últimos.
+	 * Reparto de las cajas «?» por puesto (solo munición de la torreta; nada de turbos ni estrellas): los primeros sacan
+	 * más Alga, Tinta y Concha; los últimos, más Mortero, Burbuja y Concha teledirigida. El Ancla es rara en todos los
+	 * puestos (menos que el Mortero) y, como él, algo más frecuente para los últimos.
 	 */
 	TORTUNABO_API FAmmoWeights AmmoWeightsForPlace(int32 Place, int32 NumTeams);
 
-	/** Elige munición con una tirada en [0, 1). */
+	/** Elige munición con una tirada en [0, 1). Nunca Coco ni None. */
 	TORTUNABO_API ETNRallyAmmo PickAmmo(const FAmmoWeights& Weights, float Roll01);
 
-	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2 (Docs/Rally_MVP.md). */
+	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2, Concha 2, Concha teledirigida 1. */
 	TORTUNABO_API int32 ChargesFor(ETNRallyAmmo Ammo);
+
+	/** Hacia dónde dispara un bot su munición especial (ShouldBotFireSpecial). */
+	enum class EBotSpecialShot : uint8
+	{
+		/** Aún no: se la guarda. */
+		Hold,
+		/** Al buggy de justo delante. */
+		AtAhead,
+		/** Al buggy de justo detrás (el alga, que deja el charco en su camino). */
+		AtBehind,
+		/** Hacia delante sin blanco (la burbuja, que recoge él mismo, o la que lleva demasiado tiempo guardada). */
+		Free
+	};
+
+	/** Pasado esto con una especial cargada, el bot la gasta aunque no venga a cuento (s). */
+	inline constexpr float BotMaxHoldSeconds = 8.f;
+	/** Alcance de los bots con las especiales hacia delante (cm) y con el alga hacia atrás (cm). */
+	inline constexpr float BotSpecialRangeCm = 6000.f;
+	inline constexpr float BotAlgaBehindRangeCm = 4000.f;
+	/** La burbuja se suelta al rato de cogerla (s). */
+	inline constexpr float BotBubbleDelaySeconds = 1.5f;
+
+	/**
+	 * Bot sin artillera humana (#629): qué hace con la especial Ammo que lleva HeldSeconds. AheadCm y BehindCm, distancia
+	 * al buggy de justo delante y de justo detrás (negativa si no hay). Conchas, mortero, tinta y ancla, al de delante a
+	 * menos de BotSpecialRangeCm; el alga, al de detrás a menos de BotAlgaBehindRangeCm (si no, al de delante); la burbuja,
+	 * al rato. Pasados BotMaxHoldSeconds, la gasta igual.
+	 */
+	TORTUNABO_API EBotSpecialShot ShouldBotFireSpecial(ETNRallyAmmo Ammo, float HeldSeconds, float AheadCm, float BehindCm);
 
 	// ---- Spline y parrilla ----
 

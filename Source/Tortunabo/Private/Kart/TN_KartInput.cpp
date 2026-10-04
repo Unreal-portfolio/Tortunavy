@@ -42,7 +42,7 @@ namespace
 	}
 }
 
-UTN_KartInputSet* UTN_KartInputSet::Create(UObject* Outer)
+UTN_KartInputSet* UTN_KartInputSet::Create(UObject* Outer, bool bWithItems)
 {
 	UTN_KartInputSet* Set = NewObject<UTN_KartInputSet>(Outer);
 	Set->UseItem = MakeKartAction(Set, TEXT("IA_KartUseItem"), EInputActionValueType::Boolean);
@@ -53,37 +53,51 @@ UTN_KartInputSet* UTN_KartInputSet::Create(UObject* Outer)
 	Set->Lean = MakeKartAction(Set, TEXT("IA_KartLean"), EInputActionValueType::Axis1D);
 
 	UInputMappingContext* Driver = NewObject<UInputMappingContext>(Set, TEXT("IMC_KartDriver"), RF_Transient);
-	Driver->MapKey(Set->UseItem, EKeys::E);
-	Driver->MapKey(Set->UseItem, EKeys::RightMouseButton);
-	Driver->MapKey(Set->UseItem, EKeys::Gamepad_LeftShoulder);
+	// Sin objetos (Rally, #629): ni usar objeto ni disparo propio; disparar y la munición de las cajas «?» van con los
+	// controles del buggy, que estas teclas dejan pasar.
+	if (bWithItems)
+	{
+		Driver->MapKey(Set->UseItem, EKeys::E);
+		Driver->MapKey(Set->UseItem, EKeys::RightMouseButton);
+		Driver->MapKey(Set->UseItem, EKeys::Gamepad_LeftShoulder);
+		Driver->MapKey(Set->Fire, EKeys::LeftMouseButton);
+		Driver->MapKey(Set->Fire, EKeys::Gamepad_RightShoulder);
+	}
 	Driver->MapKey(Set->Backward, EKeys::Q);
 	Driver->MapKey(Set->Backward, EKeys::Gamepad_FaceButton_Right);
-	Driver->MapKey(Set->Fire, EKeys::LeftMouseButton);
-	Driver->MapKey(Set->Fire, EKeys::Gamepad_RightShoulder);
 	Driver->MapKey(Set->LookMouse, EKeys::Mouse2D);
 	MapKartDeadZone(Driver, Set->LookStick, EKeys::Gamepad_Right2D);
 	// Con gafas (Docs/Modo_VR.md, «Vehículos»): B usa el objeto, el stick derecho hacia delante dispara sola (mira con la
 	// cabeza, ATN_KartBuggy) y cualquiera de los dos sticks hacia atrás es «hacia atrás».
-	UTN_BuggyInputSet::MapTouchButton(Driver, Set->UseItem, FTNVRKeys::B);
-	UTN_BuggyInputSet::MapTouchStickDirection(Driver, Set->Fire, FTNVRKeys::RightStickY, false);
+	if (bWithItems)
+	{
+		UTN_BuggyInputSet::MapTouchButton(Driver, Set->UseItem, FTNVRKeys::B);
+		UTN_BuggyInputSet::MapTouchStickDirection(Driver, Set->Fire, FTNVRKeys::RightStickY, false);
+	}
 	UTN_BuggyInputSet::MapTouchStickDirection(Driver, Set->Backward, FTNVRKeys::RightStickY, true);
 	UTN_BuggyInputSet::MapTouchStickDirection(Driver, Set->Backward, FTNVRKeys::LeftStickY, true);
 	Set->DriverContext = Driver;
 
 	UInputMappingContext* Gunner = NewObject<UInputMappingContext>(Set, TEXT("IMC_KartGunner"), RF_Transient);
-	Gunner->MapKey(Set->UseItem, EKeys::E);
-	Gunner->MapKey(Set->UseItem, EKeys::RightMouseButton);
-	Gunner->MapKey(Set->UseItem, EKeys::Gamepad_LeftTriggerAxis);
-	Gunner->MapKey(Set->Backward, EKeys::Q);
-	Gunner->MapKey(Set->Backward, EKeys::Gamepad_LeftShoulder);
+	if (bWithItems)
+	{
+		Gunner->MapKey(Set->UseItem, EKeys::E);
+		Gunner->MapKey(Set->UseItem, EKeys::RightMouseButton);
+		Gunner->MapKey(Set->UseItem, EKeys::Gamepad_LeftTriggerAxis);
+		Gunner->MapKey(Set->Backward, EKeys::Q);
+		Gunner->MapKey(Set->Backward, EKeys::Gamepad_LeftShoulder);
+	}
 	Gunner->MapKey(Set->Lean, EKeys::D);
 	MapKartNegated(Gunner, Set->Lean, EKeys::A);
 	MapKartDeadZone(Gunner, Set->Lean, EKeys::Gamepad_LeftX);
 	// Con gafas: gatillo izquierdo, usar el objeto; B o el stick izquierdo hacia atrás, «hacia atrás»; el peso, con el stick
 	// izquierdo a los lados y con la cabeza (ATN_KartGunnerPawn).
-	UTN_BuggyInputSet::MapTouchTrigger(Gunner, Set->UseItem, FTNVRKeys::LeftTriggerAxis);
-	UTN_BuggyInputSet::MapTouchButton(Gunner, Set->Backward, FTNVRKeys::B);
-	UTN_BuggyInputSet::MapTouchStickDirection(Gunner, Set->Backward, FTNVRKeys::LeftStickY, true);
+	if (bWithItems)
+	{
+		UTN_BuggyInputSet::MapTouchTrigger(Gunner, Set->UseItem, FTNVRKeys::LeftTriggerAxis);
+		UTN_BuggyInputSet::MapTouchButton(Gunner, Set->Backward, FTNVRKeys::B);
+		UTN_BuggyInputSet::MapTouchStickDirection(Gunner, Set->Backward, FTNVRKeys::LeftStickY, true);
+	}
 	UTN_BuggyInputSet::MapTouchAxis(Gunner, Set->Lean, FTNVRKeys::LeftStickX);
 	Set->GunnerContext = Gunner;
 	return Set;

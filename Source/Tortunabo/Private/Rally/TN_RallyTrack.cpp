@@ -7,7 +7,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Misc/FileHelper.h"
-#include "Rally/TN_RallyAmmoBox.h"
+#include "Kart/TN_KartItemBox.h"
 #include "Rally/TN_RallyGate.h"
 #include "TN_RallyMeshUtils.h"
 #include "UObject/ConstructorHelpers.h"
@@ -111,7 +111,7 @@ ATN_RallyTrack::ATN_RallyTrack()
 	BorderMesh = RockFinder.Object;
 
 	GateClass = ATN_RallyGate::StaticClass();
-	AmmoBoxClass = ATN_RallyAmmoBox::StaticClass();
+	ItemBoxClass = ATN_KartItemBox::StaticClass();
 }
 
 void ATN_RallyTrack::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -224,8 +224,17 @@ bool ATN_RallyTrack::BuildFromGates(const TArray<TNRally::FGateDef>& GateDefs, b
 	bBuilt = true;
 	UE_LOG(LogTNRally, Log, TEXT("[RallyTrack] Pista: %d puertas, %.0f m, %s, eje %s, %d cajas."),
 		GateArcs.Num(), GetTrackLengthCm() / 100.0, bClosed ? TEXT("circuito") : TEXT("punto a punto"),
-		RoadAxis.Num() >= 2 ? TEXT("de road_uu") : TEXT("por las puertas"), AmmoBoxes.Num());
+		RoadAxis.Num() >= 2 ? TEXT("de road_uu") : TEXT("por las puertas"), ItemBoxes.Num());
 	return true;
+}
+
+void ATN_RallyTrack::ClearItemBoxes()
+{
+	for (ATN_KartItemBox* Box : ItemBoxes)
+	{
+		if (IsValid(Box)) { Box->Destroy(); }
+	}
+	ItemBoxes.Reset();
 }
 
 void ATN_RallyTrack::ClearTrack()
@@ -234,12 +243,8 @@ void ATN_RallyTrack::ClearTrack()
 	{
 		if (IsValid(Gate)) { Gate->Destroy(); }
 	}
-	for (ATN_RallyAmmoBox* Box : AmmoBoxes)
-	{
-		if (IsValid(Box)) { Box->Destroy(); }
-	}
+	ClearItemBoxes();
 	Gates.Reset();
-	AmmoBoxes.Reset();
 	GateArcs.Reset();
 	AmmoRowArcs.Reset();
 	BankSampleArcs.Reset();
@@ -349,7 +354,7 @@ void ATN_RallyTrack::SpawnAmmoRows()
 void ATN_RallyTrack::SpawnAmmoRow(double Arc)
 {
 	UWorld* World = GetWorld();
-	UClass* Class = AmmoBoxClass ? AmmoBoxClass.Get() : ATN_RallyAmmoBox::StaticClass();
+	UClass* Class = ItemBoxClass ? ItemBoxClass.Get() : ATN_KartItemBox::StaticClass();
 	for (int32 Slot = 0; Slot < AmmoBoxesPerRow; ++Slot)
 	{
 		const double Lateral = (Slot - 0.5 * (AmmoBoxesPerRow - 1)) * AmmoLateralSpacingCm;
@@ -359,11 +364,11 @@ void ATN_RallyTrack::SpawnAmmoRow(double Arc)
 		FActorSpawnParameters Params;
 		Params.Owner = this;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		ATN_RallyAmmoBox* Box = World->SpawnActor<ATN_RallyAmmoBox>(Class, Ground + FVector(0.0, 0.0, 100.0),
+		ATN_KartItemBox* Box = World->SpawnActor<ATN_KartItemBox>(Class, Ground + FVector(0.0, 0.0, ItemBoxLiftCm),
 			FRotator(0.0, GetDirectionAtArc(Arc).Rotation().Yaw, 0.0), Params);
 		if (Box)
 		{
-			AmmoBoxes.Add(Box);
+			ItemBoxes.Add(Box);
 		}
 	}
 }

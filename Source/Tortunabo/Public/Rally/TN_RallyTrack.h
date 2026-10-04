@@ -1,4 +1,4 @@
-// Pista del Rally: spline del eje, puertas, arco de meta, bordes, parrilla y cajas de munición. Se construye con los
+// Pista del Rally: spline del eje, puertas, arco de meta, bordes, parrilla y cajas «?» (ATN_KartItemBox, #629). Se construye con los
 // checkpoints_uu del manifest de la variante (ATN_MapVariantLoader) o, si no hay manifest, con los ATN_RallyCheckpoint
 // colocados a mano. Cada máquina construye la suya con los mismos datos; solo el servidor pone las cajas (replicadas).
 #pragma once
@@ -12,7 +12,7 @@ class USplineComponent;
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMesh;
 class ATN_RallyGate;
-class ATN_RallyAmmoBox;
+class ATN_KartItemBox;
 
 /** Reglas puras de la parrilla y la reaparición (Tortunabo.Rally.Race.*): sin mundo, para poder probarlas. */
 namespace TNRallyRace
@@ -114,10 +114,11 @@ public:
 	int32 GetBorderInstanceCount() const;
 
 	UFUNCTION(BlueprintPure, Category = "Rally")
-	int32 GetAmmoBoxCount() const { return AmmoBoxes.Num(); }
+	int32 GetItemBoxCount() const { return ItemBoxes.Num(); }
 
 	USplineComponent* GetSpline() const { return Spline; }
-	const TArray<TObjectPtr<ATN_RallyAmmoBox>>& GetAmmoBoxes() const { return AmmoBoxes; }
+	/** Cajas «?» de la pista (solo en el servidor; los clientes las reciben replicadas). */
+	const TArray<TObjectPtr<ATN_KartItemBox>>& GetItemBoxes() const { return ItemBoxes; }
 	/** Arcos de las filas de cajas (cm de la spline, TNRally::AmmoRowArcs). También en los clientes, que no crean las cajas. */
 	const TArray<double>& GetAmmoRowArcs() const { return AmmoRowArcs; }
 
@@ -169,8 +170,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Rally")
 	TSubclassOf<ATN_RallyGate> GateClass;
 
-	UPROPERTY(EditAnywhere, Category = "Rally")
-	TSubclassOf<ATN_RallyAmmoBox> AmmoBoxClass;
+	/** Caja «?» de las filas de cajas (#629: sustituye a la caja de munición del Rally). */
+	UPROPERTY(EditAnywhere, Category = "Rally|Cajas")
+	TSubclassOf<ATN_KartItemBox> ItemBoxClass;
 
 	UPROPERTY(EditAnywhere, Category = "Rally|Bordes")
 	TObjectPtr<UStaticMesh> BorderMesh;
@@ -208,6 +210,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Rally|Cajas")
 	float NoAmmoBeforeFinishCm = 35500.f;
 
+	/** Altura del sitio de cada caja sobre el suelo (cm). */
+	UPROPERTY(EditAnywhere, Category = "Rally|Cajas")
+	float ItemBoxLiftCm = 90.f;
+
+	/** Cajas creadas (servidor). Las subclases que ponen sus propias filas las añaden aquí: ClearTrack las destruye. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<ATN_KartItemBox>> ItemBoxes;
+
+	/** Destruye las cajas «?» (también lo hace ClearTrack). */
+	void ClearItemBoxes();
+
 private:
 	void BuildSpline(const TArray<TNRally::FGateDef>& GateDefs);
 	void BuildSplineFromRoad(const TArray<FVector>& Road, const TArray<TNRally::FGateDef>& GateDefs);
@@ -220,9 +233,6 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<ATN_RallyGate>> Gates;
-
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<ATN_RallyAmmoBox>> AmmoBoxes;
 
 	TArray<double> GateArcs;
 	TArray<double> AmmoRowArcs;

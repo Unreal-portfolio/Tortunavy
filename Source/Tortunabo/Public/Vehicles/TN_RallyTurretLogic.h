@@ -29,6 +29,9 @@ namespace TNRallyTurret
 	/** Ancla: se engancha al buggy alcanzado y lo frena 2 s (TNRallyCombat::AnchorDragAccel). */
 	constexpr float AnchorSeconds = 2.f;
 
+	/** Conchas (#629): velocidad por el suelo (cm/s). La recta dura 6 s y la teledirigida 12 s (SpecFor). */
+	constexpr float ShellSpeedCms = 4600.f;
+
 	/** Velocidad punta del buggy sin charco (cm/s, ~110 km/h con el ajuste de UTN_BuggyData). */
 	constexpr float BuggyTopSpeedCms = 3050.f;
 
@@ -53,6 +56,9 @@ namespace TNRallyTurret
 
 	/** Si la munición es especial (la dan las cajas): todas menos None y Coco. */
 	TORTUNABO_API bool IsSpecial(ETNRallyAmmo Ammo);
+
+	/** Concha o concha teledirigida: no es un proyectil que vuela, corre pegada al suelo (ATN_KartShell). */
+	TORTUNABO_API bool IsGroundShell(ETNRallyAmmo Ammo);
 
 	// ── Calentamiento del coco ──────────────────────────────────────────────────
 

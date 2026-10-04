@@ -101,8 +101,6 @@ private:
 	bool AreAllPlayersReady() const;
 	/** Sienta a las que esperaban (ATN_RallyGameMode::HandleStartingNewPlayer) y deja entrar a las siguientes sin espera. */
 	void ReleaseWaitingPlayers(const TCHAR* Why);
-	/** Servidor, en carrera: los karts que pasan por una caja de objetos la abren (paso desde el fotograma anterior). */
-	void CheckItemBoxes();
 
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_ProcMapGenerator> Generator;
@@ -128,7 +126,4 @@ private:
 	/** Diagnóstico (LogTNRally Verbose): sitio, velocidad y arco de cada kart cada segundo en los primeros 20 s. */
 	void LogStartDiagnostics();
 	double NextStartLogTime = 0.0;
-
-	/** Dónde estaba cada kart el fotograma anterior (paso por las cajas). */
-	TMap<TWeakObjectPtr<APawn>, FVector> PreviousKartLocations;
 };

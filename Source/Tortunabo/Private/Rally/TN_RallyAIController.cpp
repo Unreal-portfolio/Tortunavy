@@ -204,22 +204,62 @@ void ATN_RallyAIController::TryFire(const FVector& Location, const FVector& Forw
 		return;
 	}
 	const FTNRallyStanding* Mine = RallyState->FindStandingForVehicle(GetPawn());
-	if (!Mine || Mine->bFinished || Mine->Place <= 1 || !RallyState->Standings.IsValidIndex(Mine->Place - 2))
+	if (!Mine || Mine->bFinished || Mine->Place <= 0)
 	{
 		return;
 	}
-	const APawn* Ahead = RallyState->Standings[Mine->Place - 2].Vehicle;
-	if (!Ahead)
+	const TArray<FTNRallyStanding>& Standings = RallyState->Standings;
+	const APawn* Ahead = Standings.IsValidIndex(Mine->Place - 2) ? Standings[Mine->Place - 2].Vehicle.Get() : nullptr;
+	const APawn* Behind = Standings.IsValidIndex(Mine->Place) ? Standings[Mine->Place].Vehicle.Get() : nullptr;
+	if (TryFireSpecial(*RallyVehicle, Location, Forward, Ahead, Behind, Time) || !Ahead)
 	{
 		return;
 	}
+	// Coco: al de delante, a tiro y dentro del cono.
 	const FVector ToTarget = Ahead->GetActorLocation() - Location;
 	const FVector Direction = ToTarget.GetSafeNormal();
 	if (ToTarget.SizeSquared() > FMath::Square(FireRangeCm) || (Direction | Forward) < RallyAIFireConeCos)
 	{
 		return;
 	}
-	const bool bSpecial = RallyVehicle->GetSpecialAmmo() != ETNRallyAmmo::None && FMath::FRand() < SpecialFireChance;
-	RallyVehicle->AIFire(Direction, bSpecial);
+	RallyVehicle->AIFire(Direction, false);
 	NextFireTime = Time + FireIntervalSeconds;
+}
+
+bool ATN_RallyAIController::TryFireSpecial(ITN_RallyVehicle& RallyVehicle, const FVector& Location, const FVector& Forward,
+	const APawn* Ahead, const APawn* Behind, double Time)
+{
+	const ETNRallyAmmo Special = RallyVehicle.GetSpecialAmmo();
+	if (Special != HeldSpecial)
+	{
+		HeldSpecial = Special;
+		HeldSpecialSince = Time;
+	}
+	if (Special == ETNRallyAmmo::None)
+	{
+		return false;
+	}
+	const float HeldSeconds = static_cast<float>(Time - HeldSpecialSince);
+	const float AheadCm = Ahead ? static_cast<float>(FVector::Dist(Ahead->GetActorLocation(), Location)) : -1.f;
+	const float BehindCm = Behind ? static_cast<float>(FVector::Dist(Behind->GetActorLocation(), Location)) : -1.f;
+	const TNRally::EBotSpecialShot Shot = TNRally::ShouldBotFireSpecial(Special, HeldSeconds, AheadCm, BehindCm);
+	// La dificultad (SpecialFireChance) retrasa el momento; guardada demasiado tiempo, la gasta seguro.
+	if (Shot == TNRally::EBotSpecialShot::Hold || (HeldSeconds < TNRally::BotMaxHoldSeconds && FMath::FRand() >= SpecialFireChance))
+	{
+		return false;
+	}
+	FVector Direction = Forward;
+	if (Shot == TNRally::EBotSpecialShot::AtAhead && Ahead)
+	{
+		Direction = (Ahead->GetActorLocation() - Location).GetSafeNormal();
+	}
+	else if (Shot == TNRally::EBotSpecialShot::AtBehind && Behind)
+	{
+		Direction = (Behind->GetActorLocation() - Location).GetSafeNormal();
+	}
+	RallyVehicle.AIFire(Direction, true);
+	NextFireTime = Time + FireIntervalSeconds;
+	UE_LOG(LogTNRally, Verbose, TEXT("[RallyAI] %s gasta %s (%.1f s guardada)."), *GetNameSafe(GetPawn()),
+		*UEnum::GetValueAsString(Special), HeldSeconds);
+	return true;
 }

@@ -278,7 +278,8 @@ bool FTNRallyTurretRecoilTest::RunTest(const FString& Parameters)
 
 	TestEqual(TEXT("retroceso del coco"), SpecFor(ETNRallyAmmo::Coco).RecoilCms, 120.f);
 	TestEqual(TEXT("retroceso del alga"), SpecFor(ETNRallyAmmo::Alga).RecoilCms, 60.f);
-	TestEqual(TEXT("la burbuja no retrocede"), SpecFor(ETNRallyAmmo::Burbuja).RecoilCms, 0.f);
+	// #629: todas las municiones empujan al buggy; la burbuja, poco (sale lenta para poder cogerla).
+	TestEqual(TEXT("retroceso de la burbuja"), SpecFor(ETNRallyAmmo::Burbuja).RecoilCms, 40.f);
 	TestEqual(TEXT("retroceso del mortero"), SpecFor(ETNRallyAmmo::Mortero).RecoilCms, 700.f);
 	TestEqual(TEXT("retroceso de la tinta"), SpecFor(ETNRallyAmmo::Tinta).RecoilCms, 60.f);
 	return true;

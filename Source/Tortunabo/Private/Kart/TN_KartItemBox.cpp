@@ -4,9 +4,11 @@
 #include "../World/Beach/TN_RaceItemArt.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Kart/TN_KartBuggy.h"
 #include "Kart/TN_KartItemComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Rally/TN_RallyLogic.h"
+#include "Rally/TN_RallyVehicle.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Vehicles/TN_Buggy.h"
@@ -117,17 +119,32 @@ void ATN_KartItemBox::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-bool ATN_KartItemBox::TryCollect(ATN_Buggy* Kart, int32 Place, int32 NumKarts)
+bool ATN_KartItemBox::TryCollect(APawn* Vehicle, int32 Place, int32 NumTeams)
 {
-	if (!HasAuthority() || !bAvailable || !Kart)
+	ITN_RallyVehicle* RallyVehicle = Cast<ITN_RallyVehicle>(Vehicle);
+	if (!HasAuthority() || !bAvailable || !RallyVehicle)
 	{
 		return false;
 	}
-	UTN_KartItemComponent* Items = Kart->FindComponentByClass<UTN_KartItemComponent>();
-	// Con un objeto en la mano la caja se abre igual (como en las carreras de karts), pero no da otro.
-	if (Items)
+	Place = FMath::Max(1, Place);
+	NumTeams = FMath::Max(1, NumTeams);
+	const ATN_KartBuggy* Kart = Cast<ATN_KartBuggy>(Vehicle);
+	if (Kart && Kart->UsesDriverItems())
 	{
-		Items->TryGiveFromBox(Place, NumKarts);
+		// Karts: objeto de la conductora o de la artillera (#304). Con uno en la mano la caja se abre igual, pero no da otro.
+		if (UTN_KartItemComponent* Items = Kart->GetItems())
+		{
+			Items->TryGiveFromBox(Place, NumTeams);
+		}
+	}
+	else
+	{
+		// Rally (#629): munición especial de la torreta según el puesto; la usa la artillera o, si va sola, la conductora.
+		const ETNRallyAmmo Ammo = TNRally::PickAmmo(TNRally::AmmoWeightsForPlace(Place, NumTeams), FMath::FRand());
+		const int32 Charges = TNRally::ChargesFor(Ammo);
+		RallyVehicle->GiveSpecialAmmo(Ammo, Charges);
+		UE_LOG(LogTNRally, Verbose, TEXT("[Cajas] %s (%d.º de %d) saca %s ×%d."), *Vehicle->GetName(), Place, NumTeams,
+			*UEnum::GetValueAsString(Ammo), Charges);
 	}
 	bAvailable = false;
 	OnRep_Available();

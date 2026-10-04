@@ -1,10 +1,13 @@
 // Piloto IA del Rally: sigue la spline de la pista con mirada adelantada, frena antes de las curvas, vuelve despacio a la
 // calzada si se sale, da marcha atrás (cada vez más larga si se repite) si se atasca y dispara (ITN_RallyVehicle::AIFire) al buggy de delante cuando lo tiene a menos de 40 m. Solo en el servidor.
+// La munición especial de las cajas «?» (#629) la gasta cuando le conviene (TNRally::ShouldBotFireSpecial): conchas, mortero,
+// tinta y ancla al de delante, el alga al de detrás, la burbuja al rato y cualquiera pasados 8 s.
 // Hereda de AController (no de AAIController) para no añadir AIModule al módulo: no usa navegación ni percepción.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Controller.h"
+#include "Rally/TN_RallyVehicle.h"
 #include "TN_RallyAIController.generated.h"
 
 class ATN_RallyTrack;
@@ -80,7 +83,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|IA")
 	float FireIntervalSeconds = 0.6f;
 
-	/** Probabilidad de gastar la munición especial en cada disparo si la tiene. */
+	/**
+	 * Probabilidad de gastar la munición especial en cada ocasión de disparo en que le conviene (TNRally::ShouldBotFireSpecial);
+	 * pasados TNRally::BotMaxHoldSeconds la gasta siempre.
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|IA", meta = (ClampMin = "0", ClampMax = "1"))
 	float SpecialFireChance = 0.3f;
 
@@ -93,6 +99,9 @@ private:
 	 */
 	float TargetSpeedKmh(const ATN_RallyTrack& Track, double SpeedCms) const;
 	void TryFire(const FVector& Location, const FVector& Forward);
+	/** Munición especial: true si ha disparado. Ahead y Behind, los buggies de justo delante y detrás (pueden ser nulos). */
+	bool TryFireSpecial(ITN_RallyVehicle& RallyVehicle, const FVector& Location, const FVector& Forward, const APawn* Ahead,
+		const APawn* Behind, double Time);
 
 	TWeakObjectPtr<ATN_RallyTrack> CachedTrack;
 	double Arc = 0.0;
@@ -106,4 +115,7 @@ private:
 	int32 ReverseStreak = 0;
 	double LastReverseTime = -1000.0;
 	double NextFireTime = 0.0;
+	/** Especial que lleva y desde cuándo (s del mundo). */
+	ETNRallyAmmo HeldSpecial = ETNRallyAmmo::None;
+	double HeldSpecialSince = 0.0;
 };

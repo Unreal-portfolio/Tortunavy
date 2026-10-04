@@ -63,9 +63,6 @@ public:
 	virtual bool PlayerCanRestart_Implementation(APlayerController* Player) override { return false; }
 	virtual void Logout(AController* Exiting) override;
 
-	/** Munición de una caja según el puesto del buggy (TNRally::AmmoWeightsForPlace). */
-	bool RollAmmoFor(AActor* Vehicle, ETNRallyAmmo& OutAmmo, int32& OutCharges) const;
-
 	UFUNCTION(BlueprintPure, Category = "Rally")
 	FName GetVariant() const { return Variant; }
 
@@ -212,7 +209,8 @@ private:
 	void HoldBuggiesOnGrid();
 	void TickProgress();
 	void HandleGateCrossing(FTeamRuntime& Team, int32 GateIndex, bool bForward, double Alpha, float DeltaSeconds);
-	void CheckAmmoBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To);
+	/** Cajas «?» (#629) por las que ha pasado el buggy del equipo entre From y To: le dan munición según su puesto. */
+	void CheckItemBoxes(FTeamRuntime& Team, const FVector& From, const FVector& To);
 	void EvaluateTeams(double DeltaSeconds);
 	void EvaluateTeam(FTeamRuntime& Team, double DeltaSeconds);
 	/** Avance dentro del tramo actual (desde la última puerta, o desde la parrilla antes de la salida). */

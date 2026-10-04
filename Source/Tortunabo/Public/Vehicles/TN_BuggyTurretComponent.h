@@ -150,6 +150,8 @@ private:
 	void SyncReplicatedState();
 	/** Comprueba bloqueo, noqueo, cadencia, calor y cargas de Ammo. */
 	bool CanFireAmmo(ETNRallyAmmo Ammo, double Now) const;
+	/** Lanza la munición: proyectil que vuela (ATN_RallyProjectile) o concha por el suelo (ATN_KartShell). False si falla. */
+	bool LaunchAmmo(ETNRallyAmmo Ammo, const FVector& Dir, const FVector& Muzzle);
 	ATN_RallyProjectile* SpawnProjectile(ETNRallyAmmo Ammo, const FVector& Dir, const FVector& Muzzle);
 	void CommitShot(ETNRallyAmmo Ammo, double Now);
 	void ApplyRecoil(ETNRallyAmmo Ammo, const FVector& Dir);
