@@ -60,13 +60,17 @@ namespace TNLobbyRallyDetail
 	}
 }
 
-FText TNLobbyMission::MissionTitle(ETNProcGameMode Mode, FName RallyVariant)
+FText TNLobbyMission::MissionTitle(ETNProcGameMode Mode, FName MapVariant)
 {
+	if (Mode == ETNProcGameMode::FreeForAll && !MapVariant.IsNone())
+	{
+		return FText::Format(NSLOCTEXT("Tortunabo", "MissionRallyTitle", "{0} · {1}"), ModeName(Mode), TctArenaName(MapVariant));
+	}
 	if (Mode != ETNProcGameMode::Rally)
 	{
 		return ModeName(Mode);
 	}
-	return FText::Format(NSLOCTEXT("Tortunabo", "MissionRallyTitle", "{0} · {1}"), ModeName(Mode), RallyMapName(RallyVariant));
+	return FText::Format(NSLOCTEXT("Tortunabo", "MissionRallyTitle", "{0} · {1}"), ModeName(Mode), RallyMapName(MapVariant));
 }
 
 FText TNLobbyMission::RallySeatsName(int32 Seats)

@@ -188,6 +188,10 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_PauseRow> RallySeatsRow;
 
+	/** Todos contra Todos (#651): arena, solo con el modo elegido. */
+	UPROPERTY(Transient)
+	TObjectPtr<UTN_PauseRow> TctArenaRow;
+
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_PauseRow> VisibilityRow;
 

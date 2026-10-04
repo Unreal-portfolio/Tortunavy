@@ -792,6 +792,22 @@ UWidget* UTN_RoomMenuWidget::BuildCreatePage()
 		RallyMapRow->SetDescription(NSLOCTEXT("TNRooms", "RallyCircuitDesc",
 			"El circuito del Rally: puertas en orden, vueltas y saltos de autor."));
 	}
+	TctArenaRow = AddRow();
+	if (TctArenaRow)
+	{
+		TArray<FText> Arenas;
+		for (const FName Arena : TNLobbyMission::TctArenaOptions()) { Arenas.Add(TNLobbyMission::TctArenaName(Arena)); }
+		TctArenaRow->SetupChoice(NSLOCTEXT("TNRooms", "TctArenaRow", "Arena"), Arenas, 0, [WeakThis](int32 Choice)
+		{
+			UTN_RoomMenuWidget* Menu = WeakThis.Get();
+			const TArray<FName>& Options = TNLobbyMission::TctArenaOptions();
+			if (!Menu || !Options.IsValidIndex(Choice)) { return; }
+			Menu->Draft.TctArena = Options[Choice];
+			Menu->RefreshCreateRows();
+		});
+		TctArenaRow->SetDescription(NSLOCTEXT("TNRooms", "TctArenaDesc",
+			"La arena de Todos contra Todos: se inunda ronda a ronda y caer al agua es la muerte."));
+	}
 	RallySeatsRow = AddRow();
 	if (RallySeatsRow)
 	{
@@ -1108,6 +1124,13 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 		RallyMapRow->SetChoiceIndex(FMath::Max(0, RallyMaps.IndexOfByKey(Draft.RallyVariant)));
 		RallyMapRow->SetVisibility(bRally ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
+	const TArray<FName>& TctArenas = TNLobbyMission::TctArenaOptions();
+	Draft.TctArena = TNLobbyMission::ResolveTctArena(Draft.TctArena, TctArenas);
+	if (TctArenaRow)
+	{
+		TctArenaRow->SetChoiceIndex(FMath::Max(0, TctArenas.IndexOfByKey(Draft.TctArena)));
+		TctArenaRow->SetVisibility(Draft.Mode == ETNProcGameMode::FreeForAll ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
 	if (RallySeatsRow)
 	{
 		RallySeatsRow->SetChoiceIndex(Draft.RallySeats - 1);
@@ -1149,11 +1172,14 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 	}
 	if (CreateSummary)
 	{
+		// El mapa de la misión: la arena en Todos contra Todos y el circuito en el Rally.
+		const FText MissionTitle = TNLobbyMission::MissionTitle(Draft.Mode,
+			Draft.Mode == ETNProcGameMode::FreeForAll ? Draft.TctArena : Draft.RallyVariant);
 		CreateSummary->SetText(Draft.bPrivate
 			? FText::Format(NSLOCTEXT("TNRooms", "SummaryPrivate", "Sala privada de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): no sale en la lista y tus amigos entran con el código {2} (o por invitación de Steam)."),
-				TNLobbyMission::MissionTitle(Draft.Mode, Draft.RallyVariant), Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
+				MissionTitle, Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
 			: FText::Format(NSLOCTEXT("TNRooms", "SummaryPublic", "Sala pública de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): sale en la lista de «Unirse» y entra quien quiera (puedes cerrarla desde el menú de pausa)."),
-				TNLobbyMission::MissionTitle(Draft.Mode, Draft.RallyVariant), Draft.MaxPlayers));
+				MissionTitle, Draft.MaxPlayers));
 	}
 }
 

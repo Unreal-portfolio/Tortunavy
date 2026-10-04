@@ -85,6 +85,8 @@ struct TORTUNABO_API FTNRoomConfig
 	/** Rally: circuito de LVL_Rally; Rally y Karts: tortugas por buggy (1 o 2). */
 	FName RallyVariant = FName(TEXT("E01B_espana_rally"));
 	int32 RallySeats = 2;
+	/** Todos contra Todos: arena (una de TNLobbyMission::TctArenaOptions). */
+	FName TctArena = FName(TEXT("A01_diana"));
 };
 
 /** Plazas que se pueden elegir al crear la sala. */

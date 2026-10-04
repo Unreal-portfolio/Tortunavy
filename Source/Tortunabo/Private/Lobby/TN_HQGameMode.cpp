@@ -418,10 +418,12 @@ void ATN_HQGameMode::BeginMatchTravel()
 				TNLobbyMission::ResolveRallyMap(GI->SelectedRallyVariant, TNLobbyMission::RallyMapOptions()), RallyMapPath);
 		}
 		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath)
-			&& ATN_TctGameMode::HasDefaultArena())
+			&& !TNLobbyMission::ResolveTctArena(GI->SelectedTctArena, TNLobbyMission::TctArenaOptions()).IsNone())
 		{
-			// Todos contra Todos: rondas de supervivencia en una arena inventada (ATN_TctGameMode, alias «Tct»).
-			TravelURL = TctMapPath + TEXT("?game=Tct");
+			// Todos contra Todos: rondas de supervivencia en la arena inventada que eligió el anfitrión (ATN_TctGameMode,
+			// alias «Tct», la lee de ?Arena=).
+			TravelURL = TNLobbyMission::TctTravelURL(
+				TNLobbyMission::ResolveTctArena(GI->SelectedTctArena, TNLobbyMission::TctArenaOptions()), TctMapPath);
 		}
 		else if (GI->SelectedProcMode != ETNProcGameMode::Classic)
 		{

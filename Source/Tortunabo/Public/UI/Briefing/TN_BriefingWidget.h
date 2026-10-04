@@ -99,6 +99,16 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UWidget> MapRow;
 
+	/** Todos contra Todos (solo el anfitrión, #651): un botón por arena de TNLobbyMission::TctArenaOptions, en su orden. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTN_ShopButton>> ArenaButtons;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> ArenaHeading;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UWidget> ArenaRow;
+
 	/** «Orden del día: CARRERA · NORMAL». */
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> MissionOrders;
@@ -110,10 +120,12 @@ private:
 
 	/** Pastillas de modo (y de circuito) por fila: con siete modos, dos filas que caben en la página (#632). */
 	static constexpr int32 ModePillsPerRow = 4;
+	/** Pastillas de arena por fila (Todos contra Todos tiene más de veinte: más pequeñas y en más filas). */
+	static constexpr int32 ArenaPillsPerRow = 6;
 
 	/**
-	 * Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad, 2 = plazas por buggy (Rally y Karts),
-	 * 3 = circuito (Rally).
+	 * Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad, 2 = plazas por buggy (Rally y Karts)
+	 * o arena (Todos contra Todos), 3 = circuito (Rally).
 	 */
 	int32 MissionRow = 0;
 	/** Lo último que se ha pintado en «Misión» (si cambia desde otra máquina, se repinta y el general lo anuncia). */
@@ -140,10 +152,16 @@ private:
 	bool HasSeatsRow() const;
 	/** Hay fila de circuito: el anfitrión con el Rally elegido. */
 	bool HasMapRow() const;
+	/** Hay fila de arena: el anfitrión con Todos contra Todos elegido. */
+	bool HasArenaRow() const;
 	/** Última fila con foco posible (1, 2 o 3). */
 	int32 MaxMissionRow() const;
 	/** Rally: circuito (uno de TNLobbyMission::RallyMapOptions). Solo el anfitrión. */
 	void PickRallyMap(FName Variant);
+	/** Todos contra Todos: arena (una de TNLobbyMission::TctArenaOptions). Solo el anfitrión. */
+	void PickTctArena(FName Arena);
+	/** Pinta una fila de pastillas (circuitos o arenas) con la elegida en coral. */
+	void PaintChoicePills(const TArray<TObjectPtr<UTN_ShopButton>>& Buttons, const TArray<FName>& Options, FName Chosen);
 	/** ←/→ con el teclado o el mando: la opción anterior o la siguiente de la fila con el foco. */
 	void StepMission(int32 Direction);
 	void SetMissionRow(int32 Row);
@@ -151,7 +169,10 @@ private:
 	bool CanChooseMission() const;
 	/** La misión que se ve: la de la GameInstance en el anfitrión y la replicada en el general en los demás. */
 	ETNProcGameMode GetMissionMode() const;
-	/** Circuito del Rally que se ve: el de la GameInstance en el anfitrión y el replicado en el general en los demás. */
+	/**
+	 * Mapa de la misión que se ve (circuito del Rally o arena de Todos contra Todos): el de la GameInstance en el anfitrión
+	 * y el replicado en el general en los demás.
+	 */
 	FName GetMissionRallyMap() const;
 	ETNProcDifficulty GetMissionDifficulty() const;
 

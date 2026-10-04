@@ -446,6 +446,13 @@ public:
 	FName SelectedRallyVariant = FName(TEXT("E01B_espana_rally"));
 
 	/**
+	 * Todos contra Todos: arena de Scripts/terrain_volumes/Variants (?Arena=) que eligió el anfitrión. ATN_HQGameMode la
+	 * lee al viajar (TNLobbyMission::TctTravelURL); si ya no está entre las opciones, la primera.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
+	FName SelectedTctArena = FName(TEXT("A01_diana"));
+
+	/**
 	 * Cómo se pusieron listos en el lobby (sala de la puerta doble o huevos): así empieza la partida en el mapa
 	 * procedural. Lo guarda ATN_HQGameMode antes de viajar y lo lee ATN_ProcMapGameMode.
 	 */

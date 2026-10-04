@@ -279,7 +279,7 @@ void ATN_GeneralBriefing::SyncMissionFromGameInstance()
 	{
 		return;
 	}
-	const FName RallyVariant = TNLobbyMission::GetHostRallyMap(this);
+	const FName RallyVariant = TNLobbyMission::GetHostMissionMap(this);
 	const uint8 RallySeats = static_cast<uint8>(TNLobbyMission::GetHostRallySeats(this));
 	if (MissionMode == GI->SelectedProcMode && MissionDifficulty == GI->SelectedProcDifficulty && MissionRallyVariant == RallyVariant
 		&& MissionRallySeats == RallySeats)

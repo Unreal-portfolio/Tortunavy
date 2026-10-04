@@ -103,4 +103,55 @@ bool FTNLobbyMissionRallyMapsTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNLobbyMissionTctArenasTest, "Tortunabo.Lobby.Mission.TctArenas",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNLobbyMissionTctArenasTest::RunTest(const FString& Parameters)
+{
+	using namespace TNLobbyMission;
+	TestTrue(TEXT("Manifest tct con trozos: arena"), IsTctArenaManifest(TEXT("{\"mode\": \"tct\", \"cells\": [{\"file\": \"Chunks/r0c0.bin\"}]}")));
+	TestFalse(TEXT("Manifest del Rally: no es arena"), IsTctArenaManifest(TEXT("{\"mode\": \"rally\", \"cells\": [{}]}")));
+	TestFalse(TEXT("Manifest tct sin trozos: no es arena"), IsTctArenaManifest(TEXT("{\"mode\": \"tct\", \"cells\": []}")));
+	TestFalse(TEXT("Texto roto: no es arena"), IsTctArenaManifest(TEXT("{roto")));
+
+	const TArray<FName> Sorted = SortTctArenas({ FName(TEXT("Z99_nueva")), FName(TEXT("N01_coliseo")), FName(DefaultTctArena),
+		FName(TEXT("N01_coliseo")), FName(TEXT("B01_otra")), FName(NAME_None) });
+	TestEqual(TEXT("Cuatro arenas sin repetir ni vacías"), Sorted.Num(), 4);
+	if (Sorted.Num() == 4)
+	{
+		TestEqual(TEXT("La de por defecto, la primera"), Sorted[0], FName(DefaultTctArena));
+		TestEqual(TEXT("Las conocidas, después"), Sorted[1], FName(TEXT("N01_coliseo")));
+		TestEqual(TEXT("Las nuevas, por nombre"), Sorted[2], FName(TEXT("B01_otra")));
+		TestEqual(TEXT("Y la última"), Sorted[3], FName(TEXT("Z99_nueva")));
+	}
+	TestEqual(TEXT("Arena elegida que ya no existe: la primera"), ResolveTctArena(FName(TEXT("Borrada")), Sorted), Sorted[0]);
+	TestEqual(TEXT("Sin opciones: ninguna"), ResolveTctArena(FName(DefaultTctArena), TArray<FName>()), FName(NAME_None));
+	TestEqual(TEXT("Viaje: LVL_Tct con el modo y la arena"), TctTravelURL(FName(TEXT("N01_coliseo")), TEXT("/Game/Maps/Run/LVL_Tct")),
+		FString(TEXT("/Game/Maps/Run/LVL_Tct?game=Tct?Arena=N01_coliseo")));
+
+	// En el repositorio están los manifests: las arenas del director (#651) se ofrecen y ninguna es un mapa de país.
+	const TArray<FName>& Options = TctArenaOptions();
+	const TCHAR* const Expected[] = { TEXT("A01_diana"), TEXT("A06_panal"), TEXT("A07_panal_piramide"), TEXT("A08_panal_roto"),
+		TEXT("A09_colmena"), TEXT("A10_ajedrez"), TEXT("A11_zigurat"), TEXT("A12_damas"), TEXT("N01_coliseo"), TEXT("N02_anfiteatro"),
+		TEXT("N03_volcan_arena"), TEXT("N04_atolon"), TEXT("N17_fortaleza_estrella"), TEXT("N18_yin_yang") };
+	for (const TCHAR* Arena : Expected)
+	{
+		TestTrue(FString::Printf(TEXT("%s entre las arenas"), Arena), Options.Contains(FName(Arena)));
+		TestFalse(FString::Printf(TEXT("%s con nombre traducido"), Arena), TctArenaName(FName(Arena)).ToString().Equals(Arena));
+	}
+	TestFalse(TEXT("Sin circuitos del Rally entre las arenas"), Options.Contains(FName(DefaultRallyCircuit)));
+	TestFalse(TEXT("Sin el camino del cooperativo entre las arenas"), Options.Contains(FName(TEXT("C01_camino"))));
+	if (Options.Num() > 0)
+	{
+		TestEqual(TEXT("Diana, la primera"), Options[0], FName(DefaultTctArena));
+	}
+	TestTrue(TEXT("Variante nueva: su identificador"), TctArenaName(FName(TEXT("Z99_nueva"))).ToString().Equals(TEXT("Z99_nueva")));
+
+	TestTrue(TEXT("La misión de Todos contra Todos lleva la arena"),
+		MissionTitle(ETNProcGameMode::FreeForAll, FName(TEXT("N01_coliseo"))).ToString().Contains(TctArenaName(FName(TEXT("N01_coliseo"))).ToString()));
+	TestTrue(TEXT("Todos contra Todos sin arena: solo el modo"),
+		MissionTitle(ETNProcGameMode::FreeForAll, NAME_None).EqualTo(ModeName(ETNProcGameMode::FreeForAll)));
+	return true;
+}
+
 #endif

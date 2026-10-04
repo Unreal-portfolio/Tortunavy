@@ -56,7 +56,10 @@ public:
 	/** Dificultad de la próxima partida tal como llega a esta máquina. */
 	ETNProcDifficulty GetMissionDifficulty() const { return MissionDifficulty; }
 
-	/** Rally (#632): circuito y tortugas por buggy (Rally y Karts) de la próxima partida, tal como llegan a esta máquina. */
+	/**
+	 * Mapa de la misión (TNLobbyMission::GetHostMissionMap: el circuito en el Rally, la arena en Todos contra Todos) y
+	 * tortugas por buggy (Rally y Karts) de la próxima partida, tal como llegan a esta máquina.
+	 */
 	FName GetMissionRallyVariant() const { return MissionRallyVariant; }
 	int32 GetMissionRallySeats() const { return MissionRallySeats; }
 
