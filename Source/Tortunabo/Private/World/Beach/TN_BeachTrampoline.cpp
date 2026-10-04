@@ -17,6 +17,8 @@
 #include "TN_BeachRideKit.h"
 #include "TN_BeachSignKit.h"
 #include "TN_BeachTrapKit.h"
+#include "Kismet/GameplayStatics.h"
+#include "World/Beach/TN_BeachTrapStatusComponent.h"
 
 /**
  * Geometría de los trampolines (espacio del marco: X hacia el mar, origen en la arena, en el centro). El cuerpo que rebota
@@ -444,6 +446,7 @@ void ATN_BeachTrampoline::ApplySpec()
 	TNBeachTrapKit::FBuffers Decor;
 	TNBeachTrapKit::FHulls Hulls;
 	const double Sc = FMath::Clamp(Fit / 700.0, 0.85, 1.15);
+	TentacleR = 0.0;
 	switch (Variant)
 	{
 	case VariantJelly:
@@ -452,6 +455,7 @@ void ATN_BeachTrampoline::ApplySpec()
 		TopZ = FMath::Clamp(0.45 * Fit, 260.0, 340.0);
 		BuildJelly(Body, Hulls, BodyR, RimZ, TopZ, Seed);
 		BuildJellyArms(Decor, BodyR, 0.96 * Fit, Seed);
+		TentacleR = 0.96 * Fit;
 		UpScale = 1.f;
 		BoingPitch = 1.f;
 		break;
@@ -858,6 +862,7 @@ void ATN_BeachTrampoline::Tick(float DeltaSeconds)
 	if (GetNetMode() != NM_Client)
 	{
 		BounceShells(Now);
+		StingTurtles(Now);
 	}
 	AnimateBody(DeltaSeconds);
 	Sparkle.Tick(DeltaSeconds);
@@ -929,5 +934,51 @@ void ATN_BeachTrampoline::AnimateBody(float DeltaSeconds)
 		const TArray<FProcMeshTangent> KeepTangents;
 		BodyMesh->UpdateMeshSection(0, RestVerts, RestNormals, KeepUVs, KeepColors, KeepTangents);
 		bBodyDirty = false;
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tentáculos de la medusa (#683): aturdimiento corto y ralentización, sin daño ni veneno
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ATN_BeachTrampoline::StingTurtles(double Now)
+{
+	if (Variant != TNBeachTrampolineDetail::VariantJelly || TentacleR <= BodyR)
+	{
+		return;
+	}
+	TArray<ATortugaCharacter*> Turtles;
+	ATN_BeachEnemy::GatherTurtles(this, Turtles);
+	const FTransform Xf = Frame->GetComponentTransform();
+	for (ATortugaCharacter* Turtle : Turtles)
+	{
+		const FVector Local = Xf.InverseTransformPositionNoScale(Turtle->GetActorLocation());
+		const double FeetZ = Local.Z - Turtle->GetSimpleCollisionHalfHeight();
+		const double Rho = FVector2D(Local.X, Local.Y).Size();
+		// Los tentáculos están tendidos en la arena: pican hasta un poco por encima del labio de la campana.
+		if (TNTrampolineRules::TentacleContact(Rho, FeetZ, BodyR, TentacleR, RimZ + 30.0) != TNTrampolineRules::ETentacleContact::Sting)
+		{
+			continue;
+		}
+		const double* Last = LastSting.Find(Turtle);
+		if ((Last && Now - *Last < TNTrampolineRules::StingCooldown) || !TNBeachTrapKit::IsFreeTurtle(Turtle))
+		{
+			continue;
+		}
+		LastSting.Add(Turtle, Now);
+		TNBeach::StunTurtle(Turtle, TNTrampolineRules::StingStunSeconds);
+		if (UTN_BeachTrapStatusComponent* Status = UTN_BeachTrapStatusComponent::FindOrAddTo(Turtle))
+		{
+			Status->ServerSlow(TNTrampolineRules::StingSpeedFactor, TNTrampolineRules::StingSlowSeconds);
+		}
+		MulticastSting(Turtle->GetActorLocation());
+	}
+}
+
+void ATN_BeachTrampoline::MulticastSting_Implementation(FVector_NetQuantize At)
+{
+	if (StingSound && GetNetMode() != NM_DedicatedServer)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(this, StingSound, At);
 	}
 }
