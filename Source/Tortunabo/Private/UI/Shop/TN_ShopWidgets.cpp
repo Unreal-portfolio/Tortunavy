@@ -58,6 +58,12 @@ namespace TNShopUI
 		return TNIsBuggyCategory(Category) ? GI->IsCosmeticUnlocked(Category, Id) : GI->IsCosmeticUnlockedFor(PC, Category, Id);
 	}
 
+	/** Conchas con las que se paga: el buggy, con las del perfil guardado (como RequestPurchaseCosmetic); lo demás, con las de este jugador. */
+	int32 Balance(const UMP_GameInstance* GI, const APlayerController* PC, ETNCosmeticCategory Category)
+	{
+		return TNIsBuggyCategory(Category) ? GI->GetAccumulatedRaceScore() : GI->GetAccumulatedRaceScoreFor(PC);
+	}
+
 	template <typename T>
 	T* New(UWidgetTree* Tree)
 	{
@@ -702,6 +708,7 @@ void UTN_ShopWidget::ShowTab(ETNCosmeticCategory Category)
 	// Empieza en lo que lleva puesto (en el buggy, su modelo).
 	const FName WornId = bBuggyTab ? GetWornBuggyLook().Get(ETNCosmeticCategory::BuggyModel) : GetWornLook().Get(Category);
 	const int32 WornIndex = Items.IndexOfByPredicate([&](const FTNShopItem& Item) { return Item.Category == (bBuggyTab ? ETNCosmeticCategory::BuggyModel : Category) && Item.Id == WornId; });
+	RefreshWallet();
 	Select(WornIndex == INDEX_NONE ? 0 : WornIndex, false);
 }
 
@@ -750,13 +757,13 @@ void UTN_ShopWidget::RefreshBuyButton()
 	const int32 Price = GI->GetCosmeticPrice(Item.Category, Item.Id);
 	BuyButton->SetLabel(Price <= 0 ? NSLOCTEXT("Tortunabo", "ShopBuyFree", "COMPRAR · GRATIS")
 		: FText::Format(NSLOCTEXT("Tortunabo", "ShopBuyPrice", "COMPRAR · {0}"), FText::AsNumber(Price)));
-	BuyButton->SetDisabled(Price > GI->GetAccumulatedRaceScoreFor(GetOwningPlayer()));
+	BuyButton->SetDisabled(Price > TNShopUI::Balance(GI, GetOwningPlayer(), Item.Category));
 }
 
 void UTN_ShopWidget::RefreshWallet()
 {
 	const UMP_GameInstance* GI = GetTNGI();
-	if (WalletText) { WalletText->SetText(FText::AsNumber(GI ? GI->GetAccumulatedRaceScoreFor(GetOwningPlayer()) : 0)); }
+	if (WalletText) { WalletText->SetText(FText::AsNumber(GI ? TNShopUI::Balance(GI, GetOwningPlayer(), Tab) : 0)); }
 }
 
 void UTN_ShopWidget::Select(int32 Index, bool bSpeak)
@@ -995,7 +1002,7 @@ void UTN_BoothWidget::LoadOptions()
 		{
 			for (const FName Id : GI->GetCosmeticCatalog(Category))
 			{
-				if (GI->IsCosmeticUnlockedFor(GetOwningPlayer(), Category, Id)) { Owned.Add(Id); }
+				if (TNShopUI::IsOwned(GI, GetOwningPlayer(), Category, Id)) { Owned.Add(Id); }
 			}
 		}
 		const FName WornId = TNIsBuggyCategory(Category) ? InitialBuggy.Get(Category) : Initial.Get(Category);
