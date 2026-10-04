@@ -197,6 +197,13 @@ private:
 	void EnforceBodyLocalState();
 
 	/**
+	 * @brief Cómo se anima la pose de la malla (TNShellLogic::OnlyTickPoseFromClientMoves): con la caja
+	 *        enganchada, cada fotograma; sin ella, lo de serie del motor (en el servidor, la de un jugador
+	 *        remoto solo con sus movimientos).
+	 */
+	void ApplyMeshPoseTicking(bool bDrivenByBody);
+
+	/**
 	 * @brief Servidor: sitio libre para una caja nueva en Center con Rotation. Si ahí se
 	 *        mete en algo que la para (decorado, una muralla, otra tortuga) o su parte de
 	 *        abajo queda bajo el terreno de la playa, se prueba justo encima de la arena, un

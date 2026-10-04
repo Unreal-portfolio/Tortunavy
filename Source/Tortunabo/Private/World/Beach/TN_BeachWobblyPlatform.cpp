@@ -8,6 +8,8 @@
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "ProceduralMeshComponent.h"
 #include "TN_BeachTrapKit.h"
@@ -29,6 +31,10 @@ namespace TNBeachWobblyDetail
 	constexpr double RestOverlap = 70.0;
 	/** Semiancho de la brecha en el borde del hoyo. */
 	constexpr double BreachHalfWidth = 120.0;
+	/** Lo más que un cliente adelanta una muestra del servidor (s): con más ping, la tabla se queda ese poco detrás. */
+	constexpr float MaxClientLeadSeconds = 0.15f;
+	/** Mientras la pose cambia, el servidor vuelve a despertar la réplica cada tanto (s); se duerme NetWakeSeconds después. */
+	constexpr double PoseWakeInterval = 1.0;
 
 	struct FCraterDims
 	{
@@ -226,6 +232,69 @@ namespace TNBeachWobblyDetail
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TNWobblyPlatformNet: el muelle de la tabla, el mismo en el servidor y en los clientes
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace
+{
+	/** Un paso semiimplícito del muelle de los dos ejes hacia lo que tiran. */
+	void StepSpringAxes(TNWobblyPlatformNet::FPoseState& State, float Dt, float MaxRollDeg)
+	{
+		using namespace TNWobblyPlatformNet;
+		const float RollLimit = MaxRollDeg * RollOvershoot;
+		State.RollVel += (-RollStiffness * (State.Roll - State.RollTarget) - RollDamping * State.RollVel) * Dt;
+		State.Roll = FMath::Clamp(State.Roll + State.RollVel * Dt, -RollLimit, RollLimit);
+		State.PitchVel += (-PitchStiffness * (State.Pitch - State.PitchTarget) - PitchDamping * State.PitchVel) * Dt;
+		State.Pitch = FMath::Clamp(State.Pitch + State.PitchVel * Dt, -PitchLimitDeg, PitchLimitDeg);
+	}
+}
+
+FTNWobblyPoseNet TNWobblyPlatformNet::EncodePose(const FPoseState& State)
+{
+	FTNWobblyPoseNet Net;
+	Net.Roll = QuantizeRoll(State.Roll);
+	Net.Pitch = QuantizePitch(State.Pitch);
+	Net.RollRate = QuantizeRate(State.RollVel, RollRateStepDeg);
+	Net.PitchRate = QuantizeRate(State.PitchVel, PitchRateStepDeg);
+	Net.RollTarget = QuantizeRoll(State.RollTarget);
+	Net.PitchTarget = QuantizePitch(State.PitchTarget);
+	Net.Sag = QuantizeSag(State.Sag);
+	return Net;
+}
+
+TNWobblyPlatformNet::FPoseState TNWobblyPlatformNet::DecodePose(const FTNWobblyPoseNet& Net)
+{
+	FPoseState State;
+	State.Roll = DequantizeRoll(Net.Roll);
+	State.Pitch = DequantizePitch(Net.Pitch);
+	State.RollVel = DequantizeRate(Net.RollRate, RollRateStepDeg);
+	State.PitchVel = DequantizeRate(Net.PitchRate, PitchRateStepDeg);
+	State.RollTarget = DequantizeRoll(Net.RollTarget);
+	State.PitchTarget = DequantizePitch(Net.PitchTarget);
+	State.Sag = DequantizeSag(Net.Sag);
+	return State;
+}
+
+void TNWobblyPlatformNet::StepServerPose(FPoseState& State, const FRiderInput& Input, double Now, float DeltaSeconds, float MaxRollDeg)
+{
+	// Se ladea hacia quien está encima, se mece al andar y los aterrizajes la sacuden.
+	const float Rock = Input.Motion * RockDeg * static_cast<float>(FMath::Sin(Now * RockRadPerSec));
+	State.RollTarget = FMath::Clamp(Input.SumY * RollLeanDeg + Rock, -MaxRollDeg, MaxRollDeg);
+	State.PitchTarget = FMath::Clamp(Input.SumX * PitchLeanDeg, -PitchLeanLimitDeg, PitchLeanLimitDeg);
+	State.RollVel += Input.Kick * RollKickDegPerSec * (Input.SumY >= 0.f ? 1.f : -1.f);
+	State.PitchVel += Input.Kick * PitchKickDegPerSec * (Input.SumX >= 0.f ? 1.f : -1.f);
+	StepSpringAxes(State, FMath::Min(DeltaSeconds, MaxSpringStep), MaxRollDeg);
+}
+
+void TNWobblyPlatformNet::AdvancePose(FPoseState& State, float Seconds, float MaxRollDeg)
+{
+	for (float Left = Seconds; Left > UE_KINDA_SMALL_NUMBER; Left -= MaxSpringStep)
+	{
+		StepSpringAxes(State, FMath::Min(Left, MaxSpringStep), MaxRollDeg);
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ATN_BeachWobblyPlatform
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -234,7 +303,9 @@ ATN_BeachWobblyPlatform::ATN_BeachWobblyPlatform()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	bAlwaysRelevant = true;
-	SetNetUpdateFrequency(2.f);
+	// La pose de la tabla sale hasta 15 veces por segundo mientras cambia (en la ronda, dormida si está quieta).
+	SetNetUpdateFrequency(PoseNetFrequency);
+	SetMinNetUpdateFrequency(PoseNetFrequency);
 
 	CraterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CraterMesh"));
 	CraterMesh->SetupAttachment(GetRootComponent());
@@ -295,6 +366,65 @@ void ATN_BeachWobblyPlatform::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ATN_BeachWobblyPlatform, BrokenAt);
+	DOREPLIFETIME(ATN_BeachWobblyPlatform, NetPose);
+}
+
+void ATN_BeachWobblyPlatform::ApplyRoundNetProfile()
+{
+	Super::ApplyRoundNetProfile();
+	// La base la deja a 2 Hz (lo quieto que duerme). Despierta, esta se mueve: la pose sale a PoseNetFrequency.
+	SetNetUpdateFrequency(PoseNetFrequency);
+	SetMinNetUpdateFrequency(PoseNetFrequency);
+}
+
+void ATN_BeachWobblyPlatform::PublishPose(double Now, bool bUrgent)
+{
+	const FTNWobblyPoseNet NewPose = TNWobblyPlatformNet::EncodePose(Pose);
+	if (NewPose == NetPose)
+	{
+		return;
+	}
+	NetPose = NewPose;
+	// Dormida (la red de la ronda), un cambio no sale: ForceNetUpdate la despierta y la vuelve a dormir NetWakeSeconds después
+	// del último aviso. Mientras se mueve se avisa cada PoseWakeInterval; entre medias sale sola, a PoseNetFrequency. La
+	// sacudida de un aterrizaje sale ya: esperando al siguiente envío, el cliente la vería hasta 67 ms tarde.
+	if (bUrgent || Now >= NextNetWake)
+	{
+		NextNetWake = Now + TNBeachWobblyDetail::PoseWakeInterval;
+		ForceNetUpdate();
+	}
+}
+
+void ATN_BeachWobblyPlatform::OnRep_NetPose()
+{
+	Pose = TNWobblyPlatformNet::DecodePose(NetPose);
+	TNWobblyPlatformNet::AdvancePose(Pose, ClientLeadSeconds(), MaxRollDeg);
+	bPoseJustSeeded = true;
+}
+
+void ATN_BeachWobblyPlatform::FollowServerPose(float DeltaSeconds)
+{
+	// La muestra llega al principio del fotograma, ya adelantada a esta hora: moverla otra vez la pondría por delante.
+	if (bPoseJustSeeded)
+	{
+		bPoseJustSeeded = false;
+		return;
+	}
+	TNWobblyPlatformNet::AdvancePose(Pose, DeltaSeconds, MaxRollDeg);
+}
+
+float ATN_BeachWobblyPlatform::ClientLeadSeconds() const
+{
+	const UWorld* World = GetWorld();
+	const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	const APlayerState* State = PC ? PC->PlayerState.Get() : nullptr;
+	if (!State)
+	{
+		return 0.f;
+	}
+	// El ping es de ida y vuelta, en milisegundos.
+	const float OneWaySeconds = State->GetPingInMilliseconds() * 0.001f * 0.5f;
+	return FMath::Clamp(OneWaySeconds, 0.f, TNBeachWobblyDetail::MaxClientLeadSeconds);
 }
 
 void ATN_BeachWobblyPlatform::ApplySpec()
@@ -457,19 +587,16 @@ void ATN_BeachWobblyPlatform::TickBoard(float DeltaSeconds, double Now)
 		}
 	}
 
-	// Muelle poco amortiguado: se ladea hacia quien está encima, se mece al andar y los aterrizajes la sacuden.
-	const float Dt = FMath::Min(DeltaSeconds, 0.05f);
-	const float Rock = Motion * 2.5f * static_cast<float>(FMath::Sin(Now * 5.5));
-	const float RollTarget = FMath::Clamp(static_cast<float>(SumY) * 4.5f + Rock, -MaxRollDeg, MaxRollDeg);
-	const float PitchTarget = FMath::Clamp(static_cast<float>(SumX) * 1.2f, -2.f, 2.f);
-	RollVel += Kick * 35.f * (SumY >= 0.0 ? 1.f : -1.f);
-	RollVel += (-55.f * (Roll - RollTarget) - 3.5f * RollVel) * Dt;
-	Roll = FMath::Clamp(Roll + RollVel * Dt, -MaxRollDeg * 1.4f, MaxRollDeg * 1.4f);
-	PitchVel += Kick * 8.f * (SumX >= 0.0 ? 1.f : -1.f);
-	PitchVel += (-80.f * (Pitch - PitchTarget) - 6.f * PitchVel) * Dt;
-	Pitch = FMath::Clamp(Pitch + PitchVel * Dt, -3.f, 3.f);
+	// Muelle poco amortiguado: se ladea hacia quien está encima, se mece al andar y los aterrizajes la sacuden. Solo en el
+	// servidor, con las tortugas que ve él: la tabla es base de movimiento y tiene que estar igual en todas las máquinas.
+	if (HasAuthority())
+	{
+		const TNWobblyPlatformNet::FRiderInput Input{ static_cast<float>(SumY), static_cast<float>(SumX), Kick, Motion };
+		TNWobblyPlatformNet::StepServerPose(Pose, Input, Now, DeltaSeconds, MaxRollDeg);
+	}
 
-	// Grieta: sube con BreakRiders encima y baja despacio si se bajan.
+	// Grieta: sube con BreakRiders encima y baja despacio si se bajan. Cada máquina con las tortugas que ve: en el servidor
+	// decide la rotura; en los clientes solo da crujidos, astillas y el temblor de la malla.
 	if (Count >= BreakRiders)
 	{
 		Crack = FMath::Min(1.f, Crack + DeltaSeconds / FMath::Max(0.1f, CrackSeconds));
@@ -492,10 +619,23 @@ void ATN_BeachWobblyPlatform::TickBoard(float DeltaSeconds, double Now)
 			}
 		}
 	}
+	if (HasAuthority())
+	{
+		Pose.Sag = static_cast<float>(Count * 1.5 + Crack * 6.0);
+		PublishPose(Now, Kick > 0.f);
+	}
+	else
+	{
+		// Clientes: el muelle del servidor desde su última muestra. Calcularlo con las tortugas que ve este cliente (las demás
+		// le llegan con retraso) dejaba la tabla en otro sitio; suavizar hacia la muestra, unos 90 ms detrás.
+		FollowServerPose(DeltaSeconds);
+	}
+	BoardPivot->SetRelativeLocationAndRotation(FVector(0.0, 0.0, RimHeight - static_cast<double>(Pose.Sag)),
+		FRotator(Pose.Pitch, 0.f, Pose.Roll));
+	// Temblor de la grieta: solo en la malla. Va a 33-41 rad/s con el reloj de cada máquina: en la colisión no coincidiría.
 	const float ShakeRoll = Crack * 1.6f * static_cast<float>(FMath::Sin(Now * 41.0));
 	const float ShakePitch = Crack * 0.7f * static_cast<float>(FMath::Sin(Now * 33.0 + 1.0));
-	const double Sag = Count * 1.5 + Crack * 6.0;
-	BoardPivot->SetRelativeLocationAndRotation(FVector(0.0, 0.0, RimHeight - Sag), FRotator(Pitch + ShakePitch, 0.f, Roll + ShakeRoll));
+	BoardMesh->SetRelativeRotation(FRotator(ShakePitch, 0.f, ShakeRoll));
 
 	if (HasAuthority() && Crack >= 1.f)
 	{

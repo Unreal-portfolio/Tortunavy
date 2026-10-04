@@ -300,24 +300,29 @@ void UTN_StaminaComponent::RecomputeSprintState()
 	ApplyMovementSpeed();
 }
 
+float UTN_StaminaComponent::GetBaseMoveSpeed() const
+{
+	float BaseSpeed = bIsSprinting ? SprintSpeed : WalkSpeed;
+	if (bPostBoostPenaltyActive)
+	{
+		BaseSpeed *= PostBoostSpeedMultiplier;
+	}
+	return BaseSpeed * EnvironmentSpeedMultiplier;
+}
+
+float UTN_StaminaComponent::GetRaceBoostWalkSpeed(float Multiplier) const
+{
+	return TNMovementLimits::RaceBoostWalkSpeed(GetBaseMoveSpeed(), SprintSpeed, Multiplier, ActiveSpeedCap);
+}
+
 void UTN_StaminaComponent::ApplyMovementSpeed() const
 {
 	if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
 	{
 		if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
 		{
-			float BaseSpeed = bIsSprinting ? SprintSpeed : WalkSpeed;
-			if (bPostBoostPenaltyActive)
-			{
-				BaseSpeed *= PostBoostSpeedMultiplier;
-			}
-			BaseSpeed *= EnvironmentSpeedMultiplier;
-			if (RaceSpeedMultiplier > 1.0f)
-			{
-				// Turbo de carrera: al menos la velocidad de correr, por el multiplicador (sin la penalización de después).
-				BaseSpeed = FMath::Max(BaseSpeed, SprintSpeed) * RaceSpeedMultiplier;
-			}
-			Movement->MaxWalkSpeed = FMath::Min(BaseSpeed, ActiveSpeedCap);
+			// Sin el turbo de carrera: ese lo pone cada movimiento (GetRaceBoostWalkSpeed).
+			Movement->MaxWalkSpeed = GetRaceBoostWalkSpeed(1.f);
 		}
 	}
 }
@@ -412,32 +417,6 @@ void UTN_StaminaComponent::ApplyGravityScaleOverrides()
 void UTN_StaminaComponent::SetEnvironmentSpeedMultiplier(float Multiplier)
 {
 	EnvironmentSpeedMultiplier = Multiplier;
-	ApplyMovementSpeed();
-}
-
-void UTN_StaminaComponent::SetRaceSpeedMultiplier(float Multiplier)
-{
-	const float NewMultiplier = FMath::Clamp(Multiplier, 1.0f, 4.0f);
-	if (FMath::IsNearlyEqual(NewMultiplier, RaceSpeedMultiplier))
-	{
-		return;
-	}
-	if (const ACharacter* Character = Cast<ACharacter>(GetOwner()))
-	{
-		if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
-		{
-			// La aceleración sube con la velocidad (el doble de rápido: el triple de aceleración) para que el empujón del
-			// turbo sea casi inmediato; al acabar vuelve la de antes.
-			if (RaceSpeedMultiplier <= 1.0f + KINDA_SMALL_NUMBER)
-			{
-				RaceBaseAcceleration = Movement->MaxAcceleration;
-			}
-			Movement->MaxAcceleration = NewMultiplier > 1.0f
-				? RaceBaseAcceleration * (1.0f + (NewMultiplier - 1.0f) * 2.0f)
-				: RaceBaseAcceleration;
-		}
-	}
-	RaceSpeedMultiplier = NewMultiplier;
 	ApplyMovementSpeed();
 }
 

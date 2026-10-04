@@ -591,6 +591,9 @@ void UTN_ShellComponent::ApplyBodyLocalState(bool bOn)
 			Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 			Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 		}
+		// La pose (encogerse en el caparazón) se anima cada fotograma también en el anfitrión con la de un cliente: ya no
+		// llegan sus movimientos, que eran los que la animaban allí (#246).
+		ApplyMeshPoseTicking(true);
 		// Cada máquina sigue localmente a la caja, que ya se replica sola.
 		if (Turtle->HasAuthority())
 		{
@@ -608,6 +611,8 @@ void UTN_ShellComponent::ApplyBodyLocalState(bool bOn)
 	const UCharacterMovementComponent* DefaultMove = Defaults ? Defaults->GetCharacterMovement() : nullptr;
 	USkeletalMeshComponent* SkelMesh = Turtle->GetMesh();
 	const bool bRagdoll = SkelMesh && SkelMesh->IsSimulatingPhysics();
+	// Vuelven los movimientos del cliente: en el servidor, otra vez animan ellos su pose.
+	ApplyMeshPoseTicking(false);
 	// La malla vuelve a chocar como toca (EnforceBodyLocalState le quitó la física mientras la movía la caja): la del
 	// ragdoll (perfil Ragdoll) si el derribo sigue en esta máquina; si no, la de serie de la clase.
 	if (SkelMesh)
@@ -703,6 +708,27 @@ void UTN_ShellComponent::EnforceBodyLocalState()
 	{
 		SkelMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	}
+	// Ni la pose congelada: si el servidor la vuelve a poseer con la bola puesta, el motor la deja otra vez animándose solo
+	// con los movimientos del cliente, que no llegan.
+	if (SkelMesh && SkelMesh->bOnlyAllowAutonomousTickPose)
+	{
+		ApplyMeshPoseTicking(true);
+	}
+}
+
+void UTN_ShellComponent::ApplyMeshPoseTicking(bool bDrivenByBody)
+{
+	ATortugaCharacter* Turtle = GetTurtleOwner();
+	USkeletalMeshComponent* SkelMesh = Turtle ? Turtle->GetMesh() : nullptr;
+	if (!SkelMesh)
+	{
+		return;
+	}
+	// Lo que decide el motor al poseerla (ACharacter::PossessedBy), sin mirar la réplica de movimiento: aquí aún está
+	// apagada por la propia bola.
+	const bool bServerOfRemotePlayer = Turtle->HasAuthority() && Turtle->GetRemoteRole() == ROLE_AutonomousProxy
+		&& Turtle->GetNetConnection() != nullptr;
+	SkelMesh->bOnlyAllowAutonomousTickPose = TNShellLogic::OnlyTickPoseFromClientMoves(bServerOfRemotePlayer, bDrivenByBody);
 }
 
 void UTN_ShellComponent::OnRep_IsInShell()

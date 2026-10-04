@@ -65,4 +65,21 @@ namespace TNMovementLimits
 		}
 		return Result;
 	}
+
+	/**
+	 * Velocidad de andar con el turbo de los objetos de carrera (Multiplier > 1): al menos la de correr, por el multiplicador
+	 * y con el tope. Sin turbo, la base con el tope (lo que UTN_StaminaComponent pone en MaxWalkSpeed). La usa
+	 * UTN_TurtleMovementComponent::GetMaxSpeed con el multiplicador del movimiento que simula (issue #22).
+	 */
+	inline float RaceBoostWalkSpeed(float BaseSpeed, float SprintSpeed, float Multiplier, float Cap)
+	{
+		const float Speed = Multiplier > 1.f ? FMath::Max(BaseSpeed, SprintSpeed) * Multiplier : BaseSpeed;
+		return FMath::Min(Speed, Cap);
+	}
+
+	/** Aceleración con el turbo: sube con él (el doble de rápido, el triple de aceleración) para que el empujón sea casi inmediato. */
+	inline float RaceBoostAcceleration(float BaseAcceleration, float Multiplier)
+	{
+		return Multiplier > 1.f ? BaseAcceleration * (1.f + (Multiplier - 1.f) * 2.f) : BaseAcceleration;
+	}
 }

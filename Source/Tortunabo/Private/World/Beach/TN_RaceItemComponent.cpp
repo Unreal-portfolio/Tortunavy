@@ -9,8 +9,9 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
-#include "Player/TN_StaminaComponent.h"
+#include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Settings/TN_CombatTuning.h"
 
@@ -113,6 +114,26 @@ float UTN_RaceItemComponent::GetSpeedMultiplier() const
 	return FMath::Min(Multiplier, TNRaceItems::MaxSpeedMultiplier);
 }
 
+float UTN_RaceItemComponent::ResolveOwnerBoostMultiplier() const
+{
+	const APawn* Pawn = Cast<APawn>(GetOwner());
+	const APlayerState* PlayerState = Pawn ? Pawn->GetPlayerState() : nullptr;
+	const float RoundTrip = PlayerState ? PlayerState->GetPingInMilliseconds() * 0.001f : 0.f;
+	const double SinceRecent = RecentSpeedTime >= 0.0 ? Now() - RecentSpeedTime : -1.0;
+	return TNRaceItems::ResolveClaimedBoost(GetSpeedMultiplier(), RecentSpeedMultiplier, SinceRecent, TNRaceItems::BoostGraceSeconds(RoundTrip));
+}
+
+void UTN_RaceItemComponent::NoteRecentSpeed()
+{
+	const AActor* Owner = GetOwner();
+	const float Multiplier = GetSpeedMultiplier();
+	if (Owner && Owner->HasAuthority() && Multiplier > 1.f)
+	{
+		RecentSpeedMultiplier = Multiplier;
+		RecentSpeedTime = Now();
+	}
+}
+
 float UTN_RaceItemComponent::GetBoostSecondsLeft() const
 {
 	return IsBoosting() ? static_cast<float>(static_cast<double>(Effects.BoostEnd) - Now()) : 0.f;
@@ -196,20 +217,18 @@ void UTN_RaceItemComponent::OnRep_Effects()
 
 void UTN_RaceItemComponent::ApplyEffects()
 {
-	// Cada máquina pone el mismo multiplicador en la estamina de la tortuga (la velocidad la simulan igual el dueño, el
-	// servidor y los demás).
-	if (const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(GetOwner()))
+	// La velocidad no se toca aquí: el movimiento de la tortuga lee el multiplicador en cada movimiento (el dueño lo guarda
+	// en él y el servidor lo valida, issue #22). Antes cada máquina lo ponía en MaxWalkSpeed al recibirlo: el servidor
+	// aceleraba medio ping antes que el dueño y frenaba antes al acabar, con una corrección de unos 30 cm cada vez.
+	if (const ACharacter* Turtle = Cast<ACharacter>(GetOwner()))
 	{
-		if (UTN_StaminaComponent* Stamina = Turtle->GetStaminaComponent())
+		if (UTN_TurtleMovementComponent* TurtleMove = Cast<UTN_TurtleMovementComponent>(Turtle->GetCharacterMovement()))
 		{
-			const float Multiplier = GetSpeedMultiplier();
-			if (!FMath::IsNearlyEqual(Multiplier, AppliedMultiplier))
-			{
-				AppliedMultiplier = Multiplier;
-				Stamina->SetRaceSpeedMultiplier(Multiplier);
-			}
+			TurtleMove->SetRaceItems(this);
 		}
 	}
+	AppliedMultiplier = GetSpeedMultiplier();
+	NoteRecentSpeed();
 	SetComponentTickEnabled(true);
 }
 
@@ -225,16 +244,7 @@ void UTN_RaceItemComponent::RefreshTickState()
 
 void UTN_RaceItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(GetOwner()))
-	{
-		if (UTN_StaminaComponent* Stamina = Turtle->GetStaminaComponent())
-		{
-			if (AppliedMultiplier > 1.f + KINDA_SMALL_NUMBER)
-			{
-				Stamina->SetRaceSpeedMultiplier(1.f);
-			}
-		}
-	}
+	// El movimiento la tiene con un puntero débil: sin el componente, sin turbo.
 	AppliedMultiplier = 1.f;
 	StopVisuals();
 	Super::EndPlay(EndPlayReason);
@@ -260,6 +270,8 @@ void UTN_RaceItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	{
 		ApplyEffects();
 	}
+	// Servidor: hasta cuándo ha valido el multiplicador (el margen para los movimientos del dueño que aún lo llevan).
+	NoteRecentSpeed();
 	if (Owner->HasAuthority() && bStar)
 	{
 		ServerStarContacts(DeltaTime);

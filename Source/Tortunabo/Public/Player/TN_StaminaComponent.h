@@ -101,13 +101,13 @@ public:
 	void SetEnvironmentSpeedMultiplier(float Multiplier);
 
 	/**
-	 * @brief Multiplica la velocidad máxima (objetos de carrera: coco turbo y protector solar, UTN_RaceItemComponent). 1 = sin
-	 *        efecto. Mientras sea mayor que 1, la velocidad base es al menos la de correr aunque no se esprinte, y la
-	 *        aceleración sube con ella para que el empujón sea inmediato. Llamar en todas las máquinas, como SetSpeedCap.
+	 * @brief Velocidad de andar con el turbo de los objetos de carrera (coco turbo y protector solar, UTN_RaceItemComponent)
+	 *        multiplicando: al menos la de correr aunque no se esprinte, por Multiplier y con los topes
+	 *        (TNMovementLimits::RaceBoostWalkSpeed). Con 1, lo mismo que MaxWalkSpeed.
+	 * @note  No se escribe en MaxWalkSpeed: el turbo va en cada movimiento (UTN_TurtleMovementComponent::GetMaxSpeed con el
+	 *        multiplicador de FTNSavedMove_Turtle), así el dueño lo predice y el servidor lo valida (issue #22).
 	 */
-	void SetRaceSpeedMultiplier(float Multiplier);
-
-	float GetRaceSpeedMultiplier() const { return RaceSpeedMultiplier; }
+	float GetRaceBoostWalkSpeed(float Multiplier) const;
 
 	/** @brief Vincula el componente de inventario para calcular el peso total cargado. */
 	void SetInventoryComponent(UTN_InventoryComponent* InvComp);
@@ -269,9 +269,9 @@ private:
 
 	/** Multiplicador ambiental (vadeo, etc.). 1.0 = sin efecto. Ver SetEnvironmentSpeedMultiplier. */
 	float EnvironmentSpeedMultiplier = 1.0f;
-	/** Multiplicador de velocidad de los objetos de carrera (1 = ninguno) y la aceleración de antes del turbo. */
-	float RaceSpeedMultiplier = 1.0f;
-	float RaceBaseAcceleration = 0.0f;
+
+	/** Velocidad de andar o correr con la penalización y el vadeo, sin topes ni turbo. */
+	float GetBaseMoveSpeed() const;
 
 	/** @brief OnRep: aplica MovementSpeed/visual al cambiar el estado de sprint. */
 	UFUNCTION()

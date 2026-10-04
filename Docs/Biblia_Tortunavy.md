@@ -1897,7 +1897,7 @@ El espectador tiene su propia cámara libre o fija (§22.4).
 | Energía sin fin: penalización posterior | por defecto 4 s (`PostBoostExhaustionSeconds`); cada objeto pone la suya | [C] |
 | Durante la penalización | velocidad × 0,75 y gasto × 2 (la recarga no se bloquea) | [C] |
 | Tope de la energía sin fin pedida por un cliente | 15 s (el servidor lo recorta) | [C] `MaxGrantDuration` |
-| Multiplicador de velocidad de la carrera | limitado a 1–4; la aceleración sube con él (`RaceBaseAcceleration × (1 + (m−1)·2)`) | [C] `SetRaceSpeedMultiplier` |
+| Multiplicador de velocidad de la carrera | hasta 2,4 (`MaxSpeedMultiplier`); en cada movimiento guardado (`FTNSavedMove_Turtle`); la aceleración sube con él (`MaxAcceleration × (1 + (m−1)·2)`) | [C] `TNMovementLimits::RaceBoostAcceleration` |
 
 **Cifras derivadas** [calc]:
 
@@ -2952,8 +2952,8 @@ Los nombres valen en inglés, en español o por número. La gaviota justiciera y
 ### 29.10 Límites conocidos
 
 Todo este código se escribió sin compilar (puede haber errores de compilación la primera vez); las cajas no reaparecen ni dicen lo
-que dan; las minas lanzadas solo miran el suelo; el turbo y el protector cambian `MaxWalkSpeed` en cada máquina por su cuenta
-(con latencia alta, corrección de movimiento al empezar o acabar); los efectos se acaban solos al cambiar la ronda; los abortos del
+que dan; las minas lanzadas solo miran el suelo; el turbo y el protector van en la predicción del movimiento
+(issue #22: sin corrección al empezar o acabar); los efectos se acaban solos al cambiar la ronda; los abortos del
 pelícano la sueltan donde estén.
 
 ## 30. Puntuación
@@ -3939,9 +3939,9 @@ blanco con reborde de color y bisagras; hasta 300 de ancho) tendida sobre un **h
 redondeada de 90 cm de ancho a 240 de alto, ladera exterior de 30°, pared interior empinada, hoyo de 364 cm de radio arriba y
 una brecha de ~2,4 m por el lado +Y por la que se sale andando del fondo). El hoyo va en la malla del elemento (el terreno no se cava).
 
-- **Tambaleo** (cada máquina con las tortugas que ve encima; la tabla es una base móvil): se ladea 4,5° por tortuga según dónde
-  pise (tope 7°, `MaxRollDeg`), cabecea hasta 2°, se mece al andar y los aterrizajes (caída >250 cm/s) la sacuden; muelle poco
-  amortiguado (~1,2 Hz) y crujidos.
+- **Tambaleo** (la tabla es una base móvil; el muelle lo mueve el servidor y manda la pose y el estado del muelle en siete
+  bytes hasta 15 veces por segundo, y en el acto al aterrizar; cada cliente mueve el mismo muelle desde la última muestra): se ladea 4,5° por tortuga según dónde pise (tope 7°, `MaxRollDeg`), cabecea hasta
+  2°, se mece al andar y los aterrizajes (caída >250 cm/s) la sacuden; muelle poco amortiguado (~1,2 Hz) y crujidos.
 - **Rotura** (servidor): con **2 o más tortugas** a la vez (`BreakRiders`) la grieta sube y en **1,1 s** (`CrackSeconds`) se parte;
   si se bajan, baja a 0,45/s. Al partirse: chasquido, astillas, «¡CRAC!»; las mitades caen (0,5 s) y a los 0,8 s son rampas de
   ~34° de la cresta al fondo. Quien estuviera encima cae al hoyo y sale por la brecha o subiendo por una mitad. **No se recompone
