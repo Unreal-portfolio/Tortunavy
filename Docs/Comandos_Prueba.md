@@ -144,6 +144,7 @@ necesita espera a que esté lista.
 | `TN.Beach.BuildBudgetMs 6` | Milisegundos por fotograma para montar la ronda (asientos, decorado local y actores). |
 | `TN.Beach.AsyncBuild 0` | Monta la ronda entera en un fotograma, como antes (para comparar); `1` vuelve a por partes. |
 | `TN.Perf.BeachTickWake 0` | Minas, algas y puertas de conchas con el Tick siempre encendido, como antes de #59 (para comparar); con `1` (lo normal) lo apagan sin tortuga, caparazón ni cámara cerca (40 m las minas, ~100 m las algas, ~35 m las puertas) y lo mantienen mientras tienen algo en marcha (mecha, explosión, tortuga enganchada, puerta abierta). En `-game`: `-dpcvars=TN.Perf.BeachTickWake=0`. Actores con Tick en reposo en `TN.Stress control` (Saved/Stress, `ticking_actors`). |
+| `TN.HitchLog.ThresholdMs 50` | Registro de tirones (cualquier mapa, no en Shipping): cada fotograma de más de 50 ms deja en el log una línea `[Tirón]` con su duración, los tiempos de juego, render, RHI y GPU, a qué se debe (o «ningún hilo ocupado»: espera o proceso parado), los jugadores, si la ventana tenía el foco, el intervalo desde el anterior y la mediana, y un marcador «Tirón N ms» en Insights (con `-trace=...,bookmark`). `0` lo apaga. Desde la línea de órdenes: `-TNHitchLog` (50 ms) o `-TNHitchLog=80`. Ver `Docs/Analisis/2026-10-03-Tirones-lobby.md`. |
 
 ## Objetos de carrera (tipo Mario Kart)
 
