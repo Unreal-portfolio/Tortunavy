@@ -230,8 +230,9 @@ def place_warnings(plan: Plan, rng: np.random.Generator) -> list[PlacedBump]:
         if plan.pieces[piece].kind != "horquilla":
             continue
         end = s0 - WARNING_END_M
-        room = (end - (spans[i - 1][2] + WARNING_CLEAR_M)) % total
-        design = BumpDesign.draw_warning(rng, room)
+        # Enlace entre la pieza anterior y la horquilla (con la vuelta), menos los márgenes: negativo si no cabe nada.
+        room = (s0 - spans[i - 1][2]) % total - WARNING_END_M - WARNING_CLEAR_M
+        design = BumpDesign.draw_warning(rng, room) if room > 0.0 else None
         if design is not None:
             out.append(PlacedBump(piece, (end - design.train_m - BUMP_LEAD_M) % total, design))
     return out

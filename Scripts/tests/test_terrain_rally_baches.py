@@ -224,6 +224,20 @@ def test_cada_horquilla_lleva_sus_baches_de_aviso_en_el_enlace_previo(name):
         assert w.design.within_limits()
 
 
+def test_sin_sitio_en_el_enlace_la_horquilla_no_lleva_baches_de_aviso():
+    """Un enlace más corto que los márgenes no da la vuelta al lazo (antes, el resto negativo módulo la vuelta era enorme
+    y el tren caía encima de la pieza anterior)."""
+    c = CIRCUITS[WARNED[0]]
+    plan = rc.build_track(c.seed, c.profile).plan
+    i, (piece, s0, _) = next((i, sp) for i, sp in enumerate(plan.spans) if plan.pieces[sp[0]].kind == "horquilla")
+    prev = plan.spans[i - 1]
+    tight = copy.copy(plan)
+    tight.spans = list(plan.spans)
+    tight.spans[i - 1] = (prev[0], prev[1], s0 - WARNING_END_M + 1.0)
+    warnings = rc.place_warnings(tight, np.random.default_rng(1))
+    assert piece not in {w.piece for w in warnings}
+
+
 @pytest.mark.parametrize("name", WARNED)
 def test_los_baches_de_aviso_no_cambian_el_resto_del_lazo(name):
     c = CIRCUITS[name]
