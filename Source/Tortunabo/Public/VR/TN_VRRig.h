@@ -18,6 +18,7 @@ class UMotionControllerComponent;
 class UProceduralMeshComponent;
 class UStaticMeshComponent;
 class UTN_VRScreenWidget;
+class UTN_VRSeatComponent;
 class UUserWidget;
 class UWidgetComponent;
 class UWidgetInteractionComponent;
@@ -46,6 +47,9 @@ struct FCollisionQueryParams;
  * - Manos y escenario (TN_VRRigHands.cpp): las manos no atraviesan paredes ni el suelo (se quedan en su superficie, y con
  *   ellas lo que se coge y los brazos del cuerpo); vibración de los mandos al coger, soltar, lanzar, tocar la pared, perder
  *   lo que se lleva, ser derribada y en los menús; viñeta de confort al moverse (TN.VR.ComfortVignette).
+ * - Vehículos (un peón con UTN_VRSeatComponent: la conductora o la artillera del buggy): el rig va en el asiento (con gafas,
+ *   su origen del seguimiento), le da las manos cada fotograma y no pone los mandos de la tortuga (el vehículo tiene los
+ *   suyos); los agarres y el giro los decide el vehículo.
  */
 UCLASS(NotBlueprintable, Transient)
 class TORTUNABO_API ATN_VRRig : public AActor
@@ -123,6 +127,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "VR")
 	TObjectPtr<UMotionControllerComponent> RightAim;
 
+	/** Pose de apuntar del mando izquierdo (la torreta de los vehículos con la mano izquierda). */
+	UPROPERTY(VisibleAnywhere, Category = "VR")
+	TObjectPtr<UMotionControllerComponent> LeftAim;
+
 	UPROPERTY(VisibleAnywhere, Category = "VR")
 	TObjectPtr<USceneComponent> LeftHand;
 
@@ -176,14 +184,16 @@ private:
 	void BuildHands();
 	void BuildLaser();
 
-	/** Raíz del rig en el origen de la vista que se esté viendo (ver arriba). */
-	void UpdateViewAttachment(APlayerController* PC, ATortugaCharacter* Turtle);
+	/** Raíz del rig en el origen de la vista que se esté viendo (ver arriba): la tortuga, el asiento del vehículo u otra cámara. */
+	void UpdateViewAttachment(APlayerController* PC, ATortugaCharacter* Turtle, UTN_VRSeatComponent* Seat);
 	/** Aletas de los mandos; con la tortuga vista desde sus ojos (bTurtleView), sus brazos van a ellas (IK) y las aletas
 	 *  sueltas se ocultan. */
 	void UpdateHands(ATortugaCharacter* Turtle, bool bTurtleView, float DeltaSeconds);
+	/** En un vehículo: las manos al asiento (dónde están, hacia dónde apuntan y el agarre); los brazos de la tortuga sentada las siguen. */
+	void UpdateSeatHands(APlayerController* PC, UTN_VRSeatComponent* Seat);
 	void UpdatePanel(APlayerController* PC, float DeltaSeconds);
 	void UpdatePointer(APlayerController* PC);
-	void UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds);
+	void UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, UTN_VRSeatComponent* Seat, float DeltaSeconds);
 	void EnsureVRMapping(APlayerController* PC);
 	void RemoveVRMapping();
 
@@ -298,5 +308,7 @@ private:
 	TWeakObjectPtr<USceneComponent> AttachedBase;
 	FName AttachedSocket = NAME_None;
 	TWeakObjectPtr<ATortugaCharacter> ViewTurtle;
+	/** Asiento del vehículo propio con la vista sentada encendida. */
+	TWeakObjectPtr<UTN_VRSeatComponent> ViewSeat;
 	TWeakObjectPtr<APlayerController> MappedPC;
 };

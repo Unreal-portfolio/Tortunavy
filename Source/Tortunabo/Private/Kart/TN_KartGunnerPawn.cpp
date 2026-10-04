@@ -6,6 +6,8 @@
 #include "Kart/TN_KartBuggy.h"
 #include "Kart/TN_KartInput.h"
 #include "Kart/TN_KartItemComponent.h"
+#include "VR/TN_VRSeatComponent.h"
+#include "VR/TN_VRVehicleMath.h"
 
 UTN_KartInputSet* ATN_KartGunnerPawn::GetKartInput()
 {
@@ -108,8 +110,14 @@ void ATN_KartGunnerPawn::Tick(float DeltaSeconds)
 	{
 		return;
 	}
+	// Con gafas, el cuerpo también: la cabeza apartada a un lado del asiento inclina hacia ese lado (se suma al stick).
+	float Wanted = LeanInput;
+	if (const UTN_VRSeatComponent* Seat = GetVRSeat(); Seat && Seat->IsHeadsetView())
+	{
+		Wanted = TNVRVehicle::CombineLean(LeanInput, TNVRVehicle::LeanFromHead(Seat->GetHeadLocal().Y));
+	}
 	// La inclinación sigue al mando con un poco de inercia (el cuerpo no se tumba de golpe).
-	Lean = FMath::FInterpTo(Lean, LeanInput, DeltaSeconds, LeanResponse);
+	Lean = FMath::FInterpTo(Lean, Wanted, DeltaSeconds, LeanResponse);
 	LeanSendAccumulator += DeltaSeconds;
 	const int8 Quantized = static_cast<int8>(FMath::RoundToInt(Lean * 100.f));
 	const bool bChanged = FMath::Abs(Quantized - LastSentLean) >= 3 || (Quantized == 0 && LastSentLean != 0);

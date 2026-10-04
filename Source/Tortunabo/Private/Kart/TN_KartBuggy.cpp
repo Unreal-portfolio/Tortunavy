@@ -19,6 +19,7 @@
 #include "Vehicles/TN_BuggyData.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
+#include "VR/TN_VRSeatComponent.h"
 
 namespace TNKart
 {
@@ -418,6 +419,16 @@ void ATN_KartBuggy::UpdateLook(float DeltaSeconds)
 {
 	using namespace TNKartBuggyDetail;
 	LookIdleSeconds += DeltaSeconds;
+	// Con gafas se mira con la cabeza (#529): hacia donde mira respecto del kart, sin volver al centro. Sin gafas
+	// (simulado), la cámara del asiento mira hacia donde lleve el ratón.
+	UTN_VRSeatComponent* Seat = GetVRSeat(ETNRallySeat::Driver);
+	if (Seat && Seat->IsHeadsetView())
+	{
+		const FRotator Head = Seat->GetHeadRelativeRotation();
+		LookYaw = FRotator::NormalizeAxis(static_cast<float>(Head.Yaw));
+		LookPitch = FMath::Clamp(static_cast<float>(Head.Pitch), LookPitchMin, LookPitchMax);
+		LookIdleSeconds = 0.f;
+	}
 	if (LookIdleSeconds > LookRecenterDelaySeconds)
 	{
 		LookYaw = TNKart::RecenterLook(LookYaw, LookRecenterDegPerSecond, DeltaSeconds);
@@ -427,6 +438,10 @@ void ATN_KartBuggy::UpdateLook(float DeltaSeconds)
 	if (CameraArm)
 	{
 		CameraArm->SetRelativeRotation(FRotator(CameraArmBaseRotation.Pitch + LookPitch, CameraArmBaseRotation.Yaw + ViewYaw, 0.f));
+	}
+	if (Seat && Seat->IsVRView() && !Seat->IsHeadsetView())
+	{
+		Seat->SetSimulatedLook(FRotator(LookPitch, ViewYaw, 0.f));
 	}
 	// Sola, la torreta sigue a la cámara (con artillera, la maneja ella).
 	if (HasGunner())

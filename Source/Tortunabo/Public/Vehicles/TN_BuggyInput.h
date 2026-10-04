@@ -1,8 +1,9 @@
 // Acciones y contextos de Enhanced Input del buggy, creados en C++ en tiempo de ejecución (sin .uasset de input).
-// Controles de Docs/Rally_MVP.md: teclado y ratón, y mando.
+// Controles de Docs/Rally_MVP.md: teclado y ratón, y mando; con gafas, los Touch (Docs/Modo_VR.md, «Vehículos»).
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputModifiers.h"
 #include "UObject/Object.h"
 #include "TN_BuggyInput.generated.h"
 
@@ -10,6 +11,27 @@ class APlayerController;
 class UInputAction;
 class UInputMappingContext;
 struct FInputActionValue;
+struct FKey;
+
+/**
+ * Medio eje de un stick como botón (mandos Touch, que no dan las direcciones del stick como botones con OpenXR): deja el
+ * lado positivo del eje (o el negativo, ya en positivo) y quita el otro, para que un disparador «Down» solo salte hacia ese
+ * lado.
+ */
+UCLASS(NotBlueprintable, meta = (DisplayName = "Medio eje (Tortunavy)"))
+class TORTUNABO_API UTN_InputModifierHalfAxis : public UInputModifier
+{
+	GENERATED_BODY()
+
+public:
+	/** Si deja el lado negativo (stick hacia abajo o a la izquierda). */
+	UPROPERTY(EditAnywhere, Category = "Settings")
+	bool bNegative = false;
+
+protected:
+	virtual FInputActionValue ModifyRaw_Implementation(const UEnhancedPlayerInput* PlayerInput, FInputActionValue CurrentValue,
+		float DeltaTime) override;
+};
 
 UCLASS(Transient)
 class TORTUNABO_API UTN_BuggyInputSet : public UObject
@@ -29,6 +51,17 @@ public:
 
 	/** Sentido de CycleAmmo: +1 (rueda arriba, cruceta derecha), -1 (rueda abajo, cruceta izquierda) o 0. */
 	static int32 CycleDirection(const FInputActionValue& Value);
+
+	// ── Mandos Touch (con gafas; sin ellas esas teclas no llegan nunca) ─────────
+
+	/** Gatillo de los Touch como botón: a partir del 55 % (TNVRMath::AnalogPressThreshold). */
+	static void MapTouchTrigger(UInputMappingContext* Context, const UInputAction* Action, const FKey& AxisKey);
+	/** Un eje de los Touch tal cual (con zona muerta). */
+	static void MapTouchAxis(UInputMappingContext* Context, const UInputAction* Action, const FKey& AxisKey, bool bSwizzleToY = false);
+	/** Un stick de los Touch empujado hacia un lado (bNegative: abajo o a la izquierda) como botón, a partir del 60 %. */
+	static void MapTouchStickDirection(UInputMappingContext* Context, const UInputAction* Action, const FKey& AxisKey, bool bNegative);
+	/** Un botón de los Touch (A, B, X, Y). */
+	static void MapTouchButton(UInputMappingContext* Context, const UInputAction* Action, const FKey& Key);
 
 	// Conductora
 	UPROPERTY() TObjectPtr<UInputAction> Throttle;

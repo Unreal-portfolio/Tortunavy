@@ -62,6 +62,23 @@ Reparto: `TNKart::ItemWeightsForPlace` (cuanto más atrás, más objetos buenos)
 
 El resto, los del Rally (`Docs/Rally_MVP.md`).
 
+### Con gafas (#529)
+
+La vista va en los ojos de la tortuga sentada (sin la cámara de persecución) y las manos hacen de manos: la conductora
+coge el volante y la artillera, las asas de la torreta. Los demás ven sus brazos en el volante o en las asas. Mapeo
+completo y cómo funciona en `Docs/Modo_VR.md` («Vehículos»).
+
+| Acción | Conductora | Artillera |
+|---|---|---|
+| Girar | Agarres en el volante (una o dos manos) · stick izquierdo sin cogerlo | — |
+| Acelerar / frenar y marcha atrás | Gatillo derecho / gatillo izquierdo | — |
+| Apuntar | La cabeza, si va sola | Agarres en las asas: hacia donde apuntan las manos · stick derecho sin ellas |
+| Disparar | Stick derecho hacia delante (sola) | Gatillo derecho |
+| Usar objeto | B | Gatillo izquierdo |
+| Objeto hacia atrás (mantener) | Cualquier stick hacia atrás | B · stick izquierdo hacia atrás |
+| Peso | — | La cabeza hacia un lado (y el stick izquierdo) |
+| Turbo · freno de mano · enderezar (mantener: reaparecer) | A · X · Y | Y (enderezar) |
+
 ## Código
 
 | Pieza | Qué es |
@@ -75,5 +92,5 @@ El resto, los del Rally (`Docs/Rally_MVP.md`).
 | `UTN_KartHUDWidget` | Objeto, ruleta, kilómetros que quedan y peso de la artillera. |
 | `TNProcMap::FGenParams::bDrivable` | El camino del cooperativo hecho para el kart (sin ramas, huecos ni cosas de las tortugas a pie). |
 
-Pruebas: `Tortunabo.Kart.*` (ruta, objetos, artillera, géiser y flotación) y `Tortunabo.ProcMap.Drivable`. Comandos de
-prueba en `Docs/Comandos_Prueba.md` («Karts en el mapa del cooperativo»).
+Pruebas: `Tortunabo.Kart.*` (ruta, objetos, artillera, géiser y flotación), `Tortunabo.ProcMap.Drivable` y, con gafas,
+`Tortunabo.VR.Vehicle.*`. Comandos de prueba en `Docs/Comandos_Prueba.md` («Karts en el mapa del cooperativo» y «Modo VR»).

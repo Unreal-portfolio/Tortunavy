@@ -3,6 +3,7 @@
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyGunnerPawn.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
+#include "VR/TN_VRSeatComponent.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Core/TN_CosmeticsTypes.h"
@@ -149,6 +150,11 @@ void ATN_Buggy::SetDriverSeat(AController* NewDriver)
 	if (!HasAuthority())
 	{
 		return;
+	}
+	if (DriverController != NewDriver && DriverVRSeat)
+	{
+		// Otra conductora: hasta que diga que va con gafas, sin manos ni vista sentada para los demás.
+		DriverVRSeat->ResetOccupant();
 	}
 	DriverController = NewDriver;
 	bDriverSeated = NewDriver != nullptr;

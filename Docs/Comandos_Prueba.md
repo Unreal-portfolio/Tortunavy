@@ -253,7 +253,8 @@ máquina).
 | `TN.VR.ComfortVignette 1` | Viñeta de confort al andar deprisa, caer, salir lanzado o con el giro suave, sin bajar nunca la de la escena (0 la quita, 2 la dobla). |
 | `TN.Camera 1` / `TN.Camera 0` / `TN.Camera -1` | Sin gafas: primera persona / tercera persona / la del ajuste «Cámara». También con T o el clic del stick derecho (fila «Cambiar de cámara» de Controles). |
 | `TN.FirstPerson.ShellLight 0.2` | Luz que queda dentro del caparazón en primera persona y en VR (0 negro, 1 como fuera). |
-| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara) y de las manos (lanzar, agarres enganchados, viñeta, HUD, botones con la punta, gatillo y, con un mundo de prueba, mano contra la pared, objeto que lleva otro, nada que coger detrás de una pared fina y objeto destruido en la mano). |
+| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara), de las manos (lanzar, agarres enganchados, viñeta, HUD, botones con la punta, gatillo y, con un mundo de prueba, mano contra la pared, objeto que lleva otro, nada que coger detrás de una pared fina y objeto destruido en la mano) y de los vehículos (`Tortunabo.VR.Vehicle.*`: volante, apuntado con la mano, inclinación con la cabeza, volante y asas a mano). |
+| `TN.VR.SeatPose [volante° = 30] [guiñada° = 60] [cabeceo° = 10] [s = 3]` | En un buggy o un kart con `TN.VR 2` (o gafas), simula las manos: la conductora coge el volante con las dos manos y lo gira; la artillera coge el asa derecha apuntando con esa guiñada y ese cabeceo. Al acabar escribe en el registro (`LogTNBuggy`, `[VR]`) el giro del volante y de las ruedas, o el apuntado local y el de la torreta. Fuera de Shipping. |
 
 ## Pantalla de carga del huevo
 
@@ -323,6 +324,8 @@ cada 250 m, salida en el claro y meta en la playa (más en `Docs/Karts.md`). Al 
 | `TN.Kart.Place Geyser\|Cascada\|Agua [equipo] [s]` | Pone el kart (el tuyo con `-1` o sin equipo; el de un bot con su número) encima de un géiser, en lo alto de una cascada o en el agua, tras esos segundos. Servidor o partida sola, fuera de Shipping. |
 | `TN.Kart.ProbeArc 790` | Con `LogTNRally Verbose`, perfil del suelo a lo ancho del camino alrededor de ese arco (m) al empezar (atascos). |
 | `log LogTNRally Verbose` | Objetos que salen y se usan (`[KartItems]`), géiseres, obstáculos y puertas de la pista y los karts del primer tramo. |
+| `...?BotDriver` | Cada jugadora entra de artillera y su kart lo conduce el piloto IA (para probar la torreta y la inclinación). |
+| `TN.VR 2` + `TN.VR.SeatPose` | Karts con gafas sin gafas: vista en el asiento y manos simuladas (ver «Modo VR»). |
 
 Mapas útiles para probar (`?ProcSeed=`): fácil `11` (un géiser y una cascada, 1,5 km); normal `777` (10,8 km con cinco
 géiseres, ocho cascadas y canales de agua).

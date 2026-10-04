@@ -4,6 +4,7 @@
 #include "VR/TN_VRMath.h"
 #include "VR/TN_VRGrabComponent.h"
 #include "VR/TN_VRInputTriggers.h"
+#include "VR/TN_VRSeatComponent.h"
 
 #include "Core/TN_Log.h"
 #include "Core/TN_ProjectMaterials.h"
@@ -204,6 +205,7 @@ ATN_VRRig::ATN_VRRig()
 	LeftGrip = MakeController(TEXT("LeftGrip"), TEXT("LeftGrip"));
 	RightGrip = MakeController(TEXT("RightGrip"), TEXT("RightGrip"));
 	RightAim = MakeController(TEXT("RightAim"), TEXT("RightAim"));
+	LeftAim = MakeController(TEXT("LeftAim"), TEXT("LeftAim"));
 
 	LeftHand = CreateDefaultSubobject<USceneComponent>(TEXT("LeftHand"));
 	LeftHand->SetupAttachment(LeftGrip);
@@ -228,6 +230,7 @@ ATN_VRRig::ATN_VRRig()
 	LeftGrip->PrimaryComponentTick.bTickEvenWhenPaused = true;
 	RightGrip->PrimaryComponentTick.bTickEvenWhenPaused = true;
 	RightAim->PrimaryComponentTick.bTickEvenWhenPaused = true;
+	LeftAim->PrimaryComponentTick.bTickEvenWhenPaused = true;
 
 	LaserBeam = MakeVisual(TEXT("LaserBeam"), RigRoot);
 	LaserBeam->SetUsingAbsoluteLocation(true);
@@ -331,6 +334,11 @@ void ATN_VRRig::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 	ReleaseGrips(ViewTurtle.Get());
 	StopHaptics(GetLocalPC());
+	if (UTN_VRSeatComponent* Seat = ViewSeat.Get())
+	{
+		Seat->SetVRView(false, false);
+	}
+	ViewSeat = nullptr;
 	RemoveVRMapping();
 
 	if (Screen)
@@ -409,11 +417,13 @@ void ATN_VRRig::OnModeChanged(ETNVRMode NewMode)
 	LeftGrip->SetActive(bHeadset);
 	RightGrip->SetActive(bHeadset);
 	RightAim->SetActive(bHeadset);
+	LeftAim->SetActive(bHeadset);
 	if (!bHeadset)
 	{
 		LeftGrip->SetRelativeTransform(TNVRRigDetail::SimLeftHand);
 		RightGrip->SetRelativeTransform(TNVRRigDetail::SimRightHand);
 		RightAim->SetRelativeTransform(TNVRRigDetail::SimRightHand);
+		LeftAim->SetRelativeTransform(TNVRRigDetail::SimLeftHand);
 		RemoveVRMapping();
 	}
 	RigCamera->bLockToHmd = bHeadset;
@@ -468,9 +478,27 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 	}
 	ViewTurtle = Turtle;
 
-	UpdateViewAttachment(PC, Turtle);
+	// Sentada en un vehículo propio (conductora o artillera): la vista va en su asiento.
+	APawn* Pawn = PC->GetPawn();
+	UTN_VRSeatComponent* Seat = !Turtle && Pawn && Pawn->IsLocallyControlled() ? UTN_VRSeatComponent::FindOn(Pawn) : nullptr;
+	UTN_VRSeatComponent* PreviousSeat = ViewSeat.Get();
+	if (PreviousSeat && PreviousSeat != Seat)
+	{
+		PreviousSeat->SetVRView(false, false);
+	}
+	if (Seat)
+	{
+		Seat->SetVRView(true, Mode == ETNVRMode::Headset);
+	}
+	ViewSeat = Seat;
+
+	UpdateViewAttachment(PC, Turtle, Seat);
 	// Los brazos del cuerpo solo siguen a los mandos si se ve desde la tortuga (no desde el probador o el espectador).
 	UpdateHands(Turtle, Turtle && Turtle->IsLocalViewTarget(), DeltaSeconds);
+	if (Seat)
+	{
+		UpdateSeatHands(PC, Seat);
+	}
 
 	// Hacia dónde apunta la aleta derecha: lanzar compañeros y objetos (con gafas; simulado, la cámara).
 	if (Turtle)
@@ -501,7 +529,7 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 		}
 	}
 
-	UpdateInput(PC, Turtle, DeltaSeconds);
+	UpdateInput(PC, Turtle, Seat, DeltaSeconds);
 	UpdateGrips(PC, Turtle, DeltaSeconds);
 	UpdatePanel(PC, DeltaSeconds);
 	UpdatePointer(PC);
@@ -510,7 +538,7 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 	UpdateHaptics(PC, Turtle);
 }
 
-void ATN_VRRig::UpdateViewAttachment(APlayerController* PC, ATortugaCharacter* Turtle)
+void ATN_VRRig::UpdateViewAttachment(APlayerController* PC, ATortugaCharacter* Turtle, UTN_VRSeatComponent* Seat)
 {
 	const bool bHeadset = Mode == ETNVRMode::Headset;
 	AActor* ViewTarget = PC->GetViewTarget();
@@ -550,6 +578,11 @@ void ATN_VRRig::UpdateViewAttachment(APlayerController* PC, ATortugaCharacter* T
 		{
 			// Con gafas, el origen del seguimiento (la cámara se mueve con la cabeza dentro de él); simulado, la cámara.
 			Base = bHeadset ? Turtle->GetVROrigin() : Turtle->GetVRCamera();
+		}
+		else if (Seat && ViewTarget == Seat->GetOwner() && Seat->GetVRCamera())
+		{
+			// Sentada en un vehículo: con gafas, el asiento es el origen del seguimiento; simulado, su cámara.
+			Base = bHeadset ? static_cast<USceneComponent*>(Seat) : static_cast<USceneComponent*>(Seat->GetVRCamera());
 		}
 		else if (UCameraComponent* Camera = TNVRRigDetail::FindActiveCamera(ViewTarget))
 		{
@@ -626,12 +659,36 @@ void ATN_VRRig::UpdateHands(ATortugaCharacter* Turtle, bool bTurtleView, float D
 		Turtle->SetLocalVRHands(LeftHand->GetComponentLocation(), RightHand->GetComponentLocation(), bLeftTracked && bTurtleView,
 			bRightTracked && bTurtleView);
 	}
-	const bool bLooseFlippers = !Turtle || !bTurtleView || Turtle->IsInShell();
+	// Sentada en un vehículo se ven los brazos de la tortuga sentada (siguen a los mandos): sin aletas sueltas.
+	const bool bSeated = ViewSeat.IsValid() && ViewSeat->IsVRView();
+	const bool bLooseFlippers = !bSeated && (!Turtle || !bTurtleView || Turtle->IsInShell());
 	LeftFlipper->SetVisibility(bLeftTracked && bLooseFlippers);
 	RightFlipper->SetVisibility(bRightTracked && bLooseFlippers);
 }
 
-void ATN_VRRig::UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds)
+void ATN_VRRig::UpdateSeatHands(APlayerController* PC, UTN_VRSeatComponent* Seat)
+{
+	const bool bHeadset = Mode == ETNVRMode::Headset;
+	// Con un menú delante, las manos están en el menú: no agarran nada del vehículo.
+	const bool bPlaying = bHeadset && !bMenuMode;
+	auto MakeHand = [&](bool bRight)
+	{
+		FTNVRSeatHand Hand;
+		const USceneComponent* Palm = bRight ? RightHand.Get() : LeftHand.Get();
+		const UMotionControllerComponent* Grip = bRight ? RightGrip.Get() : LeftGrip.Get();
+		const UMotionControllerComponent* Aim = bRight ? RightAim.Get() : LeftAim.Get();
+		Hand.Location = Palm ? Palm->GetComponentLocation() : GetActorLocation();
+		// La pose de apuntar del mando; sin ella, hacia donde va la aleta.
+		Hand.AimDir = Aim && Aim->IsTracked() ? Aim->GetForwardVector() : (Palm ? Palm->GetForwardVector() : GetActorForwardVector());
+		Hand.bTracked = !bHeadset || (Grip && Grip->IsTracked());
+		Hand.Grip = bPlaying ? FMath::Max(PC->GetInputAnalogKeyState(bRight ? FTNVRKeys::RightGripAxis : FTNVRKeys::LeftGripAxis),
+			PC->IsInputKeyDown(bRight ? FTNVRKeys::RightGrip : FTNVRKeys::LeftGrip) ? 1.f : 0.f) : 0.f;
+		return Hand;
+	};
+	Seat->SetLocalHands(MakeHand(false), MakeHand(true));
+}
+
+void ATN_VRRig::UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, UTN_VRSeatComponent* Seat, float DeltaSeconds)
 {
 	// Sin giro suave mientras no se gira este fotograma (menú o rueda abiertos, sin gafas): si no, la viñeta de confort se
 	// quedaría con el último giro.
@@ -640,7 +697,16 @@ void ATN_VRRig::UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, fl
 	{
 		return;
 	}
-	EnsureVRMapping(PC);
+	// En un vehículo, los mandos son los suyos (UTN_BuggyInputSet y UTN_KartInputSet): los de la tortuga se quitan para que
+	// no se queden los botones (A saltar, B caparazón...).
+	if (Seat)
+	{
+		RemoveVRMapping();
+	}
+	else
+	{
+		EnsureVRMapping(PC);
+	}
 
 	// Clic del stick derecho: recentrar.
 	const bool bRecenter = PC->IsInputKeyDown(FTNVRKeys::RightStickClick);
@@ -654,7 +720,8 @@ void ATN_VRRig::UpdateInput(APlayerController* PC, ATortugaCharacter* Turtle, fl
 	bRecenterHeld = bRecenter;
 
 	AMP_GamePlayerController* GamePC = Cast<AMP_GamePlayerController>(PC);
-	if (bMenuMode || (GamePC && GamePC->IsRadialWheelOpen()))
+	// Sentada no se gira con el stick: hacia dónde se mira lo marca el vehículo.
+	if (bMenuMode || (GamePC && GamePC->IsRadialWheelOpen()) || Seat)
 	{
 		bSnapLatched = true;
 		return;
@@ -819,6 +886,15 @@ void ATN_VRRig::AddViewIgnores(FCollisionQueryParams& Params) const
 	}
 	Params.AddIgnoredActor(PC->GetPawn());
 	Params.AddIgnoredActor(PC->GetViewTarget());
+	// Sentada: el vehículo entero (la artillera va enganchada al buggy).
+	if (const UTN_VRSeatComponent* Seat = ViewSeat.Get(); Seat && Seat->GetOwner())
+	{
+		Params.AddIgnoredActor(Seat->GetOwner());
+		if (const AActor* Vehicle = Seat->GetOwner()->GetAttachParentActor())
+		{
+			Params.AddIgnoredActor(Vehicle);
+		}
+	}
 	// Lo que se lleva en las manos (objetos con física) no empuja el HUD contra la cara.
 	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
 	if (const UTN_VRGrabComponent* Grab = Turtle ? Turtle->GetVRGrabComponent() : nullptr)

@@ -6,6 +6,7 @@
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_RallyTracerFX.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
+#include "VR/TN_VRSeatComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EnhancedInputComponent.h"
@@ -61,6 +62,11 @@ ATN_BuggyGunnerPawn::ATN_BuggyGunnerPawn()
 	Camera->SetupAttachment(SpringArm);
 	Camera->SetFieldOfView(90.f);
 	ApplyCameraMode();
+
+	// Asiento VR: los ojos de la tortuga sentada (el peón va en la cadera, Seat_Gunner).
+	VRSeat = CreateDefaultSubobject<UTN_VRSeatComponent>(TEXT("VRSeat"));
+	VRSeat->SetupAttachment(Root);
+	VRSeat->SetRelativeLocation(UTN_VRSeatComponent::EyeAboveHip);
 }
 
 void ATN_BuggyGunnerPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -117,7 +123,15 @@ void ATN_BuggyGunnerPawn::Tick(float DeltaSeconds)
 		return;
 	}
 	WatchKnock();
-	UpdateCamera(DeltaSeconds);
+	// Con la vista sentada (gafas o simulada) la cámara es la del asiento: sin brazo ni giro con el apuntado ni empujones.
+	if (VRSeat && VRSeat->IsVRView())
+	{
+		UpdateVRGunner(DeltaSeconds);
+	}
+	else
+	{
+		UpdateCamera(DeltaSeconds);
+	}
 	AimSendAccumulator += DeltaSeconds;
 	if (AimSendAccumulator >= 1.f / FMath::Max(AimSendRate, 1.f) && !LocalAim.Equals(LastSentAim, 0.5f))
 	{
@@ -266,6 +280,8 @@ void ATN_BuggyGunnerPawn::NotifyControllerChanged()
 	bSelfRightHeld = false;
 	bMainFireLatched = false;
 	RespawnHold = TNBuggy::FHold();
+	bVRHandle[0] = false;
+	bVRHandle[1] = false;
 	Super::NotifyControllerChanged();
 }
 
