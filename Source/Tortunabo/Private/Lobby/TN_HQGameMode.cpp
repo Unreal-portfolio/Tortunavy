@@ -1,4 +1,5 @@
 #include "Lobby/TN_HQGameMode.h"
+#include "Game/TN_TctGameMode.h"
 #include "Art/TN_TurtleArt.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
@@ -407,12 +408,24 @@ void ATN_HQGameMode::BeginMatchTravel()
 			// La dificultad la lee el GameMode de la GameInstance.
 			TravelURL = ProcMapPath + TEXT("?game=Karts");
 		}
+		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath)
+			&& ATN_TctGameMode::HasDefaultArena())
+		{
+			// Todos contra Todos: rondas de supervivencia en una arena inventada (ATN_TctGameMode, alias «Tct»).
+			TravelURL = TctMapPath + TEXT("?game=Tct");
+		}
 		else if (GI->SelectedProcMode != ETNProcGameMode::Classic)
 		{
 			if (bBeachRace)
 			{
 				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_beach_race.py): la carrera se juega en el mapa procedural."),
 					*BeachRaceMapPath);
+			}
+			if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll)
+			{
+				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] Sin %s (Scripts/build_tct_level.py) o sin su arena en Scripts/terrain_volumes/Variants (build cocinada): se juega el cooperativo."),
+					*TctMapPath);
+				GI->SelectedProcMode = ETNProcGameMode::Coop;
 			}
 			// También en la URL: la lee ATN_ProcMapGameMode y sustituye a la del viaje anterior.
 			TravelURL = ProcMapPath + (GI->PendingStartStyle == ETNMatchStartStyle::Eggs ? TEXT("?ProcStart=Eggs") : TEXT("?ProcStart=Gate"));

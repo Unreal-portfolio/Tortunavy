@@ -61,17 +61,19 @@ public:
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "MapVariant")
 	void Recargar();
 
+protected:
+	/** Manifest de la variante elegida, o nullptr si no se puede leer. */
+	TSharedPtr<FJsonObject> ReadManifest() const;
+	static FString VariantsDir();
+
 private:
 	void LoadVariant();
 	void ClearMeshes();
 	void MoveStartPlayerStart(const TSharedPtr<FJsonObject>& Manifest) const;
-	/** Manifest de la variante elegida, o nullptr si no se puede leer. */
-	TSharedPtr<FJsonObject> ReadManifest() const;
 	/** Pone un ATN_DeathZoneVolume por cada caja de "kill_boxes_uu" (fondo de los barrancos). */
 	void SpawnKillZones();
 	/** Coloca el bloque "placements" del manifest (ATN_MapPlacementSpawner, en cada máquina). */
 	void SpawnPlacements();
-	static FString VariantsDir();
 
 	/** Un UProceduralMeshComponent por trozo del manifest ("cells"). Transitorios: no se guardan en
 	 *  el nivel (pesaba 350 MB y, al abrirlo, se veia la malla de la ultima vez que se guardo, no la

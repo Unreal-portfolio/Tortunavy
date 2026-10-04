@@ -121,6 +121,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
 	FString BeachRaceMapPath = TEXT("/Game/Maps/Run/LVL_BeachRace");
 
+	/** Nivel de Todos contra Todos (ATN_TctGameMode, alias «Tct»; la arena es una variante inventada, #651). */
+	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
+	FString TctMapPath = TEXT("/Game/Maps/Run/LVL_Tct");
+
 private:
 	/** El recorrido del tutorial de este lobby. */
 	UPROPERTY(Transient)

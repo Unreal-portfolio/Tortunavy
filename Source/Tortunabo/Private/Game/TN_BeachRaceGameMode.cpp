@@ -2,6 +2,7 @@
 #include "Game/TN_BeachRaceDecisions.h"
 #include "Game/TN_BeachRaceGameState.h"
 #include "Game/TN_BeachRoundSyncComponent.h"
+#include "Game/TN_ChampionChoiceHandler.h"
 #include "Game/TN_UnderTerrainGuard.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
@@ -1687,6 +1688,11 @@ bool ATN_BeachRaceGameMode::RequestChampionChoice(const UObject* WorldContextObj
 		}
 		return true;
 	}
+	// Otro modo con la misma pantalla de la campeona (p. ej. Todos contra Todos): decide su GameMode.
+	if (ITN_ChampionChoiceHandler* Handler = Cast<ITN_ChampionChoiceHandler>(World->GetAuthGameMode()))
+	{
+		return Handler->HandleChampionChoice(Choice);
+	}
 	// Cliente: lo demás lo decide el anfitrión; salir, cada uno por su cuenta.
 	if (Choice == ETNBeachChampionChoice::Quit)
 	{
@@ -1705,7 +1711,12 @@ bool ATN_BeachRaceGameMode::CanLocalPlayerChoose(const UObject* WorldContextObje
 		? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull)
 		: nullptr;
 	const ATN_BeachRaceGameMode* GM = TNBeachRaceGameModeDetail::FindGameMode(World);
-	return GM && GM->bMatchOver && !GM->bLeaving;
+	if (!GM)
+	{
+		const ITN_ChampionChoiceHandler* Handler = Cast<ITN_ChampionChoiceHandler>(World ? World->GetAuthGameMode() : nullptr);
+		return Handler && Handler->CanChooseChampion();
+	}
+	return GM->bMatchOver && !GM->bLeaving;
 }
 
 void ATN_BeachRaceGameMode::PlayAgain()

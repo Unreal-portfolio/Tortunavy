@@ -754,7 +754,7 @@ void UMP_GameInstance::HostSession()
 
 void UMP_GameInstance::HostSessionWithMode(ETNProcGameMode Mode)
 {
-	// Desde el menú solo se ofrecen los modos de TNLobbyMission::MenuModes; el lobby lo lee de aquí al viajar (ATN_HQGameMode::BeginMatchTravel).
+	// Desde el menú solo se ofrecen los modos de TNLobbyMission::GetMenuModes; el lobby lo lee de aquí al viajar (ATN_HQGameMode::BeginMatchTravel).
 	FTNRoomConfig Config = MakeRoomDraft();
 	Config.Mode = TNLobbyMission::NormalizeMenuMode(Mode);
 	UE_LOG(LogTortunabo, Log, TEXT("[MP] Crear partida en modo %s."), *UEnum::GetValueAsString(Config.Mode));

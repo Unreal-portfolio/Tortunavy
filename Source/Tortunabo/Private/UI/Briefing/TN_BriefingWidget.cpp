@@ -43,8 +43,7 @@ namespace TNBriefingUI
 	constexpr int32 TabRules = 3;
 	constexpr int32 NumTabs = 5;
 
-	/** Opciones de «Misión» (TNLobbyMission): los modos del menú y las dificultades. */
-	constexpr int32 NumMenuModes = static_cast<int32>(UE_ARRAY_COUNT(TNLobbyMission::MenuModes));
+	/** Opciones de «Misión» (TNLobbyMission): las dificultades (los modos, TNLobbyMission::GetMenuModes, dependen de la build). */
 	constexpr int32 NumDifficulties = static_cast<int32>(UE_ARRAY_COUNT(TNLobbyMission::Difficulties));
 
 	/** Pastilla azul (pestaña u opción sin elegir) y coral (la elegida). */
@@ -62,6 +61,8 @@ namespace TNBriefingUI
 			return NSLOCTEXT("Tortunabo", "BriefingOrderSurvival", "¡Supervivencia! Nivel tras nivel, cada uno peor que el anterior. Solo queda en pie la última.");
 		case ETNProcGameMode::Karts:
 			return NSLOCTEXT("Tortunabo", "BriefingOrderKarts", "¡Karts! Al volante sola o con una artillera detrás. Cajas, géiseres y cascadas hasta la playa.");
+		case ETNProcGameMode::FreeForAll:
+			return NSLOCTEXT("Tortunabo", "BriefingOrderFreeForAll", "¡Todos contra Todos! El mar sube y no cabemos todas. La última en pie se lleva la concha.");
 		default:
 			return NSLOCTEXT("Tortunabo", "BriefingOrderCoop", "¡Cooperativo! Aquí no se deja a nadie atrás: del castillo al mar, todas juntas.");
 		}
@@ -544,17 +545,20 @@ void UTN_BriefingWidget::BuildMissionPage()
 	ModeHeading = Label(Tree, FText::GetEmpty(), TEXT("Black"), 23, TNHUDArt::CoralDeep, false);
 	AddV(Page, ModeHeading, FMargin(0.f, 0.f, 0.f, 6.f));
 	UHorizontalBox* ModeRow = New<UHorizontalBox>(Tree);
-	for (const ETNProcGameMode Mode : TNLobbyMission::MenuModes)
+	// Con cuatro modos (Todos contra Todos, #651) las pastillas se estrechan para que la fila quepa como cabían tres.
+	const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
+	const bool bManyModes = MenuModes.Num() > 3;
+	for (const ETNProcGameMode Mode : MenuModes)
 	{
 		UTN_ShopButton* Option = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
-		// Con cuatro modos o más, pastillas algo más estrechas para que quepan en la fila.
-		Option->Setup(TNLobbyMission::ModeName(Mode).ToUpper(), IdlePill(), TNHUDArt::Cream, 21, FVector2D(NumMenuModes > 3 ? 210.f : 260.f, 58.f),
+		Option->Setup(TNLobbyMission::ModeName(Mode).ToUpper(), IdlePill(), TNHUDArt::Cream, bManyModes ? 17 : 21,
+			FVector2D(bManyModes ? 200.f : 260.f, 58.f),
 			[this, Mode]() { PickMode(Mode); });
 		AddH(ModeRow, Option, FMargin(0.f, 0.f, 12.f, 0.f));
 		ModeButtons.Add(Option);
 	}
 	AddV(Page, ModeRow, FMargin(0.f, 0.f, 0.f, 8.f), HAlign_Left);
-	for (const ETNProcGameMode Mode : TNLobbyMission::MenuModes)
+	for (const ETNProcGameMode Mode : MenuModes)
 	{
 		AddParagraph(FText::Format(NSLOCTEXT("Tortunabo", "BriefingMissionModeLine", "•  {0}: {1}"),
 			TNLobbyMission::ModeName(Mode), TNLobbyMission::ModeBlurb(Mode)));
@@ -636,11 +640,12 @@ void UTN_BriefingWidget::RefreshMission(bool bAnnounce)
 	const bool bHost = CanChooseMission();
 
 	// La elegida en coral; los demás no pueden pulsar (se ven apagadas).
-	for (int32 i = 0; i < ModeButtons.Num() && i < NumMenuModes; ++i)
+	const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
+	for (int32 i = 0; i < ModeButtons.Num() && i < MenuModes.Num(); ++i)
 	{
 		if (UTN_ShopButton* Option = ModeButtons[i])
 		{
-			Option->SetArt(TNLobbyMission::MenuModes[i] == Mode ? ChosenPill() : IdlePill());
+			Option->SetArt(MenuModes[i] == Mode ? ChosenPill() : IdlePill());
 			Option->SetDisabled(!bHost);
 		}
 	}
@@ -762,11 +767,12 @@ void UTN_BriefingWidget::StepMission(int32 Direction)
 		return;
 	}
 	const bool bModeRow = MissionRow == 0;
-	const int32 NumOptions = bModeRow ? NumMenuModes : NumDifficulties;
+	const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
+	const int32 NumOptions = bModeRow ? MenuModes.Num() : NumDifficulties;
 	int32 Index = INDEX_NONE;
 	for (int32 i = 0; i < NumOptions; ++i)
 	{
-		const bool bCurrent = bModeRow ? TNLobbyMission::MenuModes[i] == GetMissionMode() : TNLobbyMission::Difficulties[i] == GetMissionDifficulty();
+		const bool bCurrent = bModeRow ? MenuModes[i] == GetMissionMode() : TNLobbyMission::Difficulties[i] == GetMissionDifficulty();
 		if (bCurrent) { Index = i; }
 	}
 	// Sin la actual entre las opciones (2 vs 2 o Clásico, de los selectores del lobby viejo): la primera o la última.
@@ -777,7 +783,7 @@ void UTN_BriefingWidget::StepMission(int32 Direction)
 	}
 	if (bModeRow)
 	{
-		PickMode(TNLobbyMission::MenuModes[Next]);
+		PickMode(MenuModes[Next]);
 	}
 	else
 	{

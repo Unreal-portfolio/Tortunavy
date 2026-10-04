@@ -1794,6 +1794,9 @@ void UTN_PauseMenuWidget::RefreshHeader()
 		case ETNProcGameMode::TwoVsTwo:
 			Mode = FText::Format(NSLOCTEXT("TNPause", "Mode2v2", "2 contra 2 · ronda {0} · gana la pareja que llegue a {1}"), Round, Target);
 			break;
+		case ETNProcGameMode::FreeForAll:
+			Mode = FText::Format(NSLOCTEXT("TNPause", "ModeFreeForAll", "Todos contra Todos · ronda {0} · gana quien llegue a {1} rondas"), Round, Target);
+			break;
 		default:
 		{
 			static const FText Difficulties[] = { NSLOCTEXT("TNPause", "DiffEasy", "fácil"), NSLOCTEXT("TNPause", "DiffNormal", "normal"),

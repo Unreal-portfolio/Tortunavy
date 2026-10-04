@@ -766,12 +766,13 @@ UWidget* UTN_RoomMenuWidget::BuildCreatePage()
 	if (ModeRow)
 	{
 		TArray<FText> Modes;
-		for (const ETNProcGameMode Mode : TNLobbyMission::MenuModes) { Modes.Add(TNLobbyMission::ModeName(Mode)); }
+		for (const ETNProcGameMode Mode : TNLobbyMission::GetMenuModes()) { Modes.Add(TNLobbyMission::ModeName(Mode)); }
 		ModeRow->SetupChoice(NSLOCTEXT("TNRooms", "ModeRow", "Modo"), Modes, 0, [WeakThis](int32 Choice)
 		{
 			UTN_RoomMenuWidget* Menu = WeakThis.Get();
 			if (!Menu) { return; }
-			Menu->Draft.Mode = TNLobbyMission::MenuModes[FMath::Clamp(Choice, 0, static_cast<int32>(UE_ARRAY_COUNT(TNLobbyMission::MenuModes)) - 1)];
+			const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
+			Menu->Draft.Mode = MenuModes[FMath::Clamp(Choice, 0, MenuModes.Num() - 1)];
 			Menu->RefreshCreateRows();
 		});
 	}
@@ -1053,9 +1054,10 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 {
 	TWeakObjectPtr<UTN_RoomMenuWidget> WeakThis(this);
 	int32 ModeIndex = 0;
-	for (int32 i = 0; i < static_cast<int32>(UE_ARRAY_COUNT(TNLobbyMission::MenuModes)); ++i)
+	const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
+	for (int32 i = 0; i < MenuModes.Num(); ++i)
 	{
-		if (TNLobbyMission::MenuModes[i] == Draft.Mode) { ModeIndex = i; }
+		if (MenuModes[i] == Draft.Mode) { ModeIndex = i; }
 	}
 	if (ModeRow)
 	{
