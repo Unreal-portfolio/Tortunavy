@@ -131,6 +131,8 @@ private:
 	/** Lo último que se ha pintado en «Misión» (si cambia desde otra máquina, se repinta y el general lo anuncia). */
 	ETNProcGameMode ShownMode = ETNProcGameMode::Count;
 	ETNProcDifficulty ShownDifficulty = ETNProcDifficulty::Count;
+	/** Circuito del Rally o arena de Todos contra Todos pintados (el anfitrión puede cambiar solo eso). */
+	FName ShownMap;
 
 	void BuildTree();
 	void ShowTab(int32 Index);

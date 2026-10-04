@@ -690,6 +690,7 @@ void UTN_BriefingWidget::BuildMissionPage()
 	MissionRow = 0;
 	ShownMode = GetMissionMode();
 	ShownDifficulty = GetMissionDifficulty();
+	ShownMap = GetMissionRallyMap();
 	RefreshMission(false);
 }
 
@@ -698,9 +699,11 @@ void UTN_BriefingWidget::RefreshMission(bool bAnnounce)
 	using namespace TNBriefingUI;
 	const ETNProcGameMode Mode = GetMissionMode();
 	const ETNProcDifficulty Difficulty = GetMissionDifficulty();
-	const bool bChanged = Mode != ShownMode || Difficulty != ShownDifficulty;
+	const FName Map = GetMissionRallyMap();
+	const bool bChanged = Mode != ShownMode || Difficulty != ShownDifficulty || Map != ShownMap;
 	ShownMode = Mode;
 	ShownDifficulty = Difficulty;
+	ShownMap = Map;
 	const bool bHost = CanChooseMission();
 
 	// La elegida en coral; los demás no pueden pulsar (se ven apagadas).
@@ -769,7 +772,7 @@ void UTN_BriefingWidget::RefreshMission(bool bAnnounce)
 	if (bAnnounce && bChanged)
 	{
 		Say(FText::Format(NSLOCTEXT("Tortunabo", "BriefingSayMissionChanged", "¡Atención, tropa! Nueva orden del día: {0}, dificultad {1}."),
-			TNLobbyMission::ModeName(Mode), TNLobbyMission::DifficultyName(Difficulty).ToLower()));
+			TNLobbyMission::MissionTitle(Mode, Map), TNLobbyMission::DifficultyName(Difficulty).ToLower()));
 	}
 }
 
@@ -1016,7 +1019,7 @@ void UTN_BriefingWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 	}
 	// «Misión»: si el anfitrión la cambia (a los demás les llega replicada en el general), se repinta y el general avisa.
 	if (Tab == TNBriefingUI::TabMission && ModeButtons.Num() > 0
-		&& (GetMissionMode() != ShownMode || GetMissionDifficulty() != ShownDifficulty))
+		&& (GetMissionMode() != ShownMode || GetMissionDifficulty() != ShownDifficulty || GetMissionRallyMap() != ShownMap))
 	{
 		RefreshMission(true);
 	}
