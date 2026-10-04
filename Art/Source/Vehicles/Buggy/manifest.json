@@ -1,0 +1,62 @@
+{
+  "generator": "Art/Source/Vehicles/Buggy/build_buggy.py",
+  "blender": "5.2.1 LTS",
+  "license": "Original de Tortunabo, generado por script (sin fuentes externas)",
+  "reference_style": "Source/Tortunabo/Private/World/Beach/TN_BeachCritterMeshes.h (tanque de juguete)",
+  "reference_measures": "HellYeah Tools/Blender/props/buggy.py + HYBuggyWheel.cpp",
+  "turtle_data": "Scripts/tools/data/turtle_geo.json + turtle_ref_pose.txt",
+  "seat_measure_m": {
+    "snout_ahead_of_hip": 0.5458,
+    "hip_above_seat": 0.1539,
+    "hip_above_floor": 0.3738,
+    "shell_behind_hip": 0.202,
+    "toes_ahead_of_hip": 0.5118,
+    "head_top_above_hip": 0.7218,
+    "half_width": 0.1847
+  },
+  "sockets_cm": {
+    "Seat_Driver": [
+      22.0,
+      0.0,
+      92.38
+    ],
+    "Seat_Gunner": [
+      -80.0,
+      0.0,
+      127.38
+    ],
+    "Muzzle_Gunner": [
+      -15.42,
+      0.0,
+      169.38
+    ]
+  },
+  "assets": [
+    {
+      "name": "SM_TN_BuggyBody",
+      "fbx": "Art/Source/Vehicles/Buggy/export/SM_TN_BuggyBody.fbx",
+      "tris": 1640,
+      "dimensions_cm": [
+        422.3,
+        244.7,
+        139.5
+      ],
+      "material_slots": [
+        "M_TN_Buggy"
+      ]
+    },
+    {
+      "name": "SM_TN_BuggyTire",
+      "fbx": "Art/Source/Vehicles/Buggy/export/SM_TN_BuggyTire.fbx",
+      "tris": 384,
+      "dimensions_cm": [
+        100.9,
+        35.0,
+        100.9
+      ],
+      "material_slots": [
+        "M_TN_Buggy"
+      ]
+    }
+  ]
+}

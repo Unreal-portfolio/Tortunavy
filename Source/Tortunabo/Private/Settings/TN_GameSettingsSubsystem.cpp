@@ -16,6 +16,7 @@
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
 #include "UI/Pause/TN_PauseMenuWidget.h"
 #include "Voice/ProximityVoiceComponent.h"
+#include "Voice/TN_VoiceRouting.h"
 #include "World/Beach/TN_BeachCritterSynth.h"
 #include "AudioDevice.h"
 #include "AudioDeviceManager.h"
@@ -1530,8 +1531,8 @@ void UTN_GameSettingsSubsystem::UpdateFpsCounter(APlayerController* PC)
 
 void UTN_GameSettingsSubsystem::UpdateTalkers(APlayerController* PC)
 {
-	// Solo en la partida (lobby incluido), no en el menú principal.
-	if (!Settings.bShowTalkers || !Cast<AMP_GamePlayerController>(PC))
+	// Solo en la partida (lobby y Rally incluidos: los controladores que reciben voz), no en el menú principal.
+	if (!Settings.bShowTalkers || !Cast<ITN_VoiceListener>(PC))
 	{
 		if (TalkersWidget && TNVR::IsOnScreen(TalkersWidget)) { TalkersWidget->RemoveFromParent(); }
 		return;

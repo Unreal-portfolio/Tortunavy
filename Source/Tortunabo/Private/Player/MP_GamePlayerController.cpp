@@ -30,6 +30,7 @@
 #include "Core/TN_MatchFlowTypes.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_Ghost.h"
+#include "Player/TN_CosmeticsSync.h"
 #include "Player/TN_DebugRpcDecisions.h"
 #include "TN_GhostInternal.h"
 #include "Game/TN_ProcMapGameMode.h"
@@ -311,7 +312,14 @@ void AMP_GamePlayerController::ServerReportProcMapReady_Implementation(int32 Gen
 	}
 }
 
-void AMP_GamePlayerController::ClientReceiveVoice_Implementation(const TArray<uint8>& CompressedData, int32 SenderSampleRate, AActor* SpeakerActor)
+void AMP_GamePlayerController::SendVoiceToOwningClient(const TArray<uint8>& CompressedData, int32 SenderSampleRate,
+	AActor* SpeakerActor, bool bIntercom)
+{
+	ClientReceiveVoice(CompressedData, SenderSampleRate, SpeakerActor, bIntercom);
+}
+
+void AMP_GamePlayerController::ClientReceiveVoice_Implementation(const TArray<uint8>& CompressedData, int32 SenderSampleRate,
+	AActor* SpeakerActor, bool bIntercom)
 {
 	if (!SpeakerActor)
 	{
@@ -320,7 +328,7 @@ void AMP_GamePlayerController::ClientReceiveVoice_Implementation(const TArray<ui
 
 	if (UProximityVoiceComponent* VoiceComp = SpeakerActor->FindComponentByClass<UProximityVoiceComponent>())
 	{
-		VoiceComp->PlayRemoteVoice(CompressedData, SenderSampleRate);
+		VoiceComp->PlayRemoteVoice(CompressedData, SenderSampleRate, bIntercom);
 	}
 }
 
@@ -1075,34 +1083,24 @@ void AMP_GamePlayerController::ServerLeaveBooth_Implementation(ATN_ChangingBooth
 
 bool AMP_GamePlayerController::ServerSyncUnlockedSkins_Validate(const TArray<FName>& UnlockedSkinIds)
 {
-	return UnlockedSkinIds.Num() <= 256;
+	return UnlockedSkinIds.Num() <= TNCosmeticsSync::RpcArrayCap;
 }
 
 void AMP_GamePlayerController::ServerSyncUnlockedSkins_Implementation(const TArray<FName>& UnlockedSkinIds)
 {
 	// Como los cascos: solo lo que exista en el DataTable del servidor.
 	const UMP_GameInstance* GI = GetTNGameInstance();
-	const UDataTable* SkinTable = GI ? GI->GetSkinDataTable() : nullptr;
-	if (!SkinTable || UnlockedSkinIds.Num() > 100) { return; }
-	const TArray<FName> Known = SkinTable->GetRowNames();
-	ServerUnlockedSkins.Reset();
-	for (const FName SkinId : UnlockedSkinIds)
-	{
-		if (SkinId != NAME_None && Known.Contains(SkinId)) { ServerUnlockedSkins.Add(SkinId); }
-	}
+	TNCosmeticsSync::FilterKnownRows(GI ? GI->GetSkinDataTable() : nullptr, UnlockedSkinIds, TNCosmeticsSync::MaxUnlockedSkins,
+		ServerUnlockedSkins);
 }
 
 void AMP_GamePlayerController::ServerSetEquippedShell_Implementation(FName ShellId)
 {
-	if (ShellId != NAME_None)
+	if (!TNCosmeticsSync::CanEquipSkinOfCategory(GetTNGameInstance(), ShellId, ETNCosmeticCategory::Shell, ServerUnlockedSkins,
+		TEXT("ServerSetEquippedShell")))
 	{
-		const UMP_GameInstance* GI = GetTNGameInstance();
-		const FTN_SkinData* Row = GI ? GI->FindSkinRow(ShellId, TEXT("ServerSetEquippedShell")) : nullptr;
-		if (!Row || Row->Category != ETNCosmeticCategory::Shell || !ServerUnlockedSkins.Contains(ShellId))
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedShell: '%s' no es un caparazón desbloqueado de %s"), *ShellId.ToString(), *GetNameSafe(this));
-			return;
-		}
+		UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedShell: '%s' no es un caparazón desbloqueado de %s"), *ShellId.ToString(), *GetNameSafe(this));
+		return;
 	}
 	if (ATN_CoopPlayerState* TNPS = GetPlayerState<ATN_CoopPlayerState>())
 	{
@@ -1118,15 +1116,11 @@ void AMP_GamePlayerController::ServerSetEquippedShell_Implementation(FName Shell
 
 void AMP_GamePlayerController::ServerSetEquippedEyes_Implementation(FName EyesId)
 {
-	if (EyesId != NAME_None)
+	if (!TNCosmeticsSync::CanEquipSkinOfCategory(GetTNGameInstance(), EyesId, ETNCosmeticCategory::Eyes, ServerUnlockedSkins,
+		TEXT("ServerSetEquippedEyes")))
 	{
-		const UMP_GameInstance* GI = GetTNGameInstance();
-		const FTN_SkinData* Row = GI ? GI->FindSkinRow(EyesId, TEXT("ServerSetEquippedEyes")) : nullptr;
-		if (!Row || Row->Category != ETNCosmeticCategory::Eyes || !ServerUnlockedSkins.Contains(EyesId))
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedEyes: '%s' no son unos ojos desbloqueados de %s"), *EyesId.ToString(), *GetNameSafe(this));
-			return;
-		}
+		UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedEyes: '%s' no son unos ojos desbloqueados de %s"), *EyesId.ToString(), *GetNameSafe(this));
+		return;
 	}
 	if (ATN_CoopPlayerState* TNPS = GetPlayerState<ATN_CoopPlayerState>())
 	{
@@ -1220,7 +1214,7 @@ void AMP_GamePlayerController::ServerSetEquippedHelmet_Implementation(FName Helm
 {
 	// NAME_None = desequipar (siempre permitido).
 	// Otro ID: debe estar en el conjunto de cascos desbloqueados del jugador.
-	if (HelmetId != NAME_None && !ServerUnlockedHelmets.Contains(HelmetId))
+	if (!TNCosmeticsSync::CanEquipHelmet(HelmetId, ServerUnlockedHelmets))
 	{
 		UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedHelmet: '%s' no desbloqueado para %s"),
 			*HelmetId.ToString(), *GetNameSafe(this));
@@ -1244,16 +1238,11 @@ void AMP_GamePlayerController::ServerSetEquippedSkin_Implementation(FName SkinId
 {
 	// NAME_None = el color de serie (siempre permitido). Cualquier otro: una fila de DT_Skins que el jugador tenga
 	// desbloqueada en la tienda (ServerSyncUnlockedSkins).
-	if (SkinId != NAME_None)
+	if (!TNCosmeticsSync::CanEquipSkin(GetTNGameInstance(), SkinId, ServerUnlockedSkins))
 	{
-		const UMP_GameInstance* GI = GetTNGameInstance();
-		const UDataTable* SkinTable = GI ? GI->GetSkinDataTable() : nullptr;
-		if (!SkinTable || !SkinTable->GetRowNames().Contains(SkinId) || !ServerUnlockedSkins.Contains(SkinId))
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedSkin: '%s' no es un color desbloqueado de %s"),
-				*SkinId.ToString(), *GetNameSafe(this));
-			return;
-		}
+		UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedSkin: '%s' no es un color desbloqueado de %s"),
+			*SkinId.ToString(), *GetNameSafe(this));
+		return;
 	}
 
 	if (ATN_CoopPlayerState* TNPS = GetPlayerState<ATN_CoopPlayerState>())

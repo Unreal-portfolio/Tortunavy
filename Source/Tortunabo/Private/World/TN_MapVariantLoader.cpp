@@ -10,6 +10,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
 #include "HAL/PlatformFileManager.h"
+#include "HAL/PlatformTime.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "ProceduralMeshComponent.h"
@@ -334,6 +335,7 @@ void ATN_MapVariantLoader::MoveStartPlayerStart(const TSharedPtr<FJsonObject>& M
 
 void ATN_MapVariantLoader::LoadVariant()
 {
+	const double StartSeconds = FPlatformTime::Seconds();
 	ClearMeshes();
 	if (Variant.IsNone())
 	{
@@ -367,6 +369,8 @@ void ATN_MapVariantLoader::LoadVariant()
 	}
 
 	int32 ChunkIndex = 0;
+	int32 Triangles = 0;
+	int32 VisualOnly = 0;
 	for (const TSharedPtr<FJsonValue>& CellValue : *Cells)
 	{
 		const TSharedPtr<FJsonObject> Cell = CellValue.IsValid() ? CellValue->AsObject() : nullptr;
@@ -422,10 +426,13 @@ void ATN_MapVariantLoader::LoadVariant()
 			Mesh.Colors, TArray<FProcMeshTangent>(), bCollision);
 		if (TerrainMaterial) { Component->SetMaterial(0, TerrainMaterial); }
 		ChunkMeshes.Add(Component);
+		Triangles += Mesh.Triangles.Num() / 3;
+		VisualOnly += bCollision ? 0 : 1;
 	}
 
 	MoveStartPlayerStart(Manifest);
 	BuiltVariant = Variant;
-	UE_LOG(LogTortunabo, Log, TEXT("[MapVariantLoader] '%s': variante '%s' cargada, %d trozos."),
-		*GetName(), *Variant.ToString(), ChunkMeshes.Num());
+	UE_LOG(LogTortunabo, Log, TEXT("[MapVariantLoader] '%s': variante '%s' cargada, %d trozos (%d sin colision), %d triangulos, %.0f ms."),
+		*GetName(), *Variant.ToString(), ChunkMeshes.Num(), VisualOnly, Triangles,
+		(FPlatformTime::Seconds() - StartSeconds) * 1000.0);
 }

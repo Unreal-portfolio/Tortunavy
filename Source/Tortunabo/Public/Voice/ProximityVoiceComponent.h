@@ -11,6 +11,7 @@
 class APlayerState;
 class UUserWidget;
 class FTNVoiceDeviceCapture;
+class APawn;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpeakingChanged, bool, bIsSpeaking);
 
@@ -156,9 +157,22 @@ public:
 	 * @brief Reproduce datos de voz remotos recibidos en este componente.
 	 * @param CompressedData Payload comprimido tal y como vino del servidor.
 	 * @param SenderSampleRate SampleRate original del emisor (para resample si difiere).
-	 * @note Llamado desde AMP_GamePlayerController::ClientReceiveVoice tras el filtro de distancia.
+	 * @note Lo llaman los PlayerController que reciben voz (ITN_VoiceListener) tras el filtro del servidor.
 	 */
 	void PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate);
+
+	/**
+	 * @brief Igual que la anterior, por la ruta que eligió el servidor.
+	 * @param bIntercom El que habla comparte interfono con este jugador (TNVoiceRouting): se oye sin atenuar.
+	 */
+	void PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, bool bIntercom);
+
+	/**
+	 * @brief Servidor: añade la voz a Pawn si aún no la tiene (lo hacen los PlayerController en OnPossess). En la máquina
+	 *        del jugador el micrófono se abre cuando el peón pasa a ser suyo.
+	 * @return El componente del peón, o nullptr fuera del servidor.
+	 */
+	static UProximityVoiceComponent* EnsureOn(APawn* Pawn);
 
 	/** Momento (tiempo real del mundo) en que llegó el último paquete de voz de esta tortuga a esta máquina. */
 	double LastRemoteVoiceTime = -1.0;
@@ -238,6 +252,24 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<USoundWaveProcedural> ProceduralSoundWave;
+
+	/** @brief Abre el micrófono (el elegido o el predeterminado). Una sola vez: en BeginPlay o al pasar a ser local. */
+	void OpenCapture();
+
+	/** @brief Servidor: reenvía un paquete a los oyentes que tocan (TNVoiceRouting::SelectListeners). */
+	void RelayVoiceToListeners(const TArray<uint8>& CompressedData, int32 SenderSampleRate);
+
+	/** @brief Atenuación del playback: por distancia (proximidad) o sin atenuar ni espacializar (interfono). */
+	FSoundAttenuationSettings MakeAttenuation(bool bIntercom) const;
+
+	/** @brief Cambia el playback a interfono o a proximidad si ha cambiado. */
+	void ApplyPlaybackRoute(bool bIntercom);
+
+	/** Ya se ha intentado abrir el micrófono (con éxito o no): no se repite cada fotograma. */
+	bool bCaptureOpenAttempted = false;
+
+	/** El playback suena ahora como interfono (sin atenuar). */
+	bool bPlaybackIntercom = false;
 
 	/** @brief Inicializa la SoundWaveProcedural y el AudioComponent de playback con el sample rate dado. */
 	void SetupPlayback(int32 InSampleRate = 0);

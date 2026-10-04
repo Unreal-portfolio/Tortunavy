@@ -197,6 +197,15 @@ def _uu(shape: ShapeMap, top: np.ndarray, e: float, n: float, yaw: float | None 
     return out + [round(yaw, 1)] if yaw is not None else out
 
 
+def road_uu(canvas, pts: np.ndarray, z: np.ndarray) -> list[list[float]]:
+    """Eje de la calzada (diseño e, n en m y cota absoluta en m) en uu: lo lee ATN_RallyTrack para su spline."""
+    out = []
+    for (e, n), zz in zip(pts, z):
+        X, Y = canvas.to_world(float(e), float(n))
+        out.append([round(X * 100.0, 1), round(Y * 100.0, 1), round(float(zz) * 100.0, 1)])
+    return out
+
+
 def _ij_to_design(shape: ShapeMap, ij) -> tuple[float, float]:
     from terrain_vol.layout import MAP_MIN_M
     X, Y = MAP_MIN_M + ij[0], MAP_MIN_M + ij[1]
@@ -232,6 +241,8 @@ def write_kit_map(shape: ShapeMap, extras: Extras | None = None, sheet: bool = T
         data["checkpoints_uu"] = [_uu(shape, top, *road.pts[k], math.degrees(math.atan2(tan[k, 0], tan[k, 1])))
                                   for k in cps]
         marks.update({f"c{m}": shape.canvas.to_ij(*road.pts[k]) for m, k in enumerate(cps)})
+        data["road_uu"] = road_uu(shape.canvas, road.pts, road.z)
+        data["closed"] = bool(road.closed)
     if extras.nests:
         s_ij = shape.canvas.to_ij(*shape.start)
         nests = pick_nests(top, s_ij, extras.nests)
