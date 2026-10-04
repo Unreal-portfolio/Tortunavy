@@ -429,12 +429,15 @@ void UTN_BriefingWidget::ShowTab(int32 Index)
 	DifficultyButtons.Reset();
 	SeatsButtons.Reset();
 	MapButtons.Reset();
+	ArenaButtons.Reset();
 	ModeHeading = nullptr;
 	DifficultyHeading = nullptr;
 	SeatsHeading = nullptr;
 	SeatsRow = nullptr;
 	MapHeading = nullptr;
 	MapRow = nullptr;
+	ArenaHeading = nullptr;
+	ArenaRow = nullptr;
 	MissionOrders = nullptr;
 
 	const APlayerState* PS = GetOwningPlayer() ? GetOwningPlayer()->PlayerState : nullptr;
