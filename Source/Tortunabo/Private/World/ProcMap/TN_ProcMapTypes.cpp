@@ -294,9 +294,10 @@ void UTN_ProcMapSettings::FillDefaultProfiles()
 	for (int32 M = 0; M < static_cast<int32>(ETNProcGameMode::Count); ++M)
 	{
 		const ETNProcGameMode Mode = static_cast<ETNProcGameMode>(M);
-		if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Survival)
+		if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Survival || Mode == ETNProcGameMode::Karts
+			|| Mode == ETNProcGameMode::FreeForAll || Mode == ETNProcGameMode::Rally)
 		{
-			continue; // viajan a LVL_Run: no usan el mapa procedural
+			continue; // viajan a LVL_Run, a LVL_Tct o a LVL_Rally (o, los karts, usan los perfiles del cooperativo)
 		}
 		for (int32 D = 0; D < static_cast<int32>(ETNProcDifficulty::Count); ++D)
 		{

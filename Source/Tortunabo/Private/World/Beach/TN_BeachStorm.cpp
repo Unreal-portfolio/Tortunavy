@@ -30,6 +30,7 @@
 #include "Player/TN_ShellBody.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TortugaCharacter.h"
+#include "World/Beach/TN_BeachShelterVolume.h"
 
 namespace TNBeachStormTuning
 {
@@ -556,7 +557,8 @@ void ATN_BeachStorm::ServerCheck()
 	{
 		float& Behind = BehindFor.FindOrAdd(Turtle);
 		const FVector Local = Xf.InverseTransformPositionNoScale(Turtle->GetActorLocation());
-		if (Local.X >= Front - KickSlack || FMath::Abs(Local.Y) >= HalfWidth)
+		// Dentro de un búnker (#689) la tormenta no la empuja.
+		if (Local.X >= Front - KickSlack || FMath::Abs(Local.Y) >= HalfWidth || ATN_BeachShelterVolume::IsSheltered(Turtle))
 		{
 			Behind = 0.f;
 			continue;
@@ -1712,7 +1714,7 @@ void ATN_BeachStorm::TickCough(float DeltaSeconds)
 		{
 			continue;
 		}
-		const bool bInside = IsLocationInside(Turtle->GetActorLocation());
+		const bool bInside = IsLocationInside(Turtle->GetActorLocation()) && !ATN_BeachShelterVolume::IsSheltered(Turtle);
 		float& Seconds = CoughInside.FindOrAdd(Turtle);
 		Seconds = bInside ? Seconds + Step : 0.f;
 		Cough->SetStormExposure(bInside, Seconds / TNBeachStormTuning::WorstCoughSeconds);

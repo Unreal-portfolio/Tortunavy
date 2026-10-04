@@ -150,7 +150,8 @@ namespace TNProcMap
 					const double Out = FMath::Max(0.0, M[i].S - M[k].S) + FMath::Max(0.0, M[k].S - M[j].S);
 					M[k].Width = LerpD(FMath::Min(M[k].Width, MouthW), M[k].Width, SmoothStep(1500.0, 4500.0, Out));
 				}
-				const double Narrow = Rng.Range(400.0, 700.0);
+				// Pasos estrechos de 4-7 m; en el Rally, de 9-11 m (caben dos buggies sin rozar las paredes).
+				const double Narrow = P.bDrivable ? Rng.Range(900.0, 1100.0) : Rng.Range(400.0, 700.0);
 				const double Chamber = Rng.Range(1600.0, 2600.0);
 				const bool bTwo = Span > 18000.0;
 				const double Uc = bTwo ? Rng.Range(0.26, 0.36) : Rng.Range(0.38, 0.62);
@@ -176,8 +177,8 @@ namespace TNProcMap
 				C.Width = Span;
 				L.Features.Add(C);
 
-				// Río de lava en la (primera) cámara de las cuevas del volcán: un hueco que se salta.
-				if (M[Mid].Biome == ETNProcBiome::Volcanic)
+				// Río de lava en la (primera) cámara de las cuevas del volcán: un hueco que se salta (en el Rally, no).
+				if (M[Mid].Biome == ETNProcBiome::Volcanic && !P.bDrivable)
 				{
 					FFeature G = MakeAtSample(EFeature::Gap, M[Mid], Mid, INDEX_NONE);
 					G.Aux2 = GapLava;

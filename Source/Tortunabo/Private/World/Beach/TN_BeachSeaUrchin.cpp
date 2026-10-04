@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 namespace TNBeachUrchin
 {
@@ -33,12 +34,10 @@ namespace TNBeachUrchin
 	/** Retroceso tras pinchar: velocidad y duración. */
 	constexpr float RecoilSpeed = 260.f;
 	constexpr float RecoilTime = 0.8f;
-	/** Pinchazo: derribo con ragdoll y mareo, empujón (cm/s), vuelta del ragdoll (grados/s) y tiempo que ignora a la pinchada. */
-	constexpr float KnockSeconds = 2.4f;
+	/** Pinchazo: empujón (cm/s) y vuelta del ragdoll (grados/s); el derribo y la inmunidad, en UTN_CombatTuning. */
 	constexpr float PushSpeed = 620.f;
 	constexpr float PushUp = 380.f;
 	constexpr float PushSpin = 260.f;
-	constexpr float IgnoreSeconds = 4.5f;
 }
 
 ATN_BeachSeaUrchin::ATN_BeachSeaUrchin()
@@ -153,8 +152,8 @@ bool ATN_BeachSeaUrchin::CheckPricks()
 		Away = Away.IsNearlyZero() ? FRotator(0.f, SimYaw, 0.f).Vector() : Away.GetSafeNormal();
 		// Pinchazo: derribo con ragdoll y mareo, despedida hacia fuera y dando una vuelta hacia atrás.
 		const FVector Tumble = FVector::CrossProduct(FVector::UpVector, Away) * TNBeachUrchin::PushSpin;
-		KnockDownTurtle(Turtle, TNBeachUrchin::KnockSeconds, Away * TNBeachUrchin::PushSpeed + FVector(0.0, 0.0, TNBeachUrchin::PushUp), Tumble);
-		IgnoreTurtle(Turtle, TNBeachUrchin::IgnoreSeconds);
+		KnockDownTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinKnockSeconds, Away * TNBeachUrchin::PushSpeed + FVector(0.0, 0.0, TNBeachUrchin::PushUp), Tumble);
+		IgnoreTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinIgnoreSeconds);
 		MulticastPrick(Turtle, (At + Center) * 0.5);
 		ServerSetState(TNBeachUrchin::ToByte(TNBeachUrchin::EState::Recoil), At);
 		bAny = true;

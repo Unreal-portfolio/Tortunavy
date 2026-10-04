@@ -111,6 +111,21 @@ enum class ETNBeachElement : uint8
 	SandFleas          UMETA(DisplayName = "Enjambre de pulgas de arena"),
 	/** Tanque de juguete teledirigido que patrulla un tramo y dispara bolitas de espuma que empujan y marean (Extent = tramo). */
 	ToyTank            UMETA(DisplayName = "Tanque de juguete"),
+	// ── Criaturas y peligros del Excel de diseño (lote #691): al final para no mover los valores de los anteriores ──
+	/** Charco de arenas movedizas: ralentiza cada vez más y atrapa si se queda dentro; se sale machacando salto (#684). */
+	Quicksand          UMETA(DisplayName = "Arenas movedizas"),
+	/** Cangrejo que persigue, engancha y arrastra a la tortuga una distancia máxima y la suelta derribada (#685). */
+	DragCrab           UMETA(DisplayName = "Cangrejo arrastrador"),
+	/** Cangrejo enterrado: su montículo tiembla, saca la pinza, atrapa y lanza mareada (#686). */
+	BurrowCrab         UMETA(DisplayName = "Cangrejo subterráneo"),
+	/** Pinchos de erizo casi ocultos en la arena: salen al pisarlos, derriban y ralentizan (#687). */
+	UrchinSpikes       UMETA(DisplayName = "Erizo enterrado"),
+	/** Montón de basura: correr contra él hace tropezar; un golpe lo rompe y deja paso (#690). */
+	TrashPile          UMETA(DisplayName = "Montón de basura"),
+	/** Fosa con un lado en rampa: caer no hace nada, se sale por la rampa (#690). */
+	Trench             UMETA(DisplayName = "Agujero de trinchera"),
+	/** Búnker entrable: dentro, la tormenta no ralentiza ni empuja y las gaviotas no marcan (#689). */
+	Bunker             UMETA(DisplayName = "Búnker refugio"),
 	Count              UMETA(Hidden)
 };
 
@@ -182,6 +197,10 @@ namespace TNBeach
 
 	inline ETNBeachCategory CategoryOf(ETNBeachElement E)
 	{
+		if (E >= ETNBeachElement::Quicksand)
+		{
+			return (E == ETNBeachElement::DragCrab || E == ETNBeachElement::BurrowCrab) ? ETNBeachCategory::Enemy : ETNBeachCategory::Trap;
+		}
 		if (E < ETNBeachElement::BarbedWire) { return ETNBeachCategory::Decor; }
 		if (E < ETNBeachElement::GiantCrab) { return ETNBeachCategory::Trap; }
 		return ETNBeachCategory::Enemy;
@@ -217,6 +236,13 @@ namespace TNBeach
 		case ETNBeachElement::PoolOctopus:    return TEXT("TN_BeachPoolOctopus");
 		case ETNBeachElement::SandFleas:      return TEXT("TN_BeachSandFleas");
 		case ETNBeachElement::ToyTank:        return TEXT("TN_BeachToyTank");
+		case ETNBeachElement::Quicksand:      return TEXT("TN_BeachQuicksand");
+		case ETNBeachElement::DragCrab:       return TEXT("TN_BeachDragCrab");
+		case ETNBeachElement::BurrowCrab:     return TEXT("TN_BeachBurrowCrab");
+		case ETNBeachElement::UrchinSpikes:   return TEXT("TN_BeachUrchinSpikes");
+		case ETNBeachElement::TrashPile:      return TEXT("TN_BeachTrashPile");
+		case ETNBeachElement::Trench:         return TEXT("TN_BeachTrench");
+		case ETNBeachElement::Bunker:         return TEXT("TN_BeachBunker");
 		default:                              return TEXT("TN_BeachDecor");
 		}
 	}
@@ -304,6 +330,13 @@ namespace TNBeach
 		case ETNBeachElement::PoolOctopus:       return 500.0;
 		case ETNBeachElement::SandFleas:         return 1200.0;
 		case ETNBeachElement::ToyTank:           return 900.0;
+		case ETNBeachElement::Quicksand:         return 600.0;
+		case ETNBeachElement::DragCrab:          return 900.0;
+		case ETNBeachElement::BurrowCrab:        return 450.0;
+		case ETNBeachElement::UrchinSpikes:      return 300.0;
+		case ETNBeachElement::TrashPile:         return 350.0;
+		case ETNBeachElement::Trench:            return 700.0;
+		case ETNBeachElement::Bunker:            return 650.0;
 		default:                                 return 500.0;
 		}
 	}

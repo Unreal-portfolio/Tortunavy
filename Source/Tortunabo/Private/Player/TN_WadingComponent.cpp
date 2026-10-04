@@ -91,6 +91,15 @@ void UTN_WadingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	UpdateSplashEffects(DeltaTime, bWasInWater, CMC);
 }
 
+float UTN_WadingComponent::GetSpeedMultiplierAt(double FeetZ, bool bOnGround) const
+{
+	if (!bHasWater || !bOnGround)
+	{
+		return 1.f;
+	}
+	return TNWadingLogic::ComputeSpeedMultiplier(static_cast<float>(WaterZ - FeetZ), MinDepth, FullDepth, WadeSpeedMultiplier);
+}
+
 void UTN_WadingComponent::ApplyMovementEffects(bool bWasInWater)
 {
 	UTN_StaminaComponent* Stamina = StaminaComponentRef.Get();

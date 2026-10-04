@@ -85,4 +85,42 @@ namespace TNTrampolineRules
 	{
 		return static_cast<float>(FMath::Clamp(Up / FMath::Max(1.0, Tuning.MaxUp), 0.35, 1.0));
 	}
+
+	// ── Tentáculos de la medusa (#683) ──
+
+	/** Qué toca una tortuga alrededor de una medusa trampolín. */
+	enum class ETentacleContact : uint8
+	{
+		/** Ni la campana ni los tentáculos. */
+		None,
+		/** Encima de la campana: rebota (CanBounce y BounceVelocity), sin picar. */
+		Bell,
+		/** Los tentáculos desde la arena: aturdimiento corto y ralentización (nada de daño ni veneno). */
+		Sting,
+	};
+
+	/**
+	 * Contacto de una tortuga con los pies a FeetZ (cm sobre la arena del centro) a Rho cm del eje de la medusa. La campana
+	 * mide BellR de radio; los tentáculos llegan hasta ReachR por la arena y pican hasta TentacleTopZ de alto: más arriba
+	 * dentro de la campana es estar encima de ella.
+	 */
+	inline ETentacleContact TentacleContact(double Rho, double FeetZ, double BellR, double ReachR, double TentacleTopZ)
+	{
+		if (Rho > ReachR)
+		{
+			return ETentacleContact::None;
+		}
+		if (FeetZ > TentacleTopZ)
+		{
+			return Rho <= BellR ? ETentacleContact::Bell : ETentacleContact::None;
+		}
+		return ETentacleContact::Sting;
+	}
+
+	/** Lo que hace un picotazo de tentáculo: aturdimiento corto, fracción de la velocidad que se conserva y cuánto dura. */
+	constexpr float StingStunSeconds = 0.8f;
+	constexpr float StingSpeedFactor = 0.6f;
+	constexpr float StingSlowSeconds = 3.f;
+	/** Sin volver a picar a la misma tortuga en estos segundos. */
+	constexpr float StingCooldown = 2.5f;
 }

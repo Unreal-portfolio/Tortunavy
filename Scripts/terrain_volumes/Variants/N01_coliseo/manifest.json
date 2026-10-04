@@ -1,0 +1,437 @@
+{
+ "name": "N01_coliseo",
+ "seed": 4001,
+ "format": "TNTM2",
+ "cell_uu": 10000.0,
+ "grid": 2,
+ "water_uu": -400.0,
+ "start_uu": [
+  7298.097038856279,
+  7298.097038856279,
+  -150.0
+ ],
+ "end_uu": [
+  5000.0,
+  5000.0,
+  -150.0
+ ],
+ "cells": [
+  {
+   "name": "M_N01_coliseo_r0c0",
+   "col": 0,
+   "row": 0,
+   "file": "Chunks/r0c0.bin",
+   "center_uu": [
+    0.0,
+    0.0
+   ],
+   "vertices": 16558,
+   "triangles": 32580,
+   "instances": 0
+  },
+  {
+   "name": "M_N01_coliseo_r1c0",
+   "col": 0,
+   "row": 1,
+   "file": "Chunks/r1c0.bin",
+   "center_uu": [
+    10000.0,
+    0.0
+   ],
+   "vertices": 16557,
+   "triangles": 32578,
+   "instances": 0
+  },
+  {
+   "name": "M_N01_coliseo_r0c1",
+   "col": 1,
+   "row": 0,
+   "file": "Chunks/r0c1.bin",
+   "center_uu": [
+    0.0,
+    10000.0
+   ],
+   "vertices": 16576,
+   "triangles": 32616,
+   "instances": 0
+  },
+  {
+   "name": "M_N01_coliseo_r1c1",
+   "col": 1,
+   "row": 1,
+   "file": "Chunks/r1c1.bin",
+   "center_uu": [
+    10000.0,
+    10000.0
+   ],
+   "vertices": 16573,
+   "triangles": 32610,
+   "instances": 0
+  }
+ ],
+ "description": "Coliseo (Todos contra Todos): arena de 40 m rodeada por un foso de 9 m, podio y tres gradas en anillo a +4,5, +6,75 y +9 m; 4 puertas (t\u00fanel bajo la corona y puente sobre el foso), 4 escaleras en las diagonales y talud de tierra por fuera hasta la playa.",
+ "mode": "tct",
+ "kill_boxes_uu": [
+  {
+   "center": [
+    5000.0,
+    5000.0,
+    -690.0
+   ],
+   "extent": [
+    10000.0,
+    10000.0,
+    310.0
+   ],
+   "yaw": 0.0
+  }
+ ],
+ "generator": {
+  "name": "N01_coliseo",
+  "seed": 4001,
+  "description": "Coliseo (Todos contra Todos): arena de 40 m rodeada por un foso de 9 m, podio y tres gradas en anillo a +4,5, +6,75 y +9 m; 4 puertas (t\u00fanel bajo la corona y puente sobre el foso), 4 escaleras en las diagonales y talud de tierra por fuera hasta la playa.",
+  "grid": 2,
+  "mode": "tct",
+  "arena_r": 20.0,
+  "moat_m": 9.0,
+  "podium_m": 7.0,
+  "floor_h": 2.5,
+  "tiers": [
+   [
+    8.0,
+    4.5
+   ],
+   [
+    8.0,
+    6.75
+   ],
+   [
+    8.0,
+    9.0
+   ]
+  ],
+  "berm_deg": 17.0,
+  "beach_m": 5.0,
+  "gates_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "gate_w_m": 7.0,
+  "gate_clear_m": 4.2,
+  "stairs_deg": [
+   45.0,
+   135.0,
+   225.0,
+   315.0
+  ],
+  "stair_w_m": 5.0,
+  "stair_slope_deg": 17.0,
+  "generator": "coliseo"
+ },
+ "z_range": [
+  -10.0,
+  128,
+  0.5
+ ],
+ "bridges": [
+  {
+   "a_uu": [
+    5000.0,
+    6850.0
+   ],
+   "b_uu": [
+    5000.0,
+    8050.0
+   ],
+   "width_m": 5.0,
+   "length_m": 12.0,
+   "slope_deg": 5.7
+  },
+  {
+   "a_uu": [
+    6850.0,
+    5000.0
+   ],
+   "b_uu": [
+    8050.0,
+    5000.0
+   ],
+   "width_m": 5.0,
+   "length_m": 12.0,
+   "slope_deg": 5.7
+  },
+  {
+   "a_uu": [
+    5000.0,
+    3150.0
+   ],
+   "b_uu": [
+    5000.0,
+    1950.0
+   ],
+   "width_m": 5.0,
+   "length_m": 12.0,
+   "slope_deg": 5.7
+  },
+  {
+   "a_uu": [
+    3150.0,
+    5000.0
+   ],
+   "b_uu": [
+    1950.0,
+    5000.0
+   ],
+   "width_m": 5.0,
+   "length_m": 12.0,
+   "slope_deg": 5.7
+  }
+ ],
+ "points_uu": {
+  "arena": [
+   5000.0,
+   5000.0
+  ],
+  "podio": [
+   7298.1,
+   7298.1
+  ],
+  "grada_baja": [
+   7000.0,
+   8464.1
+  ],
+  "exterior": [
+   10887.4,
+   10887.4
+  ],
+  "corona_1": [
+   6966.6,
+   10403.2
+  ],
+  "corona_2": [
+   10403.2,
+   3033.4
+  ],
+  "corona_3": [
+   3033.4,
+   -403.2
+  ],
+  "corona_4": [
+   -403.2,
+   6966.6
+  ]
+ },
+ "unreachable_ok_uu": [],
+ "recorrible": true,
+ "nests_uu": [
+  [
+   7300.0,
+   7400.0,
+   -150.0
+  ],
+  [
+   -1300.0,
+   -300.0,
+   -150.0
+  ],
+  [
+   8600.0,
+   -2400.0,
+   -150.0
+  ],
+  [
+   -2000.0,
+   9300.0,
+   -150.0
+  ],
+  [
+   13000.0,
+   3200.0,
+   -150.0
+  ],
+  [
+   3800.0,
+   13200.0,
+   -150.0
+  ],
+  [
+   4300.0,
+   1700.0,
+   -150.0
+  ],
+  [
+   12400.0,
+   8400.0,
+   -148.8
+  ]
+ ],
+ "tunnels": [
+  {
+   "name": "puerta_1",
+   "a_uu": [
+    5000.0,
+    10050.0,
+    -150.0
+   ],
+   "b_uu": [
+    5000.0,
+    11500.0,
+    -150.0
+   ],
+   "length_m": 14.5,
+   "width_m": 7.0,
+   "clearance_m": 4.2
+  },
+  {
+   "name": "puerta_2",
+   "a_uu": [
+    10050.0,
+    5000.0,
+    -150.0
+   ],
+   "b_uu": [
+    11500.0,
+    5000.0,
+    -150.0
+   ],
+   "length_m": 14.5,
+   "width_m": 7.0,
+   "clearance_m": 4.2
+  },
+  {
+   "name": "puerta_3",
+   "a_uu": [
+    5000.0,
+    -50.0,
+    -150.0
+   ],
+   "b_uu": [
+    5000.0,
+    -1500.0,
+    -150.0
+   ],
+   "length_m": 14.5,
+   "width_m": 7.0,
+   "clearance_m": 4.2
+  },
+  {
+   "name": "puerta_4",
+   "a_uu": [
+    -50.0,
+    5000.0,
+    -150.0
+   ],
+   "b_uu": [
+    -1500.0,
+    5000.0,
+    -150.0
+   ],
+   "length_m": 14.5,
+   "width_m": 7.0,
+   "clearance_m": 4.2
+  }
+ ],
+ "decks": [],
+ "markers_uu": {
+  "puerta": [
+   [
+    5000.0,
+    11659.8,
+    -150.0
+   ],
+   [
+    11659.8,
+    5000.0,
+    -150.0
+   ],
+   [
+    5000.0,
+    -1659.8,
+    -150.0
+   ],
+   [
+    -1659.8,
+    5000.0,
+    -150.0
+   ]
+  ],
+  "catapulta": [
+   [
+    5000.0,
+    5000.0,
+    -150.0
+   ]
+  ],
+  "trampolin": [
+   [
+    10211.3,
+    7430.1,
+    500.0
+   ],
+   [
+    7430.1,
+    -211.3,
+    500.0
+   ],
+   [
+    -211.3,
+    2569.9,
+    500.0
+   ],
+   [
+    2569.9,
+    10211.3,
+    500.0
+   ]
+  ]
+ },
+ "checks": {
+  "clearances": [
+   {
+    "name": "puerta_1",
+    "samples": 48,
+    "bad": 0,
+    "first_bad": [],
+    "ok": true
+   },
+   {
+    "name": "puerta_2",
+    "samples": 48,
+    "bad": 0,
+    "first_bad": [],
+    "ok": true
+   },
+   {
+    "name": "puerta_3",
+    "samples": 48,
+    "bad": 0,
+    "first_bad": [],
+    "ok": true
+   },
+   {
+    "name": "puerta_4",
+    "samples": 48,
+    "bad": 0,
+    "first_bad": [],
+    "ok": true
+   }
+  ],
+  "cotas": {
+   "ok": true,
+   "max_m": 9.0,
+   "summary": "m\u00e1x. +9.0 m"
+  },
+  "rampas": {
+   "ok": true,
+   "max_deg": 17.0,
+   "summary": "m\u00e1x. 17.0\u00b0"
+  },
+  "nests": {
+   "wanted": 8,
+   "found": 8,
+   "ok": true
+  }
+ }
+}

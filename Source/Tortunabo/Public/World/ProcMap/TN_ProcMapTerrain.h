@@ -481,7 +481,18 @@ namespace TNProcMap
 					const bool bOverWater = (In[i].Flags & (PathFlags::Islet | PathFlags::Boardwalk)) != 0;
 					const bool bCarve = bOverWater || (In[i].Flags & PathFlags::NotTerrain) == 0;
 					Carves.Add(bCarve ? 1 : 0);
-					SampleFloor.Add(static_cast<float>(bOverWater ? FMath::Min(In[i].Z, SeaLevel) - 250.0 : In[i].Z));
+					// En el mapa de los karts el canal se hunde poco a poco desde la orilla (12 m), sin escalón al entrar ni al salir.
+					double WaterDepth = 250.0;
+					if (bOverWater && L->Params.bDrivable)
+					{
+						double ToShore = 1.0e9;
+						for (int32 k = FMath::Max(0, i - 8); k <= FMath::Min(In.Num() - 1, i + 8); ++k)
+						{
+							if ((In[k].Flags & (PathFlags::Islet | PathFlags::Boardwalk)) == 0) { ToShore = FMath::Min(ToShore, FMath::Abs(In[k].S - In[i].S)); }
+						}
+						WaterDepth = 250.0 * SmoothStep(0.0, 1200.0, ToShore);
+					}
+					SampleFloor.Add(static_cast<float>(bOverWater ? FMath::Min(In[i].Z, SeaLevel) - WaterDepth : In[i].Z));
 					FBiomeTerrain Bt;
 					double Wet = 0.0;
 					double W[NumBiomes];

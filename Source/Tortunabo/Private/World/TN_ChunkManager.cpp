@@ -2,6 +2,7 @@
 #include "World/TN_ChunkDecisions.h"
 #include "World/TN_FinishLineVolume.h"
 #include "Game/TN_SurvivalRules.h"
+#include "Game/TN_SurvivalMapSelection.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcMapSurvival.h"
 #include "Core/TN_Log.h"
@@ -557,9 +558,30 @@ bool ATN_ChunkManager::BuildLevel(int32 Level)
 		return false;
 	}
 
+	// Un mapa del catálogo de la dificultad del nivel que no haya salido en la partida (#518); el nivel 1 puede venir
+	// fijado con ?SurvivalMap=. En el servidor la construcción es síncrona: al volver ya se sabe si hubo mapa.
+	const FTNSurvivalMapPick Forced = Level <= 1 && FirstLevelMap != 0u
+		? TNSurvivalMapSelection::PickForcedMap(FirstLevelMap) : FTNSurvivalMapPick();
+	const FTNSurvivalMapPick Pick = Forced.IsValid() ? Forced : TNSurvivalMapSelection::PickLevelMap(LevelSeed, Level, PlayedLevelMaps);
+	if (Pick.IsValid())
+	{
+		Generator->ServerGenerateSurvival(static_cast<int32>(Pick.Seed), Pick.Difficulty);
+		if (Generator->IsMapReady())
+		{
+			PlayedLevelMaps = TNSurvivalMapSelection::RecordPlayed(PlayedLevelMaps, Pick);
+			const TNSurvivalCatalog::FMapEntry* Entry = TNSurvivalCatalog::FindMap(Pick.Seed);
+			UE_LOG(LogTortunabo, Log, TEXT("[ChunkManager] Nivel %d: mapa del catálogo «%s» (semilla %u, dificultad %d, camino de %.0f m)%s."),
+				Level, Entry ? Entry->Name : TEXT("?"), Pick.Seed, Pick.Difficulty, Generator->GetMainPathLength() / 100.f,
+				Pick.bForgotPlayed ? TEXT("; ya habían salido todos los de su dificultad: se olvidan los jugados") : TEXT(""));
+			return true;
+		}
+		UE_LOG(LogTortunabo, Warning, TEXT("[ChunkManager] Nivel %d: el mapa del catálogo %u no se generó; se usa uno fuera del catálogo."),
+			Level, Pick.Seed);
+	}
+
+	// Respaldo fuera del catálogo (sin trampas): semillas deterministas a partir de la de la partida.
 	const int32 Difficulty = TNSurvivalLogic::LevelMapDifficulty(Level);
 	const int32 BaseSeed = LevelSeed + FMath::Max(1, Level) - 1;
-	// En el servidor la construcción es síncrona: al volver ya se sabe si la semilla dio mapa. Si no, otra determinista.
 	for (int32 Attempt = 0; Attempt < 3; ++Attempt)
 	{
 		const int32 Seed = BaseSeed + Attempt * 100003;

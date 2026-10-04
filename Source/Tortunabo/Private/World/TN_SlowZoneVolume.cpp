@@ -1,6 +1,8 @@
 #include "World/TN_SlowZoneVolume.h"
 #include "Components/BoxComponent.h"
+#include "Components/DecalComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_StaminaComponent.h"
 
@@ -135,4 +137,45 @@ void ATN_SlowZoneVolume::OnCharacterDestroyed(AActor* DestroyedActor)
 	if (!Char) { return; }
 
 	CharactersInZone.Remove(Char);
+}
+
+void ATN_SlowZoneVolume::SetZoneExtent(const FVector& Extent)
+{
+	if (!TriggerBox)
+	{
+		return;
+	}
+	TriggerBox->SetBoxExtent(Extent, true);
+
+	// El charco: un decal que proyecta hacia abajo desde el centro de la caja y llega al suelo aunque el camino suba o baje
+	// dentro de la zona. Sin el material (no se ha ejecutado Scripts/create_survival_decals.py) la zona frena sin verse.
+	static TWeakObjectPtr<UMaterialInterface> CachedMaterial;
+	UMaterialInterface* Material = CachedMaterial.Get();
+	if (!Material)
+	{
+		Material = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ProcMap/Materials/M_SlowZoneSyrupDecal.M_SlowZoneSyrupDecal"), nullptr, LOAD_NoWarn);
+		CachedMaterial = Material;
+	}
+	if (!Material)
+	{
+		return;
+	}
+	if (!SyrupDecal)
+	{
+		SyrupDecal = NewObject<UDecalComponent>(this, TEXT("SyrupDecal"), RF_Transient);
+		SyrupDecal->SetupAttachment(TriggerBox);
+		// El eje X del decal es la dirección en que proyecta: hacia abajo.
+		SyrupDecal->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+		SyrupDecal->SetDecalMaterial(Material);
+		SyrupDecal->RegisterComponent();
+		if (UMaterialInstanceDynamic* Instance = SyrupDecal->CreateDynamicMaterialInstance())
+		{
+			// Cada zona con su borde.
+			Instance->SetScalarParameterValue(TEXT("Seed"), static_cast<float>(GetTypeHash(GetActorLocation()) % 997));
+		}
+	}
+	// Tras girarlo, su X es la vertical (profundidad) y su Z, el largo de la zona. La profundidad cubre la caja entera y
+	// 3 m por debajo, por si el suelo baja dentro de la zona.
+	SyrupDecal->DecalSize = FVector(Extent.Z + 300.f, Extent.Y, Extent.X);
+	SyrupDecal->MarkRenderStateDirty();
 }

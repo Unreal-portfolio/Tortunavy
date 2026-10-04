@@ -11,6 +11,7 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 namespace TNBeachTank
 {
@@ -38,13 +39,11 @@ namespace TNBeachTank
 	constexpr float AimTolerance = 7.f;
 	constexpr float FirstShotDelay = 0.7f;
 	constexpr float ReloadTime = 4.f;
-	/** Bolita: velocidad de salida (cm/s), gravedad (flota un poco: es espuma), parte del adelanto a la tortuga. */
+	/** Bolita: velocidad de salida (cm/s) y parte del adelanto a la tortuga (la gravedad, en UTN_CombatTuning). */
 	constexpr float MuzzleSpeed = 1900.f;
-	constexpr float FoamGravity = 700.f;
 	constexpr float LeadFactor = 0.6f;
-	/** Golpe: holgura (cm), mareo en bola (s) y empujón (cm/s) de lado y hacia arriba. */
+	/** Golpe: holgura (cm) y empujón (cm/s) de lado y hacia arriba (el mareo en bola, en UTN_CombatTuning). */
 	constexpr float HitPad = 70.f;
-	constexpr float HitStun = 0.8f;
 	constexpr float HitPush = 520.f;
 	constexpr float HitUp = 260.f;
 	/** La bolita dura esto como mucho y deja de botar tras tantos botes. */
@@ -188,7 +187,7 @@ void ATN_BeachToyTank::DriveToward(const FVector& Goal, float MaxSpeed, float De
 float ATN_BeachToyTank::SolveElevation(float Dx, float Dz) const
 {
 	const float V2 = TNBeachTank::MuzzleSpeed * TNBeachTank::MuzzleSpeed;
-	const float G = TNBeachTank::FoamGravity;
+	const float G = UTN_CombatTuning::Get().ToyTankFoamGravity;
 	const float Disc = V2 * V2 - G * (G * Dx * Dx + 2.f * Dz * V2);
 	if (Disc < 0.f || Dx < 1.f)
 	{
@@ -248,7 +247,7 @@ void ATN_BeachToyTank::Fire(ATortugaCharacter* Victim)
 void ATN_BeachToyTank::BounceOffTurtle(FTNTankShot& Shot, const FVector& Where, double Now)
 {
 	const float T = static_cast<float>(FMath::Max(0.0, Now - Shot.T0));
-	const FVector Vel = Shot.V0 + FVector(0.0, 0.0, -TNBeachTank::FoamGravity * T);
+	const FVector Vel = Shot.V0 + FVector(0.0, 0.0, -UTN_CombatTuning::Get().ToyTankFoamGravity * T);
 	const float Progress = FMath::Clamp(static_cast<float>(FVector::Dist2D(Where, Shot.Origin)) / Shot.AimDist, 0.f, 1.f);
 	const float Ground = FMath::Lerp(Shot.GroundFrom, Shot.GroundTo, Progress);
 	Shot.P0 = Where;
@@ -264,6 +263,7 @@ void ATN_BeachToyTank::BounceOffTurtle(FTNTankShot& Shot, const FVector& Where, 
 void ATN_BeachToyTank::AdvanceShots(double Now, bool bServer)
 {
 	const float Radius = static_cast<float>(TNBeachCritterMeshes::TankDims().FoamRadius) * SizeK;
+	const float FoamGravity = UTN_CombatTuning::Get().ToyTankFoamGravity;
 	TArray<ATortugaCharacter*> Turtles;
 	bool bGathered = false;
 	for (FTNTankShot& Shot : Shots)
@@ -278,8 +278,8 @@ void ATN_BeachToyTank::AdvanceShots(double Now, bool bServer)
 			continue;
 		}
 		const float T = static_cast<float>(FMath::Max(0.0, Now - Shot.T0));
-		FVector P = Shot.P0 + Shot.V0 * T + FVector(0.0, 0.0, -0.5 * TNBeachTank::FoamGravity * T * T);
-		const FVector Vel = Shot.V0 + FVector(0.0, 0.0, -TNBeachTank::FoamGravity * T);
+		FVector P = Shot.P0 + Shot.V0 * T + FVector(0.0, 0.0, -0.5 * FoamGravity * T * T);
+		const FVector Vel = Shot.V0 + FVector(0.0, 0.0, -FoamGravity * T);
 		// Suelo sin trazas: entre el de la boca del cañón y el de donde apuntaba.
 		const float Progress = FMath::Clamp(static_cast<float>(FVector::Dist2D(P, Shot.Origin)) / Shot.AimDist, 0.f, 1.f);
 		const float Ground = FMath::Lerp(Shot.GroundFrom, Shot.GroundTo, Progress);
@@ -361,7 +361,7 @@ bool ATN_BeachToyTank::HitTurtleOnSegment(FTNTankShot& Shot, const TArray<ATortu
 		}
 		// Empuja hacia donde iba la bolita y marea un poco (en bola).
 		const FVector Launch = Velocity.GetSafeNormal2D() * TNBeachTank::HitPush + FVector(0.0, 0.0, TNBeachTank::HitUp);
-		StunTurtle(Turtle, TNBeachTank::HitStun, Launch);
+		StunTurtle(Turtle, UTN_CombatTuning::Get().ToyTankHitStunSeconds, Launch);
 		BounceOffTurtle(Shot, Shot.Pos, Now);
 		MulticastFoamHit(Shot.Id, Shot.Pos, Turtle);
 		return true;
@@ -538,7 +538,8 @@ void ATN_BeachToyTank::MulticastFire_Implementation(uint8 ShotId, FVector_NetQua
 		// Donde toca el suelo de llegada (para repartir el suelo entre la boca y allí).
 		const float Vz = static_cast<float>(Vel.Z);
 		const float Drop = static_cast<float>(MouthAt.Z) - LandZ;
-		const float TLand = (Vz + FMath::Sqrt(FMath::Max(0.f, Vz * Vz + 2.f * TNBeachTank::FoamGravity * Drop))) / TNBeachTank::FoamGravity;
+		const float FoamGravity = UTN_CombatTuning::Get().ToyTankFoamGravity;
+		const float TLand = (Vz + FMath::Sqrt(FMath::Max(0.f, Vz * Vz + 2.f * FoamGravity * Drop))) / FoamGravity;
 		Shot.AimDist = FMath::Max(100.f, static_cast<float>(Vel.Size2D()) * TLand);
 		Shot.Pos = MouthAt;
 		Shot.LastPos = MouthAt;

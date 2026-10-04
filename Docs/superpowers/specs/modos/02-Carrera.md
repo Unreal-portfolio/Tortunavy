@@ -1,6 +1,6 @@
 # 02 — Modo CARRERA (a pie, playa de Mokius)
 
-Estado: especificación de diseño, 2026-09-29. Rama `macro-update`. Fuentes: plan maestro §3.2, §3.6 y §7; análisis `Docs/Analisis/2026-09-29/E_carrera_autor.md` (en adelante **[E]**); `Docs/Modo_Carrera.md`; `Docs/Modos-UI-FX-2026-09-29.md` §2.2; `Docs/Inventario-Objetos-Arte-2026-09-29.md`; código `TN_BeachLayout.h`, `TN_BeachRaceGenerator.h`, `TN_RaceItems.h`.
+Estado: especificación de diseño, 2026-09-29. Rama `macro-update`. Fuentes: plan maestro §3.2, §3.6 y §7; análisis `Docs/Analisis/2026-09-29/E_carrera_autor.md` (eliminado) (en adelante **[E]**); `Docs/Modo_Carrera.md`; `Docs/Modos-UI-FX-2026-09-29.md` §2.2; `Docs/Inventario-Objetos-Arte-2026-09-29.md`; código `TN_BeachLayout.h`, `TN_BeachRaceGenerator.h`, `TN_RaceItems.h`.
 
 Marcas de alcance: **MVP** (primera entrega jugable), **Después**, **Cortado**.
 

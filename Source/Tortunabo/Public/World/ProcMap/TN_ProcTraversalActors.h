@@ -45,6 +45,14 @@ public:
 		JetHigh = FMath::Max(JetHigh, static_cast<float>(InHole.Z - GetActorLocation().Z) + 350.f);
 	}
 
+	/** Punto de aterrizaje, si es el de una torre hueca y altura extra de la parábola (los karts se lanzan solos, #293). */
+	const FVector& GetTarget() const { return Target; }
+	bool IsShaft() const { return bShaft; }
+	float GetApexExtra() const { return ApexExtra; }
+
+	/** Estallido del chorro al lanzar (gotas, espuma, bruma y sonido), en esta máquina. Lo usan los karts al subir. */
+	void PlayLaunchBurst();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Geyser")
 	TObjectPtr<USceneComponent> Root;
@@ -135,6 +143,15 @@ public:
 	 */
 	void InitFromPoints(const TArray<FVector>& Points, float Width, const FVector& PoolCenter, float PoolRadius, const FVector& Impact);
 
+	/** Dirección de la bajada en Point si está sobre el tobogán (karts, #293). */
+	bool FindFlowAt(const FVector& Point, FVector& OutFlow) const;
+
+	/** La poza del pie de la cascada: centro a la cota del agua y radio (cm). False si no tiene. */
+	bool GetPool(FVector& OutCenter, float& OutRadius) const;
+
+	/** Lo alto de la cascada (el labio, en el suelo) y hacia dónde baja. False si no tiene tramos. */
+	bool GetTop(FVector& OutTop, FVector& OutFlow) const;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Slide")
 	TObjectPtr<USceneComponent> Root;
@@ -148,6 +165,8 @@ private:
 	TArray<TObjectPtr<UBoxComponent>> Segments;
 
 	TArray<FVector> SegmentDirs;
+	FVector PoolCenterWorld = FVector::ZeroVector;
+	float PoolRadiusCm = 0.f;
 
 	UFUNCTION()
 	void OnSegmentOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

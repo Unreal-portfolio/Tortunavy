@@ -1,6 +1,8 @@
 #include "World/TN_MapVariantLoader.h"
 #include "Core/TN_Log.h"
 #include "World/TN_DeathZoneVolume.h"
+#include "World/TN_MapPlacements.h"
+#include "World/TN_MapPlacementSpawner.h"
 #include "World/TN_TerrainMeshDecisions.h"
 
 #include "Components/SceneComponent.h"
@@ -8,6 +10,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
 #include "HAL/PlatformFileManager.h"
+#include "HAL/PlatformTime.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "ProceduralMeshComponent.h"
@@ -62,6 +65,10 @@ void ATN_MapVariantLoader::BeginPlay()
 	{
 		SpawnKillZones();
 	}
+	if (bSpawnPlacements)
+	{
+		SpawnPlacements();
+	}
 }
 
 void ATN_MapVariantLoader::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -74,7 +81,67 @@ void ATN_MapVariantLoader::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		}
 	}
 	SpawnedKillZones.Reset();
+	if (IsValid(PlacementSpawner))
+	{
+		PlacementSpawner->Destroy();
+	}
+	PlacementSpawner = nullptr;
 	Super::EndPlay(EndPlayReason);
+}
+
+void ATN_MapVariantLoader::SpawnPlacements()
+{
+	UWorld* World = GetWorld();
+	const TSharedPtr<FJsonObject> Manifest = ReadManifest();
+	if (!World || !Manifest.IsValid() || IsValid(PlacementSpawner))
+	{
+		return;
+	}
+	TNMapPlacements::FParseResult Parsed;
+	const bool bParsed = TNMapPlacements::ParseBlock(*Manifest, Parsed);
+	for (const FString& Warning : Parsed.Warnings)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[MapVariantLoader] '%s': placements de '%s': %s."), *GetName(), *Variant.ToString(), *Warning);
+	}
+	if (!bParsed || !Parsed.bHasBlock)
+	{
+		return;
+	}
+	// El manifest va en el espacio del cargador (como los trozos y las zonas de muerte).
+	const FTransform& Xf = GetActorTransform();
+	for (TNMapPlacements::FPlacement& P : Parsed.Placements)
+	{
+		P.Location = Xf.TransformPosition(P.Location);
+		P.Target = Xf.TransformPosition(P.Target);
+		P.YawDeg += Xf.Rotator().Yaw;
+		for (FVector& Point : P.Path)
+		{
+			Point = Xf.TransformPosition(Point);
+		}
+	}
+	if (Parsed.bStale)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[MapVariantLoader] '%s': los placements automáticos de '%s' son de otro terreno: rehazlos con Scripts/place_terrain_path.py."),
+			*GetName(), *Variant.ToString());
+	}
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.ObjectFlags |= RF_Transient | RF_DuplicateTransient;
+	PlacementSpawner = World->SpawnActor<ATN_MapPlacementSpawner>(ATN_MapPlacementSpawner::StaticClass(), FTransform::Identity, Params);
+	if (!PlacementSpawner)
+	{
+		UE_LOG(LogTortunabo, Error, TEXT("[MapVariantLoader] '%s': no se ha podido crear el colocador de placements."), *GetName());
+		return;
+	}
+	TArray<UPrimitiveComponent*> GroundComponents;
+	for (UProceduralMeshComponent* Chunk : ChunkMeshes)
+	{
+		if (Chunk) { GroundComponents.Add(Chunk); }
+	}
+	PlacementSpawner->SetGround(GroundComponents);
+	// Lo replicado, solo el servidor (o la partida sin red); lo local, cada máquina.
+	PlacementSpawner->Populate(Parsed, World->GetNetMode() != NM_Client, true);
 }
 
 TSharedPtr<FJsonObject> ATN_MapVariantLoader::ReadManifest() const
@@ -268,6 +335,7 @@ void ATN_MapVariantLoader::MoveStartPlayerStart(const TSharedPtr<FJsonObject>& M
 
 void ATN_MapVariantLoader::LoadVariant()
 {
+	const double StartSeconds = FPlatformTime::Seconds();
 	ClearMeshes();
 	if (Variant.IsNone())
 	{
@@ -301,6 +369,8 @@ void ATN_MapVariantLoader::LoadVariant()
 	}
 
 	int32 ChunkIndex = 0;
+	int32 Triangles = 0;
+	int32 VisualOnly = 0;
 	for (const TSharedPtr<FJsonValue>& CellValue : *Cells)
 	{
 		const TSharedPtr<FJsonObject> Cell = CellValue.IsValid() ? CellValue->AsObject() : nullptr;
@@ -356,10 +426,13 @@ void ATN_MapVariantLoader::LoadVariant()
 			Mesh.Colors, TArray<FProcMeshTangent>(), bCollision);
 		if (TerrainMaterial) { Component->SetMaterial(0, TerrainMaterial); }
 		ChunkMeshes.Add(Component);
+		Triangles += Mesh.Triangles.Num() / 3;
+		VisualOnly += bCollision ? 0 : 1;
 	}
 
 	MoveStartPlayerStart(Manifest);
 	BuiltVariant = Variant;
-	UE_LOG(LogTortunabo, Log, TEXT("[MapVariantLoader] '%s': variante '%s' cargada, %d trozos."),
-		*GetName(), *Variant.ToString(), ChunkMeshes.Num());
+	UE_LOG(LogTortunabo, Log, TEXT("[MapVariantLoader] '%s': variante '%s' cargada, %d trozos (%d sin colision), %d triangulos, %.0f ms."),
+		*GetName(), *Variant.ToString(), ChunkMeshes.Num(), VisualOnly, Triangles,
+		(FPlatformTime::Seconds() - StartSeconds) * 1000.0);
 }

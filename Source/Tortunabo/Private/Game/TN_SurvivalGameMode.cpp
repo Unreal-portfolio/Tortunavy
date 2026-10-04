@@ -6,6 +6,7 @@
 #include "World/TN_ChunkManager.h"
 #include "World/TN_StormVolume.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
+#include "World/ProcMap/TN_SurvivalCatalog.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -43,13 +44,14 @@ ATN_SurvivalGameMode::ATN_SurvivalGameMode()
 void ATN_SurvivalGameMode::StartPlay()
 {
 	// StartPlay va antes del BeginPlay de los actores del nivel: así el manager genera el mapa del nivel 1 y no los
-	// chunks del Clásico. ?SurvivalSeed=N repite una partida.
+	// chunks del Clásico. ?SurvivalSeed=N repite una partida (los mismos mapas del catálogo en cada nivel) y
+	// ?SurvivalMap=<semilla> juega ese mapa del catálogo en el nivel 1 (#518).
 	if (ATN_ChunkManager* Manager = FindChunkManager())
 	{
 		const FString SeedOption = UGameplayStatics::ParseOption(OptionsString, TEXT("SurvivalSeed"));
 		const int32 Seed = SeedOption.IsEmpty() ? FMath::RandRange(1, 1 << 30) : FCString::Atoi(*SeedOption);
-		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Semilla del nivel 1: %d (?SurvivalSeed=%d para repetirla)."), Seed, Seed);
-		Manager->SetLevelMode(true, Seed);
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Semilla de la partida: %d (?SurvivalSeed=%d para repetirla)."), Seed, Seed);
+		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap());
 	}
 	else
 	{
@@ -58,6 +60,26 @@ void ATN_SurvivalGameMode::StartPlay()
 
 	Super::StartPlay();
 	PublishLevel();
+}
+
+uint32 ATN_SurvivalGameMode::ParseFirstLevelMap() const
+{
+	const FString MapOption = UGameplayStatics::ParseOption(OptionsString, TEXT("SurvivalMap"));
+	if (MapOption.IsEmpty())
+	{
+		return 0u;
+	}
+
+	const int64 MapSeed = MapOption.IsNumeric() ? FCString::Atoi64(*MapOption) : -1;
+	const TNSurvivalCatalog::FMapEntry* Entry = MapSeed > 0 && MapSeed <= MAX_uint32
+		? TNSurvivalCatalog::FindMap(static_cast<uint32>(MapSeed)) : nullptr;
+	if (!Entry)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Survival] ?SurvivalMap=%s no es una semilla del catálogo: se elige el mapa del nivel 1."), *MapOption);
+		return 0u;
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Survival] ?SurvivalMap=%u: el nivel 1 juega «%s» (dificultad %d)."), Entry->Seed, Entry->Name, Entry->Difficulty);
+	return Entry->Seed;
 }
 
 void ATN_SurvivalGameMode::PublishLevel()

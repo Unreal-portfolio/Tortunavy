@@ -11,6 +11,7 @@
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 namespace TNBeachFleas
 {
@@ -44,11 +45,9 @@ namespace TNBeachFleas
 	constexpr float HopSideMax = 260.f;
 	/** Un saltito que le llega al dueño más tarde que esto (s) ya no se aplica (entra a mitad de la picada). */
 	constexpr float HopLateLimit = 0.25f;
-	/** Mareo al final de la picada, lo que tarda en dispersarse y juntarse, y cuánto ignora a la picada. */
-	constexpr float DizzySeconds = 1.f;
+	/** Lo que tardan en dispersarse y juntarse (el mareo y la inmunidad, en UTN_CombatTuning). */
 	constexpr float ScatterOut = 1.2f;
 	constexpr float ScatterTime = 3.2f;
-	constexpr float IgnoreSeconds = 6.f;
 	constexpr float ScanPeriod = 0.2f;
 }
 
@@ -189,11 +188,11 @@ void ATN_BeachSandFleas::EndInfest(bool bDizzy)
 	ATortugaCharacter* Victim = Infested;
 	if (bDizzy && IsValid(Victim) && !Victim->IsDead())
 	{
-		StunTurtle(Victim, TNBeachFleas::DizzySeconds, FVector::ZeroVector);
+		StunTurtle(Victim, UTN_CombatTuning::Get().SandFleasDizzySeconds, FVector::ZeroVector);
 	}
 	if (Victim)
 	{
-		IgnoreTurtle(Victim, TNBeachFleas::IgnoreSeconds);
+		IgnoreTurtle(Victim, UTN_CombatTuning::Get().SandFleasIgnoreSeconds);
 	}
 	Infested = nullptr;
 	ServerSetState(TNBeachFleas::ToByte(TNBeachFleas::EState::Scatter), SimLoc);

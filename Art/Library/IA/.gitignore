@@ -1,5 +1,3 @@
-# Sin Git LFS para estas extensiones: FBX y .blend se regeneran con _pipeline/build_library.ps1
-*.fbx
-*.blend
+# FBX y .blend se versionan (decisión del director, 01-10, #287): pesan unos 3 MB y _pipeline/build_library.ps1 los regenera igual.
 *.blend1
 __pycache__/

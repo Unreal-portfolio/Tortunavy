@@ -11,6 +11,8 @@ de la tormenta). Cartoon pero creíble: patas blandas (almohadilla y dedos), nad
 | «Plaf» del panzazo | `UTN_TurtleFoleyComponent` | Al caer de tripa, más fuerte cuanto más rápido caía y corría |
 | Arrastre sobre la tripa | `UTN_TurtleFoleyComponent` | Mientras se desliza tras el panzazo, con la fuerza de la velocidad y el timbre de la superficie |
 | «Tonc» del caparazón | `UTN_TurtleFoleyComponent` | Al chocar contra algo arrastrándose (la velocidad cambia de golpe) |
+| Brazadas | `UTN_TurtleFoleyComponent` | Nadando, una por ciclo de la brazada de la animación, más fuertes cuanto más rápido nada |
+| Meterse y salir del caparazón | `UTN_TurtleFoleyComponent` (lo pide `UTN_ShellComponent`) | Al cambiar de estado, en cada máquina; los assets quedan de respaldo |
 | Tos | `UTN_StormCoughComponent` (ya existía) | Dentro de la tormenta del Coop; en la tormenta el jadeo calla |
 
 ## Arquitectura
@@ -25,6 +27,8 @@ de la tormenta). Cartoon pero creíble: patas blandas (almohadilla y dedos), nad
   rozamiento del arrastre del panzazo (`UTN_TurtleMovementComponent`) y su polvo (`UTN_TurtleDustComponent`).
 - Fuente 3D mono en la raíz de la tortuga: volumen pleno hasta 3 m, caída natural hasta 27 m y agudos que se apagan con
   la distancia. La tortuga local suena ×1,3.
+- Volumen de Efectos de los Ajustes: el sintetizador se queda en la clase de sonido por defecto, la que baja
+  `UTN_GameSettingsSubsystem` con Efectos (pasos, jadeo, panzazo, brazadas y caparazón).
 - Hilos: el juego deja las pisadas en un anillo de un escritor (`FSharedParams::PushStep`) y los objetivos (volúmenes,
   jadeo, callar el jadeo) en atómicos. Cada generador lee el anillo con su propio cursor y solo si su arranque es el
   vigente (`RunId`, lo fija `Init`): el de un arranque anterior que aún suene no roba ni repite pasos. `Busy` vuelve
@@ -125,6 +129,31 @@ espalda y el objeto entra o sale del caparazón (`Docs/Animacion_Tortuga.md`, «
 (`StepKind::Stash`) con los mismos modos del caparazón que el «tonc», sin suelo, más agudos (330-380 Hz al guardar,
 440-520 Hz al sacar), más flojos (fuerza 0,6 y 0,5) y algo más cortos. Suena aunque el Blueprint tenga `FootstepSound`.
 
+## Nado: brazadas
+
+Mientras nada (`IsSwimming`, sin estar muerta, derribada, en el caparazón ni llevada), una brazada (`StepKind::Stroke`)
+por cada ciclo de la brazada de `UTN_TurtleAnimInstance` (`PoseSwim`, 0,85 ciclos/s: una cada 1,18 s), cuando su fase
+(`GetSwimStrokePhase`) pasa por 0,25, con la aleta estirada (`TNTurtleFoley::CrossedPhase`). Si la animación no se
+evalúa (malla sin ver), un reloj propio al mismo ritmo sigue desde la última fase leída.
+
+- Solo agua, sin pata ni suelo: chapoteo de banda que entra despacio (45-70 ms) y baja de 1,5-2,2 kHz a 550-700 Hz, masa
+  de agua grave (260-380 Hz) con cola de 0,11-0,17 s y una a tres burbujas detrás de la aleta. Fundido de 60 ms al final.
+- Fuerza de 0,35 flotando en el sitio a 0,85 a la velocidad máxima nadando (`MaxSwimSpeed`); con más fuerza, más agua y
+  más viva.
+- Suena aunque el Blueprint tenga `FootstepSound` (no son pasos). Volumen: `StepLoudness`.
+
+## Meterse y salir del caparazón
+
+`UTN_ShellComponent::ApplyShellState`, que corre en todas las máquinas al cambiar de estado, pide
+`UTN_TurtleFoleyComponent::PlayShell` (`StepKind::Shell`, sin red):
+
+- Meterse: la piel roza hacia dentro (ruido de banda que barre de 2,2-2,8 kHz a 600-800 Hz en 80-100 ms) y acaba en un
+  «tonc» grave del cuerpo contra la concha (modos del caparazón a 230-280 Hz). Fuerza 0,75.
+- Salir: un «pop» que sube de tono y el roce hacia fuera (de 700-900 Hz a 2,2-2,8 kHz), con la concha más aguda
+  (340-400 Hz). Fuerza 0,6.
+- Respaldo: con `bSynthShellSounds` a false en el Blueprint del componente (o sin sintetizador, como en un servidor
+  dedicado) suenan `EnterShellSound` y `ExitShellSound`, como antes.
+
 ## Jadeo
 
 - Objetivo 0..1: nada por encima de `PantBelowStamina` (45 % de la estamina máxima con el peso que lleva), sube con curva
@@ -168,6 +197,8 @@ servidor a los 12 s.
 | `TN.Voice.Steps <0\|1\|2>` | Pasos de prueba en el sitio en la tortuga local: 0 apagados, 1 andando, 2 corriendo |
 | `TN.Voice.Pant <0\|1\|2>` | Jadeo de prueba en la tortuga local: 0 manda la estamina, 1 suave, 2 agotada |
 | `TN.Voice.Drag <0\|1\|2>` | Arrastre de prueba en el sitio en la tortuga local: 0 manda el panzazo, 1 lento, 2 rápido (con `TN.Voice.Surface` para comparar superficies) |
+| `TN.Voice.Swim <0\|1\|2>` | Brazadas de prueba en el sitio en la tortuga local, al ritmo del nado: 0 manda el nado, 1 flotando, 2 a toda velocidad |
+| `TN.Voice.Shell <0\|1>` | Sonido de meterse (1) o salir (0) del caparazón en la tortuga local, sin cambiar su estado |
 | `TN.Voice.Debug 1` | Una línea por tortuga que se oye: velocidad, pasos por huesos o por reloj, superficie, estamina, jadeo y tos |
 | `TN.Storm.Cough <0\|1\|2>` | (ya existía) Tos de prueba en la tortuga local sin tormenta |
 
@@ -183,6 +214,11 @@ sintetizados callan para no doblarse; el salto, el aterrizaje sintetizados y el 
 | Aterrizaje fuerte (1,2) | -6 a -10 dBFS |
 | Impulso del salto | -19 a -23 dBFS |
 | Jadeo flojo (0,3) / fuerte (0,7) / agotada (1) | -22 / -16 / -13 dBFS |
+| Brazada flotando (0,35) / a toda velocidad (0,85) | -35 a -31 / -23 a -18 dBFS |
+| Meterse / salir del caparazón | -15 a -13 / -20 a -16 dBFS |
+
+Las brazadas y el caparazón los mide el test `Tortunabo.Audio.TurtleFoley.SwimAndShellLevels` (doce semillas por caso):
+sin NaN, por debajo del limitador con Master 1, audibles y en silencio al acabar.
 
 El limitador de salida (-2 dBFS) solo actúa con el refuerzo de la tortuga local en las caídas más fuertes. Todo por
 debajo de la tos (golpes de tos fuerte de -7 a -1,5 dBFS).
@@ -207,10 +243,14 @@ banda de cada filtro, `DragTrim`), el «plaf» parte del aterrizaje fuerte (golp
 7. Panzazo en arena, tierra, roca, un puente de tablones y la orilla: «plaf» al caer y el arrastre de cada superficie,
    que se apaga al pararse; contra una pared, «tonc». En el sitio: `TN.Voice.Drag 2` con `TN.Voice.Surface 0..4`
    (`TN.Voice.Drag 0` para volver).
+8. Nadar: una brazada por cada ciclo de las aletas, más fuerte nadando deprisa que flotando. En el sitio: `TN.Voice.Swim 1`
+   y `2` (`TN.Voice.Swim 0` para volver).
+9. Meterse y salir del caparazón (Ctrl, B o Círculo): roce hacia dentro y «tonc» grave; al salir, «pop» y roce hacia
+   fuera. `TN.Voice.Shell 1` / `0` para oírlo sin cambiar de estado.
 
 ## Música de fondo de la carrera («Marcha de la Playa»)
 
-Tarea 8 de `Docs/Archivo/Plan_Carrera_Ronda4.md`. Sintetizada en C++ en tiempo real, sin archivos de audio, como el resto de la música
+Tarea 8 de `Docs/Archivo/Plan_Carrera_Ronda4.md` (eliminado). Sintetizada en C++ en tiempo real, sin archivos de audio, como el resto de la música
 del juego, y solo en la carrera de la playa. Suena de fondo (por debajo de efectos, voces y avisos), en la categoría **Música**
 del menú de pausa, con una capa de tensión y un «ducking» suave que sigue el estado que ya replica `ATN_BeachRaceGameState`.
 
@@ -317,7 +357,7 @@ con bloques de 1, 333, 480 y 1024 muestras; sin voces robadas en los depósitos.
 
 ## Golpes del caparazón
 
-Tarea 9 de `Docs/Archivo/Plan_Carrera_Ronda4.md`. Con la tortuga en bola (`ATN_ShellBody`, la caja de física), cada choque suena y
+Tarea 9 de `Docs/Archivo/Plan_Carrera_Ronda4.md` (eliminado). Con la tortuga en bola (`ATN_ShellBody`, la caja de física), cada choque suena y
 levanta un mini efecto según contra qué choca, con la fuerza que da la velocidad del impacto. **Sin red**: cada máquina lo
 detecta en su copia de la bola (los clientes también simulan la caja y la réplica la corrige), así que todos los jugadores
 cercanos lo ven y oyen sin un byte más y sin multicast; uno no fiable habría costado hasta 8 mensajes por segundo y bola con

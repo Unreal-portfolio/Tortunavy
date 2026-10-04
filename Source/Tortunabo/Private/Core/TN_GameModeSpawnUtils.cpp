@@ -312,15 +312,85 @@ APlayerStart* TN_EnsureFallbackPlayerStart(UWorld* World, FName SpawnActorName, 
 	return Spawned;
 }
 
+bool TN_IsPlayerStateLeaving(const APlayerState* PlayerState)
+{
+	if (!IsValid(PlayerState) || PlayerState->IsActorBeingDestroyed() || PlayerState->IsInactive())
+	{
+		return true;
+	}
+	// Durante Logout el controlador ya está en destrucción (UWorld::DestroyActor lo marca antes de llamar a Destroyed).
+	const AActor* Owner = PlayerState->GetOwner();
+	return Owner && Owner->IsActorBeingDestroyed();
+}
+
+bool TN_IsBotPlayerState(const APlayerState* PlayerState)
+{
+	if (!PlayerState)
+	{
+		return false;
+	}
+	if (PlayerState->IsABot())
+	{
+		return true;
+	}
+	const AController* Owner = Cast<AController>(PlayerState->GetOwner());
+	return Owner && !Owner->IsA<APlayerController>();
+}
+
 int32 TN_CountConnectedCoopPlayers(const AGameStateBase* GameState)
 {
+	if (!GameState)
+	{
+		return 0;
+	}
 	int32 Count = 0;
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
-		if (Cast<ATN_CoopPlayerState>(BasePS))
+		if (Cast<ATN_CoopPlayerState>(BasePS) && !TN_IsPlayerStateLeaving(BasePS) && !TN_IsBotPlayerState(BasePS))
 		{
 			++Count;
 		}
+	}
+	return Count;
+}
+
+FTNCoopRoundCount TN_CountCoopRound(const AGameStateBase* GameState)
+{
+	FTNCoopRoundCount Count;
+	if (!GameState)
+	{
+		return Count;
+	}
+	for (APlayerState* BasePS : GameState->PlayerArray)
+	{
+		const ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS);
+		if (!PS || TN_IsPlayerStateLeaving(PS))
+		{
+			continue;
+		}
+		++Count.Total;
+		Count.Alive += PS->bIsAlive ? 1 : 0;
+		Count.Resolved += PS->bHasFinishedRun ? 1 : 0;
+	}
+	return Count;
+}
+
+FTNLobbyReadyCount TN_CountLobbyReady(const AGameStateBase* GameState)
+{
+	FTNLobbyReadyCount Count;
+	if (!GameState)
+	{
+		return Count;
+	}
+	for (APlayerState* BasePS : GameState->PlayerArray)
+	{
+		const ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS);
+		if (!PS || TN_IsPlayerStateLeaving(PS) || TN_IsBotPlayerState(PS))
+		{
+			continue;
+		}
+		++Count.Connected;
+		Count.Ready += PS->bIsInReadyZone ? 1 : 0;
 	}
 	return Count;
 }

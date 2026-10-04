@@ -1,0 +1,306 @@
+#include "Vehicles/TN_RallyTurretLogic.h"
+
+namespace TNRallyTurret
+{
+	FAmmoSpec SpecFor(ETNRallyAmmo Ammo)
+	{
+		FAmmoSpec Spec;
+		switch (Ammo)
+		{
+		case ETNRallyAmmo::Coco:
+			Spec = { 6000.f, 0.3f, 3.f, 120.f, 0.25f, 0 };
+			break;
+		case ETNRallyAmmo::Alga:
+			Spec = { 3500.f, 1.f, 4.f, 60.f, 0.5f, 2 };
+			break;
+		case ETNRallyAmmo::Burbuja:
+			// Retroceso pequeño (#629): todas las municiones empujan al buggy, pero la burbuja sale lenta para poder cogerla.
+			Spec = { 900.f, 0.f, BubbleFloatSeconds, 40.f, 0.5f, 1 };
+			break;
+		case ETNRallyAmmo::Mortero:
+			Spec = { 2800.f, 1.f, 5.f, 700.f, 0.8f, 1 };
+			break;
+		case ETNRallyAmmo::Tinta:
+			Spec = { 5000.f, 0.3f, 3.f, 60.f, 0.5f, 2 };
+			break;
+		case ETNRallyAmmo::Ancla:
+			Spec = { 4500.f, 0.5f, 3.f, 200.f, 0.6f, 2 };
+			break;
+		case ETNRallyAmmo::Concha:
+			// Conchas de las cajas «?» (#629): corren por el suelo a su velocidad (ATN_KartShell), sin gravedad de vuelo.
+			Spec = { ShellSpeedCms, 0.f, 6.f, 250.f, 0.5f, 2 };
+			break;
+		case ETNRallyAmmo::ConchaGuiada:
+			Spec = { ShellSpeedCms, 0.f, 12.f, 250.f, 0.5f, 1 };
+			break;
+		default:
+			break;
+		}
+		return Spec;
+	}
+
+	bool IsSpecial(ETNRallyAmmo Ammo)
+	{
+		return Ammo != ETNRallyAmmo::None && Ammo != ETNRallyAmmo::Coco;
+	}
+
+	bool IsGroundShell(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::Concha || Ammo == ETNRallyAmmo::ConchaGuiada;
+	}
+
+	bool IsOverheated(const FHeat& State)
+	{
+		return State.OverheatLeft > 0.f;
+	}
+
+	bool CanFireCoco(const FHeat& State)
+	{
+		return !IsOverheated(State);
+	}
+
+	FHeat AfterCocoShot(const FHeat& State)
+	{
+		FHeat Out = State;
+		Out.SinceShot = 0.f;
+		if (IsOverheated(Out))
+		{
+			return Out;
+		}
+		// Redondeo: seis sumas de 1/6 en float pueden quedarse en 0,99999.
+		Out.Heat = FMath::Min(1.f, Out.Heat + 1.f / ShotsToOverheat + KINDA_SMALL_NUMBER);
+		if (Out.Heat >= 1.f)
+		{
+			Out.Heat = 1.f;
+			Out.OverheatLeft = OverheatSeconds;
+		}
+		return Out;
+	}
+
+	FHeat Cool(const FHeat& State, float Dt)
+	{
+		FHeat Out = State;
+		const float Step = FMath::Max(Dt, 0.f);
+		Out.SinceShot += Step;
+		if (IsOverheated(Out))
+		{
+			Out.OverheatLeft = FMath::Max(0.f, Out.OverheatLeft - Step);
+			if (Out.OverheatLeft <= 0.f)
+			{
+				Out.Heat = 0.f;
+			}
+			return Out;
+		}
+		if (Out.SinceShot >= CoolDelaySeconds)
+		{
+			Out.Heat = FMath::Max(0.f, Out.Heat - CoolPerSecond * Step);
+		}
+		return Out;
+	}
+
+	FSpecial Give(ETNRallyAmmo Ammo, int32 Charges)
+	{
+		FSpecial Out;
+		if (IsSpecial(Ammo) && Charges > 0)
+		{
+			Out.Ammo = Ammo;
+			Out.Charges = Charges;
+		}
+		return Out;
+	}
+
+	bool CanFireSpecial(const FSpecial& State)
+	{
+		return IsSpecial(State.Ammo) && State.Charges > 0;
+	}
+
+	FSpecial AfterSpecialShot(const FSpecial& State)
+	{
+		if (!CanFireSpecial(State))
+		{
+			return FSpecial();
+		}
+		return Give(State.Ammo, State.Charges - 1);
+	}
+
+	FRotator ClampAim(const FRotator& RelativeAim)
+	{
+		return FRotator(
+			FMath::Clamp(static_cast<float>(RelativeAim.Pitch), MinPitchDeg, MaxPitchDeg),
+			FRotator::NormalizeAxis(RelativeAim.Yaw),
+			0.f);
+	}
+
+	bool IsAimFinite(float Yaw, float Pitch)
+	{
+		return FMath::IsFinite(Yaw) && FMath::IsFinite(Pitch);
+	}
+
+	FVector AimWorldDirection(const FRotator& BuggyRotation, const FRotator& RelativeAim)
+	{
+		const FQuat World = BuggyRotation.Quaternion() * ClampAim(RelativeAim).Quaternion();
+		return World.GetForwardVector();
+	}
+
+	FRotator RelativeAimFromWorld(const FRotator& BuggyRotation, const FVector& WorldDir)
+	{
+		const FVector Local = BuggyRotation.Quaternion().UnrotateVector(WorldDir.GetSafeNormal());
+		return ClampAim(Local.Rotation());
+	}
+
+	FVector ResolveClientFireDirection(const FVector& ServerDir, const FVector& ClientDir, float MaxErrorDeg)
+	{
+		const FVector Server = ServerDir.GetSafeNormal();
+		if (ClientDir.ContainsNaN() || ClientDir.IsNearlyZero())
+		{
+			return Server;
+		}
+		const FVector Client = ClientDir.GetSafeNormal();
+		const double CosMax = FMath::Cos(FMath::DegreesToRadians(static_cast<double>(FMath::Max(MaxErrorDeg, 0.f))));
+		return FVector::DotProduct(Server, Client) >= CosMax ? Client : Server;
+	}
+
+	FVector MuzzleWorldLocation(const FVector& PivotWorld, const FRotator& BuggyRotation, const FRotator& RelativeAim, float ForwardCm,
+		float SideCm)
+	{
+		const FQuat World = BuggyRotation.Quaternion() * ClampAim(RelativeAim).Quaternion();
+		return PivotWorld + World.RotateVector(FVector(ForwardCm, SideCm, 0.f));
+	}
+
+	bool CadenceOk(double Now, double LastShot, float Interval, float Tolerance)
+	{
+		return Now - LastShot >= static_cast<double>(Interval) * Tolerance;
+	}
+
+	FVector RecoilVelocity(const FVector& AimWorldDir, float RecoilCms)
+	{
+		const FVector Flat = FVector(AimWorldDir.X, AimWorldDir.Y, 0.f).GetSafeNormal();
+		return -Flat * FMath::Max(RecoilCms, 0.f);
+	}
+
+	FRecoilLift RecoilLift(const FVector& LocalAimDir, float RecoilCms, float HalfLengthCm)
+	{
+		FRecoilLift Out;
+		const FVector Flat = FVector(LocalAimDir.X, LocalAimDir.Y, 0.f).GetSafeNormal();
+		const float Forwardness = static_cast<float>(Flat.X);
+		if (FMath::Abs(Forwardness) < KINDA_SMALL_NUMBER || RecoilCms <= 0.f)
+		{
+			return Out;
+		}
+		Out.LiftCms = RecoilCms * RecoilLiftRatio * FMath::Abs(Forwardness);
+		Out.LocalPoint = FVector(FMath::Sign(Forwardness) * FMath::Max(HalfLengthCm, 0.f) * 0.9f, 0.f, 0.f);
+		return Out;
+	}
+
+	TArray<ETNRallyAmmo> AvailableAmmo(const FSpecial& Special)
+	{
+		TArray<ETNRallyAmmo> Out;
+		Out.Add(ETNRallyAmmo::Coco);
+		if (CanFireSpecial(Special))
+		{
+			Out.Add(Special.Ammo);
+		}
+		return Out;
+	}
+
+	ETNRallyAmmo ResolveSelection(ETNRallyAmmo Selected, const FSpecial& Special)
+	{
+		if (!IsSpecial(Selected) || !CanFireSpecial(Special))
+		{
+			return ETNRallyAmmo::Coco;
+		}
+		return Special.Ammo;
+	}
+
+	ETNRallyAmmo CycleAmmo(ETNRallyAmmo Selected, const FSpecial& Special, int32 Direction)
+	{
+		const TArray<ETNRallyAmmo> Options = AvailableAmmo(Special);
+		const ETNRallyAmmo Current = ResolveSelection(Selected, Special);
+		const int32 Index = FMath::Max(0, Options.IndexOfByKey(Current));
+		const int32 Num = Options.Num();
+		// Módulo positivo: un paso hacia atrás desde el primero da el último.
+		const int32 Next = ((Index + Direction) % Num + Num) % Num;
+		return Options[Next];
+	}
+
+	float LobRangeCm(float PitchDeg, float HeightCm, float SpeedCms, float GravityCms2)
+	{
+		if (GravityCms2 <= 0.f || SpeedCms <= 0.f)
+		{
+			return 0.f;
+		}
+		const float Rad = FMath::DegreesToRadians(PitchDeg);
+		const float Vz = SpeedCms * FMath::Sin(Rad);
+		const float Discriminant = Vz * Vz + 2.f * GravityCms2 * HeightCm;
+		if (Discriminant < 0.f)
+		{
+			return 0.f;
+		}
+		const float FlightSeconds = (Vz + FMath::Sqrt(Discriminant)) / GravityCms2;
+		return FMath::Max(0.f, SpeedCms * FMath::Cos(Rad) * FlightSeconds);
+	}
+
+	float LobPitchDeg(float RangeCm, float HeightCm, float SpeedCms, float GravityCms2)
+	{
+		if (GravityCms2 <= 0.f || SpeedCms <= 0.f || RangeCm <= 0.f)
+		{
+			return 0.f;
+		}
+		constexpr float StepDeg = 0.5f;
+		for (float Pitch = MinPitchDeg; Pitch <= MaxPitchDeg; Pitch += StepDeg)
+		{
+			if (LobRangeCm(Pitch, HeightCm, SpeedCms, GravityCms2) >= RangeCm)
+			{
+				return Pitch;
+			}
+		}
+		return MaxPitchDeg;
+	}
+
+	int32 PickAutoAimTarget(const FVector& Origin, const FVector& Dir, TConstArrayView<FVector> Candidates,
+		float RangeCm, float HalfAngleDeg)
+	{
+		const FVector FlatDir = FVector(Dir.X, Dir.Y, 0.f).GetSafeNormal();
+		if (FlatDir.IsNearlyZero())
+		{
+			return INDEX_NONE;
+		}
+		const float MinCos = FMath::Cos(FMath::DegreesToRadians(HalfAngleDeg));
+		int32 Best = INDEX_NONE;
+		double BestDist = RangeCm;
+		for (int32 Index = 0; Index < Candidates.Num(); ++Index)
+		{
+			const FVector To(Candidates[Index].X - Origin.X, Candidates[Index].Y - Origin.Y, 0.f);
+			const double Dist = To.Size();
+			if (Dist <= KINDA_SMALL_NUMBER || Dist > BestDist)
+			{
+				continue;
+			}
+			if (FVector::DotProduct(To / Dist, FlatDir) < MinCos)
+			{
+				continue;
+			}
+			Best = Index;
+			BestDist = Dist;
+		}
+		return Best;
+	}
+
+	FImpactOutcome ResolveImpact(bool bShielded)
+	{
+		FImpactOutcome Out;
+		Out.bApplies = !bShielded;
+		Out.bShieldConsumed = bShielded;
+		return Out;
+	}
+
+	float PuddleGripMultiplier(bool bInPuddle)
+	{
+		return bInPuddle ? AlgaGripMultiplier : 1.f;
+	}
+
+	float PuddleSpeedCapCms(bool bInPuddle)
+	{
+		return BuggyTopSpeedCms * (bInPuddle ? AlgaSpeedMultiplier : 1.f);
+	}
+}

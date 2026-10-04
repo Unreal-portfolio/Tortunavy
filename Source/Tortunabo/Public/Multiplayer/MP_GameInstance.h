@@ -341,6 +341,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	FName GetEquippedEyesId() const;
 
+	// ── Buggy del Rally (catálogo en C++: Vehicles/TN_BuggyCosmetics.h) ──────
+
+	/** Modelos y pinturas del buggy comprados (los de serie y los gratis no hace falta comprarlos). */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	TArray<FName> GetUnlockedBuggyIds() const;
+
+	/** Guarda el buggy equipado si se puede poner (desbloqueado o gratis). Lo que no existe pasa a ser el de serie. */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	bool EquipBuggyLook(const FTN_BuggyLook& Look);
+
+	/** Buggy equipado (saneado: un Id que ya no está en el catálogo da el de serie). */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	FTN_BuggyLook GetEquippedBuggyLook() const;
+
 	/** Devuelve el DataTable de skins para lookup externo. */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	UDataTable* GetSkinDataTable() const { return SkinDataTable; }
@@ -419,6 +433,24 @@ public:
 	/** Dificultad elegida en el lobby para el mapa procedural. */
 	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
 	ETNProcDifficulty SelectedProcDifficulty = ETNProcDifficulty::Normal;
+
+	/** Rally y Karts: tortugas por buggy que eligió el anfitrión al crear la sala o con el general (1 = cada una el suyo; 2 = por parejas). */
+	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
+	int32 SelectedKartSeats = 2;
+
+	/**
+	 * Rally (#632): circuito de LVL_Rally (?Variant=) que eligió el anfitrión. ATN_HQGameMode lo lee al viajar
+	 * (TNLobbyMission::RallyTravelURL); si ya no está entre las opciones, el primero.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
+	FName SelectedRallyVariant = FName(TEXT("R01_circuito_dunas"));
+
+	/**
+	 * Todos contra Todos: arena de Scripts/terrain_volumes/Variants (?Arena=) que eligió el anfitrión. ATN_HQGameMode la
+	 * lee al viajar (TNLobbyMission::TctTravelURL); si ya no está entre las opciones, la primera.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
+	FName SelectedTctArena = FName(TEXT("A01_diana"));
 
 	/**
 	 * Cómo se pusieron listos en el lobby (sala de la puerta doble o huevos): así empieza la partida en el mapa
@@ -596,6 +628,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_TutorialSaveGame> TutorialProfile;
+
+	/** SteamID64 de la cuenta dueña del perfil cosmético; vacío sin Steam (ranura _Local). Se fija al cargarlo. */
+	FString CosmeticAccountId;
 
 	/** El perfil cosmético del disco no se pudo leer ni apartar: no se escribe encima en esta sesión. */
 	bool bCosmeticSaveBlocked = false;

@@ -4,6 +4,7 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TN_TurtleSurface.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcMapLayout.h"
@@ -100,6 +101,9 @@ namespace TNTurtleFoley
 		bool bBellyGround = false;
 		/** Muerta, derribada, en el caparazón, en panzazo, llevada por otra o nadando: sin pasos. */
 		bool bBlockedSteps = true;
+		/** Nadando y braceando (ni muerta, ni derribada, ni en el caparazón, ni llevada), y velocidad máxima nadando. */
+		bool bSwimStroke = false;
+		float SwimSpeed = 625.f;
 		bool bSprinting = false;
 		bool bRunGait = false;
 		float WalkSpeed = 450.f;
@@ -225,6 +229,16 @@ void UTN_TurtleFoleyComponent::SetDebugDrag(int32 InLevel)
 	}
 }
 
+void UTN_TurtleFoleyComponent::SetDebugSwim(int32 InLevel)
+{
+	DebugSwim = FMath::Clamp(InLevel, 0, 2);
+	if (DebugSwim > 0 && bSlowTick)
+	{
+		bSlowTick = false;
+		SetComponentTickInterval(0.f);
+	}
+}
+
 void UTN_TurtleFoleyComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -237,7 +251,7 @@ void UTN_TurtleFoleyComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	if (!Frame.bValid) { return; }
 
 	// Lejos del oyente basta un tick lento: el cansancio y las caídas se siguen llevando al día.
-	const bool bWantSlow = !Frame.bNear && DebugSteps == 0 && DebugDrag == 0;
+	const bool bWantSlow = !Frame.bNear && DebugSteps == 0 && DebugDrag == 0 && DebugSwim == 0;
 	if (bWantSlow != bSlowTick)
 	{
 		bSlowTick = bWantSlow;
@@ -248,6 +262,7 @@ void UTN_TurtleFoleyComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	UpdateJumpAndLanding(DeltaTime, Now, Frame);
 	UpdateSteps(DeltaTime, Now, Frame);
 	UpdateDrag(DeltaTime, Now, Frame);
+	UpdateSwim(DeltaTime, Now, Frame);
 
 	// Objetivos para el hilo de audio.
 	TNTurtleFoley::FSharedParams& P = *SharedParams;
@@ -273,7 +288,7 @@ void UTN_TurtleFoleyComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	}
 	else if (IsActive())
 	{
-		const bool bIdle = PantSent <= 0.f && DragSent <= 0.f && DebugSteps == 0 && Now - LastActivityTime > TNTurtleFoley::IdleStopSeconds
+		const bool bIdle = PantSent <= 0.f && DragSent <= 0.f && DebugSteps == 0 && DebugSwim == 0 && Now - LastActivityTime > TNTurtleFoley::IdleStopSeconds
 			&& P.Busy.load(std::memory_order_relaxed) == 0;
 		if (!Frame.bNear || Volume <= 0.f || bIdle)
 		{
@@ -313,6 +328,8 @@ void UTN_TurtleFoleyComponent::ReadFrame(TNTurtleFoley::FTurtleState& Out, doubl
 	Out.bBellyPose = Turtle->IsBellyPoseActive();
 	Out.bBellyGround = Out.bBellyPose && Out.bGrounded;
 	Out.bBlockedSteps = bDown || Turtle->IsInShell() || Out.bBellyPose || bCarried || bSwimming;
+	Out.bSwimStroke = bSwimming && !bDown && !Turtle->IsInShell() && !bCarried;
+	Out.SwimSpeed = Move ? FMath::Max(100.f, Move->MaxSwimSpeed) : 625.f;
 	Out.bBlockedPant = bDown;
 
 	if (const UTN_StaminaComponent* Stamina = Turtle->GetStaminaComponent())
@@ -597,16 +614,72 @@ void UTN_TurtleFoleyComponent::PlayStash(bool bIntoShell)
 	EmitStep(TNTurtleFoley::StepKind::Stash, static_cast<uint8>(bIntoShell ? 0 : 1), bIntoShell ? 0.6f : 0.5f, 0.4f, Now, Frame);
 }
 
+void UTN_TurtleFoleyComponent::PlayShell(bool bEntering)
+{
+	const UWorld* CompWorld = GetWorld();
+	if (!CompWorld || !SharedParams.IsValid())
+	{
+		return;
+	}
+	const double Now = CompWorld->GetTimeSeconds();
+	TNTurtleFoley::FTurtleState Frame;
+	ReadFrame(Frame, Now);
+	if (!Frame.bValid)
+	{
+		return;
+	}
+	// El pie elige el gesto (0 = meterse, 1 = salir).
+	EmitStep(TNTurtleFoley::StepKind::Shell, static_cast<uint8>(bEntering ? 0 : 1), bEntering ? 0.75f : 0.6f, 0.4f, Now, Frame);
+}
+
+void UTN_TurtleFoleyComponent::UpdateSwim(float DeltaTime, double Now, const TNTurtleFoley::FTurtleState& Frame)
+{
+	const bool bDebug = DebugSwim > 0;
+	if (!Frame.bNear || (!Frame.bSwimStroke && !bDebug))
+	{
+		PrevSwimPhase = -1.f;
+		return;
+	}
+
+	// Fase de la brazada: la de la animación (PoseSwim) si avanza; si no se evalúa (malla sin ver o sin la animación de
+	// la tortuga), un reloj propio al mismo ritmo que sigue desde donde se quedó.
+	float Phase = SwimClock + DeltaTime * UTN_TurtleAnimInstance::SwimStrokeHz;
+	Phase -= FMath::FloorToFloat(Phase);
+	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(GetOwner());
+	const USkeletalMeshComponent* SkelMesh = Turtle ? Turtle->GetMesh() : nullptr;
+	if (const UTN_TurtleAnimInstance* Anim = SkelMesh ? Cast<UTN_TurtleAnimInstance>(SkelMesh->GetAnimInstance()) : nullptr)
+	{
+		const float AnimPhase = Anim->GetSwimStrokePhase();
+		if (AnimPhase != LastAnimSwimPhase)
+		{
+			Phase = AnimPhase;
+			LastAnimSwimPhase = AnimPhase;
+		}
+	}
+	SwimClock = Phase;
+	const bool bCrossed = PrevSwimPhase >= 0.f && TNTurtleFoley::CrossedPhase(PrevSwimPhase, Phase, TNTurtleFoley::SwimStrokeAt);
+	PrevSwimPhase = Phase;
+	if (!bCrossed)
+	{
+		return;
+	}
+
+	// Fuerza de la brazada: flotando en el sitio, suave; a la velocidad máxima nadando, fuerte y viva.
+	const float Effort = bDebug ? (DebugSwim >= 2 ? 1.f : 0.f) : FMath::Clamp(Frame.Speed / Frame.SwimSpeed, 0.f, 1.f);
+	const float Force = FMath::Lerp(0.35f, 0.85f, Effort);
+	EmitStep(TNTurtleFoley::StepKind::Stroke, NextFoot, Force, Effort, Now, Frame);
+}
+
 void UTN_TurtleFoleyComponent::EmitStep(uint8 Kind, uint8 Foot, float Force, float Pace, double Now, const TNTurtleFoley::FTurtleState& Frame)
 {
 	LastStepTime = Now;
 	LastActivityTime = Now;
 	NextFoot = static_cast<uint8>((Foot & 1u) ^ 1u);
-	// Con los pasos de siempre del Blueprint, los sintetizados callan; los del panzazo (y guardar en el caparazón) no son
-	// pasos y suenan igual.
-	const bool bPanzazo = Kind == TNTurtleFoley::StepKind::Belly || Kind == TNTurtleFoley::StepKind::Bump
-		|| Kind == TNTurtleFoley::StepKind::Stash;
-	if (!SharedParams.IsValid() || !Frame.bNear || (Frame.bLegacySteps && !bPanzazo) || TNTurtleFoley::GVoiceVolume <= 0.f) { return; }
+	// Con los pasos de siempre del Blueprint, los sintetizados callan; el resto (panzazo, guardar en el caparazón,
+	// brazadas, meterse y salir del caparazón) no son pasos y suena igual.
+	const bool bFootstep = Kind == TNTurtleFoley::StepKind::Step || Kind == TNTurtleFoley::StepKind::Land
+		|| Kind == TNTurtleFoley::StepKind::Scuff;
+	if (!SharedParams.IsValid() || !Frame.bNear || (Frame.bLegacySteps && bFootstep) || TNTurtleFoley::GVoiceVolume <= 0.f) { return; }
 	if (!IsActive())
 	{
 		StartSynth();
@@ -618,7 +691,11 @@ void UTN_TurtleFoleyComponent::EmitStep(uint8 Kind, uint8 Foot, float Force, flo
 	Ev.Force = Force;
 	Ev.Pace = Pace;
 	Ev.Heavy = Frame.Heavy;
-	ResolveSurface(Frame.FootLocation, Now, Ev.Surf);
+	// La brazada y el caparazón no suenan a suelo: sin traza.
+	if (Kind != TNTurtleFoley::StepKind::Stroke && Kind != TNTurtleFoley::StepKind::Shell)
+	{
+		ResolveSurface(Frame.FootLocation, Now, Ev.Surf);
+	}
 	SharedParams->PushStep(Ev);
 }
 
@@ -885,6 +962,47 @@ namespace TNTurtleFoley
 		UE_LOG(LogTortunabo, Log, TEXT("[TurtleFoley] Arrastre de prueba: %s."),
 			Mode == 0 ? TEXT("apagado (manda el panzazo)") : (Mode == 1 ? TEXT("lento") : TEXT("rápido")));
 	}
+
+	/** TN.Voice.Swim <0|1|2>: brazadas de prueba en el sitio (al ritmo del nado) en la tortuga local. */
+	static void RunSwimCommand(const TArray<FString>& Args, UWorld* InWorld)
+	{
+		const int32 Mode = Args.Num() > 0 ? FMath::Clamp(FCString::Atoi(*Args[0]), 0, 2) : 1;
+		UTN_TurtleFoleyComponent* Foley = FindLocalFoley(InWorld);
+		if (!Foley)
+		{
+			UE_LOG(LogTortunabo, Warning, TEXT("[TurtleFoley] TN.Voice.Swim: no hay tortuga local o esta máquina no tiene audio."));
+			return;
+		}
+		Foley->SetDebugSwim(Mode);
+		UE_LOG(LogTortunabo, Log, TEXT("[TurtleFoley] Brazadas de prueba: %s."),
+			Mode == 0 ? TEXT("apagadas (manda el nado)") : (Mode == 1 ? TEXT("flotando") : TEXT("a toda velocidad")));
+	}
+
+	/** TN.Voice.Shell <0|1>: meterse (1) o salir (0) del caparazón, solo el sonido, en la tortuga local. */
+	static void RunShellCommand(const TArray<FString>& Args, UWorld* InWorld)
+	{
+		const bool bEntering = Args.Num() == 0 || FCString::Atoi(*Args[0]) != 0;
+		UTN_TurtleFoleyComponent* Foley = FindLocalFoley(InWorld);
+		if (!Foley)
+		{
+			UE_LOG(LogTortunabo, Warning, TEXT("[TurtleFoley] TN.Voice.Shell: no hay tortuga local o esta máquina no tiene audio."));
+			return;
+		}
+		Foley->PlayShell(bEntering);
+		UE_LOG(LogTortunabo, Log, TEXT("[TurtleFoley] Caparazón de prueba: %s."), bEntering ? TEXT("meterse") : TEXT("salir"));
+	}
+
+	static FAutoConsoleCommandWithWorldAndArgs SwimCommand(
+		TEXT("TN.Voice.Swim"),
+		TEXT("Brazadas de prueba en el sitio en la tortuga local, al ritmo del nado: 0 = apagadas (manda el nado), 1 = flotando, 2 = a toda velocidad."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunSwimCommand),
+		ECVF_Cheat);
+
+	static FAutoConsoleCommandWithWorldAndArgs ShellCommand(
+		TEXT("TN.Voice.Shell"),
+		TEXT("Sonido sintetizado de meterse (1) o salir (0) del caparazón en la tortuga local, sin cambiar su estado."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunShellCommand),
+		ECVF_Cheat);
 
 	static FAutoConsoleCommandWithWorldAndArgs DragCommand(
 		TEXT("TN.Voice.Drag"),

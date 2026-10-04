@@ -56,6 +56,13 @@ public:
 	/** Dificultad de la próxima partida tal como llega a esta máquina. */
 	ETNProcDifficulty GetMissionDifficulty() const { return MissionDifficulty; }
 
+	/**
+	 * Mapa de la misión (TNLobbyMission::GetHostMissionMap: el circuito en el Rally, la arena en Todos contra Todos) y
+	 * tortugas por buggy (Rally y Karts) de la próxima partida, tal como llegan a esta máquina.
+	 */
+	FName GetMissionRallyVariant() const { return MissionRallyVariant; }
+	int32 GetMissionRallySeats() const { return MissionRallySeats; }
+
 	/** Servidor: copia la misión de la GameInstance del anfitrión y la replica (solo si ha cambiado). */
 	void SyncMissionFromGameInstance();
 
@@ -112,6 +119,12 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Mission)
 	ETNProcDifficulty MissionDifficulty = ETNProcDifficulty::Normal;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Mission)
+	FName MissionRallyVariant;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Mission)
+	uint8 MissionRallySeats = 2;
 
 	UFUNCTION()
 	void OnRep_Mission();

@@ -462,6 +462,11 @@ void ATN_ProcGeyser::Launch(ACharacter* Character)
 	}
 	Character->LaunchCharacter(Velocity, true, true);
 
+	PlayLaunchBurst();
+}
+
+void ATN_ProcGeyser::PlayLaunchBurst()
+{
 	// Estallido al lanzar: el chorro vuelve a arrancar, gotas y espuma arriba y en la boca y una bocanada de bruma.
 	PulseTime -= FMath::Frac(PulseTime / FMath::Max(1.f, CycleSeconds)) * FMath::Max(1.f, CycleSeconds);
 	if (TNAmbientFX::FEmitter* E = TNAmbientFX::GetEmitter(this, 0)) { TNAmbientFX::Burst(*E, 50); }
@@ -487,8 +492,50 @@ ATN_ProcSlideZone::ATN_ProcSlideZone()
 	SetRootComponent(Root);
 }
 
+bool ATN_ProcSlideZone::FindFlowAt(const FVector& Point, FVector& OutFlow) const
+{
+	for (int32 Index = 0; Index < Segments.Num() && Index < SegmentDirs.Num(); ++Index)
+	{
+		const UBoxComponent* Seg = Segments[Index];
+		if (!Seg)
+		{
+			continue;
+		}
+		const FVector Local = Seg->GetComponentTransform().InverseTransformPositionNoScale(Point);
+		const FVector Extent = Seg->GetUnscaledBoxExtent();
+		if (FMath::Abs(Local.X) <= Extent.X && FMath::Abs(Local.Y) <= Extent.Y && FMath::Abs(Local.Z) <= Extent.Z + 200.f)
+		{
+			OutFlow = SegmentDirs[Index];
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ATN_ProcSlideZone::GetTop(FVector& OutTop, FVector& OutFlow) const
+{
+	if (Segments.Num() == 0 || !Segments[0] || SegmentDirs.Num() == 0)
+	{
+		return false;
+	}
+	const UBoxComponent* First = Segments[0];
+	OutFlow = SegmentDirs[0];
+	// El tramo va centrado entre sus dos puntos y 120 cm por encima: su principio es el labio.
+	OutTop = First->GetComponentLocation() - OutFlow * First->GetUnscaledBoxExtent().X - FVector(0.f, 0.f, 120.f);
+	return true;
+}
+
+bool ATN_ProcSlideZone::GetPool(FVector& OutCenter, float& OutRadius) const
+{
+	OutCenter = PoolCenterWorld;
+	OutRadius = PoolRadiusCm;
+	return PoolRadiusCm > 0.f;
+}
+
 void ATN_ProcSlideZone::InitFromPoints(const TArray<FVector>& Points, float Width, const FVector& PoolCenter, float PoolRadius, const FVector& Impact)
 {
+	PoolCenterWorld = PoolCenter;
+	PoolRadiusCm = PoolRadius;
 	for (UBoxComponent* Seg : Segments)
 	{
 		if (Seg) { Seg->DestroyComponent(); }

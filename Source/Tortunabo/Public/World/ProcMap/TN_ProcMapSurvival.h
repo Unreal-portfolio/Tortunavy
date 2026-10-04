@@ -287,4 +287,33 @@ namespace TNProcMap
 			Out.Jumps.Add({ ToIndex(C - Half), ToIndex(C + Half), GapLongestLeap(L, F) / 100.0 });
 		}
 	}
+
+	/** Huella del layout: camino, ramas y elementos redondeados al centímetro. La usan el test del Coop sin
+	 * cambios y el catálogo de Supervivencia (TN_SurvivalCatalog.h) para notar si el generador cambia. */
+	inline uint64 LayoutFingerprint(const FLayout& L)
+	{
+		uint64 H = 1469598103934665603ull;
+		auto Mix = [&H](int64 V)
+		{
+			for (int32 b = 0; b < 8; ++b) { H = (H ^ static_cast<uint64>((V >> (8 * b)) & 0xFF)) * 1099511628211ull; }
+		};
+		auto MixVec = [&Mix](const FVector2D& V) { Mix(FMath::RoundToInt64(V.X)); Mix(FMath::RoundToInt64(V.Y)); };
+		Mix(FMath::RoundToInt64(L.WorldSize));
+		for (const FRouteStep& St : L.Route) { Mix(St.Module); }
+		for (const FPathSample& S : L.Main)
+		{
+			MixVec(S.P); Mix(FMath::RoundToInt64(S.Z)); Mix(FMath::RoundToInt64(S.Width)); Mix(S.Flags);
+		}
+		for (const FBranch& B : L.Branches)
+		{
+			Mix(B.Samples.Num()); Mix(static_cast<int64>(B.Kind)); Mix(B.ForkSample); Mix(B.RejoinSample);
+			for (const FPathSample& S : B.Samples) { MixVec(S.P); Mix(FMath::RoundToInt64(S.Z)); }
+		}
+		for (const FFeature& F : L.Features)
+		{
+			Mix(static_cast<int64>(F.Type)); Mix(FMath::RoundToInt64(F.Location.X)); Mix(FMath::RoundToInt64(F.Location.Y));
+			Mix(FMath::RoundToInt64(F.Location.Z));
+		}
+		return H;
+	}
 }

@@ -1,6 +1,9 @@
 #include "Lobby/TN_LobbyMission.h"
+
+#include "Core/TN_LocText.h"
 #include "Core/TN_GameModeSpawnUtils.h"
 #include "Core/TN_Log.h"
+#include "Game/TN_TctGameMode.h"
 #include "Lobby/TN_GeneralBriefing.h"
 #include "Lobby/TN_ProcModeSelector.h"
 #include "Multiplayer/MP_GameInstance.h"
@@ -36,20 +39,63 @@ FText TNLobbyMission::ModeName(ETNProcGameMode Mode)
 	case ETNProcGameMode::Race:     return NSLOCTEXT("Tortunabo", "MissionModeRace", "Carrera");
 	case ETNProcGameMode::TwoVsTwo: return NSLOCTEXT("Tortunabo", "MissionMode2v2", "2 vs 2");
 	case ETNProcGameMode::Survival: return NSLOCTEXT("Tortunabo", "MissionModeSurvival", "Supervivencia");
+	case ETNProcGameMode::Karts:    return NSLOCTEXT("Tortunabo", "MissionModeKarts", "Karts");
+	case ETNProcGameMode::FreeForAll: return NSLOCTEXT("Tortunabo", "MissionModeFreeForAll", "Todos contra Todos");
+	case ETNProcGameMode::Rally:    return NSLOCTEXT("Tortunabo", "MissionModeRally", "Rally");
 	default:                        return NSLOCTEXT("Tortunabo", "MissionModeClassic", "Clásico");
 	}
 }
 
-ETNProcGameMode TNLobbyMission::NormalizeMenuMode(ETNProcGameMode Mode)
+bool TNLobbyMission::IsModePlayable(ETNProcGameMode Mode)
 {
+	if (Mode == ETNProcGameMode::FreeForAll)
+	{
+		return ATN_TctGameMode::HasDefaultArena();
+	}
+	if (Mode == ETNProcGameMode::Rally)
+	{
+		return RallyMapOptions().Num() > 0;
+	}
+	return Mode < ETNProcGameMode::Count;
+}
+
+TArray<ETNProcGameMode> TNLobbyMission::FilterMenuModes(bool bFreeForAllPlayable, bool bRallyPlayable)
+{
+	TArray<ETNProcGameMode> Modes;
 	for (const ETNProcGameMode MenuMode : MenuModes)
 	{
-		if (MenuMode == Mode)
+		const bool bBlocked = (MenuMode == ETNProcGameMode::FreeForAll && !bFreeForAllPlayable)
+			|| (MenuMode == ETNProcGameMode::Rally && !bRallyPlayable);
+		if (!bBlocked)
 		{
-			return Mode;
+			Modes.Add(MenuMode);
 		}
 	}
-	return ETNProcGameMode::Coop;
+	return Modes;
+}
+
+TArray<ETNProcGameMode> TNLobbyMission::GetMenuModes()
+{
+	return FilterMenuModes(IsModePlayable(ETNProcGameMode::FreeForAll), IsModePlayable(ETNProcGameMode::Rally));
+}
+
+ETNProcGameMode TNLobbyMission::NormalizeMenuMode(ETNProcGameMode Mode)
+{
+	return GetMenuModes().Contains(Mode) ? Mode : ETNProcGameMode::Coop;
+}
+
+FText TNLobbyMission::RallyMapName(FName Variant)
+{
+	const FString Id = Variant.ToString();
+	// Solo circuitos del generador de vueltas (#622, #682, #692); los de autor (E01B, I03R, I04, I06) salieron del Rally.
+	if (Id.Equals(TEXT("R01_circuito_dunas"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR01", "Dunas"); }
+	if (Id.Equals(TEXT("R02_circuito_tierra"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR02", "Pista de Tierra"); }
+	if (Id.Equals(TEXT("R03_circuito_dunas_costeras"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR03", "Dunas Costeras"); }
+	if (Id.Equals(TEXT("R04_circuito_cantera"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR04", "La Cantera"); }
+	if (Id.Equals(TEXT("R05_circuito_marismas"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR05", "Marismas"); }
+	if (Id.Equals(TEXT("R06_circuito_lomas"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR06", "Lomas Secas"); }
+	// Una variante que aún no tiene nombre traducido: su identificador, tal cual.
+	return TNLocText::Literal(Variant.IsNone() ? FString() : Id);
 }
 
 FText TNLobbyMission::DifficultyName(ETNProcDifficulty Difficulty)
@@ -74,6 +120,12 @@ FText TNLobbyMission::ModeBlurb(ETNProcGameMode Mode)
 		return NSLOCTEXT("Tortunabo", "MissionBlurb2v2", "por parejas y con exactamente cuatro; gana la pareja que llega antes.");
 	case ETNProcGameMode::Survival:
 		return NSLOCTEXT("Tortunabo", "MissionBlurbSurvival", "nivel tras nivel, cada vez más difícil; gana la última tortuga en pie (sola, hasta que caigas).");
+	case ETNProcGameMode::Karts:
+		return NSLOCTEXT("Tortunabo", "MissionBlurbKarts", "en kart por el camino del cooperativo, sola o de dos en dos (una conduce y la otra dispara y usa los objetos); gana quien llega antes a la playa.");
+	case ETNProcGameMode::Rally:
+		return NSLOCTEXT("Tortunabo", "MissionBlurbRally", "en buggy por circuitos de vueltas generados, con saltos y baches, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes.");
+	case ETNProcGameMode::FreeForAll:
+		return NSLOCTEXT("Tortunabo", "MissionBlurbFreeForAll", "de 2 a 8 en una arena que se inunda; gana la ronda la última en pie y la partida, quien gane tres.");
 	default:
 		return NSLOCTEXT("Tortunabo", "MissionBlurbClassic", "el recorrido de siempre, por tramos.");
 	}
@@ -92,20 +144,31 @@ FText TNLobbyMission::DifficultyBlurb(ETNProcDifficulty Difficulty)
 	}
 }
 
-ETNProcGameMode TNLobbyMission::NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers)
+ETNProcGameMode TNLobbyMission::NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers, bool bFreeForAllPlayable,
+	bool bRallyPlayable)
 {
 	const int32 Count = static_cast<int32>(ETNProcGameMode::Count);
 	int32 Next = static_cast<int32>(Current);
 	for (int32 Step = 0; Step < Count; ++Step)
 	{
 		Next = (Next + 1) % Count;
-		// 2 vs 2 solo se ofrece con exactamente 4 jugadores.
-		if (static_cast<ETNProcGameMode>(Next) != ETNProcGameMode::TwoVsTwo || ConnectedPlayers == 4)
+		const ETNProcGameMode Candidate = static_cast<ETNProcGameMode>(Next);
+		// 2 vs 2 solo se ofrece con exactamente 4 jugadores, Todos contra Todos solo con su arena y el Rally con algún circuito.
+		const bool bTwoVsTwoBlocked = Candidate == ETNProcGameMode::TwoVsTwo && ConnectedPlayers != 4;
+		const bool bFreeForAllBlocked = Candidate == ETNProcGameMode::FreeForAll && !bFreeForAllPlayable;
+		const bool bRallyBlocked = Candidate == ETNProcGameMode::Rally && !bRallyPlayable;
+		if (!bTwoVsTwoBlocked && !bFreeForAllBlocked && !bRallyBlocked)
 		{
 			break;
 		}
 	}
 	return static_cast<ETNProcGameMode>(Next);
+}
+
+ETNProcGameMode TNLobbyMission::NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers)
+{
+	return NextSelectorMode(Current, ConnectedPlayers, IsModePlayable(ETNProcGameMode::FreeForAll),
+		IsModePlayable(ETNProcGameMode::Rally));
 }
 
 bool TNLobbyMission::CanLocalPlayerChoose(const UObject* WorldContext)
@@ -134,13 +197,11 @@ bool TNLobbyMission::SetMode(const UObject* WorldContext, ETNProcGameMode Mode)
 	{
 		return false;
 	}
-	if (Mode == ETNProcGameMode::TwoVsTwo)
+	if (!IsModePlayable(Mode))
 	{
-		const UWorld* World = TNLobbyMissionDetail::WorldOf(WorldContext);
-		if (TN_CountConnectedCoopPlayers(World ? World->GetGameState() : nullptr) != 4)
-		{
-			return false;
-		}
+		UE_LOG(LogTortunabo, Warning, TEXT("[Misión] %s no se puede jugar en esta build (falta su arena): no se elige."),
+			*UEnum::GetValueAsString(Mode));
+		return false;
 	}
 	if (GI->SelectedProcMode != Mode)
 	{

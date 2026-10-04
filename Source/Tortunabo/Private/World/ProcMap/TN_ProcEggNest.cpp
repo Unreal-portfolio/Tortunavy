@@ -9,6 +9,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/CollisionProfile.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Core/TN_Log.h"
 #include "World/TN_PlaceholderArt.h"
@@ -246,6 +248,39 @@ FTransform ATN_ProcEggNest::GetRespawnTransform(int32 Slot) const
 	const float Angle = (Slot % 8) * (UE_PI / 4.f);
 	const FVector Offset(FMath::Cos(Angle) * 260.f, FMath::Sin(Angle) * 260.f, 120.f);
 	return FTransform(GetActorRotation(), GetActorLocation() + Offset);
+}
+
+void ATN_ProcEggNest::GatherWorldNests(UWorld* World, TArray<ATN_ProcEggNest*>& OutNests)
+{
+	OutNests.Reset();
+	if (!World)
+	{
+		return;
+	}
+	for (TActorIterator<ATN_ProcEggNest> It(World); It; ++It)
+	{
+		if (IsValid(*It))
+		{
+			OutNests.Add(*It);
+		}
+	}
+}
+
+ATN_ProcEggNest* ATN_ProcEggNest::PickRespawnNest(TConstArrayView<ATN_ProcEggNest*> Nests, int32 ReachedOrder, float MinProgress)
+{
+	ATN_ProcEggNest* Best = nullptr;
+	for (ATN_ProcEggNest* Nest : Nests)
+	{
+		if (!IsValid(Nest) || Nest->GetNestOrder() > ReachedOrder || Nest->GetPathProgress() < MinProgress)
+		{
+			continue;
+		}
+		if (!Best || Nest->GetNestOrder() > Best->GetNestOrder())
+		{
+			Best = Nest;
+		}
+	}
+	return Best;
 }
 
 void ATN_ProcEggNest::MarkActivated()

@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "TimerManager.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Player/TN_DiveDecisions.h"
 #include "TortugaCharacter.generated.h"
 
 class APlayerController;
@@ -17,6 +18,7 @@ class UTN_ShellComponent;
 class UTN_CarryComponent;
 class UTN_DizzyBirdsComponent;
 class UTN_TurtleFaceComponent;
+class UTN_SlopeTiltComponent;
 class UTN_StaminaComponent;
 class UTN_WadingComponent;
 class UTN_TurtleMovementComponent;
@@ -215,6 +217,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Dive", meta=(ClampMin="2.0"))
 	float DiveMaxSeconds = 12.f;
 
+	/**
+	 * Estampado contra la pared (#355): segundos con los pajaritos del mareo dando vueltas tras el golpe (en cada máquina;
+	 * si está derribada o aturdida, siguen lo que duren esos estados).
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Dive|Splat", meta=(ClampMin="0.0"))
+	float DiveSplatDizzySeconds = 2.5f;
+
 	/** Velocidad de rotación del actor Yaw hacia DiveDir al iniciar el dash (deg/seg).
 	 *  720 → completa 180° en 250 ms. Subir = más responsivo (más cerca de snap).
 	 *  Bajar = más fluido (puede no completar la rotación durante el dash). */
@@ -318,6 +327,10 @@ protected:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Face")
 	TObjectPtr<UTN_TurtleFaceComponent> TurtleFace;
+
+	/** Inclinación visual de la malla con la pendiente del suelo (local y cosmética, #586). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Slope Tilt")
+	TObjectPtr<UTN_SlopeTiltComponent> SlopeTilt;
 
 	// ── Nado ─────────────────────────────────────────────────────────────────
 
@@ -442,6 +455,10 @@ protected:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Emotes|Audio")
 	TArray<TObjectPtr<USoundBase>> EmoteSounds;
+
+	/** Segundos de fundido de entrada al empezar el sonido de un emote (0 = sin fundido). Solo la primera vez, no en cada vuelta del bucle. */
+	UPROPERTY(EditDefaultsOnly, Category = "Emotes|Audio", meta = (ClampMin = "0.0"))
+	float EmoteAudioFadeInTime = 0.3f;
 
 	/** Inner radius (cm) for emote audio — full volume inside this range. Matches voice chat default. */
 	UPROPERTY(EditDefaultsOnly, Category = "Emotes|Audio", meta = (ClampMin = "0.0"))
@@ -1267,6 +1284,51 @@ protected:
 	/** Tiempo acumulado desde que comenzó el dive (para DiveMinLockDuration). */
 	float DiveLockTimer = 0.f;
 
+	/** Servidor: el panzazo que empezó en un movimiento lanza lo que llevaba en el siguiente TickDive (#24). */
+	struct FTNPendingDiveThrow
+	{
+		bool bPending = false;
+		FVector DiveDir = FVector::ZeroVector;
+		FVector DiveVelocity = FVector::ZeroVector;
+		FVector CarrierVelocity = FVector::ZeroVector;
+	};
+	FTNPendingDiveThrow PendingDiveThrow;
+
+	/**
+	 * Servidor: estampado contra la pared apuntado por el movimiento (#355; NoteDiveSplat). Lo hace ServerDiveSplat en el
+	 * siguiente TickDive, si sigue en el mismo panzazo.
+	 */
+	struct FTNPendingDiveSplat
+	{
+		bool bPending = false;
+		uint8 Serial = 0;
+		FVector BallVelocity = FVector::ZeroVector;
+		FVector Where = FVector::ZeroVector;
+		FVector WallNormal = FVector::ZeroVector;
+		float Strength = 0.f;
+	};
+	FTNPendingDiveSplat PendingDiveSplat;
+
+	/** Todas las máquinas: polvo y golpe sintetizado contra la pared. Efecto de entrada, no fiable (#78); el mareo va por DiveSplatDizzyUntil. */
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_DiveSplatFX(FVector_NetQuantize Where, FVector_NetQuantizeNormal WallNormal, float Strength);
+
+	/**
+	 * Hora del servidor (AGameStateBase::GetServerWorldTimeSeconds) hasta la que dura el mareo del último estampado: estado
+	 * replicado, así los pajaritos salen aunque se pierda el multicast y quien entra tarde los ve el tiempo que les quede.
+	 */
+	UPROPERTY(ReplicatedUsing = OnRep_DiveSplatDizzyUntil)
+	float DiveSplatDizzyUntil = 0.f;
+
+	/** Enciende los pajaritos el tiempo que le quede a DiveSplatDizzyUntil (el servidor lo llama a mano). */
+	UFUNCTION()
+	void OnRep_DiveSplatDizzyUntil();
+
+	/** Fin de los pajaritos del estampado en esta máquina (los deja si está derribada). */
+	void EndDiveSplatDizzy();
+
+	FTimerHandle DiveSplatDizzyTimerHandle;
+
 	/** Alpha del tilt del cuerpo [0 = reposo, 1 = pose completa de dive]. Cosmético, local. */
 	float DiveTiltAlpha = 0.f;
 
@@ -1360,6 +1422,56 @@ public:
 
 	/** Número del panzazo en curso (0 = aún ninguno). */
 	uint8 GetDiveSerial() const { return DiveSerial; }
+
+	// ── Panzazo predicho (#24) ───────────────────────────────────────────────
+
+	/**
+	 * Dentro del movimiento que pide el panzazo (UTN_TurtleMovementComponent::TickDiveStart), en el servidor y en el dueño,
+	 * también al repetirlo: decide con TNDiveLogic::DecideDiveStart si empieza (DiveYaw comprimido; en el aire, sin otro
+	 * lanzamiento en este paso) y, si empieza, cuenta el panzazo, encoge la cápsula y da la velocidad con que sale
+	 * (OutLaunchVelocity, que el movimiento aplica). Fuera de una repetición, además: el giro hacia la dirección y lo visual; en
+	 * el servidor, el emote cancelado, el lanzamiento de lo que lleve (en el siguiente TickDive: nada se crea dentro del
+	 * movimiento del cliente) y el aviso a todos. VelocityBefore: la de antes de lanzarse (la del salto).
+	 */
+	bool StartDiveFromMove(uint16 DiveYaw, bool bInAir, bool bLaunchPending, bool bReplaying, const FVector& VelocityBefore, FVector& OutLaunchVelocity);
+
+	/**
+	 * Servidor, dentro del movimiento (UTN_TurtleMovementComponent::OnMovementUpdated, #355): en el vuelo del panzazo se ha
+	 * estampado contra la pared. Solo lo apunta (el primero de este panzazo); lo hace ServerDiveSplat en el siguiente
+	 * TickDive. BallVelocity: la reflejada; Where y WallNormal: el choque; Strength (0..1): la fuerza del golpe.
+	 */
+	void NoteDiveSplat(const FVector& BallVelocity, const FVector& Where, const FVector& WallNormal, float Strength);
+
+	/** Servidor: hay un estampado apuntado que aún no se ha hecho. */
+	bool HasPendingDiveSplat() const { return PendingDiveSplat.bPending; }
+
+	/**
+	 * Servidor, fuera del movimiento (lo llama TickDive con el estampado apuntado): si sigue en ese panzazo, lo acaba y la
+	 * lanza como bola de caparazón con la velocidad reflejada (UTN_ShellComponent::StartBody; la caja se replica sola y sale
+	 * del caparazón al pararse). Suelta antes a quien lleve. Avisa a todos del golpe (Multicast_DiveSplatFX).
+	 */
+	void ServerDiveSplat();
+
+	/** Cliente dueño, en una corrección: el panzazo que tenía el servidor en ese movimiento (sin OnRep: la cápsula la pone el movimiento). */
+	void ApplyServerDiveCorrection(bool bDiving, uint8 Serial);
+
+	/** Derribada, muerta, en el caparazón o en brazos de otra: no puede empezar un panzazo. */
+	bool IsDiveBlocked() const;
+
+	/** Velocidad y ajustes de la inercia del panzazo (Dive y Dive|Momentum). */
+	TNDiveLogic::FDiveMomentumParams GetDiveMomentumParams() const;
+
+	/** Durante el panzazo, girando hacia su dirección: el giro (grados) y la velocidad del giro (grados/s). Lo aplica el movimiento. */
+	bool GetDiveYawTurn(float& OutTargetYaw, float& OutDegreesPerSecond) const
+	{
+		OutTargetYaw = DiveTargetYaw;
+		OutDegreesPerSecond = DiveYawInterpSpeed;
+		return bIsDiving && bDiveYawInterpActive;
+	}
+
+	/** Velocidad horizontal al saltar (la inercia del panzazo); el movimiento la guarda y la repone al repetir. */
+	const FVector& GetJumpStartHorizontalVelocity() const { return JumpStartHorizontalVelocity; }
+	void SetJumpStartHorizontalVelocity(const FVector& InVelocity) { JumpStartHorizontalVelocity = InVelocity; }
 
 	/** Movimiento de la tortuga (con el arrastre del panzazo); null si el Blueprint pusiera otra clase. */
 	UTN_TurtleMovementComponent* GetTurtleMovement() const;

@@ -15,6 +15,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 namespace TNBeachCrab
 {
@@ -91,9 +92,6 @@ namespace TNBeachCrab
 	 * Saltando por encima se libra: TNBeachCrabTuning::ClearsSlamByJump (un salto solo sube la cápsula 1,2 m, menos que esto).
 	 */
 	constexpr float SlamHeight = 280.f;
-	/** Aturdimiento y tiempo que ignora a la golpeada. */
-	constexpr float StunSeconds = 3.5f;
-	constexpr float IgnoreSeconds = 6.f;
 	/** Adelanto al apuntar (s de la velocidad de la tortuga; antes 0,3). */
 	constexpr float LeadSeconds = 0.2f;
 	/** Cabeceo del brazo con la pinza en alto. */
@@ -125,14 +123,11 @@ namespace TNBeachCrab
 	 * que arrollaban a 1 m del cangrejo sin tocarlo.
 	 */
 	constexpr float RamMargin = 45.f;
-	/** Arrollada: derribo con ragdoll (s), empujón en el sentido de la embestida, hacia arriba y de lado, y vueltas. */
-	constexpr float ChargeKnock = 2.4f;
+	/** Arrollada: empujón en el sentido de la embestida, hacia arriba y de lado, y vueltas (el derribo, en UTN_CombatTuning). */
 	constexpr float ChargePush = 950.f;
 	constexpr float ChargeUp = 480.f;
 	constexpr float ChargeSidePush = 260.f;
 	constexpr float ChargeSpin = 320.f;
-	/** Estampado contra algo grande: mareo (s). */
-	constexpr float CrashStun = 1.6f;
 	/** Surcos del derrape: cuántos a la vez y cuánto duran (s). */
 	constexpr int32 MaxFurrows = 16;
 	constexpr float FurrowLife = 5.f;
@@ -738,8 +733,8 @@ void ATN_BeachGiantCrab::ResolveSlam()
 			Away.Z = 0.0;
 			Away = Away.GetSafeNormal();
 			// Despachurrada: casi en el sitio, un empujoncito hacia fuera.
-			StunTurtle(Turtle, TNBeachCrab::StunSeconds, Away * 320.0 + FVector(0.0, 0.0, 160.0));
-			IgnoreTurtle(Turtle, TNBeachCrab::IgnoreSeconds);
+			StunTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabStunSeconds, Away * 320.0 + FVector(0.0, 0.0, 160.0));
+			IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabIgnoreSeconds);
 			bHit = true;
 		}
 	}
@@ -828,8 +823,8 @@ void ATN_BeachGiantCrab::ChargeHits()
 		const FVector Out = (Away - Dir * FVector::DotProduct(Away, Dir)).GetSafeNormal();
 		const FVector Push = Dir * TNBeachCrab::ChargePush + Out * TNBeachCrab::ChargeSidePush + FVector(0.0, 0.0, TNBeachCrab::ChargeUp);
 		const FVector Spin = FVector::CrossProduct(FVector::UpVector, Dir) * TNBeachCrab::ChargeSpin;
-		KnockDownTurtle(Turtle, TNBeachCrab::ChargeKnock, Push, Spin);
-		IgnoreTurtle(Turtle, TNBeachCrab::IgnoreSeconds);
+		KnockDownTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabChargeKnockSeconds, Push, Spin);
+		IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabIgnoreSeconds);
 		MulticastRam(At);
 	}
 }
@@ -1052,7 +1047,7 @@ void ATN_BeachGiantCrab::ServerTick(float DeltaSeconds)
 			MulticastCrash(SimLoc + ChargeDir * (TNBeachMeshes::CrabW * TNBeach::Scale * SizeK));
 			MoveVel = FVector2D::ZeroVector;
 			EndCharge();
-			ApplyHitStun(TNBeachCrab::CrashStun, this);
+			ApplyHitStun(UTN_CombatTuning::Get().GiantCrabCrashStunSeconds, this);
 			break;
 		}
 		FVector Left = FVector(Mover.Aim) - SimLoc;

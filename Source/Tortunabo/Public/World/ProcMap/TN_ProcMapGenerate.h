@@ -23,6 +23,20 @@ namespace TNProcMap
 	inline FGenParams SanitizeParams(const FGenParams& In)
 	{
 		FGenParams P = In;
+		if (P.bDrivable)
+		{
+			// Karts: sin lo que el kart no puede recorrer (FGenParams::bDrivable). Los desniveles grandes entre módulos se
+			// quedan como en el cooperativo: se suben en géiser y se bajan por la cascada (#293).
+			P.NumCrossings = 0;
+			P.NumBranches = 0;
+			P.NumLanes = 0;
+			P.GapsPerKm = 0.0;
+			P.NarrowChance *= 0.5;
+			P.PathWidthMin = FMath::Max(P.PathWidthMin, DrivableMinPathWidth);
+			P.PathWidthMax = FMath::Max(P.PathWidthMax, P.PathWidthMin);
+			P.PortalWidthMin = FMath::Max(P.PortalWidthMin, DrivableMinPathWidth + 200.0);
+			P.PortalWidthMax = FMath::Max(P.PortalWidthMax, P.PortalWidthMin);
+		}
 		P.GridSize = FMath::Clamp(P.GridSize, 1, 10);
 		P.GridSizeX = FMath::Clamp(P.GridSizeX, 0, 10);
 		P.ModuleSize = FMath::Clamp(P.ModuleSize, 3000.0, 80000.0);

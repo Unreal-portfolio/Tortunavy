@@ -108,6 +108,8 @@ necesita espera a que esté lista.
 | `TN.Race.Void [jugador=0]` | La tira al vacío: vuelve a su último sitio seguro aturdida. |
 | `TN.Race.Bury [metros=3] [jugador=0]` | La mete bajo la arena donde está: la red de seguridad la devuelve encima en ~0,2 s, de pie (sin bola), con dos avisos `[Carrera] Red de seguridad` en el registro. Repetido tres veces seguidas en el mismo sitio: la segunda va a su último sitio seguro y la tercera a arena abierta lejos, con un aviso de bucle (ver `Docs/Modo_Carrera.md`, «Seguridad: nunca bajo el mapa»). |
 | `TN.Race.SafetyNet 0\|1` | Apaga o enciende esa red de seguridad (en el anfitrión; para comparar). |
+| `TN.SafetyNet.Bury [metros=3] [jugador=0]` | Coop y Clásico (#633, en el anfitrión): mete a la tortuga bajo el suelo que pisa, cayendo. La red de seguridad bajo el terreno la devuelve encima en ~0,2 s, de pie y sin daño, con un aviso `[Red de seguridad] … vuelve a la superficie de encima` en el registro. En la playa, `TN.Race.Bury`. |
+| `TN.SafetyNet.UnderTerrain 0\|1` | Coop y Clásico (#633): apaga o enciende la red de seguridad bajo el terreno (en el anfitrión). Encendida, una tortuga hundida bajo el terreno vuelve a la superficie en ~0,2 s con un aviso `[Red de seguridad]` en el registro. |
 | `TN.Race.Splash [tamaño=1]` | Chapuzón de meta delante de ti (solo en tu pantalla). |
 | `TN.Beach.Egg` | Cierra otra vez los huevos (de la salida o del sprint) con cada tortuga dentro y a los 1,5 s repite la salida: se rompen, 1 s en el huevo (de pie, sacudiéndose la cáscara y mirando al mar) y salen lanzadas. Sin cambiar de ronda. |
 
@@ -144,6 +146,7 @@ necesita espera a que esté lista.
 | `TN.Beach.BuildBudgetMs 6` | Milisegundos por fotograma para montar la ronda (asientos, decorado local y actores). |
 | `TN.Beach.AsyncBuild 0` | Monta la ronda entera en un fotograma, como antes (para comparar); `1` vuelve a por partes. |
 | `TN.Perf.BeachTickWake 0` | Minas, algas y puertas de conchas con el Tick siempre encendido, como antes de #59 (para comparar); con `1` (lo normal) lo apagan sin tortuga, caparazón ni cámara cerca (40 m las minas, ~100 m las algas, ~35 m las puertas) y lo mantienen mientras tienen algo en marcha (mecha, explosión, tortuga enganchada, puerta abierta). En `-game`: `-dpcvars=TN.Perf.BeachTickWake=0`. Actores con Tick en reposo en `TN.Stress control` (Saved/Stress, `ticking_actors`). |
+| `TN.HitchLog.ThresholdMs 50` | Registro de tirones (cualquier mapa, no en Shipping): cada fotograma de más de 50 ms deja en el log una línea `[Tirón]` con su duración, los tiempos de juego, render, RHI y GPU, a qué se debe (o «ningún hilo ocupado»: espera o proceso parado), los jugadores, si la ventana tenía el foco, el intervalo desde el anterior y la mediana, y un marcador «Tirón N ms» en Insights (con `-trace=...,bookmark`). `0` lo apaga. Desde la línea de órdenes: `-TNHitchLog` (50 ms) o `-TNHitchLog=80`. Ver `Docs/Analisis/2026-10-03-Tirones-lobby.md`. |
 
 ## Objetos de carrera (tipo Mario Kart)
 
@@ -239,16 +242,19 @@ máquina).
 | `TN.VR 2` | Modo VR simulado sin gafas: primera persona, aletas quietas delante, HUD y menús en un panel del mundo; el ratón mira y apunta. También `-vrsim` al arrancar o Ajustes > Juego > «Modo VR». |
 | `TN.VR 1` | Modo gafas: enciende las gafas OpenXR si las hay (Meta Quest Link o el Meta XR Simulator como runtime). |
 | `TN.VR 0` / `TN.VR -1` | Apagado a la fuerza / lo que diga el ajuste (Automático: gafas solo si el motor pinta en estéreo). |
-| `TN.VR.Status` | Escribe el modo, si hay OpenXR, gafas y estéreo, el dispositivo, el rig y si hay un menú delante. |
+| `TN.VR.Status` | Escribe el modo, si hay OpenXR, gafas y estéreo, el dispositivo, el rig, si hay un menú delante y qué hace cada mano (libre o parada por el escenario, qué agarra), la viñeta y la vibración. |
 | `TN.VR.Recenter` | Recentra la vista (con gafas) y vuelve a poner delante el HUD o el menú. Con los mandos, clic del stick derecho. |
 | `TN.VR.HudDistance 150` / `TN.VR.HudFov 80` | Distancia (cm) y arco (grados) del HUD curvo anclado a la cámara. |
 | `TN.VR.HudFollow 1` | HUD suelto delante que sigue a la cabeza con retraso (de serie `0`: anclado a la cámara, fijo en la vista). |
 | `TN.VR.MenuDistance 160` / `TN.VR.MenuFov 100` | Distancia y arco de los menús (curvos, quietos en el mundo). |
 | `TN.VR.LoadingDomeRadius 300` | Radio (cm) de la playa en 360 de la pantalla de carga (`0` la quita). |
 | `TN.VR.SmoothTurnSpeed 120` | Grados por segundo del giro suave. |
+| `TN.VR.Haptics 1` | Fuerza de la vibración de los mandos (0 la quita): coger, soltar, lanzar, tocar la pared, lo que se escapa, derribo y láser. |
+| `TN.VR.ComfortVignette 1` | Viñeta de confort al andar deprisa, caer, salir lanzado o con el giro suave, sin bajar nunca la de la escena (0 la quita, 2 la dobla). |
 | `TN.Camera 1` / `TN.Camera 0` / `TN.Camera -1` | Sin gafas: primera persona / tercera persona / la del ajuste «Cámara». También con T o el clic del stick derecho (fila «Cambiar de cámara» de Controles). |
 | `TN.FirstPerson.ShellLight 0.2` | Luz que queda dentro del caparazón en primera persona y en VR (0 negro, 1 como fuera). |
-| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara). |
+| `Automation RunTests Tortunabo.VR` | Pruebas automáticas del modo VR (puntero, panel curvo, HUD, giro, botones de los menús, gatillos analógicos y su umbral, velocidad de la mano, arco del menú sin gafas, tecla de cambiar de cámara), de las manos (lanzar, agarres enganchados, viñeta, HUD, botones con la punta, gatillo y, con un mundo de prueba, mano contra la pared, objeto que lleva otro, nada que coger detrás de una pared fina y objeto destruido en la mano) y de los vehículos (`Tortunabo.VR.Vehicle.*`: volante, apuntado con la mano, inclinación con la cabeza, volante y asas a mano). |
+| `TN.VR.SeatPose [volante° = 30] [guiñada° = 60] [cabeceo° = 10] [s = 3]` | En un buggy o un kart con `TN.VR 2` (o gafas), simula las manos: la conductora coge el volante con las dos manos y lo gira; la artillera coge el asa derecha apuntando con esa guiñada y ese cabeceo. Al acabar escribe en el registro (`LogTNBuggy`, `[VR]`) el giro del volante y de las ruedas, o el apuntado local y el de la torreta. Fuera de Shipping. |
 
 ## Pantalla de carga del huevo
 
@@ -268,6 +274,7 @@ No existen en la build Shipping.
 | Comando | Qué hace |
 |---|---|
 | `TN.Rooms.FakeError <locked\|full\|kicked\|other>` | Simula que el servidor no te deja entrar (sala cerrada, llena, expulsado u otro motivo): pantalla de vuelta al menú y el aviso en «Unirse». Sin segunda instancia. |
+| `TN.Rooms.FakeError build` | Simula que tu versión del juego no es la del anfitrión (NetChecksumMismatch): vuelta al menú y el aviso de dos líneas en «Unirse», encima de la ayuda. |
 | `TN.Rooms.FakeError <joinfull\|gone\|noaddress>` | Simula que falla la entrada en la sesión (llena, ya no existe, sin dirección del anfitrión): el aviso sale en el menú de salas sin recargarlo. |
 | `TN.Travel.Fail [/Game/Ruta/Mapa \| motor] [segundos]` | Solo en el anfitrión: pide un `ServerTravel` a un mapa que no existe (por defecto `/Game/Maps/TN_MapaQueNoExiste`), que `CanServerTravel` para sin mandar a los invitados; con `motor`, simula un fallo de `UEngine::OnTravelFailure` (un mapa que existe pero no carga), con la desconexión que pide el motor. Con segundos, lo hace pasado ese tiempo (para que entren invitados en una prueba sin ventana con `-ExecCmds`). En los dos casos, el registro debe dar un solo `Fallo de viaje ... (fallo 1 seguido)` y el anfitrión debe seguir en el lobby (o recargarlo) con su sesión. Antes `net.AllowPIESeamlessTravel 1` si se prueba en PIE el viaje sin cortes. Ver [Salas](Salas.md#viaje-de-mapa-fallido). |
 | `Automation RunTests Tortunabo.Net.TravelFailure` | Prueba automática de lo que se hace ante un viaje fallido (anfitrión, invitado, menú, lobby en pie, segundo fallo) y de si el `ServerTravel` ha arrancado de verdad. |
@@ -290,6 +297,10 @@ aparecen en las `Salida_*` y del quinto al octavo, junto a ellas (`[Lobby] Todos
 el log del anfitrión); ocho huevos en la pila y «Sala: 8/8»; al viajar, ocho sitios en la sala o en los huevos y, al acabar,
 los resultados con ocho filas. `TN.Proc.StartStyle 0|1` fuerza cómo se sale.
 
+Las huellas de los layouts de supervivencia (`Tortunabo.ProcMap.Survival*` y `Tortunabo.Survival.Catalogo.*`) se validan en
+DebugGame y en Development: con `/fp:fast`, `/Od` y `/O2` pueden redondear distinto en un límite exacto (#579). Un cambio en el
+generador pasa esos tests en las dos configuraciones antes de actualizar una huella.
+
 | Comando | Qué hace |
 |---|---|
 | `TN.Proc.StartStyle 0` / `TN.Proc.StartStyle 1` | Salida por puerta doble (`0`) o con huevos (`1`) desde la siguiente generación del mapa; `-1` = lo del lobby. |
@@ -297,6 +308,57 @@ los resultados con ocho filas. `TN.Proc.StartStyle 0|1` fuerza cómo se sale.
 | `TN.Fauna.Enable 0` / `TN.Fauna.Stats 1` | Esconde la fauna ambiental / saca sus métricas en el log. |
 | `TN.Lobby.Castle 0` / `TN.Lobby.Valley 0` | Esconde el castillo o el valle del lobby (al recargarlo). |
 | `TN.Storm.Cough 1` / `TN.Storm.Cough 2` | Carraspeos sueltos (`1`) o tos fuerte (`2`) de la tormenta sin tormenta; `0` la apaga. |
+
+## Karts en el mapa del cooperativo
+
+Se elige como los demás modos: «Karts» en el menú al crear sala, en la sala o con el General Galápago (pestaña
+«Misión»), y la dificultad igual que en el cooperativo. Al salir del lobby se viaja a `LVL_ProcMap?game=Karts`
+(`ATN_KartGameMode`, aparte del Rally de `LVL_Rally`): el mapa del cooperativo con el camino hecho para el kart, puertas
+cada 250 m, salida en el claro y meta en la playa (más en `Docs/Karts.md`). Al acabar los resultados se vuelve al lobby
+(y desde el menú de pausa del anfitrión).
+
+| Comando | Qué hace |
+|---|---|
+| `open LVL_ProcMap?game=Karts?ProcDifficulty=Easy` | Karts sin pasar por el lobby (`Easy`, `Normal` o `Hard`; sin la opción, la del lobby). |
+| `...?ProcSeed=4242` | Mapa fijo (misma pista siempre). |
+| `...?Bots=3` / `TN.Kart.Bots 3` | Bots de la parrilla; sin ninguno de los dos se completa hasta 4 karts (`TN.Kart.Bots -1`; si no, manda `TN.Rally.Bots`). |
+| `...?Seats=1` / `TN.Kart.Seats 1` | Un kart por tortuga (sin artillera); `2` (por defecto) empareja a la segunda de artillera. |
+| `TN.Rally.Status` | Fase, puestos, ocupantes y cajas en el log (`LogTNRally`). |
+| `TN.Kart.GiveItem Coco` | Da un objeto al kart propio sin ruleta (`Coco`, `TripleCoco`, `Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Estrella`; servidor o partida sola). |
+| `TN.Rally.GiveAmmo Concha [cargas]` | Munición especial de las cajas «?» del Rally para el buggy propio (`Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Burbuja`, `Mortero`, `Ancla`; sin cargas, las de una caja). Servidor o partida sola. |
+| `TN.Kart.Place Geyser\|Cascada\|Agua [equipo] [s]` | Pone el kart (el tuyo con `-1` o sin equipo; el de un bot con su número) encima de un géiser, en lo alto de una cascada o en el agua, tras esos segundos. Servidor o partida sola, fuera de Shipping. |
+| `TN.Kart.ProbeArc 790` | Con `LogTNRally Verbose`, perfil del suelo a lo ancho del camino alrededor de ese arco (m) al empezar (atascos). |
+| `log LogTNRally Verbose` | Objetos que salen y se usan (`[KartItems]`), géiseres, obstáculos y puertas de la pista y los karts del primer tramo. |
+| `...?BotDriver` | Cada jugadora entra de artillera y su kart lo conduce el piloto IA (para probar la torreta y la inclinación). |
+| `TN.VR 2` + `TN.VR.SeatPose` | Karts con gafas sin gafas: vista en el asiento y manos simuladas (ver «Modo VR»). |
+
+Mapas útiles para probar (`?ProcSeed=`): fácil `11` (un géiser y una cascada, 1,5 km); normal `777` (10,8 km con cinco
+géiseres, ocho cascadas y canales de agua).
+
+Sin editor (carreras solo de la IA, una línea `[RallyStats]` por carrera con terminados, atascos y vuelcos):
+`UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Run/LVL_ProcMap?game=Karts?Bots=4?AutoStart?Races=1?RaceTimeout=420?ProcDifficulty=Easy?ProcSeed=4242" -server -nullrhi -NoSteam`.
+
+## Rally: circuito por vueltas (R01)
+
+Circuito cerrado generado (#622, `Docs/Rally_Circuitos_Vueltas.md`): salida y meta en la misma puerta, 9 puertas en orden,
+parrilla 2 × 4 detrás de la línea y 3 vueltas por defecto (el `laps` del manifest; `?Laps=` manda).
+
+| Comando | Qué hace |
+|---|---|
+| `open LVL_Rally?Variant=R01_circuito_dunas` | El circuito con las vueltas del manifest (3). En PIE: abrir `LVL_Rally` y escribirlo en la consola. |
+| `...?Laps=5` / `...?Bots=3` / `...?Seats=1` | Vueltas (1-9), buggies con piloto IA y un buggy por jugadora. Sin `?Bots=`, la parrilla se completa con bots hasta 4 buggies (`TN.Rally.Bots N` lo fuerza; #631). Sin `?Seats=`, las plazas del anfitrión (`TN.Rally.Seats 1\|2`). |
+| `...?ProcDifficulty=Easy\|Normal\|Hard` | Dificultad de los bots (velocidad, cadencia y munición especial), la misma tabla que en Karts (#631). Sin ella, la del lobby. |
+| `...?Bots=5?AutoStart?Spectate` | Carrera solo de bots y la jugadora mirando (#631). |
+| `log LogTNRally Verbose` | Cada puerta válida («puerta N (vuelta V) a los S s») y las que no cuentan porque se cruza su plano fuera de ella. |
+| `Automation RunTests Tortunabo.Rally.Circuit` | Lectura del manifest, puertas con peralte, notas de salto y cresta, frenada de la IA, R01 como circuito y E01B e I03R como antes. |
+
+Sin editor, el piloto IA da 5 vueltas (unos 8 min; criterio: `terminados 1/1, atascos 0` en la línea `[RallyStats]`):
+`UnrealEditor-Win64-DebugGame-Cmd <uproject> "/Game/Maps/Rally/LVL_Rally?Variant=R01_circuito_dunas?Bots=1?AutoStart?Races=1?Laps=5?RaceTimeout=900" -server -nullrhi -NoSteam -ExecCmds="log LogTNRally Verbose"`.
+No vale `-benchmark`: con el paso fijo sin límite, el buggy no avanza como en tiempo real.
+
+Circuito de tierra (#682, `R02_circuito_tierra`): `open LVL_Rally?Variant=R02_circuito_tierra` (doble, cresta, mesa y salto
+largo sobre hueco; whoops, tabla de lavar, badén con barro y banqueta en las horquillas). Sin editor:
+`Automation RunTests Tortunabo.Rally.Tierra` y la carrera de la IA con `?Variant=R02_circuito_tierra?Laps=3?RaceTimeout=700`.
 
 ## Capturas de arte sin abrir el editor
 
@@ -331,12 +393,37 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `TN.Voice.Steps 1` / `TN.Voice.Steps 2` | Pasos de prueba en el sitio: `1` andando, `2` corriendo; `0` los apaga. |
 | `TN.Voice.Pant 1` / `TN.Voice.Pant 2` | Jadeo de prueba: `1` suave, `2` agotada; `0` lo apaga. |
 | `TN.Voice.Drag 1` / `TN.Voice.Drag 2` | Arrastre de panzazo de prueba: `1` lento, `2` rápido; `0` lo apaga. |
-| `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo. |
+| `TN.SlopeTilt.Enable 0` | El modelo ya no se inclina con la pendiente al deslizarse de tripa (para comparar); `1` (lo normal) lo inclina. Andando y corriendo va siempre recta (#586). En `-game`: `-dpcvars=TN.SlopeTilt.Enable=0`. |
+| `TN.SlopeTilt.Find [lado\|frente] [espera_s] [captura]` | Pone tu tortuga en la cuesta de 15-30° más cercana (hasta 120 m), de lado (por defecto) o de frente, con la cámara donde se ve la inclinación (de pie, recta; de tripa, paralela a la cuesta). Con `captura` = 1, a los 2,5 s escribe el estado y hace `HighResShot`. En el anfitrión o sin red; `espera_s` sirve para lanzarlo con `-ExecCmds`. |
+| `TN.SlopeTilt.Dump [espera_s]` | Escribe en el registro la inclinación de cada tortuga en esa máquina (actual, objetivo y la de la malla), para comparar el anfitrión con un cliente. |
+| `TN.SlopeTilt.DiveProbe [abajo\|arriba] [espera_s] [captura]` | Corre hacia la cuesta de 15-30° más cercana (cuesta abajo por defecto), salta y hace el panzazo; escribe por fotograma en el registro la malla respecto al suelo en el vuelo, el aterrizaje y el deslizamiento, y al final el mayor giro en un fotograma. Con `captura` = 1, una `HighResShot` en el vuelo y otra deslizando (la captura frena ese fotograma: las cifras, sin ella). |
+| `TN.Dive.Debug 1` | Datos del deslizamiento del panzazo (en el dueño de un cliente, también cuántas correcciones ha recibido y la última). |
+| `TN.Net.DivePredict 0` | En quien la controla: el panzazo vuelve a pedirse por `Server_StartDive` y lo lanza el servidor, como antes de #24 (para comparar el tirón al empezar con `p.NetShowCorrections 1`). |
+| `TN.Dive.SlopeFall 0` / `TN.Dive.WallBounce 0` | Cuesta abajo frena como en llano (antes de #62) / en el vuelo del panzazo resbala por las paredes (antes de #63). Igual en todas las máquinas. |
+| `TN.Dive.Splat 0` | En el vuelo del panzazo, contra una pared a 650 cm/s o más solo rebota: sin estampado, bola ni pajaritos (#355). `1` (lo normal) lo vuelve a encender. Igual en todas las máquinas. |
 | `TN.HeadLook.Shots [carpeta]` | Fotos sin interfaz de la cabeza siguiendo a la vista (al frente, 45° a la derecha, 60° a la izquierda, en el tope, arriba, abajo y detrás), el giro medido en el hueso en el registro, y cierra el juego. En `-game -RenderOffScreen -UseFixedTimeStep -FPS=30`. |
 | `TN.HeadLook.Sweep 20` | Mueve sola la vista del jugador local 20 s (guiñada ±60°, cabeceo ±25°) para ver el giro de la cabeza en las demás máquinas. |
 | `TN.HeadLook.Log 1` | Cada tortuga escribe una vez por segundo su vista respecto del cuerpo (del mando o replicada) y el giro de su cabeza. |
 | `TN.Debug.Knockdown [segundos=2] [jugador=0] [empujón=0] [retraso=0]` | En el anfitrión: derriba a esa tortuga (empujón hacia arriba en cm/s; retraso en s, para lanzarlo con `-ExecCmds`). Suena el «¡clonc!» del derribo, el latido (solo en su máquina) y el arpegio al levantarse; en su máquina, sacudida y vibración según el empujón (`[HitFeedback]` en el log; con `-LogCmds="LogTortunabo Verbose"`, también `[ActionSfx]`). |
 | `TN.Music.Play Victoria` | Hace sonar una pista: `Victoria`, `Derrota`, `Eliminado`, `Tienda`, `Probador` o `Silencio`. |
+
+### Panzazo en red sin editor (#24, #62, #63)
+
+Un servidor `?listen` y un cliente `-game` con `-TNDiveNetTest=<escena>_<veces>` montan en el cielo (lejos del mapa) el
+mismo escenario con cajas de colisión; el servidor pone allí la tortuga del cliente y el cliente la mueve sola. Escenas:
+`dive` (panzazos en llano, a un lado y al otro), `wall` (salto y panzazo contra una pared a 2 m) y `slope` (carrerilla y
+panzazo cuesta abajo en una rampa de 25°). Pone `p.NetShowCorrections 1` y deja marcas `[DiveNet] ciclo N: …` en el
+registro; las líneas `*** Server: Error` / `*** Client: Error` entre ellas son las correcciones. Al acabar se cierran los dos.
+`-TNDiveNetBefore` en los dos compara con lo de antes (`TN.Net.DivePredict 0`, `TN.Dive.SlopeFall 0`,
+`TN.Dive.WallBounce 0`) y `-TNDiveNetSet=TN.Dive.Body:0+…` cambia otras variables.
+
+```bash
+MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject "/Game/Maps/Run/LVL_TestMap?listen" -game -nullrhi \
+  -nosound -NoSteam -port=17777 -TNDiveNetTest=wall_6 -ABSLOG=<carpeta>/servidor.log &
+sleep 12
+MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject 127.0.0.1:17777 -game -nullrhi -nosound -NoSteam \
+  -PktLag=150 -TNDiveNetTest=wall_6 -ABSLOG=<carpeta>/cliente.log
+```
 
 ## Tutorial de la primera partida
 
@@ -371,3 +458,16 @@ mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala 
 
 Ejemplo sin mando (captura de cada estado en `Saved/Screenshots`):
 `-ExecCmds="tn.HUD.Prompt 1, TN.Later 8 TN.Tutorial.Station 7, TN.Later 12 shot showui, TN.Later 13 TN.Input.Press Gamepad_DPad_Up, TN.Later 13.3 shot showui, TN.Later 15 TN.Input.PadFamily 2, TN.Later 16 shot showui"`.
+
+## Buggy del Rally: aspecto, tienda y probador
+
+Detalle en `Docs/Tienda_Probador.md` («Buggy del Rally»).
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Shop.AddShells [conchas]` | Suma conchas al perfil local (5000 si no se dice), para comprar buggies y pinturas en la tienda. |
+| `TNShop` / `TNBooth` | Abre la tienda o entra en el probador libre más cercano (pestaña y página BUGGY con Q/E). |
+| `TN.Rally.DebugBuggy <modelo\|-> [pintura\|-] [espera]` | En el Rally: la jugadora local manda ese buggy al servidor como si lo hubiera comprado (`BuggyModel_Clasico`, `BuggyModel_Caiman`, `BuggyModel_Laud`, `BuggyPaint_Lava`...; `-` = el de serie de Art/Source o la pintura de serie). No toca el guardado. |
+| `TN.Buggy.Photos [carpeta] [tamaño] [espera]` | Fotos PNG del escaparate (los cuatro modelos desde varios lados, todas las pinturas en el de serie y en el clásico y las miniaturas de la tienda) y cierra el juego. |
+| `TN.Buggy.WorldShots [carpeta] [espera]` | En el Rally (mejor con `?Bots=5`): congela el tiempo, saca fotos sin interfaz del buggy propio de cerca, de lejos y la parrilla, y cierra el juego. |
+| `TN.Shop.UIShots [carpeta] [espera]` | En el lobby: compra un Caimán y la pintura de lava de prueba y saca capturas de la tienda y del probador con la interfaz. |

@@ -30,6 +30,7 @@ from terrain_path.layout import GRID, UU_PER_M
 from terrain_path.canyon import kill_boxes_uu
 from terrain_path.model import PathModel, walkable
 from terrain_path.outer import DECIMATE_M as OUTER_DECIMATE_M, write_outer
+from terrain_path.placement_io import carry_placements
 from terrain_path.style import C01_SEED, C01_STYLE, PathStyle
 from terrain_path.variants import PATH_VARIANTS
 from terrain_vol.export import global_top, write_map
@@ -103,6 +104,8 @@ def build_one(name: str, seed: int, style: PathStyle, description: str, decimate
     top = global_top(chunks, grid=GRID)
     s_ij, e_ij = world_index(model.start), world_index(model.end)
     out = VARIANTS / name
+    # write_map borra la carpeta: lo colocado (bloque "placements", #652) se guarda y se repone.
+    placements = carry_placements(out / "manifest.json", used)
     write_map(out, name, used, chunks, (*model.start, float(top[s_ij])), (*model.end, float(top[e_ij])),
               zone_map(model, chunks, grid=GRID), model.route.points, style=style,
               extra_manifest={"description": description, "recorrible": result["ok"],
@@ -114,6 +117,8 @@ def build_one(name: str, seed: int, style: PathStyle, description: str, decimate
     manifest_path = out / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["cells"] += write_outer(model, out, name, outer_decimate_m)
+    if placements is not None:
+        manifest["placements"] = placements
     manifest_path.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
     g = model.plan.graph
     return {"name": name, "seed": used, "description": description, "ok": result["ok"],

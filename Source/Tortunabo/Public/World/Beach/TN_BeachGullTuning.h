@@ -8,16 +8,17 @@
  * pruebas Tortunabo.Beach.Gull (Private/Tests/TN_BeachGullTuningTest.cpp).
  *
  * Ronda 4, tarea 5 (nerf, Docs/Modo_Carrera.md «Nerf de la gaviota y de su caca», con los valores de antes): casi no se
- * podían esquivar. Lo que se pidió: andando te pilla; corriendo y cambiando de dirección en el momento justo, o tirándote en
- * plancha a tiempo, te libras. Con las velocidades de verdad de la tortuga (las del Blueprint: andando 200 cm/s, corriendo
- * 400; la plancha sale a 350 + la velocidad del salto, 750 corriendo), el blanco:
- *  1. sigue a la tortuga un poco más rápido de lo que corre (ChaseSpeed): ni andando ni corriendo en línea recta se despega;
+ * podían esquivar. Lo que se pidió (GDD, ronda 4): el seguimiento es más lento y la caca se esquiva con una plancha a tiempo.
+ * Con las velocidades de verdad de la tortuga (las del Blueprint, comprobadas en BP_TortugaCharacter el 2026-10-04: andando
+ * 200 cm/s, corriendo 400; la plancha sale a 350 + la velocidad del salto), el blanco (#636):
+ *  1. sigue a la tortuga más rápido de lo que anda y más despacio de lo que corre (GullChaseSpeed, 250): andando te pilla;
+ *     esprintando en línea recta le ganas 1,5 m por segundo a la sombra y te libras de todos los tamaños;
  *  2. los últimos CommitSeconds, el pájaro (o lo que cae) ya va lanzado por la línea que llevaba la tortuga en ese momento:
  *     por esa línea la acompaña (hasta su velocidad de entonces, nunca hacia atrás) y hacia los lados apenas corrige
- *     (LateCorrection). Corriendo en línea recta, te pilla; si al lanzarse giras corriendo (60° o más), te das la vuelta o
- *     sales corriendo de parada, te libras; andando no da tiempo a salir del golpe.
- * La plancha en el momento justo libra además de las cagadas (TNBeach::IsDodgingByBellyDive) y del picado entero (el
- * panzazo); el golpe (lo que coge el pico, la mancha) es el de la sombra dura.
+ *     (LateCorrection). Andando, girar al lanzarse no da tiempo a salir del golpe; corriendo, girar o darse la vuelta libra.
+ * La plancha en el momento justo libra además de las cagadas (TNBeach::IsDodgingByBellyDive, ventana en
+ * BellyDiveDodgeWindow) y del picado entero (el panzazo); el golpe (lo que coge el pico, la mancha) es el de la sombra dura.
+ * La primera versión de este nerf (420 cm/s, algo más de lo que se corre) no dejaba esquivar corriendo en línea recta.
  */
 namespace TNBeachGullTuning
 {
@@ -50,6 +51,16 @@ namespace TNBeachGullTuning
 	constexpr float AttackIntervalMin = 4.f;
 	constexpr float AttackIntervalMax = 7.f;
 
+	// ── Persecución del blanco (los tres ataques) ──
+
+	/**
+	 * Velocidad (cm/s) a la que el blanco sigue a la tortuga hasta lanzarse (#636): entre la de andar y la de correr. Andando
+	 * (200) el blanco no se despega de ella; esprintando en línea recta (400) le gana 150 cm/s y al golpe la tiene a 3,8 m
+	 * (picado), 4,3 m (cagada) y 6,2 m (justiciera), más de lo que alcanza el pájaro más grande (3,1 m). Con 300 el picado
+	 * aún cogía a los grandes; con 420 (la versión anterior) nadie se despegaba corriendo.
+	 */
+	constexpr float GullChaseSpeed = 250.f;
+
 	// ── Picado de la zona ──
 
 	/**
@@ -57,7 +68,7 @@ namespace TNBeachGullTuning
 	 * a 800). Los últimos DiveCommitSeconds antes de llegar abajo (cuando pliega las alas del todo) va lanzado por la línea
 	 * de la tortuga y hacia los lados corrige a DiveLateCorrection (antes seguía igual hasta el final).
 	 */
-	constexpr float DiveChaseSpeed = 420.f;
+	constexpr float DiveChaseSpeed = GullChaseSpeed;
 	constexpr float DiveCommitSeconds = 1.5f;
 	constexpr float DiveLateCorrection = 75.f;
 
@@ -68,11 +79,11 @@ namespace TNBeachGullTuning
 	// ── Cagada de la zona ──
 
 	/**
-	 * Mientras la gaviota vuela hasta encima y mientras cae, el blanco sigue a la tortuga a PoopChaseSpeed (antes 625). Los
+	 * Mientras la gaviota vuela hasta encima y mientras cae, el blanco sigue a la tortuga a PoopChaseSpeed (antes 625 y 420). Los
 	 * últimos PoopCommitSeconds (el «!» deja de parpadear y se queda fijo) cae por la línea que llevaba la tortuga y hacia
 	 * los lados corrige a PoopLateCorrection.
 	 */
-	constexpr float PoopChaseSpeed = 420.f;
+	constexpr float PoopChaseSpeed = GullChaseSpeed;
 	constexpr float PoopCommitSeconds = 1.5f;
 	constexpr float PoopLateCorrection = 75.f;
 
@@ -83,11 +94,11 @@ namespace TNBeachGullTuning
 	// ── Gaviota justiciera (objeto de carrera, ATN_RaceGullStrike) ──
 
 	/**
-	 * El blanco sigue a la víctima a StrikeChaseSpeed (antes 700 hasta el golpe). Los últimos StrikeCommitSeconds (desde
+	 * El blanco sigue a la víctima a StrikeChaseSpeed (antes 700 hasta el golpe y 420). Los últimos StrikeCommitSeconds (desde
 	 * justo después de soltarla) la cagada cae por la línea que llevaba la víctima y hacia los lados corrige a
 	 * StrikeLateCorrection.
 	 */
-	constexpr float StrikeChaseSpeed = 420.f;
+	constexpr float StrikeChaseSpeed = GullChaseSpeed;
 	constexpr float StrikeCommitSeconds = 1.5f;
 	constexpr float StrikeLateCorrection = 75.f;
 
@@ -101,6 +112,54 @@ namespace TNBeachGullTuning
 	 * la tripa aún a BellyDodgeMinSpeed cm/s o más: tirarse en el momento justo, no tumbarse a esperar.
 	 */
 	constexpr float BellyDodgeMinSpeed = 250.f;
+
+	/**
+	 * Ventana de la plancha (#636). La plancha es el segundo salto en el aire: sale a BellyDiveForwardSpeed + la velocidad que
+	 * llevaba (ATortugaCharacter::DiveForwardSpeed, 350 en BP_TortugaCharacter), va BellyDiveAirSecondsMin-Max por el aire
+	 * (según cuándo se pulse tras el primer salto) y al tocar la arena conserva BellyLandingKeep de la velocidad
+	 * (UTN_TurtleMovementComponent::BellyLandingKeep). Sobre la arena frena con BellySandFriction cm/s² más BellySandDrag por
+	 * la velocidad (BellyFrictionSand y BellyDrag del mismo componente; el rozamiento solo crece pasado 1,2 s, fuera de la
+	 * ventana). Libra mientras va por el aire y mientras se arrastra a BellyDodgeMinSpeed o más: corriendo, 0,59-0,69 s desde
+	 * que despega; andando, 0,48-0,58 s. Para que la cagada le pase por encima, tiene que caer dentro de esa ventana.
+	 * Valores comprobados en BP_TortugaCharacter el 2026-10-04; si cambian allí, hay que cambiarlos aquí.
+	 */
+	constexpr float BellyDiveForwardSpeed = 350.f;
+	constexpr float BellyDiveAirSecondsMin = 0.3f;
+	constexpr float BellyDiveAirSecondsMax = 0.4f;
+	constexpr float BellyLandingKeep = 0.9f;
+	constexpr float BellySandFriction = 800.f;
+	constexpr float BellySandDrag = 1.5f;
+
+	/** Velocidad en planta (cm/s) con la que la plancha toca la arena si se lanza yendo a RunSpeed (675 corriendo). */
+	inline float BellyDiveLandingSpeed(float RunSpeed)
+	{
+		return (BellyDiveForwardSpeed + FMath::Max(0.f, RunSpeed)) * BellyLandingKeep;
+	}
+
+	/** Velocidad (cm/s) del arrastre sobre la arena a los SlideSeconds de tocarla con LandingSpeed: dv/dt = -(F + D·v). */
+	inline float BellySlideSpeedAt(float LandingSpeed, float SlideSeconds)
+	{
+		const float K = BellySandFriction / BellySandDrag;
+		const float Speed = (LandingSpeed + K) * FMath::Exp(-BellySandDrag * FMath::Max(0.f, SlideSeconds)) - K;
+		return FMath::Max(0.f, Speed);
+	}
+
+	/** Segundos que se arrastra a BellyDodgeMinSpeed o más tras tocar la arena con LandingSpeed (0 si ya toca más despacio). */
+	inline float BellySlideDodgeSeconds(float LandingSpeed)
+	{
+		if (LandingSpeed <= BellyDodgeMinSpeed)
+		{
+			return 0.f;
+		}
+		const float K = BellySandFriction / BellySandDrag;
+		return FMath::Loge((LandingSpeed + K) / (BellyDodgeMinSpeed + K)) / BellySandDrag;
+	}
+
+	/** La ventana (s desde que despega en plancha) en la que libra: AirSeconds por el aire más el arrastre deprisa. */
+	inline float BellyDiveDodgeWindow(float RunSpeed, float AirSeconds)
+	{
+		return FMath::Max(0.f, AirSeconds) + BellySlideDodgeSeconds(BellyDiveLandingSpeed(RunSpeed));
+	}
 
 	// ── Cuentas ──
 
@@ -206,5 +265,22 @@ namespace TNBeachGullTuning
 	inline bool DodgesByBellyDive(bool bBellyPose, bool bAirborne, float Speed2D)
 	{
 		return bBellyPose && (bAirborne || Speed2D >= BellyDodgeMinSpeed);
+	}
+
+	/**
+	 * true si una plancha lanzada yendo a RunSpeed hace SecondsSinceDive s (AirSeconds por el aire) libra en este momento: el
+	 * mismo DodgesByBellyDive que mira el servidor, con el estado que tendría la tortuga (en el aire o arrastrándose).
+	 */
+	inline bool DodgesByBellyDiveAt(float SecondsSinceDive, float RunSpeed, float AirSeconds)
+	{
+		if (SecondsSinceDive < 0.f)
+		{
+			return false;
+		}
+		if (SecondsSinceDive < AirSeconds)
+		{
+			return DodgesByBellyDive(true, true, BellyDiveForwardSpeed + RunSpeed);
+		}
+		return DodgesByBellyDive(true, false, BellySlideSpeedAt(BellyDiveLandingSpeed(RunSpeed), SecondsSinceDive - AirSeconds));
 	}
 }

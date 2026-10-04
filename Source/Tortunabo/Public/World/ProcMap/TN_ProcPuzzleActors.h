@@ -100,6 +100,9 @@ public:
 	/** Servidor: levanta la compuerta durante Duration segundos. */
 	void Raise(float Duration);
 
+	/** Servidor: levantada (corta el paso) o enterrada sin plazo. El atajo de Supervivencia la abre con sus placas (#517). */
+	void SetBlocking(bool bBlock);
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gate")
 	TObjectPtr<USceneComponent> Root;
@@ -144,9 +147,18 @@ public:
 	/** Servidor: a quién afecta y cuánto dura el efecto. */
 	void SetTarget(AActor* InTarget, float InEffectSeconds);
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnInteracted_Implementation(APawn* Interactor) override;
+
+	/** Color según el objetivo (0 sin objetivo, 1 muro de lanzamiento: verde, 2 compuerta de sabotaje: rojo), replicado. */
+	UPROPERTY(ReplicatedUsing = OnRep_TintKind)
+	uint8 TintKind = 0;
+
+	UFUNCTION()
+	void OnRep_TintKind();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switch", meta = (ClampMin = "0.5"))
 	float EffectSeconds = 8.f;

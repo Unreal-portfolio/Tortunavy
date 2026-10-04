@@ -4,6 +4,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UI/HUD/TN_RadialWheelTypes.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Voice/TN_VoiceRouting.h"
 #include "MP_GamePlayerController.generated.h"
 
 struct FInputActionValue;
@@ -34,7 +35,7 @@ class UTN_AmbientSoundscapeComponent;
  *  - Auto-rejoin: hooks de seamless travel para preservar la sesión Steam.
  */
 UCLASS()
-class TORTUNABO_API AMP_GamePlayerController : public APlayerController
+class TORTUNABO_API AMP_GamePlayerController : public APlayerController, public ITN_VoiceListener
 {
 	GENERATED_BODY()
 
@@ -94,9 +95,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	bool RequestEquipEyes(FName EyesId);
 
-	/** @brief Tienda: lo compra (hoy todo cuesta 0), lo guarda y manda los desbloqueos al servidor. */
+	/** @brief Tienda: lo compra con conchas (los de la tortuga hoy cuestan 0), lo guarda y manda los desbloqueos al servidor. */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	bool RequestPurchaseCosmetic(ETNCosmeticCategory Category, FName Id);
+
+	/** @brief Probador: pone el buggy del Rally (modelo y pintura comprados o gratis), lo guarda y lo replica. */
+	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
+	bool RequestEquipBuggyLook(const FTN_BuggyLook& Look);
 
 	/** @brief Client RPC: abre la tienda del tendero (UTN_ShopWidget). */
 	UFUNCTION(Client, Reliable)
@@ -209,9 +214,14 @@ public:
 	 * @param CompressedData Buffer comprimido del emisor.
 	 * @param SenderSampleRate SampleRate original del emisor.
 	 * @param SpeakerActor Actor emisor (para calcular distancia).
+	 * @param bIntercom Comparte interfono con este jugador: se oye sin atenuar (TNVoiceRouting).
 	 */
 	UFUNCTION(Client, Unreliable)
-	void ClientReceiveVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, AActor* SpeakerActor);
+	void ClientReceiveVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, AActor* SpeakerActor, bool bIntercom);
+
+	// ITN_VoiceListener
+	virtual void SendVoiceToOwningClient(const TArray<uint8>& CompressedData, int32 SenderSampleRate, AActor* SpeakerActor,
+		bool bIntercom) override;
 
 	/** @brief Notifica al cliente dueño que guarde el SkinId. Llamado desde estatuas del lobby (servidor). */
 	void NotifySkinEquipped(FName SkinId);
@@ -368,6 +378,14 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerSetEquippedEyes(FName EyesId);
 
+	/** @brief Server RPC: modelos y pinturas del buggy desbloqueados del cliente (filtrados con TNBuggyCosmetics). */
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerSyncUnlockedBuggy(const TArray<FName>& UnlockedBuggyIds);
+
+	/** @brief Server RPC: asigna el buggy equipado en el PlayerState si está en el catálogo y desbloqueado. */
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerSetEquippedBuggyLook(const FTN_BuggyLook& Look);
+
 	/** @brief Client RPC: guarda SkinId en GameInstance del cliente dueño. */
 	UFUNCTION(Client, Reliable)
 	void ClientSaveSkin(FName SkinId);
@@ -452,6 +470,9 @@ private:
 
 	/** Colores y caparazones desbloqueados de este jugador (servidor). */
 	TSet<FName> ServerUnlockedSkins;
+
+	/** Modelos y pinturas del buggy desbloqueados de este jugador (servidor). */
+	TSet<FName> ServerUnlockedBuggy;
 
 	/** Tienda o probador abiertos (solo en el cliente dueño). */
 	UPROPERTY(Transient)

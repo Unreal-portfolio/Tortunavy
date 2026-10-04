@@ -182,6 +182,14 @@ void ATN_ProcSabotageGate::Raise(float Duration)
 	GetWorldTimerManager().SetTimer(GateTimer, this, &ATN_ProcSabotageGate::Lower, Duration, false);
 }
 
+void ATN_ProcSabotageGate::SetBlocking(bool bBlock)
+{
+	if (!HasAuthority()) { return; }
+	GetWorldTimerManager().ClearTimer(GateTimer);
+	bRaised = bBlock;
+	OnRep_Raised();
+}
+
 void ATN_ProcSabotageGate::Lower()
 {
 	bRaised = false;
@@ -223,6 +231,8 @@ void ATN_ProcSwitch::BeginPlay()
 	Super::BeginPlay();
 	// Malla de arte (Docs/Arte_Assets.md): hija del cilindro, con su escala.
 	TNArt::ApplyToComponent(Mesh, TN_ART("ProcMap.Puzzle.Switch"));
+	// En un cliente el color puede haber llegado antes que BeginPlay.
+	OnRep_TintKind();
 }
 
 void ATN_ProcSwitch::SetTarget(AActor* InTarget, float InEffectSeconds)
@@ -231,7 +241,20 @@ void ATN_ProcSwitch::SetTarget(AActor* InTarget, float InEffectSeconds)
 	EffectSeconds = InEffectSeconds;
 	// Anti-spam: no se puede volver a pulsar mientras dura el efecto.
 	CooldownSeconds = InEffectSeconds + 1.f;
-	TNProcActors::Tint(Mesh, Cast<ATN_ProcSabotageGate>(InTarget) ? FLinearColor(0.9f, 0.1f, 0.1f) : FLinearColor(0.1f, 0.8f, 0.2f));
+	TintKind = Cast<ATN_ProcSabotageGate>(InTarget) ? 2 : 1;
+	OnRep_TintKind();
+}
+
+void ATN_ProcSwitch::OnRep_TintKind()
+{
+	if (TintKind == 0) { return; }
+	TNProcActors::Tint(Mesh, TintKind == 2 ? FLinearColor(0.9f, 0.1f, 0.1f) : FLinearColor(0.1f, 0.8f, 0.2f));
+}
+
+void ATN_ProcSwitch::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATN_ProcSwitch, TintKind);
 }
 
 void ATN_ProcSwitch::OnInteracted_Implementation(APawn* Interactor)

@@ -23,7 +23,10 @@
 #include "GameFramework/PlayerState.h"
 #include "Misc/PackageName.h"
 #include "TimerManager.h"
+#include "Multiplayer/TN_CosmeticSlot.h"
 #include "Multiplayer/TN_CosmeticSaveGame.h"
+#include "Vehicles/TN_BuggyCosmetics.h"
+#include "HAL/IConsoleManager.h"
 #include "Multiplayer/TN_LocalPlayRules.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Multiplayer/TN_LocalPlayerProfile.h"
@@ -74,7 +77,7 @@ namespace
 
 	FAutoConsoleCommandWithWorldAndArgs MPGameInstance_FakeRoomErrorCommand(
 		TEXT("TN.Rooms.FakeError"),
-		TEXT("Simula un fallo al entrar en una sala: TN.Rooms.FakeError <locked|full|kicked|other|checksum|joinfull|gone|noaddress>."),
+		TEXT("Simula un fallo al entrar en una sala: TN.Rooms.FakeError <locked|full|kicked|other|build|checksum|joinfull|gone|noaddress>."),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&MPGameInstance_HandleFakeRoomError));
 #endif
 }
@@ -331,6 +334,7 @@ bool UMP_GameInstance::IsCosmeticUnlocked(ETNCosmeticCategory Category, FName Id
 int32 UMP_GameInstance::GetCosmeticPrice(ETNCosmeticCategory Category, FName Id) const
 {
 	if (Id == NAME_None) { return 0; }
+	if (TNIsBuggyCategory(Category)) { return TNBuggyCosmetics::PriceOf(Category, Id); }
 	if (Category == ETNCosmeticCategory::Helmet)
 	{
 		const FTN_HelmetData* HelmRow = FindHelmetRow(Id, TEXT("GetCosmeticPrice"));
@@ -347,6 +351,7 @@ bool UMP_GameInstance::PurchaseCosmetic(ETNCosmeticCategory Category, FName Id)
 
 TArray<FName> UMP_GameInstance::GetCosmeticCatalog(ETNCosmeticCategory Category) const
 {
+	if (TNIsBuggyCategory(Category)) { return TNBuggyCosmetics::CatalogIds(Category); }
 	TArray<FName> Out;
 	if (Category == ETNCosmeticCategory::Helmet)
 	{
@@ -505,6 +510,12 @@ bool UMP_GameInstance::IsCosmeticUnlockedFor(const APlayerController* PC, ETNCos
 {
 	if (Id == NAME_None) { return true; }
 	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
+	if (TNIsBuggyCategory(Category))
+	{
+		// Lo gratis del catálogo no hace falta comprarlo.
+		if (!TNBuggyCosmetics::IsKnown(Category, Id)) { return false; }
+		return TNBuggyCosmetics::PriceOf(Category, Id) == 0 || (Profile && Profile->UnlockedBuggyIds.Contains(Id));
+	}
 	if (!Profile) { return false; }
 	return Category == ETNCosmeticCategory::Helmet ? Profile->UnlockedHelmetIds.Contains(Id) : Profile->UnlockedSkinIds.Contains(Id);
 }
@@ -513,11 +524,13 @@ bool UMP_GameInstance::PurchaseCosmeticFor(const APlayerController* PC, ETNCosme
 {
 	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
 	if (!Profile || Id == NAME_None) { return false; }
+	if (TNIsBuggyCategory(Category) && !TNBuggyCosmetics::IsKnown(Category, Id)) { return false; }
 	if (IsCosmeticUnlockedFor(PC, Category, Id)) { return true; }
 	const int32 Price = GetCosmeticPrice(Category, Id);
 	if (Price > Profile->AccumulatedRaceScore) { return false; }
 	Profile->AccumulatedRaceScore -= Price;
 	if (Category == ETNCosmeticCategory::Helmet) { Profile->UnlockedHelmetIds.AddUnique(Id); }
+	else if (TNIsBuggyCategory(Category)) { Profile->UnlockedBuggyIds.AddUnique(Id); }
 	else { Profile->UnlockedSkinIds.AddUnique(Id); }
 	SaveCosmeticsFor(PC);
 	UE_LOG(LogTortunabo, Log, TEXT("[Tienda] Desbloqueado '%s' por %d (quedan %d)%s."), *Id.ToString(), Price, Profile->AccumulatedRaceScore,
@@ -559,6 +572,30 @@ int32 UMP_GameInstance::GetAccumulatedRaceScoreFor(const APlayerController* PC) 
 {
 	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
 	return Profile ? Profile->AccumulatedRaceScore : 0;
+}
+
+TArray<FName> UMP_GameInstance::GetUnlockedBuggyIds() const
+{
+	return CosmeticProfile ? CosmeticProfile->UnlockedBuggyIds : TArray<FName>();
+}
+
+bool UMP_GameInstance::EquipBuggyLook(const FTN_BuggyLook& Look)
+{
+	if (!CosmeticProfile) { return false; }
+	const FTN_BuggyLook Clean = TNBuggyCosmetics::Sanitize(Look);
+	if (!IsCosmeticUnlocked(ETNCosmeticCategory::BuggyModel, Clean.ModelId) || !IsCosmeticUnlocked(ETNCosmeticCategory::BuggyPaint, Clean.PaintId))
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Tienda] Buggy '%s' sin desbloquear: no se equipa."), *TNBuggyCosmetics::LookKey(Clean));
+		return false;
+	}
+	CosmeticProfile->EquippedBuggyLook = Clean;
+	SaveCosmeticProfile();
+	return true;
+}
+
+FTN_BuggyLook UMP_GameInstance::GetEquippedBuggyLook() const
+{
+	return CosmeticProfile ? TNBuggyCosmetics::Sanitize(CosmeticProfile->EquippedBuggyLook) : FTN_BuggyLook();
 }
 
 const FTN_HelmetData* UMP_GameInstance::FindHelmetRow(FName HelmetId, const TCHAR* Ctx) const
@@ -717,7 +754,7 @@ void UMP_GameInstance::HostSession()
 
 void UMP_GameInstance::HostSessionWithMode(ETNProcGameMode Mode)
 {
-	// Desde el menú solo se ofrecen los modos de TNLobbyMission::MenuModes; el lobby lo lee de aquí al viajar (ATN_HQGameMode::BeginMatchTravel).
+	// Desde el menú solo se ofrecen los modos de TNLobbyMission::GetMenuModes; el lobby lo lee de aquí al viajar (ATN_HQGameMode::BeginMatchTravel).
 	FTNRoomConfig Config = MakeRoomDraft();
 	Config.Mode = TNLobbyMission::NormalizeMenuMode(Mode);
 	UE_LOG(LogTortunabo, Log, TEXT("[MP] Crear partida en modo %s."), *UEnum::GetValueAsString(Config.Mode));
@@ -1439,6 +1476,9 @@ namespace
 
 void UMP_GameInstance::LoadCosmeticProfile()
 {
+	// Un perfil por cuenta de Steam (#83); la primera que entra hereda el _Local de antes.
+	CosmeticAccountId = TNCosmeticSlot::SteamAccountIdOf(MPGameInstance_GetPreferredOnlineSubsystem());
+	TNCosmeticSlot::MigrateLocalToAccount(CosmeticSaveSlotPrefix, CosmeticAccountId);
 	const FString SlotName = BuildCosmeticSaveSlot();
 	const TNSaveGameIO::FLoadResult Loaded = TNSaveGameIO::LoadOrQuarantine(SlotName, 0, UTN_CosmeticSaveGame::StaticClass(),
 		[](const USaveGame& Save) { return CastChecked<UTN_CosmeticSaveGame>(&Save)->IsIntact(); },
@@ -1502,10 +1542,9 @@ void UMP_GameInstance::SaveCosmeticProfile() const
 
 FString UMP_GameInstance::BuildCosmeticSaveSlot() const
 {
-	// Un solo perfil por máquina y siempre el mismo nombre. Antes se cargaba de "_Local" (en Init aún no hay jugador
-	// local) y se guardaba con el nick, que con el subsistema NULL lleva un GUID distinto cada sesión: lo desbloqueado
-	// se perdía al reiniciar.
-	return FString::Printf(TEXT("%s_Local"), *CosmeticSaveSlotPrefix);
+	// La cuenta se lee del subsistema en línea en Init (no del nick del jugador, que aún no existe y que con el
+	// subsistema NULL lleva un GUID distinto cada sesión): misma ranura al cargar y al guardar.
+	return TNCosmeticSlot::SlotFor(CosmeticSaveSlotPrefix, CosmeticAccountId);
 }
 
 // ── Race Score ────────────────────────────────────────────────────────────────
@@ -1525,6 +1564,23 @@ int32 UMP_GameInstance::GetAccumulatedRaceScore() const
 {
 	return CosmeticProfile ? CosmeticProfile->AccumulatedRaceScore : 0;
 }
+
+#if !UE_BUILD_SHIPPING
+// Para probar la tienda (los buggies cuestan conchas): suma conchas al perfil local y las guarda.
+static FAutoConsoleCommandWithWorldAndArgs GTNShopAddShellsCommand(
+	TEXT("TN.Shop.AddShells"),
+	TEXT("Tienda: TN.Shop.AddShells <conchas = 5000>: suma conchas al perfil cosmético local (para comprar buggies y pinturas)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		UMP_GameInstance* GI = World ? Cast<UMP_GameInstance>(World->GetGameInstance()) : nullptr;
+		if (!GI)
+		{
+			UE_LOG(LogTortunabo, Warning, TEXT("TN.Shop.AddShells: no hay UMP_GameInstance"));
+			return;
+		}
+		GI->AddRaceScore(Args.Num() > 0 ? FMath::Max(1, FCString::Atoi(*Args[0])) : 5000);
+	}));
+#endif
 
 // ── Tutorial state ────────────────────────────────────────────────────────────
 
@@ -1790,9 +1846,14 @@ void UMP_GameInstance::HandleChecksumMismatch(const FString& ErrorString)
 {
 	HideLoadingScreen();
 	// Una sola línea: el menú enseña lo que va tras el último salto de línea del estado (#280); la pista de Live Coding va al registro.
-	UpdateStatus(TEXT("ERROR: Versiones incompatibles con el servidor."));
+	UpdateStatus(NSLOCTEXT("TNRooms", "BuildMismatchStatus", "Versiones incompatibles con el servidor.").ToString());
 	// Destruir la sesión huérfana del lado cliente para poder reintentar.
 	DestroyCurrentSession();
+	// El motor vuelve solo al menú (?closed): que diga por qué y no parezca un fallo de la sala (#245).
+	PendingMenuNotice.Text = NSLOCTEXT("TNRooms", "BuildMismatch",
+		"Tu versión del juego no es la misma que la del anfitrión. Poneos los dos en la misma versión y volved a intentarlo.");
+	PendingMenuNotice.bError = true;
+	PendingMenuNotice.bOpenJoin = true;
 	UE_LOG(LogTortunabo, Error,
 		TEXT("[MP] NetChecksumMismatch — El cliente tiene un build distinto al servidor. "
 		     "Recompila sin Live Coding y asegúrate de que todos usan el mismo binario. "
@@ -1895,6 +1956,9 @@ void UMP_GameInstance::HostRoom(const FTNRoomConfig& Config)
 	AdvertisedLocked = INDEX_NONE;
 	bKickedFromRoom = false;
 	SelectedProcMode = ActiveRoom.Mode;
+	SelectedRallyVariant = ActiveRoom.RallyVariant;
+	SelectedTctArena = ActiveRoom.TctArena;
+	SelectedKartSeats = FMath::Clamp(ActiveRoom.RallySeats, 1, 2);
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Salas] Crear sala «%s» (%s, %s, %d plazas, código %s)."), *TNRoomNames::GetIn(ActiveRoom.NameId, true),
 		*UEnum::GetValueAsString(ActiveRoom.Mode), ActiveRoom.bPrivate ? TEXT("privada") : TEXT("pública"), ActiveRoom.MaxPlayers, *ActiveRoom.Code);
@@ -1913,11 +1977,16 @@ FTNRoomConfig UMP_GameInstance::MakeRoomDraft() const
 	{
 		Draft.Mode = TNLobbyMission::NormalizeMenuMode(SelectedProcMode);
 		Draft.MaxPlayers = Sizes.Num() > 0 ? Sizes.Last() : TNRoomLimits::Max;
+		Draft.RallyVariant = SelectedRallyVariant;
+		Draft.TctArena = SelectedTctArena;
+		Draft.RallySeats = FMath::Clamp(SelectedKartSeats, 1, 2);
 	}
 	if (!Sizes.Contains(Draft.MaxPlayers) && Sizes.Num() > 0)
 	{
 		Draft.MaxPlayers = Sizes.Last();
 	}
+	Draft.RallyVariant = TNLobbyMission::ResolveRallyMap(Draft.RallyVariant, TNLobbyMission::RallyMapOptions());
+	Draft.TctArena = TNLobbyMission::ResolveTctArena(Draft.TctArena, TNLobbyMission::TctArenaOptions());
 	// Nombre y código nuevos cada vez que se abre la pantalla (el nombre, distinto del de la última vez).
 	Draft.NameId = TNRoomNames::Random(bHasRoomDraft ? RoomDraft.NameId : INDEX_NONE);
 	Draft.Code = TNRoomCode::Generate();
@@ -2117,8 +2186,10 @@ bool UMP_GameInstance::ReadRoomListing(const FOnlineSession& Session, int32 Inde
 	Value = 0;
 	Out.bLocked = Settings.Get(TNRoomKeys::Locked(), Value) && Value != 0;
 	Value = 0;
-	Out.Mode = Settings.Get(TNRoomKeys::Mode(), Value) && Value >= 0 && Value < static_cast<int32>(ETNProcGameMode::Count)
-		? static_cast<ETNProcGameMode>(Value) : ETNProcGameMode::Coop;
+	const bool bHasMode = Settings.Get(TNRoomKeys::Mode(), Value);
+	int32 Schema = 1;
+	Settings.Get(TNRoomKeys::ModeSchema(), Schema);
+	Out.Mode = TNRoomKeys::DecodeMode(bHasMode, Value, Schema);
 	Out.MaxPlayers = Settings.NumPublicConnections;
 	Value = 0;
 	Out.Players = Settings.Get(TNRoomKeys::Players(), Value) ? Value
@@ -2527,6 +2598,7 @@ void UMP_GameInstance::ApplyRoomSettings(FOnlineSessionSettings& Settings, int32
 	Settings.Set(TNRoomKeys::Private(), ActiveRoom.bPrivate ? 1 : 0, Advertise);
 	Settings.Set(TNRoomKeys::Locked(), ActiveRoom.bLocked ? 1 : 0, Advertise);
 	Settings.Set(TNRoomKeys::Mode(), static_cast<int32>(SelectedProcMode), Advertise);
+	Settings.Set(TNRoomKeys::ModeSchema(), TNRoomKeys::ModeSchemaVersion, Advertise);
 	Settings.Set(TNRoomKeys::Players(), FMath::Max(1, Players), Advertise);
 }
 
@@ -2602,10 +2674,20 @@ void UMP_GameInstance::DebugFakeRoomError(const FString& Kind)
 	else if (K == TEXT("kicked")) { Reason = TNRoomKeys::RefuseKicked(); }
 	else if (K == TEXT("other")) { Reason = TEXT("TNRoom:Prueba"); }
 
-	if (!Reason.IsEmpty())
+	// Versión distinta a la del anfitrión (NetChecksumMismatch, #245): el aviso de dos líneas en «Unirse».
+	const bool bBuildMismatch = K == TEXT("build");
+	if (bBuildMismatch || !Reason.IsEmpty())
 	{
-		UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: rechazo del servidor «%s»."), *Reason);
-		HandleRoomRefused(Reason);
+		if (bBuildMismatch)
+		{
+			UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: versión distinta a la del anfitrión."));
+			HandleChecksumMismatch(TEXT("prueba (TN.Rooms.FakeError build)"));
+		}
+		else
+		{
+			UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: rechazo del servidor «%s»."), *Reason);
+			HandleRoomRefused(Reason);
+		}
 		// En el menú, HandleRoomRefused no viaja: se recarga como hace el motor tras un fallo al conectar.
 		UWorld* World = GetWorld();
 		if (World && IsMenuWorld(World))
@@ -2632,7 +2714,7 @@ void UMP_GameInstance::DebugFakeRoomError(const FString& Kind)
 	else if (K == TEXT("noaddress")) { Result = EOnJoinSessionCompleteResult::CouldNotRetrieveAddress; }
 	else
 	{
-		UE_LOG(LogTortunabo, Display, TEXT("[Salas] TN.Rooms.FakeError <locked|full|kicked|other|checksum|joinfull|gone|noaddress>"));
+		UE_LOG(LogTortunabo, Display, TEXT("[Salas] TN.Rooms.FakeError <locked|full|kicked|other|build|checksum|joinfull|gone|noaddress>"));
 		return;
 	}
 	UE_LOG(LogTortunabo, Display, TEXT("[Salas] Prueba: JoinSession falla con «%s»."), *K);

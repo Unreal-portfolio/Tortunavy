@@ -2,12 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Player/TN_DiveDecisions.h"
 #include "Player/TN_ServerLaunch.h"
 #include "Player/TN_TurtleSurface.h"
 #include "TN_TurtleMovementComponent.generated.h"
 
 class ATortugaCharacter;
 class ATN_ProcMapGenerator;
+class UTN_RaceItemComponent;
 
 /** Fase del panzazo en el suelo. La simulan igual el cliente dueño (predicha y guardada en sus movimientos) y el servidor. */
 enum class ETNBellyPhase : uint8
@@ -37,11 +39,42 @@ struct FTNTurtleNetworkMoveDataContainer : public FCharacterNetworkMoveDataConta
 	/** Número del lanzamiento concedido que lleva Data, si es uno de estos datos (0 si no). */
 	uint8 GetLaunchId(const FCharacterNetworkMoveData* Data) const;
 
+	/** Giro del panzazo que pide Data, si es uno de estos datos (0 si no). */
+	uint16 GetDiveYaw(const FCharacterNetworkMoveData* Data) const;
+
 	virtual void ClientFillNetworkMoveData(const FSavedMove_Character* ClientNewMove, const FSavedMove_Character* ClientPendingMove,
 		const FSavedMove_Character* ClientOldMove) override;
 
 private:
+	const FTNTurtleNetworkMoveData* FindTurtleData(const FCharacterNetworkMoveData* Data) const;
+
 	FTNTurtleNetworkMoveData TurtleMoveData[3];
+};
+
+/**
+ * Estado del panzazo del servidor tras el movimiento que corrige (#24): si estaba en un panzazo, su número y la semialtura
+ * sin escalar de la cápsula. Con él, el dueño repite sus movimientos desde lo mismo que el servidor.
+ */
+struct FTNDiveNetState
+{
+	bool bDiving = false;
+	uint8 Serial = 0;
+	float CapsuleHalfHeight = 0.f;
+	/** Movimiento del cliente tras el que se tomó (el de la corrección). */
+	float TimeStamp = -1.f;
+};
+
+/**
+ * Respuesta del servidor a los movimientos del cliente: la de serie y, en las correcciones, el estado del panzazo del
+ * servidor en el movimiento corregido (FTNDiveNetState, 6 bytes). El panzazo empieza dentro del movimiento (predicho): si el
+ * servidor no lo empezó (o sí y el dueño no), la corrección lleva también eso y el dueño lo repite desde ahí.
+ */
+struct FTNTurtleMoveResponseDataContainer : public FCharacterMoveResponseDataContainer
+{
+	virtual void ServerFillResponseData(const UCharacterMovementComponent& CharacterMovement, const FClientAdjustment& PendingAdjustment) override;
+	virtual bool Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap) override;
+
+	FTNDiveNetState DiveState;
 };
 
 /**
@@ -64,7 +97,7 @@ private:
  * (KeepBellyBodyOutOfWalls).
  *
  * Consola (igual en todas las máquinas; en PIE es una sola): TN.Dive.Slide, TN.Dive.Friction, TN.Dive.Slope,
- * TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
+ * TN.Dive.SlopeFall, TN.Dive.WallBounce, TN.Dive.Splat, TN.Dive.MaxTime, TN.Dive.Body y TN.Dive.Debug. Ver Docs/Animacion_Tortuga.md.
  */
 UCLASS()
 class TORTUNABO_API UTN_TurtleMovementComponent : public UCharacterMovementComponent
@@ -78,8 +111,11 @@ public:
 
 	ETNBellyPhase GetBellyPhase() const { return BellyPhase; }
 
-	/** Segundos en la fase actual (arrastrándose, reptando o levantándose). */
+	/** Segundos en la fase actual (arrastrándose, reptando o levantándose), sin los de cuesta abajo (GetBellySlopeTime). */
 	float GetBellyTime() const { return BellyTime; }
+
+	/** Segundos de este arrastre cuesta abajo (pendiente de BellySlopeMinAngle o más): en ellos BellyTime no corre. */
+	float GetBellySlopeTime() const { return BellySlopeTime; }
 
 	/** Número del panzazo del que viene el arrastre (0 = ninguno todavía). */
 	uint8 GetSlideSerial() const { return SlideSerial; }
@@ -102,14 +138,51 @@ public:
 	 * Repetición de movimientos tras una corrección (FTNSavedMove_Turtle::PrepMoveFor): deja el estado del arrastre como
 	 * estaba al empezar ese movimiento. Si entonces iba sobre la tripa, también la cápsula encogida.
 	 */
-	void RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight);
+	void RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight, float InSlopeTime);
 
 	/**
 	 * Estado del arrastre al empezar el movimiento que se va a guardar (FTNSavedMove_Turtle::SetInitialPosition). El
 	 * cliente lee el salto antes de guardar el movimiento: si ese salto la ha levantado de la tripa, devuelve (y olvida)
 	 * el estado de antes del salto, como hace el motor con JumpCurrentCountPreJump.
 	 */
-	void ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight);
+	void ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight, float& OutSlopeTime);
+
+	/**
+	 * Lo del panzazo que guarda el movimiento nuevo (FTNSavedMove_Turtle::SetInitialPosition, #24): si pide el panzazo, su
+	 * giro, y la velocidad horizontal del último salto (la inercia del panzazo sale de ella).
+	 */
+	void CaptureMoveStartDive(bool& bOutWantsDive, uint16& OutYaw, FVector& OutJumpStartVelocity) const;
+
+	/** Repetición de movimientos (FTNSavedMove_Turtle::PrepMoveFor): el giro pedido y la velocidad del salto de entonces. */
+	void RestoreMoveStartDive(uint16 InYaw, const FVector& InJumpStartVelocity);
+
+	// ── Sprint y vadeo, predichos ────────────────────────────────────────────
+	// La velocidad máxima andando se calcula en cada paso (GetMaxSpeed) con la petición de sprint de ese movimiento, que el
+	// cliente dueño manda en sus movimientos (FLAG_Custom_0), y con el vadeo de la posición de ese paso. Antes la ponía
+	// UTN_StaminaComponent en MaxWalkSpeed cuando a cada máquina le llegaba el cambio (el sprint por RPC, el vadeo en su Tick
+	// a 10 Hz): el cliente y el servidor andaban a velocidades distintas durante un momento y el servidor lo corregía, que
+	// se veía como temblores al andar (#250).
+
+	/** El jugador pide correr (ATortugaCharacter::RefreshSprintRequest, en la máquina que la controla). */
+	void SetWantsToSprint(bool bWants) { bInputWantsToSprint = bWants; bWantsToSprint = bWants; }
+
+	/** Lo que pide ahora el jugador (lo que se guarda en el movimiento nuevo). */
+	bool InputWantsToSprint() const { return bInputWantsToSprint; }
+
+	// ── Turbo de los objetos de carrera (issue #22) ─────────────────────────
+	// Va en la predicción como el panzazo: quien mueve la tortuga (su dueño o el anfitrión) toma el multiplicador de
+	// UTN_RaceItemComponent al empezar cada movimiento y lo guarda en él (FTNSavedMove_Turtle: marca FLAG_Custom_1 al
+	// servidor y el valor para repetirlo); el servidor simula los movimientos marcados con el que él le reconoce
+	// (UTN_RaceItemComponent::ResolveOwnerBoostMultiplier) y los demás sin turbo. GetMaxSpeed y GetMaxAcceleration lo aplican.
+
+	/** Los objetos de carrera de la tortuga (UTN_RaceItemComponent::ApplyEffects se da a conocer en cada máquina). */
+	void SetRaceItems(UTN_RaceItemComponent* InRaceItems);
+
+	/** Multiplicador del turbo en el movimiento que se simula (1 = sin turbo). */
+	float GetRaceBoostMultiplier() const { return RaceBoostMultiplier; }
+
+	/** Repetición de movimientos tras una corrección (FTNSavedMove_Turtle::PrepMoveFor): el turbo con que se hizo. */
+	void RestoreRaceBoost(float InMultiplier) { RaceBoostMultiplier = FMath::Max(1.f, InMultiplier); }
 
 	// ── UCharacterMovementComponent ──────────────────────────────────────────
 
@@ -117,6 +190,7 @@ public:
 	virtual void CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration) override;
 	virtual FRotator ComputeOrientToMovementRotation(const FRotator& CurrentRotation, float DeltaTime, FRotator& DeltaRotation) const override;
 	virtual float GetMaxSpeed() const override;
+	virtual float GetMaxAcceleration() const override;
 	virtual bool CanAttemptJump() const override;
 	virtual bool DoJump(bool bReplayingMoves, float DeltaTime) override;
 	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
@@ -152,6 +226,35 @@ public:
 	static void LaunchFromServer(ACharacter* Character, const FVector& LaunchVelocity);
 
 	const FTNServerLaunch& GetServerLaunch() const { return ServerLaunch; }
+
+	// ── Red: el panzazo empieza dentro del movimiento (E9-04, #24) ───────────
+	// Antes el dueño mandaba Server_StartDive y el servidor lanzaba a la tortuga (LaunchCharacter): el dueño lo recibía como
+	// corrección una ida y vuelta después (el tirón al empezar). Ahora quien la controla pide el panzazo (RequestDive) y la
+	// petición va en su siguiente movimiento guardado: marca FSavedMove_Character::FLAG_Custom_2 (TNDiveLogic::
+	// DiveRequestFlag) y el giro en 16 bits en FTNTurtleNetworkMoveData. En ese movimiento, el dueño y el servidor deciden
+	// con las mismas reglas (ATortugaCharacter::StartDiveFromMove: en el aire, sin otro panzazo ni otro lanzamiento...) y,
+	// si empieza, los dos lanzan, encogen la cápsula y cuentan el panzazo igual; al repetir movimientos tras una
+	// corrección, otra vez. Si el servidor decide otra cosa, su corrección lleva su estado del panzazo
+	// (FTNTurtleMoveResponseDataContainer) y el dueño repite desde él. TN.Net.DivePredict 0 vuelve a Server_StartDive.
+
+	/** Quien la controla: el panzazo hacia DiveDir (horizontal) en el siguiente movimiento. */
+	void RequestDive(const FVector& DiveDir);
+
+	/** Hay un panzazo pedido que aún no ha entrado en un movimiento. */
+	bool HasDiveRequest() const { return bDiveRequested; }
+
+	/** Giro (comprimido) del panzazo que pide el movimiento que se simula o se repite. */
+	uint16 GetMoveDiveYaw() const { return MoveDiveYaw; }
+
+	/** Giro del panzazo que pide el movimiento guardado Move (0 si no lo pide: mirar su marca). */
+	static uint16 GetSavedMoveDiveYaw(const FSavedMove_Character& Move);
+
+	/** Servidor: el estado del panzazo tras el último movimiento corregido (lo que manda la corrección). */
+	const FTNDiveNetState& GetCorrectionDiveState() const { return CorrectionDiveState; }
+
+	/** Cliente dueño: correcciones recibidas y tamaño de la última (cm), para TN.Dive.Debug. */
+	int32 GetClientCorrectionCount() const { return ClientCorrectionCount; }
+	float GetLastClientCorrectionCm() const { return LastClientCorrectionCm; }
 
 	// ── Cápsula ─────────────────────────────────────────────────────────────
 
@@ -213,6 +316,34 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Speed", meta = (ClampMin = "0.0"))
 	float BellySlopeGravity = 1.15f;
 
+	// ── Pendiente: cuesta abajo sigue cayendo (E9-01, #62) ───────────────────
+	// Con el rozamiento de la arena (800) solo aceleraba por encima de 45°, que ya no es suelo: en la playa no se deslizaba
+	// por ninguna cuesta. Ahora, cuesta abajo desde BellySlopeMinAngle, el rozamiento y el freno por velocidad se multiplican
+	// por BellySlopeFrictionScale y BellySlopeDragScale (arena a 25°: más de 200 cm/s tras 2 s; el llano no cambia). Cuesta
+	// abajo el tiempo del arrastre no corre (ni la rampa de rozamiento ni BellyMaxSeconds); el tope es BellySlopeMaxSeconds.
+	// Al caer de tripa en una bajada, la caída cuenta entera (módulo 3D) con tope BellyMaxEntrySpeedDownhill. Las cuentas,
+	// en TNDiveLogic (TN_DiveDecisions.h). TN.Dive.SlopeFall 0 lo apaga.
+
+	/** Inclinación del suelo (grados) desde la que, cuesta abajo, sigue cayendo. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0", ClampMax = "90.0"))
+	float BellySlopeMinAngle = 12.f;
+
+	/** Rozamiento de la superficie cuesta abajo, multiplicado. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BellySlopeFrictionScale = 0.3f;
+
+	/** Freno por velocidad (BellyDrag) cuesta abajo, multiplicado. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BellySlopeDragScale = 0.4f;
+
+	/** Tope de todo el arrastre (s) contando el tiempo cuesta abajo: ninguna ladera la arrastra para siempre. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.5"))
+	float BellySlopeMaxSeconds = 6.f;
+
+	/** Tope de la velocidad al empezar a arrastrarse en una bajada (cm/s). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Slope", meta = (ClampMin = "0.0"))
+	float BellyMaxEntrySpeedDownhill = 1000.f;
+
 	/** Tiempo mínimo arrastrándose antes de levantarse sola (s). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Time", meta = (ClampMin = "0.0"))
 	float BellyMinSeconds = 0.3f;
@@ -255,9 +386,43 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Bounce", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float BellyBounceTangentKeep = 0.75f;
 
-	/** Velocidad contra la pared (cm/s) por debajo de la cual no rebota: se queda pegada, como andando. */
+	/** Velocidad contra la pared (cm/s) por debajo de la cual no rebota: se queda pegada, como andando. También en el vuelo. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Bounce", meta = (ClampMin = "0.0"))
 	float BellyBounceMinSpeed = 120.f;
+
+	// ── Rebote en el vuelo del panzazo (E9-02, #63) ──────────────────────────
+	// Volando de tripa (antes de tocar el suelo) contra una pared (normal con Z por debajo de DiveWallMaxNormalZ; lo demás
+	// es suelo o pendiente) a BellyBounceMinSpeed o más (velocidad relativa a lo que toca), la velocidad horizontal contra la
+	// pared vuelve con DiveWallRestitution y la de a lo largo se queda con DiveWallTangentKeep; la vertical sigue. Lo
+	// detectan el choque de la cápsula (HandleImpact) y el del cuerpo tumbado (KeepBellyBodyOutOfWalls), y se aplica al
+	// final del movimiento: igual en el servidor y en el dueño, también al repetir. No cuentan otras tortugas ni cuerpos con
+	// física. El rebote arrastrándose en el suelo no cambia. TN.Dive.WallBounce 0 lo apaga.
+
+	/** Pared en vuelo: normal con Z por debajo de esto. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
+	float DiveWallMaxNormalZ = 0.35f;
+
+	/** Rebote en vuelo: fracción de la velocidad contra la pared que devuelve. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float DiveWallRestitution = 0.45f;
+
+	/** Rebote en vuelo: fracción de la velocidad horizontal a lo largo de la pared que conserva. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float DiveWallTangentKeep = 0.6f;
+
+	/**
+	 * Estampado (#355): desde esta velocidad contra la pared (cm/s) rebota igual, pero el servidor acaba el panzazo y la
+	 * lanza como bola de caparazón con la velocidad reflejada (ATortugaCharacter::ServerDiveSplat, fuera del movimiento),
+	 * con polvo, pajaritos y el golpe sintetizado. 0 = nunca. TN.Dive.Splat 0 lo apaga.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dive|Wall", meta = (ClampMin = "0.0"))
+	float DiveSplatMinSpeed = 650.f;
+
+	/** Ajustes del rebote en vuelo (TNDiveLogic). */
+	TNDiveLogic::FDiveWallParams GetDiveWallParams() const;
+
+	/** Ajustes del rebote arrastrándose en el suelo (los de siempre, BellyBounce*), con la misma cuenta. */
+	TNDiveLogic::FDiveWallParams GetBellyBounceParams() const;
 
 	/** El cuerpo gira hacia donde se desliza (grados/s) si va a más de BellyTurnMinSpeed y la diferencia es menor que BellyTurnMaxAngle. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Belly Slide|Turn", meta = (ClampMin = "0.0"))
@@ -297,6 +462,16 @@ public:
 	float BellyBodyProbeHeight = 32.f;
 
 protected:
+	/** Quien mueve la tortuga en esta máquina: antes de guardar y simular el movimiento, el turbo que lleva ahora. */
+	virtual void ControlledCharacterMove(const FVector& InputVector, float DeltaSeconds) override;
+
+	/**
+	 * Servidor (y repetición en el cliente): la petición de sprint del movimiento (FLAG_Custom_0). Servidor, movimiento de un
+	 * cliente: con la marca de turbo (FLAG_Custom_1), el multiplicador que le reconoce; sin ella, ninguno. Y la petición de
+	 * panzazo del movimiento (TNDiveLogic::DiveRequestFlag = FLAG_Custom_2, #24).
+	 */
+	virtual void UpdateFromCompressedFlags(uint8 Flags) override;
+
 	virtual void ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations) override;
 	virtual void HandleImpact(const FHitResult& Hit, float TimeSlice = 0.f, const FVector& MoveDelta = FVector::ZeroVector) override;
 	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;
@@ -317,6 +492,9 @@ protected:
 
 	/** Cliente dueño: apunta en qué movimiento ha entrado el lanzamiento concedido. */
 	virtual bool HandlePendingLaunch() override;
+
+	/** Cliente dueño: en una corrección, el estado del panzazo del servidor (cápsula incluida) antes de repetir movimientos. */
+	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
 
 	/**
 	 * Servidor: mientras la mueve su caja del caparazón (UTN_ShellComponent::HasLocalBody), los pasos que el dueño aún manda
@@ -346,8 +524,20 @@ private:
 	/** Empieza el arrastre del panzazo Serial con la inercia a lo largo del suelo tocado. */
 	void StartBellySlide(const FHitResult& FloorHit, uint8 Serial, bool bFromAir);
 
-	/** Deja la velocidad horizontal a lo largo del suelo tocado, con Keep de lo que tenía y como mucho Cap. */
-	void RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap);
+	/**
+	 * Deja la velocidad horizontal a lo largo del suelo tocado, con Keep de lo que tenía y como mucho Cap (DownhillCap en una
+	 * bajada, donde cuenta el módulo 3D: TNDiveLogic::LandingSlideVelocity).
+	 */
+	void RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap, float DownhillCap);
+
+	/** Inclinación desde la que, cuesta abajo, sigue cayendo (90 con TN.Dive.SlopeFall 0: nunca). */
+	float SlopeMinAngleNow() const;
+
+	/** Lo que necesitan las cuentas del arrastre en este paso: suelo, gravedad, rozamiento de la superficie y pendiente. */
+	TNDiveLogic::FBellyStepInput MakeBellyStepInput() const;
+
+	/** Normal del suelo del movimiento (arriba si no es caminable). */
+	FVector BellyFloorNormal() const;
 
 	/** Antes de cada movimiento: entra, sigue, se levanta o repta. */
 	void TickBellyPhase(float DeltaSeconds);
@@ -376,6 +566,16 @@ private:
 	/** TN.Dive.Debug: línea en pantalla y flechas. */
 	void ShowBellyDebug() const;
 
+	/** Vadeo en la posición de este paso (UpdateCharacterStateBeforeMovement). */
+	void UpdateMoveWadingMultiplier();
+
+	/** Lo que pide el jugador ahora y lo que pedía en el movimiento que se simula (distintos al repetir movimientos). */
+	bool bInputWantsToSprint = false;
+	bool bWantsToSprint = false;
+
+	/** Multiplicador del vadeo en este paso del movimiento (1 = fuera del agua). */
+	float MoveWadingMultiplier = 1.f;
+
 	/**
 	 * Trampolines de la playa (#21), al empezar cada paso: si la cápsula toca el sensor de uno (ATN_BeachTrampoline) y no
 	 * sube (TNTrampolineRules::CanBounce), el rebote entra en este mismo paso (HandlePendingLaunch va justo después). Lo
@@ -386,11 +586,15 @@ private:
 
 	ETNBellyPhase BellyPhase = ETNBellyPhase::None;
 	float BellyTime = 0.f;
+	/** Tiempo de este arrastre cuesta abajo (no cuenta en BellyTime). */
+	float BellySlopeTime = 0.f;
 	uint8 SlideSerial = 0;
 
 	float SlideSurface[TNTurtleSurface::Num] = { 0.f, 0.f, 1.f, 0.f, 0.f };
 	float LastSlideFriction = 0.f;
 	FVector LastSlopeAccel = FVector::ZeroVector;
+	/** El último paso del arrastre iba cuesta abajo (TN.Dive.Debug). */
+	bool bLastSlideDownhill = false;
 
 	/** Velocidad que quería llevar el arrastre en este movimiento (antes de chocar) y pared contra la que ha chocado. */
 	FVector SlideIntentVelocity = FVector::ZeroVector;
@@ -399,6 +603,24 @@ private:
 
 	/** Último apartón del cuerpo tumbado contra una pared (TN.Dive.Debug). */
 	FVector LastBodyPush = FVector::ZeroVector;
+
+	// Rebote en el vuelo del panzazo (#63): la pared más de frente con que ha chocado en este movimiento.
+	bool bPendingAirBounce = false;
+	FVector AirBounceNormal = FVector::ZeroVector;
+	FVector AirImpactVelocity = FVector::ZeroVector;
+	FVector AirImpactOtherVelocity = FVector::ZeroVector;
+	/** Punto del choque (para el polvo del estampado, #355). */
+	FVector AirImpactPoint = FVector::ZeroVector;
+	float AirImpactSpeed = 0.f;
+	/** Último rebote en vuelo (TN.Dive.Debug): velocidad contra la pared y hora del mundo. */
+	float LastAirBounceSpeed = 0.f;
+	double LastAirBounceTime = -1.0;
+
+	/** Volando de tripa en el panzazo (aún sin tocar el suelo) en una máquina que simula el movimiento. */
+	bool IsDiveFlight() const;
+
+	/** En el vuelo del panzazo, Hit es una pared contra la que rebotar (yendo a ImpactVelocity): se apunta la más de frente. */
+	void NoteAirImpact(const FHitResult& Hit, const FVector& ImpactVelocity);
 
 	/** Estado de antes del brinco que la levantó de la tripa en el movimiento que se está guardando (ver ConsumeMoveStartBellyState). */
 	bool bHasPreJumpBelly = false;
@@ -413,4 +635,30 @@ private:
 
 	/** Lo que el cliente manda al servidor en cada movimiento (SetNetworkMoveDataContainer en el constructor). */
 	FTNTurtleNetworkMoveDataContainer TurtleNetworkMoveData;
+
+	TWeakObjectPtr<UTN_RaceItemComponent> RaceItems;
+	float RaceBoostMultiplier = 1.f;
+
+	/** Lo que el servidor contesta (SetMoveResponseDataContainer en el constructor): en las correcciones, su panzazo. */
+	FTNTurtleMoveResponseDataContainer TurtleMoveResponseData;
+
+	// ── Panzazo pedido (#24) ─────────────────────────────────────────────────
+
+	/** Al empezar el movimiento: si pide el panzazo, que lo decida el personaje y, si empieza, el lanzamiento. */
+	void TickDiveStart();
+
+	/** Pedido por el jugador y aún sin movimiento (lo guarda el siguiente). */
+	bool bDiveRequested = false;
+	uint16 DiveRequestYaw = 0;
+
+	/** El movimiento que se simula pide el panzazo (del jugador, de las marcas del cliente o del movimiento repetido). */
+	bool bMoveWantsDive = false;
+	uint16 MoveDiveYaw = 0;
+
+	/** Servidor: estado del panzazo tras el último movimiento corregido. */
+	FTNDiveNetState CorrectionDiveState;
+
+	/** Cliente dueño: correcciones recibidas (TN.Dive.Debug). */
+	int32 ClientCorrectionCount = 0;
+	float LastClientCorrectionCm = 0.f;
 };

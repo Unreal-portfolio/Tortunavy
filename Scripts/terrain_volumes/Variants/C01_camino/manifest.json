@@ -2141,5 +2141,6778 @@
    11288.2,
    234.6
   ]
- ]
+ ],
+ "placements": {
+  "format": 1,
+  "generator": "Scripts/place_terrain_path.py",
+  "seed": 652,
+  "map_seed": 60026,
+  "include_pending": false,
+  "auto": [
+   {
+    "id": "pz-catapult_gap-l1-s55",
+    "category": "puzzle",
+    "kind": "catapult_gap",
+    "class": "ATN_BeachCatapult + ATN_BeachTrampoline",
+    "line": 1,
+    "s_m": 55.0,
+    "q_m": 0.0,
+    "location_uu": [
+     9476.5,
+     18026.2,
+     1112.7
+    ],
+    "yaw_deg": -73.4,
+    "length_m": 8.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 3.0,
+    "params": {
+     "long_way": true,
+     "landing": "trampoline",
+     "landing_m": [
+      98.69,
+      216.95,
+      3.73
+     ],
+     "landing_line": 7,
+     "landing_s": 55.0
+    },
+    "source": "auto",
+    "progress_m": 134.5,
+    "path_uu": [
+     [
+      9298.0,
+      18382.1,
+      1079.1
+     ],
+     [
+      9402.8,
+      18212.0,
+      1095.9
+     ],
+     [
+      9476.5,
+      18026.2,
+      1112.7
+     ],
+     [
+      9516.7,
+      17830.5,
+      1129.5
+     ],
+     [
+      9522.4,
+      17630.8,
+      1146.3
+     ]
+    ]
+   },
+   {
+    "id": "mec-Catapult-l1-s55",
+    "category": "mechanic",
+    "kind": "Catapult",
+    "class": "ETNBeachElement::Catapult",
+    "line": 1,
+    "s_m": 55.0,
+    "q_m": 0.0,
+    "location_uu": [
+     9476.5,
+     18026.2,
+     1112.7
+    ],
+    "yaw_deg": 83.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.5,
+    "params": {
+     "puzzle_id": "pz-catapult_gap-l1-s55"
+    },
+    "source": "auto",
+    "progress_m": 134.5
+   },
+   {
+    "id": "mec-Trampoline-l7-s55",
+    "category": "mechanic",
+    "kind": "Trampoline",
+    "class": "ETNBeachElement::Trampoline",
+    "line": 7,
+    "s_m": 55.0,
+    "q_m": 0.0,
+    "location_uu": [
+     9868.8,
+     21695.3,
+     373.0
+    ],
+    "yaw_deg": 91.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.5,
+    "params": {
+     "puzzle_id": "pz-catapult_gap-l1-s55",
+     "landing": true
+    },
+    "source": "auto",
+    "progress_m": 410.4
+   },
+   {
+    "id": "pz-throw_chain-l0-s234",
+    "category": "puzzle",
+    "kind": "throw_chain",
+    "class": "ATN_ProcThrowWall + ATN_ProcSwitch",
+    "line": 0,
+    "s_m": 234.0,
+    "q_m": 0.0,
+    "location_uu": [
+     11280.9,
+     8025.0,
+     542.1
+    ],
+    "yaw_deg": -55.9,
+    "length_m": 24.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 4.0,
+    "params": {
+     "walls": 1,
+     "wall_height_m": 4.8,
+     "ramp_run_m": 7.5,
+     "effect_s": 8
+    },
+    "source": "auto",
+    "progress_m": 246.4,
+    "path_uu": [
+     [
+      10434.4,
+      8854.3,
+      379.6
+     ],
+     [
+      10608.2,
+      8755.6,
+      408.5
+     ],
+     [
+      10768.3,
+      8635.8,
+      437.3
+     ],
+     [
+      10913.6,
+      8498.6,
+      466.2
+     ],
+     [
+      11045.5,
+      8348.2,
+      494.9
+     ],
+     [
+      11166.8,
+      8189.2,
+      522.4
+     ],
+     [
+      11280.9,
+      8025.0,
+      542.1
+     ],
+     [
+      11391.2,
+      7858.2,
+      540.7
+     ],
+     [
+      11499.9,
+      7690.3,
+      515.3
+     ],
+     [
+      11607.3,
+      7521.5,
+      478.0
+     ],
+     [
+      11712.2,
+      7351.3,
+      438.3
+     ],
+     [
+      11811.6,
+      7177.7,
+      398.3
+     ],
+     [
+      11931.0,
+      7017.5,
+      358.3
+     ]
+    ]
+   },
+   {
+    "id": "pz-plate_balance-l3-s72",
+    "category": "puzzle",
+    "kind": "plate_balance",
+    "class": "ATN_PressurePlate x3-5 + ATN_PressurePlateGroupManager + ATN_PuzzleDoor (N4, M1)",
+    "line": 3,
+    "s_m": 72.0,
+    "q_m": 0.0,
+    "location_uu": [
+     18273.2,
+     12119.1,
+     285.3
+    ],
+    "yaw_deg": 125.7,
+    "length_m": 26.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 3.0,
+    "params": {
+     "plates": 3,
+     "spacing_m": 6,
+     "hold_s": 2,
+     "ball_counts_double": true,
+     "latch": false
+    },
+    "source": "auto",
+    "progress_m": 328.3,
+    "path_uu": [
+     [
+      18341.7,
+      10889.2,
+      205.7
+     ],
+     [
+      18424.0,
+      11071.3,
+      218.0
+     ],
+     [
+      18473.4,
+      11264.9,
+      230.2
+     ],
+     [
+      18488.4,
+      11464.1,
+      242.4
+     ],
+     [
+      18468.6,
+      11662.9,
+      254.7
+     ],
+     [
+      18414.5,
+      11855.3,
+      266.9
+     ],
+     [
+      18327.9,
+      12035.4,
+      279.1
+     ],
+     [
+      18211.3,
+      12197.6,
+      291.4
+     ],
+     [
+      18068.3,
+      12337.2,
+      303.6
+     ],
+     [
+      17903.3,
+      12449.8,
+      315.8
+     ],
+     [
+      17721.2,
+      12532.1,
+      328.1
+     ],
+     [
+      17527.6,
+      12581.5,
+      340.3
+     ],
+     [
+      17328.5,
+      12600.4,
+      352.5
+     ],
+     [
+      17131.2,
+      12631.9,
+      364.9
+     ]
+    ]
+   },
+   {
+    "id": "pz-throw_chain-l7-s118",
+    "category": "puzzle",
+    "kind": "throw_chain",
+    "class": "ATN_ProcThrowWall + ATN_ProcSwitch",
+    "line": 7,
+    "s_m": 118.0,
+    "q_m": 0.0,
+    "location_uu": [
+     15230.7,
+     22849.0,
+     262.0
+    ],
+    "yaw_deg": -10.0,
+    "length_m": 24.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 4.0,
+    "params": {
+     "walls": 1,
+     "wall_height_m": 4.8,
+     "ramp_run_m": 7.5,
+     "effect_s": 8
+    },
+    "source": "auto",
+    "progress_m": 419.5,
+    "path_uu": [
+     [
+      14153.3,
+      23322.5,
+      336.1
+     ],
+     [
+      14312.9,
+      23202.1,
+      323.7
+     ],
+     [
+      14475.7,
+      23086.0,
+      311.4
+     ],
+     [
+      14650.6,
+      22989.2,
+      299.1
+     ],
+     [
+      14837.4,
+      22918.1,
+      286.7
+     ],
+     [
+      15032.2,
+      22872.9,
+      274.4
+     ],
+     [
+      15230.7,
+      22849.0,
+      262.0
+     ],
+     [
+      15425.3,
+      22803.8,
+      249.7
+     ],
+     [
+      15609.1,
+      22725.5,
+      237.4
+     ],
+     [
+      15776.6,
+      22616.5,
+      225.0
+     ],
+     [
+      15922.6,
+      22480.0,
+      212.7
+     ],
+     [
+      16042.6,
+      22320.3,
+      200.3
+     ],
+     [
+      16133.1,
+      22142.2,
+      188.0
+     ]
+    ]
+   },
+   {
+    "id": "pz-breakable_chain-l5-s32",
+    "category": "puzzle",
+    "kind": "breakable_chain",
+    "class": "6-10 ATN_BreakablePlatform + ATN_BeachTrampoline",
+    "line": 5,
+    "s_m": 32.0,
+    "q_m": 0.0,
+    "location_uu": [
+     24815.6,
+     14174.8,
+     54.6
+    ],
+    "yaw_deg": -10.8,
+    "length_m": 26.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 4.0,
+    "params": {
+     "platforms": 8,
+     "respawn_s": 6,
+     "trampoline": true
+    },
+    "source": "auto",
+    "progress_m": 569.4,
+    "path_uu": [
+     [
+      23609.1,
+      13802.2,
+      54.6
+     ],
+     [
+      23791.3,
+      13884.2,
+      54.6
+     ],
+     [
+      23956.5,
+      13996.6,
+      54.6
+     ],
+     [
+      24130.9,
+      14094.1,
+      54.6
+     ],
+     [
+      24319.6,
+      14159.9,
+      54.6
+     ],
+     [
+      24516.8,
+      14191.9,
+      54.6
+     ],
+     [
+      24716.6,
+      14189.2,
+      54.6
+     ],
+     [
+      24912.9,
+      14151.8,
+      54.6
+     ],
+     [
+      25105.2,
+      14097.5,
+      54.6
+     ],
+     [
+      25304.0,
+      14077.3,
+      54.6
+     ],
+     [
+      25503.2,
+      14092.0,
+      54.6
+     ],
+     [
+      25696.9,
+      14141.1,
+      54.6
+     ],
+     [
+      25879.1,
+      14223.1,
+      54.7
+     ],
+     [
+      26052.0,
+      14323.6,
+      55.1
+     ]
+    ]
+   },
+   {
+    "id": "nido-EggNest-l0-s208",
+    "category": "nest",
+    "kind": "EggNest",
+    "class": "ATN_ProcEggNest",
+    "line": 0,
+    "s_m": 208.0,
+    "q_m": 0.0,
+    "location_uu": [
+     9075.7,
+     9165.7,
+     195.3
+    ],
+    "yaw_deg": -21.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 233.7
+   },
+   {
+    "id": "nido-EggNest-l0-s104",
+    "category": "nest",
+    "kind": "EggNest",
+    "class": "ATN_ProcEggNest",
+    "line": 0,
+    "s_m": 104.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4440.5,
+     17235.6,
+     692.5
+    ],
+    "yaw_deg": -73.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 117.2
+   },
+   {
+    "id": "nido-EggNest-l0-s396",
+    "category": "nest",
+    "kind": "EggNest",
+    "class": "ATN_ProcEggNest",
+    "line": 0,
+    "s_m": 396.0,
+    "q_m": 0.0,
+    "location_uu": [
+     16388.2,
+     17893.7,
+     -205.8
+    ],
+    "yaw_deg": 104.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 396.0
+   },
+   {
+    "id": "nido-EggNest-l0-s544",
+    "category": "nest",
+    "kind": "EggNest",
+    "class": "ATN_ProcEggNest",
+    "line": 0,
+    "s_m": 544.0,
+    "q_m": 0.0,
+    "location_uu": [
+     22828.4,
+     12157.6,
+     128.2
+    ],
+    "yaw_deg": -54.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 532.5
+   },
+   {
+    "id": "mec-MovingPlatform-l0-s309",
+    "category": "mechanic",
+    "kind": "MovingPlatform",
+    "class": "ETNBeachElement::MovingPlatform",
+    "line": 0,
+    "s_m": 309.0,
+    "q_m": 0.0,
+    "location_uu": [
+     14568.8,
+     10712.8,
+     -330.0
+    ],
+    "yaw_deg": 106.5,
+    "length_m": 20.0,
+    "extent_uu": 2000.0,
+    "size_scale": 1.0,
+    "intensity": 0.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 325.4,
+    "path_uu": [
+     [
+      14701.0,
+      9724.9,
+      -330.0
+     ],
+     [
+      14693.9,
+      9924.7,
+      -330.0
+     ],
+     [
+      14680.3,
+      10124.3,
+      -330.0
+     ],
+     [
+      14656.4,
+      10322.8,
+      -330.0
+     ],
+     [
+      14619.5,
+      10519.3,
+      -330.0
+     ],
+     [
+      14568.8,
+      10712.8,
+      -330.0
+     ],
+     [
+      14505.7,
+      10902.5,
+      -330.0
+     ],
+     [
+      14433.7,
+      11089.1,
+      -330.0
+     ],
+     [
+      14358.2,
+      11274.3,
+      -330.0
+     ],
+     [
+      14286.3,
+      11461.0,
+      -330.0
+     ],
+     [
+      14226.1,
+      11651.6,
+      -330.0
+     ]
+    ]
+   },
+   {
+    "id": "mec-Geyser-l0-s634",
+    "category": "mechanic",
+    "kind": "Geyser",
+    "class": "ATN_ProcGeyser",
+    "line": 0,
+    "s_m": 634.0,
+    "q_m": 0.0,
+    "location_uu": [
+     27720.3,
+     15942.5,
+     65.7
+    ],
+    "yaw_deg": 128.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 623.5,
+    "target_uu": [
+     26993.6,
+     17108.1,
+     67.3
+    ]
+   },
+   {
+    "id": "ob-BarbedWire-l0-s71",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 0,
+    "s_m": 71.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4113.4,
+     20271.2,
+     753.3
+    ],
+    "yaw_deg": 57.7,
+    "length_m": 0.0,
+    "extent_uu": 1782.9,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 80.0
+   },
+   {
+    "id": "ob-BarbedWire-l0-s190",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 0,
+    "s_m": 190.0,
+    "q_m": 0.0,
+    "location_uu": [
+     8361.2,
+     10666.0,
+     241.8
+    ],
+    "yaw_deg": -3.9,
+    "length_m": 0.0,
+    "extent_uu": 1881.9,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 214.1
+   },
+   {
+    "id": "en-PoolOctopus-l0-s289i",
+    "category": "enemy",
+    "kind": "PoolOctopus",
+    "class": "ETNBeachElement::PoolOctopus",
+    "line": 0,
+    "s_m": 289.0,
+    "q_m": -1.33,
+    "location_uu": [
+     14887.3,
+     8738.3,
+     -330.0
+    ],
+    "yaw_deg": 95.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 2.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 304.3
+   },
+   {
+    "id": "ob-ClamTrap-l0-s367i",
+    "category": "obstacle",
+    "kind": "ClamTrap",
+    "class": "ETNBeachElement::ClamTrap",
+    "line": 0,
+    "s_m": 367.0,
+    "q_m": -0.93,
+    "location_uu": [
+     17001.4,
+     15208.4,
+     -330.0
+    ],
+    "yaw_deg": 62.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 363.3
+   },
+   {
+    "id": "en-GullZone-l0-s381d",
+    "category": "enemy",
+    "kind": "GullZone",
+    "class": "ETNBeachElement::GullZone",
+    "line": 0,
+    "s_m": 381.0,
+    "q_m": 1.49,
+    "location_uu": [
+     16978.7,
+     16544.2,
+     -329.7
+    ],
+    "yaw_deg": 109.1,
+    "length_m": 0.0,
+    "extent_uu": 1200.0,
+    "size_scale": 1.0,
+    "intensity": 1.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 379.1
+   },
+   {
+    "id": "en-SandFleas-l0-s411d",
+    "category": "enemy",
+    "kind": "SandFleas",
+    "class": "ETNBeachElement::SandFleas",
+    "line": 0,
+    "s_m": 411.0,
+    "q_m": 1.57,
+    "location_uu": [
+     16762.9,
+     19339.3,
+     -42.4
+    ],
+    "yaw_deg": 46.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 1.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 412.9
+   },
+   {
+    "id": "en-SandFleas-l0-s498d",
+    "category": "enemy",
+    "kind": "SandFleas",
+    "class": "ETNBeachElement::SandFleas",
+    "line": 0,
+    "s_m": 498.0,
+    "q_m": 1.14,
+    "location_uu": [
+     22841.3,
+     16257.3,
+     32.8
+    ],
+    "yaw_deg": -76.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 1.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 510.9
+   },
+   {
+    "id": "ob-BarbedWire-l0-s638",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 0,
+    "s_m": 638.0,
+    "q_m": 0.0,
+    "location_uu": [
+     27454.2,
+     16241.1,
+     63.1
+    ],
+    "yaw_deg": -138.2,
+    "length_m": 0.0,
+    "extent_uu": 1651.5,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 628.0
+   },
+   {
+    "id": "ob-BarbedWire-l0-s652",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 0,
+    "s_m": 652.0,
+    "q_m": 0.0,
+    "location_uu": [
+     27020.7,
+     17505.3,
+     69.0
+    ],
+    "yaw_deg": 166.6,
+    "length_m": 0.0,
+    "extent_uu": 1501.4,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 643.8
+   },
+   {
+    "id": "ob-BarbedWire-l1-s135",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 1,
+    "s_m": 135.0,
+    "q_m": 0.0,
+    "location_uu": [
+     5171.4,
+     11819.7,
+     1070.7
+    ],
+    "yaw_deg": -76.8,
+    "length_m": 0.0,
+    "extent_uu": 1733.4,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 207.5
+   },
+   {
+    "id": "en-SeaUrchin-l1-s185",
+    "category": "enemy",
+    "kind": "SeaUrchin",
+    "class": "ETNBeachElement::SeaUrchin",
+    "line": 1,
+    "s_m": 185.0,
+    "q_m": 0.32,
+    "location_uu": [
+     4521.8,
+     9180.1,
+     593.1
+    ],
+    "yaw_deg": -57.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 1.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 253.4
+   },
+   {
+    "id": "en-HermitCrab-l2-s40",
+    "category": "enemy",
+    "kind": "HermitCrab",
+    "class": "ETNBeachElement::HermitCrab",
+    "line": 2,
+    "s_m": 40.0,
+    "q_m": 0.0,
+    "location_uu": [
+     19673.2,
+     15230.5,
+     -14.1
+    ],
+    "yaw_deg": -65.9,
+    "length_m": 20.0,
+    "extent_uu": 2000.0,
+    "size_scale": 1.0,
+    "intensity": 1.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 500.2,
+    "path_uu": [
+     [
+      19674.8,
+      16200.6,
+      1.8
+     ],
+     [
+      19606.8,
+      16012.7,
+      -1.4
+     ],
+     [
+      19572.5,
+      15815.9,
+      -4.5
+     ],
+     [
+      19572.8,
+      15616.1,
+      -7.7
+     ],
+     [
+      19607.9,
+      15419.3,
+      -10.9
+     ],
+     [
+      19673.2,
+      15230.5,
+      -14.1
+     ],
+     [
+      19770.3,
+      15055.9,
+      -17.3
+     ],
+     [
+      19896.3,
+      14900.8,
+      -20.5
+     ],
+     [
+      20047.3,
+      14769.9,
+      -23.7
+     ],
+     [
+      20218.7,
+      14667.2,
+      -26.9
+     ],
+     [
+      20399.6,
+      14582.1,
+      -29.9
+     ]
+    ]
+   },
+   {
+    "id": "en-GiantCrab-l3-s151",
+    "category": "enemy",
+    "kind": "GiantCrab",
+    "class": "ETNBeachElement::GiantCrab",
+    "line": 3,
+    "s_m": 151.0,
+    "q_m": -0.14,
+    "location_uu": [
+     13119.0,
+     16525.9,
+     398.7
+    ],
+    "yaw_deg": 67.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 2.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 403.6
+   },
+   {
+    "id": "en-ToyTank-l3-s187",
+    "category": "enemy",
+    "kind": "ToyTank",
+    "class": "ETNBeachElement::ToyTank",
+    "line": 3,
+    "s_m": 187.0,
+    "q_m": 0.0,
+    "location_uu": [
+     14911.7,
+     19395.5,
+     258.9
+    ],
+    "yaw_deg": 61.6,
+    "length_m": 15.0,
+    "extent_uu": 1500.0,
+    "size_scale": 1.0,
+    "intensity": 2.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 420.5,
+    "path_uu": [
+     [
+      14379.6,
+      18880.7,
+      305.6
+     ],
+     [
+      14536.0,
+      18984.0,
+      293.9
+     ],
+     [
+      14682.4,
+      19100.9,
+      282.2
+     ],
+     [
+      14809.0,
+      19238.8,
+      270.5
+     ],
+     [
+      14911.7,
+      19395.5,
+      258.9
+     ],
+     [
+      14986.6,
+      19567.2,
+      247.2
+     ],
+     [
+      15036.0,
+      19748.0,
+      235.5
+     ],
+     [
+      15098.8,
+      19924.3,
+      223.8
+     ],
+     [
+      15189.4,
+      20088.1,
+      212.2
+     ]
+    ]
+   },
+   {
+    "id": "en-SeaUrchin-l4-s26",
+    "category": "enemy",
+    "kind": "SeaUrchin",
+    "class": "ETNBeachElement::SeaUrchin",
+    "line": 4,
+    "s_m": 26.0,
+    "q_m": 0.47,
+    "location_uu": [
+     10597.8,
+     11132.3,
+     241.4
+    ],
+    "yaw_deg": 52.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 1.5,
+    "params": {},
+    "source": "auto",
+    "progress_m": 263.5
+   },
+   {
+    "id": "ob-BarbedWire-l6-s63",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 6,
+    "s_m": 63.0,
+    "q_m": 0.0,
+    "location_uu": [
+     1293.9,
+     6300.4,
+     665.1
+    ],
+    "yaw_deg": 58.0,
+    "length_m": 0.0,
+    "extent_uu": 1711.7,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 262.7
+   },
+   {
+    "id": "ob-BarbedWire-l7-s65",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 7,
+    "s_m": 65.0,
+    "q_m": 0.0,
+    "location_uu": [
+     10249.1,
+     22586.4,
+     373.7
+    ],
+    "yaw_deg": 131.9,
+    "length_m": 0.0,
+    "extent_uu": 1552.7,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 411.7
+   },
+   {
+    "id": "ob-BarbedWire-l0-s118",
+    "category": "obstacle",
+    "kind": "BarbedWire",
+    "class": "ETNBeachElement::BarbedWire",
+    "line": 0,
+    "s_m": 118.0,
+    "q_m": 0.0,
+    "location_uu": [
+     5016.6,
+     15961.2,
+     676.7
+    ],
+    "yaw_deg": 26.8,
+    "length_m": 0.0,
+    "extent_uu": 1637.7,
+    "size_scale": 1.0,
+    "intensity": 1.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 133.0
+   },
+   {
+    "id": "bot-ItemBox-l0-s77",
+    "category": "loot",
+    "kind": "ItemBox",
+    "class": "ATN_RaceItemBox",
+    "line": 0,
+    "s_m": 77.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4535.8,
+     19853.2,
+     712.7
+    ],
+    "yaw_deg": -59.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 86.8
+   },
+   {
+    "id": "bot-ItemBox-l0-s461",
+    "category": "loot",
+    "kind": "ItemBox",
+    "class": "ATN_RaceItemBox",
+    "line": 0,
+    "s_m": 461.0,
+    "q_m": 0.0,
+    "location_uu": [
+     20449.7,
+     19009.0,
+     68.2
+    ],
+    "yaw_deg": -29.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 469.2
+   },
+   {
+    "id": "bot-ItemBox-l0-s539",
+    "category": "loot",
+    "kind": "ItemBox",
+    "class": "ATN_RaceItemBox",
+    "line": 0,
+    "s_m": 539.0,
+    "q_m": 0.0,
+    "location_uu": [
+     22530.9,
+     12559.4,
+     112.9
+    ],
+    "yaw_deg": -52.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 527.2
+   },
+   {
+    "id": "bot-ItemBox-l0-s659",
+    "category": "loot",
+    "kind": "ItemBox",
+    "class": "ATN_RaceItemBox",
+    "line": 0,
+    "s_m": 659.0,
+    "q_m": 0.0,
+    "location_uu": [
+     27316.9,
+     18136.1,
+     68.8
+    ],
+    "yaw_deg": 57.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 651.7
+   },
+   {
+    "id": "bot-ItemBox-l4-s40",
+    "category": "loot",
+    "kind": "ItemBox",
+    "class": "ATN_RaceItemBox",
+    "line": 4,
+    "s_m": 40.0,
+    "q_m": 0.0,
+    "location_uu": [
+     11527.7,
+     12163.7,
+     -11.9
+    ],
+    "yaw_deg": 47.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 279.2
+   },
+   {
+    "id": "bot-ItemBox-l5-s14",
+    "category": "loot",
+    "kind": "ItemBox",
+    "class": "ATN_RaceItemBox",
+    "line": 5,
+    "s_m": 14.0,
+    "q_m": 0.0,
+    "location_uu": [
+     23116.3,
+     13744.2,
+     54.6
+    ],
+    "yaw_deg": -5.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 549.1
+   },
+   {
+    "id": "bot-TreasureChest-l7-s65d",
+    "category": "loot",
+    "kind": "TreasureChest",
+    "class": "ETNBeachElement::TreasureChest",
+    "line": 7,
+    "s_m": 65.0,
+    "q_m": 5.26,
+    "location_uu": [
+     9897.7,
+     22978.3,
+     373.7
+    ],
+    "yaw_deg": 41.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 411.7
+   },
+   {
+    "id": "bot-TreasureChest-l6-s61i",
+    "category": "loot",
+    "kind": "TreasureChest",
+    "class": "ETNBeachElement::TreasureChest",
+    "line": 6,
+    "s_m": 61.0,
+    "q_m": -6.09,
+    "location_uu": [
+     780.0,
+     5891.9,
+     668.8
+    ],
+    "yaw_deg": -33.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 262.2
+   },
+   {
+    "id": "bot-SearchSpot-l0-s206d",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 0,
+    "s_m": 206.34,
+    "q_m": 7.38,
+    "location_uu": [
+     9298.1,
+     9876.9,
+     192.6
+    ],
+    "yaw_deg": -30.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 233.3
+   },
+   {
+    "id": "bot-SearchSpot-l0-s395i",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 0,
+    "s_m": 394.95,
+    "q_m": -7.64,
+    "location_uu": [
+     17140.4,
+     18048.4,
+     -217.2
+    ],
+    "yaw_deg": 109.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 394.9
+   },
+   {
+    "id": "bot-SearchSpot-l0-s607d",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 0,
+    "s_m": 607.29,
+    "q_m": 8.05,
+    "location_uu": [
+     26699.7,
+     13878.4,
+     210.9
+    ],
+    "yaw_deg": 62.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 597.9
+   },
+   {
+    "id": "bot-SearchSpot-l1-s84i",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 1,
+    "s_m": 83.7,
+    "q_m": -6.46,
+    "location_uu": [
+     7632.0,
+     15758.6,
+     1272.6
+    ],
+    "yaw_deg": -102.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 159.4
+   },
+   {
+    "id": "bot-SearchSpot-l1-s199d",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 1,
+    "s_m": 199.0,
+    "q_m": 8.15,
+    "location_uu": [
+     5837.6,
+     8930.0,
+     554.3
+    ],
+    "yaw_deg": -26.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 249.1
+   },
+   {
+    "id": "bot-SearchSpot-l3-s29d",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 3,
+    "s_m": 29.34,
+    "q_m": 7.39,
+    "location_uu": [
+     16272.4,
+     8877.7,
+     24.3
+    ],
+    "yaw_deg": 49.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 292.3
+   },
+   {
+    "id": "bot-SearchSpot-l4-s28i",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 4,
+    "s_m": 27.55,
+    "q_m": -6.48,
+    "location_uu": [
+     11260.3,
+     10842.0,
+     213.3
+    ],
+    "yaw_deg": 54.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 265.7
+   },
+   {
+    "id": "bot-SearchSpot-l6-s17i",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 6,
+    "s_m": 17.26,
+    "q_m": -6.98,
+    "location_uu": [
+     1720.9,
+     10214.3,
+     477.4
+    ],
+    "yaw_deg": -117.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 235.3
+   },
+   {
+    "id": "bot-SearchSpot-l7-s19d",
+    "category": "loot",
+    "kind": "SearchSpot",
+    "class": "ATN_BeachSearchSpot",
+    "line": 7,
+    "s_m": 18.74,
+    "q_m": 4.55,
+    "location_uu": [
+     12204.9,
+     19293.3,
+     381.9
+    ],
+    "yaw_deg": 133.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 414.2
+   },
+   {
+    "id": "bot-ScoreShell-l0-s25",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 25.0,
+    "q_m": 0.0,
+    "location_uu": [
+     -95.0,
+     20608.1,
+     713.3
+    ],
+    "yaw_deg": -19.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 28.2
+   },
+   {
+    "id": "bot-ScoreShell-l0-s28",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 28.0,
+    "q_m": 0.0,
+    "location_uu": [
+     197.9,
+     20547.0,
+     753.3
+    ],
+    "yaw_deg": -4.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 31.6
+   },
+   {
+    "id": "bot-ScoreShell-l0-s80",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 80.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4654.1,
+     19578.3,
+     710.4
+    ],
+    "yaw_deg": -74.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 90.2
+   },
+   {
+    "id": "bot-ScoreShell-l0-s83",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 83.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4697.2,
+     19282.2,
+     708.2
+    ],
+    "yaw_deg": -89.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 93.5
+   },
+   {
+    "id": "bot-ScoreShell-l0-s86",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 86.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4662.1,
+     18985.0,
+     705.9
+    ],
+    "yaw_deg": -102.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 96.9
+   },
+   {
+    "id": "bot-ScoreShell-l0-s89",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 89.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4575.4,
+     18697.9,
+     703.7
+    ],
+    "yaw_deg": -108.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 100.3
+   },
+   {
+    "id": "bot-ScoreShell-l0-s92",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 92.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4478.1,
+     18414.2,
+     701.4
+    ],
+    "yaw_deg": -107.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 103.7
+   },
+   {
+    "id": "bot-ScoreShell-l0-s193",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 193.0,
+    "q_m": 0.0,
+    "location_uu": [
+     8346.8,
+     10366.4,
+     232.1
+    ],
+    "yaw_deg": -89.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 217.5
+   },
+   {
+    "id": "bot-ScoreShell-l0-s196",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 196.0,
+    "q_m": 0.0,
+    "location_uu": [
+     8367.3,
+     10067.4,
+     222.5
+    ],
+    "yaw_deg": -80.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 220.9
+   },
+   {
+    "id": "bot-ScoreShell-l0-s199",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 199.0,
+    "q_m": 0.0,
+    "location_uu": [
+     8448.8,
+     9779.4,
+     212.9
+    ],
+    "yaw_deg": -66.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 224.3
+   },
+   {
+    "id": "bot-ScoreShell-l0-s202",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 202.0,
+    "q_m": 0.0,
+    "location_uu": [
+     8601.1,
+     9521.9,
+     203.3
+    ],
+    "yaw_deg": -51.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 227.6
+   },
+   {
+    "id": "bot-ScoreShell-l0-s413",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 413.0,
+    "q_m": 0.0,
+    "location_uu": [
+     17016.3,
+     19375.5,
+     -20.6
+    ],
+    "yaw_deg": 46.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 415.1
+   },
+   {
+    "id": "bot-ScoreShell-l0-s416",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 416.0,
+    "q_m": 0.0,
+    "location_uu": [
+     17222.1,
+     19593.8,
+     12.1
+    ],
+    "yaw_deg": 47.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 418.5
+   },
+   {
+    "id": "bot-ScoreShell-l0-s419",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 419.0,
+    "q_m": 0.0,
+    "location_uu": [
+     17418.7,
+     19820.3,
+     44.8
+    ],
+    "yaw_deg": 50.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 421.9
+   },
+   {
+    "id": "bot-ScoreShell-l0-s422",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 422.0,
+    "q_m": 0.0,
+    "location_uu": [
+     17606.1,
+     20054.6,
+     77.5
+    ],
+    "yaw_deg": 51.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 425.3
+   },
+   {
+    "id": "bot-ScoreShell-l0-s465",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 465.0,
+    "q_m": 0.0,
+    "location_uu": [
+     20805.5,
+     18826.2,
+     55.6
+    ],
+    "yaw_deg": -27.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 473.7
+   },
+   {
+    "id": "bot-ScoreShell-l0-s468",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 468.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21066.3,
+     18678.0,
+     46.1
+    ],
+    "yaw_deg": -32.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 477.1
+   },
+   {
+    "id": "bot-ScoreShell-l0-s471",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 471.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21308.6,
+     18501.5,
+     36.8
+    ],
+    "yaw_deg": -40.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 480.5
+   },
+   {
+    "id": "bot-ScoreShell-l0-s474",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 474.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21523.7,
+     18292.7,
+     30.0
+    ],
+    "yaw_deg": -48.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 483.9
+   },
+   {
+    "id": "bot-ScoreShell-l0-s477",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 477.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21710.4,
+     18058.0,
+     28.2
+    ],
+    "yaw_deg": -54.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 487.3
+   },
+   {
+    "id": "bot-ScoreShell-l0-s520",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 520.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21941.4,
+     14261.4,
+     59.5
+    ],
+    "yaw_deg": -109.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 530.7
+   },
+   {
+    "id": "bot-ScoreShell-l0-s523",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 523.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21874.2,
+     13969.8,
+     64.9
+    ],
+    "yaw_deg": -95.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 529.1
+   },
+   {
+    "id": "bot-ScoreShell-l0-s526",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 526.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21884.4,
+     13670.7,
+     73.1
+    ],
+    "yaw_deg": -80.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 527.6
+   },
+   {
+    "id": "bot-ScoreShell-l0-s529",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 529.0,
+    "q_m": 0.0,
+    "location_uu": [
+     21970.3,
+     13384.0,
+     82.2
+    ],
+    "yaw_deg": -67.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 526.0
+   },
+   {
+    "id": "bot-ScoreShell-l0-s532",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 532.0,
+    "q_m": 0.0,
+    "location_uu": [
+     22111.8,
+     13119.8,
+     91.4
+    ],
+    "yaw_deg": -57.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 524.5
+   },
+   {
+    "id": "bot-ScoreShell-l0-s630",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 630.0,
+    "q_m": 0.0,
+    "location_uu": [
+     27938.9,
+     15608.6,
+     78.5
+    ],
+    "yaw_deg": 115.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 619.0
+   },
+   {
+    "id": "bot-ScoreShell-l0-s642",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 642.0,
+    "q_m": 0.0,
+    "location_uu": [
+     27203.2,
+     16552.1,
+     64.7
+    ],
+    "yaw_deg": 123.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 632.5
+   },
+   {
+    "id": "bot-ScoreShell-l0-s685",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 685.0,
+    "q_m": 0.0,
+    "location_uu": [
+     28562.1,
+     20412.1,
+     -124.1
+    ],
+    "yaw_deg": 59.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 681.0
+   },
+   {
+    "id": "bot-ScoreShell-l0-s688",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 688.0,
+    "q_m": 0.0,
+    "location_uu": [
+     28747.3,
+     20647.1,
+     -157.3
+    ],
+    "yaw_deg": 44.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 684.4
+   },
+   {
+    "id": "bot-ScoreShell-l0-s691",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 691.0,
+    "q_m": 0.0,
+    "location_uu": [
+     28987.1,
+     20826.2,
+     -190.5
+    ],
+    "yaw_deg": 29.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 687.7
+   },
+   {
+    "id": "bot-ScoreShell-l0-s694",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 694.0,
+    "q_m": 0.0,
+    "location_uu": [
+     29265.0,
+     20937.1,
+     -223.2
+    ],
+    "yaw_deg": 14.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 691.1
+   },
+   {
+    "id": "bot-ScoreShell-l0-s697",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 0,
+    "s_m": 697.0,
+    "q_m": 0.0,
+    "location_uu": [
+     29562.1,
+     20972.3,
+     -254.4
+    ],
+    "yaw_deg": -0.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 694.5
+   },
+   {
+    "id": "bot-ScoreShell-l1-s25",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 25.0,
+    "q_m": 0.0,
+    "location_uu": [
+     6875.4,
+     18622.4,
+     872.6
+    ],
+    "yaw_deg": 19.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 115.0
+   },
+   {
+    "id": "bot-ScoreShell-l1-s28",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 28.0,
+    "q_m": 0.0,
+    "location_uu": [
+     7163.3,
+     18706.2,
+     892.6
+    ],
+    "yaw_deg": 13.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 117.1
+   },
+   {
+    "id": "bot-ScoreShell-l1-s31",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 31.0,
+    "q_m": 0.0,
+    "location_uu": [
+     7457.6,
+     18764.5,
+     913.4
+    ],
+    "yaw_deg": 10.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 119.1
+   },
+   {
+    "id": "bot-ScoreShell-l1-s34",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 34.0,
+    "q_m": 0.0,
+    "location_uu": [
+     7753.3,
+     18814.9,
+     936.7
+    ],
+    "yaw_deg": 9.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 121.2
+   },
+   {
+    "id": "bot-ScoreShell-l1-s37",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 37.0,
+    "q_m": 0.0,
+    "location_uu": [
+     8049.9,
+     18859.6,
+     961.6
+    ],
+    "yaw_deg": 5.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 123.2
+   },
+   {
+    "id": "bot-ScoreShell-l1-s95",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 95.0,
+    "q_m": 0.0,
+    "location_uu": [
+     7584.3,
+     14771.9,
+     1311.8
+    ],
+    "yaw_deg": -153.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 169.8
+   },
+   {
+    "id": "bot-ScoreShell-l1-s98",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 98.0,
+    "q_m": 0.0,
+    "location_uu": [
+     7318.1,
+     14634.5,
+     1311.8
+    ],
+    "yaw_deg": -146.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 172.6
+   },
+   {
+    "id": "bot-ScoreShell-l1-s101",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 101.0,
+    "q_m": 0.0,
+    "location_uu": [
+     7093.3,
+     14437.0,
+     1311.8
+    ],
+    "yaw_deg": -131.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 175.4
+   },
+   {
+    "id": "bot-ScoreShell-l1-s104",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 104.0,
+    "q_m": 0.0,
+    "location_uu": [
+     6927.3,
+     14188.1,
+     1311.8
+    ],
+    "yaw_deg": -116.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 178.2
+   },
+   {
+    "id": "bot-ScoreShell-l1-s107",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 107.0,
+    "q_m": 0.0,
+    "location_uu": [
+     6831.3,
+     13904.6,
+     1301.3
+    ],
+    "yaw_deg": -102.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 181.1
+   },
+   {
+    "id": "bot-ScoreShell-l1-s165",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 165.0,
+    "q_m": 0.0,
+    "location_uu": [
+     3110.4,
+     10500.0,
+     732.8
+    ],
+    "yaw_deg": -77.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 235.8
+   },
+   {
+    "id": "bot-ScoreShell-l1-s168",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 168.0,
+    "q_m": 0.0,
+    "location_uu": [
+     3211.9,
+     10218.5,
+     699.0
+    ],
+    "yaw_deg": -62.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 238.6
+   },
+   {
+    "id": "bot-ScoreShell-l1-s171",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 171.0,
+    "q_m": 0.0,
+    "location_uu": [
+     3382.8,
+     9972.9,
+     665.3
+    ],
+    "yaw_deg": -47.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 241.4
+   },
+   {
+    "id": "bot-ScoreShell-l1-s174",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 174.0,
+    "q_m": 0.0,
+    "location_uu": [
+     3611.5,
+     9779.9,
+     631.9
+    ],
+    "yaw_deg": -32.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 244.2
+   },
+   {
+    "id": "bot-ScoreShell-l1-s177",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 1,
+    "s_m": 177.0,
+    "q_m": 0.0,
+    "location_uu": [
+     3882.4,
+     9652.7,
+     604.9
+    ],
+    "yaw_deg": -23.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 247.1
+   },
+   {
+    "id": "bot-ScoreShell-l2-s25",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 2,
+    "s_m": 25.0,
+    "q_m": 0.0,
+    "location_uu": [
+     19820.0,
+     16678.5,
+     9.8
+    ],
+    "yaw_deg": -104.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 484.0
+   },
+   {
+    "id": "bot-ScoreShell-l3-s25",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 25.0,
+    "q_m": 0.0,
+    "location_uu": [
+     16502.0,
+     8129.0,
+     -2.3
+    ],
+    "yaw_deg": 28.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 291.4
+   },
+   {
+    "id": "bot-ScoreShell-l3-s28",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 28.0,
+    "q_m": 0.0,
+    "location_uu": [
+     16745.3,
+     8303.2,
+     16.1
+    ],
+    "yaw_deg": 43.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 292.0
+   },
+   {
+    "id": "bot-ScoreShell-l3-s31",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 31.0,
+    "q_m": 0.0,
+    "location_uu": [
+     16935.2,
+     8534.5,
+     34.4
+    ],
+    "yaw_deg": 57.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 292.5
+   },
+   {
+    "id": "bot-ScoreShell-l3-s34",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 34.0,
+    "q_m": 0.0,
+    "location_uu": [
+     17072.3,
+     8801.2,
+     52.8
+    ],
+    "yaw_deg": 63.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 293.0
+   },
+   {
+    "id": "bot-ScoreShell-l3-s37",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 37.0,
+    "q_m": 0.0,
+    "location_uu": [
+     17209.1,
+     9068.2,
+     71.1
+    ],
+    "yaw_deg": 63.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 294.9
+   },
+   {
+    "id": "bot-ScoreShell-l3-s165",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 165.0,
+    "q_m": 0.0,
+    "location_uu": [
+     13333.4,
+     17891.0,
+     389.7
+    ],
+    "yaw_deg": 60.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 416.9
+   },
+   {
+    "id": "bot-ScoreShell-l3-s168",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 168.0,
+    "q_m": 0.0,
+    "location_uu": [
+     13515.7,
+     18128.3,
+     376.6
+    ],
+    "yaw_deg": 47.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 417.4
+   },
+   {
+    "id": "bot-ScoreShell-l3-s171",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 171.0,
+    "q_m": 0.0,
+    "location_uu": [
+     13725.1,
+     18343.1,
+     358.5
+    ],
+    "yaw_deg": 45.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 417.9
+   },
+   {
+    "id": "bot-ScoreShell-l3-s174",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 174.0,
+    "q_m": 0.0,
+    "location_uu": [
+     13938.0,
+     18554.5,
+     339.8
+    ],
+    "yaw_deg": 42.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 418.3
+   },
+   {
+    "id": "bot-ScoreShell-l3-s177",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 3,
+    "s_m": 177.0,
+    "q_m": 0.0,
+    "location_uu": [
+     14170.6,
+     18743.5,
+     321.1
+    ],
+    "yaw_deg": 35.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 418.8
+   },
+   {
+    "id": "bot-ScoreShell-l4-s28",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 4,
+    "s_m": 28.0,
+    "q_m": 0.0,
+    "location_uu": [
+     10762.8,
+     11257.5,
+     205.2
+    ],
+    "yaw_deg": 55.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 265.7
+   },
+   {
+    "id": "bot-ScoreShell-l4-s31",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 4,
+    "s_m": 31.0,
+    "q_m": 0.0,
+    "location_uu": [
+     10906.0,
+     11520.8,
+     150.9
+    ],
+    "yaw_deg": 59.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 269.1
+   },
+   {
+    "id": "bot-ScoreShell-l4-s34",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 4,
+    "s_m": 34.0,
+    "q_m": 0.0,
+    "location_uu": [
+     11082.1,
+     11762.7,
+     96.7
+    ],
+    "yaw_deg": 46.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 272.5
+   },
+   {
+    "id": "bot-ScoreShell-l4-s37",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 4,
+    "s_m": 37.0,
+    "q_m": 0.0,
+    "location_uu": [
+     11308.8,
+     11958.8,
+     42.4
+    ],
+    "yaw_deg": 40.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 275.9
+   },
+   {
+    "id": "bot-ScoreShell-l6-s25",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 25.0,
+    "q_m": 0.0,
+    "location_uu": [
+     1850.3,
+     9297.3,
+     358.4
+    ],
+    "yaw_deg": -132.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 237.4
+   },
+   {
+    "id": "bot-ScoreShell-l6-s28",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 28.0,
+    "q_m": 0.0,
+    "location_uu": [
+     1635.5,
+     9088.2,
+     375.1
+    ],
+    "yaw_deg": -140.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 238.3
+   },
+   {
+    "id": "bot-ScoreShell-l6-s31",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 31.0,
+    "q_m": 0.0,
+    "location_uu": [
+     1387.0,
+     8920.8,
+     406.1
+    ],
+    "yaw_deg": -148.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 239.2
+   },
+   {
+    "id": "bot-ScoreShell-l6-s34",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 34.0,
+    "q_m": 0.0,
+    "location_uu": [
+     1130.0,
+     8766.3,
+     437.9
+    ],
+    "yaw_deg": -143.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 240.0
+   },
+   {
+    "id": "bot-ScoreShell-l6-s37",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 37.0,
+    "q_m": 0.0,
+    "location_uu": [
+     912.1,
+     8561.1,
+     469.9
+    ],
+    "yaw_deg": -129.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 241.6
+   },
+   {
+    "id": "bot-ScoreShell-l6-s101",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 101.0,
+    "q_m": 0.0,
+    "location_uu": [
+     4842.2,
+     6153.1,
+     569.8
+    ],
+    "yaw_deg": -8.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 253.1
+   },
+   {
+    "id": "bot-ScoreShell-l6-s104",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 104.0,
+    "q_m": 0.0,
+    "location_uu": [
+     5141.4,
+     6149.2,
+     556.3
+    ],
+    "yaw_deg": 6.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 252.2
+   },
+   {
+    "id": "bot-ScoreShell-l6-s107",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 6,
+    "s_m": 107.0,
+    "q_m": 0.0,
+    "location_uu": [
+     5431.4,
+     6222.9,
+     542.8
+    ],
+    "yaw_deg": 20.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 251.4
+   },
+   {
+    "id": "bot-ScoreShell-l7-s25",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 7,
+    "s_m": 25.0,
+    "q_m": 0.0,
+    "location_uu": [
+     12000.7,
+     19923.0,
+     380.0
+    ],
+    "yaw_deg": 165.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 413.3
+   },
+   {
+    "id": "bot-ScoreShell-l7-s28",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 7,
+    "s_m": 28.0,
+    "q_m": 0.0,
+    "location_uu": [
+     11704.3,
+     19967.2,
+     379.0
+    ],
+    "yaw_deg": 173.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 412.9
+   },
+   {
+    "id": "bot-ScoreShell-l7-s31",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 7,
+    "s_m": 31.0,
+    "q_m": 0.0,
+    "location_uu": [
+     11407.7,
+     20011.4,
+     378.1
+    ],
+    "yaw_deg": 167.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 412.5
+   },
+   {
+    "id": "bot-ScoreShell-l7-s34",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 7,
+    "s_m": 34.0,
+    "q_m": 0.0,
+    "location_uu": [
+     11123.9,
+     20106.9,
+     377.1
+    ],
+    "yaw_deg": 155.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 412.1
+   },
+   {
+    "id": "bot-ScoreShell-l7-s37",
+    "category": "loot",
+    "kind": "ScoreShell",
+    "class": "BP_ScorePickup",
+    "line": 7,
+    "s_m": 37.0,
+    "q_m": 0.0,
+    "location_uu": [
+     10868.0,
+     20262.6,
+     376.2
+    ],
+    "yaw_deg": 143.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 411.7
+   },
+   {
+    "id": "dec-TankTrap-l0-s3i",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 0,
+    "s_m": 3.15,
+    "q_m": -5.83,
+    "location_uu": [
+     -1873.7,
+     21485.5,
+     650.6
+    ],
+    "yaw_deg": -150.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.19,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 4.5
+   },
+   {
+    "id": "veg-Grass-l0-s10d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 9.56,
+    "q_m": 4.95,
+    "location_uu": [
+     -803.6,
+     22023.0,
+     599.1
+    ],
+    "yaw_deg": 23.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.07,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 11.3
+   },
+   {
+    "id": "veg-Grass-l0-s14i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 13.67,
+    "q_m": -4.55,
+    "location_uu": [
+     -1280.8,
+     21095.9,
+     565.8
+    ],
+    "yaw_deg": 62.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.14,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 15.8
+   },
+   {
+    "id": "dec-Driftwood-l0-s20d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 0,
+    "s_m": 20.21,
+    "q_m": 4.98,
+    "location_uu": [
+     -167.7,
+     21224.7,
+     617.4
+    ],
+    "yaw_deg": -65.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.99,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 23.7
+   },
+   {
+    "id": "dec-Driftwood-l0-s28i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 0,
+    "s_m": 27.79,
+    "q_m": -5.32,
+    "location_uu": [
+     127.3,
+     20019.7,
+     753.3
+    ],
+    "yaw_deg": -153.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 31.6
+   },
+   {
+    "id": "dec-Rock-l0-s68d",
+    "category": "decor",
+    "kind": "Rock",
+    "class": "ETNBeachElement::Rock",
+    "line": 0,
+    "s_m": 67.78,
+    "q_m": 4.74,
+    "location_uu": [
+     4025.7,
+     20851.0,
+     753.3
+    ],
+    "yaw_deg": -10.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.12,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 76.6
+   },
+   {
+    "id": "dec-Driftwood-l0-s75i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 0,
+    "s_m": 75.24,
+    "q_m": -5.3,
+    "location_uu": [
+     4024.9,
+     19658.6,
+     714.0
+    ],
+    "yaw_deg": 162.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.17,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 85.6
+   },
+   {
+    "id": "dec-ShipSailWreck-l0-s80d",
+    "category": "decor",
+    "kind": "ShipSailWreck",
+    "class": "ETNBeachElement::ShipSailWreck",
+    "line": 0,
+    "s_m": 80.44,
+    "q_m": 6.29,
+    "location_uu": [
+     5275.2,
+     19682.6,
+     710.1
+    ],
+    "yaw_deg": -3.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.1,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 91.3
+   },
+   {
+    "id": "dec-Driftwood-l0-s94d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 0,
+    "s_m": 93.64,
+    "q_m": 4.98,
+    "location_uu": [
+     4912.9,
+     18129.8,
+     700.2
+    ],
+    "yaw_deg": 61.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.81,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 105.9
+   },
+   {
+    "id": "dec-AmmoCrate-l0-s98i",
+    "category": "decor",
+    "kind": "AmmoCrate",
+    "class": "ETNBeachElement::AmmoCrate",
+    "line": 0,
+    "s_m": 97.74,
+    "q_m": -4.48,
+    "location_uu": [
+     3916.0,
+     17878.7,
+     697.2
+    ],
+    "yaw_deg": -44.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.83,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 110.4
+   },
+   {
+    "id": "dec-TankTrap-l0-s105d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 0,
+    "s_m": 104.73,
+    "q_m": 4.62,
+    "location_uu": [
+     4901.6,
+     17310.0,
+     691.9
+    ],
+    "yaw_deg": 47.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 118.3
+   },
+   {
+    "id": "veg-Grass-l0-s111i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 111.02,
+    "q_m": -5.5,
+    "location_uu": [
+     4215.0,
+     16349.9,
+     687.2
+    ],
+    "yaw_deg": 40.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 126.2
+   },
+   {
+    "id": "dec-RockCluster-l0-s117d",
+    "category": "decor",
+    "kind": "RockCluster",
+    "class": "ETNBeachElement::RockCluster",
+    "line": 0,
+    "s_m": 116.59,
+    "q_m": 5.64,
+    "location_uu": [
+     5460.0,
+     16336.7,
+     681.1
+    ],
+    "yaw_deg": -27.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.87,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 131.9
+   },
+   {
+    "id": "dec-Driftwood-l0-s189d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 0,
+    "s_m": 189.22,
+    "q_m": 6.46,
+    "location_uu": [
+     9011.7,
+     10697.6,
+     244.3
+    ],
+    "yaw_deg": 142.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.88,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 214.1
+   },
+   {
+    "id": "dec-Rock-l0-s195i",
+    "category": "decor",
+    "kind": "Rock",
+    "class": "ETNBeachElement::Rock",
+    "line": 0,
+    "s_m": 195.25,
+    "q_m": -6.51,
+    "location_uu": [
+     7711.6,
+     10065.8,
+     224.9
+    ],
+    "yaw_deg": 90.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.84,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 220.9
+   },
+   {
+    "id": "dec-Driftwood-l0-s207i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 0,
+    "s_m": 206.58,
+    "q_m": -6.31,
+    "location_uu": [
+     8642.2,
+     8676.1,
+     192.6
+    ],
+    "yaw_deg": -5.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.13,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 233.3
+   },
+   {
+    "id": "dec-TankTrap-l0-s212d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 0,
+    "s_m": 212.14,
+    "q_m": 6.85,
+    "location_uu": [
+     9577.6,
+     9749.4,
+     237.8
+    ],
+    "yaw_deg": 85.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 235.6
+   },
+   {
+    "id": "dec-TankTrap-l0-s218i",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 0,
+    "s_m": 217.73,
+    "q_m": -6.49,
+    "location_uu": [
+     9889.3,
+     8356.0,
+     318.1
+    ],
+    "yaw_deg": 137.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.07,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 237.5
+   },
+   {
+    "id": "veg-Shrub-l0-s250d",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 249.72,
+    "q_m": 5.41,
+    "location_uu": [
+     12487.2,
+     7255.0,
+     283.9
+    ],
+    "yaw_deg": 158.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.83,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 263.3
+   },
+   {
+    "id": "dec-ToyBucket-l0-s405d",
+    "category": "decor",
+    "kind": "ToyBucket",
+    "class": "ETNBeachElement::ToyBucket",
+    "line": 0,
+    "s_m": 404.99,
+    "q_m": 7.35,
+    "location_uu": [
+     15863.9,
+     19123.1,
+     -107.9
+    ],
+    "yaw_deg": 18.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.01,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 406.1
+   },
+   {
+    "id": "veg-Shrub-l0-s411i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 411.04,
+    "q_m": -6.95,
+    "location_uu": [
+     17386.5,
+     18757.7,
+     -41.9
+    ],
+    "yaw_deg": -144.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.09,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 414.0
+   },
+   {
+    "id": "veg-Palm-l0-s476d",
+    "category": "vegetation",
+    "kind": "Palm",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 476.1,
+    "q_m": 4.03,
+    "location_uu": [
+     21977.5,
+     18374.5,
+     28.4
+    ],
+    "yaw_deg": 102.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.1,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 487.3
+   },
+   {
+    "id": "dec-PlantedUmbrella-l0-s501d",
+    "category": "decor",
+    "kind": "PlantedUmbrella",
+    "class": "ETNBeachElement::PlantedUmbrella",
+    "line": 0,
+    "s_m": 501.07,
+    "q_m": 5.45,
+    "location_uu": [
+     23316.0,
+     15933.1,
+     36.0
+    ],
+    "yaw_deg": 169.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.99,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 515.4
+   },
+   {
+    "id": "dec-FlipFlop-l0-s507i",
+    "category": "decor",
+    "kind": "FlipFlop",
+    "class": "ETNBeachElement::FlipFlop",
+    "line": 0,
+    "s_m": 507.12,
+    "q_m": -6.25,
+    "location_uu": [
+     22070.5,
+     15617.0,
+     43.5
+    ],
+    "yaw_deg": -27.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 522.2
+   },
+   {
+    "id": "dec-Coconut-l0-s512d",
+    "category": "decor",
+    "kind": "Coconut",
+    "class": "ETNBeachElement::Coconut",
+    "line": 0,
+    "s_m": 512.35,
+    "q_m": 5.99,
+    "location_uu": [
+     22823.5,
+     14546.7,
+     49.9
+    ],
+    "yaw_deg": 80.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.92,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 527.8
+   },
+   {
+    "id": "dec-Coconut-l0-s518i",
+    "category": "decor",
+    "kind": "Coconut",
+    "class": "ETNBeachElement::Coconut",
+    "line": 0,
+    "s_m": 518.39,
+    "q_m": -6.15,
+    "location_uu": [
+     21455.9,
+     14681.7,
+     57.4
+    ],
+    "yaw_deg": -26.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 531.3
+   },
+   {
+    "id": "veg-Palm-l0-s531i",
+    "category": "vegetation",
+    "kind": "Palm",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 530.66,
+    "q_m": -4.96,
+    "location_uu": [
+     21607.9,
+     12999.3,
+     87.3
+    ],
+    "yaw_deg": -39.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 525.0
+   },
+   {
+    "id": "veg-Shrub-l0-s538d",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 538.19,
+    "q_m": 4.18,
+    "location_uu": [
+     22810.2,
+     12880.3,
+     110.4
+    ],
+    "yaw_deg": 0.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 527.2
+   },
+   {
+    "id": "dec-BeachChair-l0-s542i",
+    "category": "decor",
+    "kind": "BeachChair",
+    "class": "ETNBeachElement::BeachChair",
+    "line": 0,
+    "s_m": 541.68,
+    "q_m": -4.56,
+    "location_uu": [
+     22325.3,
+     12075.0,
+     121.1
+    ],
+    "yaw_deg": -80.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.98,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 530.4
+   },
+   {
+    "id": "veg-Shrub-l0-s602i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 602.33,
+    "q_m": -7.15,
+    "location_uu": [
+     27796.2,
+     12707.2,
+     257.1
+    ],
+    "yaw_deg": -80.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.87,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 594.3
+   },
+   {
+    "id": "dec-BeachTowel-l0-s610d",
+    "category": "decor",
+    "kind": "BeachTowel",
+    "class": "ETNBeachElement::BeachTowel",
+    "line": 0,
+    "s_m": 610.12,
+    "q_m": 7.22,
+    "location_uu": [
+     26910.5,
+     14095.8,
+     184.6
+    ],
+    "yaw_deg": -63.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.03,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 600.1
+   },
+   {
+    "id": "veg-Grass-l0-s614i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 614.12,
+    "q_m": -7.11,
+    "location_uu": [
+     28363.3,
+     13764.9,
+     148.8
+    ],
+    "yaw_deg": -52.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.85,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 603.2
+   },
+   {
+    "id": "dec-StrandedJellyfish-l0-s620d",
+    "category": "decor",
+    "kind": "StrandedJellyfish",
+    "class": "ETNBeachElement::StrandedJellyfish",
+    "line": 0,
+    "s_m": 619.53,
+    "q_m": 7.75,
+    "location_uu": [
+     27237.0,
+     14848.5,
+     118.6
+    ],
+    "yaw_deg": -20.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.18,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 607.7
+   },
+   {
+    "id": "dec-SandCastleSmall-l0-s628i",
+    "category": "decor",
+    "kind": "SandCastleSmall",
+    "class": "ETNBeachElement::SandCastleSmall",
+    "line": 0,
+    "s_m": 628.42,
+    "q_m": -5.63,
+    "location_uu": [
+     28531.5,
+     15640.5,
+     84.5
+    ],
+    "yaw_deg": 37.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.94,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 617.9
+   },
+   {
+    "id": "veg-Grass-l0-s632d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 632.18,
+    "q_m": 6.74,
+    "location_uu": [
+     27268.9,
+     15422.0,
+     70.7
+    ],
+    "yaw_deg": 74.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.07,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 622.4
+   },
+   {
+    "id": "dec-Lollipop-l0-s640i",
+    "category": "decor",
+    "kind": "Lollipop",
+    "class": "ETNBeachElement::Lollipop",
+    "line": 0,
+    "s_m": 639.82,
+    "q_m": -4.69,
+    "location_uu": [
+     27697.7,
+     16674.6,
+     63.8
+    ],
+    "yaw_deg": -71.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.19,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 630.3
+   },
+   {
+    "id": "dec-BeachBall-l0-s646d",
+    "category": "decor",
+    "kind": "BeachBall",
+    "class": "ETNBeachElement::BeachBall",
+    "line": 0,
+    "s_m": 645.58,
+    "q_m": 4.29,
+    "location_uu": [
+     26637.7,
+     16738.6,
+     66.2
+    ],
+    "yaw_deg": -166.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.96,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 637.0
+   },
+   {
+    "id": "dec-DecorShell-l0-s652i",
+    "category": "decor",
+    "kind": "DecorShell",
+    "class": "ETNBeachElement::DecorShell",
+    "line": 0,
+    "s_m": 652.24,
+    "q_m": -4.24,
+    "location_uu": [
+     27438.2,
+     17423.1,
+     69.1
+    ],
+    "yaw_deg": 175.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.87,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 644.9
+   },
+   {
+    "id": "dec-WatermelonRind-l0-s658d",
+    "category": "decor",
+    "kind": "WatermelonRind",
+    "class": "ETNBeachElement::WatermelonRind",
+    "line": 0,
+    "s_m": 658.4,
+    "q_m": 6.17,
+    "location_uu": [
+     26758.3,
+     18406.8,
+     69.4
+    ],
+    "yaw_deg": 150.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.82,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 651.7
+   },
+   {
+    "id": "dec-BeachBall-l0-s663i",
+    "category": "decor",
+    "kind": "BeachBall",
+    "class": "ETNBeachElement::BeachBall",
+    "line": 0,
+    "s_m": 663.26,
+    "q_m": -5.72,
+    "location_uu": [
+     28029.8,
+     18183.3,
+     57.9
+    ],
+    "yaw_deg": -31.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.97,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 657.3
+   },
+   {
+    "id": "veg-Grass-l0-s669d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 669.04,
+    "q_m": 6.36,
+    "location_uu": [
+     27299.0,
+     19304.6,
+     26.6
+    ],
+    "yaw_deg": -13.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.15,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 664.1
+   },
+   {
+    "id": "dec-SandCastleSmall-l0-s676i",
+    "category": "decor",
+    "kind": "SandCastleSmall",
+    "class": "ETNBeachElement::SandCastleSmall",
+    "line": 0,
+    "s_m": 675.54,
+    "q_m": -9.01,
+    "location_uu": [
+     28958.5,
+     19126.8,
+     -26.3
+    ],
+    "yaw_deg": 21.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 670.8
+   },
+   {
+    "id": "dec-Starfish-l0-s680d",
+    "category": "decor",
+    "kind": "Starfish",
+    "class": "ETNBeachElement::Starfish",
+    "line": 0,
+    "s_m": 680.47,
+    "q_m": 10.05,
+    "location_uu": [
+     27462.1,
+     20390.0,
+     -75.3
+    ],
+    "yaw_deg": 179.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 676.5
+   },
+   {
+    "id": "dec-WatermelonRind-l0-s688i",
+    "category": "decor",
+    "kind": "WatermelonRind",
+    "class": "ETNBeachElement::WatermelonRind",
+    "line": 0,
+    "s_m": 688.01,
+    "q_m": -13.15,
+    "location_uu": [
+     29665.1,
+     19705.0,
+     -157.4
+    ],
+    "yaw_deg": -11.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.12,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 685.5
+   },
+   {
+    "id": "dec-WatermelonRind-l0-s694d",
+    "category": "decor",
+    "kind": "WatermelonRind",
+    "class": "ETNBeachElement::WatermelonRind",
+    "line": 0,
+    "s_m": 694.09,
+    "q_m": 15.02,
+    "location_uu": [
+     28915.4,
+     22397.4,
+     -224.1
+    ],
+    "yaw_deg": 92.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.93,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 692.2
+   },
+   {
+    "id": "dec-Starfish-l0-s700i",
+    "category": "decor",
+    "kind": "Starfish",
+    "class": "ETNBeachElement::Starfish",
+    "line": 0,
+    "s_m": 700.02,
+    "q_m": -16.14,
+    "location_uu": [
+     29639.4,
+     19330.9,
+     -283.4
+    ],
+    "yaw_deg": -40.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.01,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 699.0
+   },
+   {
+    "id": "dec-DecorShell-l0-s705d",
+    "category": "decor",
+    "kind": "DecorShell",
+    "class": "ETNBeachElement::DecorShell",
+    "line": 0,
+    "s_m": 705.39,
+    "q_m": 17.96,
+    "location_uu": [
+     30193.8,
+     22722.8,
+     -326.6
+    ],
+    "yaw_deg": -58.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.97,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 704.6
+   },
+   {
+    "id": "veg-Palm-l0-s711i",
+    "category": "vegetation",
+    "kind": "Palm",
+    "class": "ATN_BeachDecorField",
+    "line": 0,
+    "s_m": 711.03,
+    "q_m": -17.32,
+    "location_uu": [
+     30847.8,
+     19247.7,
+     -357.3
+    ],
+    "yaw_deg": -18.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.92,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 711.4
+   },
+   {
+    "id": "dec-Rock-l1-s8d",
+    "category": "decor",
+    "kind": "Rock",
+    "class": "ETNBeachElement::Rock",
+    "line": 1,
+    "s_m": 8.1,
+    "q_m": 5.92,
+    "location_uu": [
+     5632.7,
+     19035.4,
+     760.5
+    ],
+    "yaw_deg": -26.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.05,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 103.0
+   },
+   {
+    "id": "dec-Rock-l1-s14i",
+    "category": "decor",
+    "kind": "Rock",
+    "class": "ETNBeachElement::Rock",
+    "line": 1,
+    "s_m": 13.53,
+    "q_m": -6.42,
+    "location_uu": [
+     5681.2,
+     17710.0,
+     796.5
+    ],
+    "yaw_deg": 23.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.1,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 106.9
+   },
+   {
+    "id": "dec-RockCluster-l1-s20d",
+    "category": "decor",
+    "kind": "RockCluster",
+    "class": "ETNBeachElement::RockCluster",
+    "line": 1,
+    "s_m": 19.72,
+    "q_m": 6.32,
+    "location_uu": [
+     6169.2,
+     18997.6,
+     837.6
+    ],
+    "yaw_deg": 110.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.98,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 111.4
+   },
+   {
+    "id": "dec-TankTrap-l1-s28i",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 1,
+    "s_m": 28.37,
+    "q_m": -7.46,
+    "location_uu": [
+     7365.3,
+     17986.7,
+     895.1
+    ],
+    "yaw_deg": -46.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.13,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 117.8
+   },
+   {
+    "id": "dec-RockCluster-l1-s33d",
+    "category": "decor",
+    "kind": "RockCluster",
+    "class": "ETNBeachElement::RockCluster",
+    "line": 1,
+    "s_m": 33.48,
+    "q_m": 7.03,
+    "location_uu": [
+     7587.0,
+     19499.3,
+     932.5
+    ],
+    "yaw_deg": 70.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.16,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 121.2
+   },
+   {
+    "id": "veg-Shrub-l1-s40i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 39.82,
+    "q_m": -8.16,
+    "location_uu": [
+     8285.3,
+     18055.7,
+     985.3
+    ],
+    "yaw_deg": -101.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.12,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 125.2
+   },
+   {
+    "id": "veg-Grass-l1-s44d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 43.73,
+    "q_m": 7.28,
+    "location_uu": [
+     8946.5,
+     19483.7,
+     1018.1
+    ],
+    "yaw_deg": -145.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.83,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 127.7
+   },
+   {
+    "id": "veg-Shrub-l1-s64i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 63.9,
+    "q_m": -5.96,
+    "location_uu": [
+     8864.5,
+     17441.0,
+     1186.8
+    ],
+    "yaw_deg": -69.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 140.5
+   },
+   {
+    "id": "dec-TankTrap-l1-s69d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 1,
+    "s_m": 68.88,
+    "q_m": 7.25,
+    "location_uu": [
+     9550.3,
+     16235.9,
+     1215.8
+    ],
+    "yaw_deg": 177.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.98,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 145.2
+   },
+   {
+    "id": "veg-Shrub-l1-s75i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 75.4,
+    "q_m": -6.11,
+    "location_uu": [
+     8110.8,
+     16782.1,
+     1240.9
+    ],
+    "yaw_deg": -113.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.88,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 151.8
+   },
+   {
+    "id": "dec-TankTrap-l1-s80d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 1,
+    "s_m": 79.81,
+    "q_m": 6.01,
+    "location_uu": [
+     8909.3,
+     15796.0,
+     1257.7
+    ],
+    "yaw_deg": -76.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.04,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 155.6
+   },
+   {
+    "id": "veg-Grass-l1-s92d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 91.97,
+    "q_m": 4.9,
+    "location_uu": [
+     8147.6,
+     14541.8,
+     1311.8
+    ],
+    "yaw_deg": -31.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.89,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 166.9
+   },
+   {
+    "id": "dec-Driftwood-l1-s100i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 1,
+    "s_m": 100.49,
+    "q_m": -5.27,
+    "location_uu": [
+     6747.4,
+     14838.4,
+     1311.8
+    ],
+    "yaw_deg": -35.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.09,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 175.4
+   },
+   {
+    "id": "dec-MossyLog-l1-s105d",
+    "category": "decor",
+    "kind": "MossyLog",
+    "class": "ETNBeachElement::MossyLog",
+    "line": 1,
+    "s_m": 105.4,
+    "q_m": 5.66,
+    "location_uu": [
+     7408.4,
+     13872.5,
+     1309.1
+    ],
+    "yaw_deg": -96.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.08,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 180.1
+   },
+   {
+    "id": "dec-Driftwood-l1-s112i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 1,
+    "s_m": 111.54,
+    "q_m": -6.81,
+    "location_uu": [
+     6100.6,
+     13626.6,
+     1280.9
+    ],
+    "yaw_deg": -85.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.97,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 185.8
+   },
+   {
+    "id": "dec-MossyLog-l1-s117d",
+    "category": "decor",
+    "kind": "MossyLog",
+    "class": "ETNBeachElement::MossyLog",
+    "line": 1,
+    "s_m": 117.4,
+    "q_m": 6.5,
+    "location_uu": [
+     6961.0,
+     12507.1,
+     1252.9
+    ],
+    "yaw_deg": 159.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.88,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 191.4
+   },
+   {
+    "id": "dec-Sandbags-l1-s123i",
+    "category": "decor",
+    "kind": "Sandbags",
+    "class": "ETNBeachElement::Sandbags",
+    "line": 1,
+    "s_m": 122.85,
+    "q_m": -5.98,
+    "location_uu": [
+     5645.8,
+     12959.9,
+     1207.2
+    ],
+    "yaw_deg": -90.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.03,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 196.2
+   },
+   {
+    "id": "dec-Rock-l1-s128d",
+    "category": "decor",
+    "kind": "Rock",
+    "class": "ETNBeachElement::Rock",
+    "line": 1,
+    "s_m": 128.15,
+    "q_m": 6.19,
+    "location_uu": [
+     6196.3,
+     11726.8,
+     1147.8
+    ],
+    "yaw_deg": -136.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.1,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 201.8
+   },
+   {
+    "id": "dec-ShipSailWreck-l1-s134i",
+    "category": "decor",
+    "kind": "ShipSailWreck",
+    "class": "ETNBeachElement::ShipSailWreck",
+    "line": 1,
+    "s_m": 134.01,
+    "q_m": -5.88,
+    "location_uu": [
+     5084.0,
+     12405.7,
+     1081.9
+    ],
+    "yaw_deg": -87.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.07,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 207.5
+   },
+   {
+    "id": "veg-Grass-l1-s141d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 141.45,
+    "q_m": 6.6,
+    "location_uu": [
+     4402.4,
+     11203.5,
+     998.0
+    ],
+    "yaw_deg": 100.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.1,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 214.1
+   },
+   {
+    "id": "dec-Driftwood-l1-s147i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 1,
+    "s_m": 146.6,
+    "q_m": -6.24,
+    "location_uu": [
+     3912.2,
+     12484.9,
+     940.0
+    ],
+    "yaw_deg": -145.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 218.8
+   },
+   {
+    "id": "veg-Grass-l1-s152d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 152.3,
+    "q_m": 6.2,
+    "location_uu": [
+     3901.0,
+     11153.8,
+     875.8
+    ],
+    "yaw_deg": -158.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.12,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 224.4
+   },
+   {
+    "id": "veg-Shrub-l1-s160i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 160.17,
+    "q_m": -5.14,
+    "location_uu": [
+     2605.4,
+     11084.2,
+     787.2
+    ],
+    "yaw_deg": 33.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.09,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 232.0
+   },
+   {
+    "id": "veg-Shrub-l1-s166d",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 1,
+    "s_m": 165.64,
+    "q_m": 5.67,
+    "location_uu": [
+     3673.2,
+     10589.9,
+     725.6
+    ],
+    "yaw_deg": 149.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.13,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 236.7
+   },
+   {
+    "id": "dec-ShipSailWreck-l1-s171i",
+    "category": "decor",
+    "kind": "ShipSailWreck",
+    "class": "ETNBeachElement::ShipSailWreck",
+    "line": 1,
+    "s_m": 170.72,
+    "q_m": -6.41,
+    "location_uu": [
+     2880.6,
+     9573.8,
+     668.4
+    ],
+    "yaw_deg": -3.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.83,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 241.4
+   },
+   {
+    "id": "dec-Sandbags-l1-s178d",
+    "category": "decor",
+    "kind": "Sandbags",
+    "class": "ETNBeachElement::Sandbags",
+    "line": 1,
+    "s_m": 178.28,
+    "q_m": 6.6,
+    "location_uu": [
+     4287.4,
+     10199.2,
+     598.7
+    ],
+    "yaw_deg": 6.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 249.0
+   },
+   {
+    "id": "dec-MossyLog-l1-s184i",
+    "category": "decor",
+    "kind": "MossyLog",
+    "class": "ETNBeachElement::MossyLog",
+    "line": 1,
+    "s_m": 183.65,
+    "q_m": -5.83,
+    "location_uu": [
+     3958.0,
+     8913.5,
+     593.2
+    ],
+    "yaw_deg": -120.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.88,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 253.7
+   },
+   {
+    "id": "dec-AmmoCrate-l1-s190d",
+    "category": "decor",
+    "kind": "AmmoCrate",
+    "class": "ETNBeachElement::AmmoCrate",
+    "line": 1,
+    "s_m": 190.37,
+    "q_m": 6.57,
+    "location_uu": [
+     5283.8,
+     9122.7,
+     592.1
+    ],
+    "yaw_deg": 125.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.08,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 251.8
+   },
+   {
+    "id": "dec-TankTrap-l1-s196i",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 1,
+    "s_m": 196.12,
+    "q_m": -6.63,
+    "location_uu": [
+     4872.8,
+     7773.1,
+     574.1
+    ],
+    "yaw_deg": 63.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.86,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 250.0
+   },
+   {
+    "id": "dec-Driftwood-l1-s208i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 1,
+    "s_m": 208.35,
+    "q_m": -7.95,
+    "location_uu": [
+     6157.2,
+     7092.5,
+     487.8
+    ],
+    "yaw_deg": 178.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.14,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 246.4
+   },
+   {
+    "id": "dec-TankTrap-l1-s213d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 1,
+    "s_m": 212.61,
+    "q_m": 8.13,
+    "location_uu": [
+     6922.1,
+     8582.4,
+     457.4
+    ],
+    "yaw_deg": -140.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.12,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 245.1
+   },
+   {
+    "id": "dec-Driftwood-l1-s219i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 1,
+    "s_m": 219.4,
+    "q_m": -8.29,
+    "location_uu": [
+     7558.6,
+     6899.5,
+     409.1
+    ],
+    "yaw_deg": 157.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.89,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 242.8
+   },
+   {
+    "id": "dec-TankTrap-l1-s225d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 1,
+    "s_m": 224.96,
+    "q_m": 7.88,
+    "location_uu": [
+     7505.0,
+     8595.5,
+     369.6
+    ],
+    "yaw_deg": -104.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.94,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 241.1
+   },
+   {
+    "id": "dec-AmmoCrate-l1-s230i",
+    "category": "decor",
+    "kind": "AmmoCrate",
+    "class": "ETNBeachElement::AmmoCrate",
+    "line": 1,
+    "s_m": 230.39,
+    "q_m": -7.05,
+    "location_uu": [
+     8746.1,
+     7589.1,
+     330.9
+    ],
+    "yaw_deg": -172.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.13,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 239.0
+   },
+   {
+    "id": "dec-FlipFlop-l2-s2i",
+    "category": "decor",
+    "kind": "FlipFlop",
+    "class": "ETNBeachElement::FlipFlop",
+    "line": 2,
+    "s_m": 2.04,
+    "q_m": -6.31,
+    "location_uu": [
+     20363.0,
+     18513.3,
+     46.2
+    ],
+    "yaw_deg": -28.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.85,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 474.8
+   },
+   {
+    "id": "veg-Palm-l2-s10d",
+    "category": "vegetation",
+    "kind": "Palm",
+    "class": "ATN_BeachDecorField",
+    "line": 2,
+    "s_m": 9.61,
+    "q_m": 6.61,
+    "location_uu": [
+     21311.0,
+     17436.8,
+     34.4
+    ],
+    "yaw_deg": -86.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 472.4
+   },
+   {
+    "id": "dec-SodaCan-l2-s15i",
+    "category": "decor",
+    "kind": "SodaCan",
+    "class": "ETNBeachElement::SodaCan",
+    "line": 2,
+    "s_m": 14.85,
+    "q_m": -6.35,
+    "location_uu": [
+     20030.5,
+     18011.1,
+     26.0
+    ],
+    "yaw_deg": 74.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.17,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 473.2
+   },
+   {
+    "id": "dec-BeachChair-l2-s21d",
+    "category": "decor",
+    "kind": "BeachChair",
+    "class": "ETNBeachElement::BeachChair",
+    "line": 2,
+    "s_m": 21.15,
+    "q_m": 7.16,
+    "location_uu": [
+     20574.0,
+     16694.8,
+     15.9
+    ],
+    "yaw_deg": -124.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.84,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 480.7
+   },
+   {
+    "id": "dec-Starfish-l2-s27i",
+    "category": "decor",
+    "kind": "Starfish",
+    "class": "ETNBeachElement::Starfish",
+    "line": 2,
+    "s_m": 27.02,
+    "q_m": -7.02,
+    "location_uu": [
+     19095.8,
+     16675.4,
+     6.6
+    ],
+    "yaw_deg": -112.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.09,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 487.2
+   },
+   {
+    "id": "dec-Starfish-l2-s34d",
+    "category": "decor",
+    "kind": "Starfish",
+    "class": "ETNBeachElement::Starfish",
+    "line": 2,
+    "s_m": 33.54,
+    "q_m": 6.24,
+    "location_uu": [
+     20197.2,
+     15783.2,
+     -3.8
+    ],
+    "yaw_deg": 89.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.81,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 493.7
+   },
+   {
+    "id": "dec-ToyBucket-l2-s39i",
+    "category": "decor",
+    "kind": "ToyBucket",
+    "class": "ETNBeachElement::ToyBucket",
+    "line": 2,
+    "s_m": 39.34,
+    "q_m": -7.65,
+    "location_uu": [
+     18934.2,
+     15019.0,
+     -13.1
+    ],
+    "yaw_deg": 105.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 500.2
+   },
+   {
+    "id": "veg-Grass-l2-s46d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 2,
+    "s_m": 46.02,
+    "q_m": 6.39,
+    "location_uu": [
+     20422.7,
+     15286.9,
+     -23.7
+    ],
+    "yaw_deg": 68.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.88,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 507.8
+   },
+   {
+    "id": "veg-Shrub-l2-s50i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 2,
+    "s_m": 49.54,
+    "q_m": -7.06,
+    "location_uu": [
+     20018.1,
+     13984.3,
+     -29.2
+    ],
+    "yaw_deg": 151.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 511.0
+   },
+   {
+    "id": "dec-ToyBucket-l2-s58d",
+    "category": "decor",
+    "kind": "ToyBucket",
+    "class": "ETNBeachElement::ToyBucket",
+    "line": 2,
+    "s_m": 57.68,
+    "q_m": 7.62,
+    "location_uu": [
+     21446.7,
+     14715.6,
+     -5.1
+    ],
+    "yaw_deg": 173.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.82,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 519.7
+   },
+   {
+    "id": "dec-Bottle-l2-s64i",
+    "category": "decor",
+    "kind": "Bottle",
+    "class": "ETNBeachElement::Bottle",
+    "line": 2,
+    "s_m": 64.32,
+    "q_m": -6.78,
+    "location_uu": [
+     21330.5,
+     13154.6,
+     46.9
+    ],
+    "yaw_deg": 81.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.09,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 526.2
+   },
+   {
+    "id": "veg-Grass-l3-s3i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 3.06,
+    "q_m": -5.8,
+    "location_uu": [
+     14678.6,
+     6587.9,
+     -136.2
+    ],
+    "yaw_deg": 77.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.97,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 287.3
+   },
+   {
+    "id": "dec-Clam-l3-s10d",
+    "category": "decor",
+    "kind": "Clam",
+    "class": "ETNBeachElement::Clam",
+    "line": 3,
+    "s_m": 10.44,
+    "q_m": 7.0,
+    "location_uu": [
+     14746.5,
+     7991.6,
+     -91.3
+    ],
+    "yaw_deg": -36.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.17,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 288.8
+   },
+   {
+    "id": "dec-Starfish-l3-s15i",
+    "category": "decor",
+    "kind": "Starfish",
+    "class": "ETNBeachElement::Starfish",
+    "line": 3,
+    "s_m": 15.08,
+    "q_m": -6.91,
+    "location_uu": [
+     15953.5,
+     7238.1,
+     -62.9
+    ],
+    "yaw_deg": -52.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.89,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 289.7
+   },
+   {
+    "id": "dec-Clam-l3-s20d",
+    "category": "decor",
+    "kind": "Clam",
+    "class": "ETNBeachElement::Clam",
+    "line": 3,
+    "s_m": 19.5,
+    "q_m": 5.76,
+    "location_uu": [
+     15845.4,
+     8541.8,
+     -35.9
+    ],
+    "yaw_deg": 129.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.01,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 290.5
+   },
+   {
+    "id": "dec-RubberDuck-l3-s26i",
+    "category": "decor",
+    "kind": "RubberDuck",
+    "class": "ETNBeachElement::RubberDuck",
+    "line": 3,
+    "s_m": 26.15,
+    "q_m": -6.35,
+    "location_uu": [
+     16953.9,
+     7660.9,
+     4.8
+    ],
+    "yaw_deg": 55.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.89,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 291.8
+   },
+   {
+    "id": "dec-OldPlanks-l3-s38i",
+    "category": "decor",
+    "kind": "OldPlanks",
+    "class": "ETNBeachElement::OldPlanks",
+    "line": 3,
+    "s_m": 37.69,
+    "q_m": -6.31,
+    "location_uu": [
+     17807.4,
+     8854.5,
+     75.3
+    ],
+    "yaw_deg": 104.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.95,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 295.9
+   },
+   {
+    "id": "dec-Driftwood-l3-s46d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 3,
+    "s_m": 46.03,
+    "q_m": 6.58,
+    "location_uu": [
+     16899.2,
+     10146.6,
+     126.4
+    ],
+    "yaw_deg": -86.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.82,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 304.5
+   },
+   {
+    "id": "veg-Grass-l3-s52i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 51.92,
+    "q_m": -6.78,
+    "location_uu": [
+     18288.5,
+     9886.3,
+     162.4
+    ],
+    "yaw_deg": -98.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.11,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 309.2
+   },
+   {
+    "id": "dec-RubberDuck-l3-s123i",
+    "category": "decor",
+    "kind": "RubberDuck",
+    "class": "ETNBeachElement::RubberDuck",
+    "line": 3,
+    "s_m": 123.26,
+    "q_m": -5.05,
+    "location_uu": [
+     14181.8,
+     15211.2,
+     409.6
+    ],
+    "yaw_deg": 113.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.89,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 377.9
+   },
+   {
+    "id": "dec-FishingNet-l3-s129d",
+    "category": "decor",
+    "kind": "FishingNet",
+    "class": "ETNBeachElement::FishingNet",
+    "line": 3,
+    "s_m": 129.39,
+    "q_m": 4.3,
+    "location_uu": [
+     13524.1,
+     14344.5,
+     407.2
+    ],
+    "yaw_deg": 30.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.09,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 383.6
+   },
+   {
+    "id": "dec-Driftwood-l3-s135i",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 3,
+    "s_m": 135.04,
+    "q_m": -5.84,
+    "location_uu": [
+     13623.2,
+     15452.6,
+     404.9
+    ],
+    "yaw_deg": 71.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.19,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 389.3
+   },
+   {
+    "id": "dec-Clam-l3-s140d",
+    "category": "decor",
+    "kind": "Clam",
+    "class": "ETNBeachElement::Clam",
+    "line": 3,
+    "s_m": 140.08,
+    "q_m": 4.6,
+    "location_uu": [
+     12504.7,
+     15347.3,
+     403.0
+    ],
+    "yaw_deg": -178.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.03,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 394.1
+   },
+   {
+    "id": "veg-Grass-l3-s147i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 147.2,
+    "q_m": -6.12,
+    "location_uu": [
+     13527.3,
+     15999.4,
+     400.1
+    ],
+    "yaw_deg": 116.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.14,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 400.8
+   },
+   {
+    "id": "veg-Shrub-l3-s153d",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 152.76,
+    "q_m": 6.57,
+    "location_uu": [
+     12526.8,
+     16863.6,
+     398.0
+    ],
+    "yaw_deg": -48.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.07,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 405.5
+   },
+   {
+    "id": "dec-SandCastleSmall-l3-s158i",
+    "category": "decor",
+    "kind": "SandCastleSmall",
+    "class": "ETNBeachElement::SandCastleSmall",
+    "line": 3,
+    "s_m": 157.76,
+    "q_m": -6.0,
+    "location_uu": [
+     13784.9,
+     17219.2,
+     396.0
+    ],
+    "yaw_deg": -11.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.83,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 410.3
+   },
+   {
+    "id": "dec-Coconut-l3-s164d",
+    "category": "decor",
+    "kind": "Coconut",
+    "class": "ETNBeachElement::Coconut",
+    "line": 3,
+    "s_m": 164.09,
+    "q_m": 6.61,
+    "location_uu": [
+     12695.2,
+     18094.7,
+     391.7
+    ],
+    "yaw_deg": 141.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.84,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 416.9
+   },
+   {
+    "id": "veg-Shrub-l3-s171i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 170.58,
+    "q_m": -5.96,
+    "location_uu": [
+     14121.3,
+     17896.4,
+     361.0
+    ],
+    "yaw_deg": -175.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 417.9
+   },
+   {
+    "id": "dec-SandCastleSmall-l3-s176d",
+    "category": "decor",
+    "kind": "SandCastleSmall",
+    "class": "ETNBeachElement::SandCastleSmall",
+    "line": 3,
+    "s_m": 175.81,
+    "q_m": 6.82,
+    "location_uu": [
+     13652.2,
+     19206.6,
+     328.6
+    ],
+    "yaw_deg": -26.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.91,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 418.7
+   },
+   {
+    "id": "dec-ToyBucket-l3-s182i",
+    "category": "decor",
+    "kind": "ToyBucket",
+    "class": "ETNBeachElement::ToyBucket",
+    "line": 3,
+    "s_m": 181.68,
+    "q_m": -5.03,
+    "location_uu": [
+     14863.6,
+     18599.9,
+     292.0
+    ],
+    "yaw_deg": -54.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.01,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 419.7
+   },
+   {
+    "id": "veg-Shrub-l3-s188d",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 187.64,
+    "q_m": 5.65,
+    "location_uu": [
+     14427.9,
+     19693.6,
+     254.9
+    ],
+    "yaw_deg": 131.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.88,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 420.7
+   },
+   {
+    "id": "veg-Shrub-l3-s195i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 195.06,
+    "q_m": -5.74,
+    "location_uu": [
+     15682.8,
+     19794.1,
+     208.6
+    ],
+    "yaw_deg": -58.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.89,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 422.2
+   },
+   {
+    "id": "dec-BeachChair-l3-s201d",
+    "category": "decor",
+    "kind": "BeachChair",
+    "class": "ETNBeachElement::BeachChair",
+    "line": 3,
+    "s_m": 201.42,
+    "q_m": 5.84,
+    "location_uu": [
+     15501.4,
+     21060.2,
+     169.1
+    ],
+    "yaw_deg": 61.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.01,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 423.3
+   },
+   {
+    "id": "veg-Grass-l3-s206i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 206.31,
+    "q_m": -5.44,
+    "location_uu": [
+     16170.8,
+     20055.4,
+     138.7
+    ],
+    "yaw_deg": -108.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.93,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 424.3
+   },
+   {
+    "id": "veg-Palm-l3-s214d",
+    "category": "vegetation",
+    "kind": "Palm",
+    "class": "ATN_BeachDecorField",
+    "line": 3,
+    "s_m": 213.82,
+    "q_m": 5.46,
+    "location_uu": [
+     17140.7,
+     20878.4,
+     100.2
+    ],
+    "yaw_deg": 118.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.94,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 425.7
+   },
+   {
+    "id": "veg-Grass-l4-s10d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 4,
+    "s_m": 9.87,
+    "q_m": 7.27,
+    "location_uu": [
+     9213.0,
+     10319.8,
+     315.7
+    ],
+    "yaw_deg": -120.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.11,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 245.4
+   },
+   {
+    "id": "dec-ShipSailWreck-l4-s14i",
+    "category": "decor",
+    "kind": "ShipSailWreck",
+    "class": "ETNBeachElement::ShipSailWreck",
+    "line": 4,
+    "s_m": 13.69,
+    "q_m": -6.24,
+    "location_uu": [
+     10443.8,
+     9634.0,
+     362.0
+    ],
+    "yaw_deg": -103.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.93,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 249.9
+   },
+   {
+    "id": "dec-Driftwood-l4-s20d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 4,
+    "s_m": 20.3,
+    "q_m": 5.97,
+    "location_uu": [
+     9821.6,
+     10866.5,
+     343.2
+    ],
+    "yaw_deg": 131.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.18,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 257.8
+   },
+   {
+    "id": "dec-AmmoCrate-l4-s34d",
+    "category": "decor",
+    "kind": "AmmoCrate",
+    "class": "ETNBeachElement::AmmoCrate",
+    "line": 4,
+    "s_m": 33.55,
+    "q_m": 6.14,
+    "location_uu": [
+     10591.1,
+     12133.6,
+     104.7
+    ],
+    "yaw_deg": 145.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.98,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 272.5
+   },
+   {
+    "id": "veg-Grass-l4-s39i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 4,
+    "s_m": 38.63,
+    "q_m": -5.43,
+    "location_uu": [
+     11805.0,
+     11673.6,
+     13.0
+    ],
+    "yaw_deg": -74.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.07,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 278.1
+   },
+   {
+    "id": "dec-RubberDuck-l4-s46d",
+    "category": "decor",
+    "kind": "RubberDuck",
+    "class": "ETNBeachElement::RubberDuck",
+    "line": 4,
+    "s_m": 45.99,
+    "q_m": 6.11,
+    "location_uu": [
+     11365.0,
+     12973.2,
+     -120.3
+    ],
+    "yaw_deg": 90.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.04,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 286.0
+   },
+   {
+    "id": "dec-Buoy-l4-s51i",
+    "category": "decor",
+    "kind": "Buoy",
+    "class": "ETNBeachElement::Buoy",
+    "line": 4,
+    "s_m": 50.89,
+    "q_m": -5.84,
+    "location_uu": [
+     12627.6,
+     12781.3,
+     -208.9
+    ],
+    "yaw_deg": -74.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 291.6
+   },
+   {
+    "id": "veg-Grass-l4-s56d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 4,
+    "s_m": 55.93,
+    "q_m": 5.62,
+    "location_uu": [
+     12106.8,
+     13902.7,
+     -299.6
+    ],
+    "yaw_deg": 44.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.84,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 297.3
+   },
+   {
+    "id": "dec-Starfish-l4-s63i",
+    "category": "decor",
+    "kind": "Starfish",
+    "class": "ETNBeachElement::Starfish",
+    "line": 4,
+    "s_m": 63.07,
+    "q_m": -4.78,
+    "location_uu": [
+     13132.2,
+     13207.6,
+     -369.2
+    ],
+    "yaw_deg": -143.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.88,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 306.3
+   },
+   {
+    "id": "veg-Grass-l4-s69d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 4,
+    "s_m": 68.94,
+    "q_m": 5.65,
+    "location_uu": [
+     13882.8,
+     14137.7,
+     -366.4
+    ],
+    "yaw_deg": -45.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.92,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 311.9
+   },
+   {
+    "id": "dec-Clam-l4-s74i",
+    "category": "decor",
+    "kind": "Clam",
+    "class": "ETNBeachElement::Clam",
+    "line": 4,
+    "s_m": 74.07,
+    "q_m": -5.1,
+    "location_uu": [
+     13816.1,
+     12941.9,
+     -351.4
+    ],
+    "yaw_deg": 91.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.92,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 318.7
+   },
+   {
+    "id": "dec-FlipFlop-l5-s2i",
+    "category": "decor",
+    "kind": "FlipFlop",
+    "class": "ETNBeachElement::FlipFlop",
+    "line": 5,
+    "s_m": 1.6,
+    "q_m": -7.28,
+    "location_uu": [
+     21503.7,
+     14162.6,
+     54.6
+    ],
+    "yaw_deg": 158.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.01,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 535.6
+   },
+   {
+    "id": "dec-Bottle-l5-s10d",
+    "category": "decor",
+    "kind": "Bottle",
+    "class": "ETNBeachElement::Bottle",
+    "line": 5,
+    "s_m": 10.25,
+    "q_m": 6.24,
+    "location_uu": [
+     23015.0,
+     14410.2,
+     54.6
+    ],
+    "yaw_deg": -170.9,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.02,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 545.7
+   },
+   {
+    "id": "veg-Grass-l5-s14i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 5,
+    "s_m": 14.13,
+    "q_m": -6.77,
+    "location_uu": [
+     23068.0,
+     13069.5,
+     54.6
+    ],
+    "yaw_deg": -83.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.19,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 550.2
+   },
+   {
+    "id": "dec-Starfish-l5-s56d",
+    "category": "decor",
+    "kind": "Starfish",
+    "class": "ETNBeachElement::Starfish",
+    "line": 5,
+    "s_m": 56.07,
+    "q_m": 6.41,
+    "location_uu": [
+     27130.6,
+     15151.6,
+     92.4
+    ],
+    "yaw_deg": 141.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.14,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 597.6
+   },
+   {
+    "id": "dec-AmmoCrate-l6-s3i",
+    "category": "decor",
+    "kind": "AmmoCrate",
+    "class": "ETNBeachElement::AmmoCrate",
+    "line": 6,
+    "s_m": 2.8,
+    "q_m": -5.79,
+    "location_uu": [
+     2641.8,
+     11628.0,
+     766.6
+    ],
+    "yaw_deg": -129.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.95,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 230.5
+   },
+   {
+    "id": "dec-Driftwood-l6-s22d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 6,
+    "s_m": 21.52,
+    "q_m": 7.18,
+    "location_uu": [
+     2615.3,
+     9074.9,
+     394.8
+    ],
+    "yaw_deg": 113.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.1,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 236.5
+   },
+   {
+    "id": "dec-Sandbags-l6-s26i",
+    "category": "decor",
+    "kind": "Sandbags",
+    "class": "ETNBeachElement::Sandbags",
+    "line": 6,
+    "s_m": 26.1,
+    "q_m": -5.75,
+    "location_uu": [
+     1368.3,
+     9624.0,
+     360.8
+    ],
+    "yaw_deg": 151.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.98,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 238.0
+   },
+   {
+    "id": "dec-RockCluster-l6-s33d",
+    "category": "decor",
+    "kind": "RockCluster",
+    "class": "ETNBeachElement::RockCluster",
+    "line": 6,
+    "s_m": 33.22,
+    "q_m": 6.37,
+    "location_uu": [
+     1547.6,
+     8278.5,
+     429.6
+    ],
+    "yaw_deg": -86.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.12,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 240.0
+   },
+   {
+    "id": "dec-AmmoCrate-l6-s39i",
+    "category": "decor",
+    "kind": "AmmoCrate",
+    "class": "ETNBeachElement::AmmoCrate",
+    "line": 6,
+    "s_m": 39.14,
+    "q_m": -7.32,
+    "location_uu": [
+     150.2,
+     8732.7,
+     492.8
+    ],
+    "yaw_deg": -104.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.07,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 244.2
+   },
+   {
+    "id": "dec-TankTrap-l6-s46d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 6,
+    "s_m": 46.37,
+    "q_m": 6.61,
+    "location_uu": [
+     1303.5,
+     7616.6,
+     571.9
+    ],
+    "yaw_deg": 53.0,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.04,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 250.2
+   },
+   {
+    "id": "dec-TankTrap-l6-s52i",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 6,
+    "s_m": 52.04,
+    "q_m": -5.71,
+    "location_uu": [
+     70.6,
+     7005.2,
+     634.1
+    ],
+    "yaw_deg": 162.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 255.3
+   },
+   {
+    "id": "dec-Driftwood-l6-s56d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 6,
+    "s_m": 55.89,
+    "q_m": 5.8,
+    "location_uu": [
+     1267.4,
+     7062.6,
+     667.3
+    ],
+    "yaw_deg": 98.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.0,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 257.9
+   },
+   {
+    "id": "dec-Sandbags-l6-s70d",
+    "category": "decor",
+    "kind": "Sandbags",
+    "class": "ETNBeachElement::Sandbags",
+    "line": 6,
+    "s_m": 69.52,
+    "q_m": 5.23,
+    "location_uu": [
+     2057.6,
+     6388.5,
+     653.0
+    ],
+    "yaw_deg": -169.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.92,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 261.0
+   },
+   {
+    "id": "dec-AmmoCrate-l6-s75i",
+    "category": "decor",
+    "kind": "AmmoCrate",
+    "class": "ETNBeachElement::AmmoCrate",
+    "line": 6,
+    "s_m": 74.56,
+    "q_m": -5.0,
+    "location_uu": [
+     2290.8,
+     5298.8,
+     643.5
+    ],
+    "yaw_deg": 86.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.09,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 259.8
+   },
+   {
+    "id": "dec-TankTrap-l6-s81d",
+    "category": "decor",
+    "kind": "TankTrap",
+    "class": "ETNBeachElement::TankTrap",
+    "line": 6,
+    "s_m": 80.52,
+    "q_m": 5.34,
+    "location_uu": [
+     2817.2,
+     6382.5,
+     632.4
+    ],
+    "yaw_deg": 117.5,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.87,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 258.3
+   },
+   {
+    "id": "veg-Shrub-l6-s86i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 6,
+    "s_m": 86.33,
+    "q_m": -5.58,
+    "location_uu": [
+     3706.8,
+     5546.4,
+     621.6
+    ],
+    "yaw_deg": 112.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.03,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 256.8
+   },
+   {
+    "id": "dec-Sandbags-l6-s106d",
+    "category": "decor",
+    "kind": "Sandbags",
+    "class": "ETNBeachElement::Sandbags",
+    "line": 6,
+    "s_m": 106.32,
+    "q_m": 5.44,
+    "location_uu": [
+     5199.4,
+     6717.7,
+     545.8
+    ],
+    "yaw_deg": 110.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.87,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 251.4
+   },
+   {
+    "id": "veg-Grass-l6-s111i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 6,
+    "s_m": 111.01,
+    "q_m": -4.19,
+    "location_uu": [
+     5976.7,
+     6006.0,
+     524.7
+    ],
+    "yaw_deg": 45.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.01,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 249.9
+   },
+   {
+    "id": "veg-Shrub-l6-s117d",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 6,
+    "s_m": 116.63,
+    "q_m": 5.19,
+    "location_uu": [
+     5860.0,
+     7047.9,
+     499.4
+    ],
+    "yaw_deg": -140.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.19,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 248.4
+   },
+   {
+    "id": "veg-Grass-l6-s124i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 6,
+    "s_m": 124.15,
+    "q_m": -5.73,
+    "location_uu": [
+     7092.5,
+     7052.7,
+     465.6
+    ],
+    "yaw_deg": -66.7,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.06,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 245.9
+   },
+   {
+    "id": "veg-Grass-l7-s10d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 7,
+    "s_m": 10.27,
+    "q_m": 4.36,
+    "location_uu": [
+     12523.4,
+     18700.8,
+     384.5
+    ],
+    "yaw_deg": -78.4,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.94,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 415.3
+   },
+   {
+    "id": "veg-Grass-l7-s16i",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 7,
+    "s_m": 15.82,
+    "q_m": -4.3,
+    "location_uu": [
+     13078.1,
+     19591.6,
+     382.8
+    ],
+    "yaw_deg": 8.8,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.04,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 414.6
+   },
+   {
+    "id": "veg-Palm-l7-s27i",
+    "category": "vegetation",
+    "kind": "Palm",
+    "class": "ATN_BeachDecorField",
+    "line": 7,
+    "s_m": 26.95,
+    "q_m": -5.06,
+    "location_uu": [
+     11880.5,
+     20457.4,
+     379.3
+    ],
+    "yaw_deg": 77.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.85,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 413.1
+   },
+   {
+    "id": "veg-Grass-l7-s34d",
+    "category": "vegetation",
+    "kind": "Grass",
+    "class": "ATN_BeachDecorField",
+    "line": 7,
+    "s_m": 33.88,
+    "q_m": 4.65,
+    "location_uu": [
+     10942.3,
+     19679.3,
+     377.2
+    ],
+    "yaw_deg": 120.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.9,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 412.1
+   },
+   {
+    "id": "dec-MossyLog-l7-s57d",
+    "category": "decor",
+    "kind": "MossyLog",
+    "class": "ETNBeachElement::MossyLog",
+    "line": 7,
+    "s_m": 57.24,
+    "q_m": 4.71,
+    "location_uu": [
+     9419.3,
+     21995.2,
+     373.1
+    ],
+    "yaw_deg": 99.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.83,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 410.8
+   },
+   {
+    "id": "dec-ShipSailWreck-l7-s63i",
+    "category": "decor",
+    "kind": "ShipSailWreck",
+    "class": "ETNBeachElement::ShipSailWreck",
+    "line": 7,
+    "s_m": 62.72,
+    "q_m": -4.83,
+    "location_uu": [
+     10483.4,
+     22129.3,
+     373.5
+    ],
+    "yaw_deg": 123.1,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.91,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 411.4
+   },
+   {
+    "id": "dec-Driftwood-l7-s69d",
+    "category": "decor",
+    "kind": "Driftwood",
+    "class": "ETNBeachElement::Driftwood",
+    "line": 7,
+    "s_m": 68.83,
+    "q_m": 4.63,
+    "location_uu": [
+     10391.9,
+     23216.9,
+     374.0
+    ],
+    "yaw_deg": 129.6,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.85,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 412.2
+   },
+   {
+    "id": "veg-Palm-l7-s75i",
+    "category": "vegetation",
+    "kind": "Palm",
+    "class": "ATN_BeachDecorField",
+    "line": 7,
+    "s_m": 75.14,
+    "q_m": -6.36,
+    "location_uu": [
+     11316.8,
+     22300.5,
+     374.4
+    ],
+    "yaw_deg": -150.3,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.13,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 413.1
+   },
+   {
+    "id": "veg-Shrub-l7-s136i",
+    "category": "vegetation",
+    "kind": "Shrub",
+    "class": "ATN_BeachDecorField",
+    "line": 7,
+    "s_m": 136.34,
+    "q_m": -7.91,
+    "location_uu": [
+     15603.8,
+     21233.3,
+     150.7
+    ],
+    "yaw_deg": -106.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 0.98,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 422.9
+   },
+   {
+    "id": "dec-ToyBucket-l7-s141d",
+    "category": "decor",
+    "kind": "ToyBucket",
+    "class": "ETNBeachElement::ToyBucket",
+    "line": 7,
+    "s_m": 140.73,
+    "q_m": 7.25,
+    "location_uu": [
+     17191.0,
+     21348.3,
+     134.5
+    ],
+    "yaw_deg": 85.2,
+    "length_m": 0.0,
+    "extent_uu": 0.0,
+    "size_scale": 1.13,
+    "intensity": 0.0,
+    "params": {},
+    "source": "auto",
+    "progress_m": 423.7
+   }
+  ],
+  "manual": [],
+  "suppressed": [],
+  "summary": {
+   "counts": {
+    "puzzle": 5,
+    "mechanic": 4,
+    "nest": 4,
+    "obstacle": 9,
+    "enemy": 9,
+    "loot": 92,
+    "decor": 109,
+    "vegetation": 49
+   },
+   "puzzles_main": 1,
+   "puzzles_loops": 4,
+   "group_puzzles_main": 1,
+   "routes": [
+    {
+     "loop": 1,
+     "parent": 0,
+     "loop_m": 243.1,
+     "alternative_m": 125.0,
+     "loop_danger_per_100m": 0.82,
+     "alternative_danger_per_100m": 1.6
+    },
+    {
+     "loop": 2,
+     "parent": 0,
+     "loop_m": 67.6,
+     "alternative_m": 59.1,
+     "loop_danger_per_100m": 1.48,
+     "alternative_danger_per_100m": 1.69
+    },
+    {
+     "loop": 3,
+     "parent": 0,
+     "loop_m": 221.9,
+     "alternative_m": 151.4,
+     "loop_danger_per_100m": 0.9,
+     "alternative_danger_per_100m": 2.64
+    },
+    {
+     "loop": 4,
+     "parent": 0,
+     "loop_m": 80.6,
+     "alternative_m": 126.8,
+     "loop_danger_per_100m": 1.24,
+     "alternative_danger_per_100m": 0.79
+    },
+    {
+     "loop": 5,
+     "parent": 0,
+     "loop_m": 63.8,
+     "alternative_m": 101.7,
+     "loop_danger_per_100m": 3.13,
+     "alternative_danger_per_100m": 0.0
+    },
+    {
+     "loop": 6,
+     "parent": 1,
+     "loop_m": 129.3,
+     "alternative_m": 57.7,
+     "loop_danger_per_100m": 0.77,
+     "alternative_danger_per_100m": 1.73
+    },
+    {
+     "loop": 7,
+     "parent": 3,
+     "loop_m": 146.8,
+     "alternative_m": 44.3,
+     "loop_danger_per_100m": 0.68,
+     "alternative_danger_per_100m": 2.26
+    }
+   ],
+   "violations": 0
+  }
+ }
 }

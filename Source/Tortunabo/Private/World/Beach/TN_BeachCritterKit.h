@@ -118,7 +118,8 @@ namespace TNBeachCritterKit
 	{
 		if (Comp && Xf.Num() > 0 && Comp->GetInstanceCount() >= Xf.Num())
 		{
-			TNArt::UpdateInstances(Comp, 0, Xf, bWorld, true, false);
+			// Se llama cada fotograma: sin MarkRenderStateDirty: TransformChanged ya actualiza instancias y límites al final del fotograma sin rehacer el proxy (#566).
+			TNArt::UpdateInstances(Comp, 0, Xf, bWorld, false, false);
 		}
 	}
 

@@ -1,7 +1,12 @@
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Core/TN_Log.h"
+#include "Player/TN_DiveDecisions.h"
+#include "Player/TN_MovementLimits.h"
+#include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
+#include "Player/TN_WadingComponent.h"
 #include "World/Beach/TN_BeachTrampoline.h"
+#include "World/Beach/TN_RaceItemComponent.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "CollisionQueryParams.h"
 #include "Components/CapsuleComponent.h"
@@ -39,6 +44,27 @@ namespace TNBellySlide
 		TEXT("Multiplica cuánto tiran las pendientes del arrastre del panzazo (1 = normal; 0 = como en llano)."),
 		ECVF_Cheat);
 
+	static int32 GSlopeFall = 1;
+	static FAutoConsoleVariableRef CVarSlopeFall(
+		TEXT("TN.Dive.SlopeFall"),
+		GSlopeFall,
+		TEXT("1 = cuesta abajo (desde BellySlopeMinAngle, 12°) el arrastre del panzazo sigue cayendo: menos rozamiento y freno, y su tiempo no corre (#62); 0 = como antes. Igual en el servidor y los clientes."),
+		ECVF_Cheat);
+
+	static int32 GWallBounce = 1;
+	static FAutoConsoleVariableRef CVarWallBounce(
+		TEXT("TN.Dive.WallBounce"),
+		GWallBounce,
+		TEXT("1 = en el vuelo del panzazo rebota contra las paredes (restitución 0,45, 60 % a lo largo; #63); 0 = resbala por ellas, como antes. Igual en el servidor y los clientes."),
+		ECVF_Cheat);
+
+	static int32 GSplat = 1;
+	static FAutoConsoleVariableRef CVarSplat(
+		TEXT("TN.Dive.Splat"),
+		GSplat,
+		TEXT("1 = en el vuelo del panzazo, contra una pared a DiveSplatMinSpeed (650 cm/s) o más se estampa: acaba el panzazo y sale rodando como bola, con polvo y pajaritos (#355); 0 = solo rebota. Igual en el servidor y los clientes."),
+		ECVF_Cheat);
+
 	static float GMaxSeconds = 0.f;
 	static FAutoConsoleVariableRef CVarMaxSeconds(
 		TEXT("TN.Dive.MaxTime"),
@@ -61,8 +87,17 @@ namespace TNBellySlide
 		ECVF_Cheat);
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// Movimientos guardados del cliente: el estado del arrastre viaja con cada uno para repetirlo tras una corrección
+	// Movimientos guardados del cliente: el estado del arrastre y el turbo viajan con cada uno para repetirlos tras una
+	// corrección
 	// ─────────────────────────────────────────────────────────────────────────
+
+	// Marcas comprimidas del movimiento, una por bit: FLAG_Custom_0 = petición de sprint (#250), FLAG_Custom_1 = turbo de
+	// carrera (#22), FLAG_Custom_2 = petición de panzazo (#24).
+	/** Marca del movimiento que va con el turbo de carrera (al servidor solo el bit; el multiplicador lo pone él). */
+	constexpr uint8 RaceBoostFlag = FSavedMove_Character::FLAG_Custom_1;
+	static_assert(TNDiveLogic::DiveRequestFlag == FSavedMove_Character::FLAG_Custom_2, "El panzazo pedido va en FLAG_Custom_2");
+	static_assert((RaceBoostFlag & TNDiveLogic::DiveRequestFlag) == 0 && (FSavedMove_Character::FLAG_Custom_0 & (RaceBoostFlag | TNDiveLogic::DiveRequestFlag)) == 0,
+		"Sprint, turbo y panzazo van en bits distintos");
 
 	class FTNSavedMove_Turtle : public FSavedMove_Character
 	{
@@ -76,6 +111,37 @@ namespace TNBellySlide
 			SavedBellyTime = 0.f;
 			SavedSlideSerial = 0;
 			SavedCapsuleHalfHeight = 0.f;
+			bSavedWantsToSprint = false;
+			SavedRaceBoost = 1.f;
+			SavedBellySlopeTime = 0.f;
+			bSavedWantsDive = false;
+			SavedDiveYaw = 0;
+			SavedJumpStartVelocity = FVector::ZeroVector;
+		}
+
+		virtual void SetMoveFor(ACharacter* C, float InDeltaTime, FVector const& NewAccel, FNetworkPredictionData_Client_Character& ClientData) override
+		{
+			Super::SetMoveFor(C, InDeltaTime, NewAccel, ClientData);
+			const UTN_TurtleMovementComponent* TurtleMove = C ? Cast<UTN_TurtleMovementComponent>(C->GetCharacterMovement()) : nullptr;
+			bSavedWantsToSprint = TurtleMove && TurtleMove->InputWantsToSprint();
+			// El turbo de este movimiento (ControlledCharacterMove lo acaba de tomar de los objetos de carrera).
+			SavedRaceBoost = TurtleMove ? TurtleMove->GetRaceBoostMultiplier() : 1.f;
+		}
+
+		virtual uint8 GetCompressedFlags() const override
+		{
+			// La petición de sprint viaja con el movimiento: el servidor corre en el mismo movimiento que el cliente.
+			uint8 Flags = Super::GetCompressedFlags() | (bSavedWantsToSprint ? FLAG_Custom_0 : 0);
+			if (SavedRaceBoost > 1.f)
+			{
+				Flags |= RaceBoostFlag;
+			}
+			// El panzazo pedido viaja con el movimiento: el servidor lo empieza en el mismo que el dueño (#24).
+			if (bSavedWantsDive)
+			{
+				Flags |= TNDiveLogic::DiveRequestFlag;
+			}
+			return Flags;
 		}
 
 		virtual void SetInitialPosition(ACharacter* C) override
@@ -85,7 +151,8 @@ namespace TNBellySlide
 			// antes del salto: al repetirlo, el salto vuelve a levantarla igual.
 			if (UTN_TurtleMovementComponent* TurtleMove = C ? Cast<UTN_TurtleMovementComponent>(C->GetCharacterMovement()) : nullptr)
 			{
-				TurtleMove->ConsumeMoveStartBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight);
+				TurtleMove->ConsumeMoveStartBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
+				TurtleMove->CaptureMoveStartDive(bSavedWantsDive, SavedDiveYaw, SavedJumpStartVelocity);
 			}
 		}
 
@@ -97,6 +164,12 @@ namespace TNBellySlide
 			{
 				return false;
 			}
+			// Con otra petición de sprint u otro turbo no (la marca ya la compara el motor; el multiplicador también cuenta al
+			// repetirlos).
+			if (Other && (Other->bSavedWantsToSprint != bSavedWantsToSprint || !FMath::IsNearlyEqual(Other->SavedRaceBoost, SavedRaceBoost)))
+			{
+				return false;
+			}
 			return Super::CanCombineWith(NewMove, InCharacter, MaxDelta);
 		}
 
@@ -105,7 +178,9 @@ namespace TNBellySlide
 			Super::PrepMoveFor(C);
 			if (UTN_TurtleMovementComponent* TurtleMove = C ? Cast<UTN_TurtleMovementComponent>(C->GetCharacterMovement()) : nullptr)
 			{
-				TurtleMove->RestoreBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight);
+				TurtleMove->RestoreBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
+				TurtleMove->RestoreRaceBoost(SavedRaceBoost);
+				TurtleMove->RestoreMoveStartDive(SavedDiveYaw, SavedJumpStartVelocity);
 			}
 		}
 
@@ -125,6 +200,16 @@ namespace TNBellySlide
 		uint8 SavedSlideSerial = 0;
 		/** Semialtura de la cápsula sin escalar al empezar el movimiento. */
 		float SavedCapsuleHalfHeight = 0.f;
+		bool bSavedWantsToSprint = false;
+		/** Multiplicador del turbo de carrera con que se hizo (1 = sin turbo). */
+		float SavedRaceBoost = 1.f;
+		/** Tiempo del arrastre cuesta abajo al empezar el movimiento (#62). */
+		float SavedBellySlopeTime = 0.f;
+		/** Este movimiento pide el panzazo, hacia este giro (#24). */
+		bool bSavedWantsDive = false;
+		uint16 SavedDiveYaw = 0;
+		/** Velocidad horizontal del último salto al empezar el movimiento (la inercia del panzazo). */
+		FVector SavedJumpStartVelocity = FVector::ZeroVector;
 	};
 
 	class FTNNetworkPredictionData_Client_Turtle : public FNetworkPredictionData_Client_Character
@@ -167,6 +252,8 @@ UTN_TurtleMovementComponent::UTN_TurtleMovementComponent()
 {
 	// Movimientos del cliente sin bases que el servidor no encuentra por red (FTNTurtleNetworkMoveDataContainer).
 	SetNetworkMoveDataContainer(TurtleNetworkMoveData);
+	// Correcciones con el estado del panzazo del servidor (FTNTurtleMoveResponseDataContainer, #24).
+	SetMoveResponseDataContainer(TurtleMoveResponseData);
 	// Para el RPC de los lanzamientos que concede el servidor (LaunchFromServer).
 	SetIsReplicatedByDefault(true);
 }
@@ -204,14 +291,15 @@ bool UTN_TurtleMovementComponent::AcceptsInputDuringDive(uint8 DiveSerial) const
 
 bool UTN_TurtleMovementComponent::CanLeaveSlide() const
 {
-	return BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround() && BellyTime >= BellyMinExitSeconds
+	return BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround() && BellyTime + BellySlopeTime >= BellyMinExitSeconds
 		&& Velocity.Size2D() <= BellyExitSpeed;
 }
 
-void UTN_TurtleMovementComponent::RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight)
+void UTN_TurtleMovementComponent::RestoreBellyState(uint8 InPhase, float InTime, uint8 InSerial, float InCapsuleHalfHeight, float InSlopeTime)
 {
 	BellyPhase = static_cast<ETNBellyPhase>(FMath::Min<uint8>(InPhase, static_cast<uint8>(ETNBellyPhase::GetUp)));
 	BellyTime = InTime;
+	BellySlopeTime = InSlopeTime;
 	SlideSerial = InSerial;
 	bPendingBounce = false;
 
@@ -225,8 +313,11 @@ void UTN_TurtleMovementComponent::RestoreBellyState(uint8 InPhase, float InTime,
 	}
 }
 
-void UTN_TurtleMovementComponent::ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight)
+void UTN_TurtleMovementComponent::ConsumeMoveStartBellyState(uint8& OutPhase, float& OutTime, uint8& OutSerial, float& OutCapsuleHalfHeight,
+	float& OutSlopeTime)
 {
+	// El brinco no lo cambia: el de ahora es el de antes del salto.
+	OutSlopeTime = BellySlopeTime;
 	if (bHasPreJumpBelly)
 	{
 		bHasPreJumpBelly = false;
@@ -250,11 +341,33 @@ void UTN_TurtleMovementComponent::ConsumeMoveStartBellyState(uint8& OutPhase, fl
 void UTN_TurtleMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSeconds)
 {
 	Super::UpdateCharacterStateBeforeMovement(DeltaSeconds);
+	// Fuera de una repetición, quien la controla corre con lo que pide ahora (al repetir se quedó lo del último movimiento).
+	if (CharacterOwner && CharacterOwner->IsLocallyControlled() && !CharacterOwner->bClientUpdating)
+	{
+		bWantsToSprint = bInputWantsToSprint;
+	}
+	UpdateMoveWadingMultiplier();
 	bPendingBounce = false;
+	bPendingAirBounce = false;
 	// El movimiento ya se ha guardado (el cliente guarda antes de simular): lo de antes del brinco ya no sirve.
 	bHasPreJumpBelly = false;
+	// El panzazo pedido (#24): quien la controla, el que acaba de pedir (ya está en el movimiento guardado); el servidor y
+	// la repetición en el dueño, el de las marcas del movimiento (UpdateFromCompressedFlags).
+	if (CharacterOwner && CharacterOwner->IsLocallyControlled() && !CharacterOwner->bClientUpdating)
+	{
+		bMoveWantsDive = bDiveRequested;
+		MoveDiveYaw = DiveRequestYaw;
+		bDiveRequested = false;
+	}
+	const bool bMoveDive = bMoveWantsDive;
+	bMoveWantsDive = false;
 	if (SimulatesBelly())
 	{
+		// Lo primero: el panzazo pedido, si empieza, lanza en este paso (otro lanzamiento ya pendiente manda).
+		if (bMoveDive)
+		{
+			TickDiveStart();
+		}
 		// Antes que el panzazo: si rebota, el arrastre no empieza en este paso (lo mira PendingLaunchVelocity).
 		TickTrampolineBounce();
 		TickBellyPhase(DeltaSeconds);
@@ -330,10 +443,22 @@ void UTN_TurtleMovementComponent::TickBellyPhase(float DeltaSeconds)
 			// desincrustarse, podía caer por debajo del mapa).
 			BellyPhase = ETNBellyPhase::None;
 			BellyTime = 0.f;
+			BellySlopeTime = 0.f;
 			RestoreStandingCapsule();
 			break;
 		}
-		BellyTime += DeltaSeconds;
+		// Cuesta abajo (#62) el tiempo del arrastre no corre: ni la rampa de rozamiento ni BellyMaxSeconds la paran en una
+		// ladera; el tope entonces es BellySlopeMaxSeconds, con todo el tiempo sobre la tripa.
+		const bool bDownhill = BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround()
+			&& !TNDiveLogic::ShouldAdvanceBellyTimer(BellyFloorNormal(), Velocity, SlopeMinAngleNow());
+		if (bDownhill)
+		{
+			BellySlopeTime += DeltaSeconds;
+		}
+		else
+		{
+			BellyTime += DeltaSeconds;
+		}
 		if (IsSwimming())
 		{
 			// Al agua: nada (la cápsula la devuelve el fin del panzazo, que llega en seguida).
@@ -351,10 +476,14 @@ void UTN_TurtleMovementComponent::TickBellyPhase(float DeltaSeconds)
 		{
 			const float Speed = static_cast<float>(Velocity.Size2D());
 			const float MaxSeconds = TNBellySlide::GMaxSeconds > 0.f ? TNBellySlide::GMaxSeconds : BellyMaxSeconds;
-			const bool bStopped = BellyTime >= BellyMinSeconds && Speed <= BellyStopSpeed;
+			const float OnBellySeconds = BellyTime + BellySlopeTime;
+			// Casi parada se levanta; cuesta abajo, solo si la cuesta no la va a llevar más deprisa (si no, sigue cayendo).
+			const bool bStopped = OnBellySeconds >= BellyMinSeconds && Speed <= BellyStopSpeed
+				&& (!bDownhill || TNDiveLogic::DownhillTerminalSpeed(MakeBellyStepInput()) <= BellyStopSpeed);
+			const bool bTooLong = BellyTime >= MaxSeconds || OnBellySeconds >= BellySlopeMaxSeconds;
 			// Moverse casi parada la levanta (el movimiento del jugador solo llega aquí entonces: ATortugaCharacter::Move).
 			const bool bWantsOut = !Acceleration.IsNearlyZero() && CanLeaveSlide();
-			bWantStand = bStopped || BellyTime >= MaxSeconds || bWantsOut;
+			bWantStand = bStopped || bTooLong || bWantsOut;
 		}
 		if (bWantStand)
 		{
@@ -385,6 +514,7 @@ void UTN_TurtleMovementComponent::TickBellyPhase(float DeltaSeconds)
 		{
 			BellyPhase = ETNBellyPhase::None;
 			BellyTime = 0.f;
+			BellySlopeTime = 0.f;
 		}
 		break;
 	}
@@ -394,9 +524,10 @@ void UTN_TurtleMovementComponent::StartBellySlide(const FHitResult& FloorHit, ui
 {
 	BellyPhase = ETNBellyPhase::Slide;
 	BellyTime = 0.f;
+	BellySlopeTime = 0.f;
 	SlideSerial = Serial;
 	bPendingBounce = false;
-	RedirectAlongFloor(FloorHit, bFromAir ? BellyLandingKeep : 1.f, BellyMaxEntrySpeed);
+	RedirectAlongFloor(FloorHit, bFromAir ? BellyLandingKeep : 1.f, BellyMaxEntrySpeed, BellyMaxEntrySpeedDownhill);
 	UpdateSlideSurface();
 	if (CharacterOwner && !CharacterOwner->bClientUpdating)
 	{
@@ -404,25 +535,43 @@ void UTN_TurtleMovementComponent::StartBellySlide(const FHitResult& FloorHit, ui
 	}
 }
 
-void UTN_TurtleMovementComponent::RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap)
+void UTN_TurtleMovementComponent::RedirectAlongFloor(const FHitResult& FloorHit, float Keep, float Cap, float DownhillCap)
 {
 	// La inercia a lo largo del suelo: se quita lo que iba contra él (el golpe). En llano es la velocidad horizontal; en
-	// una bajada, parte de la caída se convierte en arrastre; en una subida, se pierde.
-	FVector Along = Velocity;
-	if (FloorHit.bBlockingHit && !FloorHit.ImpactNormal.IsNearlyZero())
+	// una bajada, la caída se convierte en arrastre (entera desde BellySlopeMinAngle); en una subida, se pierde.
+	const FVector FloorNormal = (FloorHit.bBlockingHit && !FloorHit.ImpactNormal.IsNearlyZero()) ? FloorHit.ImpactNormal : FVector::ZeroVector;
+	const FVector Slide = TNDiveLogic::LandingSlideVelocity(Velocity, FloorNormal, Keep, Cap, DownhillCap, SlopeMinAngleNow());
+	Velocity.X = Slide.X;
+	Velocity.Y = Slide.Y;
+}
+
+TNDiveLogic::FBellyStepInput UTN_TurtleMovementComponent::MakeBellyStepInput() const
+{
+	TNDiveLogic::FBellyStepInput Step;
+	Step.Normal = BellyFloorNormal();
+	Step.Gravity = FMath::Abs(GetGravityZ());
+	Step.Friction = SlideFrictionNow();
+	Step.Drag = BellyDrag;
+	Step.Slope.SlopeGravity = BellySlopeGravity * FMath::Max(0.f, TNBellySlide::GSlopeScale);
+	Step.Slope.MinAngleDeg = SlopeMinAngleNow();
+	Step.Slope.FrictionScale = BellySlopeFrictionScale;
+	Step.Slope.DragScale = BellySlopeDragScale;
+	Step.Slope.MaxSpeed = BellyMaxSpeed;
+	return Step;
+}
+
+float UTN_TurtleMovementComponent::SlopeMinAngleNow() const
+{
+	return TNBellySlide::GSlopeFall != 0 ? BellySlopeMinAngle : 90.f;
+}
+
+FVector UTN_TurtleMovementComponent::BellyFloorNormal() const
+{
+	if (CurrentFloor.IsWalkableFloor() && !CurrentFloor.HitResult.ImpactNormal.IsNearlyZero())
 	{
-		const FVector N = FloorHit.ImpactNormal.GetSafeNormal();
-		const double Into = FVector::DotProduct(Along, N);
-		if (Into < 0.0)
-		{
-			Along -= N * Into;
-		}
+		return CurrentFloor.HitResult.ImpactNormal.GetSafeNormal();
 	}
-	const FVector Flat(Along.X, Along.Y, 0.0);
-	const double NewSpeed = FMath::Min(Flat.Size() * static_cast<double>(Keep), static_cast<double>(Cap));
-	const FVector Dir = Flat.GetSafeNormal();
-	Velocity.X = Dir.X * NewSpeed;
-	Velocity.Y = Dir.Y * NewSpeed;
+	return FVector::UpVector;
 }
 
 void UTN_TurtleMovementComponent::EnterGetUp()
@@ -499,7 +648,7 @@ void UTN_TurtleMovementComponent::ProcessLanded(const FHitResult& Hit, float rem
 			else if (BellyPhase == ETNBellyPhase::Slide && Serial == SlideSerial)
 			{
 				// Se había caído por un borde arrastrándose: sigue con la inercia a lo largo del suelo nuevo.
-				RedirectAlongFloor(Hit, 1.f, BellyMaxSpeed);
+				RedirectAlongFloor(Hit, 1.f, BellyMaxSpeed, BellyMaxSpeed);
 			}
 		}
 	}
@@ -554,48 +703,18 @@ float UTN_TurtleMovementComponent::SlideFrictionNow() const
 void UTN_TurtleMovementComponent::CalcBellySlideVelocity(float DeltaTime)
 {
 	UpdateSlideSurface();
-	const float SlideFriction = SlideFrictionNow();
 
-	// Gravedad a lo largo del suelo, en horizontal: la velocidad al andar es horizontal y el suelo la inclina al moverse.
-	// Con la normal N, la componente horizontal de g·senθ por el suelo es g·(Nx, Ny)·Nz, hacia abajo de la cuesta.
-	FVector N = FVector::UpVector;
-	if (CurrentFloor.IsWalkableFloor() && !CurrentFloor.HitResult.ImpactNormal.IsNearlyZero())
-	{
-		N = CurrentFloor.HitResult.ImpactNormal.GetSafeNormal();
-	}
-	const float G = FMath::Abs(GetGravityZ());
-	const float SlopeScale = BellySlopeGravity * FMath::Max(0.f, TNBellySlide::GSlopeScale);
-	const FVector SlopeAccel = FVector(N.X, N.Y, 0.0) * static_cast<double>(G * static_cast<float>(N.Z) * SlopeScale);
-	// El rozamiento va con el peso que apoya (menos en cuesta).
-	const float NormalShare = FMath::Clamp(static_cast<float>(N.Z), 0.2f, 1.f);
-	const float DragK = FMath::Max(0.f, BellyDrag);
-
-	// Integración en pasos cortos (igual a cualquier ritmo de fotogramas y al repetir movimientos). Sin la entrada del
-	// jugador: sobre la tripa no se dirige.
-	FVector V(Velocity.X, Velocity.Y, 0.0);
-	float Remaining = DeltaTime;
-	constexpr float MaxStep = 1.f / 60.f;
-	while (Remaining > UE_KINDA_SMALL_NUMBER)
-	{
-		const float H = FMath::Min(Remaining, MaxStep);
-		Remaining -= H;
-		V += SlopeAccel * static_cast<double>(H);
-		const float Speed = static_cast<float>(V.Size());
-		if (Speed <= UE_KINDA_SMALL_NUMBER)
-		{
-			V = FVector::ZeroVector;
-			continue;
-		}
-		// Rozamiento seco más freno por velocidad; en una cuesta suave el rozamiento puede más y se queda quieta.
-		const float Loss = (SlideFriction * NormalShare + DragK * Speed) * H;
-		V = Loss >= Speed ? FVector::ZeroVector : V * static_cast<double>((Speed - Loss) / Speed);
-	}
-	V = V.GetClampedToMaxSize(static_cast<double>(BellyMaxSpeed));
+	// Gravedad a lo largo del suelo, rozamiento con el peso que apoya y freno por velocidad, en pasos cortos; cuesta abajo
+	// desde BellySlopeMinAngle, menos rozamiento y freno (#62). Las cuentas, en TNDiveLogic::IntegrateBellyVelocity.
+	const TNDiveLogic::FBellyStepInput Step = MakeBellyStepInput();
+	float StepFriction = 0.f;
+	const FVector V = TNDiveLogic::IntegrateBellyVelocity(Velocity, Step, DeltaTime, &StepFriction);
 	Velocity.X = V.X;
 	Velocity.Y = V.Y;
 	SlideIntentVelocity = V;
-	LastSlideFriction = SlideFriction * NormalShare;
-	LastSlopeAccel = SlopeAccel;
+	LastSlideFriction = StepFriction;
+	LastSlopeAccel = TNDiveLogic::SlopeAcceleration(Step.Normal, Step.Gravity, Step.Slope.SlopeGravity);
+	bLastSlideDownhill = TNDiveLogic::IsGoingDownhill(Step.Normal, V, Step.Slope.MinAngleDeg);
 }
 
 void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
@@ -642,6 +761,7 @@ void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
 
 	FVector Push = FVector::ZeroVector;
 	FVector MainNormal = FVector::ZeroVector;
+	FHitResult MainHit;
 	double MainDepth = 0.0;
 	for (int32 Side = 0; Side < 2; ++Side)
 	{
@@ -686,6 +806,7 @@ void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
 		{
 			MainDepth = Depth;
 			MainNormal = WallNormal;
+			MainHit = Hit;
 		}
 	}
 	if (Push.IsNearlyZero() || MainNormal.IsNearlyZero())
@@ -703,6 +824,13 @@ void UTN_TurtleMovementComponent::KeepBellyBodyOutOfWalls()
 	}
 	bForceNextFloorCheck = true;
 	LastBodyPush = Push;
+
+	// En el vuelo del panzazo la cabeza suele llegar a la pared antes que la cápsula: rebota como si hubiera chocado ella
+	// (#63), con la velocidad de antes de apartarse.
+	if (IsDiveFlight())
+	{
+		NoteAirImpact(MainHit, Velocity);
+	}
 
 	// Deja de ir contra la pared; arrastrándose, además rebota como si hubiera chocado la cápsula (en OnMovementUpdated).
 	const double Into = FVector::DotProduct(Velocity, MainNormal);
@@ -735,7 +863,73 @@ void UTN_TurtleMovementComponent::HandleImpact(const FHitResult& Hit, float Time
 			}
 		}
 	}
+	else if (Hit.bBlockingHit && IsDiveFlight())
+	{
+		// Volando de tripa contra una pared (#63): la velocidad de este subpaso, antes de resbalar por ella.
+		NoteAirImpact(Hit, Velocity);
+	}
 	Super::HandleImpact(Hit, TimeSlice, MoveDelta);
+}
+
+TNDiveLogic::FDiveWallParams UTN_TurtleMovementComponent::GetDiveWallParams() const
+{
+	TNDiveLogic::FDiveWallParams Params;
+	Params.MaxNormalZ = DiveWallMaxNormalZ;
+	Params.MinSpeed = BellyBounceMinSpeed;
+	Params.Restitution = DiveWallRestitution;
+	Params.TangentKeep = DiveWallTangentKeep;
+	Params.SplatMinSpeed = TNBellySlide::GSplat != 0 ? DiveSplatMinSpeed : 0.f;
+	return Params;
+}
+
+TNDiveLogic::FDiveWallParams UTN_TurtleMovementComponent::GetBellyBounceParams() const
+{
+	TNDiveLogic::FDiveWallParams Params;
+	Params.MinSpeed = BellyBounceMinSpeed;
+	Params.Restitution = BellyBounceRestitution;
+	Params.TangentKeep = BellyBounceTangentKeep;
+	return Params;
+}
+
+bool UTN_TurtleMovementComponent::IsDiveFlight() const
+{
+	if (TNBellySlide::GWallBounce == 0 || BellyPhase != ETNBellyPhase::None || !IsFalling() || !SimulatesBelly())
+	{
+		return false;
+	}
+	// En un panzazo que aún no se ha arrastrado (tras levantarse, un brinco con el panzazo sin acabar no cuenta).
+	const ATortugaCharacter* Turtle = GetTurtle();
+	return Turtle && Turtle->IsDiving() && Turtle->GetDiveSerial() != 0 && Turtle->GetDiveSerial() != SlideSerial;
+}
+
+void UTN_TurtleMovementComponent::NoteAirImpact(const FHitResult& Hit, const FVector& ImpactVelocity)
+{
+	const UPrimitiveComponent* Other = Hit.GetComponent();
+	// Otras tortugas y cuerpos con física se mueven distinto en cada máquina: no rebota en ellos.
+	if (Other && (Other->IsSimulatingPhysics() || Other->GetCollisionObjectType() == ECC_Pawn
+		|| Other->GetCollisionObjectType() == ECC_PhysicsBody || Cast<APawn>(Other->GetOwner())))
+	{
+		return;
+	}
+	const FVector OtherVelocity = Other ? Other->GetComponentVelocity() : FVector::ZeroVector;
+	const TNDiveLogic::FDiveWallParams Params = GetDiveWallParams();
+	// Rebote o estampado (#355): la velocidad sale igual; lo que cambia, lo hace el servidor fuera del movimiento.
+	if (TNDiveLogic::ClassifyDiveImpact(Hit.Normal, ImpactVelocity, OtherVelocity, Params) == TNDiveLogic::EDiveImpact::None)
+	{
+		return;
+	}
+	const FVector WallN = TNDiveLogic::WallNormal(Hit.Normal, Params.MaxNormalZ);
+	const float Speed = TNDiveLogic::WallImpactSpeed(ImpactVelocity, OtherVelocity, WallN);
+	// Si choca con varias cosas en el mismo movimiento, manda la que más de frente se lleva.
+	if (!bPendingAirBounce || Speed > AirImpactSpeed)
+	{
+		bPendingAirBounce = true;
+		AirBounceNormal = WallN;
+		AirImpactVelocity = ImpactVelocity;
+		AirImpactOtherVelocity = OtherVelocity;
+		AirImpactPoint = Hit.ImpactPoint.IsNearlyZero() ? FVector(Hit.Location) : FVector(Hit.ImpactPoint);
+		AirImpactSpeed = Speed;
+	}
 }
 
 void UTN_TurtleMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity)
@@ -751,17 +945,47 @@ void UTN_TurtleMovementComponent::OnMovementUpdated(float DeltaSeconds, const FV
 		bPendingBounce = false;
 		if (BellyPhase == ETNBellyPhase::Slide && IsMovingOnGround())
 		{
-			const double Into = FVector::DotProduct(SlideIntentVelocity, PendingBounceNormal);
-			if (-Into >= static_cast<double>(BellyBounceMinSpeed))
+			const TNDiveLogic::FDiveWallParams Params = GetBellyBounceParams();
+			if (TNDiveLogic::WallImpactSpeed(SlideIntentVelocity, FVector::ZeroVector, PendingBounceNormal) >= Params.MinSpeed)
 			{
-				const FVector Tangent = SlideIntentVelocity - PendingBounceNormal * Into;
-				const FVector Bounced = Tangent * static_cast<double>(BellyBounceTangentKeep)
-					- PendingBounceNormal * (Into * static_cast<double>(BellyBounceRestitution));
+				const FVector Bounced = TNDiveLogic::ReflectDiveVelocity(SlideIntentVelocity, FVector::ZeroVector, PendingBounceNormal, Params);
 				Velocity.X = Bounced.X;
 				Velocity.Y = Bounced.Y;
 				if (CharacterOwner && !CharacterOwner->bClientUpdating)
 				{
 					UE_LOG(LogTortunabo, Verbose, TEXT("[Panzazo] %s rebota a %.0f cm/s."), *GetNameSafe(CharacterOwner), Bounced.Size2D());
+				}
+			}
+		}
+	}
+
+	// Rebote en el vuelo del panzazo (#63): la velocidad horizontal sale reflejada de la pared más de frente; la vertical,
+	// la de ahora (sigue cayendo). Si en este mismo movimiento ha caído de tripa, ya manda el arrastre.
+	if (bPendingAirBounce)
+	{
+		bPendingAirBounce = false;
+		if (IsDiveFlight())
+		{
+			const TNDiveLogic::FDiveWallParams Params = GetDiveWallParams();
+			const FVector Bounced = TNDiveLogic::ReflectDiveVelocity(AirImpactVelocity, AirImpactOtherVelocity, AirBounceNormal, Params);
+			Velocity.X = Bounced.X;
+			Velocity.Y = Bounced.Y;
+			const bool bSplat = TNDiveLogic::IsSplatSpeed(AirImpactSpeed, Params);
+			if (CharacterOwner && !CharacterOwner->bClientUpdating)
+			{
+				LastAirBounceSpeed = AirImpactSpeed;
+				LastAirBounceTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+				UE_LOG(LogTortunabo, Log, TEXT("[Panzazo] %s %s en vuelo: %.0f cm/s contra la pared, sale a %.0f cm/s."),
+					*GetNameSafe(CharacterOwner), bSplat ? TEXT("se estampa") : TEXT("rebota"), AirImpactSpeed, Bounced.Size2D());
+				// Estampado (#355): el servidor lo apunta y lo hace en el siguiente Tick del personaje (la bola es un actor
+				// nuevo: nada se crea dentro del movimiento). El dueño sigue con el rebote hasta que le llega la bola.
+				if (bSplat && CharacterOwner->HasAuthority())
+				{
+					if (ATortugaCharacter* Turtle = GetTurtle())
+					{
+						Turtle->NoteDiveSplat(FVector(Bounced.X, Bounced.Y, Velocity.Z), AirImpactPoint, AirBounceNormal,
+							TNDiveLogic::SplatStrength(AirImpactSpeed, Params));
+					}
 				}
 			}
 		}
@@ -777,6 +1001,16 @@ FRotator UTN_TurtleMovementComponent::ComputeOrientToMovementRotation(const FRot
 {
 	if (BellyPhase != ETNBellyPhase::Slide)
 	{
+		// En el vuelo del panzazo, el cuerpo gira hacia su dirección dentro del movimiento: igual en el dueño y el servidor
+		// (#24). Desde que cae de tripa, como siempre.
+		float DiveYaw = 0.f;
+		float DiveTurnRate = 0.f;
+		const ATortugaCharacter* Turtle = GetTurtle();
+		if (Turtle && BellyPhase == ETNBellyPhase::None && Turtle->GetDiveSerial() != SlideSerial && Turtle->GetDiveYawTurn(DiveYaw, DiveTurnRate))
+		{
+			DeltaRotation = FRotator(0.f, DiveTurnRate * DeltaTime, 0.f);
+			return FRotator(0.f, DiveYaw, 0.f);
+		}
 		return Super::ComputeOrientToMovementRotation(CurrentRotation, DeltaTime, DeltaRotation);
 	}
 	// Sobre la tripa el cuerpo sigue despacio hacia donde se desliza (curvas por la pendiente o a lo largo de una pared);
@@ -794,9 +1028,88 @@ FRotator UTN_TurtleMovementComponent::ComputeOrientToMovementRotation(const FRot
 	return CurrentRotation;
 }
 
+void UTN_TurtleMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
+{
+	Super::UpdateFromCompressedFlags(Flags);
+	bWantsToSprint = (Flags & FSavedMove_Character::FLAG_Custom_0) != 0;
+
+	// Servidor: la estamina (gasto, réplica a los demás y animación) corre cuando corre el movimiento del cliente.
+	if (CharacterOwner && CharacterOwner->HasAuthority() && !CharacterOwner->IsLocallyControlled())
+	{
+		if (const ATortugaCharacter* Turtle = GetTurtle())
+		{
+			if (UTN_StaminaComponent* Stamina = Turtle->GetStaminaComponent())
+			{
+				Stamina->SetSprintRequested(bWantsToSprint);
+			}
+		}
+	}
+
+	// Turbo: solo el servidor con los movimientos de un cliente: el cliente, al repetir los suyos, ya tiene el multiplicador
+	// con que los hizo (PrepMoveFor). Un movimiento sin marca va sin turbo aunque aquí ya lo tenga (el dueño aún no lo sabía).
+	if (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority)
+	{
+		const UTN_RaceItemComponent* Items = RaceItems.Get();
+		const bool bClaimsBoost = (Flags & TNBellySlide::RaceBoostFlag) != 0;
+		RaceBoostMultiplier = (bClaimsBoost && Items) ? FMath::Max(1.f, Items->ResolveOwnerBoostMultiplier()) : 1.f;
+	}
+
+	// Panzazo pedido (#24). Servidor: el giro viene en los datos del movimiento del cliente; al repetir en el dueño, ya lo
+	// puso PrepMoveFor.
+	bMoveWantsDive = (Flags & TNDiveLogic::DiveRequestFlag) != 0;
+	if (bMoveWantsDive && CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority)
+	{
+		MoveDiveYaw = TurtleNetworkMoveData.GetDiveYaw(GetCurrentNetworkMoveData());
+	}
+}
+
+void UTN_TurtleMovementComponent::UpdateMoveWadingMultiplier()
+{
+	MoveWadingMultiplier = 1.f;
+	const ATortugaCharacter* Turtle = GetTurtle();
+	const UTN_WadingComponent* Wading = Turtle ? Turtle->FindComponentByClass<UTN_WadingComponent>() : nullptr;
+	const UCapsuleComponent* Capsule = Turtle ? Turtle->GetCapsuleComponent() : nullptr;
+	if (Wading && Capsule && UpdatedComponent)
+	{
+		const double FeetZ = UpdatedComponent->GetComponentLocation().Z - Capsule->GetScaledCapsuleHalfHeight();
+		MoveWadingMultiplier = Wading->GetSpeedMultiplierAt(FeetZ, IsMovingOnGround());
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Turbo de los objetos de carrera en la predicción (issue #22)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void UTN_TurtleMovementComponent::SetRaceItems(UTN_RaceItemComponent* InRaceItems)
+{
+	RaceItems = InRaceItems;
+}
+
+void UTN_TurtleMovementComponent::ControlledCharacterMove(const FVector& InputVector, float DeltaSeconds)
+{
+	// El dueño (o el anfitrión con la suya) decide el turbo de este movimiento con lo que sabe ahora: lo guarda el movimiento
+	// (FTNSavedMove_Turtle::SetMoveFor) antes de simularlo y el servidor lo valida al recibirlo.
+	const UTN_RaceItemComponent* Items = RaceItems.Get();
+	RaceBoostMultiplier = Items ? FMath::Max(1.f, Items->GetSpeedMultiplier()) : 1.f;
+	Super::ControlledCharacterMove(InputVector, DeltaSeconds);
+}
+
+float UTN_TurtleMovementComponent::GetMaxAcceleration() const
+{
+	return TNMovementLimits::RaceBoostAcceleration(Super::GetMaxAcceleration(), RaceBoostMultiplier);
+}
+
 float UTN_TurtleMovementComponent::GetMaxSpeed() const
 {
-	const float Base = Super::GetMaxSpeed();
+	float Base = Super::GetMaxSpeed();
+	// Andando (y en el aire, que usa la misma): la de este movimiento, con su sprint, su vadeo (ver SetWantsToSprint) y su
+	// turbo de carrera (al menos la velocidad de correr, por el multiplicador y con los topes).
+	const ATortugaCharacter* Turtle = GetTurtle();
+	const UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+	if (Stamina && !IsCrouching() && (MovementMode == MOVE_Walking || MovementMode == MOVE_NavWalking || MovementMode == MOVE_Falling))
+	{
+		Base = Stamina->ComputeMaxWalkSpeed(Stamina->CanSprint(bWantsToSprint), MoveWadingMultiplier, RaceBoostMultiplier);
+	}
 	if (!IsMovingOnGround())
 	{
 		return Base;
@@ -870,6 +1183,56 @@ FNetworkPredictionData_Client* UTN_TurtleMovementComponent::GetPredictionData_Cl
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Panzazo pedido dentro del movimiento (#24)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void UTN_TurtleMovementComponent::RequestDive(const FVector& DiveDir)
+{
+	bDiveRequested = true;
+	DiveRequestYaw = TNDiveLogic::CompressDiveYaw(DiveDir);
+}
+
+void UTN_TurtleMovementComponent::CaptureMoveStartDive(bool& bOutWantsDive, uint16& OutYaw, FVector& OutJumpStartVelocity) const
+{
+	bOutWantsDive = bDiveRequested;
+	OutYaw = bDiveRequested ? DiveRequestYaw : 0;
+	const ATortugaCharacter* Turtle = GetTurtle();
+	OutJumpStartVelocity = Turtle ? Turtle->GetJumpStartHorizontalVelocity() : FVector::ZeroVector;
+}
+
+void UTN_TurtleMovementComponent::RestoreMoveStartDive(uint16 InYaw, const FVector& InJumpStartVelocity)
+{
+	// La marca la lee después UpdateFromCompressedFlags; aquí, el giro y la inercia del salto de entonces.
+	MoveDiveYaw = InYaw;
+	if (ATortugaCharacter* Turtle = GetTurtle())
+	{
+		Turtle->SetJumpStartHorizontalVelocity(InJumpStartVelocity);
+	}
+}
+
+uint16 UTN_TurtleMovementComponent::GetSavedMoveDiveYaw(const FSavedMove_Character& Move)
+{
+	// Todos los movimientos guardados de la tortuga son FTNSavedMove_Turtle (FTNNetworkPredictionData_Client_Turtle).
+	return static_cast<const TNBellySlide::FTNSavedMove_Turtle&>(Move).SavedDiveYaw;
+}
+
+void UTN_TurtleMovementComponent::TickDiveStart()
+{
+	ATortugaCharacter* Turtle = GetTurtle();
+	if (!Turtle || !CharacterOwner)
+	{
+		return;
+	}
+	// Las mismas reglas en el servidor y en el dueño, con el estado de este paso: en el aire, sin otro panzazo, sin otro
+	// lanzamiento en este paso (el que concede el servidor ya está en PendingLaunchVelocity)...
+	FVector LaunchVelocity = FVector::ZeroVector;
+	if (Turtle->StartDiveFromMove(MoveDiveYaw, IsFalling(), !PendingLaunchVelocity.IsZero(), CharacterOwner->bClientUpdating, Velocity, LaunchVelocity))
+	{
+		Launch(LaunchVelocity);
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Red: bases de movimiento que no se encuentran por red
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -937,6 +1300,16 @@ void UTN_TurtleMovementComponent::ServerMoveHandleClientError(float ClientTimeSt
 		return;
 	}
 	FClientAdjustment& Adjustment = ServerData->PendingAdjustment;
+	// Corrige este movimiento: el estado del panzazo tras él va con la corrección (#24, FTNTurtleMoveResponseDataContainer).
+	if (!Adjustment.bAckGoodMove && Adjustment.TimeStamp == ClientTimeStamp)
+	{
+		const ATortugaCharacter* Turtle = GetTurtle();
+		const UCapsuleComponent* Capsule = CharacterOwner ? CharacterOwner->GetCapsuleComponent() : nullptr;
+		CorrectionDiveState.bDiving = Turtle && Turtle->IsDiving();
+		CorrectionDiveState.Serial = Turtle ? Turtle->GetDiveSerial() : 0;
+		CorrectionDiveState.CapsuleHalfHeight = Capsule ? Capsule->GetUnscaledCapsuleHalfHeight() : 0.f;
+		CorrectionDiveState.TimeStamp = ClientTimeStamp;
+	}
 	UPrimitiveComponent* AdjustBase = Adjustment.NewBase;
 	if (Adjustment.bAckGoodMove || Adjustment.TimeStamp != ClientTimeStamp || !AdjustBase || IsNetResolvableBase(AdjustBase))
 	{
@@ -970,9 +1343,43 @@ void UTN_TurtleMovementComponent::ServerMoveHandleClientError(float ClientTimeSt
 	Adjustment.NewBaseBoneName = NAME_None;
 }
 
+void UTN_TurtleMovementComponent::ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse)
+{
+	// Una corrección de un movimiento que aún se guarda (si no, el motor la ignora): el panzazo y la cápsula del servidor
+	// en ese movimiento, antes de colocarla y de repetir los siguientes (que vuelven a pedir el panzazo si lo pedían).
+	const FNetworkPredictionData_Client_Character* ClientData = MoveResponse.IsCorrection() ? GetPredictionData_Client_Character() : nullptr;
+	if (ClientData && &MoveResponse == &TurtleMoveResponseData && ClientData->GetSavedMoveIndex(MoveResponse.ClientAdjustment.TimeStamp) != INDEX_NONE)
+	{
+		const FTNDiveNetState& Server = TurtleMoveResponseData.DiveState;
+		if (ATortugaCharacter* Turtle = GetTurtle())
+		{
+			Turtle->ApplyServerDiveCorrection(Server.bDiving, Server.Serial);
+		}
+		UCapsuleComponent* Capsule = CharacterOwner ? CharacterOwner->GetCapsuleComponent() : nullptr;
+		if (Capsule && Server.CapsuleHalfHeight > 1.f && !FMath::IsNearlyEqual(Capsule->GetUnscaledCapsuleHalfHeight(), Server.CapsuleHalfHeight, 0.01f))
+		{
+			// En su sitio: la posición de la corrección es la del centro de esa cápsula en el servidor.
+			Capsule->SetCapsuleHalfHeight(Server.CapsuleHalfHeight);
+		}
+	}
+	Super::ClientHandleMoveResponse(MoveResponse);
+}
+
 void UTN_TurtleMovementComponent::ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase,
 	FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation)
 {
+	// TN.Dive.Debug: cuántas correcciones y de cuánto (la posición guardada de ese movimiento frente a la del servidor).
+	if (const FNetworkPredictionData_Client_Character* ClientData = GetPredictionData_Client_Character())
+	{
+		const int32 MoveIndex = ClientData->GetSavedMoveIndex(TimeStamp);
+		if (MoveIndex != INDEX_NONE && !bBaseRelativePosition && ClientData->SavedMoves.IsValidIndex(MoveIndex) && ClientData->SavedMoves[MoveIndex].IsValid())
+		{
+			++ClientCorrectionCount;
+			LastClientCorrectionCm = static_cast<float>(FVector::Dist(ClientData->SavedMoves[MoveIndex]->SavedLocation,
+				FRepMovement::RebaseOntoLocalOrigin(NewLoc, this)));
+		}
+	}
+
 	Super::ClientAdjustPosition_Implementation(TimeStamp, NewLoc, NewVel, NewBase, NewBaseBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode,
 		OptionalRotation);
 
@@ -1050,9 +1457,22 @@ void UTN_TurtleMovementComponent::ShowBellyDebug() const
 		return;
 	}
 	const bool bLocal = CharacterOwner->IsLocallyControlled();
-	const FString Text = FString::Printf(TEXT("[Panzazo] %s (%s) · %s %.2f s · %.0f cm/s · %s· roce %.0f cm/s² · pendiente %.0f cm/s² · panzazo %s nº %d (arrastre del nº %d)"),
+	FString SlopeText = BellySlopeTime > 0.f || bLastSlideDownhill
+		? FString::Printf(TEXT(" (%s, %.2f s cuesta abajo)"), bLastSlideDownhill ? TEXT("bajando") : TEXT("ya no baja"), BellySlopeTime)
+		: FString();
+	const UWorld* DebugWorld = GetWorld();
+	if (DebugWorld && LastAirBounceTime >= 0.0 && DebugWorld->GetTimeSeconds() - LastAirBounceTime < 1.5)
+	{
+		SlopeText += FString::Printf(TEXT(" · rebote en vuelo a %.0f cm/s"), LastAirBounceSpeed);
+	}
+	if (CharacterOwner->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		// El dueño en un cliente: las correcciones del servidor (con el panzazo predicho no debe sumar al empezar).
+		SlopeText += FString::Printf(TEXT(" · correcciones %d (última %.0f cm)"), ClientCorrectionCount, LastClientCorrectionCm);
+	}
+	const FString Text = FString::Printf(TEXT("[Panzazo] %s (%s) · %s %.2f s · %.0f cm/s · %s· roce %.0f cm/s² · pendiente %.0f cm/s²%s · panzazo %s nº %d (arrastre del nº %d)"),
 		*GetNameSafe(CharacterOwner), bLocal ? TEXT("local") : TEXT("servidor"), TNBellySlide::PhaseName(BellyPhase), BellyTime,
-		Velocity.Size2D(), *SurfaceText, LastSlideFriction, LastSlopeAccel.Size(),
+		Velocity.Size2D(), *SurfaceText, LastSlideFriction, LastSlopeAccel.Size(), *SlopeText,
 		(Turtle && Turtle->IsDiving()) ? TEXT("sí") : TEXT("no"), Turtle ? static_cast<int32>(Turtle->GetDiveSerial()) : 0,
 		static_cast<int32>(SlideSerial));
 	GEngine->AddOnScreenDebugMessage(static_cast<uint64>(GetUniqueID()) + 0xB311F10Bull, 0.f,

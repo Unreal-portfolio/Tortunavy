@@ -62,11 +62,14 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
   dirección al servidor (fiable) justo antes de la acción; sin gafas se apunta con la cámara, como siempre.
 - **Gatillos y agarres por su valor.** Con OpenXR los Touch solo dan el valor del gatillo y del agarre (no un «clic»):
   cuentan como pulsados a partir del 55 % y sueltos por debajo del 35 % (en los menús y en los agarres, con histéresis;
-  en las acciones del juego, un disparador «Down» al 55 % en la asignación). Si un menú se abre con el gatillo o el
+  en las acciones del juego, un disparador «Down» con la misma histéresis en la asignación, `UTN_InputTriggerAnalogDown`:
+  un gatillo que ronda el 55 % no corta lo que se mantiene, como rebuscar). Si un menú se abre con el gatillo o el
   agarre ya apretados, no hacen clic ni cambian de pestaña hasta soltarlos y volver a apretar.
 - **HUD** curvo y **anclado a la cámara**: siempre fijo en la vista, como en la pantalla (1,5 m, 80° de arco, el eje del
-  cilindro en los ojos). Si hay una pared delante, se acerca. `TN.VR.HudFollow 1` lo deja suelto delante siguiendo a la
-  cabeza con retraso (a quien le maree el anclado).
+  cilindro en los ojos). Si hay una pared delante, o el suelo bajo su borde de abajo o en sus lados, se acerca lo justo para
+  que no quede tapado (se mira el centro, los lados y el borde de abajo); lo que se lleva en las manos no lo acerca.
+  `TN.VR.HudFollow 1` lo deja suelto delante siguiendo a la cabeza con retraso (a quien le maree el anclado).
+
 - **Menús** (pausa, tienda, probador, general, salas, menú principal, campeón...): un panel curvo que te rodea, quieto en
   el mundo (1,6 m, 100° de arco). Sin gafas (simulado), centrado en la vista y con el arco que cabe en la ventana con el
   campo de visión de la cámara (unos 76° con 90° y 16:9; `TNVRMath::SimulatedMenuArc`). La aleta derecha apunta con un láser y el gatillo es el clic. También con botones: A/X
@@ -84,6 +87,26 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
   - la almeja y el gusano de la playa no se llevan la cámara (se sigue en primera persona);
   - de fantasma espectador, la vista es la de la cámara del jugador seguido (sin la cámara libre que orbita sola).
 - **Voz**: con «Pulsar para hablar», el clic del stick izquierdo.
+- **Manos que no atraviesan el escenario**: la punta de cada aleta se queda en la superficie de paredes, suelo y rocas
+  (lo que para la cámara, `ECC_Camera`), con los brazos del cuerpo y lo que se coge; no se coge ni se pulsa nada a través
+  de una pared. Lo que se coge, las tortugas y los interactuables no paran la mano.
+- **Solo se coge o se toca lo que se ve**: la mano coge a 22 cm de la punta y toca a 40, así que con la punta parada en una
+  pared fina llegaba a lo de detrás. Cada candidato (objeto con física, interactuable o compañero) tiene que verse desde los
+  ojos: un trazo `ECC_Camera` hasta su punto más cercano a la mano, sin contar el propio candidato, la tortuga, lo que lleva
+  encima ni lo que tiene en las manos (`UTN_VRGrabComponent::CanReach`). Con la mano dentro de la esfera de escaneo de un
+  decorado que se rebusca, el punto es el del decorado. El servidor lo vuelve a mirar al aceptar un agarre: desde los ojos
+  del peón o pasando por la mano que le manda el cliente (los ojos de verdad pueden estar algo apartados de la cápsula).
+- **Pulsar botones con la punta de la aleta**: los botones (`ATN_ButtonInteractable`) y los interruptores del mapa
+  procedural (`ATN_ProcSwitch`) se pulsan tocándolos con la punta yendo hacia ellos (a más de 40 cm/s), sin apretar nada;
+  dejar la mano apoyada no los repite (hay que alejarla 10 cm). Lo demás (cofres, puestos, objetos) sigue con el agarre o
+  el gatillo (`TNVRHands::UpdatePoke`).
+- **Vibración de los mandos** (si los mandos vibran): al coger o interactuar con la mano, al soltar y al lanzar, al tocar
+  una pared o el suelo, cuando lo cogido se engancha y tira de la mano (más fuerte cuanto más se separa) o se escapa, al ser
+  derribada (las dos manos) y con el láser al pasar por un botón y al pulsar. `TN.VR.Haptics` (0-1, 1 de serie).
+- **Viñeta de confort**: los bordes de la vista se oscurecen al andar deprisa, caer, salir lanzado (catapulta) o con el
+  giro suave; parada, girando a pasos o con una rueda abierta, nada. Nunca baja de la que ya hay (la de la escena, 0,4 del
+  motor y los volúmenes como el de las tormentas, o la del caparazón): se nota cuando la supera, a partir de unos 4 m/s o
+  45°/s de giro suave. `TN.VR.ComfortVignette` (0 la quita, 1 de serie, 2 el doble).
 
 ## Controles (Meta Quest Touch)
 
@@ -102,6 +125,58 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
 | X | Cambiar de objeto | Aceptar |
 | Y | Rueda de emotes (mantener) | Atrás |
 | Menú (mando izquierdo) | Menú de pausa | Cerrar |
+
+## Vehículos: buggy del Rally y karts (con gafas)
+
+Decisión de Mokius (04-10-2026): los vehículos se juegan con las manos, programado en `ATN_Buggy` y `ATN_BuggyGunnerPawn`
+para que el Rally y los karts lo hereden (#529).
+
+- **Asiento.** La conductora y la artillera llevan un `UTN_VRSeatComponent` en los ojos de su tortuga sentada (55 cm sobre
+  la cadera y 14 por delante). Con gafas es el origen del seguimiento: el rig se engancha ahí y la cabeza mueve la cámara
+  dentro de él. Al sentarse con gafas se **recentra solo** (la cabeza queda en los ojos de la tortuga, mirando al morro);
+  el clic del stick derecho vuelve a recentrar.
+- **Cámara.** La del asiento sustituye a la de siempre: sin brazo, sin retardo, sin FOV dinámico, sin balanceo ni temblor
+  (`ATN_Buggy::UpdateCamera` no corre) y, en la artillera, sin girar con el apuntado ni empujones. La cabeza propia y el
+  casco no se ven (solo en tu máquina). Sin gafas (`TN.VR 2`), la cámara del asiento mira hacia el ratón (karts) o el
+  apuntado (artillera).
+- **Volante** (conductora): cerrar el agarre a menos de 22 cm del aro lo coge, con una mano o con las dos. Con una mano
+  manda su ángulo alrededor del centro; con dos, el de la recta entre ellas. Coger o soltar una mano no hace saltar el
+  volante; llega a ±90° (dirección a tope) y, sin manos, vuelve solo al centro. La dirección sale suavizada
+  (`TNVRVehicle::StepWheel`). Sin cogerlo, el stick izquierdo.
+- **Asas** (artillera): un manillar en el carro de la torreta, delante de su pecho, que gira con ella (solo en guiñada) y
+  solo se ve con una artillera con gafas. Cerrar el agarre a menos de 30 cm de un puño lo coge y, mientras se tenga, el
+  apuntado sale de hacia donde apuntan las manos que agarran (en los ejes del buggy y limitado como siempre,
+  `TNRallyTurret::ClampAim`); se manda al servidor con `ServerSetAim`, como el del ratón. Sin asas, el stick derecho.
+- **Peso** (artillera de los karts): la cabeza apartada a un lado del asiento inclina hacia ese lado (nada hasta 4 cm, a
+  tope a 20 cm; se suma al stick) y va al servidor con `ServerSetLean`.
+- **Kart con una sola tortuga**: mira con la cabeza; la torreta sigue a la mirada y dispara hacia allí.
+- **Brazos para los demás**: las manos que se ven (en el aro, en los puños o en los mandos) van al servidor sin fiabilidad
+  unas 15 veces por segundo y los brazos de la tortuga sentada las siguen (IK de brazo y antebrazo en
+  `UTN_BuggyRiderAnimComponent`).
+- **Red**: el servidor decide como siempre. La dirección va con la entrada del vehículo (Chaos), el apuntado y el peso con
+  sus RPC de siempre (limitados en frecuencia y validados), y el asiento solo manda si va con gafas y dónde están sus manos
+  (recortadas a 1,5 m de los ojos).
+
+| Botón | Conductora | Artillera |
+|---|---|---|
+| Agarres | Coger el volante (una o dos manos) | Coger las asas (apuntar con la mano) |
+| Gatillo derecho | Acelerar | Disparar |
+| Gatillo izquierdo | Frenar y marcha atrás | Especial del Rally · usar el objeto (karts) |
+| Stick izquierdo | Girar sin el volante · hacia atrás: «hacia atrás» | Peso (karts) · hacia atrás: «hacia atrás» |
+| Stick derecho | Hacia delante: disparar sola · hacia atrás: disparar atrás / «hacia atrás» | Apuntar sin las asas |
+| A | Turbo | — |
+| B | Usar el objeto (karts) | «Hacia atrás» (karts, mantener) |
+| X | Freno de mano | — |
+| Y | Enderezar (mantener: reaparecer) | Enderezar (mantener: reaparecer) |
+| Clic del stick derecho / izquierdo | Recentrar / hablar | Recentrar / hablar |
+
+Fuera de esto (otras tarjetas): los nombres de los botones Touch en los HUD, la munición, las notas y la tableta del Rally,
+la pausa y la salida en el Rally y los karts, y el rendimiento en estéreo.
+
+Piezas: `UTN_VRSeatComponent` (`VR/TN_VRSeatComponent.*`), `TNVRVehicle` (`VR/TN_VRVehicleMath.h`), `ATN_Buggy`
+(`Vehicles/TN_Buggy_VR.cpp`), `ATN_BuggyGunnerPawn` (`Vehicles/TN_BuggyGunnerPawn_VR.cpp`), las asas en
+`TNBuggyTurretMesh::BuildHandles` y los botones Touch en `UTN_BuggyInputSet` y `UTN_KartInputSet`. El rig quita sus mandos
+de la tortuga (`IMC_VR`) mientras se va sentada.
 
 ## Coger y lanzar (con gafas)
 
@@ -125,6 +200,24 @@ orden:
    etiqueta `NoVRGrab` lo impide siempre.
 4. Con el agarre derecho y un objeto ya en la aleta: se «agarra» ese objeto.
 5. Nada: con el izquierdo, correr mientras se mantiene.
+
+Robustez de los agarres (revisión del 03-10-2026, `UTN_VRGrabComponent`):
+
+- **Lo que lleva otra tortuga no se le quita**: el servidor rechaza el agarre (y la máquina que lo coge en local no lo
+  busca). La misma tortuga sí puede cogerlo con las dos manos.
+- **Sin poder usar las manos** (derribada, muerta, en el caparazón o llevada por otra): no se coge nada; lo que llevaba con
+  física se suelta (también en el servidor si el cliente no lo ha soltado aún).
+- **Enganchado**: si lo cogido se queda a más de 45 cm de donde debería estar en la mano durante 0,35 s (detrás de una
+  pared, sujeto por algo) o a más de 1,5 m de golpe, se suelta solo y vibra (`TNVRHands::ShouldBreakGrab`). No se queda
+  tirando de la mano ni atraviesa la pared.
+- **La cápsula propia no choca con lo que lleva**: no se puede subir encima de la caja que se tiene en la mano ni empujarla
+  andando (lo hacen el dueño y el servidor, para que no haya correcciones). Lo cogido pasa a usar CCD (no atraviesa paredes
+  finas al lanzarlo).
+- **Menú, rueda o derribo con el agarre apretado**: el agarre se anula (lo de física se suelta; el compañero y el objeto de
+  la aleta se quedan como estaban) y no vuelve a contar hasta abrir la mano: cerrar el menú con el agarre apretado ya no
+  coge lo que haya al alcance ni tira el objeto de la aleta.
+- **Velocidad para lanzar**: la media de los últimos 70 ms (`TNVRHands::FHandVelocityWindow`), igual a 72, 90 o 120 Hz; un
+  tirón suelto del seguimiento ya no lanza.
 
 Al soltar el agarre:
 
@@ -162,7 +255,15 @@ ajuste). Con un menú o una rueda a la vista no cambia. Es la misma cámara que 
    distancia y escala del panel (`PanelPlacement`), botones de los mandos en los menús (`MenuKeys`), panel curvo
    (`CurvedPanel`), gatillos y agarres analógicos (`AnalogButton`), umbral del gatillo en el juego y gatillo apretado al
    abrir un menú (`TriggerThreshold`), velocidad de la mano respecto del cuerpo (`HandVelocity`), arco del menú sin gafas
-   (`SimulatedMenuArc`) y tecla de cambiar de cámara (`CameraKey`). Sin ventana:
+   (`SimulatedMenuArc`) y tecla de cambiar de cámara (`CameraKey`). Y doce de las manos (`TN_VRHandsTest.cpp`): media de la
+   velocidad para lanzar (`HandVelocityWindow`), agarre enganchado (`GrabStrain`), viñeta de confort (`ComfortVignette`) sin
+   bajar la de la escena ni pisar la del caparazón ni quedarse puesta en pausa (`ComfortVignetteLayer`), sitio del HUD
+   (`HudProbe`), botones con la punta (`Poke`), gatillo entre el menú y el juego (`TriggerMenuLatch`) y, con un mundo de
+   prueba, mano contra una pared (`HandBlock`), objeto que lleva otro (`GrabHolder`), nada que coger al otro lado de una
+   pared fina (`GrabThroughWall`), la caja más cercana que se ve y no la de detrás de la pared (`GrabNearestVisible`) y
+   objeto destruido en la mano, que sale del registro (`GrabDestroyedInHand`). Y las de los vehículos, `Tortunabo.VR.Vehicle.*`:
+   volante con una o dos manos (`WheelAngle`), apuntado con la mano (`HandAim`), inclinación con la cabeza (`HeadLean`)
+   y volante y asas a mano desde los ojos (`Reach`). Sin ventana:
    `UnrealEditor-Cmd Tortunabo.uproject -ExecCmds="Automation RunTests Tortunabo.VR; Quit" -nullrhi -unattended`.
 2. **Modo simulado** en PIE (1 o 2 jugadores): consola `TN.VR 2` en la ventana que quieras probar. Lista de pruebas abajo.
 3. **Meta XR Simulator** (opcional, para probar el modo gafas de verdad sin gafas): el simulador de Meta hace de gafas y
@@ -224,8 +325,11 @@ Steam, así que no se juega con los del PC). Para mañana, mejor la opción A.
 |---|---|---|
 | `ETNVRMode`, `TNVR::*`, `FTNVRKeys` | `VR/TN_VRMode.*` | El modo actual y las ayudas que usa todo el juego (ver «Reglas para código nuevo»); los botones de los Touch por nombre. |
 | `UTN_VRSubsystem` | `VR/TN_VRSubsystem.*` | Decide el modo cada fotograma, crea el rig en cada mundo de juego, pone y quita los ajustes de confort, registra el procesador de entrada, la capa de carga de las gafas y los comandos `TN.VR*`. |
-| `ATN_VRRig` | `VR/TN_VRRig.*` | El jugador local en VR (solo en su máquina): manos con `UMotionControllerComponent` (LeftGrip, RightGrip, RightAim), panel de la interfaz (`UWidgetComponent` plano e invisible) y su malla curva (`CurvedPanel`), la playa en 360 de la carga (`LoadingDome`), láser (`UWidgetInteractionComponent` con rayo propio), el contexto de entrada `IMC_VR` (prioridad 10) sobre las acciones de siempre, los agarres (coger y lanzar), el giro y el recentrado. Sin peón (menú principal), la vista es su cámara. |
-| `UTN_VRGrabComponent` | `VR/TN_VRGrabComponent.*` | En la tortuga: coger objetos con física con la mano (servidor si el actor se replica, local si no). |
+| `UTN_VRSeatComponent` | `VR/TN_VRSeatComponent.*` | Asiento de los vehículos con gafas (ver «Vehículos»): origen del seguimiento, cámara sentada, manos que llegan del rig y las que ven los demás. |
+| `ATN_VRRig` | `VR/TN_VRRig.*` | El jugador local en VR (solo en su máquina): manos con `UMotionControllerComponent` (LeftGrip, RightGrip, RightAim, LeftAim), panel de la interfaz (`UWidgetComponent` plano e invisible) y su malla curva (`CurvedPanel`), la playa en 360 de la carga (`LoadingDome`), láser (`UWidgetInteractionComponent` con rayo propio), el contexto de entrada `IMC_VR` (prioridad 10) sobre las acciones de siempre, los agarres (coger y lanzar), el giro y el recentrado. Sin peón (menú principal), la vista es su cámara. |
+| `UTN_VRGrabComponent` | `VR/TN_VRGrabComponent.*` | En la tortuga: coger objetos con física con la mano (servidor si el actor se replica, local si no), quién lleva cada objeto, agarres enganchados y cápsula que no choca con lo que lleva. |
+| Manos del rig | `VR/TN_VRRigHands.cpp` | Agarres (coger, lanzar, anular), manos contra el escenario (`ATN_VRRig::BlockHandLocation`), vibración de los mandos y viñeta de confort. |
+| `TNVRHands` | `VR/TN_VRHandMath.h` | Cuentas de las manos sin mundo: ventana de velocidad, agarre enganchado, toques de vibración, viñeta y sitio del HUD. |
 | Primera persona | `Player/TortugaCharacter_FirstPerson.cpp` | Cámara en la cabeza (con y sin gafas), cuerpo sin cabeza (solo vista desde ella), caparazón oscuro, tecla de «Cambiar de cámara» (`FTNGameSettings::CameraKey`/`CameraPadKey`, fila `Camera` de `UTN_GameSettingsSubsystem`) y `TN.Camera`. |
 | IK de los brazos | `Player/TN_TurtleAnimInstance.cpp` (`ReachArm`) | Las manos del cuerpo van a los mandos en VR. |
 | `UTN_VRScreenWidget` | `VR/TN_VRScreenWidget.*` | La pantalla VR: lienzo de 1920 × 1080 donde van todos los widgets de pantalla completa con su ZOrder. Se quitan con `RemoveFromParent` de siempre. |
@@ -237,7 +341,9 @@ Steam, así que no se juega con los del PC). Para mañana, mejor la opción A.
 
 Comandos: `TN.VR`, `TN.VR.Status`, `TN.VR.Recenter`, `TN.VR.HudDistance` (150), `TN.VR.HudFov` (80, arco del HUD),
 `TN.VR.HudFollow` (0 anclado a la cámara), `TN.VR.MenuDistance` (160), `TN.VR.MenuFov` (100, arco de los menús),
-`TN.VR.LoadingDomeRadius` (300), `TN.VR.SmoothTurnSpeed` (120), `TN.Camera` (-1), `TN.FirstPerson.ShellLight` (0,2).
+`TN.VR.LoadingDomeRadius` (300), `TN.VR.SmoothTurnSpeed` (120), `TN.VR.Haptics` (1), `TN.VR.ComfortVignette` (1),
+`TN.Camera` (-1), `TN.FirstPerson.ShellLight` (0,2). `TN.VR.Status` dice también qué hace cada mano (libre o parada por el
+escenario, qué agarra), la viñeta de confort y la vibración de cada mando.
 
 ## Reglas para código nuevo
 
@@ -272,8 +378,8 @@ Para que todo lo nuevo se vea y funcione en VR:
 
 Sin gafas (modo simulado, PIE):
 
-1. `Automation RunTests Tortunabo.VR`: las once pasan (también `TriggerThreshold`, `HandVelocity`, `SimulatedMenuArc` y
-   `CameraKey`).
+1. `Automation RunTests Tortunabo.VR`: las diecinueve pasan (también `TriggerThreshold`, `HandVelocity`, `SimulatedMenuArc`,
+   `CameraKey` y las ocho de las manos).
 2. Menú principal con `-vrsim` (o `TN.VR 2` en la consola y volver al menú): el menú sale en un panel delante; el ratón
    mueve el puntero sobre el panel y el clic pulsa los botones; la rueda baja las listas; «Ajustes» y «Crear partida» van.
    Los botones del editor (parar PIE) se siguen pudiendo pulsar con el menú abierto.
@@ -346,20 +452,72 @@ Con las Quest, lo arreglado en la revisión del 30-09-2026:
 37. Entrar al probador con gafas: se ven las aletas sueltas y el láser; al salir, los brazos del cuerpo vuelven a los
     mandos y la cabeza propia no se ve.
 
+Con las Quest, el pulido de las manos del 03-10-2026:
+
+38. Meter la mano en una pared o bajarla al suelo: la aleta (y el brazo de la tortuga) se queda en la superficie, con una
+    vibración corta al tocarla. Con la mano metida en una pared fina (una valla, la pared de una caseta), al otro lado no se
+    coge una caja, no se recoge un objeto, no se rebusca, no se coge a un compañero ni se pulsa nada; asomando la mano por
+    encima o por un lado, sí. Lo mismo desde un cliente (el servidor también lo comprueba).
+39. Coger una caja con física y empujarla contra una pared: vibra cada vez más y, si se queda enganchada, se suelta sola
+    (vibración fuerte); no atraviesa la pared. Lanzarla fuerte contra una pared fina: rebota, no la atraviesa.
+40. Con la caja en la mano, ponerla bajo los pies o delante y andar: la tortuga no se sube encima ni la empuja.
+41. Dos jugadores con gafas: uno coge una caja; el otro intenta cogerla: no puede (vibra al rechazarlo). Al soltarla, sí.
+42. Con algo en la mano, que te derriben o meterte en el caparazón: se suelta (en las dos máquinas) y vibran los dos mandos.
+43. Abrir la pausa con el agarre derecho apretado y un objeto en la aleta: no se cae al suelo. Cerrarla con el agarre aún
+    apretado: no coge nada; abrir y volver a apretar, sí.
+44. Soltar despacio un objeto de la aleta con la mano temblando: se cae (no se lanza). Un gesto de lanzar corto y rápido:
+    se lanza. Comparar a 72 y a 90 Hz (Ajustes de las Quest).
+45. Vibración: coger, soltar, lanzar, tocar la pared, el láser al pasar por un botón y al pulsar. `TN.VR.Haptics 0` la quita.
+46. Andar deprisa, caer desde alto, salir lanzado en una catapulta y el giro suave: los bordes se oscurecen; parada o a
+    pasos, no. Al empezar a andar despacio, los bordes no se aclaran ni un momento. Girando suave, abrir la rueda de emotes:
+    los bordes vuelven a su sitio mientras está abierta. `TN.VR.ComfortVignette 0` la quita y `2` la dobla. Comprobar que se nota sin molestar (si es poca, subir
+    `TNVRHands::VignetteMaxIntensity`).
+47. HUD: mirar abajo andando por la playa: el suelo no tapa la parte de abajo del HUD (se acerca un poco). Con una caja en la
+    mano delante de la cara, el HUD no se viene a la cara.
+48. Botón del mapa (o interruptor del procedural): tocarlo con la punta de la aleta lo pulsa una vez (vibra); dejar la mano
+    apoyada no lo vuelve a pulsar; apartarla y volver, sí. Pasar la mano despacio por encima no lo pulsa.
+49. Abrir la tienda (o el general) con el gatillo y cerrarla con el clic del láser en «Cerrar» sin soltar el gatillo: no se
+    vuelve a abrir; soltar y apretar otra vez junto al tendero, sí. Abrirla con el gatillo y soltarlo dentro: al cerrarla con
+    B, el gatillo no interactúa solo.
+
+Vehículos (#529) sin gafas: `LVL_ProcMap?game=Karts?ProcSeed=11` (o con `?BotDriver` para ir de artillera), `TN.VR 2`:
+
+50. La vista va en el asiento, sin brazo de cámara; la cabeza y el casco propios no se ven; el HUD, en el panel.
+51. `TN.VR.SeatPose 30`: la conductora gira el volante 30° y el registro dice dirección 0,33 y las ruedas giradas. De
+    artillera, `TN.VR.SeatPose 0 60 10`: el apuntado y la torreta del servidor quedan en 60° y 10°; las asas se ven.
+52. `TN.VR 0`: vuelve la cámara de persecución de siempre; sin gafas el kart conduce, usa objetos y dispara como antes.
+
+Vehículos (#529) con las Quest:
+
+53. Al sentarse, la vista queda en los ojos de la tortuga mirando al morro (recentrado solo); el clic del stick derecho
+    recentra sentada. Nada tiembla ni cambia el FOV con el turbo o al aterrizar.
+54. Volante con las dos manos: gira con ellas, llega a tope a un cuarto de vuelta y, al soltarlo, vuelve al centro. Con
+    una sola mano también. Coger o soltar una mano no da tirones. Sin cogerlo, el stick izquierdo gira.
+55. Gatillo derecho acelera y el izquierdo frena (y da marcha atrás parado). A turbo, X freno de mano, Y enderezar
+    (mantener: reaparecer), B usar el objeto, stick derecho adelante disparar sola, cualquier stick atrás «hacia atrás».
+56. Artillera: las asas se ven delante del pecho y giran con la torreta; al cogerlas, la torreta apunta hacia donde
+    apuntan las manos (también arriba y abajo, limitada); gatillo derecho dispara, el izquierdo usa el objeto.
+57. Artillera de los karts: apartar la cabeza a un lado del asiento inclina el kart hacia ese lado (el HUD lo enseña).
+58. Kart con una sola tortuga: la torreta sigue a la cabeza y dispara hacia donde se mira.
+59. Con dos jugadores (uno con gafas y otro sin ellas, en el mismo kart y en karts distintos): cada uno ve los brazos de la
+    tortuga con gafas en el volante o en las asas, sin tirones; quien va sin gafas juega como siempre.
+
 ## Dudas para la prueba con gafas
 
 Cosas que no se pueden comprobar sin gafas y que pueden fallar (anotadas en la revisión del 30-09-2026). Si alguna falla,
 abrir un fallo del objeto «Modo VR» con lo que se vio.
 
-- **Cerrar un menú con el agarre apretado**: al volver al juego, el agarre cuenta como recién apretado y coge lo que haya
-  al alcance de esa mano (`ATN_VRRig::UpdateGrips` pone el agarre a 0 con el menú delante).
-- **Cerrar un menú con el gatillo apretado**: el procesador de menús se come los ejes del gatillo; al cerrarlo, Enhanced
-  Input puede ver una pulsación nueva de `IA_Interact` e interactuar sin querer.
+- **Gatillo y agarre al cerrar un menú**: con el menú delante el procesador deja pasar al juego la suelta de los ejes
+  (que no se quede con el valor de antes del menú) y, si el gatillo se apretó en el menú, no deja pasar nada de él hasta
+  soltarlo (`TNVRHands::ShouldEatTriggerAxis`). Depende de que OpenXR mande el eje cuando cambia: comprobar la prueba 49.
+
 - **Stick mantenido al abrir un menú**: el primer fotograma puede mover el foco un paso.
-- **Gatillo rondando el 55 % en el juego**: el disparador «Down» no tiene histéresis; en las interacciones de mantener
-  (rebuscar, cofres) un gatillo justo en el umbral podría cortarlas.
-- **Velocidad para lanzar**: se suaviza a la mitad cada fotograma (a 72-90 Hz); comprobar que un lanzamiento rápido y
-  corto pasa de `VRThrowSpeed` (250 cm/s) y que la dirección es la del gesto.
+- **Gatillo rondando el 55 % en el juego**: ya tiene histéresis (suelto por debajo del 35 %); comprobar rebuscando con el
+  gatillo a medias que no se corta y que soltarlo del todo sí lo corta.
+
+- **Velocidad para lanzar**: es la media de los últimos 70 ms; comprobar que un lanzamiento rápido y corto pasa de
+  `VRThrowSpeed` (250 cm/s) y que la dirección es la del gesto (si se queda corto, bajar
+  `FHandVelocityWindow::DefaultWindowSeconds`).
 - **Recentrar con algo en la mano**: el seguimiento salta; la velocidad se descarta, pero el objeto con física puede dar un
   tirón hasta la nueva posición de la mano.
 - **Coger por red con mucho ping**: el servidor acepta la mano con 60 cm de margen (`ServerGrabSlack`); si lo rechaza, el
@@ -374,13 +532,26 @@ abrir un fallo del objeto «Modo VR» con lo que se vio.
   dentro de la cabeza y puede verse el casco un instante.
 - **Manos del cuerpo**: comprobar que el esqueleto tiene los huesos `LeftHand` y `RightHand`; si no, el IK no actúa y no
   se ve ninguna mano (las aletas sueltas se ocultan cuando hay tortuga).
-- **HUD tapado**: el HUD fijo a 150 cm respeta la profundidad, así que el suelo y el cuerpo propio pueden tapar su parte de
-  abajo al mirar abajo; y el rayo de `FitDistance` (`ATN_VRRig`) puede chocar con lo que se lleva y acercar el HUD a la cara.
+- **HUD tapado**: el HUD fijo a 150 cm respeta la profundidad; el suelo y las paredes ya lo acercan (centro, lados y borde
+  de abajo), pero el cuerpo propio (`ECC_Visibility` lo ignora) aún puede tapar un poco su parte de abajo al mirar abajo.
+- **Manos y escenario**: lo que no para la cámara (`ECC_Camera` en `Ignore`: algún decorado, el agua) no para la mano; y
+  una pared con la cabeza metida dentro no para nada (no se sabe dónde está el otro lado).
+- **Vibración**: OpenXR la mantiene un fotograma y el rig la vuelve a pedir cada uno; comprobar que los toques cortos
+  (20-40 ms) se notan en los Touch y que no se queda vibrando al abrir un menú o al cambiar de mapa.
+
 - **Probador con gafas**: la cámara del probador tiene `bLockToHmd` y el visor le pisa la posición (ya pasaba antes).
-- **Agarres**: apoyar el dedo en el agarre derecho y soltarlo despacio puede tirar el objeto; llevando a un compañero,
-  cualquier agarre lo suelta y el izquierdo deja de servir para correr; si llegan a la vez el clic y el eje del agarre, la
-  pestaña del menú puede cambiar dos veces.
+- **Agarres**: apoyar el dedo en el agarre derecho y soltarlo despacio puede tirar el objeto; llevando a un compañero
+  cogido con un agarre, el de la otra mano ya no lo toca (el izquierdo corre), pero si se cogió con E o el gatillo,
+  cualquier agarre lo suelta; si llegan a la vez el clic y el eje del agarre, la pestaña del menú puede cambiar dos veces.
+
 - **Coger y lanzar muy deprisa**: si el objeto nuevo aún no ha llegado al inventario, se puede lanzar el anterior.
 - **Alcance de la mano**: el servidor valida la interacción por la distancia al cuerpo, no a la mano, y puede rechazarla
   sin aviso.
 - **Cúpula de la pantalla de carga**: el suelo tapa su mitad de abajo.
+- **Vehículos (#529)**: los ojos van a una altura fija sobre la cadera (55 cm y 14 por delante,
+  `UTN_VRSeatComponent::EyeAboveHip`): si la vista queda baja o dentro del caparazón, se ajusta ahí. El volante está donde
+  caen las manos de la tortuga sentada (52 cm por delante y 25 por encima de la cadera); si cuesta cogerlo, subir
+  `WheelGrabReachCm` (22 cm, `TN_Buggy_VR.cpp`). La torreta apunta con la pose de apuntar del mando, que va algo hacia
+  abajo respecto del puño: comprobar que apuntar al horizonte con las asas cogidas no deja el cañón mirando al suelo.
+  Recentrar al sentarse usa el mismo recentrado del motor que el clic del stick: si alguien se sienta de pie, la vista
+  queda a su altura hasta que recentra sentado.

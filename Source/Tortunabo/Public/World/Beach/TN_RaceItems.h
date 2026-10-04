@@ -83,14 +83,42 @@ namespace TNRaceItems
 	constexpr float TurboSeconds = 3.f;
 	/** Coco dorado: turbo sin parar durante estos segundos (y energía sin fin). */
 	constexpr float GoldenSeconds = 7.f;
-	/** Protector solar: segundos, multiplicador de velocidad, radio de contacto (cm) y derribos. */
+	/** Protector solar: segundos, multiplicador de velocidad y radio de contacto (cm); los derribos, en UTN_CombatTuning. */
 	constexpr float StarSeconds = 8.f;
 	constexpr float StarMultiplier = 1.25f;
 	constexpr float StarContactRadius = 320.f;
-	constexpr float StarKnockSeconds = 2.f;
-	constexpr float StarEnemyStunSeconds = 4.f;
 	/** Tope de la velocidad al sumar efectos (por ejemplo, turbo con el protector puesto). */
 	constexpr float MaxSpeedMultiplier = 2.4f;
+
+	// ── Turbo en la predicción del movimiento (FTNSavedMove_Turtle, issue #22) ─────────────────────────────────────────
+
+	/**
+	 * Margen (s) en que el servidor sigue aceptando movimientos del dueño marcados con turbo cuando aquí el efecto ya se ha
+	 * acabado: el dueño lo ve acabar más tarde (su reloj del servidor va medio ping por detrás) y sus movimientos tardan otro
+	 * medio en llegar. Un ping de ida y vuelta más un cuarto de segundo, entre 0,3 y 1 s.
+	 */
+	inline float BoostGraceSeconds(float RoundTripSeconds)
+	{
+		return FMath::Clamp(FMath::Max(0.f, RoundTripSeconds) + 0.25f, 0.3f, 1.f);
+	}
+
+	/**
+	 * Servidor: multiplicador con el que simula un movimiento del dueño marcado con turbo. Current, el de ahora; Recent, el
+	 * último mayor que 1 que tuvo, hace SecondsSinceRecent (negativo si nunca). Sin turbo que lo justifique (nunca lo tuvo o
+	 * pasó el margen), 1: se simula sin turbo y el dueño recibe la corrección.
+	 */
+	inline float ResolveClaimedBoost(float Current, float Recent, double SecondsSinceRecent, float GraceSeconds)
+	{
+		if (Current > 1.f)
+		{
+			return Current;
+		}
+		if (Recent > 1.f && SecondsSinceRecent >= 0.0 && SecondsSinceRecent <= static_cast<double>(GraceSeconds))
+		{
+			return Recent;
+		}
+		return 1.f;
+	}
 	/** Silbato del sargento: radio (cm) y segundos de mareo a los enemigos de alrededor. */
 	constexpr float WhistleRadius = 5500.f;
 	constexpr float WhistleStunSeconds = 5.f;

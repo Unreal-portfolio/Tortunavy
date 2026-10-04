@@ -191,7 +191,9 @@ namespace TNProcMap
 					const EFormation Kind = PlazaKind;
 					const double R = PlazaR, H = PlazaH;
 					// El círculo de piedras se cruza por los huecos entre piedras: solo el altar ocupa el camino.
-					const double Room = Sm.Width * 0.5 - (Kind == EFormation::StoneCircle ? 220.0 : R) - 450.0;
+					// En el Rally, carriles de 8 m: el buggy (y el piloto IA) pasa con holgura a cualquier lado.
+					const double Lane = L.Params.bDrivable ? 800.0 : 450.0;
+					const double Room = Sm.Width * 0.5 - (Kind == EFormation::StoneCircle ? 220.0 : R) - Lane;
 					if (Room < 0.0) { continue; }
 					FFeature F = MakeAtSample(EFeature::Formation, Sm, i, BranchIndex);
 					F.Location = FVector(Sm.P + LeftNormal(Sm.Dir) * Rng.Range(-Room, Room), Sm.Z);

@@ -5,6 +5,7 @@
 #include "Core/TN_Log.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TortugaCharacter.h"
+#include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "HAL/IConsoleManager.h"
@@ -30,16 +31,28 @@ FTNTurtleNetworkMoveDataContainer::FTNTurtleNetworkMoveDataContainer()
 	OldMoveData = &TurtleMoveData[2];
 }
 
-uint8 FTNTurtleNetworkMoveDataContainer::GetLaunchId(const FCharacterNetworkMoveData* Data) const
+const FTNTurtleNetworkMoveData* FTNTurtleNetworkMoveDataContainer::FindTurtleData(const FCharacterNetworkMoveData* Data) const
 {
 	for (const FTNTurtleNetworkMoveData& MoveData : TurtleMoveData)
 	{
 		if (Data == &MoveData)
 		{
-			return MoveData.LaunchId;
+			return &MoveData;
 		}
 	}
-	return 0;
+	return nullptr;
+}
+
+uint8 FTNTurtleNetworkMoveDataContainer::GetLaunchId(const FCharacterNetworkMoveData* Data) const
+{
+	const FTNTurtleNetworkMoveData* MoveData = FindTurtleData(Data);
+	return MoveData ? MoveData->LaunchId : 0;
+}
+
+uint16 FTNTurtleNetworkMoveDataContainer::GetDiveYaw(const FCharacterNetworkMoveData* Data) const
+{
+	const FTNTurtleNetworkMoveData* MoveData = FindTurtleData(Data);
+	return MoveData ? MoveData->DiveYaw : 0;
 }
 
 void FTNTurtleNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType)
@@ -48,6 +61,8 @@ void FTNTurtleNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Charac
 	const ACharacter* Owner = ClientMove.CharacterOwner;
 	const UTN_TurtleMovementComponent* TurtleMove = Owner ? Cast<UTN_TurtleMovementComponent>(Owner->GetCharacterMovement()) : nullptr;
 	LaunchId = TurtleMove ? TurtleMove->GetServerLaunch().GetIdForMove(ClientMove.TimeStamp) : 0;
+	// El panzazo que pide este movimiento (su marca ya va en CompressedMoveFlags): la dirección (#24).
+	DiveYaw = (CompressedMoveFlags & TNDiveLogic::DiveRequestFlag) != 0 ? UTN_TurtleMovementComponent::GetSavedMoveDiveYaw(ClientMove) : 0;
 }
 
 bool FTNTurtleNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType)
@@ -62,6 +77,50 @@ bool FTNTurtleNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterM
 	else
 	{
 		LaunchId = 0;
+	}
+	// Con la marca del panzazo (ya leída con lo de serie), su giro: 16 bits; sin ella, nada.
+	TNDiveLogic::SerializeDiveRequest(Ar, CompressedMoveFlags, DiveYaw);
+	return bBaseOk && !Ar.IsError();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Respuesta del servidor: en las correcciones, su panzazo (#24)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void FTNTurtleMoveResponseDataContainer::ServerFillResponseData(const UCharacterMovementComponent& CharacterMovement, const FClientAdjustment& PendingAdjustment)
+{
+	FCharacterMoveResponseDataContainer::ServerFillResponseData(CharacterMovement, PendingAdjustment);
+	DiveState = FTNDiveNetState();
+	if (PendingAdjustment.bAckGoodMove)
+	{
+		return;
+	}
+	const UTN_TurtleMovementComponent* TurtleMove = Cast<const UTN_TurtleMovementComponent>(&CharacterMovement);
+	if (TurtleMove && TurtleMove->GetCorrectionDiveState().TimeStamp == PendingAdjustment.TimeStamp)
+	{
+		DiveState = TurtleMove->GetCorrectionDiveState();
+		return;
+	}
+	// Por si acaso (no debería): el de ahora.
+	const ATortugaCharacter* Turtle = Cast<const ATortugaCharacter>(CharacterMovement.GetCharacterOwner());
+	const UCapsuleComponent* Capsule = Turtle ? Turtle->GetCapsuleComponent() : nullptr;
+	DiveState.bDiving = Turtle && Turtle->IsDiving();
+	DiveState.Serial = Turtle ? Turtle->GetDiveSerial() : 0;
+	DiveState.CapsuleHalfHeight = Capsule ? Capsule->GetUnscaledCapsuleHalfHeight() : 0.f;
+	DiveState.TimeStamp = PendingAdjustment.TimeStamp;
+}
+
+bool FTNTurtleMoveResponseDataContainer::Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap)
+{
+	const bool bBaseOk = FCharacterMoveResponseDataContainer::Serialize(CharacterMovement, Ar, PackageMap);
+	if (IsCorrection())
+	{
+		uint8 bDiving = DiveState.bDiving ? 1 : 0;
+		Ar.SerializeBits(&bDiving, 1);
+		DiveState.bDiving = bDiving != 0;
+		Ar << DiveState.Serial;
+		Ar << DiveState.CapsuleHalfHeight;
+		DiveState.TimeStamp = ClientAdjustment.TimeStamp;
 	}
 	return bBaseOk && !Ar.IsError();
 }

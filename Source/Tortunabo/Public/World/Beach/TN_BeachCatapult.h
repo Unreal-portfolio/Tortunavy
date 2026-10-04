@@ -31,7 +31,7 @@ class UTN_PlaygroundSynthComponent;
  * vez más, el banderín parpadea; el temblor del brazo y del cazo es solo de sus mallas visibles: el eje y las colisiones no
  * se mueven hasta el disparo, así que la tortuga, o la bola de caparazón, que espera en el cazo no sale despedida); si el
  * cazo se queda vacío, se desarma. Si una tortuga sube al cubito (de un salto desde el mango o
- * cayendo encima), dispara al momento. Al disparar, el palo sale volando, el cubito cae, la cuchara da la vuelta (golpe y rebote contra la
+ * cayendo encima) con alguien en el cazo o en el mango, dispara al momento (sin nadie a quien lanzar no: la gastaba vacía). Al disparar, el palo sale volando, el cubito cae, la cuchara da la vuelta (golpe y rebote contra la
  * arena) y lanza como bolas de caparazón (UTN_ShellComponent: vuelan, rebotan y ruedan; salen solas al pararse) a las
  * que estén en el cazo (LaunchSpeed a LaunchPitch grados hacia el mar, ±DeviationDeg de desvío al azar) y, más flojo, a
  * las que estén en el mango.
@@ -75,6 +75,15 @@ public:
 
 	/** Potenciada (Spec.Flags & TNBeach::FlagBoosted). */
 	bool IsBoosted() const { return bBoosted; }
+
+	/**
+	 * Servidor: dónde acaba el arco de conchitas que dibuja su vuelo (UTN_BeachLootSubsystem, al repartir las conchas de la
+	 * ronda), a la altura del centro de la bola. Las que no están potenciadas lanzan hacia ahí, con su elevación y la rapidez
+	 * justa para caer en él aunque la bola frene en el aire (TNBeachCatapultAim), sin el desvío al azar (#257): antes salían
+	 * desde el cazo con la rapidez fija y ±12° de desvío, y se quedaban cortas y fuera del arco. Sin punto, o si queda muy
+	 * de lado respecto al morro de la cuchara, como antes.
+	 */
+	void SetLaunchTarget(const FVector& WorldTarget);
 
 	/** Aviso desde que alguien se sube al cazo hasta que dispara. */
 	UPROPERTY(EditAnywhere, Category = "Catapulta", meta = (ClampMin = "0.0"))
@@ -226,7 +235,8 @@ private:
 	/** Dónde está una tortuga sobre el brazo: 0 = fuera, 1 = cazo, 2 = mango, 3 = encima del cubito. */
 	int32 WhereOnArm(const ACharacter* Character) const;
 
-	FVector LaunchVelocity(float Fraction) const;
+	/** Velocidad de lanzamiento desde From (donde sale la bola): al final del arco si tiene punto (SetLaunchTarget). */
+	FVector LaunchVelocity(float Fraction, const FVector& From) const;
 
 	/**
 	 * Servidor: el cuerpo físico del caparazón (ATN_ShellBody) de esta tortuga si está metida en él, quieta dentro del cazo
@@ -278,6 +288,9 @@ private:
 	double DangleDeg = 110.0;
 
 	bool bBoosted = false;
+	/** Final del arco de conchitas (SetLaunchTarget); solo en el servidor. */
+	FVector LaunchTarget = FVector::ZeroVector;
+	bool bHasLaunchTarget = false;
 	/** Cartel: lado (+1/-1 en Y del marco), giro de su tabla y estado de su animación. */
 	double SignSide = 1.0;
 	double SignYawDeg = 0.0;

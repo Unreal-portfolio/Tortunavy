@@ -48,7 +48,6 @@ void UTN_StaminaComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME_CONDITION(UTN_StaminaComponent, CurrentStamina, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UTN_StaminaComponent, StaminaShared, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(UTN_StaminaComponent, bIsSprinting, COND_SkipOwner);
-	DOREPLIFETIME_CONDITION(UTN_StaminaComponent, bSprintRequested, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UTN_StaminaComponent, bUnlimitedStamina, COND_OwnerOnly);
 	DOREPLIFETIME(UTN_StaminaComponent, bIsExhausted);
 	DOREPLIFETIME_CONDITION(UTN_StaminaComponent, bPostBoostPenaltyActive, COND_OwnerOnly);
@@ -56,17 +55,30 @@ void UTN_StaminaComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 void UTN_StaminaComponent::SetSprintRequested(bool bRequested)
 {
-	const bool bChanged = bRequested != bSprintRequested;
+	if (bRequested == bSprintRequested)
+	{
+		return;
+	}
 	bSprintRequested = bRequested;
 	RecomputeSprintState();
+}
 
-	// Al servidor solo cuando cambia: el personaje lo pide en cada fotograma mientras se mueve (RefreshSprintRequest) y un
-	// RPC fiable por fotograma y jugador llenaba el búfer de fiables del cliente. Si el servidor lo cambia por su cuenta (al
-	// meterse en el caparazón), la réplica (solo al dueño) lo trae aquí y la siguiente petición vuelve a salir.
-	if (bChanged && GetOwner() && !GetOwner()->HasAuthority())
-	{
-		ServerSetSprintRequested(bRequested);
-	}
+bool UTN_StaminaComponent::CanSprint(bool bRequested) const
+{
+	return bRequested && (bUnlimitedStamina || CurrentStamina > KINDA_SMALL_NUMBER);
+}
+
+float UTN_StaminaComponent::ComputeMaxWalkSpeed(bool bSprinting, float EnvironmentMultiplier, float RaceMultiplier) const
+{
+	TNMovementLimits::FWalkSpeedInputs In;
+	In.WalkSpeed = WalkSpeed;
+	In.SprintSpeed = SprintSpeed;
+	In.bSprinting = bSprinting;
+	In.PostBoostMultiplier = bPostBoostPenaltyActive ? PostBoostSpeedMultiplier : 1.f;
+	In.EnvironmentMultiplier = EnvironmentMultiplier;
+	In.RaceMultiplier = RaceMultiplier;
+	In.Cap = ActiveSpeedCap;
+	return TNMovementLimits::ResolveWalkSpeed(In);
 }
 
 void UTN_StaminaComponent::GrantUnlimitedStamina(float DurationSeconds)
@@ -94,12 +106,6 @@ void UTN_StaminaComponent::GrantUnlimitedStamina(float DurationSeconds)
 	// cara y el «sin aliento» lo seguirían enseñando con la barra llena.
 	bIsExhausted = false;
 	ExhaustionTimer = 0.f;
-	RecomputeSprintState();
-}
-
-void UTN_StaminaComponent::ServerSetSprintRequested_Implementation(bool bRequested)
-{
-	bSprintRequested = bRequested;
 	RecomputeSprintState();
 }
 
@@ -236,7 +242,12 @@ void UTN_StaminaComponent::TickStamina(float DeltaTime)
 		TimeSinceSprintStopped = 0.0f;
 		RechargeElapsed = 0.0f;
 
-		if (!bUnlimitedStamina)
+		// Contra una pared (u otro tope que la frena del todo) el sprint sigue pedido pero la tortuga no avanza: no gasta.
+		// El sprint no se quita, para que al despegarse corra sin soltar la tecla.
+		const AActor* Owner = GetOwner();
+		const bool bAdvancing = Owner && Owner->GetVelocity().Size2D() > WalkSpeed * 0.1f;
+
+		if (!bUnlimitedStamina && bAdvancing)
 		{
 			const float DrainMul = bPostBoostPenaltyActive ? PostBoostDrainMultiplier : 1.0f;
 			CurrentStamina = FMath::Max(0.0f, CurrentStamina - (SprintDrainPerSecond * DrainMul * DeltaTime));
@@ -283,14 +294,9 @@ void UTN_StaminaComponent::TickStamina(float DeltaTime)
 
 void UTN_StaminaComponent::RecomputeSprintState()
 {
-	bool bCanSprint = bSprintRequested;
-
-	if (!bUnlimitedStamina)
-	{
-		// Puede sprintar si la stamina actual supera un mínimo — comprobamos contra 0,
-		// ya que GetEffectiveMaxStamina es el techo, no el suelo.
-		bCanSprint = bCanSprint && (CurrentStamina > KINDA_SMALL_NUMBER);
-	}
+	// Puede sprintar si la stamina actual supera un mínimo — comprobamos contra 0,
+	// ya que GetEffectiveMaxStamina es el techo, no el suelo.
+	const bool bCanSprint = CanSprint(bSprintRequested);
 
 	if (bIsSprinting != bCanSprint)
 	{
@@ -306,18 +312,10 @@ void UTN_StaminaComponent::ApplyMovementSpeed() const
 	{
 		if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
 		{
-			float BaseSpeed = bIsSprinting ? SprintSpeed : WalkSpeed;
-			if (bPostBoostPenaltyActive)
-			{
-				BaseSpeed *= PostBoostSpeedMultiplier;
-			}
-			BaseSpeed *= EnvironmentSpeedMultiplier;
-			if (RaceSpeedMultiplier > 1.0f)
-			{
-				// Turbo de carrera: al menos la velocidad de correr, por el multiplicador (sin la penalización de después).
-				BaseSpeed = FMath::Max(BaseSpeed, SprintSpeed) * RaceSpeedMultiplier;
-			}
-			Movement->MaxWalkSpeed = FMath::Min(BaseSpeed, ActiveSpeedCap);
+			// La tortuga la calcula en cada paso del movimiento (UTN_TurtleMovementComponent::GetMaxSpeed), con el sprint, el
+			// vadeo y el turbo de carrera de ese movimiento; esto queda, sin turbo, para quien lee MaxWalkSpeed (el sonido) y
+			// para personajes sin ese movimiento.
+			Movement->MaxWalkSpeed = ComputeMaxWalkSpeed(bIsSprinting, EnvironmentSpeedMultiplier);
 		}
 	}
 }
@@ -412,32 +410,6 @@ void UTN_StaminaComponent::ApplyGravityScaleOverrides()
 void UTN_StaminaComponent::SetEnvironmentSpeedMultiplier(float Multiplier)
 {
 	EnvironmentSpeedMultiplier = Multiplier;
-	ApplyMovementSpeed();
-}
-
-void UTN_StaminaComponent::SetRaceSpeedMultiplier(float Multiplier)
-{
-	const float NewMultiplier = FMath::Clamp(Multiplier, 1.0f, 4.0f);
-	if (FMath::IsNearlyEqual(NewMultiplier, RaceSpeedMultiplier))
-	{
-		return;
-	}
-	if (const ACharacter* Character = Cast<ACharacter>(GetOwner()))
-	{
-		if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
-		{
-			// La aceleración sube con la velocidad (el doble de rápido: el triple de aceleración) para que el empujón del
-			// turbo sea casi inmediato; al acabar vuelve la de antes.
-			if (RaceSpeedMultiplier <= 1.0f + KINDA_SMALL_NUMBER)
-			{
-				RaceBaseAcceleration = Movement->MaxAcceleration;
-			}
-			Movement->MaxAcceleration = NewMultiplier > 1.0f
-				? RaceBaseAcceleration * (1.0f + (NewMultiplier - 1.0f) * 2.0f)
-				: RaceBaseAcceleration;
-		}
-	}
-	RaceSpeedMultiplier = NewMultiplier;
 	ApplyMovementSpeed();
 }
 

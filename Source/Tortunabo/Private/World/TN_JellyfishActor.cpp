@@ -15,6 +15,9 @@
 #include "World/TN_PlaceholderArt.h"
 #include "World/TN_PlaceholderArtMeshes.h"
 #include "World/Beach/TN_BeachPropMeshes.h"
+#include "Beach/TN_BeachTrapKit.h"
+#include "World/Beach/TN_BeachTrampolineRules.h"
+#include "World/Beach/TN_BeachTrapStatusComponent.h"
 
 namespace TNJellyfishArt
 {
@@ -89,6 +92,7 @@ void ATN_JellyfishActor::BeginPlay()
 	// Guardar escala inicial del HeadMesh para la animación squish
 	HeadMeshDefaultScale = HeadMesh->GetRelativeScale3D();
 	BuildCodeArt();
+	BuildTentacles();
 
 	// Con el CVar de debug activo el draw vive en Tick → mantenerlo encendido.
 	if (TNDebug::EnemyDebug != 0)
@@ -106,6 +110,7 @@ void ATN_JellyfishActor::BeginPlay()
 		FTimerDelegate Delegate;
 		Delegate.BindUObject(this, &ATN_JellyfishActor::DeferredCaptureInitialLocation);
 		GetWorldTimerManager().SetTimer(DeferredInitHandle, Delegate, TNWorldTuning::ChunkChildActorSettleDelay, false);
+		GetWorldTimerManager().SetTimer(TentacleTimer, FTimerDelegate::CreateUObject(this, &ATN_JellyfishActor::CheckTentacles), 0.1f, true);
 	}
 }
 
@@ -350,4 +355,97 @@ void ATN_JellyfishActor::MulticastPlayBounceEffects_Implementation(FVector Effec
 	bSquishingIn = true;
 	bSquishingOut = false;
 	SetActorTickEnabled(true); // El squish vive en Tick; se auto-apaga al terminar
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tentáculos (#683): pican desde la arena (aturdimiento corto y ralentización, sin daño)
+// ─────────────────────────────────────────────────────────────────────────────
+
+float ATN_JellyfishActor::BellRadius() const
+{
+	const FVector Zone = BounceZone ? BounceZone->GetScaledBoxExtent() : FVector(80.f);
+	return static_cast<float>(FMath::Max(Zone.X, Zone.Y)) * CodeArtSizeFactor;
+}
+
+void ATN_JellyfishActor::BuildTentacles()
+{
+	if (GetNetMode() == NM_DedicatedServer || TentacleReach <= 0.f || TentacleMesh)
+	{
+		return;
+	}
+	const double Bell = BellRadius();
+	// La medusa se coloca con el origen en el suelo (Supervivencia y chunks): los tentáculos, tendidos en la arena.
+	constexpr double GroundZ = 0.0;
+	TNBeachTrapKit::FBuffers B;
+	const FLinearColor Pink = TNPlaygroundKit::Rgb(0xE59AC8, 0.45f);
+	const uint32 Seed = static_cast<uint32>(GetUniqueID()) * 2654435761u;
+	constexpr int32 Count = 10;
+	for (int32 k = 0; k < Count; ++k)
+	{
+		const double A = TNPlaygroundKit::KitTwoPi * (k + 0.4 * TNPlaygroundKit::Hash01(k, 1, Seed)) / Count;
+		const FVector Dir(FMath::Cos(A), FMath::Sin(A), 0.0);
+		const FVector Side(-Dir.Y, Dir.X, 0.0);
+		FVector Prev = Dir * Bell * 0.85 + FVector(0.0, 0.0, GroundZ + 4.0);
+		for (int32 s = 1; s <= 4; ++s)
+		{
+			const double U = s / 4.0;
+			const FVector Next = Dir * FMath::Lerp(Bell * 0.85, Bell + TentacleReach, U) + Side * (18.0 * FMath::Sin(U * 6.0 + k))
+				+ FVector(0.0, 0.0, GroundZ + 4.0);
+			TNPlaygroundKit::AddRod(B, Prev, Next, FMath::Lerp(5.0, 2.0, U), 5, Pink, FVector::UpVector);
+			Prev = Next;
+		}
+	}
+	TentacleMesh = NewObject<UStaticMeshComponent>(this, TEXT("TentacleMesh"));
+	TentacleMesh->SetupAttachment(Root);
+	TNBeachTrapKit::ConfigureVisual(TentacleMesh);
+	TentacleMesh->RegisterComponent();
+	TNBeachTrapKit::SetMesh(TentacleMesh, this, B);
+}
+
+void ATN_JellyfishActor::CheckTentacles()
+{
+	UWorld* World = GetWorld();
+	if (!World || !HasAuthority() || TentacleReach <= 0.f)
+	{
+		return;
+	}
+	const double Now = World->GetTimeSeconds();
+	const double Bell = BellRadius();
+	// Por encima de la parte de abajo de la zona de rebote se está sobre la campana.
+	const double TentacleTop = FMath::Max(60.0, BounceZone ? BounceZone->GetRelativeLocation().Z - BounceZone->GetScaledBoxExtent().Z - 30.0 : 0.0);
+	TArray<ATortugaCharacter*> Turtles;
+	ATN_BeachEnemy::GatherTurtles(this, Turtles);
+	for (ATortugaCharacter* Turtle : Turtles)
+	{
+		const FVector Local = GetActorTransform().InverseTransformPositionNoScale(Turtle->GetActorLocation());
+		const double FeetZ = Local.Z - Turtle->GetSimpleCollisionHalfHeight();
+		const double Rho = FVector2D(Local.X, Local.Y).Size();
+		if (TNTrampolineRules::TentacleContact(Rho, FeetZ, Bell, Bell + TentacleReach, TentacleTop) != TNTrampolineRules::ETentacleContact::Sting)
+		{
+			continue;
+		}
+		const double* Last = LastSting.Find(Turtle);
+		if ((Last && Now - *Last < TNTrampolineRules::StingCooldown) || !TNBeachTrapKit::IsFreeTurtle(Turtle))
+		{
+			continue;
+		}
+		LastSting.Add(Turtle, Now);
+		TNBeach::StunTurtle(Turtle, TNTrampolineRules::StingStunSeconds);
+		if (UTN_BeachTrapStatusComponent* Status = UTN_BeachTrapStatusComponent::FindOrAddTo(Turtle))
+		{
+			Status->ServerSlow(TNTrampolineRules::StingSpeedFactor, TNTrampolineRules::StingSlowSeconds);
+		}
+		FlushNetDormancy();
+		MulticastSting(Turtle->GetActorLocation());
+	}
+}
+
+void ATN_JellyfishActor::MulticastSting_Implementation(FVector_NetQuantize At)
+{
+	if (GetNetMode() == NM_DedicatedServer)
+	{
+		return;
+	}
+	if (StingSound) { UGameplayStatics::SpawnSoundAtLocation(this, StingSound, At); }
+	if (StingVFX) { UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, StingVFX, At); }
 }

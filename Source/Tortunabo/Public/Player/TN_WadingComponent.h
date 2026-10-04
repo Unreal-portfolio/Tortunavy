@@ -49,6 +49,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Wading")
 	float GetCurrentDepth() const { return CurrentDepth; }
 
+	/**
+	 * Multiplicador de velocidad con los pies a FeetZ, andando o no. Lo pide el movimiento en cada paso
+	 * (UTN_TurtleMovementComponent), así el cliente y el servidor usan el de la misma posición: el del Tick de este componente
+	 * (10 Hz, en cada máquina a su hora) cambiaba a destiempo y daba correcciones al andar por la orilla.
+	 */
+	float GetSpeedMultiplierAt(double FeetZ, bool bOnGround) const;
+
 protected:
 	/** Tag de actor que marca el plano/volumen de agua a buscar en BeginPlay. */
 	UPROPERTY(EditDefaultsOnly, Category = "Wading")

@@ -195,6 +195,7 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 		return;
 	}
 	const double T1 = FPlatformTime::Seconds();
+	PlanSurvivalTraps();
 
 	BuildTerrain();
 	const double T2 = FPlatformTime::Seconds();
@@ -217,9 +218,15 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 		}
 		if (!bTerrainOnly)
 		{
-			SpawnHazards();
-			// Después de los peligros: las conchas del plan no pisan lo que estos han puesto (HazardSpots).
-			SpawnShells();
+			// Karts: sin enemigos, peligros ni conchas de las tortugas a pie (estorbarían al kart en el camino).
+			if (!IsKartMap())
+			{
+				SpawnHazards();
+				SpawnSurvivalTraps();
+				SpawnShelters();
+				// Después de los peligros: las conchas del plan no pisan lo que estos han puesto (HazardSpots).
+				SpawnShells();
+			}
 			RunBiomePCG();
 		}
 	}
@@ -253,8 +260,12 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 
 bool ATN_ProcMapGenerator::BuildLayout()
 {
-	ActiveProfile = Settings ? Settings->ResolveProfile(NetConfig.Mode, NetConfig.Difficulty)
-		: TN_MakeDefaultProcProfile(NetConfig.Mode, NetConfig.Difficulty);
+	// Los karts usan el perfil del cooperativo (el mismo camino largo, y la dificultad cambia lo mismo que allí) con el
+	// camino hecho para el kart.
+	const bool bKarts = IsKartMap();
+	const ETNProcGameMode ProfileMode = bKarts ? ETNProcGameMode::Coop : NetConfig.Mode;
+	ActiveProfile = Settings ? Settings->ResolveProfile(ProfileMode, NetConfig.Difficulty)
+		: TN_MakeDefaultProcProfile(ProfileMode, NetConfig.Difficulty);
 
 	// Supervivencia (#273): su propio perfil, alargado y lineal, con la dificultad 1–5 del nivel.
 	const bool bSurvival = NetConfig.Mode == ETNProcGameMode::Survival;
@@ -269,7 +280,9 @@ bool ATN_ProcMapGenerator::BuildLayout()
 	for (int32 Attempt = 0; Attempt < 5; ++Attempt)
 	{
 		const uint32 Seed = static_cast<uint32>(NetConfig.Seed) + static_cast<uint32>(Attempt) * 7919u;
-		if (TNProcMap::GenerateLayout(ActiveProfile.ToGenParams(Seed), Layout))
+		TNProcMap::FGenParams Params = ActiveProfile.ToGenParams(Seed);
+		Params.bDrivable = bKarts;
+		if (TNProcMap::GenerateLayout(Params, Layout))
 		{
 			return true;
 		}
@@ -326,6 +339,8 @@ void ATN_ProcMapGenerator::Clear()
 		if (Comp) { Comp->DestroyComponent(); }
 	}
 	BoundaryWalls.Reset();
+	SurvivalTrapPlan.Reset();
+	SurvivalTerrainPlan = TNSurvivalCatalog::FTerrainTrapPlan();
 
 	for (AActor* Actor : SpawnedActors)
 	{
@@ -536,6 +551,51 @@ FVector ATN_ProcMapGenerator::GetPathLocationAtProgress(float Progress, FVector&
 	return MapToWorld(FVector(P.X, P.Y, Z));
 }
 
+void ATN_ProcMapGenerator::GetMainPathWorld(TArray<FTNProcPathPoint>& OutPoints) const
+{
+	OutPoints.Reset(Layout.Main.Num());
+	const FTransform& Xf = GetActorTransform();
+	for (const TNProcMap::FPathSample& S : Layout.Main)
+	{
+		FTNProcPathPoint& Point = OutPoints.AddDefaulted_GetRef();
+		Point.Location = MapToWorld(FVector(S.P.X, S.P.Y, S.Z));
+		Point.Direction = Xf.TransformVectorNoScale(FVector(S.Dir.X, S.Dir.Y, 0.0)).GetSafeNormal2D();
+		Point.Width = static_cast<float>(S.Width * Xf.GetScale3D().X);
+		Point.Flags = S.Flags;
+	}
+}
+
+void ATN_ProcMapGenerator::GetMainPathObstaclesWorld(TArray<FVector4>& OutObstacles) const
+{
+	using namespace TNProcMap;
+	OutObstacles.Reset();
+	const double Scale = GetActorTransform().GetScale3D().X;
+	for (const FFeature& F : Layout.Features)
+	{
+		// Solo lo que pisa el camino principal: las piezas de explanada (los arcos se pasan por debajo y los hitos están lejos)
+		// y las agujas de roca.
+		const bool bPlazaPiece = F.Type == EFeature::Formation && F.BranchIndex == INDEX_NONE
+			&& !IsArchFormation(static_cast<EFormation>(F.Aux)) && !IsLandmarkFormation(static_cast<EFormation>(F.Aux));
+		const bool bSpire = F.Type == EFeature::RockSpire && F.BranchIndex == INDEX_NONE;
+		// Los arcos se pasan por debajo, pero por el centro: van con el radio en negativo (medio fondo más 4 m).
+		const bool bArch = F.Type == EFeature::Formation && F.BranchIndex == INDEX_NONE && IsArchFormation(static_cast<EFormation>(F.Aux));
+		// Los géiseres del camino se cogen por el centro (los karts suben en ellos, #293): también con el radio en negativo.
+		const bool bGeyser = F.Type == EFeature::Geyser && F.BranchIndex == INDEX_NONE;
+		if (!bPlazaPiece && !bSpire && !bArch && !bGeyser)
+		{
+			continue;
+		}
+		const FVector Center = MapToWorld(F.Location);
+		const double Radius = bArch ? -(F.Length * 0.5 + 400.0) : (bGeyser ? -1500.0 : F.Radius);
+		OutObstacles.Add(FVector4(Center.X, Center.Y, Center.Z, Radius * Scale));
+	}
+}
+
+float ATN_ProcMapGenerator::GetSeaLevelWorldZ() const
+{
+	return static_cast<float>(MapToWorld(FVector(0.0, 0.0, TNProcMap::SeaLevel)).Z);
+}
+
 void ATN_ProcMapGenerator::BuildProgressIndex()
 {
 	ProgressPoints.Reset();
@@ -628,4 +688,5 @@ void ATN_ProcMapGenerator::DrawDebug() const
 				FColor::Orange, true, -1.f, 0, 20.f);
 		}
 	}
+	DrawSurvivalTrapPlan();
 }

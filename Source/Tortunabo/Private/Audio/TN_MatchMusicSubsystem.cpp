@@ -58,7 +58,8 @@ namespace TNMatchMusicLocal
 	{
 		switch (InMode)
 		{
-		case ETNProcGameMode::Race: return TNMatchMusic::EMode::Race;
+		case ETNProcGameMode::Race:
+		case ETNProcGameMode::FreeForAll: return TNMatchMusic::EMode::Race;
 		case ETNProcGameMode::TwoVsTwo: return TNMatchMusic::EMode::TwoVsTwo;
 		default: return TNMatchMusic::EMode::Coop;
 		}

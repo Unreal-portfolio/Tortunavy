@@ -1896,11 +1896,20 @@ void ATN_ProcMapGenerator::BuildTerrain()
 		}
 	});
 
+	// Karts: las teselas del claro de salida, con colisión al momento (los karts se crean en la parrilla nada más generar
+	// el mapa); el resto se cocina en segundo plano como siempre.
+	const bool bKartMap = IsKartMap();
+	auto NearStart = [this](const TArray<FVector>& Verts)
+	{
+		FBox2D Bounds(ForceInit);
+		for (const FVector& V : Verts) { Bounds += FVector2D(V.X, V.Y); }
+		return Bounds.bIsValid && Bounds.ExpandBy(12000.0).IsInside(Layout.StartPoint);
+	};
 	for (FTileData& T : TileData)
 	{
 		UProceduralMeshComponent* Tile = NewObject<UProceduralMeshComponent>(this, NAME_None, RF_Transient);
 		Tile->SetupAttachment(RootComponent);
-		Tile->bUseAsyncCooking = true;
+		Tile->bUseAsyncCooking = !(bKartMap && NearStart(T.Verts));
 		Tile->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
 		// Dato de primitiva 0 = 1: M_ProcTerrain aplica el relieve por normales y la textura del camino solo en las
 		// teselas, no en las formaciones pintadas que comparten el material (su alfa de vértice no es la máscara).
@@ -2658,8 +2667,9 @@ void ATN_ProcMapGenerator::BuildStructures()
 							break;
 					}
 				}
-				// Troncos de equilibrio de labio a labio (uno o dos), con la cima 10 cm sobre el suelo.
-				if (GapStyleOf(F) == EGapStyle::Beam)
+				// Troncos de equilibrio de labio a labio (uno o dos), con la cima 10 cm sobre el suelo. En Supervivencia, un
+				// hueco del catálogo lleva en su lugar el puente que se rompe (ATN_ProcBreakableBridge, #517).
+				if (GapStyleOf(F) == EGapStyle::Beam && !IsSurvivalBreakableGap(static_cast<int32>(&F - Layout.Features.GetData())))
 				{
 					const FVector2D Nn = LeftNormal(D);
 					const int32 Logs = F.Width > 1400.0 ? 2 : 1;

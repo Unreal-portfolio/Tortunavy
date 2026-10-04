@@ -32,6 +32,7 @@
 #include "ProceduralMeshComponent.h"
 #include "UObject/UObjectGlobals.h"
 #include "../ProcMap/TN_ProcMapAmbientFX.h"
+#include "World/Beach/TN_BeachTankTrap.h"
 
 namespace TNBeachRace
 {
@@ -325,7 +326,33 @@ FString ATN_BeachRaceGenerator::SpawnRoundElements()
 	{
 		SpawnRoundElement(Index, HasClass, MissingByClass);
 	}
+	SpawnTankTrapGuard();
 	return DescribeMissing(MissingByClass);
+}
+
+void ATN_BeachRaceGenerator::SpawnTankTrapGuard()
+{
+	UWorld* World = GetWorld();
+	if (!World || !World->IsGameWorld())
+	{
+		return;
+	}
+	// Los erizos son decorado instanciado (colisión de cada máquina); el choque lo vigila uno solo en el servidor.
+	TArray<FVector4> Spots;
+	for (const TNBeachLayout::FItem& Item : Layout.Items)
+	{
+		if (Item.Element != ETNBeachElement::TankTrap)
+		{
+			continue;
+		}
+		const FVector Local(Item.Pos.X, Item.Pos.Y, TNBeachLayout::PlacementZ(Item));
+		const FVector World3 = GetActorTransform().TransformPosition(Local);
+		Spots.Add(FVector4(World3.X, World3.Y, World3.Z + 100.0, Item.Radius * 0.45));
+	}
+	if (ATN_BeachTankTrap* Guard = ATN_BeachTankTrap::SpawnGuard(World, Spots))
+	{
+		RoundElements.Add(Guard);
+	}
 }
 
 void ATN_BeachRaceGenerator::SpawnRoundElement(int32 Index, TArray<int8>& HasClass, TMap<FString, int32>& MissingByClass)

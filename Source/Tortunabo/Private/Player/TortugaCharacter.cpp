@@ -20,6 +20,7 @@
 #include "Player/TN_DizzyBirdsComponent.h"
 #include "Player/TN_HeadLook.h"
 #include "Player/TN_TurtleFaceComponent.h"
+#include "Player/TN_SlopeTiltComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_WadingComponent.h"
 #include "VR/TN_VRGrabComponent.h"
@@ -49,6 +50,7 @@
 #include "Core/TN_CosmeticsTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include "World/Beach/TN_BeachTrapStatusComponent.h"
 
 // ── CVar de debug ─────────────────────────────────────────────────────────────
 // Activar en consola con: TN.Debug.Interaction 1
@@ -154,6 +156,8 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	WadingComponent = CreateDefaultSubobject<UTN_WadingComponent>(TEXT("WadingComponent"));
 	ShellComponent = CreateDefaultSubobject<UTN_ShellComponent>(TEXT("ShellComponent"));
 	CarryComponent = CreateDefaultSubobject<UTN_CarryComponent>(TEXT("CarryComponent"));
+	// La malla se inclina con la pendiente (solo visual; ver UTN_SlopeTiltComponent).
+	SlopeTilt = CreateDefaultSubobject<UTN_SlopeTiltComponent>(TEXT("SlopeTilt"));
 	DizzyBirds = CreateDefaultSubobject<UTN_DizzyBirdsComponent>(TEXT("DizzyBirds"));
 	DizzyBirds->SetupAttachment(RootComponent);
 	// Lengua, caras de cansancio, sudor y boca (se engancha sola a la cabeza de la malla en su primer fotograma).
@@ -1127,6 +1131,12 @@ void ATortugaCharacter::OnJumped_Implementation()
 
 void ATortugaCharacter::Jump()
 {
+	// Atrapada por una criatura de la playa (arenas movedizas, pinza, arrastre): el salto es forcejeo (#684-#686).
+	if (UTN_BeachTrapStatusComponent* TrapStatus = UTN_BeachTrapStatusComponent::FindOn(this); TrapStatus && TrapStatus->IsEscapeArmed())
+	{
+		TrapStatus->PressEscape();
+		return;
+	}
 	if (bIsKnockedDown || bIsDead || IsInShell()) { return; }
 	// Levantándose del derribo: la animación termina antes de volver a saltar.
 	if (GetWorld() && GetWorld()->GetTimeSeconds() < GetUpLockUntil) { return; }
@@ -1493,7 +1503,13 @@ void ATortugaCharacter::RefreshSprintRequest()
 	const bool bHasMovementInput = LastMovementInput.SizeSquared() > (MovementInputDeadzone * MovementInputDeadzone);
 	// En el caparazón no se esprinta aunque la tecla siga pulsada: el input de movimiento llega igual y, sin esto, la
 	// petición de sprint volvía a activarse y gastaba estamina con la tortuga metida dentro.
-	StaminaComponent->SetSprintRequested(bSprintHeld && bHasMovementInput && !IsInShell() && !bIsKnockedDown && !bIsDead);
+	const bool bWantsToSprint = bSprintHeld && bHasMovementInput && !IsInShell() && !bIsKnockedDown && !bIsDead;
+	StaminaComponent->SetSprintRequested(bWantsToSprint);
+	// La velocidad la decide el movimiento con la petición que lleva cada movimiento; al servidor llega con ellos (#250).
+	if (UTN_TurtleMovementComponent* TurtleMove = GetTurtleMovement())
+	{
+		TurtleMove->SetWantsToSprint(bWantsToSprint);
+	}
 }
 
 void ATortugaCharacter::GrantInfiniteStamina(float DurationSeconds)
@@ -1655,6 +1671,7 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Dive
 	DOREPLIFETIME(ATortugaCharacter, bIsDiving);
 	DOREPLIFETIME(ATortugaCharacter, DiveSerial);
+	DOREPLIFETIME(ATortugaCharacter, DiveSplatDizzyUntil);
 	DOREPLIFETIME(ATortugaCharacter, DiveTargetYaw);
 	DOREPLIFETIME(ATortugaCharacter, bDiveYawInterpActive);
 	// Umbrella protection (#29)

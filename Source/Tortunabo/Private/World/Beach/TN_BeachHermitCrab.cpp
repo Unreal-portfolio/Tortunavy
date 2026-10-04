@@ -11,6 +11,7 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 namespace TNBeachHermit
 {
@@ -39,8 +40,7 @@ namespace TNBeachHermit
 	constexpr float MaxSpeed = 1500.f;
 	constexpr float BaseAccel = 380.f;
 	constexpr float SlopeAccel = 900.f;
-	/** Botes: gravedad de la bola, impacto mínimo para rebotar, rebote y botes sueltos (cm/s hacia arriba). */
-	constexpr float Gravity = 1250.f;
+	/** Botes: impacto mínimo para rebotar, rebote y botes sueltos (cm/s hacia arriba); la gravedad, en UTN_CombatTuning. */
 	constexpr float BounceMin = 260.f;
 	constexpr float Bounce = 0.32f;
 	constexpr float HopMin = 170.f;
@@ -68,17 +68,15 @@ namespace TNBeachHermit
 	constexpr float SettleTime = 0.9f;
 	/** Cabeceo de la caracola cargada (grados, la boca hacia abajo). */
 	constexpr float CarryTilt = 15.f;
-	/** Derribo: mareo, empujón (base, parte de la velocidad de la bola, de lado, hacia arriba y tope) y vuelta del ragdoll. */
-	constexpr float KnockSeconds = 2.5f;
+	/** Derribo: empujón (base, parte de la velocidad de la bola, de lado, hacia arriba y tope) y vuelta del ragdoll. */
 	constexpr float PushBase = 320.f;
 	constexpr float PushAlong = 0.55f;
 	constexpr float PushSide = 240.f;
 	constexpr float PushUp = 430.f;
 	constexpr float PushMax = 1300.f;
 	constexpr float PushSpin = 320.f;
-	/** Holgura de la tortuga al chocar (cm) y tiempo que la ignora tras derribarla. */
+	/** Holgura de la tortuga al chocar (cm). */
 	constexpr float HitPad = 70.f;
-	constexpr float IgnoreSeconds = 3.f;
 	/** Mareado, como poco esto antes de volver andando. */
 	constexpr float DizzyMinTime = 0.6f;
 }
@@ -302,6 +300,7 @@ void ATN_BeachHermitCrab::BuildPath(const FVector& Top, const FVector& Bottom, u
 	bool bDone = false;
 	const int32 MaxSteps = FMath::CeilToInt32(TNBeachHermit::MaxRollTime / TNBeachHermit::SimDt);
 	const int32 Every = FMath::Max(1, FMath::RoundToInt32(TNBeachHermit::SampleDt / TNBeachHermit::SimDt));
+	const float Gravity = UTN_CombatTuning::Get().HermitCrabGravity;
 	for (int32 Step = 0; Step <= MaxSteps && !bDone; ++Step)
 	{
 		const float Lat = LatAt(S);
@@ -339,7 +338,7 @@ void ATN_BeachHermitCrab::BuildPath(const FVector& Top, const FVector& Bottom, u
 		const float G = ProfileGround(S, LatAt(S));
 		const float GroundVz = FMath::Clamp((G - PrevG) / TNBeachHermit::SimDt, -V, V * 0.8f);
 		PrevG = G;
-		Vz -= TNBeachHermit::Gravity * TNBeachHermit::SimDt;
+		Vz -= Gravity * TNBeachHermit::SimDt;
 		Z += Vz * TNBeachHermit::SimDt;
 		if (Z <= G)
 		{
@@ -507,8 +506,8 @@ void ATN_BeachHermitCrab::CheckRollHits(const FVector& From, const FVector& To, 
 		Push = Push.GetClampedToMaxSize2D(TNBeachHermit::PushMax);
 		Push.Z = TNBeachHermit::PushUp;
 		const FVector Tumble = FVector::CrossProduct(FVector::UpVector, Push.GetSafeNormal2D()) * TNBeachHermit::PushSpin;
-		KnockDownTurtle(Turtle, TNBeachHermit::KnockSeconds, Push, Tumble);
-		IgnoreTurtle(Turtle, TNBeachHermit::IgnoreSeconds);
+		KnockDownTurtle(Turtle, UTN_CombatTuning::Get().HermitCrabKnockSeconds, Push, Tumble);
+		IgnoreTurtle(Turtle, UTN_CombatTuning::Get().HermitCrabIgnoreSeconds);
 		HitsThisRoll = static_cast<uint8>(FMath::Min(255, HitsThisRoll + 1));
 		MulticastStrike(Turtle, (At + Hit) * 0.5, HitsThisRoll);
 	}

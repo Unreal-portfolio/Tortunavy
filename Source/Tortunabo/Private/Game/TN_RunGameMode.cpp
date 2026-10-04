@@ -1,5 +1,6 @@
 #include "Game/TN_RunGameMode.h"
 #include "Game/TN_MatchStartRules.h"
+#include "Game/TN_UnderTerrainGuard.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -32,6 +33,7 @@ ATN_RunGameMode::ATN_RunGameMode()
 	PlayerControllerClass = AMP_GamePlayerController::StaticClass();
 	DefaultPawnClass = ATortugaCharacter::StaticClass();
 	bUseSeamlessTravel = true;
+	UnderTerrainGuard = CreateDefaultSubobject<UTN_UnderTerrainGuardComponent>(TEXT("UnderTerrainGuard"));
 }
 
 void ATN_RunGameMode::BeginPlay()
@@ -185,7 +187,7 @@ void ATN_RunGameMode::Logout(AController* Exiting)
 	PendingJoins.Remove(Cast<APlayerController>(Exiting));
 	Super::Logout(Exiting);
 
-	// Actualizar conteo tras desconexión
+	// Actualizar conteo tras desconexión (TN_CountConnectedCoopPlayers ya no cuenta al que se va, #558)
 	if (ATN_CoopGameState* TNGS = GetGameState<ATN_CoopGameState>())
 	{
 		TNGS->ConnectedPlayers = TN_CountConnectedCoopPlayers(GameState);
@@ -204,6 +206,10 @@ void ATN_RunGameMode::Logout(AController* Exiting)
 		// Si aún estamos en staging y alguien se desconecta,
 		// reducir la expectativa para no esperarle
 		ExpectedPlayersFromLobby = FMath::Max(1, ExpectedPlayersFromLobby - 1);
+		if (ATN_CoopGameState* TNGS = GetGameState<ATN_CoopGameState>())
+		{
+			TNGS->ExpectedPlayers = ExpectedPlayersFromLobby;
+		}
 		TryStartMatch();
 	}
 }
@@ -1199,31 +1205,14 @@ void ATN_RunGameMode::UpdateRoundProgressAndMaybeFinish()
 		return;
 	}
 
-	int32 TotalPlayers = 0;
-	int32 ResolvedPlayers = 0;
-	int32 AlivePlayers = 0;
+	// Sin el que se está yendo: desde Logout su PlayerState sigue en el PlayerArray (#558).
+	const FTNCoopRoundCount Count = TN_CountCoopRound(GameState);
 
-	for (APlayerState* BasePS : GameState->PlayerArray)
-	{
-		if (const ATN_CoopPlayerState* CastPS = Cast<ATN_CoopPlayerState>(BasePS))
-		{
-			++TotalPlayers;
-			if (CastPS->bIsAlive)
-			{
-				++AlivePlayers;
-			}
-			if (CastPS->bHasFinishedRun)
-			{
-				++ResolvedPlayers;
-			}
-		}
-	}
-
-	TNGS->FinishedPlayers = ResolvedPlayers;
-	TNGS->ExpectedPlayers = TotalPlayers;
+	TNGS->FinishedPlayers = Count.Resolved;
+	TNGS->ExpectedPlayers = Count.Total;
 	TNGS->ServerMatchElapsedTime = GetWorld()->GetTimeSeconds() - MatchStartServerTime;
 
-	if (TotalPlayers <= 0 || (ResolvedPlayers != TotalPlayers && AlivePlayers > 0))
+	if (!Count.IsRoundOver())
 	{
 		return;
 	}

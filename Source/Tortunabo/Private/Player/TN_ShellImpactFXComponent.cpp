@@ -797,3 +797,38 @@ void UTN_ShellImpactFXComponent::PlayTestImpact(ETNShellImpactSound InSound, flo
 	EmitImpact(InSound, Strength, Where, FVector::UpVector);
 	UE_LOG(LogTortunabo, Display, TEXT("[ShellImpact] Prueba: %s con fuerza %.2f."), TNShellImpactFX::SoundName(InSound), Strength);
 }
+
+void UTN_ShellImpactFXComponent::PlayWallSplat(const FVector& InWhere, const FVector& InWallNormal, float InStrength)
+{
+	using namespace TNShellImpactFX;
+	AActor* Turtle = GetOwner();
+	UWorld* World = GetWorld();
+	if (GEnabled == 0 || !State.IsValid() || !Turtle || !World)
+	{
+		return;
+	}
+	FState& S = *State;
+	const FVector Normal = InWallNormal.IsNearlyZero() ? FVector::UpVector : InWallNormal.GetSafeNormal();
+	const float Strength = FMath::Clamp(InStrength, 0.f, 1.f);
+
+	// Lo que hay en la pared en esta máquina: de un poco fuera hacia dentro, sin la propia tortuga ni su bola.
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(TNShellWallSplat), true, Turtle);
+	if (const ATN_ShellBody* Body = BoundBody.Get())
+	{
+		Query.AddIgnoredActor(Body);
+	}
+	FHitResult Hit;
+	ETNShellImpactSound Sound = ETNShellImpactSound::Rock;
+	if (World->LineTraceSingleByChannel(Hit, InWhere + Normal * 30.0, InWhere - Normal * 40.0, ECC_Visibility, Query))
+	{
+		Sound = ClassifyContact(Hit.GetActor(), Hit.GetComponent(), Hit, S, World);
+	}
+	S.LastHitTime = World->GetTimeSeconds();
+	S.LastStrength = Strength;
+	EmitImpact(Sound, Strength, InWhere, Normal);
+	if (GDebug != 0)
+	{
+		UE_LOG(LogTortunabo, Display, TEXT("[ShellImpact] %s: estampado contra la pared (%s), fuerza %.2f."), *Turtle->GetName(),
+			SoundName(Sound), Strength);
+	}
+}

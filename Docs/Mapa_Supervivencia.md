@@ -96,3 +96,61 @@ semilla: cada máquina construye el mismo mapa. La semilla base es al azar o la 
 Se espera en el corral de `LVL_Run`; al empezar la partida y en cada nivel nuevo, `ATN_SurvivalGameMode` lleva a los
 vivos a la salida del mapa en cuanto su suelo tiene colisión, y la tormenta de `LVL_Run` vuelve a su estado inicial
 (#448). La distancia que falta para el desempate se mide por el camino del mapa generado.
+
+## Catálogo de mapas
+
+Decisión en #143: Supervivencia juega un catálogo fijo de 50 mapas en vez de una semilla al azar (#515). Están en
+`TN_SurvivalCatalog.h`: 9 por dificultad de la 1 a la 4 y 14 en la 5, cada uno con su semilla, un nombre de trabajo,
+su tipo de terreno (Llanura, Desfiladero, Serpiente, Saltos, Cumbre o Encrucijada) y las trampas del Clásico que le
+encajan, en % del recorrido del camino principal. Se eligieron entre 750 mapas exportados (150 semillas × 5
+dificultades) por lo que más destaca de cada uno dentro de su dificultad; la tabla completa, en #515.
+
+- Ninguna semilla se repite: la misma semilla da casi el mismo terreno en todas las dificultades.
+- Cada entrada guarda la huella de su layout. Si el generador cambia, `Tortunabo.Survival.Catalogo.Huellas` falla e
+  imprime la huella nueva de cada mapa que cambia: hay que mirar esos mapas (export y `bench --hojas`) y, si siguen
+  valiendo para su tipo y sus trampas, poner las huellas nuevas; si no, elegir otra semilla.
+- Las trampas las colocan #516 y #517; el nivel N juega un mapa del catálogo de su dificultad sin repetir (#518).
+- Densidad: tras probarlo en #516 se dobló. Cada mapa tiene de 4 a 5 puntos con trampa en la dificultad 1 y de 6 a 8
+  en la 5 (unas 8 y 15 trampas contando cada cáscara de un grupo). Los añadidos rellenan los tramos vacíos más
+  largos con la trampa que pide el terreno: cáscaras en curvas, bajadas y antes de los saltos, medusas en los
+  estrechos, zonas lentas en las subidas y cangrejos en las rectas.
+- Mapa de pruebas (`TestMaps`): «Banco de Pruebas», semilla 6 en dificultad 5, con una trampa de cada tipo en orden y
+  cada una en su tramo (plátanos 5 %, puente que se rompe en la viga 10 %, zona lenta 17 %, medusa 24 %, cangrejos 30 %,
+  placa en la rama 44 %, gaviotas 62–76 %, quad en la playa 88 %). No cuenta en el reparto ni sale en las partidas;
+  se abre con `ServerTravel /Game/Maps/Run/LVL_ProcMap?ProcMode=Survival?ProcSeed=6?ProcDifficulty=Hard`.
+- Las zonas lentas que coloca el generador pintan un charco de sirope del tamaño de su caja (`M_SlowZoneSyrupDecal`,
+  creado con `Scripts/create_survival_decals.py`); las del Clásico las siguen marcando las plataformas del chunk.
+
+### Trampas sobre el mapa (#516)
+
+`TNSurvivalCatalog::PlaceLooseTraps` (`TN_SurvivalTrapPlacement.h`) pasa el % de cada trampa a un punto del camino
+principal: nada en huecos, salida, meta ni uniones de ramas; ninguna zona lenta en los 30 m anteriores a un hueco; y
+los obstáculos (cáscaras, medusas y sombrillas) dejan siempre 3 m de paso libre. Lo comprueba
+`Tortunabo.Survival.Catalogo.Colocacion` sobre los 50 mapas. El generador crea los Blueprints del Clásico
+(`TN_ProcMapGenerator_Survival.cpp`): cáscaras, medusas, sombrillas y las zonas de cangrejos y gaviotas en el
+servidor; las zonas lentas en cada máquina, que frena a su propia tortuga.
+
+Para verlas: en el editor, `Generate In Editor` con una semilla del catálogo y su dificultad y **Debug Draw** dibuja
+los marcadores (cáscaras en verde, zonas lentas en azul, medusas en magenta, cangrejos en rojo, la zona de gaviotas en
+blanco y sus sombrillas en cian). Los actores solo se crean en partida (PIE): p. ej.
+`ServerTravel /Game/Maps/Run/LVL_ProcMap?ProcMode=Survival?ProcSeed=63?ProcDifficulty=Easy`. Una semilla fuera del
+catálogo sale sin trampas.
+
+### Quads, puente que se rompe y placas (#517)
+
+`TNSurvivalCatalog::PlaceTerrainTraps` coloca las trampas que dependen de la forma del terreno; el test de colocación
+comprueba que cada una encuentra su sitio en los 50 mapas.
+
+- **Puente que se rompe** (`ATN_ProcBreakableBridge`, la plataforma del Clásico con malla puesta desde código): un
+  tablón de 1,4 m de ancho en lugar de la viga del hueco más cercano al % (solo huecos de viga del camino principal;
+  el generador no construye esa viga). Aguanta 1,6 s con alguien encima: corriendo se cruza, andando se cae a la zona
+  de muerte del hueco. Reaparece a los 5 s. Los cuatro puentes del catálogo que caían en huecos de salto (88, 126, 3
+  y 46) se cambiaron por cáscaras tras el aterrizaje.
+- **Quads** (`ATN_ProcQuadCrossing`): franjas amarillas y negras de lado a lado del camino y, cada 10 s, un
+  `BP_QuadActor` que lo cruza de un lado a otro (15 m más allá de cada borde) y mata con las ruedas. En los 2,5 s
+  antes de cada paso las franjas parpadean en rojo, igual en todas las máquinas (reloj del servidor).
+- **Placas** (`ATN_ProcShortcutLock`): una compuerta (`ATN_ProcSabotageGate`, levantada) corta la rama a 9 m de su
+  entrada y la abren las placas (`BP_PressurePlate` en modo Latched) que hay a 3 m: basta un jugador pisándolas una
+  tras otra. Se reinician solas al pasar de nivel, porque el mapa se rehace.
+
+Debug Draw: cruces de quads en naranja, puentes en marrón y atajos (compuerta y placas) en amarillo.

@@ -46,6 +46,8 @@ namespace TNRoomUI
 	constexpr float CreateCardWidth = 1120.f;
 	constexpr float JoinCardWidth = 1240.f;
 	constexpr float RoomListHeight = 390.f;
+	/** Ancho de la franja de abajo (aviso y ayuda): sus textos se parten en líneas a este ancho. */
+	constexpr float FooterWidth = 1180.f;
 	constexpr float CellWidth = 58.f;
 	constexpr float CellHeight = 70.f;
 	constexpr float CellGap = 8.f;
@@ -78,6 +80,19 @@ namespace TNRoomUI
 		Brush.Margin = Margin;
 		if (Tex) { Brush.ImageSize = FVector2D(Tex->GetSizeX(), Tex->GetSizeY()); }
 		return Brush;
+	}
+
+	/**
+	 * Texto centrado que se parte en líneas a lo ancho de la franja de abajo. Con el ancho fijo (WrapTextAt), su alto es el
+	 * de todas sus líneas desde el primer fotograma, sin esperar a que lo coloquen.
+	 */
+	UTextBlock* WrappedLabel(UWidgetTree* Tree, FName Weight, int32 FontSize, const FLinearColor& Color)
+	{
+		UTextBlock* Out = Label(Tree, FText::GetEmpty(), Weight, FontSize, Color);
+		Out->SetJustification(ETextJustify::Center);
+		Out->SetAutoWrapText(true);
+		Out->SetWrapTextAt(FooterWidth);
+		return Out;
 	}
 
 	USizeBox* Sized(UWidgetTree* Tree, UWidget* Content, float W, float H)
@@ -703,18 +718,18 @@ void UTN_RoomMenuWidget::BuildTree()
 	}
 	TNRoomUI::Pin(Canvas, Pages, FVector2D(0.5f, 0.f), FVector2D(0.f, 140.f));
 
-	// Ayuda de la opción enfocada, atajos y avisos, abajo (como en el menú de pausa).
-	HelpText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Regular"), 18, TNHUDArt::Foam);
-	HelpText->SetJustification(ETextJustify::Center);
-	HelpText->SetAutoWrapText(true);
-	TNRoomUI::Pin(Canvas, TNRoomUI::Sized(Tree, HelpText, 1180.f, 0.f), FVector2D(0.5f, 1.f), FVector2D(0.f, -54.f));
-	HintText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Bold"), 16, TNHUDStyle::TextDim);
-	TNRoomUI::Pin(Canvas, HintText, FVector2D(0.5f, 1.f), FVector2D(0.f, -20.f));
-	NoticeText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Bold"), 20, TNHUDArt::Gold);
-	NoticeText->SetJustification(ETextJustify::Center);
-	NoticeText->SetAutoWrapText(true);
+	// Abajo, apilados de arriba abajo (como en el menú de pausa): el aviso, la ayuda de la opción enfocada y los atajos.
+	// Cada uno ocupa las líneas que necesite y sube al de encima: un aviso o una ayuda de dos líneas no pisan al vecino
+	// (#245). La ayuda tiene su hueco fijo sobre los atajos, salga aviso o no.
+	UVerticalBox* Footer = TNRoomUI::Make<UVerticalBox>(Tree);
+	NoticeText = TNRoomUI::WrappedLabel(Tree, TEXT("Bold"), 20, TNHUDArt::Gold);
 	NoticeText->SetVisibility(ESlateVisibility::Collapsed);
-	TNRoomUI::Pin(Canvas, TNRoomUI::Sized(Tree, NoticeText, 1180.f, 0.f), FVector2D(0.5f, 1.f), FVector2D(0.f, -96.f));
+	TNRoomUI::AddV(Footer, TNRoomUI::Sized(Tree, NoticeText, TNRoomUI::FooterWidth, 0.f), FMargin(0.f), HAlign_Center);
+	HelpText = TNRoomUI::WrappedLabel(Tree, TEXT("Regular"), 18, TNHUDArt::Foam);
+	TNRoomUI::AddV(Footer, TNRoomUI::Sized(Tree, HelpText, TNRoomUI::FooterWidth, 0.f), FMargin(0.f, 10.f, 0.f, 4.f), HAlign_Center);
+	HintText = TNRoomUI::Label(Tree, FText::GetEmpty(), TEXT("Bold"), 16, TNHUDStyle::TextDim);
+	TNRoomUI::AddV(Footer, HintText, FMargin(0.f), HAlign_Center);
+	TNRoomUI::Pin(Canvas, Footer, FVector2D(0.5f, 1.f), FVector2D(0.f, -20.f));
 
 	// Aviso de arriba con la pantalla cerrada (sobre el menú del Blueprint, sin tapar sus clics).
 	UCanvasPanel* ToastCanvas = TNRoomUI::Make<UCanvasPanel>(Tree);
@@ -751,14 +766,61 @@ UWidget* UTN_RoomMenuWidget::BuildCreatePage()
 	if (ModeRow)
 	{
 		TArray<FText> Modes;
-		for (const ETNProcGameMode Mode : TNLobbyMission::MenuModes) { Modes.Add(TNLobbyMission::ModeName(Mode)); }
+		for (const ETNProcGameMode Mode : TNLobbyMission::GetMenuModes()) { Modes.Add(TNLobbyMission::ModeName(Mode)); }
 		ModeRow->SetupChoice(NSLOCTEXT("TNRooms", "ModeRow", "Modo"), Modes, 0, [WeakThis](int32 Choice)
 		{
 			UTN_RoomMenuWidget* Menu = WeakThis.Get();
 			if (!Menu) { return; }
-			Menu->Draft.Mode = TNLobbyMission::MenuModes[FMath::Clamp(Choice, 0, static_cast<int32>(UE_ARRAY_COUNT(TNLobbyMission::MenuModes)) - 1)];
+			const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
+			Menu->Draft.Mode = MenuModes[FMath::Clamp(Choice, 0, MenuModes.Num() - 1)];
 			Menu->RefreshCreateRows();
 		});
+	}
+	RallyMapRow = AddRow();
+	if (RallyMapRow)
+	{
+		TArray<FText> Maps;
+		for (const FName Map : TNLobbyMission::RallyMapOptions()) { Maps.Add(TNLobbyMission::RallyMapName(Map)); }
+		RallyMapRow->SetupChoice(NSLOCTEXT("TNRooms", "RallyCircuitRow", "Circuito del Rally"), Maps, 0, [WeakThis](int32 Choice)
+		{
+			UTN_RoomMenuWidget* Menu = WeakThis.Get();
+			const TArray<FName>& Options = TNLobbyMission::RallyMapOptions();
+			if (!Menu || !Options.IsValidIndex(Choice)) { return; }
+			Menu->Draft.RallyVariant = Options[Choice];
+			Menu->RefreshCreateRows();
+		});
+		RallyMapRow->SetDescription(NSLOCTEXT("TNRooms", "RallyCircuitDesc",
+			"El circuito del Rally: puertas en orden, vueltas y saltos de autor."));
+	}
+	TctArenaRow = AddRow();
+	if (TctArenaRow)
+	{
+		TArray<FText> Arenas;
+		for (const FName Arena : TNLobbyMission::TctArenaOptions()) { Arenas.Add(TNLobbyMission::TctArenaName(Arena)); }
+		TctArenaRow->SetupChoice(NSLOCTEXT("TNRooms", "TctArenaRow", "Arena"), Arenas, 0, [WeakThis](int32 Choice)
+		{
+			UTN_RoomMenuWidget* Menu = WeakThis.Get();
+			const TArray<FName>& Options = TNLobbyMission::TctArenaOptions();
+			if (!Menu || !Options.IsValidIndex(Choice)) { return; }
+			Menu->Draft.TctArena = Options[Choice];
+			Menu->RefreshCreateRows();
+		});
+		TctArenaRow->SetDescription(NSLOCTEXT("TNRooms", "TctArenaDesc",
+			"La arena de Todos contra Todos: se inunda ronda a ronda y caer al agua es la muerte."));
+	}
+	RallySeatsRow = AddRow();
+	if (RallySeatsRow)
+	{
+		RallySeatsRow->SetupChoice(NSLOCTEXT("TNRooms", "RallySeatsRow", "Tortugas por buggy"),
+			{ TNLobbyMission::RallySeatsName(1), TNLobbyMission::RallySeatsName(2) }, 1, [WeakThis](int32 Choice)
+		{
+			UTN_RoomMenuWidget* Menu = WeakThis.Get();
+			if (!Menu) { return; }
+			Menu->Draft.RallySeats = FMath::Clamp(Choice + 1, 1, 2);
+			Menu->RefreshCreateRows();
+		});
+		RallySeatsRow->SetDescription(NSLOCTEXT("TNRooms", "BuggySeatsDesc",
+			"Rally y Karts. Una por buggy: cada tortuga conduce y dispara. Por parejas: la segunda va de artillera, dispara y carga el peso en las curvas. Los bots completan la parrilla."));
 	}
 	VisibilityRow = AddRow();
 	if (VisibilityRow)
@@ -1038,14 +1100,41 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 {
 	TWeakObjectPtr<UTN_RoomMenuWidget> WeakThis(this);
 	int32 ModeIndex = 0;
-	for (int32 i = 0; i < static_cast<int32>(UE_ARRAY_COUNT(TNLobbyMission::MenuModes)); ++i)
+	const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
+	for (int32 i = 0; i < MenuModes.Num(); ++i)
 	{
-		if (TNLobbyMission::MenuModes[i] == Draft.Mode) { ModeIndex = i; }
+		if (MenuModes[i] == Draft.Mode) { ModeIndex = i; }
 	}
 	if (ModeRow)
 	{
 		ModeRow->SetChoiceIndex(ModeIndex);
-		ModeRow->SetDescription(TNLobbyMission::ModeBlurb(Draft.Mode));
+		ModeRow->SetDescription(Draft.Mode == ETNProcGameMode::TwoVsTwo
+			? FText::Format(NSLOCTEXT("TNRooms", "Mode2v2Desc", "{0} Si al salir del lobby no sois cuatro, se juega Carrera."),
+				TNLobbyMission::ModeBlurb(Draft.Mode))
+			: TNLobbyMission::ModeBlurb(Draft.Mode));
+	}
+	// El circuito, solo en el Rally; las plazas por buggy, en el Rally y en Karts.
+	const bool bRally = Draft.Mode == ETNProcGameMode::Rally;
+	const bool bBuggySeats = bRally || Draft.Mode == ETNProcGameMode::Karts;
+	const TArray<FName>& RallyMaps = TNLobbyMission::RallyMapOptions();
+	Draft.RallyVariant = TNLobbyMission::ResolveRallyMap(Draft.RallyVariant, RallyMaps);
+	Draft.RallySeats = FMath::Clamp(Draft.RallySeats, 1, 2);
+	if (RallyMapRow)
+	{
+		RallyMapRow->SetChoiceIndex(FMath::Max(0, RallyMaps.IndexOfByKey(Draft.RallyVariant)));
+		RallyMapRow->SetVisibility(bRally ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+	const TArray<FName>& TctArenas = TNLobbyMission::TctArenaOptions();
+	Draft.TctArena = TNLobbyMission::ResolveTctArena(Draft.TctArena, TctArenas);
+	if (TctArenaRow)
+	{
+		TctArenaRow->SetChoiceIndex(FMath::Max(0, TctArenas.IndexOfByKey(Draft.TctArena)));
+		TctArenaRow->SetVisibility(Draft.Mode == ETNProcGameMode::FreeForAll ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+	if (RallySeatsRow)
+	{
+		RallySeatsRow->SetChoiceIndex(Draft.RallySeats - 1);
+		RallySeatsRow->SetVisibility(bBuggySeats ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
 	if (VisibilityRow) { VisibilityRow->SetChoiceIndex(Draft.bPrivate ? 1 : 0); }
 	if (SizeRow)
@@ -1083,11 +1172,14 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 	}
 	if (CreateSummary)
 	{
+		// El mapa de la misión: la arena en Todos contra Todos y el circuito en el Rally.
+		const FText MissionTitle = TNLobbyMission::MissionTitle(Draft.Mode,
+			Draft.Mode == ETNProcGameMode::FreeForAll ? Draft.TctArena : Draft.RallyVariant);
 		CreateSummary->SetText(Draft.bPrivate
 			? FText::Format(NSLOCTEXT("TNRooms", "SummaryPrivate", "Sala privada de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): no sale en la lista y tus amigos entran con el código {2} (o por invitación de Steam)."),
-				TNLobbyMission::ModeName(Draft.Mode), Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
+				MissionTitle, Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
 			: FText::Format(NSLOCTEXT("TNRooms", "SummaryPublic", "Sala pública de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): sale en la lista de «Unirse» y entra quien quiera (puedes cerrarla desde el menú de pausa)."),
-				TNLobbyMission::ModeName(Draft.Mode), Draft.MaxPlayers));
+				MissionTitle, Draft.MaxPlayers));
 	}
 }
 

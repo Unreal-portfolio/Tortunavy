@@ -14,6 +14,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_CombatTuning.h"
 
 namespace TNBeachOctopus
 {
@@ -41,22 +42,19 @@ namespace TNBeachOctopus
 	constexpr float LiftTime = 0.35f;
 	constexpr float HoldTime = 0.8f;
 	constexpr float HoldHeight = 230.f;
-	/** Lanzamiento: ángulo, cuánto más allá de la orilla cae, alcance mínimo y máximo, y mareo además del vuelo. */
+	/** Lanzamiento: ángulo, cuánto más allá de la orilla cae y alcance mínimo y máximo (el mareo, en UTN_CombatTuning). */
 	constexpr float ThrowAngle = 42.f;
 	constexpr float ThrowBeyond = 600.f;
 	constexpr float ThrowMinRange = 900.f;
 	constexpr float ThrowMaxRange = 3400.f;
-	constexpr float StunExtra = 1.2f;
-	/** Tras lanzarla, la ignora este tiempo; lo que dura la tinta y el brazo que acompaña. */
-	constexpr float IgnoreSeconds = 5.f;
+	/** Lo que dura la tinta y el brazo que acompaña (la inmunidad tras lanzarla, en UTN_CombatTuning). */
 	constexpr float ThrowShowTime = 0.6f;
 	/** Mareado, como poco esto flotando. */
 	constexpr float DizzyMinTime = 0.8f;
 	/** Cada cuánto busca nadadoras y hasta qué radio normalizado de la poza se mueve (no se mete en lo poco hondo). */
 	constexpr float ScanPeriod = 0.15f;
 	constexpr float InnerU = 0.85f;
-	/** Gravedad con la que se calcula el lanzamiento (la de la bola del caparazón) y lo que se pierde por el rozamiento. */
-	constexpr float ThrowGravity = 980.f;
+	/** Lo que se pierde por el rozamiento en el lanzamiento (la gravedad, en UTN_CombatTuning). */
 	constexpr float ThrowDragBoost = 1.08f;
 	/**
 	 * Burbujas que suenan al acechar (las que se ven no cambian): solo a menos de BubbleAudibleDistance del oyente, solo
@@ -260,7 +258,7 @@ FVector ATN_BeachPoolOctopus::ThrowLaunch(const FVector& From, float& OutFlight)
 	const float C = FMath::Cos(Theta);
 	const float Sn = FMath::Sin(Theta);
 	// Tiro parabólico desde Height sobre donde cae: v² = g R² / (2 cos² (R tan + H)).
-	const float V = FMath::Sqrt(TNBeachOctopus::ThrowGravity * Range * Range / (2.f * C * C * (Range * Sn / C + Height))) * TNBeachOctopus::ThrowDragBoost;
+	const float V = FMath::Sqrt(UTN_CombatTuning::Get().PoolOctopusThrowGravity * Range * Range / (2.f * C * C * (Range * Sn / C + Height))) * TNBeachOctopus::ThrowDragBoost;
 	OutFlight = Range / FMath::Max(1.f, V * C);
 	return BackDir * (V * C) + FVector(0.0, 0.0, V * Sn);
 }
@@ -432,7 +430,7 @@ void ATN_BeachPoolOctopus::ServerTick(float DeltaSeconds)
 		{
 			// La agarra: cada máquina la sujeta desde donde estaba (Aim) con la hora del estado.
 			Grabbed = Victim;
-			IgnoreTurtle(Victim, TNBeachOctopus::IgnoreSeconds + TNBeachOctopus::HoldTime);
+			IgnoreTurtle(Victim, UTN_CombatTuning::Get().PoolOctopusIgnoreSeconds + TNBeachOctopus::HoldTime);
 			ServerSetState(ToByte(EState::Grab), At);
 		}
 		else if (Age > TNBeachOctopus::StalkTimeout)
@@ -462,8 +460,8 @@ void ATN_BeachPoolOctopus::ServerTick(float DeltaSeconds)
 			const FVector From = Victim->GetActorLocation();
 			const FVector Launch = ThrowLaunch(From, Flight);
 			EndHoldTurtle();
-			StunTurtle(Victim, Flight + TNBeachOctopus::StunExtra, Launch);
-			IgnoreTurtle(Victim, TNBeachOctopus::IgnoreSeconds);
+			StunTurtle(Victim, Flight + UTN_CombatTuning::Get().PoolOctopusStunExtraSeconds, Launch);
+			IgnoreTurtle(Victim, UTN_CombatTuning::Get().PoolOctopusIgnoreSeconds);
 			MulticastThrow(Victim, Launch);
 			ServerSetState(ToByte(EState::Throw), From);
 		}

@@ -2,6 +2,8 @@
 #include "Game/TN_BeachRaceDecisions.h"
 #include "Game/TN_BeachRaceGameState.h"
 #include "Game/TN_BeachRoundSyncComponent.h"
+#include "Game/TN_ChampionChoiceHandler.h"
+#include "Game/TN_UnderTerrainGuard.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -81,9 +83,6 @@ namespace TNBeachRaceGameModeDetail
 	/** A menos de esto (cm) del filo del acantilado no se mira la red: la pared está socavada y ahí se cae al agua de meta. */
 	constexpr double CliffSkipDistance = 1000.0;
 
-	/** Una mirada a más de esta hondura (cm) bajo la arena rescata ya, sin esperar a confirmarlo en la siguiente. */
-	constexpr double DeepUnderSand = 400.0;
-
 	/** Margen de más (cm) en las trincheras (el canal cavado y sus caballones). */
 	constexpr double TrenchExtraMargin = 100.0;
 
@@ -93,62 +92,6 @@ namespace TNBeachRaceGameModeDetail
 	/** Hasta dónde (cm) se busca arena abierta alrededor de su último sitio seguro (nivel 1) y lejos de los hoyos (nivel 2). */
 	constexpr float RescueNearSearch = 400.f;
 	constexpr float RescueFarSearch = 3000.f;
-
-	/**
-	 * Lo que mueve de verdad a la tortuga y su punto más bajo: la caja de la bola del caparazón (enganchada en esta
-	 * máquina), el cuerpo raíz del ragdoll o los pies de la cápsula. OutDriver, si se pide (solo para el registro: no se
-	 * forma texto en cada mirada), dice qué la mueve.
-	 */
-	FVector BodyProbe(const ATortugaCharacter& Turtle, FVector& OutVelocity, FString* OutDriver = nullptr)
-	{
-		const UCapsuleComponent* Capsule = Turtle.GetCapsuleComponent();
-		const double HalfHeight = Capsule ? Capsule->GetScaledCapsuleHalfHeight() : 90.0;
-		const UTN_ShellComponent* Shell = Turtle.GetShellComponent();
-		const ATN_ShellBody* Body = Shell ? Shell->GetBody() : nullptr;
-		if (Shell && Shell->HasLocalBody() && Body && Body->GetBox())
-		{
-			UBoxComponent* Box = Body->GetBox();
-			if (OutDriver)
-			{
-				*OutDriver = FString::Printf(TEXT("la caja de la bola del caparazón (%s)"), *Body->GetName());
-			}
-			OutVelocity = Box->GetPhysicsLinearVelocity();
-			return Box->GetComponentLocation() - FVector(0.0, 0.0, ATN_ShellBody::BoxHalfExtent().Z);
-		}
-		const USkeletalMeshComponent* Mesh = Turtle.GetMesh();
-		const FBodyInstance* Root = Mesh && Mesh->IsSimulatingPhysics() ? Mesh->GetBodyInstance() : nullptr;
-		if (Root && Root->IsValidBodyInstance())
-		{
-			if (OutDriver)
-			{
-				*OutDriver = TEXT("el ragdoll del derribo (física del esqueleto)");
-			}
-			OutVelocity = Root->GetUnrealWorldVelocity();
-			return Root->GetUnrealWorldTransform().GetLocation() - FVector(0.0, 0.0, 30.0);
-		}
-		if (OutDriver)
-		{
-			if (const ATN_BeachEnemy* Holder = ATN_BeachEnemy::FindHolder(&Turtle))
-			{
-				*OutDriver = FString::Printf(TEXT("%s (la sujeta)"), *Holder->GetName());
-			}
-			else if (const UTN_CarryComponent* Carry = Turtle.GetCarryComponent(); Carry && Carry->GetCarrier())
-			{
-				*OutDriver = FString::Printf(TEXT("%s (la lleva en brazos)"), *Carry->GetCarrier()->GetName());
-			}
-			else if (ATN_BeachSandWorm::IsBeingEaten(&Turtle))
-			{
-				*OutDriver = TEXT("un gusano de arena");
-			}
-			else
-			{
-				const UCharacterMovementComponent* Move = Turtle.GetCharacterMovement();
-				*OutDriver = FString::Printf(TEXT("su movimiento (%s)"), Move ? *Move->GetMovementName() : TEXT("sin componente"));
-			}
-		}
-		OutVelocity = Turtle.GetVelocity();
-		return Turtle.GetActorLocation() - FVector(0.0, 0.0, HalfHeight);
-	}
 
 	/** El estado de la tortuga para el registro de la red de seguridad. */
 	FString DescribeTurtle(const ATortugaCharacter& Turtle)
@@ -357,6 +300,12 @@ ATN_BeachRaceGameMode::ATN_BeachRaceGameMode()
 	GameStateClass = ATN_BeachRaceGameState::StaticClass();
 	GeneratorClass = ATN_BeachRaceGenerator::StaticClass();
 	StormClass = ATN_BeachStorm::StaticClass();
+	// La red de seguridad bajo el terreno de ATN_RunGameMode (#633) no: la playa tiene la suya, que conoce la arena del
+	// generador, las pozas y el acantilado (GuardUnderSand).
+	if (UnderTerrainGuard)
+	{
+		UnderTerrainGuard->SetGuardEnabled(false);
+	}
 
 	// Los mismos Blueprints que el mapa procedural: la clase C++ sirve tal cual como GameMode de LVL_BeachRace.
 	static ConstructorHelpers::FClassFinder<APawn> TurtleBP(TEXT("/Game/Blueprints/Characters/BP_TortugaCharacter"));
@@ -1739,6 +1688,11 @@ bool ATN_BeachRaceGameMode::RequestChampionChoice(const UObject* WorldContextObj
 		}
 		return true;
 	}
+	// Otro modo con la misma pantalla de la campeona (p. ej. Todos contra Todos): decide su GameMode.
+	if (ITN_ChampionChoiceHandler* Handler = Cast<ITN_ChampionChoiceHandler>(World->GetAuthGameMode()))
+	{
+		return Handler->HandleChampionChoice(Choice);
+	}
 	// Cliente: lo demás lo decide el anfitrión; salir, cada uno por su cuenta.
 	if (Choice == ETNBeachChampionChoice::Quit)
 	{
@@ -1757,7 +1711,12 @@ bool ATN_BeachRaceGameMode::CanLocalPlayerChoose(const UObject* WorldContextObje
 		? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull)
 		: nullptr;
 	const ATN_BeachRaceGameMode* GM = TNBeachRaceGameModeDetail::FindGameMode(World);
-	return GM && GM->bMatchOver && !GM->bLeaving;
+	if (!GM)
+	{
+		const ITN_ChampionChoiceHandler* Handler = Cast<ITN_ChampionChoiceHandler>(World ? World->GetAuthGameMode() : nullptr);
+		return Handler && Handler->CanChooseChampion();
+	}
+	return GM->bMatchOver && !GM->bLeaving;
 }
 
 void ATN_BeachRaceGameMode::PlayAgain()
@@ -2506,7 +2465,7 @@ void ATN_BeachRaceGameMode::GuardUnderSand(APlayerController* PlayerController, 
 		return;
 	}
 	FVector BodyVelocity = FVector::ZeroVector;
-	const FVector Probe = TNBeachRaceGameModeDetail::BodyProbe(*Turtle, BodyVelocity);
+	const FVector Probe = TNUnderTerrain::BodyProbe(*Turtle, BodyVelocity);
 
 	// Donde bajar de la arena es normal: el borde del acantilado y más allá (la pared está socavada y se cae al agua de
 	// meta), las pozas (se nada) y nadando en cualquier agua.
@@ -2542,25 +2501,18 @@ void ATN_BeachRaceGameMode::GuardUnderSand(APlayerController* PlayerController, 
 			Depth = static_cast<double>(TerrainZ) - Probe.Z;
 		}
 	}
-	if (Depth > Margin)
+	// Confirmado en dos miradas seguidas (0,1 s), o ya si está muy hondo: un fotograma de la física no cuenta (la misma regla
+	// que la red de Coop y Clásico, TNUnderTerrain::RegisterLook).
+	if (TNUnderTerrain::RegisterLook(Watch.Strikes, Depth, Margin))
 	{
-		// Confirmado en dos miradas seguidas (0,1 s), o ya si está muy hondo: un fotograma de la física no cuenta.
-		++Watch.Strikes;
-		if (Watch.Strikes >= 2 || Depth > TNBeachRaceGameModeDetail::DeepUnderSand)
-		{
-			bRescue = true;
-			Cause = FString::Printf(TEXT("%.1f m bajo la arena"), Depth / 100.0);
-		}
+		bRescue = true;
+		Cause = FString::Printf(TEXT("%.1f m bajo la arena"), Depth / 100.0);
 	}
-	else
+	else if (Depth <= Margin && Ground - Probe.Z > Margin && Now >= Watch.NextMismatchLog)
 	{
-		if (Ground - Probe.Z > Margin && Now >= Watch.NextMismatchLog)
-		{
-			Watch.NextMismatchLog = Now + 10.f;
-			UE_LOG(LogTortunabo, Log, TEXT("[Carrera] Red de seguridad: %s %.1f m bajo la arena del generador en (%.1f, %.1f, %.1f) m, pero encima de la malla del terreno: no se rescata."),
-				*GetNameSafe(Turtle), (Ground - Probe.Z) / 100.0, Probe.X / 100.0, Probe.Y / 100.0, Probe.Z / 100.0);
-		}
-		Watch.Strikes = 0;
+		Watch.NextMismatchLog = Now + 10.f;
+		UE_LOG(LogTortunabo, Log, TEXT("[Carrera] Red de seguridad: %s %.1f m bajo la arena del generador en (%.1f, %.1f, %.1f) m, pero encima de la malla del terreno: no se rescata."),
+			*GetNameSafe(Turtle), (Ground - Probe.Z) / 100.0, Probe.X / 100.0, Probe.Y / 100.0, Probe.Z / 100.0);
 	}
 
 	// 2) Cayendo (la cápsula, sin bola ni ragdoll) sin colisión de suelo debajo: ahí se atravesaría el mapa. Al último sitio
@@ -2591,7 +2543,7 @@ void ATN_BeachRaceGameMode::GuardUnderSand(APlayerController* PlayerController, 
 	Watch.Strikes = 0;
 	Watch.FallNoFloorSince = -1.f;
 	FString Driver;
-	TNBeachRaceGameModeDetail::BodyProbe(*Turtle, BodyVelocity, &Driver);
+	TNUnderTerrain::BodyProbe(*Turtle, BodyVelocity, &Driver);
 	UE_LOG(LogTortunabo, Warning, TEXT("[Carrera] Red de seguridad: %s %s en (%.1f, %.1f, %.1f) m (arena a %.1f m) · %s · velocidad %.0f cm/s (Z %.0f) · la movía %s."),
 		*GetNameSafe(Turtle), *Cause, Probe.X / 100.0, Probe.Y / 100.0, Probe.Z / 100.0, Ground / 100.0, *TNBeachRaceGameModeDetail::DescribeTurtle(*Turtle),
 		BodyVelocity.Size(), BodyVelocity.Z, *Driver);

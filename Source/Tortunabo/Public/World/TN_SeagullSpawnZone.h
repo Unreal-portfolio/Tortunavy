@@ -30,6 +30,9 @@ class TORTUNABO_API ATN_SeagullSpawnZone : public ATN_SpawnZoneBase
 public:
 	ATN_SeagullSpawnZone();
 
+	/** Gaviota por defecto si el Blueprint no trae una (zona creada desde código, #516). */
+	void SetSeagullClassIfMissing(TSubclassOf<ATN_EnemySeagull> InClass);
+
 protected:
 	/** Clase de gaviota a spawnear. Apuntar al BP hijo de ATN_EnemySeagull. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SeagullSpawnZone")

@@ -44,10 +44,12 @@ struct FTNRaceEffectState
  * el servidor lo añade en ejecución la primera vez que hace falta y se replica solo (componente dinámico replicado, como
  * UTN_BeachStunComponent), así que el cooperativo no lo lleva nunca.
  *
- *  - Turbo (coco turbo y dorado): la velocidad se multiplica durante unos segundos. Cada máquina pone el multiplicador en su
- *    UTN_StaminaComponent (SetRaceSpeedMultiplier) a partir de lo replicado, como se hace con el resto de límites de
- *    velocidad: el dueño, el servidor y los demás usan el mismo MaxWalkSpeed. Con pantalla: estela de rayas y arena, luz
- *    cálida, «fiuuum» y, en la tortuga local, un empujón de campo de visión.
+ *  - Turbo (coco turbo y dorado): la velocidad se multiplica durante unos segundos. Va en la predicción del movimiento
+ *    (issue #22): quien mueve la tortuga (su dueño o el anfitrión) mira GetSpeedMultiplier en cada movimiento y lo guarda en
+ *    él (FTNSavedMove_Turtle, marca de turbo); el servidor simula los movimientos marcados con el multiplicador que él le
+ *    reconoce (ResolveOwnerBoostMultiplier) y UTN_TurtleMovementComponent lo aplica a la velocidad y la aceleración. Así no
+ *    hay corrección al empezar ni al acabar. Con pantalla: estela de rayas y arena, luz cálida, «fiuuum» y, en la tortuga
+ *    local, un empujón de campo de visión.
  *  - Protector solar (la estrella): invulnerable (nada la aturde ni la derriba: TNBeach::StunTurtle, KnockDownTurtle y
  *    ATortugaCharacter::ApplyKnockdown lo miran con TNRaceItems::IsInvulnerable), algo más rápida y, en el servidor, derriba
  *    a las tortugas que toca y marea a los enemigos que toca. Con pantalla: brillo dorado, chispas y una luz que late.
@@ -108,6 +110,13 @@ public:
 	/** Multiplicador de velocidad que suman ahora el turbo y el protector (1 = ninguno). */
 	float GetSpeedMultiplier() const;
 
+	/**
+	 * Servidor: multiplicador con el que simula un movimiento de la tortuga que llega marcado con turbo. El de ahora o, si
+	 * aquí se acaba de terminar (por tiempo o cancelado), el que tenía, durante TNRaceItems::BoostGraceSeconds de su ping:
+	 * el dueño lo ve acabar más tarde. 1 si nada lo justifica (TNRaceItems::ResolveClaimedBoost).
+	 */
+	float ResolveOwnerBoostMultiplier() const;
+
 	float GetBoostSecondsLeft() const;
 	float GetStarSecondsLeft() const;
 
@@ -122,8 +131,18 @@ private:
 	UFUNCTION()
 	void OnRep_Effects();
 
-	/** Pone los efectos como dicen los datos: multiplicador de velocidad, tick y efectos visuales. */
+	/**
+	 * Pone los efectos como dicen los datos: se da a conocer al movimiento de la tortuga (que lee el multiplicador en cada
+	 * movimiento), apunta el último multiplicador del servidor y enciende el tick y los efectos visuales.
+	 */
 	void ApplyEffects();
+
+	/** Servidor: si hay multiplicador ahora, lo apunta con su hora (el margen de ResolveOwnerBoostMultiplier cuenta desde ahí). */
+	void NoteRecentSpeed();
+
+	/** Servidor: último multiplicador mayor que 1 y la hora del servidor en que aún valía (< 0 = nunca). */
+	float RecentSpeedMultiplier = 1.f;
+	double RecentSpeedTime = -1.0;
 
 	/** Servidor: el protector derriba a las tortugas y marea a los enemigos que toca. */
 	void ServerStarContacts(float DeltaTime);

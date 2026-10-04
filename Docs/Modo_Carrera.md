@@ -1453,11 +1453,13 @@ del aturdimiento es solo de la malla; la cápsula de su tortuga solo solapa y su
 
 **Arreglos de la auditoría**, por orden de impacto:
 - **Voz** (lo que más pesaba): mu-law a 24 kHz = 24 KB/s por quien habla, reenviados por el anfitrión a cada oyente a
-  menos de 25 m. Provisional: **16 kHz** (`VoiceDownsampleFactor` 3: 16 KB/s) y como mucho **4 oyentes**, los más cercanos
+  menos de 25 m. Provisional: **16 kHz** (`VoiceTargetSampleRate` 16000: 16 KB/s) y como mucho **4 oyentes**, los más cercanos
   (`MaxVoiceListeners`). Peor caso con ocho hablando juntos: ~0,5 MB/s de subida del anfitrión (antes ~1,3 MB/s).
   Pendiente: Opus.
 - `UTN_StaminaComponent::SetSprintRequested`: el RPC fiable `ServerSetSprintRequested` iba **en cada fotograma** al moverse
-  (riesgo de desbordar los fiables); ahora solo al cambiar.
+  (riesgo de desbordar los fiables); ahora solo al cambiar. Después (#250) ya no hay RPC: la petición viaja en los
+  movimientos del cliente (`FLAG_Custom_0`) y `UTN_TurtleMovementComponent::GetMaxSpeed` calcula la velocidad en cada paso
+  con ese sprint y con el vadeo de esa posición, igual en el cliente y en el servidor (antes cada cambio era una corrección).
 - Cabeza: `ServerUpdateHeadRotation` iba en cada fotograma con dos floats a 60 Hz; ahora grados enteros (`int8`), como
   mucho 12 veces por segundo y solo si cambia (y una vez por segundo por si se perdió); `ReplicatedHeadYaw/Pitch`, un byte.
 - Tortuga (`ATortugaCharacter`): 60/30 Hz → **30/10 Hz**. `CurrentStamina` solo al dueño; los demás reciben
@@ -1741,9 +1743,13 @@ resto no lo usa.
 - **Encima**, a lo largo de X y apoyada 70 cm en la cresta por cada lado: tabla vieja de tres tablones (868 x 220 x 24,
   con travesaños, clavos y una grieta pintada en el centro) o tapa de nevera (plástico blanco con reborde de color,
   bisagras y pegatina; hasta 300 de ancho y 28 de grueso), según la semilla.
-- **Tambaleo** (cada máquina con las tortugas que ve encima; la tabla es una base móvil): se ladea 4,5° por tortuga
-  según dónde pise (hasta 7°, `MaxRollDeg`), cabecea hasta 2°, se mece al andar y los aterrizajes (caída > 250 cm/s) la
-  sacuden; muelle poco amortiguado (~1,2 Hz). Crujidos al pisar y al andar.
+- **Tambaleo** (la tabla es una base móvil): se ladea 4,5° por tortuga según dónde pise (hasta 7°, `MaxRollDeg`),
+  cabecea hasta 2°, se mece al andar y los aterrizajes (caída > 250 cm/s) la sacuden; muelle poco amortiguado (~1,2 Hz).
+  Crujidos al pisar y al andar. El muelle solo lo mueve el servidor, con las tortugas que ve él, y manda `NetPose` en
+  siete bytes: alabeo y cabeceo en int8 y hundimiento en uint8, y de cada eje del muelle su velocidad y hacia dónde tira
+  (int8), hasta 15 veces por segundo mientras cambian (despierta la réplica dormida) y en el acto si un aterrizaje la
+  sacude. Cada cliente mueve el mismo muelle desde la última muestra, adelantada media ida y vuelta (suavizarla la dejaba
+  unos 90 ms detrás: hasta 9,6 cm en el borde al aterrizar). El temblor de la grieta solo está en la malla (issue #20).
 - **Rotura** (servidor): con 2 o más tortugas a la vez (`BreakRiders`) la grieta sube y en 1,1 s (`CrackSeconds`) se
   parte; si se bajan, baja a 0,45/s. Mientras, tiembla, se hunde unos centímetros y cruje cada vez más agudo y seguido,
   soltando astillas. Al partirse: chasquido, astillas, «¡CRAC!», las mitades resbalan 70 cm hacia dentro y caen (0,5 s,
@@ -2551,6 +2557,16 @@ abajo; en el aire 0,3-0,4 s y luego se arrastra por la arena (de ~675 cm/s a men
 corre (4 m/s), así que ni corriendo ni cambiando de dirección se despegaba; el golpe alcanzaba 3,45 m (picado) y 3,25 m
 (cagada); la plancha no libraba de la cagada. Y atacaban desde la huella de la zona + 8 m (32-47 m de radio) cada 3-6 s.
 
+**Recalculado en #636** (GDD, ronda 4: «el seguimiento es más lento y la caca se esquiva con una plancha a tiempo»): con 4,2 m/s
+(lo que se describe abajo) nadie se despegaba corriendo en línea recta. Ahora el blanco persigue a **2,5 m/s**
+(`TNBeachGullTuning::GullChaseSpeed`, entre andar y correr) en los tres ataques, con el mismo tramo final de 1,5 s. Andando
+(2 m/s) no se despega y le da; esprintando en línea recta (4 m/s) se le gana 1,5 m/s y al golpe queda a 3,8 m (picado), 4,3 m
+(cagada) y 6,2 m (justiciera), fuera del alcance del pájaro más grande. Girar corriendo al lanzarse sigue librando; darse la vuelta
+esprintando es cruzar la sombra (2,8 / 2,45 / 1,1 m). La ventana de la plancha está ahora en el código
+(`BellyDiveDodgeWindow`): 0,59-0,69 s desde que despega corriendo y 0,48-0,58 s andando. Velocidades comprobadas en
+`BP_TortugaCharacter` el 2026-10-04 (andar 200, correr 400, plancha 350, rozamiento en arena 800 y freno 1,5). Las tablas de abajo
+son de la versión con 4,2 m/s; las cifras vigentes las comprueba `Tortunabo.Beach.Gull.*`.
+
 **Cómo es ahora** (`TNBeachGullTuning::StepAim`): el blanco persigue a la tortuga a 4,2 m/s (un poco más de lo que corre: en
 línea recta no se despega de nadie) y, los **últimos 1,5 s**, va **lanzado por la línea que llevaba la tortuga** en ese momento:
 por esa línea la acompaña (lo que ella avance por ella, hasta su velocidad de entonces y nunca hacia atrás) y hacia los lados
@@ -3245,7 +3261,7 @@ replica ni se guarda (un objeto en ejecución no tiene nombre de red: llega nulo
 | **Pelícano taxi** (`PelicanTaxi`) | bala | Un pelícano gigante baja en picado desde atrás, te coge por el caparazón y te lleva volando **por delante de todas** unos 120 m (22 m/s), y te suelta **de pie en arena abierta** por delante. Ver «Pelícano taxi». |
 | **Protector solar** (`Sunscreen`) | estrella | **8 s** invulnerable (nada te aturde ni te derriba; los enemigos ni te miran), un 25 % más rápida, con brillo dorado, chispas y una luz que late. **Derriba a las tortugas que toca** (ragdoll de 2 s, empujadas hacia fuera; 2,5 s de respiro por víctima) y **marea 4 s a los enemigos** que toca. |
 | **Cangrejo teledirigido** (`HomingCrab`) | concha roja | Un cangrejito rojo de juguete (1,1 m, con antena de mando que parpadea) sale corriendo con saltitos hacia **la tortuga más cercana por delante** (900 → 1600 cm/s, gira 420°/s) y, si la alcanza, la **derriba** 2,2 s. Sin tortuga por delante va a por el **enemigo más cercano por delante** (< 80 m) y lo marea 4 s. Vive 12 s; con el protector puesto, rebota sin efecto. Máximo 10 a la vez. |
-| **Gaviota justiciera** (`GullStrike`) | concha azul | Una gaviota gigante (la de las zonas de gaviotas) vuela hasta ponerse sobre **la tortuga que va la primera** (solo si va por delante de quien la lanza) y le suelta una cagada: aviso de sombra negra que crece 1,7 s hasta 2,4 m (antes 3,3); el blanco sigue a la víctima a 420 cm/s (algo más de lo que corre) y, desde justo después de soltarla, cae por la línea que llevaba (antes, 700 hasta el golpe: ronda 4, «Nerf de la gaviota y de su caca») (**andando o corriendo recto te pilla; girando corriendo al soltarla o tirándote en plancha a tiempo, te libras**); si alcanza, derriba 2,6 s y deja la mancha en la arena y el pegote en el caparazón. Sin líder por delante, va a por el enemigo más cercano por delante. Máximo 3 a la vez. |
+| **Gaviota justiciera** (`GullStrike`) | concha azul | Una gaviota gigante (la de las zonas de gaviotas) vuela hasta ponerse sobre **la tortuga que va la primera** (solo si va por delante de quien la lanza) y le suelta una cagada: aviso de sombra negra que crece 1,7 s hasta 2,4 m (antes 3,3); el blanco sigue a la víctima a 250 cm/s (más que andando, menos que corriendo; #636) y, desde justo después de soltarla, cae por la línea que llevaba (antes, 700 hasta el golpe: ronda 4, «Nerf de la gaviota y de su caca») (**andando te pilla; esprintando en línea recta, girando corriendo al soltarla o tirándote en plancha a tiempo, te libras**); si alcanza, derriba 2,6 s y deja la mancha en la arena y el pegote en el caparazón. Sin líder por delante, va a por el enemigo más cercano por delante. Máximo 3 a la vez. |
 | **Mina de arena** (`SandMine`) | bob-omb | Mina lanzable hacia donde mira la cámara: vuela con gravedad, rebota una vez y queda quieta; se arma a los 0,9 s (pitido y luz roja que late cada vez más deprisa) y salta cuando se acerca una tortuga (la de quien la lanzó, pasado 1,5 s) o un enemigo: mecha de 0,35 s y explosión que **aturde en bola 3 s** a las tortugas a menos de 5,5 m y **marea 5 s** a los enemigos a menos de 13 m. Explota sola a los 10 s de armada. Máximo 12 a la vez. |
 | **Nube de tormenta** (`StormCloud`) | rayo | Una nube negra crece sobre **cada otra tortuga en carrera** (1,1 s de aviso, con sombra y truenos) y les cae un rayo que las **aturde en bola 2,2 s**. Con el protector puesto el rayo cae a su lado sin efecto. Necesita al menos otra víctima. Máximo 2 a la vez. |
 | **Disco volador** (`Frisbee`) | bumerán | Sale hacia delante dibujando un arco (26 m, curvado 7 m), gira y **vuelve a la mano** de quien lo lanzó (2,9 s en total), **derribando 1,9 s** a las tortugas (una vez por pasada) y **mareando 4 s** a los enemigos que toca; no golpea a quien lo lanza. Máximo 6 a la vez. |
@@ -3339,10 +3355,11 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
   aturdimientos. Los actores de los objetos (`ATN_RaceItemActor`: siempre relevantes, `Track` replicado a 20-30 Hz y suavizado
   en los clientes, reloj del servidor común) y el pelícano (`ATN_BeachEnemy`, plan replicado una vez) se ven igual en todas.
 - **Efectos en la propia tortuga** (`UTN_RaceItemComponent`, componente dinámico replicado que el servidor añade la primera
-  vez, como `UTN_BeachStunComponent`): turbo, protector y vuelo. Cada máquina pone el mismo multiplicador de velocidad en
-  su `UTN_StaminaComponent` (`SetRaceSpeedMultiplier`) a partir del estado replicado, de modo que el dueño, el servidor y los
-  demás usan el mismo `MaxWalkSpeed` (al empezar y acabar el turbo puede haber una pequeña corrección de movimiento de un
-  par de fotogramas por la latencia).
+  vez, como `UTN_BeachStunComponent`): turbo, protector y vuelo. El multiplicador de velocidad va en la predicción del
+  movimiento (issue #22): quien mueve la tortuga lo toma al empezar cada movimiento y lo guarda en `FTNSavedMove_Turtle`
+  (marca `FLAG_Custom_1`; la `FLAG_Custom_0` es la petición de sprint, #250); el servidor simula los movimientos
+  marcados con el que él le reconoce (`ResolveOwnerBoostMultiplier`: el de ahora o, recién acabado, el de antes durante un ping más 0,25 s) y
+  `UTN_TurtleMovementComponent` lo aplica a la velocidad y la aceleración. Sin corrección al empezar ni al acabar.
 - **Sonidos** sintetizados (`UTN_RaceItemSynthComponent`, 21 sonidos, sin archivos) y efectos puntuales locales
   (`ATN_RaceBurstFX`); nada en servidor dedicado.
 
@@ -3361,7 +3378,7 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
 | `TN_RaceItemSynth.h`, `Private/World/Beach/TN_RaceItemSynth.cpp` | Los sonidos sintetizados |
 | `Private/World/Beach/TN_RaceItemArt.h/.cpp` | Mallas e iconos dibujados en código |
 | `Private/World/Beach/TN_RaceItemCommands.cpp` | Comandos de consola (`Docs/Comandos_Prueba.md`) |
-| Cambios mínimos en lo existente | `TN_InventoryTypes.h` (`RaceItem`), `TN_InventoryComponent.*` (resolver malla e icono; `TryReplaceEquippedItem`), `TN_PickupInteractableBase.cpp` (idem), `TortugaCharacter_Interaction.cpp` (rama `RaceItem`), `TortugaCharacter_Knockdown.cpp` y `TN_BeachStun.cpp` (invulnerabilidad), `TN_BeachEnemy.*` (`CanBeHit` y `GetMaxHoldSeconds`, virtual: el seguro de la sujeción es de 6 s y el pelícano taxi lo alarga a 20 s), `TN_StaminaComponent.*` (`SetRaceSpeedMultiplier`), `TN_ProcSearchSpot.*` (`PickLoot` virtual), `TN_BeachLoot.*` y `TN_BeachChest.*` (sorteo por puesto, cajas de objetos) |
+| Cambios mínimos en lo existente | `TN_InventoryTypes.h` (`RaceItem`), `TN_InventoryComponent.*` (resolver malla e icono; `TryReplaceEquippedItem`), `TN_PickupInteractableBase.cpp` (idem), `TortugaCharacter_Interaction.cpp` (rama `RaceItem`), `TortugaCharacter_Knockdown.cpp` y `TN_BeachStun.cpp` (invulnerabilidad), `TN_BeachEnemy.*` (`CanBeHit` y `GetMaxHoldSeconds`, virtual: el seguro de la sujeción es de 6 s y el pelícano taxi lo alarga a 20 s), `TN_StaminaComponent.*` (`GetRaceBoostWalkSpeed`), `TN_TurtleMovementComponent.*` (turbo en `FTNSavedMove_Turtle`), `TN_ProcSearchSpot.*` (`PickLoot` virtual), `TN_BeachLoot.*` y `TN_BeachChest.*` (sorteo por puesto, cajas de objetos) |
 
 ### Probar
 
@@ -3377,8 +3394,8 @@ mirar que las dos ventanas ven lo mismo; `TN.Race.ItemBox 4` y `TN.Race.ItemRank
 - Las cajas de objetos no reaparecen en la ronda y no dicen lo que dan (como en las carreras de karts).
 - `M_ProcFXHard` (material duro de las sombras de aviso, lo crea `Scripts/create_poop_decal.py`) no es imprescindible: sin
   él, la onda del silbato, el rayo y el aviso de la gaviota usan `M_ProcFXSoft`.
-- El turbo y el protector cambian `MaxWalkSpeed` en cada máquina por su cuenta (como el resto de límites de velocidad):
-  con mucha latencia el dueño puede notar una corrección al empezar o acabar.
+- El turbo y el protector van en la predicción del movimiento; si cambian a la vez (un turbo que acaba con el protector
+  puesto), durante un ping el servidor usa el multiplicador nuevo y el dueño el viejo: corrección pequeña.
 - Las minas lanzadas solo miran el suelo, no chocan con el decorado.
 - Los efectos (turbo, protector solar) y los actores lanzados se acaban solos al cambiar la ronda del generador; el pelícano
   dura como mucho 40 s.

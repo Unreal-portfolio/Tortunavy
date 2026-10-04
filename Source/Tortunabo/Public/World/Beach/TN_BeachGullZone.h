@@ -97,9 +97,9 @@ struct FTNBeachGullStain
  * cifras, en TN_BeachGullTuning.h):
  *  - Cagada: vuela sobre ella y la suelta desde 30 m; cae un pegote blanco bien visible con su estela y una sombra dura y
  *    negra que nace pequeña y crece hasta la mancha según cae (2,1 s para apartarse). Sobre la tortuga a la que va, un
- *    signo de exclamación que parpadea cada vez más rápido según cae (WarnMark). El blanco la sigue a 4,2 m/s (algo más
- *    de lo que se corre) y, los últimos 1,5 s (el «!» se queda fijo), cae por la línea que llevaba la tortuga: andando o
- *    corriendo en línea recta te pilla; girando corriendo (60° o más) o dándote la vuelta en ese momento, o tirándote en
+ *    signo de exclamación que parpadea cada vez más rápido según cae (WarnMark). El blanco la sigue a 2,5 m/s (más que
+ *    andando y menos que corriendo, #636) y, los últimos 1,5 s (el «!» se queda fijo), cae por la línea que llevaba: andando
+ *    te pilla; esprintando en línea recta, girando corriendo (60° o más) en ese momento, o tirándote en
  *    plancha a tiempo, te libras. Quien
  *    esté dentro al caer (y no a cubierto ni en plancha) cae derribada con ragdoll y mareo (TNBeach::KnockDownTurtle), con
  *    la cagada PINTADA en el caparazón (un decal sujeto a su hueso de la espalda con el material M_PoopSplatDecal;

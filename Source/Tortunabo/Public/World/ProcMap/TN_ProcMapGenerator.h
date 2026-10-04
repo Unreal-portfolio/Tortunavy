@@ -7,6 +7,7 @@
 #include "World/ProcMap/TN_ProcMapLayout.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
 #include "World/ProcMap/TN_ProcMapTerrainDetail.h"
+#include "World/ProcMap/TN_SurvivalTrapPlacement.h"
 #include "TN_ProcMapGenerator.generated.h"
 
 class UProceduralMeshComponent;
@@ -35,6 +36,19 @@ struct FTNShellSpot
 	int32 Value = 0;
 	/** Qué sitio es (TNProcMap::ShellSpotName). */
 	FString Where;
+};
+
+/** Una muestra del camino principal en el mundo (para el Rally, que hace su pista con ellas). */
+struct FTNProcPathPoint
+{
+	/** Centro del camino a la cota del suelo. */
+	FVector Location = FVector::ZeroVector;
+	/** Dirección del camino en horizontal (unitaria). */
+	FVector Direction = FVector::ForwardVector;
+	/** Ancho del camino (cm). */
+	float Width = 0.f;
+	/** TNProcMap::PathFlags de la muestra (cueva, salida, playa final...). */
+	uint32 Flags = 0;
 };
 
 /** Lo único que se replica del mapa: con esto cada máquina genera el mismo. */
@@ -175,6 +189,26 @@ public:
 	/** Altura del terreno generado en un punto del mundo (sin trazas: vale antes de cocinar colisión). */
 	float GetTerrainHeightAt(const FVector& WorldLocation) const;
 
+	/**
+	 * Mapa de los karts (NetConfig.Mode == Karts): el camino del cooperativo hecho para el kart (TNProcMap::FGenParams::
+	 * bDrivable) y sin lo que es de las tortugas a pie (huevos, recompensas, rebuscables, peligros, enemigos y conchas). Lo
+	 * saben todas las máquinas porque el modo viaja en la réplica.
+	 */
+	bool IsKartMap() const { return NetConfig.Mode == ETNProcGameMode::Karts; }
+
+	/** Muestras del camino principal en el mundo, de la salida a la playa final (vacío si no hay mapa). */
+	void GetMainPathWorld(TArray<FTNProcPathPoint>& OutPoints) const;
+
+	/**
+	 * Obstáculos grandes que quedan dentro del camino principal (piezas de explanada y agujas de roca), en el mundo: X, Y y
+	 * Z del centro a ras de suelo y W = radio libre (cm). El piloto IA de los karts los rodea. Los arcos que cruzan el camino
+	 * van con W negativo (su medio fondo más 4 m): bajo ellos el piloto va por el centro.
+	 */
+	void GetMainPathObstaclesWorld(TArray<FVector4>& OutObstacles) const;
+
+	/** Cota del mar en el mundo (por debajo, el kart está en el agua). */
+	float GetSeaLevelWorldZ() const;
+
 	UTN_ProcMapSettings* GetSettings() const { return Settings; }
 
 	/** Modo de solo terreno (bTerrainOnly): lo pone el GameMode del nivel de solo terreno antes de generar. */
@@ -254,6 +288,19 @@ private:
 	/** Servidor: decorados del camino que se pueden rebuscar (ATN_ProcSearchSpot); no en el modo de solo terreno. */
 	void SpawnSearchSpots();
 	void SpawnHazards();
+	/**
+	 * Supervivencia (#516, #517): calcula dónde van las trampas del mapa del catálogo (en todas las máquinas y en el
+	 * editor). Antes de las mallas: el hueco con puente que se rompe se construye sin su viga.
+	 */
+	void PlanSurvivalTraps();
+	/** ¿El hueco Feature lleva puente que se rompe en lugar de viga? */
+	bool IsSurvivalBreakableGap(int32 Feature) const;
+	/** Crea las trampas del plan: las replicadas y las de lógica de servidor en el servidor; las zonas lentas en cada máquina. */
+	void SpawnSurvivalTraps();
+	/** Refugios de los búnkeres (#689): un ATN_BeachShelterVolume local en cada formación Bunker, en todas las máquinas. */
+	void SpawnShelters();
+	/** Marcadores de las trampas del plan (Debug Draw), también en el editor. */
+	void DrawSurvivalTrapPlan() const;
 	/**
 	 * Servidor: conchas de puntos del plan puro (TNProcMap::PlanShells: rachas de 1, arcos de salto, cornisas y
 	 * especiales de 50 y 100) y las especiales de los tramos hundidos de los puentes (BrokenSpanPrizes). Después de
@@ -347,6 +394,11 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AActor>> SpawnedActors;
+
+	/** Trampas del mapa del catálogo de Supervivencia (vacío fuera de Supervivencia o con una semilla fuera del catálogo). */
+	TArray<TNSurvivalCatalog::FTrapPlacement> SurvivalTrapPlan;
+	/** Quads, puentes que se rompen y placas del mapa del catálogo (#517). */
+	TNSurvivalCatalog::FTerrainTrapPlan SurvivalTerrainPlan;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UPrimitiveComponent>> BoundaryWalls;

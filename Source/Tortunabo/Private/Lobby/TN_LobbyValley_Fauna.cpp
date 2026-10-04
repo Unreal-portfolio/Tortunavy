@@ -941,10 +941,11 @@ void ATN_LobbyValley::TickCastleBirds(float Dt)
 		PerchXf.SetScale3D(FVector::ZeroVector);
 	}
 
-	// Estos van de punta a punta del castillo: se marcan para rehacer sus límites (como las bandadas de TNAmbientFX).
+	// Estos van de punta a punta del castillo. Sin MarkRenderStateDirty: el cambio de transformada ya rehace los límites del
+	// ISM al final del fotograma (SendRenderInstanceData_Concurrent) sin recrear el proxy en cada fotograma (#566).
 	for (int32 t = 0; t < 2; ++t)
 	{
-		if (UInstancedStaticMeshComponent* FlyComp = BirdFlyISM[t].Get()) { TNArt::UpdateInstances(FlyComp, 0, BirdFlyXf[t], false, true, false); }
-		if (UInstancedStaticMeshComponent* PerchComp = BirdPerchISM[t].Get()) { TNArt::UpdateInstances(PerchComp, 0, BirdPerchXf[t], false, true, false); }
+		if (UInstancedStaticMeshComponent* FlyComp = BirdFlyISM[t].Get()) { TNArt::UpdateInstances(FlyComp, 0, BirdFlyXf[t], false, false, false); }
+		if (UInstancedStaticMeshComponent* PerchComp = BirdPerchISM[t].Get()) { TNArt::UpdateInstances(PerchComp, 0, BirdPerchXf[t], false, false, false); }
 	}
 }

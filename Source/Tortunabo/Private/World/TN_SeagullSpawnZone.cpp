@@ -40,3 +40,11 @@ void ATN_SeagullSpawnZone::TrySpawn()
 			*GetName(), *GetNameSafe(Target));
 	}
 }
+
+void ATN_SeagullSpawnZone::SetSeagullClassIfMissing(TSubclassOf<ATN_EnemySeagull> InClass)
+{
+	if (!SeagullClass)
+	{
+		SeagullClass = InClass;
+	}
+}

@@ -1,0 +1,282 @@
+{
+ "name": "N18_yin_yang",
+ "seed": 4018,
+ "format": "TNTM2",
+ "cell_uu": 10000.0,
+ "grid": 2,
+ "water_uu": -400.0,
+ "start_uu": [
+  6525.011446852917,
+  1849.7079362434388,
+  -150.0
+ ],
+ "end_uu": [
+  1849.7079362434388,
+  3474.9885531470823,
+  538.8421299917898
+ ],
+ "cells": [
+  {
+   "name": "M_N18_yin_yang_r0c0",
+   "col": 0,
+   "row": 0,
+   "file": "Chunks/r0c0.bin",
+   "center_uu": [
+    0.0,
+    0.0
+   ],
+   "vertices": 14730,
+   "triangles": 28988,
+   "instances": 0
+  },
+  {
+   "name": "M_N18_yin_yang_r1c0",
+   "col": 0,
+   "row": 1,
+   "file": "Chunks/r1c0.bin",
+   "center_uu": [
+    10000.0,
+    0.0
+   ],
+   "vertices": 12017,
+   "triangles": 23564,
+   "instances": 0
+  },
+  {
+   "name": "M_N18_yin_yang_r0c1",
+   "col": 1,
+   "row": 0,
+   "file": "Chunks/r0c1.bin",
+   "center_uu": [
+    0.0,
+    10000.0
+   ],
+   "vertices": 13017,
+   "triangles": 25546,
+   "instances": 0
+  },
+  {
+   "name": "M_N18_yin_yang_r1c1",
+   "col": 1,
+   "row": 1,
+   "file": "Chunks/r1c1.bin",
+   "center_uu": [
+    10000.0,
+    10000.0
+   ],
+   "vertices": 14407,
+   "triangles": 28346,
+   "instances": 0
+  }
+ ],
+ "description": "Yin-yang (Todos contra Todos): disco de 140 m partido por un canal en S de 8 m en dos l\u00f3bulos, el yang a +5 m con una colina de +9,4 m como ojo y el yin a +2,5 m con un estanque como ojo; tres puentes en rampa cruzan el canal.",
+ "mode": "tct",
+ "kill_boxes_uu": [
+  {
+   "center": [
+    5000.0,
+    5000.0,
+    -690.0
+   ],
+   "extent": [
+    10000.0,
+    10000.0,
+    310.0
+   ],
+   "yaw": 0.0
+  }
+ ],
+ "generator": {
+  "name": "N18_yin_yang",
+  "seed": 4018,
+  "description": "Yin-yang (Todos contra Todos): disco de 140 m partido por un canal en S de 8 m en dos l\u00f3bulos, el yang a +5 m con una colina de +9,4 m como ojo y el yin a +2,5 m con un estanque como ojo; tres puentes en rampa cruzan el canal.",
+  "grid": 2,
+  "mode": "tct",
+  "radius": 70.0,
+  "channel_w_m": 8.0,
+  "yang_h": 5.0,
+  "yin_h": 2.5,
+  "hill_r": 22.0,
+  "hill_rise": 4.4,
+  "pond_r": 9.0,
+  "arc_jitter_deg": 25.0,
+  "generator": "yin_yang",
+  "rot_deg": 154.16903811305676,
+  "bridge_arcs_deg": [
+   12.847973898577045,
+   185.40891410183087
+  ]
+ },
+ "z_range": [
+  -10.0,
+  128,
+  0.5
+ ],
+ "bridges": [
+  {
+   "a_uu": [
+    4369.9,
+    4695.0
+   ],
+   "b_uu": [
+    5630.1,
+    5305.0
+   ],
+   "width_m": 4.0,
+   "length_m": 14.0,
+   "slope_deg": 10.1
+  },
+  {
+   "a_uu": [
+    2478.8,
+    746.6
+   ],
+   "b_uu": [
+    2793.3,
+    -617.6
+   ],
+   "width_m": 4.0,
+   "length_m": 14.0,
+   "slope_deg": 10.1
+  },
+  {
+   "a_uu": [
+    6684.8,
+    10461.0
+   ],
+   "b_uu": [
+    7173.3,
+    9149.0
+   ],
+   "width_m": 4.0,
+   "length_m": 14.0,
+   "slope_deg": 10.1
+  }
+ ],
+ "points_uu": {
+  "colina": [
+   1849.7,
+   3475.0
+  ],
+  "lobulo_yang": [
+   3475.0,
+   8150.3
+  ],
+  "lobulo_yin": [
+   6525.0,
+   1849.7
+  ],
+  "orilla_estanque": [
+   8803.9,
+   5174.9
+  ]
+ },
+ "unreachable_ok_uu": [],
+ "recorrible": true,
+ "nests_uu": [
+  [
+   6500.0,
+   1800.0,
+   -150.0
+  ],
+  [
+   2900.0,
+   11200.0,
+   100.0
+  ],
+  [
+   -1500.0,
+   4100.0,
+   100.0
+  ],
+  [
+   9900.0,
+   8500.0,
+   -150.0
+  ],
+  [
+   3400.0,
+   6000.0,
+   100.0
+  ],
+  [
+   11300.0,
+   3600.0,
+   -150.0
+  ],
+  [
+   2300.0,
+   -900.0,
+   -150.0
+  ],
+  [
+   -500.0,
+   8400.0,
+   100.0
+  ]
+ ],
+ "tunnels": [],
+ "decks": [],
+ "markers_uu": {
+  "estanque": [
+   [
+    8150.3,
+    6525.0,
+    -600.0
+   ]
+  ],
+  "cofre": [
+   [
+    1849.7,
+    3475.0,
+    538.8
+   ]
+  ],
+  "catapulta": [
+   [
+    3475.0,
+    8150.3,
+    100.0
+   ],
+   [
+    6525.0,
+    1849.7,
+    -150.0
+   ]
+  ],
+  "trampolin": [
+   [
+    10198.2,
+    2294.6,
+    -150.0
+   ],
+   [
+    -198.2,
+    7705.4,
+    100.0
+   ],
+   [
+    -400.5,
+    2385.7,
+    100.0
+   ]
+  ]
+ },
+ "checks": {
+  "cotas": {
+   "ok": true,
+   "max_m": 9.4,
+   "summary": "m\u00e1x. +9.4 m"
+  },
+  "rampas": {
+   "ok": true,
+   "max_deg": 16.7,
+   "summary": "m\u00e1x. 16.7\u00b0"
+  },
+  "nests": {
+   "wanted": 8,
+   "found": 8,
+   "ok": true
+  }
+ }
+}

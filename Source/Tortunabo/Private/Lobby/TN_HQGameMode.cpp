@@ -1,4 +1,5 @@
 #include "Lobby/TN_HQGameMode.h"
+#include "Game/TN_TctGameMode.h"
 #include "Art/TN_TurtleArt.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
@@ -22,6 +23,7 @@
 #include "TimerManager.h"
 #include "Lobby/TN_ChangingBooth.h"
 #include "Lobby/TN_GeneralBriefing.h"
+#include "Lobby/TN_LobbyMission.h"
 #include "Lobby/TN_LobbyReadyZone.h"
 #include "Lobby/TN_LobbyValley.h"
 #include "Lobby/TN_SandCastleLobby.h"
@@ -262,19 +264,10 @@ void ATN_HQGameMode::RefreshLobbyState()
 		return;
 	}
 
-	int32 ConnectedPlayers = 0;
-	int32 ReadyPlayers = 0;
-	for (APlayerState* BasePS : GameState->PlayerArray)
-	{
-		if (ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(BasePS))
-		{
-			++ConnectedPlayers;
-			if (TNPS->bIsInReadyZone)
-			{
-				++ReadyPlayers;
-			}
-		}
-	}
+	// Sin el que se está yendo: desde Logout su PlayerState sigue en el PlayerArray (#559).
+	const FTNLobbyReadyCount Count = TN_CountLobbyReady(GameState);
+	const int32 ConnectedPlayers = Count.Connected;
+	const int32 ReadyPlayers = Count.Ready;
 
 	// Plazas de la sala: las de la sesión (ocho) salvo que LobbyExpectedPlayers fije otras.
 	const UMP_GameInstance* SessionGI = Cast<UMP_GameInstance>(GetGameInstance());
@@ -291,7 +284,7 @@ void ATN_HQGameMode::RefreshLobbyState()
 
 	// Countdown starts when ALL connected players are inside the ready zone.
 	// This allows solo testing (1/1) and adapts to any party size (2/2, 3/3, etc.).
-	if (ConnectedPlayers >= LobbyMinPlayersForStart && ReadyPlayers >= ConnectedPlayers)
+	if (Count.AllReady(LobbyMinPlayersForStart))
 	{
 		if (!bCountdownRunning)
 		{
@@ -329,22 +322,9 @@ void ATN_HQGameMode::TickCountdown()
 		return;
 	}
 
-	int32 ConnectedNow = 0;
-	int32 ReadyNow = 0;
-	for (APlayerState* BasePS : GameState->PlayerArray)
-	{
-		if (const ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(BasePS))
-		{
-			++ConnectedNow;
-			if (TNPS->bIsInReadyZone)
-			{
-				++ReadyNow;
-			}
-		}
-	}
-
 	// Cancel countdown if any connected player left the zone
-	if (ConnectedNow <= 0 || ReadyNow < ConnectedNow)
+	const FTNLobbyReadyCount Count = TN_CountLobbyReady(GameState);
+	if (Count.Connected <= 0 || Count.Ready < Count.Connected)
 	{
 		ResetCountdown();
 		return;
@@ -423,12 +403,46 @@ void ATN_HQGameMode::BeginMatchTravel()
 			// Supervivencia: los niveles del Clásico (LVL_Run) con su propio GameMode (alias «Survival», DefaultEngine.ini).
 			TravelURL = MatchMapPath + TEXT("?game=Survival");
 		}
+		else if (GI->SelectedProcMode == ETNProcGameMode::Karts)
+		{
+			// Karts: el mapa procedural del cooperativo con karts (ATN_KartGameMode, alias «Karts» en DefaultEngine.ini).
+			// La dificultad y las plazas las lee el GameMode de la GameInstance.
+			TravelURL = ProcMapPath + TEXT("?game=Karts");
+		}
+		else if (GI->SelectedProcMode == ETNProcGameMode::Rally && FPackageName::DoesPackageExist(RallyMapPath)
+			&& !TNLobbyMission::ResolveRallyMap(GI->SelectedRallyVariant, TNLobbyMission::RallyMapOptions()).IsNone())
+		{
+			// Rally (#632): un circuito de LVL_Rally (ATN_RallyGameMode). La dificultad y las plazas las lee el GameMode de la
+			// GameInstance; con ?FromLobby vuelve aquí al acabar.
+			TravelURL = TNLobbyMission::RallyTravelURL(
+				TNLobbyMission::ResolveRallyMap(GI->SelectedRallyVariant, TNLobbyMission::RallyMapOptions()), RallyMapPath);
+		}
+		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath)
+			&& !TNLobbyMission::ResolveTctArena(GI->SelectedTctArena, TNLobbyMission::TctArenaOptions()).IsNone())
+		{
+			// Todos contra Todos: rondas de supervivencia en la arena inventada que eligió el anfitrión (ATN_TctGameMode,
+			// alias «Tct», la lee de ?Arena=).
+			TravelURL = TNLobbyMission::TctTravelURL(
+				TNLobbyMission::ResolveTctArena(GI->SelectedTctArena, TNLobbyMission::TctArenaOptions()), TctMapPath);
+		}
 		else if (GI->SelectedProcMode != ETNProcGameMode::Classic)
 		{
 			if (bBeachRace)
 			{
 				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_beach_race.py): la carrera se juega en el mapa procedural."),
 					*BeachRaceMapPath);
+			}
+			if (GI->SelectedProcMode == ETNProcGameMode::Rally)
+			{
+				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] Sin %s o sin circuitos en Scripts/terrain_volumes/Variants (build cocinada): se juega el cooperativo."),
+					*RallyMapPath);
+				GI->SelectedProcMode = ETNProcGameMode::Coop;
+			}
+			if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll)
+			{
+				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] Sin %s (Scripts/build_tct_level.py) o sin su arena en Scripts/terrain_volumes/Variants (build cocinada): se juega el cooperativo."),
+					*TctMapPath);
+				GI->SelectedProcMode = ETNProcGameMode::Coop;
 			}
 			// También en la URL: la lee ATN_ProcMapGameMode y sustituye a la del viaje anterior.
 			TravelURL = ProcMapPath + (GI->PendingStartStyle == ETNMatchStartStyle::Eggs ? TEXT("?ProcStart=Eggs") : TEXT("?ProcStart=Gate"));
@@ -477,6 +491,16 @@ void ATN_HQGameMode::SetFlowState(ETNMatchFlowState NewState) const
 
 void ATN_HQGameMode::HandleSeamlessTravelPlayer(AController*& C)
 {
+	// Un bot de la partida (piloto IA del Rally) no tiene sitio en el lobby: ni peón ni plaza en «todos listos» (#694).
+	// El Rally ya no los deja viajar; esto cubre a cualquier controlador sin jugador que llegue igualmente.
+	if (C && !C->IsA<APlayerController>())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] HandleSeamlessTravelPlayer: %s es un bot, fuera del lobby."), *GetNameSafe(C));
+		C->Destroy();
+		C = nullptr;
+		return;
+	}
+
 	// Limpiar estado espectador ANTES de Super — jugadores que murieron/terminaron
 	// en la carrera estaban en modo espectador. Sin esto, PlayerCanRestart() devuelve
 	// false y Super no les spawnea pawn.

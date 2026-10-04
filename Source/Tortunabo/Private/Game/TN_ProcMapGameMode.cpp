@@ -34,6 +34,33 @@ namespace TNProcMapGameModeDetail
 
 	/** Con estructura de salida, un PlayerStart está ocupado si hay otro peón a menos de esto (los sitios de la sala distan ~2 m). */
 	constexpr double StructureStartTakenRadius = 80.0;
+
+	/**
+	 * Salida de un mapa sin generador: el PlayerStart con la etiqueta MapVariantStart o, si no hay, el primero (el que
+	 * ATN_MapVariantLoader lleva a la salida de la variante).
+	 */
+	bool FindLevelStartTransform(UWorld* World, FTransform& OutTransform)
+	{
+		if (!World)
+		{
+			return false;
+		}
+		const APlayerStart* First = nullptr;
+		for (TActorIterator<APlayerStart> It(World); It; ++It)
+		{
+			if (It->ActorHasTag(TEXT("MapVariantStart")))
+			{
+				First = *It;
+				break;
+			}
+			First = First ? First : *It;
+		}
+		if (First)
+		{
+			OutTransform = First->GetActorTransform();
+		}
+		return First != nullptr;
+	}
 }
 
 ATN_ProcMapGameMode::ATN_ProcMapGameMode()
@@ -90,10 +117,13 @@ void ATN_ProcMapGameMode::ResolveModeAndDifficulty()
 	Mode = ModeWithoutLobby;
 	Difficulty = DifficultyWithoutLobby;
 
-	// Lo elegido en el lobby (Clásico y Supervivencia nunca llegan aquí: viajan a LVL_Run).
+	// Lo elegido en el lobby (Clásico y Supervivencia nunca llegan aquí: viajan a LVL_Run; los karts llegan con su propio
+	// GameMode, ?game=Karts).
 	if (const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
 	{
 		if (GI->SelectedProcMode != ETNProcGameMode::Classic && GI->SelectedProcMode != ETNProcGameMode::Survival
+			&& GI->SelectedProcMode != ETNProcGameMode::Karts && GI->SelectedProcMode != ETNProcGameMode::FreeForAll
+			&& GI->SelectedProcMode != ETNProcGameMode::Rally
 			&& GI->SelectedProcMode != ETNProcGameMode::Count)
 		{
 			Mode = GI->SelectedProcMode;
@@ -117,7 +147,9 @@ void ATN_ProcMapGameMode::ResolveModeAndDifficulty()
 	const FString SeedOption = UGameplayStatics::ParseOption(OptionsString, TEXT("ProcSeed"));
 	UrlSeed = SeedOption.IsEmpty() ? 0 : FCString::Atoi(*SeedOption);
 
-	if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Count)
+	// Supervivencia sí (su mapa procedural, #273); los karts tienen su propio GameMode.
+	if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Karts || Mode == ETNProcGameMode::Rally
+		|| Mode == ETNProcGameMode::Count)
 	{
 		Mode = ETNProcGameMode::Coop;
 	}
@@ -740,7 +772,9 @@ void ATN_ProcMapGameMode::NotifyEggNestReached(APlayerController* PlayerControll
 
 bool ATN_ProcMapGameMode::FindRespawnTransform(APlayerController* PlayerController, FTransform& OutTransform) const
 {
-	if (!Generator || !Generator->IsMapReady() || !PlayerController)
+	// Con generador, sus pilas y solo con el mapa construido (entre rondas se rehacen). Sin él (un mapa fijo con el
+	// bloque placements del manifest, #652), las pilas que haya en el mundo.
+	if (!PlayerController || (Generator && !Generator->IsMapReady()))
 	{
 		return false;
 	}
@@ -759,40 +793,50 @@ bool ATN_ProcMapGameMode::FindRespawnTransform(APlayerController* PlayerControll
 	{
 		ReachedOrder = *PlayerBest;
 	}
-	// La pila 0 está siempre en la salida: cuenta como alcanzada aunque nadie haya pasado junto a ella (#524).
-	ReachedOrder = FMath::Max(ReachedOrder, 0);
+	// La pila 0 del generador está siempre en la salida: cuenta como alcanzada aunque nadie haya pasado junto a ella
+	// (#524). La primera de un mapa fijo está lejos de la salida: hasta alcanzarla se reaparece en la salida.
+	if (Generator)
+	{
+		ReachedOrder = FMath::Max(ReachedOrder, 0);
+	}
 
 	const bool bStorm = Storm && Storm->IsStormActive();
 	const float MinProgress = bStorm ? Storm->GetFrontProgress() + StormRespawnMargin : -TNumericLimits<float>::Max();
 	const int32 Slot = GetPlayerSlot(PlayerController);
 
 	// La pila alcanzada más lejana que siga por delante de la tormenta.
-	const ATN_ProcEggNest* Best = nullptr;
-	for (const TWeakObjectPtr<ATN_ProcEggNest>& WeakNest : Generator->GetEggNests())
+	TArray<ATN_ProcEggNest*> Nests;
+	if (Generator)
 	{
-		const ATN_ProcEggNest* Nest = WeakNest.Get();
-		if (!Nest || Nest->GetNestOrder() > ReachedOrder || Nest->GetPathProgress() < MinProgress)
+		for (const TWeakObjectPtr<ATN_ProcEggNest>& WeakNest : Generator->GetEggNests())
 		{
-			continue;
-		}
-		if (!Best || Nest->GetNestOrder() > Best->GetNestOrder())
-		{
-			Best = Nest;
+			if (ATN_ProcEggNest* Nest = WeakNest.Get())
+			{
+				Nests.Add(Nest);
+			}
 		}
 	}
-	if (Best)
+	else
+	{
+		ATN_ProcEggNest::GatherWorldNests(GetWorld(), Nests);
+	}
+	if (const ATN_ProcEggNest* Best = ATN_ProcEggNest::PickRespawnNest(Nests, ReachedOrder, MinProgress))
 	{
 		OutTransform = Best->GetRespawnTransform(Slot);
 		return true;
 	}
 
 	// Sin pila: la salida, mientras la tormenta no la haya alcanzado.
-	if (MinProgress <= 0.f)
+	if (MinProgress > 0.f)
+	{
+		return false;
+	}
+	if (Generator)
 	{
 		OutTransform = Generator->GetStartTransform(Slot);
 		return true;
 	}
-	return false;
+	return TNProcMapGameModeDetail::FindLevelStartTransform(GetWorld(), OutTransform);
 }
 
 void ATN_ProcMapGameMode::BeginRespawn(APlayerController* PlayerController, ATortugaCharacter* Turtle)
@@ -963,8 +1007,9 @@ void ATN_ProcMapGameMode::UpdateRoundProgressAndMaybeFinish()
 	TArray<APlayerController*> Finishers;
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
+		// Sin el que se está yendo: desde Logout su PlayerState sigue en el PlayerArray (#558).
 		const ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS);
-		if (!PS)
+		if (!PS || TN_IsPlayerStateLeaving(PS))
 		{
 			continue;
 		}

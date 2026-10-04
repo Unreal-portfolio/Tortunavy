@@ -10,34 +10,6 @@
 
 namespace
 {
-	/** Huella del layout: camino, ramas y elementos redondeados al centímetro. */
-	uint64 LayoutFingerprint(const TNProcMap::FLayout& L)
-	{
-		uint64 H = 1469598103934665603ull;
-		auto Mix = [&H](int64 V)
-		{
-			for (int32 b = 0; b < 8; ++b) { H = (H ^ static_cast<uint64>((V >> (8 * b)) & 0xFF)) * 1099511628211ull; }
-		};
-		auto MixVec = [&Mix](const FVector2D& V) { Mix(FMath::RoundToInt64(V.X)); Mix(FMath::RoundToInt64(V.Y)); };
-		Mix(FMath::RoundToInt64(L.WorldSize));
-		for (const TNProcMap::FRouteStep& St : L.Route) { Mix(St.Module); }
-		for (const TNProcMap::FPathSample& S : L.Main)
-		{
-			MixVec(S.P); Mix(FMath::RoundToInt64(S.Z)); Mix(FMath::RoundToInt64(S.Width)); Mix(S.Flags);
-		}
-		for (const TNProcMap::FBranch& B : L.Branches)
-		{
-			Mix(B.Samples.Num()); Mix(static_cast<int64>(B.Kind)); Mix(B.ForkSample); Mix(B.RejoinSample);
-			for (const TNProcMap::FPathSample& S : B.Samples) { MixVec(S.P); Mix(FMath::RoundToInt64(S.Z)); }
-		}
-		for (const TNProcMap::FFeature& F : L.Features)
-		{
-			Mix(static_cast<int64>(F.Type)); Mix(FMath::RoundToInt64(F.Location.X)); Mix(FMath::RoundToInt64(F.Location.Y));
-			Mix(FMath::RoundToInt64(F.Location.Z));
-		}
-		return H;
-	}
-
 	TNProcMap::FGenParams MakeCoopParams(uint32 Seed, int32 Grid)
 	{
 		TNProcMap::FGenParams P;
@@ -63,7 +35,9 @@ bool FTNProcMapCoopUnchangedTest::RunTest(const FString& Parameters)
 {
 	using namespace TNProcMap;
 	struct FCase { uint32 Seed; int32 Grid; uint64 Expected; };
-	// Huellas tomadas con el generador antes de admitir rejillas rectangulares (dev a1ced1de).
+	// Huellas del generador antes de admitir rejillas rectangulares (dev a1ced1de). Son las mismas en DebugGame y en
+	// Development: la de grid 6 y semilla 21 salía 0x787A8D4838D3FD94 en DebugGame y 0x06BAEAE6AA08AC97 en Development
+	// porque una senda tenía un punto de más o de menos según el redondeo (#579, arreglado en AppendHermite).
 	const FCase Cases[] = {
 		{ 11u, 3, 0xFD5CBBA920111AD3ull },
 		{ 12u, 3, 0xD8A940E8D5C2E22Dull },
@@ -74,7 +48,7 @@ bool FTNProcMapCoopUnchangedTest::RunTest(const FString& Parameters)
 		FLayout L;
 		const FString Ctx = FString::Printf(TEXT("grid %d semilla %u"), C.Grid, C.Seed);
 		if (!TestTrue(Ctx + TEXT(": genera layout"), GenerateLayout(MakeCoopParams(C.Seed, C.Grid), L) && L.bValid)) { continue; }
-		const uint64 Got = LayoutFingerprint(L);
+		const uint64 Got = TNProcMap::LayoutFingerprint(L);
 		AddInfo(FString::Printf(TEXT("%s: huella 0x%016llXull"), *Ctx, Got));
 		TestEqual(Ctx + TEXT(": misma huella que antes"), Got, C.Expected);
 	}

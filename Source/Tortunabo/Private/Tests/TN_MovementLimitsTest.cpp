@@ -96,4 +96,30 @@ bool FTNMovementLimitsGravityTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNMovementLimitsWalkSpeedTest,
+	"Tortunabo.Movement.Limits.WalkSpeed",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNMovementLimitsWalkSpeedTest::RunTest(const FString& Parameters)
+{
+	using namespace TNMovementLimits;
+
+	FWalkSpeedInputs In;
+	In.WalkSpeed = 450.f;
+	In.SprintSpeed = 800.f;
+	TestEqual(TEXT("Andando"), ResolveWalkSpeed(In), 450.f);
+	In.bSprinting = true;
+	TestEqual(TEXT("Corriendo"), ResolveWalkSpeed(In), 800.f);
+	In.EnvironmentMultiplier = 0.5f;
+	TestEqual(TEXT("Corriendo en el agua"), ResolveWalkSpeed(In), 400.f, 0.01f);
+	In.PostBoostMultiplier = 0.75f;
+	TestEqual(TEXT("Con la penalización tras el boost"), ResolveWalkSpeed(In), 300.f, 0.01f);
+	In.bSprinting = false;
+	In.RaceMultiplier = 1.5f;
+	TestEqual(TEXT("Turbo: al menos la de correr, por el turbo"), ResolveWalkSpeed(In), 1200.f, 0.01f);
+	In.Cap = 0.f;
+	TestEqual(TEXT("En el caparazón: quieta aunque lleve turbo"), ResolveWalkSpeed(In), 0.f);
+	return true;
+}
+
 #endif

@@ -120,11 +120,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Shell", meta = (ClampMin = "0.0"))
 	float MinTimeInShellSeconds = 0.3f;
 
-	/** Sonido al meterse en el caparazón. */
+	/**
+	 * Meterse y salir del caparazón con el sonido sintetizado (UTN_TurtleFoleyComponent::PlayShell). A false, o sin
+	 * sintetizador (servidor dedicado), suenan EnterShellSound y ExitShellSound.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Shell|Audio")
+	bool bSynthShellSounds = true;
+
+	/** Sonido al meterse en el caparazón (respaldo del sintetizado: ver bSynthShellSounds). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Shell|Audio")
 	TObjectPtr<USoundBase> EnterShellSound;
 
-	/** Sonido al salir del caparazón. */
+	/** Sonido al salir del caparazón (respaldo del sintetizado: ver bSynthShellSounds). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Shell|Audio")
 	TObjectPtr<USoundBase> ExitShellSound;
 
@@ -188,6 +195,13 @@ private:
 	 *        más la mueve. Lo llama FollowBody en cada fotograma.
 	 */
 	void EnforceBodyLocalState();
+
+	/**
+	 * @brief Cómo se anima la pose de la malla (TNShellLogic::OnlyTickPoseFromClientMoves): con la caja
+	 *        enganchada, cada fotograma; sin ella, lo de serie del motor (en el servidor, la de un jugador
+	 *        remoto solo con sus movimientos).
+	 */
+	void ApplyMeshPoseTicking(bool bDrivenByBody);
 
 	/**
 	 * @brief Servidor: sitio libre para una caja nueva en Center con Rotation. Si ahí se

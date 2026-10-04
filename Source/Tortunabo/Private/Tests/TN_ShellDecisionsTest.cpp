@@ -427,4 +427,26 @@ bool FTNShellTerrainPushOutTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Pose de la bola de un cliente en el anfitrión (#246)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNShellRemotePoseTest,
+	"Tortunabo.Shell.RemotePose",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNShellRemotePoseTest::RunTest(const FString& Parameters)
+{
+	using TNShellLogic::OnlyTickPoseFromClientMoves;
+
+	// Andando, la tortuga de un cliente se anima en el servidor con sus movimientos (lo de serie del motor).
+	TestTrue(TEXT("Cliente remoto andando: con sus movimientos"), OnlyTickPoseFromClientMoves(true, false));
+	// En la bola su cliente ya no manda movimientos: se anima cada fotograma (si no, se queda con la pose de antes de meterse).
+	TestFalse(TEXT("Cliente remoto en la bola: cada fotograma"), OnlyTickPoseFromClientMoves(true, true));
+	// La propia del anfitrión y todas en los clientes se animan siempre cada fotograma.
+	TestFalse(TEXT("Local o en un cliente, andando"), OnlyTickPoseFromClientMoves(false, false));
+	TestFalse(TEXT("Local o en un cliente, en la bola"), OnlyTickPoseFromClientMoves(false, true));
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

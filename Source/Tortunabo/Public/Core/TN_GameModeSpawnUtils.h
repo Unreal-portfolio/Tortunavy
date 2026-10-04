@@ -10,6 +10,7 @@ class AGameStateBase;
 class APawn;
 class APlayerController;
 class APlayerStart;
+class APlayerState;
 class UWorld;
 
 /**
@@ -65,13 +66,73 @@ void TN_EnsurePlayerSpawned(AGameModeBase* GameMode, APlayerController* PlayerCo
 APlayerStart* TN_EnsureFallbackPlayerStart(UWorld* World, FName SpawnActorName, const TCHAR* LogTag, const TCHAR* MapDescriptor);
 
 /**
- * @brief Cuenta cuántos elementos del PlayerArray son ATN_CoopPlayerState (jugadores coop conectados).
- * @param GameState GameState del que iterar PlayerArray. Se asume no-nulo (mismo contrato que los
- *        call sites originales, que ya lo desreferenciaban sin guard).
+ * @brief true si el PlayerState es de un jugador que se está yendo de la partida y no debe contar.
+ * @details AController::Destroyed llama a GameMode->Logout antes de CleanupPlayerState, y AGameMode::AddInactivePlayer
+ *          solo saca del PlayerArray la copia inactiva: durante Logout el PlayerState del que se va sigue en
+ *          GameState->PlayerArray. Se reconoce porque su dueño (el controlador) se está destruyendo. También cuentan
+ *          como idos los PlayerState nulos, en destrucción o inactivos.
+ * @note Sin esto, si se iba el único jugador que faltaba por llegar (Clásico, Coop) o por ponerse listo (lobby), la
+ *       ronda o la cuenta atrás no se reevaluaban nunca (#558, #559).
+ */
+bool TN_IsPlayerStateLeaving(const APlayerState* PlayerState);
+
+/**
+ * @brief true si el PlayerState es de un bot: marcado con IsABot o con un controlador que no es de jugador como dueño.
+ * @details APlayerState::PostInitializeComponents marca IsABot cuando el dueño es un controlador sin jugador; lo
+ *          segundo cubre al PlayerState que se le asigna después a ese controlador (SetPlayerState) sin pasar por ahí.
+ * @note Los recuentos del lobby (todos listos, PendingTravelPlayerCount) no cuentan bots (#694).
+ */
+bool TN_IsBotPlayerState(const APlayerState* PlayerState);
+
+/**
+ * @brief Cuenta cuántos elementos del PlayerArray son ATN_CoopPlayerState (jugadores coop conectados), sin contar al
+ *        que se está yendo (TN_IsPlayerStateLeaving) ni a los bots (TN_IsBotPlayerState, #694).
+ * @param GameState GameState del que iterar PlayerArray; nulo devuelve 0.
  * @note Compartido por ATN_RunGameMode y ATN_HQGameMode: 7 sitios reimplementaban el mismo bucle
  *       de conteo (solo cambiaba el nombre de la variable acumuladora).
  */
 int32 TN_CountConnectedCoopPlayers(const AGameStateBase* GameState);
+
+/** Recuento de la ronda de Clásico y Coop sobre los jugadores que siguen en la partida. */
+struct FTNCoopRoundCount
+{
+	/** Jugadores coop que siguen en la partida. */
+	int32 Total = 0;
+	/** Los que ya han terminado la ronda (bHasFinishedRun: meta o eliminados). */
+	int32 Resolved = 0;
+	/** Los que siguen vivos. */
+	int32 Alive = 0;
+
+	/** La ronda acaba cuando hay alguien y o bien todos la han terminado o no queda nadie vivo. */
+	bool IsRoundOver() const { return Total > 0 && (Resolved >= Total || Alive == 0); }
+};
+
+/**
+ * @brief Cuenta Total, Resolved y Alive sobre los ATN_CoopPlayerState del PlayerArray, sin el que se está yendo.
+ * @param GameState GameState del que iterar PlayerArray; nulo devuelve todo a 0.
+ * @note Lo usa ATN_RunGameMode::UpdateRoundProgressAndMaybeFinish, también desde Logout (#558).
+ */
+FTNCoopRoundCount TN_CountCoopRound(const AGameStateBase* GameState);
+
+/** Recuento de jugadores listos en el lobby. */
+struct FTNLobbyReadyCount
+{
+	/** Jugadores coop conectados que siguen en la partida. */
+	int32 Connected = 0;
+	/** Los que están en la zona de listos (bIsInReadyZone). */
+	int32 Ready = 0;
+
+	/** Todos los conectados (y al menos MinPlayers) están listos: arranca la cuenta atrás. */
+	bool AllReady(int32 MinPlayers) const { return Connected > 0 && Connected >= MinPlayers && Ready >= Connected; }
+};
+
+/**
+ * @brief Cuenta conectados y listos sobre los ATN_CoopPlayerState del PlayerArray, sin el que se está yendo ni los bots
+ *        (#694: un bot nunca se pone listo y bloqueaba la cuenta atrás).
+ * @param GameState GameState del que iterar PlayerArray; nulo devuelve todo a 0.
+ * @note Lo usan ATN_HQGameMode::RefreshLobbyState (también desde Logout, #559) y TickCountdown.
+ */
+FTNLobbyReadyCount TN_CountLobbyReady(const AGameStateBase* GameState);
 
 /** Largo máximo de un nombre de jugador: el de Steam (32). */
 constexpr int32 TN_MaxPlayerNameLength = 32;

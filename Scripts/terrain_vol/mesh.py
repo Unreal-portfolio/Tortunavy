@@ -133,6 +133,9 @@ def vertex_colors(model: MapModel, world: np.ndarray, normals: np.ndarray) -> np
     trail = trail_full * flat_up
     trail_color = np.array(getattr(model, "trail_color", TRAIL_COLOR))
     out = out + (trail_color - out) * (getattr(model, "trail_strength", 0.7) * trail)[:, None]
+    if hasattr(model, "mud_mask"):                  # barro (badén de los circuitos de tierra, #682)
+        mud = model.mud_mask(x, y) * (1.0 - wet)
+        out = out + (np.array(model.mud_color) - out) * (model.mud_strength * mud)[:, None]
     plaza = model.plaza_mask(x, y) * flat_up
     out = out + (np.array(PLAZA_COLOR) - out) * (0.8 * plaza)[:, None]
     out = out * (1.0 - strata)[:, None]

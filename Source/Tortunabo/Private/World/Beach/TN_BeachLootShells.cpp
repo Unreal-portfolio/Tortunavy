@@ -19,6 +19,7 @@
 
 #include "World/Beach/TN_BeachLoot.h"
 #include "Settings/TN_GameplayAssetSettings.h"
+#include "World/Beach/TN_BeachCatapult.h"
 #include "World/Beach/TN_BeachDecorField.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
@@ -575,6 +576,11 @@ namespace TNBeachShellDetail
 				const FVector From(Base.X, Base.Y, (Box.IsValid ? FMath::Min(Box.Max.Z, Base.Z + 600.0) : Base.Z + 150.0) + TurtleCenter);
 				const FVector To = OnSand(Point.To) + FVector(0.0, 0.0, TurtleCenter - TNScoreShells::Hover);
 				AddCurve(From, To, FMath::Clamp(0.3 * FVector::Dist2D(From, To), 400.0, 1500.0));
+				// La catapulta lanza hacia el final del arco (a la altura del centro de la tortuga): sigue las conchitas (#257).
+				if (ATN_BeachCatapult* Catapult = Cast<ATN_BeachCatapult>(Actors[i]))
+				{
+					Catapult->SetLaunchTarget(To);
+				}
 			}
 			// Los que no tienen arco en el reparto: con su impulso (LaunchUp y LaunchForward en cm/s si su clase los tiene),
 			// los trampolines hacia su +X y las catapultas hacia el mar.
@@ -603,6 +609,12 @@ namespace TNBeachShellDetail
 						Up = Speed * FMath::Sin(Pitch);
 					}
 					AddArc(Origin, Dir, Forward, Up);
+					if (ATN_BeachCatapult* Catapult = Cast<ATN_BeachCatapult>(Actors[i]))
+					{
+						// Donde el arco dibujado vuelve a la altura de salida, sobre la arena: ahí la manda la catapulta (#257).
+						const FVector Flat = Origin + Dir * (Forward * 2.0 * FMath::Max(100.0, Up) / Gravity);
+						Catapult->SetLaunchTarget(FVector(Flat.X, Flat.Y, Gen.GetGroundHeightAt(Flat) + TurtleCenter));
+					}
 				}
 			}
 		}

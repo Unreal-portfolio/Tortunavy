@@ -1,4 +1,5 @@
 #include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_TctItems.h"
 #include "Core/TN_GameplayPreload.h"
 #include "TN_RaceItemArt.h"
 #include "World/Beach/TN_RaceItemBox.h"
@@ -268,6 +269,12 @@ FTN_InventoryItem TNRaceItems::MakeItem(ETNRaceItem Item)
 
 void TNRaceItems::ResolveVisuals(FTN_InventoryItem& Item)
 {
+	// Los de Todos contra Todos también se definen en código: el inventario y los pickups los resuelven por aquí.
+	if (Item.UseType == ETN_ItemUseType::TctItem)
+	{
+		TNTctItems::ResolveVisuals(Item);
+		return;
+	}
 	if (Item.UseType != ETN_ItemUseType::RaceItem || IsRunningDedicatedServer() || !FApp::CanEverRender())
 	{
 		return;

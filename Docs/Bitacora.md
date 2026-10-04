@@ -42,7 +42,7 @@ main: `c231ef3`.
 4. Reabrir editor con `UnrealEditor-Win64-DebugGame.exe`, mirar muros y puentes en PIE.
 5. Push de `feat/procgen-terrain` y merge a main.
 
-Kanban: `card-1790093849652-b7kug3`. Diseño: `Docs/Archivo/2026-09-22-Terreno-Modulos-400m.md`.
+Kanban: `card-1790093849652-b7kug3`. Diseño: `Docs/Archivo/2026-09-22-Terreno-Modulos-400m.md` (eliminado).
 
 ## 2026-09-22 (tarde-noche) — Rediseño del terreno: fases 1 y 2
 

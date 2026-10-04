@@ -37,6 +37,9 @@ namespace TNTurtleFoley
  * Panzazo: «plaf» de tripa al caer, arrastre continuo mientras se desliza sobre la tripa (con el timbre de la superficie
  * y la fuerza de la velocidad) y «tonc» hueco del caparazón si choca contra algo arrastrándose.
  *
+ * Nado y caparazón: una brazada (el agua que empujan las aletas) en cada ciclo de la brazada de la animación, más fuerte
+ * cuanto más rápido nada, y el roce con «tonc» hueco al meterse o salir del caparazón (PlayShell).
+ *
  * Estado local por máquina, sin RPC: cada máquina con audio da este componente a cada tortuga (ATortugaCharacter::
  * BeginPlay) y lee cada fotograma su estado replicado (velocidad, en el suelo o en el aire, sprint, estamina, derribo,
  * caparazón...). Fuente 3D mono en la raíz de la tortuga; la del jugador local suena algo más alta. Nada en servidor
@@ -47,8 +50,8 @@ namespace TNTurtleFoley
  * atómicos; el sintetizador arranca al hacer falta y se para en silencio o lejos del oyente (sin gastar CPU).
  *
  * Consola: TN.Voice.Volume (volumen), TN.Voice.Surface (forzar superficie), TN.Voice.Debug (estado en pantalla),
- * TN.Voice.Steps <0|1|2>, TN.Voice.Pant <0|1|2> y TN.Voice.Drag <0|1|2> (forzar pasos, jadeo o arrastre en la tortuga
- * local). Ver Docs/Sonido_Tortuga.md.
+ * TN.Voice.Steps <0|1|2>, TN.Voice.Pant <0|1|2>, TN.Voice.Drag <0|1|2> y TN.Voice.Swim <0|1|2> (forzar pasos, jadeo,
+ * arrastre o brazadas en la tortuga local) y TN.Voice.Shell <0|1>. Ver Docs/Sonido_Tortuga.md.
  */
 UCLASS(ClassGroup = (Audio), meta = (BlueprintSpawnableComponent))
 class TORTUNABO_API UTN_TurtleFoleyComponent : public USynthComponent
@@ -84,11 +87,20 @@ public:
 	 */
 	void PlayStash(bool bIntoShell);
 
+	/**
+	 * Meterse en el caparazón (bEntering) o salir: roce de la piel y «tonc» hueco de la concha. Lo pide UTN_ShellComponent
+	 * en cada máquina al cambiar de estado (cosmético, sin red) si bSynthShellSounds; si no, suenan sus assets.
+	 */
+	void PlayShell(bool bEntering);
+
+	/** Pruebas (TN.Voice.Swim): 0 = sin forzar (manda el nado), 1 = brazadas flotando en el sitio, 2 = a toda velocidad. */
+	void SetDebugSwim(int32 InLevel);
+
 	/** Volumen general (pasos y jadeo). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TurtleFoley", meta = (ClampMin = "0.0", ClampMax = "4.0"))
 	float Loudness = 1.f;
 
-	/** Volumen de los pasos, aterrizajes e impulsos. */
+	/** Volumen de los pasos, aterrizajes e impulsos (y de las brazadas y el caparazón). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TurtleFoley", meta = (ClampMin = "0.0", ClampMax = "4.0"))
 	float StepLoudness = 1.f;
 
@@ -160,6 +172,9 @@ private:
 
 	/** Arrastre sobre la tripa (fuerza por la velocidad, superficie) y choques arrastrándose. */
 	void UpdateDrag(float DeltaTime, double Now, const TNTurtleFoley::FTurtleState& Frame);
+
+	/** Brazadas al nadar, al ritmo de la brazada de la animación (o de un reloj propio si no se evalúa). */
+	void UpdateSwim(float DeltaTime, double Now, const TNTurtleFoley::FTurtleState& Frame);
 
 	/** Manda una pisada al hilo de audio (arranca el sintetizador si hace falta). */
 	void EmitStep(uint8 Kind, uint8 Foot, float Force, float Pace, double Now, const TNTurtleFoley::FTurtleState& Frame);
@@ -252,8 +267,15 @@ private:
 	bool bWasBellyGround = false;
 	double LastBumpTime = -10.0;
 
+	// ── Nado ────────────────────────────────────────────────────────────────
+	/** Fase de la brazada del fotograma anterior (-1 = sin nadar), reloj propio y última fase leída de la animación. */
+	float PrevSwimPhase = -1.f;
+	float SwimClock = 0.f;
+	float LastAnimSwimPhase = -1.f;
+
 	// ── Pruebas ─────────────────────────────────────────────────────────────
 	int32 DebugPant = 0;
+	int32 DebugSwim = 0;
 	int32 DebugSteps = 0;
 	int32 DebugDrag = 0;
 	float DebugStepTimer = 0.f;

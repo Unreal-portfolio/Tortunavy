@@ -59,6 +59,20 @@ namespace TNShellLogic
 		return TimeInShellSeconds >= MinTimeInShellSeconds;
 	}
 
+	/**
+	 * @brief Si la pose de la malla solo se anima con los movimientos que manda su cliente
+	 *        (USkeletalMeshComponent::bOnlyAllowAutonomousTickPose).
+	 * @param bServerOfRemotePlayer En el servidor, la tortuga de un jugador remoto: el motor la deja así al
+	 *        poseerla (ACharacter::PossessedBy) para que la animación vaya al ritmo de sus movimientos.
+	 * @param bDrivenByShellBody La mueve su caja física: su movimiento está apagado aquí y en su cliente, que
+	 *        deja de mandar movimientos. Sin animarse cada fotograma, el anfitrión la veía congelada con la pose
+	 *        de antes de meterse, con las patas fuera de la bola (#246).
+	 */
+	inline bool OnlyTickPoseFromClientMoves(bool bServerOfRemotePlayer, bool bDrivenByShellBody)
+	{
+		return bServerOfRemotePlayer && !bDrivenByShellBody;
+	}
+
 	/** Reglas de la recolocación de una caja que ha cruzado la malla fina del terreno (servidor, ATN_ShellBody). */
 	struct FSunkRescueRules
 	{
