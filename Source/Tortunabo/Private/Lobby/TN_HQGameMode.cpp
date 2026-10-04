@@ -1,4 +1,5 @@
 #include "Lobby/TN_HQGameMode.h"
+#include "Game/TN_TctGameMode.h"
 #include "Art/TN_TurtleArt.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
@@ -423,7 +424,8 @@ void ATN_HQGameMode::BeginMatchTravel()
 			// Supervivencia: los niveles del Clásico (LVL_Run) con su propio GameMode (alias «Survival», DefaultEngine.ini).
 			TravelURL = MatchMapPath + TEXT("?game=Survival");
 		}
-		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath))
+		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath)
+			&& ATN_TctGameMode::HasDefaultArena())
 		{
 			// Todos contra Todos: rondas de supervivencia en una arena inventada (ATN_TctGameMode, alias «Tct»).
 			TravelURL = TctMapPath + TEXT("?game=Tct");
@@ -437,7 +439,7 @@ void ATN_HQGameMode::BeginMatchTravel()
 			}
 			if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll)
 			{
-				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_tct_level.py): se juega el cooperativo."),
+				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] Sin %s (Scripts/build_tct_level.py) o sin su arena en Scripts/terrain_volumes/Variants (build cocinada): se juega el cooperativo."),
 					*TctMapPath);
 				GI->SelectedProcMode = ETNProcGameMode::Coop;
 			}

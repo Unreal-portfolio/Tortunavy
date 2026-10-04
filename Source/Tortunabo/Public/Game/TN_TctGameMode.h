@@ -39,8 +39,20 @@ class TORTUNABO_API ATN_TctGameMode : public ATN_RunGameMode, public ITN_Champio
 public:
 	ATN_TctGameMode();
 
-	/** Antes del BeginPlay de los actores: carga la arena, la mide y prepara los sitios de salida y el plan del agua. */
+	/**
+	 * Antes del BeginPlay de los actores: carga la arena, la mide y prepara los sitios de salida y el plan del agua. Si no hay
+	 * arena (build cocinada: la variante no está en Scripts/), la partida no arranca y se vuelve al lobby al llegar todas.
+	 */
 	virtual void StartPlay() override;
+
+	/**
+	 * true si existe la arena por defecto del modo (DefaultArenaVariant de la clase, en Scripts/terrain_volumes/Variants). El
+	 * lobby no viaja a este modo ni lo ofrece sin ella (TNLobbyMission::IsModePlayable).
+	 */
+	static bool HasDefaultArena();
+
+	/** true si la arena se cargó y se midió (sitios de salida, límites y plan del agua listos). */
+	bool IsArenaReady() const { return bArenaReady; }
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
@@ -192,6 +204,8 @@ private:
 	bool bMatchOver = false;
 	bool bLeaving = false;
 	bool bTimeUp = false;
+	/** La arena se cargó y se midió (SetUpArena); sin ella no se juega ninguna ronda. */
+	bool bArenaReady = false;
 	float PhaseEndTime = 0.f;
 
 	FTimerHandle PhaseClockHandle;
@@ -202,7 +216,10 @@ private:
 	FTimerHandle LeaveHandle;
 
 	// ── Arena (TN_TctGameMode.cpp) ──
-	void SetUpArena();
+	/** Carga y mide la arena; false si no se pudo (sin variante o sin suelo). */
+	bool SetUpArena();
+	/** Sin arena: congela a las tortugas, devuelve la misión del anfitrión al cooperativo y vuelve al lobby. */
+	void AbortWithoutArena();
 	void BuildFloodPlan();
 	void CreateSpawnPoints();
 	ATN_TctGameState* GetTctState() const;

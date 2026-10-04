@@ -87,8 +87,13 @@ ATN_TctGameMode::ATN_TctGameMode()
 void ATN_TctGameMode::StartPlay()
 {
 	// StartPlay va antes del BeginPlay de los actores: la arena ya está cargada cuando la base reparte a las tortugas.
-	SetUpArena();
+	bArenaReady = SetUpArena();
 	Super::StartPlay();
+}
+
+bool ATN_TctGameMode::HasDefaultArena()
+{
+	return ATN_TctArena::VariantExists(GetDefault<ATN_TctGameMode>()->DefaultArenaVariant);
 }
 
 ATN_TctGameState* ATN_TctGameMode::GetTctState() const
@@ -96,12 +101,12 @@ ATN_TctGameState* ATN_TctGameMode::GetTctState() const
 	return GetGameState<ATN_TctGameState>();
 }
 
-void ATN_TctGameMode::SetUpArena()
+bool ATN_TctGameMode::SetUpArena()
 {
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		return;
+		return false;
 	}
 	FName Wanted = DefaultArenaVariant;
 	const FString ArenaOption = UGameplayStatics::ParseOption(OptionsString, TEXT("Arena"));
@@ -130,17 +135,18 @@ void ATN_TctGameMode::SetUpArena()
 	if (!Arena)
 	{
 		UE_LOG(LogTortunabo, Error, TEXT("[TcT] No se ha podido crear la arena."));
-		return;
+		return false;
 	}
 	if (!ATN_TctArena::VariantExists(Wanted))
 	{
-		UE_LOG(LogTortunabo, Error, TEXT("[TcT] La arena %s no está en Scripts/terrain_volumes/Variants (el modo solo se juega sin cocinar)."),
+		UE_LOG(LogTortunabo, Error, TEXT("[TcT] La arena %s no está en Scripts/terrain_volumes/Variants (el modo solo se juega sin cocinar): no hay partida."),
 			*Wanted.ToString());
+		return false;
 	}
 	Arena->ServerSetArenaVariant(Wanted);
 	if (!Arena->Survey(SurveySpacing))
 	{
-		return;
+		return false;
 	}
 
 	const FBox& Box = Arena->GetGroundBox();
@@ -152,6 +158,7 @@ void ATN_TctGameMode::SetUpArena()
 	CreateSpawnPoints();
 	CreateItemPads();
 	HoldWater(FloodPlan.BaseZ);
+	return true;
 }
 
 void ATN_TctGameMode::BuildFloodPlan()

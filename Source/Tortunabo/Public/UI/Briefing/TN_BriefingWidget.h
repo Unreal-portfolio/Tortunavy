@@ -65,7 +65,7 @@ private:
 
 	// ── Pestaña «Misión» (solo mientras se ve) ──
 
-	/** Un botón por modo de TNLobbyMission::MenuModes, en su orden. */
+	/** Un botón por modo de TNLobbyMission::GetMenuModes, en su orden. */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTN_ShopButton>> ModeButtons;
 

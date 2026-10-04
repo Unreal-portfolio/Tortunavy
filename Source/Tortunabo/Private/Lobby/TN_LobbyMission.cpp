@@ -1,6 +1,7 @@
 #include "Lobby/TN_LobbyMission.h"
 #include "Core/TN_GameModeSpawnUtils.h"
 #include "Core/TN_Log.h"
+#include "Game/TN_TctGameMode.h"
 #include "Lobby/TN_GeneralBriefing.h"
 #include "Lobby/TN_ProcModeSelector.h"
 #include "Multiplayer/MP_GameInstance.h"
@@ -41,16 +42,32 @@ FText TNLobbyMission::ModeName(ETNProcGameMode Mode)
 	}
 }
 
-ETNProcGameMode TNLobbyMission::NormalizeMenuMode(ETNProcGameMode Mode)
+bool TNLobbyMission::IsModePlayable(ETNProcGameMode Mode)
 {
+	return Mode != ETNProcGameMode::FreeForAll || ATN_TctGameMode::HasDefaultArena();
+}
+
+TArray<ETNProcGameMode> TNLobbyMission::FilterMenuModes(bool bFreeForAllPlayable)
+{
+	TArray<ETNProcGameMode> Modes;
 	for (const ETNProcGameMode MenuMode : MenuModes)
 	{
-		if (MenuMode == Mode)
+		if (MenuMode != ETNProcGameMode::FreeForAll || bFreeForAllPlayable)
 		{
-			return Mode;
+			Modes.Add(MenuMode);
 		}
 	}
-	return ETNProcGameMode::Coop;
+	return Modes;
+}
+
+TArray<ETNProcGameMode> TNLobbyMission::GetMenuModes()
+{
+	return FilterMenuModes(IsModePlayable(ETNProcGameMode::FreeForAll));
+}
+
+ETNProcGameMode TNLobbyMission::NormalizeMenuMode(ETNProcGameMode Mode)
+{
+	return GetMenuModes().Contains(Mode) ? Mode : ETNProcGameMode::Coop;
 }
 
 FText TNLobbyMission::DifficultyName(ETNProcDifficulty Difficulty)
@@ -95,20 +112,28 @@ FText TNLobbyMission::DifficultyBlurb(ETNProcDifficulty Difficulty)
 	}
 }
 
-ETNProcGameMode TNLobbyMission::NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers)
+ETNProcGameMode TNLobbyMission::NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers, bool bFreeForAllPlayable)
 {
 	const int32 Count = static_cast<int32>(ETNProcGameMode::Count);
 	int32 Next = static_cast<int32>(Current);
 	for (int32 Step = 0; Step < Count; ++Step)
 	{
 		Next = (Next + 1) % Count;
-		// 2 vs 2 solo se ofrece con exactamente 4 jugadores.
-		if (static_cast<ETNProcGameMode>(Next) != ETNProcGameMode::TwoVsTwo || ConnectedPlayers == 4)
+		const ETNProcGameMode Candidate = static_cast<ETNProcGameMode>(Next);
+		// 2 vs 2 solo se ofrece con exactamente 4 jugadores, y Todos contra Todos solo con su arena.
+		const bool bTwoVsTwoBlocked = Candidate == ETNProcGameMode::TwoVsTwo && ConnectedPlayers != 4;
+		const bool bFreeForAllBlocked = Candidate == ETNProcGameMode::FreeForAll && !bFreeForAllPlayable;
+		if (!bTwoVsTwoBlocked && !bFreeForAllBlocked)
 		{
 			break;
 		}
 	}
 	return static_cast<ETNProcGameMode>(Next);
+}
+
+ETNProcGameMode TNLobbyMission::NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers)
+{
+	return NextSelectorMode(Current, ConnectedPlayers, IsModePlayable(ETNProcGameMode::FreeForAll));
 }
 
 bool TNLobbyMission::CanLocalPlayerChoose(const UObject* WorldContext)
@@ -135,6 +160,12 @@ bool TNLobbyMission::SetMode(const UObject* WorldContext, ETNProcGameMode Mode)
 	UMP_GameInstance* GI = TNLobbyMissionDetail::HostGameInstance(WorldContext);
 	if (!GI || Mode >= ETNProcGameMode::Count)
 	{
+		return false;
+	}
+	if (!IsModePlayable(Mode))
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Misión] %s no se puede jugar en esta build (falta su arena): no se elige."),
+			*UEnum::GetValueAsString(Mode));
 		return false;
 	}
 	if (Mode == ETNProcGameMode::TwoVsTwo)
