@@ -250,6 +250,8 @@ void ATortugaCharacter::ApplyDiveVisual(bool bEnter)
 			EmoteBlendOutTimer          = 0.f;
 			ActiveEmoteIndex            = -1;
 			EmoteTime                   = 0.f;
+			// La música de los bailes va en bucle (#82): si no se para aquí, el panzazo la deja sonando.
+			StopEmoteSound();
 		}
 		// Abort jump animation if it was running
 		bJumpAnimActive = false;

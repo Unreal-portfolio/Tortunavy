@@ -943,7 +943,14 @@ void ATortugaCharacter::PlayEmoteSound(int32 Index)
 	}
 
 	EmoteAudioComponent->SetSound(EmoteSounds[Index]);
-	EmoteAudioComponent->Play();
+	if (EmoteAudioFadeInTime > 0.f)
+	{
+		EmoteAudioComponent->FadeIn(EmoteAudioFadeInTime);
+	}
+	else
+	{
+		EmoteAudioComponent->Play();
+	}
 }
 
 void ATortugaCharacter::StopEmoteSound()

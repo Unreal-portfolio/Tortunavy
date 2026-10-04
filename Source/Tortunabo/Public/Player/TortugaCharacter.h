@@ -443,6 +443,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Emotes|Audio")
 	TArray<TObjectPtr<USoundBase>> EmoteSounds;
 
+	/** Segundos de fundido de entrada al empezar el sonido de un emote (0 = sin fundido). Solo la primera vez, no en cada vuelta del bucle. */
+	UPROPERTY(EditDefaultsOnly, Category = "Emotes|Audio", meta = (ClampMin = "0.0"))
+	float EmoteAudioFadeInTime = 0.3f;
+
 	/** Inner radius (cm) for emote audio — full volume inside this range. Matches voice chat default. */
 	UPROPERTY(EditDefaultsOnly, Category = "Emotes|Audio", meta = (ClampMin = "0.0"))
 	float EmoteAudioInnerRadius = 300.f;
