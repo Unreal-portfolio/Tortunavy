@@ -218,6 +218,11 @@ bool ATN_RaceMine::ServerThrow(ATortugaCharacter* Turtle, const FVector& Directi
 		}
 	}
 	const FVector Start = Turtle->GetActorLocation() + Flat * SpawnForward + FVector(0.0, 0.0, SpawnUp);
+	// Al punto del centro de la pantalla, con la gravedad de la mina (en VR se queda la dirección de la aleta, los 28° fijos).
+	if (Turtle->UsesCameraThrowAim())
+	{
+		Aim = Turtle->GetThrowDirectionToCrosshair(Start, Turtle->GetTurtleAimRotation(), static_cast<float>(ThrowSpeed), static_cast<float>(TNRaceMineFlight::GravityCm));
+	}
 	const FTransform SpawnXf(FRotator(0.0, Flat.Rotation().Yaw, 0.0), Start);
 	ATN_RaceMine* Mine = World->SpawnActorDeferred<ATN_RaceMine>(StaticClass(), SpawnXf, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	if (!Mine)

@@ -8,6 +8,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include "Player/TortugaCharacter.h"
+#include "Camera/CameraComponent.h"
+#include "Player/TN_CarryComponent.h"
+#include "Player/TN_ThrowArc.h"
 #include "Core/TN_Log.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Player/TN_StaminaComponent.h"
@@ -380,6 +383,61 @@ FVector ATortugaCharacter::GetThrowDirection(const FRotator& AimRotation) const
 	return FRotator(Pitch, AimRotation.Yaw, 0.f).Vector();
 }
 
+bool ATortugaCharacter::UsesCameraThrowAim() const
+{
+	return FollowCamera && !bVRViewActive && !bVRPlayer;
+}
+
+bool ATortugaCharacter::GetCrosshairPoint(FVector& OutPoint) const
+{
+	const UWorld* World = GetWorld();
+	if (!UsesCameraThrowAim() || !World)
+	{
+		return false;
+	}
+
+	// Rayo por el centro de la pantalla: sale de la cámara hacia delante. Su primer choque (menos la propia tortuga y lo que
+	// lleva) es el punto de mira; sin choque, un punto lejano en el mismo rayo.
+	constexpr float AimRange = 8000.f;
+	const FVector CamLoc = FollowCamera->GetComponentLocation();
+	const FVector CamDir = FollowCamera->GetForwardVector();
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(ThrowCrosshair), false, this);
+	if (const UTN_CarryComponent* Carry = CarryComponent)
+	{
+		if (const AActor* Carried = Carry->GetCarriedTurtle())
+		{
+			Params.AddIgnoredActor(Carried);
+		}
+	}
+	FHitResult Hit;
+	const bool bHit = World->LineTraceSingleByChannel(Hit, CamLoc, CamLoc + CamDir * AimRange, ECC_Visibility, Params);
+	OutPoint = bHit ? FVector(Hit.ImpactPoint) : CamLoc + CamDir * AimRange;
+	return true;
+}
+
+FVector ATortugaCharacter::GetThrowDirectionToCrosshair(const FVector& Origin, const FRotator& AimRotation, float Speed, float GravityCmS2, float LinearDamping) const
+{
+	const UWorld* World = GetWorld();
+	FVector Target;
+	if (!World || Speed < 1.f || !GetCrosshairPoint(Target))
+	{
+		return GetThrowDirection(AimRotation);
+	}
+
+	// Tiro parabólico (la gravedad del mundo, con ProjectileGravityScale 1): el ángulo bajo que llega justo al punto.
+	const FVector Delta = Target - Origin;
+	const FVector Flat(Delta.X, Delta.Y, 0.0);
+	const double D = Flat.Size();
+	if (D < 1.0)
+	{
+		return Delta.GetSafeNormal();
+	}
+	const double G = GravityCmS2 > 1.f ? static_cast<double>(GravityCmS2) : FMath::Max(1.0, -static_cast<double>(World->GetGravityZ()));
+	// Sin alcance (punto demasiado lejos): el ángulo de máximo alcance.
+	const double Theta = TNThrowArc::LaunchPitch(D, Delta.Z, static_cast<double>(Speed), G, static_cast<double>(LinearDamping));
+	return (Flat / D * FMath::Cos(Theta) + FVector(0.0, 0.0, FMath::Sin(Theta))).GetSafeNormal();
+}
+
 void ATortugaCharacter::MulticastItemThrowAnim_Implementation()
 {
 	if (GetNetMode() == NM_DedicatedServer)
@@ -398,9 +456,11 @@ void ATortugaCharacter::HandleUseThrowable(const FTN_InventoryItem& EquippedItem
 	const FVector SpawnLocation = GetItemSpawnLocation();
 
 	// ── Dirección de lanzamiento: hacia donde mira la cámara (en VR, la aleta), con el arco bajo de todos los lanzamientos ──
-	const FVector ArcedDirection = GetThrowDirection(GetTurtleAimRotation());
+	// y al punto del centro de la pantalla (en VR, hacia la aleta).
+	const float ThrowSpeedCmS = FMath::Max(EquippedItem.ThrowableData.ThrowSpeed, 0.0f);
+	const FVector ArcedDirection = GetThrowDirectionToCrosshair(SpawnLocation, GetTurtleAimRotation(), ThrowSpeedCmS);
 
-	const FVector LaunchVelocity = ArcedDirection * FMath::Max(EquippedItem.ThrowableData.ThrowSpeed, 0.0f);
+	const FVector LaunchVelocity = ArcedDirection * ThrowSpeedCmS;
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -458,7 +518,7 @@ void ATortugaCharacter::HandleUseInkThrower(const FTN_InventoryItem& EquippedIte
 
 	// Con el mismo arco bajo que el resto de lanzamientos (la tinta también cae con la gravedad).
 	const FVector Origin    = GetItemSpawnLocation();
-	const FVector Direction = GetThrowDirection(GetTurtleAimRotation());
+	const FVector Direction = GetThrowDirectionToCrosshair(Origin, GetTurtleAimRotation(), ConsumedItem.InkData.ThrowSpeed);
 	ATN_InkProjectile::Spawn(this, ConsumedItem.InkData.ProjectileClass,
 		Origin, Direction, ConsumedItem.InkData.ThrowSpeed);
 	MulticastItemThrowAnim();

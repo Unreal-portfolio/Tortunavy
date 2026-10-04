@@ -36,6 +36,9 @@ class TORTUNABO_API ATN_ShellBody : public AActor
 	GENERATED_BODY()
 
 public:
+	/** Amortiguación lineal de la caja (1/s): frena un poco en el aire; los lanzamientos al punto de mira la compensan. */
+	static constexpr float BoxLinearDamping = 0.25f;
+
 	ATN_ShellBody();
 
 	virtual void BeginPlay() override;
