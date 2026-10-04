@@ -52,8 +52,15 @@ namespace TNSurvivalCatalog
 	constexpr double BananaSpacing = 250.0;
 	/** Medio largo (cm) de una zona lenta a lo largo del camino. */
 	constexpr double SlowZoneHalfLength = 500.0;
-	/** Medio largo (cm) de la zona de un grupo de cangrejos colocado en un punto. */
+	/** Medio largo (cm) de cada zona de cangrejos: un tramo largo se parte en varias, que en una curva no se salen del camino. */
 	constexpr double CrabZoneHalfLength = 800.0;
+
+	/** Zonas en que se parte un grupo de Count cangrejos del tramo [From, To] (cm): una por cada 16 m, sin pasar de Count. */
+	inline int32 CrabZoneCount(double From, double To, int32 Count)
+	{
+		const int32 BySpan = FMath::CeilToInt32(FMath::Max(0.0, To - From) / (2.0 * CrabZoneHalfLength));
+		return FMath::Clamp(BySpan, 1, FMath::Max(1, Count));
+	}
 	/** Sombrillas por tramo de gaviotas si el catálogo no lo dice. */
 	constexpr int32 DefaultUmbrellas = 2;
 
@@ -284,14 +291,21 @@ namespace TNSurvivalCatalog
 				}
 				case ETrap::Crab:
 				{
-					const int32 i = NearestFree(M, SampleAtDistance(M, (From + To) * 0.5));
-					if (i == INDEX_NONE) { break; }
-					FTrapPlacement P = At(M, ETrap::Crab, i, 0.0);
-					// Solo el ancho del camino: la zona hace nacer los cangrejos en cualquier punto de su caja, y fuera del
-					// camino caerían en las paredes.
-					P.Extent = FVector(FMath::Max(CrabZoneHalfLength, (To - From) * 0.5), M[i].Width * 0.5, 300.0);
-					P.Count = Spot.Count;
-					Out.Add(P);
+					// Zonas cortas repartidas por el tramo, con los cangrejos repartidos entre ellas: la zona los hace nacer en
+					// cualquier punto de su caja recta, y una caja larga se sale del camino en las curvas (paredes, terreno).
+					const int32 Zones = CrabZoneCount(From, To, Spot.Count);
+					int32 k = 0;
+					for (const double S : Spread(From, To, Zones, 0.0))
+					{
+						const int32 Crabs = Spot.Count / Zones + (k++ < Spot.Count % Zones ? 1 : 0);
+						const int32 i = NearestFree(M, SampleAtDistance(M, S));
+						if (i == INDEX_NONE) { continue; }
+						FTrapPlacement P = At(M, ETrap::Crab, i, 0.0);
+						// Solo el ancho del camino: fuera de él caerían en las paredes.
+						P.Extent = FVector(CrabZoneHalfLength, M[i].Width * 0.5, 300.0);
+						P.Count = FMath::Max(1, Crabs);
+						Out.Add(P);
+					}
 					break;
 				}
 				case ETrap::Seagull:

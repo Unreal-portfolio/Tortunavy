@@ -15,6 +15,9 @@
 
 namespace
 {
+	/** Holgura (cm) de las esquinas de una zona de cangrejos fuera del ancho del camino (el cangrejo se pega al suelo al nacer). */
+	constexpr double CrabZoneEdgeTolerance = 150.0;
+
 	/** Los 50 mapas del catálogo y el mapa de pruebas. */
 	TArray<TNSurvivalCatalog::FMapEntry> CatalogAndTestMaps()
 	{
@@ -117,7 +120,7 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 		if (!TestTrue(Ctx + TEXT(": genera mapa"), TNProcMap::GenerateSurvivalLayout(M.Seed, M.Difficulty, L) != 0)) { continue; }
 		const TArray<FTrapPlacement> Plan = PlaceLooseTraps(L, M.Seed);
 
-		// Ninguna se pierde: una por cáscara, medusa y zona lenta; una zona por grupo de cangrejos; la zona de
+		// Ninguna se pierde: una por cáscara, medusa y zona lenta; una zona por cada 16 m de tramo de cangrejos; la zona de
 		// gaviotas y sus sombrillas.
 		int32 Expected = 0;
 		for (const FTrapSpot& T : TrapsOf(M.Seed))
@@ -127,7 +130,7 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 				case ETrap::BananaPeel: case ETrap::Jellyfish: case ETrap::SlowZone: Expected += T.Count; break;
 				case ETrap::Quicksand: case ETrap::DragCrab: case ETrap::BurrowCrab: case ETrap::UrchinSpikes:
 				case ETrap::TankTrap: case ETrap::TrashPile: case ETrap::Trench: Expected += T.Count; break;
-				case ETrap::Crab: Expected += 1; break;
+				case ETrap::Crab: Expected += CrabZoneCount(L.Main.Last().S * T.FromPct / 100.0, L.Main.Last().S * T.ToPct / 100.0, T.Count); break;
 				case ETrap::Seagull: Expected += 1 + (T.Umbrellas > 0 ? T.Umbrellas : DefaultUmbrellas); break;
 				default: break;
 			}
@@ -152,6 +155,27 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 			{
 				TestTrue(What + TEXT(": arenas movedizas sin hueco en los 30 m siguientes"), Placement::GapEndBetween(L.Main,
 					P.Along - QuicksandMaxRadius, P.Along + QuicksandMaxRadius + SlowZoneGapClearance) < 0.0);
+			}
+
+			if (P.Trap == ETrap::Crab)
+			{
+				// Las esquinas de la caja de la zona (donde puede nacer un cangrejo) caen en el ancho del camino.
+				TestTrue(What + TEXT(": zona de cangrejos corta"), P.Extent.X <= CrabZoneHalfLength && P.Count >= 1);
+				const double Yaw = FMath::DegreesToRadians(P.YawDeg);
+				const FVector2D Fwd(FMath::Cos(Yaw), FMath::Sin(Yaw));
+				const FVector2D Left(-Fwd.Y, Fwd.X);
+				for (const FVector2D Corner : { FVector2D(1.0, 1.0), FVector2D(1.0, -1.0), FVector2D(-1.0, 1.0), FVector2D(-1.0, -1.0) })
+				{
+					const FVector2D Q = FVector2D(P.Location) + Fwd * (Corner.X * P.Extent.X) + Left * (Corner.Y * P.Extent.Y);
+					int32 Best = 0;
+					for (int32 j = 1; j < L.Main.Num(); ++j)
+					{
+						if (FVector2D::DistSquared(L.Main[j].P, Q) < FVector2D::DistSquared(L.Main[Best].P, Q)) { Best = j; }
+					}
+					const double Lateral = FMath::Abs(FVector2D::CrossProduct(L.Main[Best].Dir, Q - L.Main[Best].P));
+					TestTrue(What + FString::Printf(TEXT(": esquina de la zona de cangrejos a %.0f cm del eje (ancho %.0f)"), Lateral,
+						L.Main[Best].Width), Lateral <= L.Main[Best].Width * 0.5 + CrabZoneEdgeTolerance);
+				}
 			}
 
 			// Paso libre: los obstáculos a menos de 1,5 m a lo largo del camino ocupan franjas de la sección.
