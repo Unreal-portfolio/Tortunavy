@@ -26,6 +26,8 @@ ORDEN_TAMANO = {"XS": 0, "S": 1, "M": 2, "L": 3}
 REF_CIERRE = re.compile(r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|cierra|resuelve)\s+#(\d+)", re.I)
 REF_MENCION = re.compile(r"\brefs?\s+#(\d+)", re.I)
 REF_RAMA = re.compile(r"/(\d+)-")
+# Respuesta de `gh project item-add` cuando la issue ya es un item del Project (auto-add de GitHub).
+YA_EN_PROYECTO = "Content already exists"
 
 CONSULTA_ITEMS = """
 query($org: String!, $num: Int!, $cursor: String) {
@@ -145,13 +147,25 @@ def cargar_proyecto(numero: int | None = None) -> dict:
 
 
 def item_de_issue(proyecto: dict, numero: int) -> str:
-    """Id del item del proyecto para la issue; la añade si aún no está."""
+    """Id del item del proyecto para la issue; la añade si aún no está.
+
+    Si el auto-add del Project se adelanta, `item-add` responde «Content already exists»:
+    entonces se lee el item que ya existe y se sigue con él.
+    """
     if numero in proyecto["items"]:
         return proyecto["items"][numero]["item"]
     cache = proyecto.setdefault("items_nuevos", {})
     if numero not in cache:
         url = f"https://github.com/{REPO}/issues/{numero}"
-        salida = gh("project", "item-add", str(NUMERO), "--owner", OWNER, "--url", url, "--format", "json")
+        try:
+            salida = gh("project", "item-add", str(NUMERO), "--owner", OWNER, "--url", url, "--format", "json")
+        except ErrorTablero as exc:
+            if YA_EN_PROYECTO not in str(exc):
+                raise
+            completar_con(proyecto, numero)
+            if numero not in proyecto["items"]:
+                raise ErrorTablero(f"#{numero} ya está en el Project, pero no se encuentra su item.") from exc
+            return proyecto["items"][numero]["item"]
         cache[numero] = json.loads(salida)["id"]
     return cache[numero]
 
