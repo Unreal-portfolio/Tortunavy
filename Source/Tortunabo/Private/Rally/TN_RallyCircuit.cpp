@@ -197,6 +197,52 @@ namespace TNRallyCircuit
 		return FMath::Lerp(BankDeg[Below], BankDeg[Below + 1], FMath::Clamp(Alpha, 0.0, 1.0));
 	}
 
+	bool ReadRoadWidths(const FJsonObject& Root, int32 RoadPoints, TArray<double>& OutWidthCm, FString& OutError)
+	{
+		OutWidthCm.Reset();
+		const TArray<TSharedPtr<FJsonValue>>* Widths = nullptr;
+		if (!Root.TryGetArrayField(TEXT("road_widths_m"), Widths) || !Widths)
+		{
+			return true;
+		}
+		OutWidthCm.Reserve(Widths->Num());
+		for (const TSharedPtr<FJsonValue>& Value : *Widths)
+		{
+			double Meters = 0.0;
+			if (!Value.IsValid() || !Value->TryGetNumber(Meters))
+			{
+				OutError = TEXT("road_widths_m con un valor que no es un número");
+				OutWidthCm.Reset();
+				return false;
+			}
+			OutWidthCm.Add(FMath::Clamp(Meters * 100.0, MinRoadWidthCm, MaxRoadWidthCm));
+		}
+		if (OutWidthCm.Num() != RoadPoints)
+		{
+			UE_LOG(LogTNRally, Warning, TEXT("[RallyCircuit] road_widths_m trae %d valores y road_uu %d puntos: se usa road_width_m."),
+				OutWidthCm.Num(), RoadPoints);
+			OutWidthCm.Reset();
+		}
+		return true;
+	}
+
+	double RoadWidthAtArc(TConstArrayView<double> SampleArcs, TConstArrayView<double> WidthCm, double Arc, double LengthCm, bool bClosed,
+		double FallbackCm)
+	{
+		// La misma interpolación que el peralte: lineal entre puntos de road_uu y, en circuito, entre el último y el primero.
+		return FMath::Min(SampleArcs.Num(), WidthCm.Num()) > 0 ? BankAtArc(SampleArcs, WidthCm, Arc, LengthCm, bClosed) : FallbackCm;
+	}
+
+	double RowLateralSpacingCm(double PreferredCm, double RoadWidthCm, int32 Count, double EdgeMarginCm)
+	{
+		if (RoadWidthCm <= 0.0 || Count < 2)
+		{
+			return PreferredCm;
+		}
+		const double Room = FMath::Max(0.0, RoadWidthCm - 2.0 * FMath::Max(0.0, EdgeMarginCm));
+		return FMath::Min(PreferredCm, Room / (Count - 1));
+	}
+
 	float FeatureSpeedLimitKmh(TConstArrayView<FFeatureArc> Features, double ArcCm, double LengthCm, bool bClosed, double ProbeCm,
 		double DecelCms2, float MaxKmh, const FBrakeTuning& Tuning)
 	{

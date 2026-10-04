@@ -74,8 +74,10 @@ namespace TNRally
 		/** start_yaw: rumbo de la salida cuando no es uno de los checkpoints. */
 		bool bHasStartYaw = false;
 		double StartYawDeg = 0.0;
-		/** road_width_m en cm (0 = no viene). */
+		/** road_width_m en cm (0 = no viene). En los circuitos con ancho por tramos es el máximo. */
 		double RoadWidthCm = 0.0;
+		/** road_widths_m: ancho de la calzada en cada punto de Road (cm; «Tramos variados», #622). Vacío si no viene. */
+		TArray<double> RoadWidthsCm;
 		/** bank_deg: peralte de cada punto de Road (grados; positivo, la derecha más baja). Vacío si no viene. */
 		TArray<double> RoadBankDeg;
 		/** elements: saltos, rasantes, horquillas... de los circuitos generados (#622). Vacío si no viene. */
@@ -86,7 +88,7 @@ namespace TNRally
 	TORTUNABO_API FString VariantManifestPath(FName Variant);
 
 	/**
-	 * Lee checkpoints_uu, start_uu, end_uu, water_uu y, si vienen, road_uu, closed, laps, start_yaw, road_width_m, bank_deg y
+	 * Lee checkpoints_uu, start_uu, end_uu, water_uu y, si vienen, road_uu, closed, laps, start_yaw, road_width_m, road_widths_m, bank_deg y
 	 * elements. False (con OutError) si el JSON no vale o no hay ni puertas ni salida.
 	 */
 	TORTUNABO_API bool ParseTrackManifest(const FString& JsonText, FTrackSource& Out, FString& OutError);

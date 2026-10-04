@@ -125,6 +125,8 @@ namespace TNRallyDressing
 		FVector Location = FVector::ZeroVector;
 		FVector Direction = FVector::ForwardVector;
 		double Arc = 0.0;
+		/** Ancho de la calzada en la muestra (cm; tramos estrechos y anchos, #622); 0 = el de FTrackData::RoadWidthCm. */
+		double RoadWidthCm = 0.0;
 	};
 
 	/** Lo que el decorado necesita del trazado (SampleTrack lo saca de ATN_RallyTrack; los tests lo montan a mano). */
@@ -135,7 +137,7 @@ namespace TNRallyDressing
 		double StepCm = 400.0;
 		double LengthCm = 0.0;
 		bool bClosed = false;
-		/** Ancho de la calzada (cm); 0 = el de FBarrierParams::DefaultRoadWidthCm. */
+		/** Ancho de la calzada (cm; con ancho por tramos, el máximo); 0 = el de FBarrierParams::DefaultRoadWidthCm. */
 		double RoadWidthCm = 0.0;
 		/** Puertas a la cota de la calzada con X en el sentido de la carrera, y la de la meta (INDEX_NONE si no hay). */
 		TArray<FTransform> Gates;
@@ -220,6 +222,8 @@ namespace TNRallyDressing
 
 	/** Semiancho de la calzada y desplazamiento del límite en recta (con bHugRoad, en todas partes). */
 	TORTUNABO_API double RoadHalfWidthCm(const FTrackData& Track, const FBarrierParams& Params);
+	/** Semiancho de la calzada en la muestra Index: el suyo (FAxisSample::RoadWidthCm) o, si no lo trae, RoadHalfWidthCm. */
+	TORTUNABO_API double SampleRoadHalfCm(const FTrackData& Track, int32 Index, const FBarrierParams& Params);
 	TORTUNABO_API double BaseOffsetCm(double RoadHalfCm, const FBarrierParams& Params);
 
 	/** Curvatura con signo de cada muestra (cambio de rumbo en la ventana / arco de la ventana). */

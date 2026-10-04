@@ -308,6 +308,7 @@ bool FTNRallyCircuitR01Test::RunTest(const FString& Parameters)
 	}
 	TestTrue(TEXT("circuito cerrado"), TNRally::IsCircuit(Source));
 	TestEqual(TEXT("un peralte por punto de road_uu"), Source.RoadBankDeg.Num(), Source.Road.Num());
+	TestEqual(TEXT("un ancho por punto de road_uu (tramos variados)"), Source.RoadWidthsCm.Num(), Source.Road.Num());
 
 	TNRallyCircuitTest::FScopedTestWorld Scoped;
 	if (!TestNotNull(TEXT("mundo de prueba"), Scoped.World))
@@ -377,9 +378,40 @@ bool FTNRallyCircuitR01Test::RunTest(const FString& Parameters)
 	const FVector Forward = Track->GetDirectionAtArc(Track->GetGateArc(0));
 	TestTrue(TEXT("la parrilla, detrás de la salida"), ((Slots[0] - Track->GetLocationAtArc(Track->GetGateArc(0))) | Forward) < 0.0);
 
-	// Barrera continua a los dos lados del lazo.
+	// Tramos variados: la calzada se estrecha y se ensancha por el lazo.
+	TestTrue(TEXT("la pista trae ancho por tramos"), Track->HasRoadWidthsPerPoint());
+	double MinWidth = TNumericLimits<double>::Max();
+	double MaxWidth = 0.0;
+	for (double Arc = 0.0; Arc < Track->GetTrackLengthCm(); Arc += 500.0)
+	{
+		MinWidth = FMath::Min(MinWidth, Track->GetRoadWidthAtArcCm(Arc));
+		MaxWidth = FMath::Max(MaxWidth, Track->GetRoadWidthAtArcCm(Arc));
+	}
+	TestTrue(*FString::Printf(TEXT("hay un tramo estrecho (%.1f m)"), MinWidth / 100.0), MinWidth <= 1250.0);
+	TestTrue(*FString::Printf(TEXT("hay un tramo ancho (%.1f m)"), MaxWidth / 100.0), MaxWidth >= 1650.0);
+	TestEqual(TEXT("road_width_m es el máximo"), Track->GetRoadWidthCm(), MaxWidth, 30.0);
+	for (const FFeatureArc& Feature : Features)
+	{
+		if (Feature.Kind == EElementKind::Hairpin)
+		{
+			const double Mid = Feature.StartCm + 0.5 * TNRally::ForwardArc(Feature.StartCm, Feature.EndCm, Track->GetTrackLengthCm(), true);
+			TestTrue(TEXT("las horquillas se ensanchan"), Track->GetRoadWidthAtArcCm(Mid) >= 1650.0);
+		}
+	}
+
+	// Barrera continua a los dos lados del lazo, pegada al borde de cada tramo.
 	const TNRallyDressing::FTrackData Data = TNRallyDressing::SampleTrack(*Track, 400.0);
 	const TNRallyDressing::FBarrierPlan Plan = TNRallyDressing::PlanBarriers(Data, TArray<uint8>(), TNRallyDressing::FBarrierParams());
+	int32 OnRoad = 0;
+	for (int32 Index = 0; Index < Data.Samples.Num(); ++Index)
+	{
+		for (int32 Side = TNRallyDressing::LeftSide; Side <= TNRallyDressing::RightSide; ++Side)
+		{
+			const double Offset = Plan.Sides[Side].OffsetCm.IsValidIndex(Index) ? Plan.Sides[Side].OffsetCm[Index] : 0.0;
+			OnRoad += Offset > 0.0 && Offset < 0.5 * Data.Samples[Index].RoadWidthCm ? 1 : 0;
+		}
+	}
+	TestEqual(TEXT("ninguna barrera dentro de su tramo de calzada"), OnRoad, 0);
 	for (int32 Side = TNRallyDressing::LeftSide; Side <= TNRallyDressing::RightSide; ++Side)
 	{
 		int32 TooWide = 0;

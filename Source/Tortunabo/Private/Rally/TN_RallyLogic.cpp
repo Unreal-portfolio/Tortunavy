@@ -111,6 +111,10 @@ namespace TNRally
 		{
 			return false;
 		}
+		if (!TNRallyCircuit::ReadRoadWidths(*Root, Out.Road.Num(), Out.RoadWidthsCm, OutError))
+		{
+			return false;
+		}
 
 		if (Out.Checkpoints.Num() == 0 && !Out.bHasStart)
 		{

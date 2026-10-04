@@ -23,11 +23,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from terrain_geo import rally_circuit as rc  # noqa: E402
 from terrain_geo.build import VARIANTS  # noqa: E402
 from terrain_geo.rally_circuit_check import LIMITS, load_report, verdict  # noqa: E402
+from terrain_geo.rally_circuit_check_width import LIMITS_WIDTH, road_widths  # noqa: E402
 from terrain_geo.rally_circuit_elements import (MAX_BANK_DEG, CrestDesign, JumpParams, bank_profile,  # noqa: E402
                                                 design_crest, design_jump, impact_ms)
 from terrain_geo.rally_circuit_physics import (BUGGY, G, boost_arrival, curve_speed, flight,  # noqa: E402
                                                speed_profile, takeoff_flight)
 from terrain_geo.rally_circuit_plan import JUMP_RESERVE_M, make_plan, separation_ok  # noqa: E402
+from terrain_geo.rally_circuit_width import (NARROW_MAX_M, TAPER_M, WIDE_MIN_M, WIDTH_RANGE_M,  # noqa: E402
+                                             target_widths, width_profile, width_sections)
 from terrain_vol.layout import UU_PER_M  # noqa: E402
 
 OUT = VARIANTS / rc.NAME
@@ -145,7 +148,8 @@ def test_registrada_con_vistas_y_lamina(manifest):
 def test_manifest_trae_lo_que_lee_tn_rally_track(manifest):
     road = manifest["road_uu"]
     assert manifest["mode"] == "rally" and manifest["closed"] is True and manifest["laps"] >= 2
-    assert manifest["road_width_m"] == rc.ROAD_W_M and isinstance(manifest["start_yaw"], float)
+    assert len(manifest["road_widths_m"]) == len(road) and manifest["road_width_m"] == max(manifest["road_widths_m"])
+    assert isinstance(manifest["start_yaw"], float) and manifest["width_sections"]
     assert manifest["start_uu"] == manifest["end_uu"] and math.dist(manifest["start_uu"], road[0]) < 1.0
     assert all(len(cp) == 4 for cp in manifest["checkpoints_uu"])
     assert math.dist(manifest["checkpoints_uu"][0][:3], road[0]) < 1.0
@@ -162,6 +166,7 @@ def test_variante_reproducible_desde_la_semilla(manifest):
     assert np.abs(got[:, :2] - road * UU_PER_M).max() < 0.1
     assert np.abs(got[:, 2] - track.z * UU_PER_M).max() < 0.1
     assert np.abs(np.asarray(manifest["bank_deg"]) - track.bank_deg).max() < 0.01
+    assert np.abs(np.asarray(manifest["road_widths_m"]) - track.width_m).max() < 0.01
 
 
 @generated
@@ -174,13 +179,12 @@ def test_circuito_cerrado_y_continuo(measured, manifest):
 @generated
 def test_saltos_aterrizan_en_la_calzada_a_la_velocidad_calculada(measured, manifest):
     report, checks = measured
-    half = manifest["road_width_m"] / 2.0
     assert len(report["jumps"]) >= 3 and checks["jumps"]
     for j in report["jumps"]:
         assert j["speed_rel_err"] <= LIMITS["speed_rel"]       # la velocidad del manifest es la de la malla
         assert j["zone_m"][0] <= j["x_land_m"] <= j["zone_m"][1]
-        assert j["landing_lateral_m"] <= half - LIMITS["landing_margin_m"]
-        assert j["boost_on_straight"] and j["boost_lateral_m"] <= half - LIMITS["landing_margin_m"]
+        assert j["landing_lateral_m"] <= j["landing_half_m"] - LIMITS["landing_margin_m"]
+        assert j["boost_on_straight"] and j["boost_lateral_m"] <= j["boost_half_m"] - LIMITS["landing_margin_m"]
 
 
 @generated
@@ -213,7 +217,54 @@ def test_el_veredicto_cae_con_cada_criterio_roto(measured, manifest):
     for key, edit in (("bank", lambda r: r.update(bank_manifest_max_deg=16.0)),
                       ("jumps", lambda r: r["jumps"][0].update(in_zone=False)),
                       ("steps", lambda r: r.update(max_step_m=0.6)),
-                      ("closed", lambda r: r.update(wrap_gap_m=8.0))):
+                      ("closed", lambda r: r.update(wrap_gap_m=8.0)),
+                      ("widths", lambda r: r["widths"].update(max_rate=2.0)),
+                      ("width_variety", lambda r: r["widths"].update(narrow_sections=0)),
+                      ("width_variety", lambda r: r["widths"]["hairpins"][0].update(width_m=14.0)),
+                      ("jumps", lambda r: r["jumps"][0].update(landing_half_m=r["jumps"][0]["landing_lateral_m"]))):
         broken = copy.deepcopy(report)
         edit(broken)
         assert verdict(broken, manifest)[key] is False
+
+
+# ── Ancho por tramos («Tramos variados», director 04-10) ────────────────────────
+@pytest.mark.parametrize("seed", SEEDS)
+def test_ancho_por_tramos_en_rango_y_con_transiciones_suaves(seed):
+    plan = make_plan(seed)
+    widths = width_profile(plan, seed)
+    assert len(widths) == len(plan.pts)
+    assert WIDTH_RANGE_M[0] <= widths.min() and widths.max() <= WIDTH_RANGE_M[1]
+    rate = np.abs(np.roll(widths, -1) - widths) / plan.step_m
+    assert rate.max() <= LIMITS_WIDTH["max_rate"]
+    assert rate.max() <= (WIDTH_RANGE_M[1] - WIDTH_RANGE_M[0]) / TAPER_M + 0.01
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_tramos_estrechos_y_anchos_por_reglas_de_ritmo(seed):
+    """Horquillas y recta de salida anchas; chicane y rasantes estrechos; nunca un ancho único."""
+    plan = make_plan(seed)
+    stepped = target_widths(plan, seed)
+    for piece, s0, s1 in plan.spans:
+        kind = plan.pieces[piece].kind
+        mid = stepped[int(round(((s0 + ((s1 - s0) % plan.length_m) / 2.0) % plan.length_m) / plan.step_m)) % len(stepped)]
+        if kind in ("horquilla", "recta"):
+            assert mid >= WIDE_MIN_M, kind
+        if kind in ("chicane", "rasante"):
+            assert mid <= NARROW_MAX_M, kind
+    sections = width_sections(plan, seed)
+    classes = [s["class"] for s in sections]
+    assert classes.count("estrecho") >= 2 and classes.count("ancho") >= 2
+    assert sum(s["length_m"] for s in sections) == pytest.approx(plan.length_m, abs=0.5)
+
+
+def test_el_ancho_no_cambia_el_trazado_de_la_semilla():
+    """El ancho va con su propio generador: la planta y el perfil de R01 son los de antes del ancho por tramos."""
+    a, b = rc.build_track(rc.SEED), rc.build_track(rc.SEED)
+    assert np.array_equal(a.width_m, b.width_m)
+    assert np.array_equal(a.plan.pts, make_plan(rc.SEED).pts)
+
+
+def test_manifest_sin_ancho_por_punto_usa_road_width_m():
+    widths = road_widths({"road_width_m": 14.0}, 5)
+    assert widths.tolist() == [14.0] * 5
+    assert road_widths({"road_width_m": 14.0, "road_widths_m": [10.0, 12.0]}, 5).tolist() == [14.0] * 5

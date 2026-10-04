@@ -11,9 +11,9 @@ ondulación sorteada) más los elementos (rally_circuit_elements). Los saltos y 
 velocidad de la línea ideal (rally_circuit_physics.speed_profile) en su labio o su cima, y como el perfil cambia la
 velocidad, se repite DESIGN_PASSES veces.
 
-Sección transversal: plataforma de ROAD_W_M + 2 x SHOULDER_M con el peralte (positivo = lado derecho más bajo),
-berma llana a la cota del borde hasta BERM_M del eje (ahí van las barreras de #303, a 15-23 m) y talud de TALUD_DEG
-hasta el terreno natural.
+Sección transversal: plataforma del ancho del tramo (rally_circuit_width: de 10 a 20 m, ROAD_W_M de referencia) más
+2 x SHOULDER_M con el peralte (positivo = lado derecho más bajo), berma llana a la cota del borde hasta BERM_M del eje
+(ahí van las barreras de #303, pegadas al borde de la calzada) y talud de TALUD_DEG hasta el terreno natural.
 """
 
 from __future__ import annotations
@@ -37,6 +37,7 @@ from .rally_circuit_elements import (BANK_RAMP_M, CrestDesign, JumpDesign, JumpP
 from .rally_circuit_jumps import SHAPED_KINDS, ShapedJump, ShapedParams, design_shaped
 from .rally_circuit_physics import boost_arrival, speed_profile
 from .rally_circuit_plan import JUMP_APPROACH_M, JUMP_RESERVE_M, Plan, make_plan
+from .rally_circuit_width import width_profile
 from .rally_spain import value_noise
 
 NAME = "R01_circuito_dunas"
@@ -47,9 +48,8 @@ TIERRA_DESCRIPTION = ("Circuito de Rally por vueltas de tierra generado (#682): 
                       "cresta, mesa y salto largo sobre hueco), whoops y tabla de lavar en recta, badén con barro, "
                       "banqueta de tierra en las horquillas, curvas peraltadas, chicane y cambios de rasante.")
 LAPS = 3
-ROAD_W_M = 14.0
+ROAD_W_M = 14.0                    # ancho de referencia (el de los tramos normales); el real va por tramos
 SHOULDER_M = 3.0
-PLATFORM_M = ROAD_W_M / 2.0 + SHOULDER_M
 BERM_M = 26.0
 TALUD_DEG = 33.0
 MARGIN_M = 110.0
@@ -107,6 +107,7 @@ class Track:
     base_free: np.ndarray | None = None
     inward_tan: np.ndarray | None = None
     grade_sin: np.ndarray | None = None
+    width_m: np.ndarray | None = None   # ancho de la calzada por muestra (rally_circuit_width)
 
     @property
     def arc(self) -> np.ndarray:
@@ -223,7 +224,8 @@ def build_track(seed: int = SEED, profile: str = "dunas") -> Track:
     rng_dirt = np.random.default_rng([seed, 682])
     arc, n = plan.arc, len(plan.pts)
     bank = bank_profile(arc, plan.length_m, _bank_curves(plan))
-    track = Track(plan, np.zeros(n), bank, np.zeros(n), np.zeros(n), np.zeros(n, dtype=bool), profile=profile)
+    track = Track(plan, np.zeros(n), bank, np.zeros(n), np.zeros(n), np.zeros(n, dtype=bool), profile=profile,
+                  width_m=width_profile(plan, seed))
     jump_params, crest_heights, dip_depths = {}, {}, {}
     for piece, s0, _ in plan.spans:
         p = plan.pieces[piece]
@@ -313,11 +315,17 @@ class RallyCircuitModel(HeightfieldModel):
         idx = np.arange(len(self.road) + 1)
         z = np.interp(frac, idx, np.append(track.z, track.z[0]))
         bank = np.interp(frac, idx, np.append(track.bank_deg, track.bank_deg[0]))
-        berm, mud = self.berm_dir(), self.mud_axis()
+        berm, mud, half = self.berm_dir(), self.mud_axis(), self.half_width()
         shape = X.shape
         return {"dist": dist.reshape(shape), "lateral": lateral.reshape(shape), "z": z.reshape(shape),
                 "bank": bank.reshape(shape), "berm": np.interp(frac, idx, np.append(berm, berm[0])).reshape(shape),
-                "mud": np.interp(frac, idx, np.append(mud, mud[0])).reshape(shape)}
+                "mud": np.interp(frac, idx, np.append(mud, mud[0])).reshape(shape),
+                "half": np.interp(frac, idx, np.append(half, half[0])).reshape(shape)}
+
+    def half_width(self) -> np.ndarray:
+        """Media calzada (m) por muestra del eje; ROAD_W_M / 2 si el trazado no trae ancho por tramo."""
+        width = self.track.width_m
+        return np.full(len(self.road), ROAD_W_M / 2.0) if width is None else np.asarray(width) / 2.0
 
     def berm_dir(self) -> np.ndarray:
         """Por muestra del eje: peso (0..1) de la banqueta con el signo del lado de fuera de la curva (+1 derecha),
@@ -357,15 +365,18 @@ class RallyCircuitModel(HeightfieldModel):
         return np.maximum(regional - 1.0 + amp * hills + 0.4 * ripples + rim, WATER_M + 1.5)
 
     def _carve(self, natural: np.ndarray, near: dict) -> tuple[np.ndarray, np.ndarray]:
-        d, lat = near["dist"], near["lateral"]
-        road_like = near["z"] - np.clip(lat, -PLATFORM_M, PLATFORM_M) * np.tan(np.radians(near["bank"]))
+        d, lat, half = near["dist"], near["lateral"], near["half"]
+        platform = half + SHOULDER_M
+        road_like = near["z"] - np.clip(lat, -platform, platform) * np.tan(np.radians(near["bank"]))
         berm = near["berm"]
-        road_like = road_like + np.abs(berm) * berm_lift(lat * np.sign(berm)) * (d <= BERM_END_M + 1.0)
-        mud = near["mud"] * (1.0 - smooth(ROAD_W_M / 2.0, ROAD_W_M / 2.0 + 2.0, np.abs(lat))) * (d <= BERM_M)
+        # La banqueta va por fuera del borde del tramo: se desplaza con lo que el tramo se aparta de los 14 m.
+        shift = half - ROAD_W_M / 2.0
+        road_like = road_like + np.abs(berm) * berm_lift(lat * np.sign(berm) - shift) * (d <= BERM_END_M + shift + 1.0)
+        mud = near["mud"] * (1.0 - smooth(half, half + 2.0, np.abs(lat))) * (d <= BERM_M)
         self.mud = mud
         reach = np.clip(d - BERM_M, 0.0, None) * math.tan(math.radians(TALUD_DEG))
         height = np.where(d <= BERM_M, road_like, np.clip(natural, road_like - reach, road_like + reach))
-        trail = 1.0 - smooth(ROAD_W_M / 2.0 - 1.0, ROAD_W_M / 2.0 + 0.5, np.abs(lat) * (d <= BERM_M) + 99.0 * (d > BERM_M))
+        trail = 1.0 - smooth(half - 1.0, half + 0.5, np.abs(lat) * (d <= BERM_M) + 99.0 * (d > BERM_M))
         return height, trail
 
     def trail_mask(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:

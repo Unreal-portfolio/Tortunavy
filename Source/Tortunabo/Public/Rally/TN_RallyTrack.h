@@ -90,10 +90,12 @@ public:
 	/**
 	 * Construye con las puertas dadas. Con RoadAxis (road_uu) la spline sigue la calzada y cada puerta se proyecta en ella;
 	 * sin él, la spline pasa por las puertas con su rumbo. RoadWidthCm (0 = desconocido) acerca los bordes a la calzada.
-	 * RoadBankDeg (bank_deg, uno por punto de RoadAxis) inclina las puertas con el peralte (#622).
+	 * RoadBankDeg (bank_deg, uno por punto de RoadAxis) inclina las puertas con el peralte (#622). RoadWidthsCm (road_widths_m en
+	 * cm, uno por punto de RoadAxis) da el ancho de cada tramo («Tramos variados», #622); sin él, RoadWidthCm en todo el trazado.
 	 */
 	bool BuildFromGates(const TArray<TNRally::FGateDef>& GateDefs, bool bCircuit, const TArray<FVector>& RoadAxis = TArray<FVector>(),
-		double RoadWidthCm = 0.0, TConstArrayView<double> RoadBankDeg = TConstArrayView<double>());
+		double RoadWidthCm = 0.0, TConstArrayView<double> RoadBankDeg = TConstArrayView<double>(),
+		TConstArrayView<double> RoadWidthsCm = TConstArrayView<double>());
 
 	UFUNCTION(BlueprintCallable, Category = "Rally")
 	void ClearTrack();
@@ -128,8 +130,18 @@ public:
 	/** Centro del volumen de la puerta con X en el sentido de la carrera. */
 	FTransform GetGateCrossingTransform(int32 GateIndex) const;
 	FVector GetGateHalfExtent() const;
-	/** Ancho de la calzada del manifest (road_width_m, en cm); 0 si no viene. */
+	/** Ancho de la calzada del manifest (road_width_m, en cm; con ancho por tramos, el máximo); 0 si no viene. */
 	double GetRoadWidthCm() const { return ManifestRoadWidthCm; }
+
+	/**
+	 * Ancho de la calzada (cm) en el arco: el de road_widths_m interpolado si el manifest lo trae (tramos estrechos y anchos, #622)
+	 * y, si no, road_width_m (0 si tampoco viene).
+	 */
+	UFUNCTION(BlueprintPure, Category = "Rally")
+	double GetRoadWidthAtArcCm(double Arc) const;
+
+	/** true si el manifest trae ancho por tramos (road_widths_m). */
+	bool HasRoadWidthsPerPoint() const { return WidthSampleCm.Num() > 0; }
 
 	/** Hueco Slot (0..7) de la parrilla 2 × 4 detrás de la salida, a ras de suelo (traza hacia abajo) + Lift. */
 	FTransform GetGridSlotTransform(int32 Slot, double LiftCm = 80.0) const;
@@ -239,6 +251,9 @@ private:
 	/** Peralte de road_uu: arco de la spline de cada punto y su peralte (vacíos sin bank_deg). */
 	TArray<double> BankSampleArcs;
 	TArray<double> BankSampleDeg;
+	/** Ancho de road_uu (road_widths_m): arco de la spline de cada punto y su ancho en cm (vacíos sin el campo). */
+	TArray<double> WidthSampleArcs;
+	TArray<double> WidthSampleCm;
 	TArray<TNRallyCircuit::FFeatureArc> Features;
 	/** Longitud de la polilínea road_uu (cm; 0 sin ella): pasa los metros de elements a arcos de la spline. */
 	double RoadLengthCm = 0.0;
