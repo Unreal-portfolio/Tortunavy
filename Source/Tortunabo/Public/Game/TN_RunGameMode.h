@@ -11,6 +11,7 @@ class APlayerStart;
 class ATN_RescuePickup;
 class ATN_CollectionZone;
 class ATN_CoopPlayerState;
+class UTN_UnderTerrainGuardComponent;
 
 /**
  * @brief GameMode de la fase Run (carrera). Orquesta el ciclo Countdown -> Race -> Results -> retorno al lobby.
@@ -163,6 +164,14 @@ protected:
 	/** Invulnerabilidad breve tras un revive (evita re-muerte inmediata en death zones). */
 	UPROPERTY(EditDefaultsOnly, Category = "Run|DBNO", meta = (ClampMin = "0.0"))
 	float ReviveImmunitySeconds = 2.f;
+
+	/**
+	 * Red de seguridad bajo el terreno (#633): 10 veces por segundo en el servidor, una tortuga hundida bajo el terreno vuelve
+	 * a la superficie sin morir (no en el agua ni en las zonas de muerte). Coop (ATN_ProcMapGameMode) y Clásico; la carrera
+	 * de la playa la apaga porque tiene la suya (ATN_BeachRaceGameMode::GuardUnderSand).
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Run|Safety")
+	TObjectPtr<UTN_UnderTerrainGuardComponent> UnderTerrainGuard;
 
 	/**
 	 * Clase de pickup de rescate que se spawnea al morir un jugador.

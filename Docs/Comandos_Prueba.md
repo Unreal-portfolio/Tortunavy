@@ -108,6 +108,8 @@ necesita espera a que esté lista.
 | `TN.Race.Void [jugador=0]` | La tira al vacío: vuelve a su último sitio seguro aturdida. |
 | `TN.Race.Bury [metros=3] [jugador=0]` | La mete bajo la arena donde está: la red de seguridad la devuelve encima en ~0,2 s, de pie (sin bola), con dos avisos `[Carrera] Red de seguridad` en el registro. Repetido tres veces seguidas en el mismo sitio: la segunda va a su último sitio seguro y la tercera a arena abierta lejos, con un aviso de bucle (ver `Docs/Modo_Carrera.md`, «Seguridad: nunca bajo el mapa»). |
 | `TN.Race.SafetyNet 0\|1` | Apaga o enciende esa red de seguridad (en el anfitrión; para comparar). |
+| `TN.SafetyNet.Bury [metros=3] [jugador=0]` | Coop y Clásico (#633, en el anfitrión): mete a la tortuga bajo el suelo que pisa, cayendo. La red de seguridad bajo el terreno la devuelve encima en ~0,2 s, de pie y sin daño, con un aviso `[Red de seguridad] … vuelve a la superficie de encima` en el registro. En la playa, `TN.Race.Bury`. |
+| `TN.SafetyNet.UnderTerrain 0\|1` | Coop y Clásico (#633): apaga o enciende la red de seguridad bajo el terreno (en el anfitrión). Encendida, una tortuga hundida bajo el terreno vuelve a la superficie en ~0,2 s con un aviso `[Red de seguridad]` en el registro. |
 | `TN.Race.Splash [tamaño=1]` | Chapuzón de meta delante de ti (solo en tu pantalla). |
 | `TN.Beach.Egg` | Cierra otra vez los huevos (de la salida o del sprint) con cada tortuga dentro y a los 1,5 s repite la salida: se rompen, 1 s en el huevo (de pie, sacudiéndose la cáscara y mirando al mar) y salen lanzadas. Sin cambiar de ronda. |
 

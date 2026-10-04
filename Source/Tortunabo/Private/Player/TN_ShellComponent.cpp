@@ -14,6 +14,7 @@
 #include "Player/TN_ShellBody.h"
 #include "Player/TN_ShellDecisions.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_TurtleFoleyComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_RaceItemComponent.h"
@@ -737,8 +738,15 @@ void UTN_ShellComponent::ApplyShellState(bool bInShell)
 	Turtle->OnShellStateChanged(bInShell);
 
 	// Sonido local en cada máquina — no multicast: ApplyShellState ya se ejecuta
-	// en todas, y un multicast encima duplicaría el disparo.
-	if (USoundBase* Sound = bInShell ? EnterShellSound : ExitShellSound)
+	// en todas, y un multicast encima duplicaría el disparo. Sintetizado por defecto;
+	// los assets, de respaldo (bSynthShellSounds a false o sin sintetizador, como en
+	// un servidor dedicado).
+	UTN_TurtleFoleyComponent* Foley = bSynthShellSounds ? UTN_TurtleFoleyComponent::FindOrAddTo(Turtle) : nullptr;
+	if (Foley)
+	{
+		Foley->PlayShell(bInShell);
+	}
+	else if (USoundBase* Sound = bInShell ? EnterShellSound : ExitShellSound)
 	{
 		UGameplayStatics::SpawnSoundAtLocation(Turtle, Sound, Turtle->GetActorLocation());
 	}

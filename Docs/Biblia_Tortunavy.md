@@ -1014,6 +1014,14 @@ Lo que pasó y cómo se arregló ([`Docs/Modo_Carrera.md`](Modo_Carrera.md), «S
   1,6 m (2,6 m en trincheras) por debajo de la arena **y** de la malla del terreno, o cae más de 0,6 s sin suelo, la devuelve
   encima, en tres niveles para no entrar nunca en bucle (mismo punto → su último sitio seguro → arena abierta lejos), con 1,5 s de gracia y
   3 s sin patadas de la tormenta. Consola: `TN.Race.Bury`, `TN.Race.SafetyNet 0|1`.
+- **Red de seguridad bajo el terreno en Coop y Clásico** (#633, `UTN_UnderTerrainGuardComponent` de `ATN_RunGameMode` y, con él, de
+  `ATN_ProcMapGameMode`; servidor, 10 veces por segundo): la misma regla de confirmación que la de la playa (`TNUnderTerrain::RegisterLook`:
+  dos miradas seguidas a más de 1,6 m bajo la superficie, o una a más de 4 m) y el mismo punto que se mira (`TNUnderTerrain::BodyProbe`).
+  Sin generador de arena, la superficie se busca con trazas (hasta 30 m por encima) y solo cuenta si debajo no hay suelo (bajo un puente o
+  en una cueva no se toca). No salva a quien nada, está en una zona de muerte o cae al vacío sin nada encima. La pone de pie en la
+  superficie más cercana por encima (o alrededor, hasta 10 m) con `TNBeach::RelocateTurtle`, sin caída ni daño; si se vuelve a hundir en
+  5 s, en su último sitio seguro. Registro: `[Red de seguridad]`. Consola: `TN.SafetyNet.Bury`, `TN.SafetyNet.UnderTerrain 0|1`. Pruebas:
+  `Tortunabo.SafetyNet.UnderTerrain.*`.
 - **Tormenta de bañistas**: su patada busca siempre arena abierta ~20 m por delante del frente; no puede dejar a nadie atrás.
 - **Bola del caparazón**: réplica predictiva, aristas suavizadas, giro máximo de 900 °/s, rebote 0,2.
 - **Recolocar ya no deja una caída vieja** (ronda 4): `TNBeach::RelocateTurtle` pasa por `MOVE_None` antes de `MOVE_Falling` si la tortuga
@@ -1058,9 +1066,9 @@ asset (no de un documento); el menú de pausa las lista siempre desde el `IMC_Pl
 - En la carrera, «usar el objeto» es la misma tecla que interactuar (E); si hay algo que coger cerca, coge.
 - **Reanimar no va con E.** A una tortuga derribada la levanta una compañera **haciendo un emote** a menos de 300 cm durante 3 s (§20.3); a
   una eliminada, el rescate del cooperativo se hace con E **sin mantener** sobre su cuerpo (§22.3).
-- **B / Círculo mete y saca del caparazón** (ronda 4). B no hacía nada en juego (en los menús es «volver»). El asset `IMC_Player` todavía no
-  la trae: `UTN_GameSettingsSubsystem` la añade como tecla de serie de `IA_Shell` mientras tanto (`PendingCodeDefaults`), y
-  `Scripts/imc_player_shell_b.py` (se ejecuta una vez con el editor abierto) la mete en el asset; con el asset al día esa lista queda vacía.
+- **B / Círculo mete y saca del caparazón** (ronda 4). B no hacía nada en juego (en los menús es «volver»). El asset `IMC_Player` la trae
+  desde #637 (`Scripts/imc_player_shell_b.py`, ejecutado en el editor sin ventana; el test `Tortunabo.Settings.PlayerInputMapping` lo
+  comprueba). `UTN_GameSettingsSubsystem` la añadía como tecla de serie de `IA_Shell` (`PendingCodeDefaults`); con el asset al día esa lista queda vacía.
   La lista de controles del menú la enseña sola, porque sale del `IMC_Player` en ejecución.
 - **Una tecla mantenida al cerrar un menú no se repite en el juego** (ronda 4). Con el menú a la vista, el menú se come la pulsación; si la
   tecla sigue apretada cuando desaparece, el motor manda repeticiones y Enhanced Input las toma por una pulsación nueva (B metería en el
@@ -1314,13 +1322,13 @@ Abajo, la ayuda de la opción enfocada y los atajos. Una línea dorada de **avis
 |---|---|---|
 | Cámara | Temblor de cámara | Sí / No: apagado, se desactivan los modificadores de temblor (golpes, quads, tormenta…) |
 | | Campo de visión | −15 a +20° sobre el de la tortuga (se enseña en grados); al correr se abre lo mismo que antes; vale también mirando a otra tortuga |
-| | Ojo de pez leve | Sí / No (**Sí de serie**): proyección Panini suave del motor sobre la imagen del mundo; no deforma el HUD ni los menús; se enciende y se apaga en 1,2 s y se afloja con el campo de visión (§14.3) |
+| | Ojo de pez leve | Sí / No (**No de serie**, #634): proyección Panini suave del motor sobre la imagen del mundo; no deforma el HUD ni los menús; se enciende y se apaga en 1,2 s y se afloja con el campo de visión (§14.3) |
 | Interfaz | Tamaño de la interfaz | 75–130 %: agranda o achica el HUD y los menús (el editor no cambia) |
 | Accesibilidad | Filtro para daltónicos | No · Deuteranopía (verde) · Protanopía (rojo) · Tritanopía (azul) |
 | | Intensidad del filtro | 0–100 % |
 | | Quién habla (texto) | Sí / No |
 | | Idioma / Language | Primera fila de la pestaña. Lista de los 13 idiomas con su nombre en su idioma; se aplica en caliente; sin elegir, el del sistema si está en la lista y, si no, el español (§10.1) |
-| Reinicios | Restablecer esta pestaña | Temblor encendido, ojo de pez encendido, campo de visión e interfaz de siempre, sin filtro, sin «Quién habla» y con el idioma «sin elegir» (el del sistema) |
+| Reinicios | Restablecer esta pestaña | Temblor encendido, ojo de pez apagado, campo de visión e interfaz de siempre, sin filtro, sin «Quién habla» y con el idioma «sin elegir» (el del sistema) |
 | | Restablecer todos los ajustes | Con confirmación: sonido, voz, micrófono, controles (teclas incluidas), juego, brillo y FPS; **no** toca calidad gráfica ni pantalla |
 
 Cada pestaña (salvo Gráficos) tiene «Restablecer».
@@ -1374,7 +1382,7 @@ toca gráficos ni pantalla).
 | **Tamaño de la interfaz** 75–130 % | Juego > Interfaz | Multiplica la escala de la interfaz del motor (`UUserInterfaceSettings::ApplicationScale`): cambia el HUD y los menús de UMG al momento, no el editor. El menú de pausa se encoge si no cabe | Baja visión, pantallas de sofá o de portátil, resoluciones extremas (4:3, 16:10, 4K) |
 | **Brillo** 0–100 % (50 % = el de siempre) | Gráficos > Pantalla | Gamma de salida del motor (`GEngine->DisplayGamma`), ±0,7 | Pantallas mal calibradas, salas con reflejos; la playa es muy luminosa |
 | **Campo de visión** −15° a +20° | Juego > Cámara | Suma o resta a los grados de la cámara de la tortuga (reposo y correr); vale también mirando a otra tortuga | Ver más a los lados, o menos ángulo para reducir la distorsión y el mareo |
-| **Ojo de pez leve** Sí / No (Sí de serie) | Juego > Cámara | Curva un poco los bordes de la imagen del mundo (Panini) y se afloja al abrirse el campo de visión; no toca el HUD | Sensación de inmensidad; **puede marear a quien es sensible a la distorsión de lente**: se apaga en la misma pestaña (hueco n.º 14 del §40.1) |
+| **Ojo de pez leve** Sí / No (No de serie, #634) | Juego > Cámara | Curva un poco los bordes de la imagen del mundo (Panini) y se afloja al abrirse el campo de visión; no toca el HUD | Sensación de inmensidad; **puede marear a quien es sensible a la distorsión de lente**: por eso viene apagado y se enciende en la misma pestaña (hueco n.º 14 del §40.1) |
 | **Temblor de cámara** Sí / No | Juego > Cámara | Apagado, se desactivan los modificadores de temblor (golpes, quads de la carrera, tormenta…) | «Apágalo si te marea»: sensibilidad al movimiento, fotosensibilidad parcial |
 | **Contador de FPS** | Gráficos > Pantalla | FPS y peor fotograma | Diagnóstico para quien ajuste la calidad |
 | **Calidad general / partes / escala de resolución / límite de FPS / vsync / modo de ventana / resolución** | Gráficos | Niveles Baja–Épica por sombras, efectos, vegetación, distancia de visión, antialiasing, texturas, postprocesado, iluminación global y reflejos; «Calidad recomendada» mide el equipo | Accesibilidad **de hardware**: equipos modestos (la vegetación llega a ~500 000 instancias). El cambio de modo de ventana o resolución pide confirmar en 12 s y **se deshace solo**, para no dejar al jugador ante una imagen que no ve |
@@ -1791,8 +1799,8 @@ recalculadas; entre paréntesis, lo que dicen los documentos):
 | Protector solar (`max(base, correr) × 1,25`) | **500 cm/s** | 1000 cm/s |
 | Turbo + protector (tope 2,4×) | **960 cm/s** | 1920 cm/s |
 | Metros por barra de estamina corriendo (13,3 s) | **53 m** | 107 m |
-| Gaviota justiciera (el blanco sigue a 600 cm/s hasta soltar y a 450 al caer, y se queda quieto los últimos 0,5 s) | corriendo (400) **no se libra** por velocidad: solo con la plancha en el momento justo o con turbo (800) | corriendo (800) se libra |
-| Gaviotas de la zona (el blanco sigue a 540 cm/s; 450 al caer la cagada) | corriendo (400) el blanco no se despega hasta su último tramo (0,6 s el picado, 0,45 s la cagada): en ese tramo se gana como mucho 1,7 m (picado) o 1,8 m (cagada), menos de lo que coge (2,45 m) o mancha (2,25 m); libran la plancha en el momento justo, el caparazón (picado) y el techo. Ver el §36.7 | corriendo (800) se libra en línea recta |
+| Gaviota justiciera (el blanco sigue a 250 cm/s y, desde soltarla, cae por su línea; #636) | corriendo (400) **se libra** en línea recta (6,2 m al golpe); andando, solo con la plancha en el momento justo | corriendo (800) se libra |
+| Gaviotas de la zona (el blanco sigue a 250 cm/s; los últimos 1,5 s, lanzado por su línea; #636) | corriendo (400) se le gana 1,5 m/s a la sombra y en línea recta se libra (3,8 m el picado, 4,3 m la cagada); andando, libran la plancha en el momento justo, el caparazón (picado) y el techo. Ver el §36.7 | corriendo (800) se libra en línea recta |
 | Cangrejo gigante (persigue a 560 cm/s) | más rápido que correr (400): solo se le escapa saliendo de su correa (38 m) o de su vista, o con turbo (800) | más lento que correr (800) |
 | Erizo de mar (rueda a 210 cm/s) | algo más rápido que andar (200) | más lento que andar (450) |
 | Tormenta de bañistas Normal (180 cm/s) | 90 % de la velocidad de andar | 40 % |
@@ -1870,7 +1878,7 @@ Tercera persona con brazo de resorte (`ATortugaCharacter`, `TickCameraInterp`, s
 | Colisión | sonda de 30 cm por el canal de cámara; no choca con otras tortugas ni con cajas de caparazón | [C] |
 | Suelo | si la cámara queda a menos de 40 cm del suelo, sube (interpolación a 10/s) | [C] `TickCameraInterp` |
 | Turbo del coco | empujón de +16° de campo de visión a velocidad 40 | [C] `TN_RaceItemComponent.cpp` |
-| Ojo de pez leve | Proyección Panini del motor (`r.LensDistortion.Panini.D` = 0,55 con todo encendido; `TN.Fisheye.D`/`.S`). Se enciende y apaga en 1,2 s y se afloja con el campo de visión (al correr, 82°, baja hasta ~0,35) para que el borde se comprima igual que en reposo. No toca el HUD, que se pinta después. Ajuste «Ojo de pez leve» de la pestaña Juego, activado por defecto (`bFisheye`) | [C] `TN_GameSettingsSubsystem.cpp` |
+| Ojo de pez leve | Proyección Panini del motor (`r.LensDistortion.Panini.D` = 0,55 con todo encendido; `TN.Fisheye.D`/`.S`). Se enciende y apaga en 1,2 s y se afloja con el campo de visión (al correr, 82°, baja hasta ~0,35) para que el borde se comprima igual que en reposo. No toca el HUD, que se pinta después. Ajuste «Ojo de pez leve» de la pestaña Juego, desactivado por defecto (`bFisheye`, #634) | [C] `TN_GameSettingsSubsystem.cpp` |
 
 El espectador tiene su propia cámara libre o fija (§22.4).
 
@@ -4212,7 +4220,7 @@ Ninguno mata: **aturden** (bola temblando), **derriban** (ragdoll con mareo) o *
 | Erizo de mar (§36.4) | a partir de los 64 m, más hacia el mar | vibraciones a 22 m | rueda a 2,1 m/s y pincha a ~1,65 m: derribo 2,4 s | correr (4 m/s; andando a 2 m/s apenas le saca ventaja) o rodearlo; lo lanzado lo marea | 17 / 25 / 74 |
 | Lagarto (§36.5) | por los lados de la playa, antes del 88 % | alerta a 30 m; susto a 17 m; huye a 9 m | huidizo: empujón 6,5 m/s; mordedor: mordisco a 2,6 m y zarandeo 1,3 s | mordedor: ir en bola, agachada o en el aire; huidizo/generoso: dejarlo huir | 10 / 16 / 42 |
 | Paso de quads (§36.6) | 1–2 franjas de lado a lado (2–3 en Difícil) | aviso de 3,5 s (temblor, humo, motor) | rueda que pasa por encima: derribo 3 s, lanzada 9,5 m/s | fuera de su paso o en el hueco entre ruedas (10,6 m); no se marea | 1–2 / 1–2 / 2–3 |
-| Gaviotas y pelícanos (§36.7) | 3–4 zonas por ronda, por encima; atacan cada 4–7 s | tortuga a menos del 80 % de la huella desde el centro (con techo encima, el ataque falla) | cagada (derribo 2,4 s + mancha 12 s) o picado con agarre (colgada 3,3 s, bola 4 s) | plancha en el momento justo, caparazón (picado) o cubrirse; el blanco te sigue a 5,4 m/s y se queda casi quieto en el último tramo (corriendo no basta con las velocidades reales) | 2–3 / 3–4 / 4–6 zonas |
+| Gaviotas y pelícanos (§36.7) | 3–4 zonas por ronda, por encima; atacan cada 4–7 s | tortuga a menos del 80 % de la huella desde el centro (con techo encima, el ataque falla) | cagada (derribo 2,4 s + mancha 12 s) o picado con agarre (colgada 3,3 s, bola 4 s) | plancha en el momento justo, caparazón (picado) o cubrirse; el blanco te sigue a 2,5 m/s (más que andando, menos que corriendo: esprintando en línea recta se libra, #636) | 2–3 / 3–4 / 4–6 zonas |
 | Ermitaño bola (§36.8) | en calles cuesta abajo de 25–45 m | tortuga en su calle a menos de 5,2 m del eje | rueda a 3–15 m/s y derriba a todas las de la fila (2,5 s) | apartarse 3 m de lado, subir el terreno de la calle | 4,7 / 6,3 / 8,5 |
 | Pulpo de poza (§36.9) | dentro del agua de las 7 pozas | nadadora atacable dentro de la orilla | agarre a 3 m (0,8 s en el aire) y lanzamiento en bola de 9–34 m hacia la salida | salir nadando antes de que llegue, no nadar | 7,1 / 11 / 26 |
 | Pulgas de arena (§36.10) | en claros de arena abierta | tortuga a 18 m dentro de su correa (24 m) | picada a 2,7 m: 2 s de saltitos sin control + bola 1 s | andar (van a 1,6 m/s), lanzarles algo | 4 / 6,7 / 16,7 |
@@ -4393,10 +4401,11 @@ probada por `Tortunabo.Beach.Gull.*`). La ronda 4 las **rebajó** porque casi no
   **Junto al frente de la tormenta** (detrás o a menos de 25 m por delante, `StormNoCarryReach`) la zona caga en vez de picar y, si pica,
   falla (`IsNearStormFront`): el vuelo de 15 m hacia la salida metía a la tortuga en la tormenta y empezaba la cadena de patada,
   recolocación y red de seguridad.
-- **El blanco te sigue, menos que antes**. El punto de la arena al que van el picado y la cagada (`FTNBeachGullAttack::Aim`) va hacia la
-  tortuga a **5,4 m/s** como mucho (6,25). En el picado, los **últimos 0,6 s** ya va lanzado y apenas corrige (1,2 m/s); en la cagada
-  sigue a 5,4 m/s mientras el pájaro vuela encima (1,5 s), a 4,5 m/s mientras cae (2,1 s) y **queda quieto el último 0,45 s**. El servidor
-  lo mueve y lo replica (10 Hz); cada cliente lo suaviza. Aviso duro en la arena: un disco negro de borde neto que nace pequeño y crece a
+- **El blanco te sigue, menos que antes** (#636, `TNBeachGullTuning::GullChaseSpeed`). El punto de la arena al que van el picado y la
+  cagada (`FTNBeachGullAttack::Aim`) va hacia la tortuga a **2,5 m/s** como mucho (antes 6,25 y luego 4,2): más que andando (2 m/s) y
+  menos que corriendo (4 m/s). Los **últimos 1,5 s** ya va lanzado por la línea que llevaba la tortuga y hacia los lados apenas corrige
+  (0,75 m/s). Andando no se despega; **esprintando en línea recta se le gana 1,5 m/s** y al golpe queda a 3,8 m (picado), 4,3 m (cagada)
+  o 6,2 m (justiciera), más de lo que alcanza el pájaro más grande. El servidor lo mueve y lo replica (10 Hz); cada cliente lo suaviza. Aviso duro en la arena: un disco negro de borde neto que nace pequeño y crece a
   medida que baja, hasta lo que coge o la mancha.
 - **Cagada**: 1,5 s volando hasta encima; la suelta desde 30 m y cae acelerando en **2,1 s**: un pegote de 1,6 m con estela de gotitas y
   silbido; sobre la tortuga a la que va, un **signo de exclamación** amarillo de 105 cm sobre la cabeza que empieza 0,5 s antes de soltar y
@@ -4432,13 +4441,12 @@ probada por `Tortunabo.Beach.Gull.*`). La ronda 4 las **rebajó** porque casi no
   `RelocateTurtle` podrían conservar una altura vieja.
 - **Se evita**: tirarse en **plancha en el momento justo** (libra de la cagada y, como siempre, del picado), meterse en el caparazón (el
   picado no coge a quien va en bola), refugiarse bajo techo (sombrilla clavada, castillos con salas), lanzarle una piedra al que baja (lo
-  marea y suelta a la tortuga) o echar a correr. **Ojo con lo que se puede esquivar corriendo**: las cuentas del nerf
-  ([`Docs/Modo_Carrera.md`](Modo_Carrera.md), «Nerf de la gaviota y de su caca») suponen andar a 4,5 m/s y correr a 8 m/s, las velocidades del código; con ellas,
-  quien corre en línea recta se libra con 8 a 11 m de ventaja. Con las velocidades **reales** (2 y 4 m/s) [calc] el blanco (5,4 m/s) es más
-  rápido que una tortuga que corre: se pega a ella hasta su último tramo y en ese tramo solo se le saca 1,7 m (picado) o 1,8 m (cagada), menos
-  de lo que coge (2,45 m) o mancha (2,25 m). Corriendo, cambiando de rumbo o parándose no se libra: libran la plancha en el momento justo, el
-  caparazón (picado), el techo y el turbo del coco (8 m/s). **No confirmado en juego**; hay que recalcular los números del nerf con las
-  velocidades reales (§41).
+  marea y suelta a la tortuga) o echar a correr. **Corriendo** (#636, recalculado con las velocidades reales comprobadas en
+  `BP_TortugaCharacter`: 2 m/s andando y 4 m/s corriendo): esprintando en línea recta se libra de todo; andando, aunque gire al lanzarse,
+  no. Esprintando y dándose la vuelta al lanzarse se cruza la sombra (queda a 2,8 m en el picado, 2,45 en la cagada y 1,1 en la justiciera).
+  **Ventana de la plancha** (`TNBeachGullTuning::BellyDiveDodgeWindow`): libra mientras va por el aire (0,3-0,4 s) y mientras se arrastra
+  a 2,5 m/s o más: 0,59-0,69 s desde que despega corriendo y 0,48-0,58 s andando; la cagada tiene que caer dentro. Pruebas:
+  `Tortunabo.Beach.Gull.*` (`PoopWalkSprintDive` simula andar, esprintar y la plancha frente a la caca). **No confirmado en juego**.
 - Consola: `TN.Beach.Gull.Attack 1|2` (1 = cagada, 2 = picado; sin número, al azar), `TN.Beach.Gull.Grab [veces=2] [jugador]`,
   `TN.Beach.Place GullZone`.
 
@@ -4890,7 +4898,7 @@ escucha). Los índices de jugador empiezan en 0 (0 = el anfitrión).
 | Gaviotas | Ataque cada 4–7 s a menos del 80 % de la huella; blanco a 5,4 m/s (últimos 0,6 s a 1,2 m/s); coge a 2,2 m × tamaño + 0,25 m; la plancha libra de la cagada si va en el aire o a ≥ 2,5 m/s | `TN_BeachGullTuning.h` |
 | Música de la carrera | Mi bemol mayor, 116 BPM, bucle de 132 s; RMS −29 dBFS; categoría Música | `TN_RaceMusicDSP.h` |
 | Golpes del caparazón | Desde 260 cm/s (máximo a 1800); 8 sonidos por segundo en todo el mundo como mucho | `TN_ShellImpactFXComponent` |
-| Ojo de pez | Panini `r.LensDistortion.Panini.D` = 0,55, encendido de serie | `TN_GameSettingsSubsystem.cpp` |
+| Ojo de pez | Panini `r.LensDistortion.Panini.D` = 0,55, apagado de serie (#634) | `TN_GameSettingsSubsystem.cpp` |
 | Velocidad de la tortuga | **andar 200 y correr 400 cm/s** reales (el Blueprint pisa los 450 y 800 del código; §13); salto 485 cm/s (120 cm de alto, 0,99 s) | `BP_TortugaCharacter`, `TN_StaminaComponent.h` |
 | Energía | 200 máx.; correr gasta 15/s (≈13 s, 53 m con la velocidad real) | `TN_StaminaComponent.h` |
 | Duración de la ronda de playa | ≈ 4 min 46 s con la media real de ~2,8 m/s [calc]; el juego anuncia 3,3 min | `AverageRaceSpeed` |
@@ -4920,7 +4928,7 @@ importante para quien lo necesite. Ninguno se cuenta como existente en el resto 
 | 11 | **Sin chat de texto libre, ni voz a texto, ni texto a voz** | Solo frases prefabricadas (`TN_QuickChatWheelDataAsset`) | Quien no puede hablar ni oír queda limitado a las frases de la rueda | Transcripción opcional de la voz |
 | 12 | **Sin lector de pantalla ni exposición de la interfaz a tecnologías de asistencia** | Los menús son widgets de UMG hechos en código con dibujo propio (`Private/UI/...`); no hay rastro de accesibilidad de UMG | Ceguera | Fuera de alcance realista para un juego de acción visual; se cita por completitud |
 | 13 | **Idiomas: selector hecho, traducciones pendientes**: los 13 idiomas se pueden elegir (ronda 4), pero mientras los `.po` no estén traducidos todo sale en español, y para japonés, coreano y chino faltan fuentes propias (la reserva del motor solo tiene un peso) | §10 | Barrera de acceso | Traducir (§10.5) y dejar las fuentes Noto Sans en `Content/Slate/Fonts` |
-| 14 | **El «Ojo de pez leve» viene activado por defecto** y es una distorsión de lente que puede marear | `bFisheye = true` (`TN_SettingsSaveGame.h`); Panini 0,55 (`TN_GameSettingsSubsystem.cpp`) | Mareo | Se apaga en la misma pestaña; comprobar en juego que no marea con el campo de visión al correr y valorar que respete el ajuste de temblor |
+| 14 | **Resuelto (#634): el «Ojo de pez leve» venía activado por defecto** y es una distorsión de lente que puede marear | `bFisheye = false` desde #634 (`TN_SettingsSaveGame.h`); Panini 0,55 (`TN_GameSettingsSubsystem.cpp`) | Mareo | Se apaga en la misma pestaña; comprobar en juego que no marea con el campo de visión al correr y valorar que respete el ajuste de temblor |
 | 15 | **No hay asistencia de partida por persona** (velocidad, tiempo extra, ayudas) | La dificultad es de la sala | Motricidad | Opcional; hoy la Fácil ayuda a todos por igual |
 
 ### 40.2 Juego
@@ -4977,7 +4985,7 @@ Dónde una fuente dice una cosa y el código otra. **Manda el código**; la colu
 | 15 | Comentario de `TortugaCharacter.h` | Las teclas 0–9 deberían mapearse a los emotes | No están en `IMC_Player`; los bailes solo salen por la rueda |
 | 16 | Pestaña «Reglas» del general (`TN_BriefingWidget.cpp`) | «Cada ronda dura como mucho 6 minutos»; reaparición «en Carrera y 2 vs 2, la tuya» | 9 min (`RoundTimeLimitSeconds` 540); en la playa no se muere |
 | 17 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 10 | Ojo de pez con `r.Upscale.Panini.D` y `.S` | En UE 5.6 los cvars son `r.LensDistortion.Panini.*` ([`Docs/Menu_Pausa.md`](Menu_Pausa.md)) |
-| 18 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 11 | Círculo/B «de serie» en `IMC_Player` | El asset todavía no la trae: la pone el código (`PendingCodeDefaults`) hasta que se ejecute `Scripts/imc_player_shell_b.py` (§6.1) |
+| 18 | [`Docs/Plan_Carrera_Ronda4.md`](Plan_Carrera_Ronda4.md), tarea 11 | Círculo/B «de serie» en `IMC_Player` | Resuelto en #637: el asset ya la trae (`Scripts/imc_player_shell_b.py`, §6.1) |
 | 19 | [`Docs/Modo_Carrera.md`](Modo_Carrera.md), «Algas» | «Hasta 4 a la vez» | `MaxCatches = 8` (y el propio documento, en «Hecho para 8 jugadores», dice 8) |
 | 20 | `TN_CrabSpawnZone.h` (comentario) | «Default 3» | `SpawnCountOnEnter = 5` |
 | 21 | LDD | Gaviota con «bombardeo en zona aleatoria cada ~8 s» y «agarra si quieto más de 2 s» | `ATN_EnemySeagull` tiene cronómetro de 8 s y círculo que se encoge; no hay regla de «quieto 2 s» |
@@ -5022,8 +5030,8 @@ Lo que no se ha podido comprobar en el código, en un documento o en pantalla. N
    velocidades y la plancha están confirmadas por los registros; el resto (salto, cámara, sensibilidades…) se leyó del `.uasset` sin verlo en pantalla.
 10. **Contenido de las ruedas**: los bailes y las frases están en assets de datos (`DA_EmoteWheelCatalog`, `DA_QuickChatWheelCatalog`); las
     probabilidades de los objetos suponen que `DT_Items` tiene solo las siete filas leídas (archivo de 27-04-2026, sin cambios en HEAD).
-11. **`IMC_Player` en disco**: no se ha abierto el asset para ver si ya trae B / Círculo para el caparazón (la pone el código mientras tanto;
-    `Scripts/imc_player_shell_b.py` está pendiente de ejecutarse).
+11. **`IMC_Player` en disco**: trae B / Círculo para el caparazón desde #637 (`Scripts/imc_player_shell_b.py`, comprobado por
+    `Tortunabo.Settings.PlayerInputMapping`).
 12. **Nombre visible de los objetos de siempre**: `FTN_InventoryItem` no lo tiene; los de las tablas son los de trabajo de los comentarios y los
     documentos. Cuántos objetos puede abrazar o llevar por un extremo cada malla concreta depende del tamaño de cada una.
 13. **Clases del clásico**: el LDD describe erizos venenosos, arenas movedizas y cangrejo enterrado; en C++ solo hay `ATN_SlowZoneVolume` y el

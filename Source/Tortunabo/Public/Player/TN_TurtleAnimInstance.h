@@ -186,6 +186,12 @@ public:
 	/** true mientras se zambulle de cabeza desde el acantilado de la meta (modo carrera). */
 	bool IsCliffDiving() const { return bCliffDive; }
 
+	/** Ciclos por segundo de la brazada del nado (PoseSwim). */
+	static constexpr float SwimStrokeHz = 0.85f;
+
+	/** Fase (0..1) de la brazada del nado en este fotograma (0,25 = aleta estirada): el sonido de las brazadas la sigue. */
+	float GetSwimStrokePhase() const { return FMath::Frac(Frame.Clock * SwimStrokeHz); }
+
 	/**
 	 * Golpe de brazo de lanzar: con la aleta derecha (un objeto) o con las dos. El de soltar a la tortuga que lleva en alto
 	 * sale solo (con la toma de impulso de UTN_CarryComponent antes, si es con la E).

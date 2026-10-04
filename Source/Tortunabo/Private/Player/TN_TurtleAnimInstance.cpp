@@ -463,7 +463,7 @@ namespace TNTurtleAnim
 
 	void PoseSwim(FCompactPose& P, const FBones& B, const FTNTurtleAnimFrame& F)
 	{
-		const float T = F.Clock * TwoPiF * 0.85f;
+		const float T = F.Clock * TwoPiF * UTN_TurtleAnimInstance::SwimStrokeHz;
 		Turn(P, B.Spine, AxisX, -22.f);
 		Turn(P, B.Head, AxisX, 24.f);
 		Turn(P, B.LArm, AxisY, 12.f + 30.f * FMath::Cos(T));

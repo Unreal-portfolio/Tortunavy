@@ -1043,7 +1043,7 @@ void ATN_BeachGullZone::ServerTick(float DeltaSeconds)
 
 void ATN_BeachGullZone::ServerTrackAim(float DeltaSeconds, float Tau, const TNBeachGullTuning::FChasePlan& Plan)
 {
-	// El blanco sigue a la tortuga por la arena: algo más rápido de lo que corre y, en el último tramo, lanzado por la línea
+	// El blanco sigue a la tortuga por la arena: más rápido de lo que anda y más despacio de lo que corre (#636) y, en el último tramo, lanzado por la línea
 	// que ella llevaba (TNBeachGullTuning::StepAim).
 	const ATortugaCharacter* Victim = Attack.Victim;
 	if (!IsValid(Victim) || Attack.bLocked)
@@ -1063,8 +1063,8 @@ void ATN_BeachGullZone::ServerTrackAim(float DeltaSeconds, float Tau, const TNBe
 void ATN_BeachGullZone::ServerPoop(float Tau, float DeltaSeconds)
 {
 	using namespace TNBeachGull;
-	// Mientras vuela encima y mientras cae, el blanco sigue a la tortuga algo más rápido de lo que corre; los últimos 1,5 s
-	// (el «!» fijo) cae por la línea que ella llevaba: girando corriendo, dándose la vuelta o con la plancha a tiempo, se libra.
+	// Mientras vuela encima y mientras cae, el blanco sigue a la tortuga más despacio de lo que corre (#636); los últimos 1,5 s
+	// (el «!» fijo) cae por la línea que ella llevaba: esprintando en línea recta, girando corriendo, dándose la vuelta o con la plancha a tiempo, se libra.
 	if (Attack.Result == 0 && Tau < DropTime + FallTime)
 	{
 		ServerTrackAim(DeltaSeconds, Tau, TNBeachGullTuning::PoopPlan());
@@ -1145,7 +1145,7 @@ void ATN_BeachGullZone::ServerPoop(float Tau, float DeltaSeconds)
 void ATN_BeachGullZone::ServerDive(float Tau, float DeltaSeconds)
 {
 	using namespace TNBeachGull;
-	// Hasta el golpe, el blanco (y con él el pájaro y la sombra) sigue a la tortuga algo más rápido de lo que corre; en el
+	// Hasta el golpe, el blanco (y con él el pájaro y la sombra) sigue a la tortuga más despacio de lo que corre (#636); en el
 	// último tramo del picado (alas plegadas) va lanzado por la línea que ella llevaba: un giro corriendo o una plancha a
 	// tiempo lo hacen fallar.
 	if (Attack.Result == 0 && Tau < StrikeTime)

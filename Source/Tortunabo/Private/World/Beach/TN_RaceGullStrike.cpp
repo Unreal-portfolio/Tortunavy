@@ -60,9 +60,9 @@ namespace TNRaceGullStrikeDetail
 	// ── Cagada ──
 
 	/**
-	 * El punto de impacto sigue al objetivo por la arena a esta velocidad como mucho (cm/s; algo más de lo que corre una
+	 * El punto de impacto sigue al objetivo por la arena a esta velocidad como mucho (cm/s; más de lo que anda y menos de lo que corre una
 	 * tortuga) y, desde justo después de soltarla, cae por la línea que llevaba (TNBeachGullTuning::StrikePlan). Girando
-	 * corriendo o dándose la vuelta en ese momento, o tirándose en plancha a tiempo, se libra; en línea recta, no.
+	 * corriendo o dándose la vuelta en ese momento, o tirándose en plancha a tiempo, se libra; esprintando en línea recta, también (#636).
 	 */
 	constexpr float AimSpeed = TNBeachGullTuning::StrikeChaseSpeed;
 	/** Radio del impacto en planta (cm; antes 330) y altura máxima (cm) sobre la arena. */
@@ -380,7 +380,7 @@ void ATN_RaceGullStrike::ServerTrackAim(float DeltaSeconds)
 		}
 	}
 
-	// El blanco sigue al objetivo por la arena algo más rápido de lo que corre una tortuga y, desde justo después de soltar la
+	// El blanco sigue al objetivo por la arena más despacio de lo que corre una tortuga (#636) y, desde justo después de soltar la
 	// cagada, cae por la línea que llevaba (TNBeachGullTuning::StepAim): girando corriendo o con la plancha a tiempo se libra.
 	const FVector GoalVel = Goal->GetVelocity();
 	const FVector2D Next = TNBeachGullTuning::StepAim(TNBeachGullTuning::StrikePlan(), static_cast<float>(GetAge()), AimChase,
