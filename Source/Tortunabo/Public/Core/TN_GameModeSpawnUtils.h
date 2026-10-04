@@ -77,8 +77,16 @@ APlayerStart* TN_EnsureFallbackPlayerStart(UWorld* World, FName SpawnActorName, 
 bool TN_IsPlayerStateLeaving(const APlayerState* PlayerState);
 
 /**
+ * @brief true si el PlayerState es de un bot: marcado con IsABot o con un controlador que no es de jugador como dueño.
+ * @details APlayerState::PostInitializeComponents marca IsABot cuando el dueño es un controlador sin jugador; lo
+ *          segundo cubre al PlayerState que se le asigna después a ese controlador (SetPlayerState) sin pasar por ahí.
+ * @note Los recuentos del lobby (todos listos, PendingTravelPlayerCount) no cuentan bots (#694).
+ */
+bool TN_IsBotPlayerState(const APlayerState* PlayerState);
+
+/**
  * @brief Cuenta cuántos elementos del PlayerArray son ATN_CoopPlayerState (jugadores coop conectados), sin contar al
- *        que se está yendo (TN_IsPlayerStateLeaving).
+ *        que se está yendo (TN_IsPlayerStateLeaving) ni a los bots (TN_IsBotPlayerState, #694).
  * @param GameState GameState del que iterar PlayerArray; nulo devuelve 0.
  * @note Compartido por ATN_RunGameMode y ATN_HQGameMode: 7 sitios reimplementaban el mismo bucle
  *       de conteo (solo cambiaba el nombre de la variable acumuladora).
@@ -119,7 +127,8 @@ struct FTNLobbyReadyCount
 };
 
 /**
- * @brief Cuenta conectados y listos sobre los ATN_CoopPlayerState del PlayerArray, sin el que se está yendo.
+ * @brief Cuenta conectados y listos sobre los ATN_CoopPlayerState del PlayerArray, sin el que se está yendo ni los bots
+ *        (#694: un bot nunca se pone listo y bloqueaba la cuenta atrás).
  * @param GameState GameState del que iterar PlayerArray; nulo devuelve todo a 0.
  * @note Lo usan ATN_HQGameMode::RefreshLobbyState (también desde Logout, #559) y TickCountdown.
  */

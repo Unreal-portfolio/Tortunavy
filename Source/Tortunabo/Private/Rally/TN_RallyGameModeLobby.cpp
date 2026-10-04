@@ -3,6 +3,7 @@
 // Vale igual en los circuitos de LVL_Rally y en el mapa generado (ATN_KartGameMode).
 #include "Rally/TN_RallyGameMode.h"
 
+#include "Core/TN_GameModeSpawnUtils.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
@@ -138,6 +139,13 @@ void ATN_RallyGameMode::ConfigureBot(ATN_RallyAIController& Pilot)
 	Pilot.FireRangeCm = FMath::Max(500.f, static_cast<float>(BotFireRangeCm[Index]));
 	UE_LOG(LogTNRally, Verbose, TEXT("[RallyGameMode] Bot %s: %.0f km/h, disparo cada %.1f s (%s)."), *Pilot.GetName(),
 		Pilot.MaxSpeedKmh, Pilot.FireIntervalSeconds, *UEnum::GetValueAsString(Difficulty));
+}
+
+void ATN_RallyGameMode::GetSeamlessTravelActorList(bool bToTransition, TArray<AActor*>& ActorList)
+{
+	Super::GetSeamlessTravelActorList(bToTransition, ActorList);
+	// Super guarda todo el PlayerArray; los bots se crean de nuevo en cada carrera y en el lobby no tienen plaza (#694).
+	ActorList.RemoveAll([](const AActor* Actor) { return TN_IsBotPlayerState(Cast<APlayerState>(Actor)); });
 }
 
 void ATN_RallyGameMode::ReturnToLobbyNow()

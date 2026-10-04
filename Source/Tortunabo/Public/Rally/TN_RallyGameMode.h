@@ -121,6 +121,8 @@ public:
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual bool PlayerCanRestart_Implementation(APlayerController* Player) override { return false; }
 	virtual void Logout(AController* Exiting) override;
+	/** Sin los PlayerState de los bots: no viajan al lobby ni a la carrera siguiente (#694). */
+	virtual void GetSeamlessTravelActorList(bool bToTransition, TArray<AActor*>& ActorList) override;
 
 	UFUNCTION(BlueprintPure, Category = "Rally")
 	FName GetVariant() const { return Variant; }
