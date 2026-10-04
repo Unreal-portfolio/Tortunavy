@@ -35,6 +35,10 @@ namespace TNRallyDressingActor
 	constexpr float PostRopeSize = 0.8f;
 	/** Una malla de pórtico tiene el lado largo al menos este múltiplo del corto (si no, es un poste suelto). */
 	constexpr double GateArchAspect = 2.0;
+	/** Patas del pórtico: a esta fracción del medio vano desde el centro (cerca de los extremos del lado largo). */
+	constexpr double GateArchFootFraction = 0.92;
+	/** Inclinación lateral máxima del pórtico para apoyar las dos patas (grados); con más desnivel se entierra la alta. */
+	constexpr double GateArchMaxRollDeg = 20.0;
 	constexpr float CrabCullCm = 20000.f;
 	constexpr float TireCullCm = 20000.f;
 	constexpr float SpectatorCullCm = 30000.f;
@@ -683,10 +687,23 @@ bool ATN_RallyTrackDressing::PlaceGateMesh(UStaticMesh* Mesh, const TNRallyDress
 	FVector Ground;
 	if (Long / Short >= GateArchAspect)
 	{
-		// Pórtico: el lado largo de la malla cruza la calzada y abarca la puerta con sus postes fuera del volumen.
+		// Pórtico: el lado largo de la malla cruza la calzada y abarca la puerta con sus postes fuera del volumen. Cada pata
+		// busca su suelo y el pórtico se inclina hasta que pisan las dos (en peralte o ladera, una flotaba: #665).
 		const FQuat Rotation = FRotator(0.0, Yaw + (Extent.X > Extent.Y ? 90.0 : 0.0), 0.0).Quaternion();
 		const FVector At = FindGroundNear(Track, Gate.GetLocation(), Gate.GetLocation().Z, Ground) ? Ground : Gate.GetLocation();
-		Out.Add(FitUniformOnGround(Mesh, At, Rotation, UniformScaleFor(Mesh, Rotation, 2.0 * HalfSpan)));
+		const FVector Flat = FRotator(0.0, Yaw, 0.0).Vector();
+		const FVector Side = FVector::CrossProduct(FVector::UpVector, Flat);
+		const double FootOffset = HalfSpan * GateArchFootFraction;
+		double FootZ[2] = { At.Z, At.Z };
+		for (int32 Foot = 0; Foot < 2; ++Foot)
+		{
+			const FVector Probe = At + Side * (Foot == 0 ? -FootOffset : FootOffset);
+			FootZ[Foot] = FindGroundNear(Track, Probe, At.Z, Ground) ? Ground.Z : At.Z;
+		}
+		const TNRallyDressing::FArchFit Fit = TNRallyDressing::FitArchToFeet(FootZ[0], FootZ[1], FootOffset, GateArchMaxRollDeg);
+		const FVector Base(At.X, At.Y, Fit.BaseZ);
+		const FTransform Upright = FitUniformOnGround(Mesh, Base, Rotation, UniformScaleFor(Mesh, Rotation, 2.0 * HalfSpan));
+		Out.Add(TNRallyDressing::RollAboutBase(Upright, Base, Flat, Fit.RollDeg));
 		return true;
 	}
 	// Poste suelto (bandera, baliza): uno a cada lado de la puerta, de GatePostHeightCm.
