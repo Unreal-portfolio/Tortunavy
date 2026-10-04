@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-04 12:32\n"
-"PO-Revision-Date: 2026-10-04 12:32\n"
+"POT-Creation-Date: 2026-10-04 15:26\n"
+"PO-Revision-Date: 2026-10-04 15:26\n"
 "Language-Team: \n"
 "Language: es-ES\n"
 "MIME-Version: 1.0\n"
@@ -1120,99 +1120,99 @@ msgid "ORDEN DEL DÍA<br>MISIÓN: {0}<br>DIFICULTAD: {1}"
 msgstr "ORDEN DEL DÍA<br>MISIÓN: {0}<br>DIFICULTAD: {1}"
 
 #. Key:	MissionDiffEasy
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(102)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(102)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(105)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(105)
 msgctxt "Tortunabo,MissionDiffEasy"
 msgid "Fácil"
 msgstr "Fácil"
 
 #. Key:	MissionDiffHard
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(103)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(103)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(106)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(106)
 msgctxt "Tortunabo,MissionDiffHard"
 msgid "Difícil"
 msgstr "Difícil"
 
 #. Key:	MissionDiffNormal
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(104)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(104)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(107)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(107)
 msgctxt "Tortunabo,MissionDiffNormal"
 msgid "Normal"
 msgstr "Normal"
 
 #. Key:	MissionBlurbCoop
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(113)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(113)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(116)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(116)
 msgctxt "Tortunabo,MissionBlurbCoop"
 msgid "todas juntas, del castillo de arena al mapa procedural."
 msgstr "todas juntas, del castillo de arena al mapa procedural."
 
 #. Key:	MissionBlurbRace
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(115)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(115)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(118)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(118)
 msgctxt "Tortunabo,MissionBlurbRace"
 msgid "todas contra todas en la playa; gana quien consigue tres conchas."
 msgstr "todas contra todas en la playa; gana quien consigue tres conchas."
 
 #. Key:	MissionBlurb2v2
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(117)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(117)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(120)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(120)
 msgctxt "Tortunabo,MissionBlurb2v2"
 msgid "por parejas y con exactamente cuatro; gana la pareja que llega antes."
 msgstr "por parejas y con exactamente cuatro; gana la pareja que llega antes."
 
 #. Key:	MissionBlurbSurvival
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(119)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(119)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(122)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(122)
 msgctxt "Tortunabo,MissionBlurbSurvival"
 msgid "nivel tras nivel, cada vez más difícil; gana la última tortuga en pie (sola, hasta que caigas)."
 msgstr "nivel tras nivel, cada vez más difícil; gana la última tortuga en pie (sola, hasta que caigas)."
 
 #. Key:	MissionBlurbKarts
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(121)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(121)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(124)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(124)
 msgctxt "Tortunabo,MissionBlurbKarts"
 msgid "en kart por el camino del cooperativo, sola o de dos en dos (una conduce y la otra dispara y usa los objetos); gana quien llega antes a la playa."
 msgstr "en kart por el camino del cooperativo, sola o de dos en dos (una conduce y la otra dispara y usa los objetos); gana quien llega antes a la playa."
 
 #. Key:	MissionBlurbRally
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(123)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(123)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(126)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(126)
 msgctxt "Tortunabo,MissionBlurbRally"
 msgid "en buggy por un circuito de autor, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes."
 msgstr "en buggy por un circuito de autor, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes."
 
 #. Key:	MissionBlurbFreeForAll
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(125)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(125)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(128)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(128)
 msgctxt "Tortunabo,MissionBlurbFreeForAll"
 msgid "de 2 a 8 en una arena que se inunda; gana la ronda la última en pie y la partida, quien gane tres."
 msgstr "de 2 a 8 en una arena que se inunda; gana la ronda la última en pie y la partida, quien gane tres."
 
 #. Key:	MissionBlurbClassic
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(127)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(127)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(130)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(130)
 msgctxt "Tortunabo,MissionBlurbClassic"
 msgid "el recorrido de siempre, por tramos."
 msgstr "el recorrido de siempre, por tramos."
 
 #. Key:	MissionDiffBlurbEasy
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(136)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(136)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(139)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(139)
 msgctxt "Tortunabo,MissionDiffBlurbEasy"
 msgid "menos peligros y huecos, y la tormenta va más despacio."
 msgstr "menos peligros y huecos, y la tormenta va más despacio."
 
 #. Key:	MissionDiffBlurbHard
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(138)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(138)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(141)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(141)
 msgctxt "Tortunabo,MissionDiffBlurbHard"
 msgid "más peligros, huecos y cruces colosales, y la tormenta pisándote los talones."
 msgstr "más peligros, huecos y cruces colosales, y la tormenta pisándote los talones."
 
 #. Key:	MissionDiffBlurbNormal
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(140)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(140)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(143)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(143)
 msgctxt "Tortunabo,MissionDiffBlurbNormal"
 msgid "lo que manda el reglamento."
 msgstr "lo que manda el reglamento."
@@ -1273,33 +1273,47 @@ msgctxt "Tortunabo,MissionModeClassic"
 msgid "Clásico"
 msgstr "Clásico"
 
-#. Key:	RallyMapE01B
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(90)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(90)
-msgctxt "Tortunabo,RallyMapE01B"
-msgid "España"
-msgstr "España"
-
-#. Key:	RallyMapI03R
+#. Key:	RallyMapR01
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(91)
 #: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(91)
-msgctxt "Tortunabo,RallyMapI03R"
-msgid "Tortuga Magna"
-msgstr "Tortuga Magna"
+msgctxt "Tortunabo,RallyMapR01"
+msgid "Dunas"
+msgstr "Dunas"
 
-#. Key:	RallyMapI04
+#. Key:	RallyMapR02
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(92)
 #: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(92)
-msgctxt "Tortunabo,RallyMapI04"
-msgid "Volcán Hueco"
-msgstr "Volcán Hueco"
+msgctxt "Tortunabo,RallyMapR02"
+msgid "Pista de Tierra"
+msgstr "Pista de Tierra"
 
-#. Key:	RallyMapI06
+#. Key:	RallyMapR03
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(93)
 #: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(93)
-msgctxt "Tortunabo,RallyMapI06"
-msgid "Islas Feroe"
-msgstr "Islas Feroe"
+msgctxt "Tortunabo,RallyMapR03"
+msgid "Dunas Costeras"
+msgstr "Dunas Costeras"
+
+#. Key:	RallyMapR04
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(94)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(94)
+msgctxt "Tortunabo,RallyMapR04"
+msgid "La Cantera"
+msgstr "La Cantera"
+
+#. Key:	RallyMapR05
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(95)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(95)
+msgctxt "Tortunabo,RallyMapR05"
+msgid "Marismas"
+msgstr "Marismas"
+
+#. Key:	RallyMapR06
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(96)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(96)
+msgctxt "Tortunabo,RallyMapR06"
+msgid "Lomas Secas"
+msgstr "Lomas Secas"
 
 #. Key:	MissionRallyTitle
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMissionRally.cpp(67)
@@ -2156,29 +2170,29 @@ msgid "Buscando la sala {0}..."
 msgstr "Buscando la sala {0}..."
 
 #. Key:	Locked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2332)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2332)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2334)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2334)
 msgctxt "TNRooms,Locked"
 msgid "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
 msgstr "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
 
 #. Key:	Unlocked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2333)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2333)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2335)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2335)
 msgctxt "TNRooms,Unlocked"
 msgid "Sala abierta: puede entrar gente otra vez."
 msgstr "Sala abierta: puede entrar gente otra vez."
 
 #. Key:	KickReason
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2371)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2371)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2373)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2373)
 msgctxt "TNRooms,KickReason"
 msgid "El anfitrión te ha expulsado de la sala."
 msgstr "El anfitrión te ha expulsado de la sala."
 
 #. Key:	KickedNotice
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2388)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2388)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2390)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2390)
 msgctxt "TNRooms,KickedNotice"
 msgid "El anfitrión te ha expulsado de la sala «{0}»."
 msgstr "El anfitrión te ha expulsado de la sala «{0}»."
@@ -4137,15 +4151,15 @@ msgid "¡Frena!"
 msgstr "¡Frena!"
 
 #. Key:	BotDriverName
-#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(351)
-#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(351)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(352)
+#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(352)
 msgctxt "Rally,BotDriverName"
 msgid "Piloto IA"
 msgstr "Piloto IA"
 
 #. Key:	BotName
-#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(494)
-#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(494)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(495)
+#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(495)
 msgctxt "Rally,BotName"
 msgid "Tortuga IA {0}"
 msgstr "Tortuga IA {0}"
@@ -5186,6 +5200,13 @@ msgctxt "TNSettings,WordPad"
 msgid "el mando"
 msgstr "el mando"
 
+#. Key:	BriefingKeysMission
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(1002)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(1002)
+msgctxt "Tortunabo,BriefingKeysMission"
+msgid "Q/E: pestaña · ↑/↓: fila · ←/→: cambiar · Esc: salir"
+msgstr "Q/E: pestaña · ↑/↓: fila · ←/→: cambiar · Esc: salir"
+
 #. Key:	ShortShift
 #. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(173)
 #: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(173)
@@ -5341,379 +5362,379 @@ msgid "— sin tecla —"
 msgstr "— sin tecla —"
 
 #. Key:	BriefingRecruit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(441)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(441)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(444)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(444)
 msgctxt "Tortunabo,BriefingRecruit"
 msgid "recluta"
 msgstr "recluta"
 
 #. Key:	BriefingSayHowTo
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(449)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(449)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
 msgctxt "Tortunabo,BriefingSayHowTo"
 msgid "¡Firmes, {0}! Soy el General Galápago. De este cuartel se sale hacia el mar... y se sale sabiendo."
 msgstr "¡Firmes, {0}! Soy el General Galápago. De este cuartel se sale hacia el mar... y se sale sabiendo."
 
 #. Key:	BriefingGoalH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(451)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(451)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
 msgctxt "Tortunabo,BriefingGoalH"
 msgid "El objetivo"
 msgstr "El objetivo"
 
 #. Key:	BriefingGoal
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
 msgctxt "Tortunabo,BriefingGoal"
 msgid "Acabáis de salir del huevo y el mar os espera. El camino cruza selva, playa, desierto, volcán, rocas y manglar: seguidlo hasta la meta, el arco de neumático gigante junto a la orilla, y ¡al agua!"
 msgstr "Acabáis de salir del huevo y el mar os espera. El camino cruza selva, playa, desierto, volcán, rocas y manglar: seguidlo hasta la meta, el arco de neumático gigante junto a la orilla, y ¡al agua!"
 
 #. Key:	BriefingMoveH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
 msgctxt "Tortunabo,BriefingMoveH"
 msgid "Moverse"
 msgstr "Moverse"
 
 #. Key:	BriefingMove1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(458)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(458)
 msgctxt "Tortunabo,BriefingMove1"
 msgid "•  Anda y esprinta (el sprint gasta aliento: mira el salvavidas del HUD). Salta y, en el aire, pulsa saltar otra vez para el panzazo: te lanzas en plancha y cruzas huecos que andando no se cruzan."
 msgstr "•  Anda y esprinta (el sprint gasta aliento: mira el salvavidas del HUD). Salta y, en el aire, pulsa saltar otra vez para el panzazo: te lanzas en plancha y cruzas huecos que andando no se cruzan."
 
 #. Key:	BriefingMove2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
 msgctxt "Tortunabo,BriefingMove2"
 msgid "•  En el agua se nada. Si saltas nadando, das un impulso para subir a las orillas y a las isletas."
 msgstr "•  En el agua se nada. Si saltas nadando, das un impulso para subir a las orillas y a las isletas."
 
 #. Key:	BriefingShellH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(459)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(459)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
 msgctxt "Tortunabo,BriefingShellH"
 msgid "El caparazón"
 msgstr "El caparazón"
 
 #. Key:	BriefingShell1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(463)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(463)
 msgctxt "Tortunabo,BriefingShell1"
 msgid "•  Métete en tu caparazón: caes al suelo y ruedas, resbalas y rebotas con física de verdad (¡y los demás te pueden empujar!). Pulsa otra vez para salir."
 msgstr "•  Métete en tu caparazón: caes al suelo y ruedas, resbalas y rebotas con física de verdad (¡y los demás te pueden empujar!). Pulsa otra vez para salir."
 
 #. Key:	BriefingShell2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
 msgctxt "Tortunabo,BriefingShell2"
 msgid "•  Con Interactuar coges a una tortuga metida en su caparazón (o noqueada) y la lanzas hacia donde miras: sale dando volteretas y no puede salir hasta que se para. Si te llevan a ti, muévete sin parar dos segundos para escaparte."
 msgstr "•  Con Interactuar coges a una tortuga metida en su caparazón (o noqueada) y la lanzas hacia donde miras: sale dando volteretas y no puede salir hasta que se para. Si te llevan a ti, muévete sin parar dos segundos para escaparte."
 
 #. Key:	BriefingDangerH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(464)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(464)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
 msgctxt "Tortunabo,BriefingDangerH"
 msgid "Cuidado"
 msgstr "Cuidado"
 
 #. Key:	BriefingDanger1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(468)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(468)
 msgctxt "Tortunabo,BriefingDanger1"
 msgid "•  Plátanos y golpes te noquean: te quedas un momento en el suelo con los pajaritos dando vueltas y luego te levantas."
 msgstr "•  Plátanos y golpes te noquean: te quedas un momento en el suelo con los pajaritos dando vueltas y luego te levantas."
 
 #. Key:	BriefingDanger2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(470)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(470)
 msgctxt "Tortunabo,BriefingDanger2"
 msgid "•  Si caes más de 5 m te haces bola tú solo; si caes de muy alto, te rompes. Géiseres, toboganes y agua no cuentan, ni el salto del acantilado de la meta en la carrera: ese se hace de cabeza."
 msgstr "•  Si caes más de 5 m te haces bola tú solo; si caes de muy alto, te rompes. Géiseres, toboganes y agua no cuentan, ni el salto del acantilado de la meta en la carrera: ese se hace de cabeza."
 
 #. Key:	BriefingDanger3
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(469)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(469)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(472)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(472)
 msgctxt "Tortunabo,BriefingDanger3"
 msgid "•  La fauna del agua muerde. Las pilas de huevos del camino son vuestros puntos de reaparición: pasad por ellas."
 msgstr "•  La fauna del agua muerde. Las pilas de huevos del camino son vuestros puntos de reaparición: pasad por ellas."
 
 #. Key:	BriefingSayModes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(473)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(473)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
 msgctxt "Tortunabo,BriefingSayModes"
 msgid "Cuatro formas de llegar al mar. La de hoy la fija el anfitrión conmigo, en la pestaña «Misión»."
 msgstr "Cuatro formas de llegar al mar. La de hoy la fija el anfitrión conmigo, en la pestaña «Misión»."
 
 #. Key:	BriefingCoopH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(475)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(475)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
 msgctxt "Tortunabo,BriefingCoopH"
 msgid "Cooperativo (de 1 a 8 tortugas)"
 msgstr "Cooperativo (de 1 a 8 tortugas)"
 
 #. Key:	BriefingCoop
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
 msgctxt "Tortunabo,BriefingCoop"
 msgid "Todo el equipo tiene que llegar a la meta. Una tormenta avanza por el camino detrás de vosotros y nunca va más rápido que una tortuga andando: si os quedáis atrás, os alcanza. Es el mapa más largo."
 msgstr "Todo el equipo tiene que llegar a la meta. Una tormenta avanza por el camino detrás de vosotros y nunca va más rápido que una tortuga andando: si os quedáis atrás, os alcanza. Es el mapa más largo."
 
 #. Key:	BriefingRaceH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
 msgctxt "Tortunabo,BriefingRaceH"
 msgid "Carrera (de 1 a 8)"
 msgstr "Carrera (de 1 a 8)"
 
 #. Key:	BriefingRace
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
 msgctxt "Tortunabo,BriefingRace"
 msgid "Todas contra todas en la playa: la primera que salta del acantilado y toca el agua gana la ronda y una concha, y la partida es para quien consiga tres. Aquí no se muere nadie: lo que en el cooperativo mata, en la playa te deja un rato hecha una bola."
 msgstr "Todas contra todas en la playa: la primera que salta del acantilado y toca el agua gana la ronda y una concha, y la partida es para quien consiga tres. Aquí no se muere nadie: lo que en el cooperativo mata, en la playa te deja un rato hecha una bola."
 
 #. Key:	Briefing2v2H
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
 msgctxt "Tortunabo,Briefing2v2H"
 msgid "2 vs 2 (exactamente 4)"
 msgstr "2 vs 2 (exactamente 4)"
 
 #. Key:	Briefing2v2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
 msgctxt "Tortunabo,Briefing2v2"
 msgid "Por parejas: gana la ronda la pareja cuyos dos miembros llegan antes. Hay muros que solo se superan lanzando al compañero (o bajando la rampa con el interruptor) y compuertas para sabotear a la otra pareja. Las parejas cambian cada ronda; si no sois cuatro, se juega Carrera."
 msgstr "Por parejas: gana la ronda la pareja cuyos dos miembros llegan antes. Hay muros que solo se superan lanzando al compañero (o bajando la rampa con el interruptor) y compuertas para sabotear a la otra pareja. Las parejas cambian cada ronda; si no sois cuatro, se juega Carrera."
 
 #. Key:	BriefingClassicH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
 msgctxt "Tortunabo,BriefingClassicH"
 msgid "Clásico"
 msgstr "Clásico"
 
 #. Key:	BriefingClassic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(488)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(488)
 msgctxt "Tortunabo,BriefingClassic"
 msgid "El recorrido de siempre, por tramos, para los veteranos del cuartel."
 msgstr "El recorrido de siempre, por tramos, para los veteranos del cuartel."
 
 #. Key:	BriefingSurvivalH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(486)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(486)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
 msgctxt "Tortunabo,BriefingSurvivalH"
 msgid "Supervivencia"
 msgstr "Supervivencia"
 
 #. Key:	BriefingSurvival
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
 msgctxt "Tortunabo,BriefingSurvival"
 msgid "Niveles cortos del recorrido de siempre, uno tras otro y cada vez más duros. Cuando todas las que siguen vivas llegan a la meta, empieza otro. Quien cae mira desde la grada, y gana la última en pie (si caen las últimas a la vez, la que cayó más cerca de la meta). Sola, dura hasta que caigas."
 msgstr "Niveles cortos del recorrido de siempre, uno tras otro y cada vez más duros. Cuando todas las que siguen vivas llegan a la meta, empieza otro. Quien cae mira desde la grada, y gana la última en pie (si caen las últimas a la vez, la que cayó más cerca de la meta). Sola, dura hasta que caigas."
 
 #. Key:	BriefingPickH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(492)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(492)
 msgctxt "Tortunabo,BriefingPickH"
 msgid "Cómo se elige"
 msgstr "Cómo se elige"
 
 #. Key:	BriefingPick
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(493)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(493)
 msgctxt "Tortunabo,BriefingPick"
 msgid "El anfitrión, aquí conmigo, en la pestaña «Misión»: Cooperativo, Carrera o Supervivencia, y la dificultad (Fácil, Normal o Difícil), que en el cooperativo cambia el tamaño del mapa, los cruces colosales, los huecos y lo rápida que va la tormenta. También al crear la partida en el menú y, si el cuartel tiene selectores de modo y dificultad, con ellos (2 vs 2 y Clásico solo salen ahí)."
 msgstr "El anfitrión, aquí conmigo, en la pestaña «Misión»: Cooperativo, Carrera o Supervivencia, y la dificultad (Fácil, Normal o Difícil), que en el cooperativo cambia el tamaño del mapa, los cruces colosales, los huecos y lo rápida que va la tormenta. También al crear la partida en el menú y, si el cuartel tiene selectores de modo y dificultad, con ellos (2 vs 2 y Clásico solo salen ahí)."
 
 #. Key:	BriefingSayRules
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(494)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(494)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(497)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(497)
 msgctxt "Tortunabo,BriefingSayRules"
 msgid "Las normas del cuartel no se discuten. Bueno, se pueden discutir... pero se pierde."
 msgstr "Las normas del cuartel no se discuten. Bueno, se pueden discutir... pero se pierde."
 
 #. Key:	BriefingStartH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(495)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(495)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
 msgctxt "Tortunabo,BriefingStartH"
 msgid "La salida"
 msgstr "La salida"
 
 #. Key:	BriefingStart
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(496)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(496)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
 msgctxt "Tortunabo,BriefingStart"
 msgid "•  Cuando estéis listos, id a la sala de espera junto a la gran puerta del castillo y meteos cada uno en un huevo. Con todos dentro empieza la cuenta atrás, la puerta se abre... ¡y a la playa!"
 msgstr "•  Cuando estéis listos, id a la sala de espera junto a la gran puerta del castillo y meteos cada uno en un huevo. Con todos dentro empieza la cuenta atrás, la puerta se abre... ¡y a la playa!"
 
 #. Key:	BriefingRespawnH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
 msgctxt "Tortunabo,BriefingRespawnH"
 msgid "Reaparición"
 msgstr "Reaparición"
 
 #. Key:	BriefingRespawn1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
 msgctxt "Tortunabo,BriefingRespawn1"
 msgid "•  Si caes, vuelves a la última pila de huevos alcanzada que quede por delante de la tormenta: en Cooperativo, la más lejana del equipo; en Carrera y 2 vs 2, la tuya."
 msgstr "•  Si caes, vuelves a la última pila de huevos alcanzada que quede por delante de la tormenta: en Cooperativo, la más lejana del equipo; en Carrera y 2 vs 2, la tuya."
 
 #. Key:	BriefingRespawn2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(504)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(504)
 msgctxt "Tortunabo,BriefingRespawn2"
 msgid "•  Sin pila válida te quedas en el suelo y un compañero tiene que rescatarte."
 msgstr "•  Sin pila válida te quedas en el suelo y un compañero tiene que rescatarte."
 
 #. Key:	BriefingTimeH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
 msgctxt "Tortunabo,BriefingTimeH"
 msgid "Tiempo"
 msgstr "Tiempo"
 
 #. Key:	BriefingTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(503)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(503)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
 msgctxt "Tortunabo,BriefingTime"
 msgid "•  En la Carrera de la playa cada ronda dura como mucho 6 minutos: si se acaba, gana la más cerca del mar. En 2 vs 2, 15 minutos, y gana el más adelantado en el camino."
 msgstr "•  En la Carrera de la playa cada ronda dura como mucho 6 minutos: si se acaba, gana la más cerca del mar. En 2 vs 2, 15 minutos, y gana el más adelantado en el camino."
 
 #. Key:	BriefingFairH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(508)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(508)
 msgctxt "Tortunabo,BriefingFairH"
 msgid "Juego limpio"
 msgstr "Juego limpio"
 
 #. Key:	BriefingFair
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(509)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(509)
 msgctxt "Tortunabo,BriefingFair"
 msgid "•  Se puede coger y lanzar a cualquiera que esté metido en su caparazón, también a los rivales. Lo que no se puede es quedarse en la salida molestando: el general lo ve todo."
 msgstr "•  Se puede coger y lanzar a cualquiera que esté metido en su caparazón, también a los rivales. Lo que no se puede es quedarse en la salida molestando: el general lo ve todo."
 
 #. Key:	BriefingSayControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(510)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(510)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
 msgctxt "Tortunabo,BriefingSayControls"
 msgid "Estas son tus teclas de verdad, recluta. Apréndetelas antes de salir del huevo."
 msgstr "Estas son tus teclas de verdad, recluta. Apréndetelas antes de salir del huevo."
 
 #. Key:	BriefingKeysH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(511)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(511)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
 msgctxt "Tortunabo,BriefingKeysH"
 msgid "Tus teclas"
 msgstr "Tus teclas"
 
 #. Key:	BriefingKeysNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(512)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(512)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
 msgctxt "Tortunabo,BriefingKeysNote"
 msgid "Leídas de tu configuración actual. En azul, las del mando."
 msgstr "Leídas de tu configuración actual. En azul, las del mando."
 
 #. Key:	CtlMove
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
 msgctxt "Tortunabo,CtlMove"
 msgid "Moverse"
 msgstr "Moverse"
 
 #. Key:	CtlLook
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
 msgctxt "Tortunabo,CtlLook"
 msgid "Mirar"
 msgstr "Mirar"
 
 #. Key:	CtlJump
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
 msgctxt "Tortunabo,CtlJump"
 msgid "Saltar (en el aire, otra vez: panzazo)"
 msgstr "Saltar (en el aire, otra vez: panzazo)"
 
 #. Key:	CtlSprint
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
 msgctxt "Tortunabo,CtlSprint"
 msgid "Esprintar"
 msgstr "Esprintar"
 
 #. Key:	CtlShell
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
 msgctxt "Tortunabo,CtlShell"
 msgid "Meterse o salir del caparazón"
 msgstr "Meterse o salir del caparazón"
 
 #. Key:	CtlInteract
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
 msgctxt "Tortunabo,CtlInteract"
 msgid "Interactuar, coger y lanzar"
 msgstr "Interactuar, coger y lanzar"
 
 #. Key:	CtlDrop
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
 msgctxt "Tortunabo,CtlDrop"
 msgid "Soltar el objeto (o a quien llevas)"
 msgstr "Soltar el objeto (o a quien llevas)"
 
 #. Key:	CtlRotate
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(523)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(523)
 msgctxt "Tortunabo,CtlRotate"
 msgid "Cambiar de objeto"
 msgstr "Cambiar de objeto"
 
 #. Key:	CtlEmoteWheel
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(524)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(524)
 msgctxt "Tortunabo,CtlEmoteWheel"
 msgid "Rueda de emotes"
 msgstr "Rueda de emotes"
 
 #. Key:	CtlChatWheel
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(525)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(525)
 msgctxt "Tortunabo,CtlChatWheel"
 msgid "Chat rápido"
 msgstr "Chat rápido"
 
 #. Key:	CtlEmotes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(527)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(527)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(530)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(530)
 msgctxt "Tortunabo,CtlEmotes"
 msgid "Emotes directos"
 msgstr "Emotes directos"
 
 #. Key:	BriefingSayMissionHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(546)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(546)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(549)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(549)
 msgctxt "Tortunabo,BriefingSayMissionHost"
 msgid "¡Firmes, {0}! Tú mandas: ¿qué misión le damos hoy a la tropa? Elige el modo y la dificultad."
 msgstr "¡Firmes, {0}! Tú mandas: ¿qué misión le damos hoy a la tropa? Elige el modo y la dificultad."
 
 #. Key:	BriefingSayMissionGuest
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(548)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(548)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(551)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(551)
 msgctxt "Tortunabo,BriefingSayMissionGuest"
 msgid "¡Firmes, {0}! Esta es la orden del día. La misión la decide el anfitrión: tú, a prepararte."
 msgstr "¡Firmes, {0}! Esta es la orden del día. La misión la decide el anfitrión: tú, a prepararte."
 
 #. Key:	BriefingMissionModeLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(576)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(576)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(579)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(579)
 msgctxt "Tortunabo,BriefingMissionModeLine"
 msgid "•  {0}: {1}"
 msgstr "•  {0}: {1}"
@@ -5726,8 +5747,8 @@ msgid "¡Carrera! Todas contra todas hasta el agua. Tres conchas y al podio."
 msgstr "¡Carrera! Todas contra todas hasta el agua. Tres conchas y al podio."
 
 #. Key:	BriefingMissionDiffLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(593)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(593)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(596)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(596)
 msgctxt "Tortunabo,BriefingMissionDiffLine"
 msgid "•  En el cooperativo. {0}: {1} {2}: {3} {4}: {5} La playa de la carrera es siempre la misma."
 msgstr "•  En el cooperativo. {0}: {1} {2}: {3} {4}: {5} La playa de la carrera es siempre la misma."
@@ -5740,8 +5761,8 @@ msgid "¡Supervivencia! Nivel tras nivel, cada uno peor que el anterior. Solo qu
 msgstr "¡Supervivencia! Nivel tras nivel, cada uno peor que el anterior. Solo queda en pie la última."
 
 #. Key:	BriefingBuggySeatsLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(616)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(616)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(619)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(619)
 msgctxt "Tortunabo,BriefingBuggySeatsLine"
 msgid "•  Por parejas, la segunda de cada buggy va de artillera: maneja la torreta (en Karts, también los objetos) y su peso cambia cuánto gira el buggy."
 msgstr "•  Por parejas, la segunda de cada buggy va de artillera: maneja la torreta (en Karts, también los objetos) y su peso cambia cuánto gira el buggy."
@@ -5754,8 +5775,8 @@ msgid "¡Karts! Al volante sola o con una artillera detrás. Cajas, géiseres y 
 msgstr "¡Karts! Al volante sola o con una artillera detrás. Cajas, géiseres y cascadas hasta la playa."
 
 #. Key:	BriefingRallyCircuitLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(643)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(643)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(646)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(646)
 msgctxt "Tortunabo,BriefingRallyCircuitLine"
 msgid "•  Los circuitos del Rally tienen puertas en orden, vueltas y saltos de autor."
 msgstr "•  Los circuitos del Rally tienen puertas en orden, vueltas y saltos de autor."
@@ -5767,13 +5788,6 @@ msgctxt "Tortunabo,BriefingOrderRally"
 msgid "¡Rally! Circuito de autor, puertas en orden y una artillera con las cajas «?». Nada de atajos."
 msgstr "¡Rally! Circuito de autor, puertas en orden y una artillera con las cajas «?». Nada de atajos."
 
-#. Key:	BriefingTctArenaLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(669)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(669)
-msgctxt "Tortunabo,BriefingTctArenaLine"
-msgid "•  Cada arena se inunda a su manera: manda quien aguanta arriba y caer al agua es la muerte."
-msgstr "•  Cada arena se inunda a su manera: manda quien aguanta arriba y caer al agua es la muerte."
-
 #. Key:	BriefingOrder2v2
 #. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(67)
 #: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(67)
@@ -5781,16 +5795,23 @@ msgctxt "Tortunabo,BriefingOrder2v2"
 msgid "¡2 vs 2! Por parejas y hasta el agua. Si al salir no sois cuatro, se corre la Carrera."
 msgstr "¡2 vs 2! Por parejas y hasta el agua. Si al salir no sois cuatro, se corre la Carrera."
 
+#. Key:	BriefingTctArenaLine
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(672)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(672)
+msgctxt "Tortunabo,BriefingTctArenaLine"
+msgid "•  Cada arena se inunda a su manera: manda quien aguanta arriba y caer al agua es la muerte."
+msgstr "•  Cada arena se inunda a su manera: manda quien aguanta arriba y caer al agua es la muerte."
+
 #. Key:	BriefingMissionHostNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(682)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(682)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(685)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(685)
 msgctxt "Tortunabo,BriefingMissionHostNote"
 msgid "Tú mandas: lo que elijas vale para toda la tropa en cuanto salgáis del lobby y todas lo ven al momento (también en mi pizarra). Teclado o mando: ↑/↓ elige la fila y ←/→ cambia; con el ratón, clic."
 msgstr "Tú mandas: lo que elijas vale para toda la tropa en cuanto salgáis del lobby y todas lo ven al momento (también en mi pizarra). Teclado o mando: ↑/↓ elige la fila y ←/→ cambia; con el ratón, clic."
 
 #. Key:	BriefingMissionGuestNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(684)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(684)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(687)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(687)
 msgctxt "Tortunabo,BriefingMissionGuestNote"
 msgid "El modo y la dificultad los elige el anfitrión. Si los cambia, lo verás aquí y en la pizarra de mi mesa al momento."
 msgstr "El modo y la dificultad los elige el anfitrión. Si los cambia, lo verás aquí y en la pizarra de mi mesa al momento."
@@ -5810,64 +5831,64 @@ msgid "¡Cooperativo! Aquí no se deja a nadie atrás: del castillo al mar, toda
 msgstr "¡Cooperativo! Aquí no se deja a nadie atrás: del castillo al mar, todas juntas."
 
 #. Key:	BriefingMissionFocus
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(736)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(736)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
 msgctxt "Tortunabo,BriefingMissionFocus"
 msgid "» {0}"
 msgstr "» {0}"
 
 #. Key:	BriefingMissionModeH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
 msgctxt "Tortunabo,BriefingMissionModeH"
 msgid "Modo de la misión"
 msgstr "Modo de la misión"
 
 #. Key:	BriefingMissionDiffH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(740)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(740)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
 msgctxt "Tortunabo,BriefingMissionDiffH"
 msgid "Dificultad"
 msgstr "Dificultad"
 
 #. Key:	BriefingBuggySeatsH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(741)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(741)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(744)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(744)
 msgctxt "Tortunabo,BriefingBuggySeatsH"
 msgid "Tortugas por buggy"
 msgstr "Tortugas por buggy"
 
 #. Key:	BriefingRallyCircuitH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(745)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(745)
 msgctxt "Tortunabo,BriefingRallyCircuitH"
 msgid "Circuito del Rally"
 msgstr "Circuito del Rally"
 
 #. Key:	BriefingTctArenaH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(746)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(746)
 msgctxt "Tortunabo,BriefingTctArenaH"
 msgid "Arena"
 msgstr "Arena"
 
 #. Key:	BriefingMissionOrders
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(769)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(769)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(772)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(772)
 msgctxt "Tortunabo,BriefingMissionOrders"
 msgid "Orden del día: {0} · {1}"
 msgstr "Orden del día: {0} · {1}"
 
 #. Key:	BriefingSayMissionChanged
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(774)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(774)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(777)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(777)
 msgctxt "Tortunabo,BriefingSayMissionChanged"
 msgid "¡Atención, tropa! Nueva orden del día: {0}, dificultad {1}."
 msgstr "¡Atención, tropa! Nueva orden del día: {0}, dificultad {1}."
 
 #. Key:	BriefingSayHostOnly
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(784)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(784)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(787)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(787)
 msgctxt "Tortunabo,BriefingSayHostOnly"
 msgid "¡Alto ahí, recluta! La misión la decide el anfitrión."
 msgstr "¡Alto ahí, recluta! La misión la decide el anfitrión."
@@ -5894,53 +5915,46 @@ msgid "Normal: lo que manda el reglamento. Ni más ni menos."
 msgstr "Normal: lo que manda el reglamento. Ni más ni menos."
 
 #. Key:	BriefingSayTctArena
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(856)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(856)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(859)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(859)
 msgctxt "Tortunabo,BriefingSayTctArena"
 msgid "¡A la arena {0}! Arriba manda quien aguanta; el agua no perdona."
 msgstr "¡A la arena {0}! Arriba manda quien aguanta; el agua no perdona."
 
 #. Key:	BriefingSayRallyCircuit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(868)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(868)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(871)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(871)
 msgctxt "Tortunabo,BriefingSayRallyCircuit"
 msgid "¡Circuito de {0}! Puertas en orden y nada de atajos por la arena."
 msgstr "¡Circuito de {0}! Puertas en orden y nada de atajos por la arena."
 
 #. Key:	BriefingSayKartsSolo
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(885)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(885)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(888)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(888)
 msgctxt "Tortunabo,BriefingSayKartsSolo"
 msgid "¡Cada tortuga a su kart! Al volante y con la torreta, todo tuyo."
 msgstr "¡Cada tortuga a su kart! Al volante y con la torreta, todo tuyo."
 
 #. Key:	BriefingSayRallySolo
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(886)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(886)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(889)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(889)
 msgctxt "Tortunabo,BriefingSayRallySolo"
 msgid "¡Cada tortuga a su buggy! Al volante y con la torreta, todo tuyo."
 msgstr "¡Cada tortuga a su buggy! Al volante y con la torreta, todo tuyo."
 
 #. Key:	BriefingSayKartsPairs
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(890)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(890)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(893)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(893)
 msgctxt "Tortunabo,BriefingSayKartsPairs"
 msgid "¡Por parejas! Una conduce y la otra dispara, usa los objetos y carga el peso en las curvas."
 msgstr "¡Por parejas! Una conduce y la otra dispara, usa los objetos y carga el peso en las curvas."
 
 #. Key:	BriefingSayRallyPairs
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(891)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(891)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(894)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(894)
 msgctxt "Tortunabo,BriefingSayRallyPairs"
 msgid "¡Por parejas! Una conduce y la otra dispara la munición de las cajas y carga el peso en las curvas."
 msgstr "¡Por parejas! Una conduce y la otra dispara la munición de las cajas y carga el peso en las curvas."
-
-#. Key:	BriefingKeysMission
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(999)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(999)
-msgctxt "Tortunabo,BriefingKeysMission"
-msgid "Q/E: pestaña · ↑/↓: fila · ←/→: cambiar · Esc: salir"
-msgstr "Q/E: pestaña · ↑/↓: fila · ←/→: cambiar · Esc: salir"
 
 #. Key:	SectionTeam
 #. SourceLocation:	Source/Tortunabo/Private/UI/Credits/TN_CreditsData.cpp(186)
@@ -10913,8 +10927,8 @@ msgid "¡AY!"
 msgstr "¡AY!"
 
 #. Key:	Hide
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(224)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(224)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(239)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(239)
 msgctxt "TNBeachBurrowCrab,Hide"
 msgid "¡GLUP!"
 msgstr "¡GLUP!"
@@ -10983,8 +10997,8 @@ msgid "¡ÑAM!"
 msgstr "¡ÑAM!"
 
 #. Key:	Grab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(333)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(333)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(348)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(348)
 msgctxt "TNBeachDragCrab,Grab"
 msgid "¡ZAS!"
 msgstr "¡ZAS!"

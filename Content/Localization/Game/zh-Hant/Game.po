@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-04 12:32\n"
-"PO-Revision-Date: 2026-10-04 12:32\n"
+"POT-Creation-Date: 2026-10-04 15:26\n"
+"PO-Revision-Date: 2026-10-04 15:26\n"
 "Language-Team: \n"
 "Language: zh-Hant\n"
 "MIME-Version: 1.0\n"
@@ -1120,99 +1120,99 @@ msgid "ORDEN DEL DÍA<br>MISIÓN: {0}<br>DIFICULTAD: {1}"
 msgstr "今日命令<br>任務：{0}<br>難度：{1}"
 
 #. Key:	MissionDiffEasy
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(102)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(102)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(105)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(105)
 msgctxt "Tortunabo,MissionDiffEasy"
 msgid "Fácil"
 msgstr "簡單"
 
 #. Key:	MissionDiffHard
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(103)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(103)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(106)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(106)
 msgctxt "Tortunabo,MissionDiffHard"
 msgid "Difícil"
 msgstr "困難"
 
 #. Key:	MissionDiffNormal
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(104)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(104)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(107)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(107)
 msgctxt "Tortunabo,MissionDiffNormal"
 msgid "Normal"
 msgstr "普通"
 
 #. Key:	MissionBlurbCoop
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(113)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(113)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(116)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(116)
 msgctxt "Tortunabo,MissionBlurbCoop"
 msgid "todas juntas, del castillo de arena al mapa procedural."
 msgstr "大家一起，從沙堡出發，穿越隨機生成的地圖。"
 
 #. Key:	MissionBlurbRace
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(115)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(115)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(118)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(118)
 msgctxt "Tortunabo,MissionBlurbRace"
 msgid "todas contra todas en la playa; gana quien consigue tres conchas."
 msgstr "沙灘大混戰，先拿到三個貝殼的獲勝。"
 
 #. Key:	MissionBlurb2v2
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(117)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(117)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(120)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(120)
 msgctxt "Tortunabo,MissionBlurb2v2"
 msgid "por parejas y con exactamente cuatro; gana la pareja que llega antes."
 msgstr "兩兩組隊，必須剛好四人；先抵達終點的一對獲勝。"
 
 #. Key:	MissionBlurbSurvival
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(119)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(119)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(122)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(122)
 msgctxt "Tortunabo,MissionBlurbSurvival"
 msgid "nivel tras nivel, cada vez más difícil; gana la última tortuga en pie (sola, hasta que caigas)."
 msgstr "一關接一關，一關比一關難；最後站著的烏龜獲勝（單人時，堅持到你掉下去為止）。"
 
 #. Key:	MissionBlurbKarts
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(121)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(121)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(124)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(124)
 msgctxt "Tortunabo,MissionBlurbKarts"
 msgid "en kart por el camino del cooperativo, sola o de dos en dos (una conduce y la otra dispara y usa los objetos); gana quien llega antes a la playa."
 msgstr "開著卡丁車沿合作模式的路線前進，可以單人，也可以兩人一車（一個開車，一個射擊和使用道具）；先到海灘的獲勝。"
 
 #. Key:	MissionBlurbRally
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(123)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(123)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(126)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(126)
 msgctxt "Tortunabo,MissionBlurbRally"
 msgid "en buggy por un circuito de autor, sola o por parejas (una conduce y la otra dispara la munición de las cajas «?» y carga el peso en las curvas); gana quien llega antes."
 msgstr "駕駛越野車跑精心設計的賽道，可單人也可兩人一車（一個開車，另一個發射「？」箱子裡的彈藥，轉彎時壓住重心）；先到者勝。"
 
 #. Key:	MissionBlurbFreeForAll
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(125)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(125)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(128)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(128)
 msgctxt "Tortunabo,MissionBlurbFreeForAll"
 msgid "de 2 a 8 en una arena que se inunda; gana la ronda la última en pie y la partida, quien gane tres."
 msgstr "2 到 8 隻小海龜在不斷漲水的競技場裡；最後站著的贏下這一回合，先贏三回合的贏得比賽。"
 
 #. Key:	MissionBlurbClassic
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(127)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(127)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(130)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(130)
 msgctxt "Tortunabo,MissionBlurbClassic"
 msgid "el recorrido de siempre, por tramos."
 msgstr "老樣子的經典路線，分段前進。"
 
 #. Key:	MissionDiffBlurbEasy
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(136)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(136)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(139)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(139)
 msgctxt "Tortunabo,MissionDiffBlurbEasy"
 msgid "menos peligros y huecos, y la tormenta va más despacio."
 msgstr "危險和缺口更少，風暴也走得更慢。"
 
 #. Key:	MissionDiffBlurbHard
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(138)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(138)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(141)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(141)
 msgctxt "Tortunabo,MissionDiffBlurbHard"
 msgid "más peligros, huecos y cruces colosales, y la tormenta pisándote los talones."
 msgstr "危險更多，缺口更多，還有巨大的路口，風暴緊追在你腳後跟。"
 
 #. Key:	MissionDiffBlurbNormal
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(140)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(140)
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(143)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(143)
 msgctxt "Tortunabo,MissionDiffBlurbNormal"
 msgid "lo que manda el reglamento."
 msgstr "按規定來，不多不少。"
@@ -1273,33 +1273,47 @@ msgctxt "Tortunabo,MissionModeClassic"
 msgid "Clásico"
 msgstr "經典"
 
-#. Key:	RallyMapE01B
-#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(90)
-#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(90)
-msgctxt "Tortunabo,RallyMapE01B"
-msgid "España"
-msgstr "西班牙"
-
-#. Key:	RallyMapI03R
+#. Key:	RallyMapR01
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(91)
 #: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(91)
-msgctxt "Tortunabo,RallyMapI03R"
-msgid "Tortuga Magna"
-msgstr "巨龜"
+msgctxt "Tortunabo,RallyMapR01"
+msgid "Dunas"
+msgstr "沙丘"
 
-#. Key:	RallyMapI04
+#. Key:	RallyMapR02
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(92)
 #: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(92)
-msgctxt "Tortunabo,RallyMapI04"
-msgid "Volcán Hueco"
-msgstr "空心火山"
+msgctxt "Tortunabo,RallyMapR02"
+msgid "Pista de Tierra"
+msgstr "泥土賽道"
 
-#. Key:	RallyMapI06
+#. Key:	RallyMapR03
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(93)
 #: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(93)
-msgctxt "Tortunabo,RallyMapI06"
-msgid "Islas Feroe"
-msgstr "法羅群島"
+msgctxt "Tortunabo,RallyMapR03"
+msgid "Dunas Costeras"
+msgstr "海岸沙丘"
+
+#. Key:	RallyMapR04
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(94)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(94)
+msgctxt "Tortunabo,RallyMapR04"
+msgid "La Cantera"
+msgstr "採石場"
+
+#. Key:	RallyMapR05
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(95)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(95)
+msgctxt "Tortunabo,RallyMapR05"
+msgid "Marismas"
+msgstr "沼澤"
+
+#. Key:	RallyMapR06
+#. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(96)
+#: Source/Tortunabo/Private/Lobby/TN_LobbyMission.cpp(96)
+msgctxt "Tortunabo,RallyMapR06"
+msgid "Lomas Secas"
+msgstr "乾旱丘陵"
 
 #. Key:	MissionRallyTitle
 #. SourceLocation:	Source/Tortunabo/Private/Lobby/TN_LobbyMissionRally.cpp(67)
@@ -2156,29 +2170,29 @@ msgid "Buscando la sala {0}..."
 msgstr "正在尋找房間 {0}……"
 
 #. Key:	Locked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2332)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2332)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2334)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2334)
 msgctxt "TNRooms,Locked"
 msgid "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
 msgstr "房間已關閉：不再接納新人（已經在裡面的人可以重新進入）。"
 
 #. Key:	Unlocked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2333)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2333)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2335)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2335)
 msgctxt "TNRooms,Unlocked"
 msgid "Sala abierta: puede entrar gente otra vez."
 msgstr "房間已開放：又可以進人了。"
 
 #. Key:	KickReason
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2371)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2371)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2373)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2373)
 msgctxt "TNRooms,KickReason"
 msgid "El anfitrión te ha expulsado de la sala."
 msgstr "房主把你踢出了房間。"
 
 #. Key:	KickedNotice
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2388)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2388)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2390)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2390)
 msgctxt "TNRooms,KickedNotice"
 msgid "El anfitrión te ha expulsado de la sala «{0}»."
 msgstr "房主把你踢出了房間「{0}」。"
@@ -4137,15 +4151,15 @@ msgid "¡Frena!"
 msgstr "煞車！"
 
 #. Key:	BotDriverName
-#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(351)
-#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(351)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(352)
+#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(352)
 msgctxt "Rally,BotDriverName"
 msgid "Piloto IA"
 msgstr "AI 車手"
 
 #. Key:	BotName
-#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(494)
-#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(494)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(495)
+#: Source/Tortunabo/Private/Rally/TN_RallyGameMode.cpp(495)
 msgctxt "Rally,BotName"
 msgid "Tortuga IA {0}"
 msgstr "AI 海龜 {0}"
@@ -5186,6 +5200,13 @@ msgctxt "TNSettings,WordPad"
 msgid "el mando"
 msgstr "手把"
 
+#. Key:	BriefingKeysMission
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(1002)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(1002)
+msgctxt "Tortunabo,BriefingKeysMission"
+msgid "Q/E: pestaña · ↑/↓: fila · ←/→: cambiar · Esc: salir"
+msgstr "Q/E：切換頁籤 · ↑/↓：選擇列 · ←/→：更改 · Esc：離開"
+
 #. Key:	ShortShift
 #. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(173)
 #: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(173)
@@ -5341,379 +5362,379 @@ msgid "— sin tecla —"
 msgstr "— 未設定按鍵 —"
 
 #. Key:	BriefingRecruit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(441)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(441)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(444)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(444)
 msgctxt "Tortunabo,BriefingRecruit"
 msgid "recluta"
 msgstr "新兵"
 
 #. Key:	BriefingSayHowTo
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(449)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(449)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
 msgctxt "Tortunabo,BriefingSayHowTo"
 msgid "¡Firmes, {0}! Soy el General Galápago. De este cuartel se sale hacia el mar... y se sale sabiendo."
 msgstr "立正，{0}！我是龜將軍。從總部出發就是奔向大海……而且要有備而去！"
 
 #. Key:	BriefingGoalH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(451)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(451)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
 msgctxt "Tortunabo,BriefingGoalH"
 msgid "El objetivo"
 msgstr "目標"
 
 #. Key:	BriefingGoal
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(452)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
 msgctxt "Tortunabo,BriefingGoal"
 msgid "Acabáis de salir del huevo y el mar os espera. El camino cruza selva, playa, desierto, volcán, rocas y manglar: seguidlo hasta la meta, el arco de neumático gigante junto a la orilla, y ¡al agua!"
 msgstr "你們剛剛破殼，大海正在等著你們。這條路穿過叢林、沙灘、沙漠、火山、岩石和紅樹林：一路走到終點——岸邊那座巨型輪胎拱門，然後，跳進水裡！"
 
 #. Key:	BriefingMoveH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(454)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
 msgctxt "Tortunabo,BriefingMoveH"
 msgid "Moverse"
 msgstr "移動"
 
 #. Key:	BriefingMove1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(455)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(458)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(458)
 msgctxt "Tortunabo,BriefingMove1"
 msgid "•  Anda y esprinta (el sprint gasta aliento: mira el salvavidas del HUD). Salta y, en el aire, pulsa saltar otra vez para el panzazo: te lanzas en plancha y cruzas huecos que andando no se cruzan."
 msgstr "•  行走和衝刺（衝刺會消耗體力：看看介面上的救生圈）。跳起來，在空中再按一次跳躍就是肚皮飛撲：你會平身撲出去，越過走路過不去的缺口。"
 
 #. Key:	BriefingMove2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(457)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
 msgctxt "Tortunabo,BriefingMove2"
 msgid "•  En el agua se nada. Si saltas nadando, das un impulso para subir a las orillas y a las isletas."
 msgstr "•  水裡可以游泳。游泳時跳一下，會借力爬上岸邊和小島。"
 
 #. Key:	BriefingShellH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(459)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(459)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
 msgctxt "Tortunabo,BriefingShellH"
 msgid "El caparazón"
 msgstr "龜殼"
 
 #. Key:	BriefingShell1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(460)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(463)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(463)
 msgctxt "Tortunabo,BriefingShell1"
 msgid "•  Métete en tu caparazón: caes al suelo y ruedas, resbalas y rebotas con física de verdad (¡y los demás te pueden empujar!). Pulsa otra vez para salir."
 msgstr "•  縮進你的龜殼：你會摔到地上滾動、滑行、彈跳，用的是真實的物理效果（別人還能推你！）。再按一次就能鑽出來。"
 
 #. Key:	BriefingShell2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(462)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
 msgctxt "Tortunabo,BriefingShell2"
 msgid "•  Con Interactuar coges a una tortuga metida en su caparazón (o noqueada) y la lanzas hacia donde miras: sale dando volteretas y no puede salir hasta que se para. Si te llevan a ti, muévete sin parar dos segundos para escaparte."
 msgstr "•  用「互動」鍵可以抱起縮在殼裡（或被打暈）的小龜，朝你看的方向丟出去：對方會翻著筋斗飛出去，停下來之前沒辦法鑽出殼。如果被別人抱住，不停地動上兩秒就能掙脫。"
 
 #. Key:	BriefingDangerH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(464)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(464)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
 msgctxt "Tortunabo,BriefingDangerH"
 msgid "Cuidado"
 msgstr "小心"
 
 #. Key:	BriefingDanger1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(465)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(468)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(468)
 msgctxt "Tortunabo,BriefingDanger1"
 msgid "•  Plátanos y golpes te noquean: te quedas un momento en el suelo con los pajaritos dando vueltas y luego te levantas."
 msgstr "•  香蕉和撞擊會把你打暈：你會在地上躺一會兒，頭頂小鳥繞圈飛，然後再爬起來。"
 
 #. Key:	BriefingDanger2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(467)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(470)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(470)
 msgctxt "Tortunabo,BriefingDanger2"
 msgid "•  Si caes más de 5 m te haces bola tú solo; si caes de muy alto, te rompes. Géiseres, toboganes y agua no cuentan, ni el salto del acantilado de la meta en la carrera: ese se hace de cabeza."
 msgstr "•  從超過 5 公尺的地方掉下來，你會自己縮成一團；要是從特別高的地方掉下來，你會摔壞。間歇泉、溜滑梯和水不算，競速裡終點的懸崖跳水也不算：那一跳要頭朝下。"
 
 #. Key:	BriefingDanger3
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(469)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(469)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(472)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(472)
 msgctxt "Tortunabo,BriefingDanger3"
 msgid "•  La fauna del agua muerde. Las pilas de huevos del camino son vuestros puntos de reaparición: pasad por ellas."
 msgstr "•  水裡的生物會咬人。路上的龜蛋堆是你們的重生點：記得經過它們。"
 
 #. Key:	BriefingSayModes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(473)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(473)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
 msgctxt "Tortunabo,BriefingSayModes"
 msgid "Cuatro formas de llegar al mar. La de hoy la fija el anfitrión conmigo, en la pestaña «Misión»."
 msgstr "抵達大海有四種方式。今天走哪一種，由房主和我在「任務」頁籤裡決定。"
 
 #. Key:	BriefingCoopH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(475)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(475)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
 msgctxt "Tortunabo,BriefingCoopH"
 msgid "Cooperativo (de 1 a 8 tortugas)"
 msgstr "合作（1 至 8 隻小龜）"
 
 #. Key:	BriefingCoop
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(476)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
 msgctxt "Tortunabo,BriefingCoop"
 msgid "Todo el equipo tiene que llegar a la meta. Una tormenta avanza por el camino detrás de vosotros y nunca va más rápido que una tortuga andando: si os quedáis atrás, os alcanza. Es el mapa más largo."
 msgstr "整個隊伍都要抵達終點。一場風暴在你們身後沿路推進，速度從不超過走路的小龜：誰落後，就會被追上。這是最長的地圖。"
 
 #. Key:	BriefingRaceH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(478)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
 msgctxt "Tortunabo,BriefingRaceH"
 msgid "Carrera (de 1 a 8)"
 msgstr "競速（1 至 8 人）"
 
 #. Key:	BriefingRace
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(479)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
 msgctxt "Tortunabo,BriefingRace"
 msgid "Todas contra todas en la playa: la primera que salta del acantilado y toca el agua gana la ronda y una concha, y la partida es para quien consiga tres. Aquí no se muere nadie: lo que en el cooperativo mata, en la playa te deja un rato hecha una bola."
 msgstr "沙灘上各憑本事：第一個從懸崖跳下並碰到水的贏得本輪和一枚貝殼，先集齊三枚的贏下整場。這裡不會有誰死掉：合作模式裡能要命的東西，在沙灘上只會讓你縮成球躺一會兒。"
 
 #. Key:	Briefing2v2H
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(481)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
 msgctxt "Tortunabo,Briefing2v2H"
 msgid "2 vs 2 (exactamente 4)"
 msgstr "2 vs 2（剛好 4 人）"
 
 #. Key:	Briefing2v2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(482)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
 msgctxt "Tortunabo,Briefing2v2"
 msgid "Por parejas: gana la ronda la pareja cuyos dos miembros llegan antes. Hay muros que solo se superan lanzando al compañero (o bajando la rampa con el interruptor) y compuertas para sabotear a la otra pareja. Las parejas cambian cada ronda; si no sois cuatro, se juega Carrera."
 msgstr "兩兩組隊：兩名成員都先抵達終點的一對贏下本輪。有些牆只能靠把隊友丟過去才能翻越（或者用開關放下斜坡），還有閘門可以給對面那隊使絆子。每輪隊伍都會重新分組；如果不是四個人，就改玩競速。"
 
 #. Key:	BriefingClassicH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(484)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
 msgctxt "Tortunabo,BriefingClassicH"
 msgid "Clásico"
 msgstr "經典"
 
 #. Key:	BriefingClassic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(485)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(488)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(488)
 msgctxt "Tortunabo,BriefingClassic"
 msgid "El recorrido de siempre, por tramos, para los veteranos del cuartel."
 msgstr "老樣子的經典路線，分段前進，獻給總部的老兵們。"
 
 #. Key:	BriefingSurvivalH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(486)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(486)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
 msgctxt "Tortunabo,BriefingSurvivalH"
 msgid "Supervivencia"
 msgstr "生存"
 
 #. Key:	BriefingSurvival
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(487)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
 msgctxt "Tortunabo,BriefingSurvival"
 msgid "Niveles cortos del recorrido de siempre, uno tras otro y cada vez más duros. Cuando todas las que siguen vivas llegan a la meta, empieza otro. Quien cae mira desde la grada, y gana la última en pie (si caen las últimas a la vez, la que cayó más cerca de la meta). Sola, dura hasta que caigas."
 msgstr "把熟悉的賽道切成一段段短關卡，一關接一關，越來越難。所有還活著的烏龜都抵達終點後，下一關就開始。掉下去的烏龜在看台上圍觀，最後站著的烏龜獲勝（如果最後幾隻同時掉下去，就看誰掉得離終點最近）。單人時，堅持到你掉下去為止。"
 
 #. Key:	BriefingPickH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(489)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(492)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(492)
 msgctxt "Tortunabo,BriefingPickH"
 msgid "Cómo se elige"
 msgstr "如何選擇"
 
 #. Key:	BriefingPick
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(490)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(493)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(493)
 msgctxt "Tortunabo,BriefingPick"
 msgid "El anfitrión, aquí conmigo, en la pestaña «Misión»: Cooperativo, Carrera o Supervivencia, y la dificultad (Fácil, Normal o Difícil), que en el cooperativo cambia el tamaño del mapa, los cruces colosales, los huecos y lo rápida que va la tormenta. También al crear la partida en el menú y, si el cuartel tiene selectores de modo y dificultad, con ellos (2 vs 2 y Clásico solo salen ahí)."
 msgstr "房主，就在我這裡，在「任務」分頁裡選：合作、競速或生存，還有難度（簡單、普通或困難）；在合作模式裡，難度會改變地圖大小、巨型渡口、缺口和風暴的速度。建立房間時也可以在選單裡選；如果總部有模式和難度選擇器，也能用它們來選（2 對 2 和經典只在那裡出現）。"
 
 #. Key:	BriefingSayRules
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(494)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(494)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(497)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(497)
 msgctxt "Tortunabo,BriefingSayRules"
 msgid "Las normas del cuartel no se discuten. Bueno, se pueden discutir... pero se pierde."
 msgstr "總部的規矩不許爭論。好吧，爭論也行……不過你會輸。"
 
 #. Key:	BriefingStartH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(495)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(495)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
 msgctxt "Tortunabo,BriefingStartH"
 msgid "La salida"
 msgstr "出發"
 
 #. Key:	BriefingStart
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(496)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(496)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
 msgctxt "Tortunabo,BriefingStart"
 msgid "•  Cuando estéis listos, id a la sala de espera junto a la gran puerta del castillo y meteos cada uno en un huevo. Con todos dentro empieza la cuenta atrás, la puerta se abre... ¡y a la playa!"
 msgstr "•  準備好後，去城堡大門旁的等候室，每人鑽進一個龜蛋。全員就位後開始倒數，大門打開……衝向沙灘！"
 
 #. Key:	BriefingRespawnH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(498)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
 msgctxt "Tortunabo,BriefingRespawnH"
 msgid "Reaparición"
 msgstr "重生"
 
 #. Key:	BriefingRespawn1
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(499)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
 msgctxt "Tortunabo,BriefingRespawn1"
 msgid "•  Si caes, vuelves a la última pila de huevos alcanzada que quede por delante de la tormenta: en Cooperativo, la más lejana del equipo; en Carrera y 2 vs 2, la tuya."
 msgstr "•  如果倒下，你會回到最近抵達、且在風暴前方的龜蛋堆：合作模式裡是隊伍到過的最遠的一處；競速和 2 vs 2 裡則是你自己的那一處。"
 
 #. Key:	BriefingRespawn2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(501)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(504)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(504)
 msgctxt "Tortunabo,BriefingRespawn2"
 msgid "•  Sin pila válida te quedas en el suelo y un compañero tiene que rescatarte."
 msgstr "•  沒有可用的龜蛋堆時你會留在地上，需要隊友來救你。"
 
 #. Key:	BriefingTimeH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(502)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
 msgctxt "Tortunabo,BriefingTimeH"
 msgid "Tiempo"
 msgstr "時間"
 
 #. Key:	BriefingTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(503)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(503)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
 msgctxt "Tortunabo,BriefingTime"
 msgid "•  En la Carrera de la playa cada ronda dura como mucho 6 minutos: si se acaba, gana la más cerca del mar. En 2 vs 2, 15 minutos, y gana el más adelantado en el camino."
 msgstr "•  沙灘競速裡每一輪最多 6 分鐘：時間到了，離大海最近的獲勝。2 vs 2 是 15 分鐘，路上跑得最靠前的一方獲勝。"
 
 #. Key:	BriefingFairH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(505)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(508)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(508)
 msgctxt "Tortunabo,BriefingFairH"
 msgid "Juego limpio"
 msgstr "公平競爭"
 
 #. Key:	BriefingFair
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(506)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(509)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(509)
 msgctxt "Tortunabo,BriefingFair"
 msgid "•  Se puede coger y lanzar a cualquiera que esté metido en su caparazón, también a los rivales. Lo que no se puede es quedarse en la salida molestando: el general lo ve todo."
 msgstr "•  縮在殼裡的小龜誰都可以抱起來丟，對手也一樣。但不許守在出發點搗亂：將軍什麼都看得見。"
 
 #. Key:	BriefingSayControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(510)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(510)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
 msgctxt "Tortunabo,BriefingSayControls"
 msgid "Estas son tus teclas de verdad, recluta. Apréndetelas antes de salir del huevo."
 msgstr "這些是你真正在用的按鍵，新兵。破殼之前先背熟。"
 
 #. Key:	BriefingKeysH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(511)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(511)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
 msgctxt "Tortunabo,BriefingKeysH"
 msgid "Tus teclas"
 msgstr "你的按鍵"
 
 #. Key:	BriefingKeysNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(512)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(512)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
 msgctxt "Tortunabo,BriefingKeysNote"
 msgid "Leídas de tu configuración actual. En azul, las del mando."
 msgstr "讀取自你目前的設定。藍色的是手把按鍵。"
 
 #. Key:	CtlMove
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(513)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
 msgctxt "Tortunabo,CtlMove"
 msgid "Moverse"
 msgstr "移動"
 
 #. Key:	CtlLook
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(514)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
 msgctxt "Tortunabo,CtlLook"
 msgid "Mirar"
 msgstr "環顧"
 
 #. Key:	CtlJump
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(515)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
 msgctxt "Tortunabo,CtlJump"
 msgid "Saltar (en el aire, otra vez: panzazo)"
 msgstr "跳躍（空中再按：肚皮飛撲）"
 
 #. Key:	CtlSprint
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(516)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
 msgctxt "Tortunabo,CtlSprint"
 msgid "Esprintar"
 msgstr "衝刺"
 
 #. Key:	CtlShell
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(517)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
 msgctxt "Tortunabo,CtlShell"
 msgid "Meterse o salir del caparazón"
 msgstr "縮進或鑽出龜殼"
 
 #. Key:	CtlInteract
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(518)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
 msgctxt "Tortunabo,CtlInteract"
 msgid "Interactuar, coger y lanzar"
 msgstr "互動、撿取和投擲"
 
 #. Key:	CtlDrop
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(519)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
 msgctxt "Tortunabo,CtlDrop"
 msgid "Soltar el objeto (o a quien llevas)"
 msgstr "放下物品（或你抱著的人）"
 
 #. Key:	CtlRotate
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(520)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(523)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(523)
 msgctxt "Tortunabo,CtlRotate"
 msgid "Cambiar de objeto"
 msgstr "切換物品"
 
 #. Key:	CtlEmoteWheel
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(521)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(524)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(524)
 msgctxt "Tortunabo,CtlEmoteWheel"
 msgid "Rueda de emotes"
 msgstr "舞蹈輪盤"
 
 #. Key:	CtlChatWheel
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(522)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(525)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(525)
 msgctxt "Tortunabo,CtlChatWheel"
 msgid "Chat rápido"
 msgstr "快捷聊天"
 
 #. Key:	CtlEmotes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(527)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(527)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(530)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(530)
 msgctxt "Tortunabo,CtlEmotes"
 msgid "Emotes directos"
 msgstr "快捷舞蹈"
 
 #. Key:	BriefingSayMissionHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(546)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(546)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(549)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(549)
 msgctxt "Tortunabo,BriefingSayMissionHost"
 msgid "¡Firmes, {0}! Tú mandas: ¿qué misión le damos hoy a la tropa? Elige el modo y la dificultad."
 msgstr "立正，{0}！你說了算：今天給部隊什麼任務？選好模式和難度吧。"
 
 #. Key:	BriefingSayMissionGuest
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(548)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(548)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(551)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(551)
 msgctxt "Tortunabo,BriefingSayMissionGuest"
 msgid "¡Firmes, {0}! Esta es la orden del día. La misión la decide el anfitrión: tú, a prepararte."
 msgstr "立正，{0}！這是今日命令。任務由房主決定：你只管做好準備。"
 
 #. Key:	BriefingMissionModeLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(576)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(576)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(579)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(579)
 msgctxt "Tortunabo,BriefingMissionModeLine"
 msgid "•  {0}: {1}"
 msgstr "•  {0}：{1}"
@@ -5726,8 +5747,8 @@ msgid "¡Carrera! Todas contra todas hasta el agua. Tres conchas y al podio."
 msgstr "競速！大家比拚，一路衝進水裡。集齊三枚貝殼，登上領獎台。"
 
 #. Key:	BriefingMissionDiffLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(593)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(593)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(596)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(596)
 msgctxt "Tortunabo,BriefingMissionDiffLine"
 msgid "•  En el cooperativo. {0}: {1} {2}: {3} {4}: {5} La playa de la carrera es siempre la misma."
 msgstr "•  在合作模式裡。{0}：{1} {2}：{3} {4}：{5} 競速的沙灘永遠是同一片。"
@@ -5740,8 +5761,8 @@ msgid "¡Supervivencia! Nivel tras nivel, cada uno peor que el anterior. Solo qu
 msgstr "生存！一關接一關，一關比一關糟。最後只剩最後一隻還站著。"
 
 #. Key:	BriefingBuggySeatsLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(616)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(616)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(619)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(619)
 msgctxt "Tortunabo,BriefingBuggySeatsLine"
 msgid "•  Por parejas, la segunda de cada buggy va de artillera: maneja la torreta (en Karts, también los objetos) y su peso cambia cuánto gira el buggy."
 msgstr "•  兩人一車時，每輛越野車的第二隻海龜是砲手：操控砲塔（卡丁車模式中還負責道具），她的重量會改變越野車的轉向幅度。"
@@ -5754,8 +5775,8 @@ msgid "¡Karts! Al volante sola o con una artillera detrás. Cajas, géiseres y 
 msgstr "卡丁車！自己開，或者帶上一名砲手。一路穿過道具箱、間歇泉和瀑布，衝向海灘。"
 
 #. Key:	BriefingRallyCircuitLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(643)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(643)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(646)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(646)
 msgctxt "Tortunabo,BriefingRallyCircuitLine"
 msgid "•  Los circuitos del Rally tienen puertas en orden, vueltas y saltos de autor."
 msgstr "•  拉力賽賽道有按順序通過的關門、多圈和精心設計的飛躍。"
@@ -5767,13 +5788,6 @@ msgctxt "Tortunabo,BriefingOrderRally"
 msgid "¡Rally! Circuito de autor, puertas en orden y una artillera con las cajas «?». Nada de atajos."
 msgstr "拉力賽！精心設計的賽道、按順序的關門，還有一名用「？」箱子的砲手。不許抄近路。"
 
-#. Key:	BriefingTctArenaLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(669)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(669)
-msgctxt "Tortunabo,BriefingTctArenaLine"
-msgid "•  Cada arena se inunda a su manera: manda quien aguanta arriba y caer al agua es la muerte."
-msgstr "•  每個競技場的漲水方式都不一樣：誰在高處撐住誰說了算，掉進水裡就完了。"
-
 #. Key:	BriefingOrder2v2
 #. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(67)
 #: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(67)
@@ -5781,16 +5795,23 @@ msgctxt "Tortunabo,BriefingOrder2v2"
 msgid "¡2 vs 2! Por parejas y hasta el agua. Si al salir no sois cuatro, se corre la Carrera."
 msgstr "2 vs 2！兩兩組隊衝向海邊。出發時不滿四隻，就改跑競速。"
 
+#. Key:	BriefingTctArenaLine
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(672)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(672)
+msgctxt "Tortunabo,BriefingTctArenaLine"
+msgid "•  Cada arena se inunda a su manera: manda quien aguanta arriba y caer al agua es la muerte."
+msgstr "•  每個競技場的漲水方式都不一樣：誰在高處撐住誰說了算，掉進水裡就完了。"
+
 #. Key:	BriefingMissionHostNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(682)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(682)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(685)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(685)
 msgctxt "Tortunabo,BriefingMissionHostNote"
 msgid "Tú mandas: lo que elijas vale para toda la tropa en cuanto salgáis del lobby y todas lo ven al momento (también en mi pizarra). Teclado o mando: ↑/↓ elige la fila y ←/→ cambia; con el ratón, clic."
 msgstr "你說了算：你的選擇在離開大廳後對全隊生效，所有人也會立刻看到（包括我的黑板）。鍵盤或手把：↑/↓ 選擇列，←/→ 更改；用滑鼠就直接點擊。"
 
 #. Key:	BriefingMissionGuestNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(684)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(684)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(687)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(687)
 msgctxt "Tortunabo,BriefingMissionGuestNote"
 msgid "El modo y la dificultad los elige el anfitrión. Si los cambia, lo verás aquí y en la pizarra de mi mesa al momento."
 msgstr "模式和難度由房主選擇。房主一改動，你就能在這裡和我桌上的黑板上立刻看到。"
@@ -5810,64 +5831,64 @@ msgid "¡Cooperativo! Aquí no se deja a nadie atrás: del castillo al mar, toda
 msgstr "合作！這裡不丟下任何人：從城堡到大海，大家一起走。"
 
 #. Key:	BriefingMissionFocus
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(736)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(736)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
 msgctxt "Tortunabo,BriefingMissionFocus"
 msgid "» {0}"
 msgstr "» {0}"
 
 #. Key:	BriefingMissionModeH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(739)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
 msgctxt "Tortunabo,BriefingMissionModeH"
 msgid "Modo de la misión"
 msgstr "任務模式"
 
 #. Key:	BriefingMissionDiffH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(740)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(740)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
 msgctxt "Tortunabo,BriefingMissionDiffH"
 msgid "Dificultad"
 msgstr "難度"
 
 #. Key:	BriefingBuggySeatsH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(741)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(741)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(744)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(744)
 msgctxt "Tortunabo,BriefingBuggySeatsH"
 msgid "Tortugas por buggy"
 msgstr "每車海龜數"
 
 #. Key:	BriefingRallyCircuitH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(742)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(745)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(745)
 msgctxt "Tortunabo,BriefingRallyCircuitH"
 msgid "Circuito del Rally"
 msgstr "拉力賽賽道"
 
 #. Key:	BriefingTctArenaH
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(743)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(746)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(746)
 msgctxt "Tortunabo,BriefingTctArenaH"
 msgid "Arena"
 msgstr "競技場"
 
 #. Key:	BriefingMissionOrders
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(769)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(769)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(772)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(772)
 msgctxt "Tortunabo,BriefingMissionOrders"
 msgid "Orden del día: {0} · {1}"
 msgstr "今日命令：{0} · {1}"
 
 #. Key:	BriefingSayMissionChanged
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(774)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(774)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(777)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(777)
 msgctxt "Tortunabo,BriefingSayMissionChanged"
 msgid "¡Atención, tropa! Nueva orden del día: {0}, dificultad {1}."
 msgstr "全體注意！新的今日命令：{0}，難度{1}。"
 
 #. Key:	BriefingSayHostOnly
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(784)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(784)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(787)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(787)
 msgctxt "Tortunabo,BriefingSayHostOnly"
 msgid "¡Alto ahí, recluta! La misión la decide el anfitrión."
 msgstr "站住，新兵！任務由房主決定。"
@@ -5894,53 +5915,46 @@ msgid "Normal: lo que manda el reglamento. Ni más ni menos."
 msgstr "普通：按規定來，不多也不少。"
 
 #. Key:	BriefingSayTctArena
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(856)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(856)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(859)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(859)
 msgctxt "Tortunabo,BriefingSayTctArena"
 msgid "¡A la arena {0}! Arriba manda quien aguanta; el agua no perdona."
 msgstr "前往「{0}」競技場！誰在高處撐住誰說了算，水可不留情。"
 
 #. Key:	BriefingSayRallyCircuit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(868)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(868)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(871)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(871)
 msgctxt "Tortunabo,BriefingSayRallyCircuit"
 msgid "¡Circuito de {0}! Puertas en orden y nada de atajos por la arena."
 msgstr "{0}賽道！按順序過關門，不許從沙地抄近路。"
 
 #. Key:	BriefingSayKartsSolo
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(885)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(885)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(888)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(888)
 msgctxt "Tortunabo,BriefingSayKartsSolo"
 msgid "¡Cada tortuga a su kart! Al volante y con la torreta, todo tuyo."
 msgstr "每隻海龜一輛車！方向盤和砲塔，全歸你。"
 
 #. Key:	BriefingSayRallySolo
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(886)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(886)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(889)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(889)
 msgctxt "Tortunabo,BriefingSayRallySolo"
 msgid "¡Cada tortuga a su buggy! Al volante y con la torreta, todo tuyo."
 msgstr "每隻海龜一輛越野車！方向盤和砲塔，全歸你。"
 
 #. Key:	BriefingSayKartsPairs
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(890)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(890)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(893)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(893)
 msgctxt "Tortunabo,BriefingSayKartsPairs"
 msgid "¡Por parejas! Una conduce y la otra dispara, usa los objetos y carga el peso en las curvas."
 msgstr "兩人一車！一個開車，一個射擊、用道具，轉彎時壓住重心。"
 
 #. Key:	BriefingSayRallyPairs
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(891)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(891)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(894)
+#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(894)
 msgctxt "Tortunabo,BriefingSayRallyPairs"
 msgid "¡Por parejas! Una conduce y la otra dispara la munición de las cajas y carga el peso en las curvas."
 msgstr "兩人一車！一個開車，另一個發射箱子裡的彈藥，轉彎時壓住重心。"
-
-#. Key:	BriefingKeysMission
-#. SourceLocation:	Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(999)
-#: Source/Tortunabo/Private/UI/Briefing/TN_BriefingWidget.cpp(999)
-msgctxt "Tortunabo,BriefingKeysMission"
-msgid "Q/E: pestaña · ↑/↓: fila · ←/→: cambiar · Esc: salir"
-msgstr "Q/E：切換頁籤 · ↑/↓：選擇列 · ←/→：更改 · Esc：離開"
 
 #. Key:	SectionTeam
 #. SourceLocation:	Source/Tortunabo/Private/UI/Credits/TN_CreditsData.cpp(186)
@@ -10913,8 +10927,8 @@ msgid "¡AY!"
 msgstr "哎喲！"
 
 #. Key:	Hide
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(224)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(224)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(239)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachBurrowCrab.cpp(239)
 msgctxt "TNBeachBurrowCrab,Hide"
 msgid "¡GLUP!"
 msgstr "咕嚕！"
@@ -10983,8 +10997,8 @@ msgid "¡ÑAM!"
 msgstr "咕咚！"
 
 #. Key:	Grab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(333)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(333)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(348)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachDragCrab.cpp(348)
 msgctxt "TNBeachDragCrab,Grab"
 msgid "¡ZAS!"
 msgstr "咔嚓！"
