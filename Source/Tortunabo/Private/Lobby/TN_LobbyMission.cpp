@@ -87,10 +87,13 @@ ETNProcGameMode TNLobbyMission::NormalizeMenuMode(ETNProcGameMode Mode)
 FText TNLobbyMission::RallyMapName(FName Variant)
 {
 	const FString Id = Variant.ToString();
-	if (Id.Equals(TEXT("E01B_espana_rally"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapE01B", "España"); }
-	if (Id.Equals(TEXT("I03R_tortuga_magna"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapI03R", "Tortuga Magna"); }
-	if (Id.Equals(TEXT("I04_volcan_hueco"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapI04", "Volcán Hueco"); }
-	if (Id.Equals(TEXT("I06_feroe"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapI06", "Islas Feroe"); }
+	// Solo circuitos del generador de vueltas (#622, #682, #692); los de autor (E01B, I03R, I04, I06) salieron del Rally.
+	if (Id.Equals(TEXT("R01_circuito_dunas"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR01", "Dunas"); }
+	if (Id.Equals(TEXT("R02_circuito_tierra"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR02", "Pista de Tierra"); }
+	if (Id.Equals(TEXT("R03_circuito_dunas_costeras"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR03", "Dunas Costeras"); }
+	if (Id.Equals(TEXT("R04_circuito_cantera"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR04", "La Cantera"); }
+	if (Id.Equals(TEXT("R05_circuito_marismas"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR05", "Marismas"); }
+	if (Id.Equals(TEXT("R06_circuito_lomas"), ESearchCase::IgnoreCase)) { return NSLOCTEXT("Tortunabo", "RallyMapR06", "Lomas Secas"); }
 	// Una variante que aún no tiene nombre traducido: su identificador, tal cual.
 	return TNLocText::Literal(Variant.IsNone() ? FString() : Id);
 }

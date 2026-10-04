@@ -16,7 +16,7 @@ Contenido:
   horizonte heredados de LVL_Demo01: el cuadro azul claro era esa superficie (1,2 km en el origen) y la mancha
   blanca de Málaga salía de ella sobre el lecho del corredor; el plano de horizonte no se veía.
 - Niebla (ExponentialHeightFog) con los ajustes y la posición de la de LVL_TestMap (LVL_Demo01 no tiene).
-- ATN_MapVariantLoader con E01B_espana_rally (la carrera cambia de variante con ?Variant=...), un ATN_RallyTrack y un
+- ATN_MapVariantLoader con R01_circuito_dunas (la carrera cambia de variante con ?Variant=...), un ATN_RallyTrack y un
   PlayerStart en la salida de la variante.
 - WorldSettings: GameMode override = ATN_RallyGameMode.
 
@@ -36,7 +36,7 @@ import build_water as water  # noqa: E402
 RALLY_LEVEL = "/Game/Maps/Rally/LVL_Rally"
 LIGHT_SOURCE = "/Game/Maps/Run/LVL_Demo01"
 FOG_SOURCE = "/Game/Maps/Run/LVL_TestMap"
-VARIANT = "E01B_espana_rally"
+VARIANT = "R01_circuito_dunas"        # #692: el Rally solo usa circuitos del generador de vueltas
 PLAYER_START_LIFT_UU = 150.0
 SEA_MATERIAL = "M_RallySea"
 SEA_ROOT = "/Game/Maps/Rally"

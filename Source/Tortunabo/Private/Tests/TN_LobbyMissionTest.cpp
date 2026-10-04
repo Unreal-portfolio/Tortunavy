@@ -64,20 +64,26 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNLobbyMissionRallyMapsTest, "Tortunabo.Lobby.
 bool FTNLobbyMissionRallyMapsTest::RunTest(const FString& Parameters)
 {
 	using namespace TNLobbyMission;
-	TestTrue(TEXT("Manifest de Rally con puertas"),
+	TestTrue(TEXT("Manifest de Rally con puertas y del generador de vueltas"), IsRallyCircuitManifest(
+		TEXT("{\"mode\": \"rally\", \"checkpoints_uu\": [[0,0,0],[100,0,0]], \"generator\": {\"generator\": \"rally_circuit_vueltas\"}}")));
+	TestFalse(TEXT("Sin puertas no es un circuito"),
+		IsRallyCircuitManifest(TEXT("{\"mode\": \"rally\", \"generator\": {\"generator\": \"rally_circuit_vueltas\"}}")));
+	TestFalse(TEXT("Otro modo no es un circuito"), IsRallyCircuitManifest(
+		TEXT("{\"mode\": \"coop\", \"checkpoints_uu\": [[0,0,0],[100,0,0]], \"generator\": {\"generator\": \"rally_circuit_vueltas\"}}")));
+	// Caso negativo (#692): un circuito de autor (I03R, I04, I06) no viene del generador de vueltas y no entra en el Rally.
+	TestFalse(TEXT("Circuito de autor: fuera del Rally"), IsRallyCircuitManifest(
+		TEXT("{\"mode\": \"rally\", \"checkpoints_uu\": [[0,0,0],[100,0,0]], \"generator\": {\"generator\": \"shape_kit\"}}")));
+	TestFalse(TEXT("Sin generador: fuera del Rally"),
 		IsRallyCircuitManifest(TEXT("{\"mode\": \"rally\", \"checkpoints_uu\": [[0,0,0],[100,0,0]]}")));
-	TestFalse(TEXT("Sin puertas no es un circuito"), IsRallyCircuitManifest(TEXT("{\"mode\": \"rally\"}")));
-	TestFalse(TEXT("Otro modo no es un circuito"),
-		IsRallyCircuitManifest(TEXT("{\"mode\": \"coop\", \"checkpoints_uu\": [[0,0,0],[100,0,0]]}")));
 	TestFalse(TEXT("JSON roto"), IsRallyCircuitManifest(TEXT("{ no")));
 
-	const TArray<FName> Sorted = SortRallyMaps({ FName(TEXT("Z99_nuevo")), FName(TEXT("I03R_tortuga_magna")), FName(DefaultRallyCircuit),
+	const TArray<FName> Sorted = SortRallyMaps({ FName(TEXT("Z99_nuevo")), FName(TEXT("R02_circuito_tierra")), FName(DefaultRallyCircuit),
 		FName(TEXT("A01_otro")), FName(DefaultRallyCircuit), FName(NAME_None) });
 	TestEqual(TEXT("Cuatro circuitos sin repetir ni vacíos"), Sorted.Num(), 4);
 	if (Sorted.Num() == 4)
 	{
-		TestEqual(TEXT("E01B, el primero"), Sorted[0], FName(DefaultRallyCircuit));
-		TestEqual(TEXT("I03R, el segundo"), Sorted[1], FName(TEXT("I03R_tortuga_magna")));
+		TestEqual(TEXT("R01, el primero"), Sorted[0], FName(DefaultRallyCircuit));
+		TestEqual(TEXT("R02, el segundo"), Sorted[1], FName(TEXT("R02_circuito_tierra")));
 		TestEqual(TEXT("Las variantes nuevas, por nombre"), Sorted[2], FName(TEXT("A01_otro")));
 		TestEqual(TEXT("Y la última"), Sorted[3], FName(TEXT("Z99_nuevo")));
 	}
@@ -85,13 +91,26 @@ bool FTNLobbyMissionRallyMapsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Sin opciones: ninguno"), ResolveRallyMap(FName(DefaultRallyCircuit), TArray<FName>()), FName(NAME_None));
 
 	TestEqual(TEXT("Circuito: LVL_Rally con su variante y vuelta al lobby"),
-		RallyTravelURL(FName(TEXT("I03R_tortuga_magna")), TEXT("/Game/Maps/Rally/LVL_Rally")),
-		FString(TEXT("/Game/Maps/Rally/LVL_Rally?Variant=I03R_tortuga_magna?FromLobby")));
+		RallyTravelURL(FName(TEXT("R04_circuito_cantera")), TEXT("/Game/Maps/Rally/LVL_Rally")),
+		FString(TEXT("/Game/Maps/Rally/LVL_Rally?Variant=R04_circuito_cantera?FromLobby")));
 
-	// En el repositorio están los manifests: E01B e I03R se ofrecen, sin mapa generado (ese es Karts).
+	// En el repositorio están los manifests (#692): solo los circuitos del generador de vueltas, R01 a R06 en su orden y
+	// con nombre traducido; ni los de autor (E01B, I03R, I04, I06) ni el mapa generado (ese es Karts).
 	const TArray<FName>& Options = RallyMapOptions();
-	TestTrue(TEXT("E01B entre los circuitos"), Options.Contains(FName(DefaultRallyCircuit)));
-	TestTrue(TEXT("I03R entre los circuitos"), Options.Contains(FName(TEXT("I03R_tortuga_magna"))));
+	const TCHAR* const Catalog[] = { TEXT("R01_circuito_dunas"), TEXT("R02_circuito_tierra"), TEXT("R03_circuito_dunas_costeras"),
+		TEXT("R04_circuito_cantera"), TEXT("R05_circuito_marismas"), TEXT("R06_circuito_lomas") };
+	for (int32 Index = 0; Index < static_cast<int32>(UE_ARRAY_COUNT(Catalog)); ++Index)
+	{
+		const FName Circuit(Catalog[Index]);
+		TestTrue(*FString::Printf(TEXT("%s, en el puesto %d del selector"), Catalog[Index], Index),
+			Options.IsValidIndex(Index) && Options[Index] == Circuit);
+		TestFalse(*FString::Printf(TEXT("%s con nombre traducido, no su identificador"), Catalog[Index]),
+			RallyMapName(Circuit).ToString().Equals(Catalog[Index]));
+	}
+	for (const TCHAR* Retired : { TEXT("E01B_espana_rally"), TEXT("I03R_tortuga_magna"), TEXT("I04_volcan_hueco"), TEXT("I06_feroe") })
+	{
+		TestFalse(*FString::Printf(TEXT("%s fuera del selector del Rally"), Retired), Options.Contains(FName(Retired)));
+	}
 	TestFalse(TEXT("Sin mapa generado entre los circuitos"), Options.Contains(FName(NAME_None)));
 	TestTrue(TEXT("Con circuitos, el Rally se puede jugar"), IsModePlayable(ETNProcGameMode::Rally));
 

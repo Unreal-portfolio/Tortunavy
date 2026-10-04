@@ -1,12 +1,13 @@
 // Circuitos por vueltas generados (#622): lectura de bank_deg y elements del manifest, puertas inclinadas con el peralte, notas
 // del copiloto con los saltos y rasantes del manifest y frenada del piloto IA (TNRallyCircuit). Lógica pura; los de variantes
-// construyen la pista de R01, E01B e I03R en un mundo vacío (solo editor: Scripts/ no se empaqueta). Headless:
+// construyen la pista de R01 y de todo el selector del Rally en un mundo vacío (solo editor: Scripts/ no se empaqueta). Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Circuit; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
 #include "Dom/JsonObject.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "Lobby/TN_LobbyMission.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Rally/TN_RallyCircuit.h"
@@ -425,17 +426,15 @@ bool FTNRallyCircuitR01Test::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyCircuitVariantsTest, "Tortunabo.Rally.Circuit.E01BAndI03RStillLoad",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyCircuitVariantsTest, "Tortunabo.Rally.Circuit.CatalogBuilds",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
 bool FTNRallyCircuitVariantsTest::RunTest(const FString& Parameters)
 {
-	struct FExpected
-	{
-		const TCHAR* Variant;
-		bool bCircuit;
-	};
-	const FExpected Expected[] = { { TEXT("E01B_espana_rally"), false }, { TEXT("I03R_tortuga_magna"), true } };
+	// Todos los circuitos del selector del Rally (#692: solo los del generador de vueltas) se construyen como circuito, con
+	// sus puertas, sus elementos (saltos, baches...) y peralte en alguna puerta.
+	const TArray<FName>& Circuits = TNLobbyMission::RallyMapOptions();
+	TestTrue(TEXT("al menos seis circuitos en el selector (R01 a R06)"), Circuits.Num() >= 6);
 	TNRallyCircuitTest::FScopedTestWorld Scoped;
 	if (!TestNotNull(TEXT("mundo de prueba"), Scoped.World))
 	{
@@ -446,17 +445,16 @@ bool FTNRallyCircuitVariantsTest::RunTest(const FString& Parameters)
 	{
 		return false;
 	}
-	for (const FExpected& Entry : Expected)
+	for (const FName Circuit : Circuits)
 	{
-		if (!TestTrue(*FString::Printf(TEXT("%s se construye desde su manifest"), Entry.Variant), Track->BuildFromVariant(FName(Entry.Variant))))
+		const FString Name = Circuit.ToString();
+		if (!TestTrue(*FString::Printf(TEXT("%s se construye desde su manifest"), *Name), Track->BuildFromVariant(Circuit)))
 		{
 			continue;
 		}
-		TestEqual(*FString::Printf(TEXT("%s: circuito o punto a punto como antes"), Entry.Variant), Track->IsCircuit(), Entry.bCircuit);
-		TestTrue(*FString::Printf(TEXT("%s: al menos 2 puertas"), Entry.Variant), Track->GetGateCount() >= 2);
-		TestEqual(*FString::Printf(TEXT("%s: sin elementos del generador"), Entry.Variant), Track->GetFeatures().Num(), 0);
-		TestEqual(*FString::Printf(TEXT("%s: sin peralte, las puertas van rectas"), Entry.Variant),
-			Track->GetGateCrossingTransform(1).Rotator().Roll, 0.0, 0.01);
+		TestTrue(*FString::Printf(TEXT("%s: circuito por vueltas"), *Name), Track->IsCircuit());
+		TestTrue(*FString::Printf(TEXT("%s: al menos 3 puertas"), *Name), Track->GetGateCount() >= 3);
+		TestTrue(*FString::Printf(TEXT("%s: con los elementos del generador"), *Name), Track->GetFeatures().Num() >= 4);
 	}
 	Track->ClearTrack();
 	return true;

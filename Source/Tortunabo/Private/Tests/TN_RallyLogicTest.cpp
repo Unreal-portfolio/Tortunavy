@@ -295,14 +295,16 @@ bool FTNRallyArcWindowTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyManifestTest, "Tortunabo.Rally.Logic.ManifestI03R",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyManifestTest, "Tortunabo.Rally.Logic.ManifestCircuit",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
 bool FTNRallyManifestTest::RunTest(const FString& Parameters)
 {
 	using namespace TNRally;
 	FString Text;
-	const FString Path = VariantManifestPath(TEXT("I03R_tortuga_magna"));
+	// R02, circuito del generador de vueltas (#692: I03R salió del repo); rumbo de su checkpoints_uu[1].
+	constexpr double R02Gate1Yaw = -164.7;
+	const FString Path = VariantManifestPath(TEXT("R02_circuito_tierra"));
 	if (!FFileHelper::LoadFileToString(Text, *Path))
 	{
 		AddError(FString::Printf(TEXT("No se puede leer %s"), *Path));
@@ -310,17 +312,17 @@ bool FTNRallyManifestTest::RunTest(const FString& Parameters)
 	}
 	FTrackSource Source;
 	FString Error;
-	TestTrue(TEXT("El manifest de I03R se lee"), ParseTrackManifest(Text, Source, Error));
-	TestEqual(TEXT("7 checkpoints"), Source.Checkpoints.Num(), 7);
+	TestTrue(TEXT("El manifest de R02 se lee"), ParseTrackManifest(Text, Source, Error));
+	TestEqual(TEXT("11 checkpoints"), Source.Checkpoints.Num(), 11);
 	TestTrue(TEXT("Trae la cota del agua"), Source.bHasWater);
 	bool bCircuit = false;
 	const TArray<FGateDef> Gates = BuildGateList(Source, bCircuit);
-	TestTrue(TEXT("I03R es un circuito (start_uu == end_uu)"), bCircuit);
-	TestEqual(TEXT("7 puertas: el primer checkpoint ya es la salida"), Gates.Num(), 7);
-	if (Gates.Num() == 7)
+	TestTrue(TEXT("R02 es un circuito (start_uu == end_uu)"), bCircuit);
+	TestEqual(TEXT("11 puertas: el primer checkpoint ya es la salida"), Gates.Num(), 11);
+	if (Gates.Num() == 11)
 	{
 		TestTrue(TEXT("La puerta 0 está en la salida"), FVector::Dist(Gates[0].Location, Source.Start) < 100.0);
-		TestEqual(TEXT("Rumbo de la puerta 1 (del manifest)"), Gates[1].YawDeg, -44.0, 1e-6);
+		TestEqual(TEXT("Rumbo de la puerta 1 (del manifest)"), Gates[1].YawDeg, R02Gate1Yaw, 1e-3);
 	}
 
 	// Punto a punto sin checkpoints (como E01_espana): salida y meta.

@@ -34,7 +34,8 @@ namespace TNRallyPhysicsMeasure
 	constexpr double GroundThicknessCm = 100.0;
 	constexpr double SpawnLiftCm = 120.0;
 	constexpr float SettleSeconds = 2.f;
-	inline const TCHAR* E01BVariant() { return TEXT("E01B_espana_rally"); }
+	/** Pista de las medidas sobre el trazado: R01, el circuito por defecto del Rally (#692 quitó E01B del repo). */
+	inline const TCHAR* MeasureVariant() { return TEXT("R01_circuito_dunas"); }
 
 	/** Mundo de juego con BeginPlay hecho; Step lo avanza un fotograma de 1/60 s con física. */
 	struct FPhysicsWorld
@@ -160,8 +161,8 @@ namespace TNRallyPhysicsMeasure
 		return Buggy;
 	}
 
-	/** Pista de E01B con su terreno y la carrera en marcha (sin GameMode: nadie reaparece ni corta motores). */
-	inline ATN_RallyTrack* PrepareE01B(const FPhysicsWorld& Test)
+	/** Pista de MeasureVariant con su terreno y la carrera en marcha (sin GameMode: nadie reaparece ni corta motores). */
+	inline ATN_RallyTrack* PrepareMeasureTrack(const FPhysicsWorld& Test)
 	{
 		ATN_RallyGameState* RallyState = Test.World->SpawnActor<ATN_RallyGameState>();
 		if (!RallyState)
@@ -169,7 +170,7 @@ namespace TNRallyPhysicsMeasure
 			return nullptr;
 		}
 		Test.World->SetGameState(RallyState);
-		ATN_RallyTrack* Track = RallyState->PrepareTrack(FName(E01BVariant()));
+		ATN_RallyTrack* Track = RallyState->PrepareTrack(FName(MeasureVariant()));
 		RallyState->Phase = ETNRallyPhase::Racing;
 		return Track && Track->IsBuilt() ? Track : nullptr;
 	}

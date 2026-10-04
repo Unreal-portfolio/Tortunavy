@@ -15,9 +15,9 @@
 
 namespace TNLobbyRallyDetail
 {
-	/** Circuitos con nombre traducido, en el orden del menú. */
-	const TCHAR* const KnownCircuits[] = { TNLobbyMission::DefaultRallyCircuit, TEXT("I03R_tortuga_magna"), TEXT("I04_volcan_hueco"),
-		TEXT("I06_feroe") };
+	/** Circuitos con nombre traducido, en el orden del menú: solo los del generador de vueltas (#692). */
+	const TCHAR* const KnownCircuits[] = { TNLobbyMission::DefaultRallyCircuit, TEXT("R02_circuito_tierra"),
+		TEXT("R03_circuito_dunas_costeras"), TEXT("R04_circuito_cantera"), TEXT("R05_circuito_marismas"), TEXT("R06_circuito_lomas") };
 
 	UMP_GameInstance* GameInstanceOf(const UObject* WorldContext, bool bHostOnly)
 	{
@@ -88,8 +88,13 @@ bool TNLobbyMission::IsRallyCircuitManifest(const FString& JsonText)
 	}
 	FString Mode;
 	const TArray<TSharedPtr<FJsonValue>>* Checkpoints = nullptr;
+	const TSharedPtr<FJsonObject>* Generator = nullptr;
+	FString GeneratorName;
+	// Solo los circuitos del generador de vueltas (#692): una variante de autor con "mode": "rally" no entra en el Rally.
 	return Root->TryGetStringField(TEXT("mode"), Mode) && Mode.Equals(TEXT("rally"), ESearchCase::IgnoreCase)
-		&& Root->TryGetArrayField(TEXT("checkpoints_uu"), Checkpoints) && Checkpoints && Checkpoints->Num() >= 2;
+		&& Root->TryGetArrayField(TEXT("checkpoints_uu"), Checkpoints) && Checkpoints && Checkpoints->Num() >= 2
+		&& Root->TryGetObjectField(TEXT("generator"), Generator) && Generator && Generator->IsValid()
+		&& (*Generator)->TryGetStringField(TEXT("generator"), GeneratorName) && GeneratorName.Equals(RallyCircuitGenerator);
 }
 
 TArray<FName> TNLobbyMission::SortRallyMaps(const TArray<FName>& Circuits)

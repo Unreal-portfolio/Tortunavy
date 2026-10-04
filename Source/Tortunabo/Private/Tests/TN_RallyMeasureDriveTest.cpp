@@ -1,6 +1,6 @@
 // Aceleración del buggy del Rally con física y sin ventana (#294: 0-60 km/h en ~2 s sin turbo y sin cambiar la punta).
 //  - ZeroToSixtyFlat: en llano, desde parado y a fondo en línea recta: 0-60 y 0-100 km/h y punta.
-//  - TrackE01B: TN.Rally.Measure en la salida de E01B (sigue la pista, con sus cuestas y curvas), como en el juego.
+//  - TrackR01: TN.Rally.Measure en la salida de R01 (sigue la pista, con sus cuestas y curvas), como en el juego.
 // Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Measure; Quit" -nullrhi -unattended -NoSteam
 
@@ -65,19 +65,19 @@ bool FTNRallyMeasureZeroToSixtyTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyMeasureTrackE01BTest, "Tortunabo.Rally.Measure.TrackE01B",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyMeasureTrackTest, "Tortunabo.Rally.Measure.TrackR01",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
-bool FTNRallyMeasureTrackE01BTest::RunTest(const FString& Parameters)
+bool FTNRallyMeasureTrackTest::RunTest(const FString& Parameters)
 {
 	using namespace TNRallyPhysicsMeasure;
-	if (!TestTrue(TEXT("Manifest de E01B"), FPaths::FileExists(TNRally::VariantManifestPath(FName(E01BVariant())))))
+	if (!TestTrue(TEXT("Manifest de R01"), FPaths::FileExists(TNRally::VariantManifestPath(FName(MeasureVariant())))))
 	{
 		return false;
 	}
 	FPhysicsWorld Test(TEXT("TNRallyTrackMeasureWorld"));
-	ATN_RallyTrack* Track = Test.World ? PrepareE01B(Test) : nullptr;
-	if (!TestNotNull(TEXT("Pista de E01B construida"), Track) || !TestNotNull(TEXT("Buggy en la parrilla"),
+	ATN_RallyTrack* Track = Test.World ? PrepareMeasureTrack(Test) : nullptr;
+	if (!TestNotNull(TEXT("Pista de R01 construida"), Track) || !TestNotNull(TEXT("Buggy en la parrilla"),
 		SpawnBuggy(*Test.World, Track->GetGridSlotTransform(0))))
 	{
 		return false;
@@ -94,11 +94,11 @@ bool FTNRallyMeasureTrackE01BTest::RunTest(const FString& Parameters)
 			Result = Line.Contains(TEXT("0-60 km/h")) ? Line : Result;
 		}
 	}
-	if (!TestFalse(TEXT("TN.Rally.Measure da resultado en E01B"), Result.IsEmpty()))
+	if (!TestFalse(TEXT("TN.Rally.Measure da resultado en R01"), Result.IsEmpty()))
 	{
 		return false;
 	}
-	AddInfo(FString::Printf(TEXT("E01B, salida: %s"), *Result));
+	AddInfo(FString::Printf(TEXT("R01, salida: %s"), *Result));
 	TestTrue(TEXT("la medida acaba bien"), Result.Contains(TEXT("hecho")));
 	return true;
 }

@@ -11,12 +11,16 @@ import math
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terrain_shapes.lots_rally import turtle_rally_spec  # noqa: E402
 from terrain_shapes.rally_road import spec_road  # noqa: E402
 
 MANIFEST = Path(__file__).resolve().parents[1] / "terrain_volumes" / "Variants" / "I03R_tortuga_magna" / "manifest.json"
+# I03R salió del Rally y del repo (#692): se regenera con terrain_shapes/lots_rally.py si hace falta.
+pytestmark = pytest.mark.skipif(not MANIFEST.exists(), reason="I03R_tortuga_magna sin generar (archivada fuera del repo, #692)")
 
 
 def _manifest() -> dict:

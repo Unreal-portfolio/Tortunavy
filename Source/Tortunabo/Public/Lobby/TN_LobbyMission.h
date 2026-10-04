@@ -25,8 +25,11 @@ namespace TNLobbyMission
 	inline constexpr ETNProcGameMode MenuModes[] = { ETNProcGameMode::Coop, ETNProcGameMode::Race, ETNProcGameMode::Survival,
 		ETNProcGameMode::Karts, ETNProcGameMode::FreeForAll, ETNProcGameMode::Rally, ETNProcGameMode::TwoVsTwo };
 
-	/** Circuito del Rally que se elige por defecto (el Rally de SkiTemplar, #240). */
-	inline const TCHAR* const DefaultRallyCircuit = TEXT("E01B_espana_rally");
+	/** Circuito del Rally que se elige por defecto: el primero del generador de vueltas (#622; #692 quitó E01B). */
+	inline const TCHAR* const DefaultRallyCircuit = TEXT("R01_circuito_dunas");
+
+	/** generator.generator de los manifests de Scripts/gen_terrain_rally_circuit.py: el único origen de circuitos del Rally (#692). */
+	inline const TCHAR* const RallyCircuitGenerator = TEXT("rally_circuit_vueltas");
 
 	/**
 	 * true si el modo se puede jugar en esta build. Todos contra Todos necesita su arena por defecto y el Rally algún
@@ -67,12 +70,13 @@ namespace TNLobbyMission
 
 	/**
 	 * true si el texto de un manifest de variante (Scripts/terrain_volumes/Variants/<v>/manifest.json) es un circuito del
-	 * Rally: "mode": "rally" y al menos dos checkpoints_uu.
+	 * Rally: "mode": "rally", al menos dos checkpoints_uu y generado por el generador de vueltas (generator.generator ==
+	 * RallyCircuitGenerator, #692).
 	 */
 	TORTUNABO_API bool IsRallyCircuitManifest(const FString& JsonText);
 
 	/**
-	 * Los circuitos del Rally en el orden del menú: los conocidos en su orden (E01B, I03R, I04, I06) y los demás por
+	 * Los circuitos del Rally en el orden del menú: los conocidos en su orden (R01 a R06) y los demás por
 	 * nombre. Sin repetidos ni vacíos (el mapa generado es Karts, otro modo).
 	 */
 	TORTUNABO_API TArray<FName> SortRallyMaps(const TArray<FName>& Circuits);

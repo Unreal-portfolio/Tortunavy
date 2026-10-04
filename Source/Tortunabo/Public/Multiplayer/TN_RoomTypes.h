@@ -104,7 +104,7 @@ struct TORTUNABO_API FTNRoomConfig
 	/** Cerrada: no entra nadie nuevo (los que ya estaban sí pueden volver). */
 	bool bLocked = false;
 	/** Rally: circuito de LVL_Rally; Rally y Karts: tortugas por buggy (1 o 2). */
-	FName RallyVariant = FName(TEXT("E01B_espana_rally"));
+	FName RallyVariant = FName(TEXT("R01_circuito_dunas"));
 	int32 RallySeats = 2;
 	/** Todos contra Todos: arena (una de TNLobbyMission::TctArenaOptions). */
 	FName TctArena = FName(TEXT("A01_diana"));

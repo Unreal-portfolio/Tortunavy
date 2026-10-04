@@ -1,6 +1,6 @@
 // Bordes de la pista homogéneos (#666): con el estilo de siempre (neumáticos, BarrierStyles = {Tires}), las pilas se reparten con
 // la misma separación a lo largo de todo el borde de cada tramo, sin trocearlo por ChunkPolyline, en los circuitos generados
-// (R01, R02), E01B e I03R. Pista del manifest en un mundo vacío (ATN_RallyTrack::BuildFromVariant), muestreada y planificada
+// (R01 a R06, los del selector del Rally desde #692). Pista del manifest en un mundo vacío (ATN_RallyTrack::BuildFromVariant), muestreada y planificada
 // como el decorado (TNRallyDressing::SampleTrack, PlanBarriers, RunEdge, BarrierSections y ResamplePolyline).
 // Solo editor: Scripts/ no se empaqueta. Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Dressing.Spacing; Quit" -nullrhi -unattended
@@ -24,7 +24,8 @@ namespace TNRallyBarrierSpacingTest
 	/** Diferencia de separación (cm) que se admite entre dos pilas del mismo tramo: redondeo, nada más. */
 	constexpr double SpacingToleranceCm = 0.01;
 
-	const TCHAR* const Variants[] = { TEXT("R01_circuito_dunas"), TEXT("R02_circuito_tierra"), TEXT("E01B_espana_rally"), TEXT("I03R_tortuga_magna") };
+	const TCHAR* const Variants[] = { TEXT("R01_circuito_dunas"), TEXT("R02_circuito_tierra"), TEXT("R03_circuito_dunas_costeras"),
+		TEXT("R04_circuito_cantera"), TEXT("R05_circuito_marismas"), TEXT("R06_circuito_lomas") };
 
 	struct FScopedTestWorld
 	{

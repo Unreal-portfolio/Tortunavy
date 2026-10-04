@@ -2,7 +2,7 @@
 //  - TurnRadius: radio de giro con el volante a tope entrando a 20 km/h (objetivo < 6 m) y a 72 km/h (20 m/s), con el ajuste
 //    actual y con el de antes de #606 (UTN_BuggyData de 9a082625^ y el ángulo de su curva de dirección a esa velocidad; la
 //    rigidez lateral de la rueda, 750 entonces, está en código y no se reproduce). Mismo método que TN.Rally.MeasureTurn.
-//  - AIRacesE01B: 5 recorridos del piloto IA (ATN_RallyAIController) por E01B, uno por hueco de parrilla: 0 vuelcos.
+//  - AIRacesR01: 5 vueltas del piloto IA (ATN_RallyAIController) a R01, una por hueco de parrilla: 0 vuelcos.
 // Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Measure; Quit" -nullrhi -unattended -NoSteam
 
@@ -124,7 +124,11 @@ namespace TNRallyMeasureTurn
 		float StoppedSeconds = 0.f;
 	};
 
-	/** Un recorrido del piloto IA desde el hueco Slot de la parrilla hasta 30 m de la meta (o TimeoutSeconds). */
+	/**
+	 * Un recorrido del piloto IA desde el hueco Slot de la parrilla hasta 30 m de la meta (o TimeoutSeconds). En un circuito
+	 * la parrilla está detrás de la línea (arco cerca del final): se cuenta lo avanzado con la vuelta y se para a 30 m de
+	 * completar una vuelta desde la parrilla.
+	 */
 	FRace RunAIRace(const FPhysicsWorld& Test, ATN_RallyTrack& Track, int32 Slot, float TimeoutSeconds)
 	{
 		FRace Out;
@@ -136,8 +140,10 @@ namespace TNRallyMeasureTurn
 			return Out;
 		}
 		Pilot->Possess(Buggy);
-		const double FinishArc = Track.GetTrackLengthCm() - 3000.0;
+		const double LengthCm = Track.GetTrackLengthCm();
 		double Arc = Track.FindArcGlobal(Buggy->GetActorLocation());
+		const double GoalCm = Track.IsCircuit() ? LengthCm - 3000.0 : LengthCm - 3000.0 - Arc;
+		double ProgressCm = 0.0;
 		bool bWasFlipped = false;
 		for (int32 Step = 1; Step <= FMath::RoundToInt32(TimeoutSeconds * StepsPerSecond); ++Step)
 		{
@@ -148,15 +154,25 @@ namespace TNRallyMeasureTurn
 			const float Speed = FMath::Abs(Kmh(*Buggy));
 			Out.MaxKmh = FMath::Max(Out.MaxKmh, Speed);
 			Out.StoppedSeconds += Speed < 3.f ? StepSeconds : 0.f;
-			Arc = FMath::Max(Arc, Track.FindArcNear(Buggy->GetActorLocation(), Arc));
+			const double Now = Track.FindArcNear(Buggy->GetActorLocation(), Arc);
+			double Delta = Now - Arc;
+			if (Track.IsCircuit())
+			{
+				Delta += Delta < -0.5 * LengthCm ? LengthCm : (Delta > 0.5 * LengthCm ? -LengthCm : 0.0);
+			}
+			if (Delta > 0.0)
+			{
+				ProgressCm += Delta;
+				Arc = Now;
+			}
 			Out.Seconds = Step * StepSeconds;
-			if (Arc >= FinishArc)
+			if (ProgressCm >= GoalCm)
 			{
 				Out.bFinished = true;
 				break;
 			}
 		}
-		Out.ProgressM = static_cast<float>(Arc / 100.0);
+		Out.ProgressM = static_cast<float>(ProgressCm / 100.0);
 		Pilot->UnPossess();
 		Pilot->Destroy();
 		Buggy->Destroy();
@@ -188,19 +204,19 @@ bool FTNRallyMeasureTurnRadiusTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyMeasureAIRacesTest, "Tortunabo.Rally.Measure.AIRacesE01B",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyMeasureAIRacesTest, "Tortunabo.Rally.Measure.AIRacesR01",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
 bool FTNRallyMeasureAIRacesTest::RunTest(const FString& Parameters)
 {
 	using namespace TNRallyMeasureTurn;
-	if (!TestTrue(TEXT("Manifest de E01B"), FPaths::FileExists(TNRally::VariantManifestPath(FName(E01BVariant())))))
+	if (!TestTrue(TEXT("Manifest de R01"), FPaths::FileExists(TNRally::VariantManifestPath(FName(MeasureVariant())))))
 	{
 		return false;
 	}
 	FPhysicsWorld Test(TEXT("TNRallyAIRacesWorld"));
-	ATN_RallyTrack* Track = Test.World ? PrepareE01B(Test) : nullptr;
-	if (!TestNotNull(TEXT("Pista de E01B construida"), Track))
+	ATN_RallyTrack* Track = Test.World ? PrepareMeasureTrack(Test) : nullptr;
+	if (!TestNotNull(TEXT("Pista de R01 construida"), Track))
 	{
 		return false;
 	}
@@ -215,11 +231,11 @@ bool FTNRallyMeasureAIRacesTest::RunTest(const FString& Parameters)
 		const FRace Race = RunAIRace(Test, *Track, Slot, Timeout);
 		Flips += Race.Flips;
 		Finished += Race.bFinished ? 1 : 0;
-		AddInfo(FString::Printf(TEXT("E01B, recorrido %d (hueco %d): %s en %.0f s, %.0f de %.0f m, %d vuelcos, punta %.0f km/h, %.0f s parado."),
+		AddInfo(FString::Printf(TEXT("R01, recorrido %d (hueco %d): %s en %.0f s, %.0f de %.0f m, %d vuelcos, punta %.0f km/h, %.0f s parado."),
 			Slot + 1, Slot, Race.bFinished ? TEXT("llega") : TEXT("NO llega"), Race.Seconds, Race.ProgressM, LengthM, Race.Flips,
 			Race.MaxKmh, Race.StoppedSeconds));
 	}
-	TestEqual(TEXT("vuelcos del piloto IA en 5 recorridos de E01B"), Flips, 0);
+	TestEqual(TEXT("vuelcos del piloto IA en 5 recorridos de R01"), Flips, 0);
 	TestEqual(TEXT("recorridos que llegan a la meta"), Finished, Races);
 	return true;
 }

@@ -1,7 +1,7 @@
 // Fotos de prueba de los buggies en el mundo (TN.Buggy.WorldShots), fuera de Shipping: con la luz del mapa, de cerca y de
 // lejos, para revisar la carrocería de tortuga sin abrir el editor. Congela el tiempo (slomo) para que la parrilla no
 // arranque y saca capturas sin interfaz desde una cámara colocada alrededor del buggy de la jugadora.
-//   UnrealEditor-Win64-DebugGame.exe <uproject> <LVL_Rally con ?Variant=I03R_tortuga_magna?Bots=5> -game
+//   UnrealEditor-Win64-DebugGame.exe <uproject> <LVL_Rally con ?Variant=R01_circuito_dunas?Bots=5> -game
 //     -RenderOffScreen -ResX=1600 -ResY=900 -NoSteam -ExecCmds="TN.Buggy.WorldShots C:/ruta"
 
 #if !UE_BUILD_SHIPPING

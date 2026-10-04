@@ -129,3 +129,30 @@ Además de lo de #622, con el perfil tierra el veredicto pide (`rally_circuit_ch
 Vuelta de 2 281 m (3 vueltas) en 9 × 8 trozos y 124 000 triángulos; la vuelta ideal dura 82 s. Saltos: doble a 94 km/h (hueco de 16,5 m, 1,5 s en el aire), cresta a 93 km/h (1,2 s), mesa a 94 km/h (0,8 s) y hueco a 104 km/h (hueco de 20,6 m, 1,5 s); choque medido de 3,3-3,8 m/s y, a la velocidad de la IA, 2,9-4,4 m/s. Whoops de 7 ondas (A 0,18 m, λ 9,6 m, medida 0,17 m) y tabla de lavar de 11 (A 0,08 m, λ 5,9 m, medida 0,07 m); badén de 0,61 m y 43 m; banquetas de 12,4° y 11,6° con 0,77-0,81 m de caballón medido. Cinco curvas peraltadas (9-13°) y dos rasantes (2,9 y 2,4 m). El validador sale todo en verde. Sin editor (04-10, 1 bot, `-server -nullrhi`), el piloto IA da 3 vueltas en 336 s (112 s por vuelta) con `terminados 1/1, atascos 0, vuelcos 0, caidas 0`. No se ha probado en el editor.
 
 `open LVL_Rally?Variant=R02_circuito_tierra` (con `?Laps=N` y `?Bots=N`) la carga como R01. `Automation RunTests Tortunabo.Rally.Tierra` comprueba que se construye como circuito con 4 saltos, sus notas, la frenada de la IA y la barrera continua.
+
+## Catálogo del Rally: R03 a R06 (#692)
+
+Desde #692 el selector del Rally (sala, Misión, general y pausa) solo ofrece circuitos del generador de vueltas: `TNLobbyMission::IsRallyCircuitManifest` exige `generator.generator == "rally_circuit_vueltas"`, y E01B, I03R, I04 e I06 salieron del selector y del repo (ningún otro modo las usaba). El orden es R01 a R06 y el circuito por defecto, R01.
+
+Los circuitos nuevos van en `terrain_geo/rally_circuit_themes.CIRCUITS` (semilla, perfil y tema) y se regeneran con `gen_terrain_rally_circuit.py --all-circuits` (o `--circuit <nombre>`). El tema cambia el relieve de alrededor, la paleta de arena de los colores de vértice, el color de la calzada y el del barro; no toca el trazado ni los elementos. El tema `base` reproduce R01 y R02. Todos con el perfil tierra y el validador en verde (`Scripts/tests/test_terrain_rally_catalogo.py`).
+
+| Circuito | Semilla | Tema | Vuelta | Saltos (llegada) | Baches | Badén |
+|---|---|---|---|---|---|---|
+| R03_circuito_dunas_costeras («Dunas Costeras») | 6928 | dunas altas, arena de playa | 2 398 m, 85 s ideal | mesa 96, hueco 107, doble 91, cresta 94 km/h | tabla A 0,08 m λ 5,7 m; whoops A 0,14 m λ 10,9 m | 0,46 m |
+| R04_circuito_cantera («La Cantera») | 6929 | lomas cortas y altas con estratos | 2 358 m, 84 s | mesa 93, hueco 105, doble 91, cresta 96 km/h | whoops A 0,16 m λ 8,8 m; tabla A 0,09 m λ 5,5 m | 0,54 m |
+| R05_circuito_marismas («Marismas») | 6927 | llano de arena húmeda, más barro | 2 388 m, 86 s | doble 88, cresta 98, hueco 106, mesa 94 km/h | tabla A 0,09 m λ 5,0 m; whoops A 0,18 m λ 10,2 m | 0,65 m |
+| R06_circuito_lomas («Lomas Secas») | 6933 | colinas redondas, pista clara | 2 276 m, 82 s | hueco 105, doble 89, cresta 97, mesa 95 km/h | whoops A 0,14 m λ 8,9 m; tabla A 0,08 m λ 5,4 m | 0,52 m |
+
+Semillas descartadas: 6923 (puertas a 99 m y tabla de lavar medida al 31 %), 6939 (tabla medida al 55 %) y 6938 (whoops justo antes de la primera horquilla: en la primera vuelta el piloto IA se pasó la horquilla, cruzó la puerta 7 por fuera y tardó 277 s en volver).
+
+Piloto IA sin editor (04-10, 1 bot, 3 vueltas, `-server -nullrhi`, `LVL_Rally?Variant=V?Bots=1?AutoStart?Races=1?Laps=3`): todos terminan sin atascos ni caídas.
+
+| Circuito | Tiempo (3 vueltas) | Atascos | Vuelcos | Fuera de pista |
+|---|---|---|---|---|
+| R03 | 385 s | 0 | 5 | 0 |
+| R04 | 379 s | 0 | 3 | 0 |
+| R05 | 389 s | 0 | 8 | 0 |
+| R06 | 372 s | 0 | 5 | 0 |
+| R02 (control, mismo día) | 367 s | 0 | 1 | 0 |
+
+Los vuelcos son momentáneos (el ritmo por vuelta no cambia y no hay reapariciones) y se repiten en los mismos sitios: curvas peraltadas a 40-55 km/h, la salida de horquillas con banqueta y, en R06, la mesa tras la chicane a 55 km/h (diseñada para 95). Falta verlos en el editor. No se ha probado en el editor.

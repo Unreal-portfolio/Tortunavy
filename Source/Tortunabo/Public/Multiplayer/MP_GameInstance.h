@@ -443,7 +443,7 @@ public:
 	 * (TNLobbyMission::RallyTravelURL); si ya no está entre las opciones, el primero.
 	 */
 	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
-	FName SelectedRallyVariant = FName(TEXT("E01B_espana_rally"));
+	FName SelectedRallyVariant = FName(TEXT("R01_circuito_dunas"));
 
 	/**
 	 * Todos contra Todos: arena de Scripts/terrain_volumes/Variants (?Arena=) que eligió el anfitrión. ATN_HQGameMode la
