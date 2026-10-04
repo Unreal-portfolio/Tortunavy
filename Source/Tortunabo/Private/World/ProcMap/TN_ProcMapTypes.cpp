@@ -295,9 +295,9 @@ void UTN_ProcMapSettings::FillDefaultProfiles()
 	{
 		const ETNProcGameMode Mode = static_cast<ETNProcGameMode>(M);
 		if (Mode == ETNProcGameMode::Classic || Mode == ETNProcGameMode::Survival || Mode == ETNProcGameMode::Karts
-			|| Mode == ETNProcGameMode::FreeForAll)
+			|| Mode == ETNProcGameMode::FreeForAll || Mode == ETNProcGameMode::Rally)
 		{
-			continue; // viajan a LVL_Run o a LVL_Tct (o, los karts, usan los perfiles del cooperativo)
+			continue; // viajan a LVL_Run, a LVL_Tct o a LVL_Rally (o, los karts, usan los perfiles del cooperativo)
 		}
 		for (int32 D = 0; D < static_cast<int32>(ETNProcDifficulty::Count); ++D)
 		{

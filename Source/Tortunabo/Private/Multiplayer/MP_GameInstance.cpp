@@ -1956,6 +1956,8 @@ void UMP_GameInstance::HostRoom(const FTNRoomConfig& Config)
 	AdvertisedLocked = INDEX_NONE;
 	bKickedFromRoom = false;
 	SelectedProcMode = ActiveRoom.Mode;
+	SelectedRallyVariant = ActiveRoom.RallyVariant;
+	SelectedKartSeats = FMath::Clamp(ActiveRoom.RallySeats, 1, 2);
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Salas] Crear sala «%s» (%s, %s, %d plazas, código %s)."), *TNRoomNames::GetIn(ActiveRoom.NameId, true),
 		*UEnum::GetValueAsString(ActiveRoom.Mode), ActiveRoom.bPrivate ? TEXT("privada") : TEXT("pública"), ActiveRoom.MaxPlayers, *ActiveRoom.Code);
@@ -1974,11 +1976,14 @@ FTNRoomConfig UMP_GameInstance::MakeRoomDraft() const
 	{
 		Draft.Mode = TNLobbyMission::NormalizeMenuMode(SelectedProcMode);
 		Draft.MaxPlayers = Sizes.Num() > 0 ? Sizes.Last() : TNRoomLimits::Max;
+		Draft.RallyVariant = SelectedRallyVariant;
+		Draft.RallySeats = FMath::Clamp(SelectedKartSeats, 1, 2);
 	}
 	if (!Sizes.Contains(Draft.MaxPlayers) && Sizes.Num() > 0)
 	{
 		Draft.MaxPlayers = Sizes.Last();
 	}
+	Draft.RallyVariant = TNLobbyMission::ResolveRallyMap(Draft.RallyVariant, TNLobbyMission::RallyMapOptions());
 	// Nombre y código nuevos cada vez que se abre la pantalla (el nombre, distinto del de la última vez).
 	Draft.NameId = TNRoomNames::Random(bHasRoomDraft ? RoomDraft.NameId : INDEX_NONE);
 	Draft.Code = TNRoomCode::Generate();

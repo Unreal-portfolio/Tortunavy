@@ -79,7 +79,7 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> DifficultyHeading;
 
-	/** Karts (solo el anfitrión): una tortuga por kart o por parejas. */
+	/** Rally y Karts (solo el anfitrión): una tortuga por buggy o por parejas. */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTN_ShopButton>> SeatsButtons;
 
@@ -88,6 +88,16 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UWidget> SeatsRow;
+
+	/** Rally (solo el anfitrión, #632): un botón por circuito de TNLobbyMission::RallyMapOptions, en su orden. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTN_ShopButton>> MapButtons;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> MapHeading;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UWidget> MapRow;
 
 	/** «Orden del día: CARRERA · NORMAL». */
 	UPROPERTY(Transient)
@@ -98,7 +108,13 @@ private:
 	FString FullLine;
 	float Reveal = 0.f;
 
-	/** Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad, 2 = plazas por kart (karts). */
+	/** Pastillas de modo (y de circuito) por fila: con siete modos, dos filas que caben en la página (#632). */
+	static constexpr int32 ModePillsPerRow = 4;
+
+	/**
+	 * Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad, 2 = plazas por buggy (Rally y Karts),
+	 * 3 = circuito (Rally).
+	 */
 	int32 MissionRow = 0;
 	/** Lo último que se ha pintado en «Misión» (si cambia desde otra máquina, se repinta y el general lo anuncia). */
 	ETNProcGameMode ShownMode = ETNProcGameMode::Count;
@@ -120,8 +136,14 @@ private:
 	void PickSeats(int32 Seats);
 	/** Plazas por kart elegidas en la GameInstance del anfitrión. */
 	int32 GetKartSeats() const;
-	/** Hay fila de plazas: el anfitrión con los karts elegidos. */
+	/** Hay fila de plazas: el anfitrión con el Rally o Karts elegido. */
 	bool HasSeatsRow() const;
+	/** Hay fila de circuito: el anfitrión con el Rally elegido. */
+	bool HasMapRow() const;
+	/** Última fila con foco posible (1, 2 o 3). */
+	int32 MaxMissionRow() const;
+	/** Rally: circuito (uno de TNLobbyMission::RallyMapOptions). Solo el anfitrión. */
+	void PickRallyMap(FName Variant);
 	/** ←/→ con el teclado o el mando: la opción anterior o la siguiente de la fila con el foco. */
 	void StepMission(int32 Direction);
 	void SetMissionRow(int32 Row);
@@ -129,6 +151,8 @@ private:
 	bool CanChooseMission() const;
 	/** La misión que se ve: la de la GameInstance en el anfitrión y la replicada en el general en los demás. */
 	ETNProcGameMode GetMissionMode() const;
+	/** Circuito del Rally que se ve: el de la GameInstance en el anfitrión y el replicado en el general en los demás. */
+	FName GetMissionRallyMap() const;
 	ETNProcDifficulty GetMissionDifficulty() const;
 
 	void AddHeading(const FText& Text);

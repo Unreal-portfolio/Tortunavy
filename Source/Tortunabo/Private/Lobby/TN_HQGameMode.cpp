@@ -23,6 +23,7 @@
 #include "TimerManager.h"
 #include "Lobby/TN_ChangingBooth.h"
 #include "Lobby/TN_GeneralBriefing.h"
+#include "Lobby/TN_LobbyMission.h"
 #include "Lobby/TN_LobbyReadyZone.h"
 #include "Lobby/TN_LobbyValley.h"
 #include "Lobby/TN_SandCastleLobby.h"
@@ -405,8 +406,16 @@ void ATN_HQGameMode::BeginMatchTravel()
 		else if (GI->SelectedProcMode == ETNProcGameMode::Karts)
 		{
 			// Karts: el mapa procedural del cooperativo con karts (ATN_KartGameMode, alias «Karts» en DefaultEngine.ini).
-			// La dificultad la lee el GameMode de la GameInstance.
+			// La dificultad y las plazas las lee el GameMode de la GameInstance.
 			TravelURL = ProcMapPath + TEXT("?game=Karts");
+		}
+		else if (GI->SelectedProcMode == ETNProcGameMode::Rally && FPackageName::DoesPackageExist(RallyMapPath)
+			&& !TNLobbyMission::ResolveRallyMap(GI->SelectedRallyVariant, TNLobbyMission::RallyMapOptions()).IsNone())
+		{
+			// Rally (#632): un circuito de LVL_Rally (ATN_RallyGameMode). La dificultad y las plazas las lee el GameMode de la
+			// GameInstance; con ?FromLobby vuelve aquí al acabar.
+			TravelURL = TNLobbyMission::RallyTravelURL(
+				TNLobbyMission::ResolveRallyMap(GI->SelectedRallyVariant, TNLobbyMission::RallyMapOptions()), RallyMapPath);
 		}
 		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath)
 			&& ATN_TctGameMode::HasDefaultArena())
@@ -420,6 +429,12 @@ void ATN_HQGameMode::BeginMatchTravel()
 			{
 				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_beach_race.py): la carrera se juega en el mapa procedural."),
 					*BeachRaceMapPath);
+			}
+			if (GI->SelectedProcMode == ETNProcGameMode::Rally)
+			{
+				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] Sin %s o sin circuitos en Scripts/terrain_volumes/Variants (build cocinada): se juega el cooperativo."),
+					*RallyMapPath);
+				GI->SelectedProcMode = ETNProcGameMode::Coop;
 			}
 			if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll)
 			{

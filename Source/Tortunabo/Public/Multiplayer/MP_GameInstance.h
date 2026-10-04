@@ -434,9 +434,16 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
 	ETNProcDifficulty SelectedProcDifficulty = ETNProcDifficulty::Normal;
 
-	/** Karts: tortugas por kart que eligió el anfitrión con el general (1 = cada una el suyo; 2 = por parejas). */
+	/** Rally y Karts: tortugas por buggy que eligió el anfitrión al crear la sala o con el general (1 = cada una el suyo; 2 = por parejas). */
 	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
 	int32 SelectedKartSeats = 2;
+
+	/**
+	 * Rally (#632): circuito de LVL_Rally (?Variant=) que eligió el anfitrión. ATN_HQGameMode lo lee al viajar
+	 * (TNLobbyMission::RallyTravelURL); si ya no está entre las opciones, el primero.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
+	FName SelectedRallyVariant = FName(TEXT("E01B_espana_rally"));
 
 	/**
 	 * Cómo se pusieron listos en el lobby (sala de la puerta doble o huevos): así empieza la partida en el mapa

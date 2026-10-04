@@ -18,18 +18,25 @@ class UObject;
  */
 namespace TNLobbyMission
 {
-	/** Los modos que se ofrecen al crear partida y con el general, en su orden (el selector del lobby viejo recorre todos). */
-	inline constexpr ETNProcGameMode MenuModes[] = { ETNProcGameMode::Coop, ETNProcGameMode::Race, ETNProcGameMode::Karts, ETNProcGameMode::Survival,
-		ETNProcGameMode::FreeForAll };
+	/**
+	 * Los modos que se ofrecen al crear partida, en la sala y con el general, en su orden (#632): todos los jugables. El
+	 * 2 vs 2 se puede elegir, pero se juega como Carrera si al salir del lobby no son exactamente cuatro.
+	 */
+	inline constexpr ETNProcGameMode MenuModes[] = { ETNProcGameMode::Coop, ETNProcGameMode::Race, ETNProcGameMode::Survival,
+		ETNProcGameMode::Karts, ETNProcGameMode::FreeForAll, ETNProcGameMode::Rally, ETNProcGameMode::TwoVsTwo };
+
+	/** Circuito del Rally que se elige por defecto (el Rally de SkiTemplar, #240). */
+	inline const TCHAR* const DefaultRallyCircuit = TEXT("E01B_espana_rally");
 
 	/**
-	 * true si el modo se puede jugar en esta build. Todos contra Todos necesita su arena por defecto, que se lee de Scripts/
-	 * y no se empaqueta (ATN_TctGameMode::HasDefaultArena): en una build cocinada no se ofrece. El resto, siempre.
+	 * true si el modo se puede jugar en esta build. Todos contra Todos necesita su arena por defecto y el Rally algún
+	 * circuito, que se leen de Scripts/ y no se empaquetan (ATN_TctGameMode::HasDefaultArena, RallyMapOptions): en una
+	 * build cocinada no se ofrecen. El resto, siempre.
 	 */
 	TORTUNABO_API bool IsModePlayable(ETNProcGameMode Mode);
 
-	/** Los de MenuModes en su orden, sin Todos contra Todos si bFreeForAllPlayable es false. */
-	TORTUNABO_API TArray<ETNProcGameMode> FilterMenuModes(bool bFreeForAllPlayable);
+	/** Los de MenuModes en su orden, sin Todos contra Todos ni el Rally si no se pueden jugar. */
+	TORTUNABO_API TArray<ETNProcGameMode> FilterMenuModes(bool bFreeForAllPlayable, bool bRallyPlayable = true);
 
 	/** Los modos que se ofrecen de verdad (FilterMenuModes con lo que hay en esta build): menú, salas y general. */
 	TORTUNABO_API TArray<ETNProcGameMode> GetMenuModes();
@@ -37,10 +44,10 @@ namespace TNLobbyMission
 	/** Las dificultades, en su orden. */
 	inline constexpr ETNProcDifficulty Difficulties[] = { ETNProcDifficulty::Easy, ETNProcDifficulty::Normal, ETNProcDifficulty::Hard };
 
-	/** Nombre del modo («Cooperativo», «Carrera», «Karts», «2 vs 2», «Clásico», «Supervivencia», «Todos contra Todos»). */
+	/** Nombre del modo («Cooperativo», «Carrera», «Karts», «Rally», «2 vs 2», «Clásico», «Supervivencia», «Todos contra Todos»). */
 	TORTUNABO_API FText ModeName(ETNProcGameMode Mode);
 
-	/** El modo si es uno de GetMenuModes; si no (2 vs 2, Clásico o uno que no se puede jugar), Cooperativo. Lo que admite una sala nueva. */
+	/** El modo si es uno de GetMenuModes; si no (Clásico o uno que no se puede jugar en esta build), Cooperativo. Lo que admite una sala nueva. */
 	TORTUNABO_API ETNProcGameMode NormalizeMenuMode(ETNProcGameMode Mode);
 
 	/**
@@ -48,6 +55,36 @@ namespace TNLobbyMission
 	 * nuevas) salen con su identificador.
 	 */
 	TORTUNABO_API FText RallyMapName(FName Variant);
+
+	/** Nombre de la misión: el del modo y, en el Rally, también el circuito («Rally · España»). */
+	TORTUNABO_API FText MissionTitle(ETNProcGameMode Mode, FName RallyVariant);
+
+	/** Plazas por buggy del Rally y de Karts: «Una por buggy» (1) o «Por parejas» (2). */
+	TORTUNABO_API FText RallySeatsName(int32 Seats);
+
+	/**
+	 * true si el texto de un manifest de variante (Scripts/terrain_volumes/Variants/<v>/manifest.json) es un circuito del
+	 * Rally: "mode": "rally" y al menos dos checkpoints_uu.
+	 */
+	TORTUNABO_API bool IsRallyCircuitManifest(const FString& JsonText);
+
+	/**
+	 * Los circuitos del Rally en el orden del menú: los conocidos en su orden (E01B, I03R, I04, I06) y los demás por
+	 * nombre. Sin repetidos ni vacíos (el mapa generado es Karts, otro modo).
+	 */
+	TORTUNABO_API TArray<FName> SortRallyMaps(const TArray<FName>& Circuits);
+
+	/**
+	 * Los circuitos del Rally que se ofrecen: los de Scripts/terrain_volumes/Variants con pista (incluidas las variantes
+	 * nuevas). Se buscan una vez por sesión. En un juego empaquetado sin manifests no hay ninguno y el Rally no se ofrece.
+	 */
+	TORTUNABO_API const TArray<FName>& RallyMapOptions();
+
+	/** El circuito elegido si está entre las opciones; si no, el primero (NAME_None si no hay ninguno). */
+	TORTUNABO_API FName ResolveRallyMap(FName Selected, const TArray<FName>& Options);
+
+	/** URL del viaje del lobby al Rally: LVL_Rally?Variant=<v>?FromLobby (al acabar los resultados, de vuelta al lobby). */
+	TORTUNABO_API FString RallyTravelURL(FName Variant, const FString& RallyMapPath);
 
 	/** Nombre de la dificultad («Fácil», «Normal», «Difícil»). */
 	TORTUNABO_API FText DifficultyName(ETNProcDifficulty Difficulty);
@@ -60,9 +97,10 @@ namespace TNLobbyMission
 
 	/**
 	 * El siguiente modo del selector del lobby: Clásico → Coop → Carrera → 2 vs 2 (este, solo con exactamente 4 jugadores) →
-	 * Supervivencia → Todos contra Todos (este, solo si bFreeForAllPlayable).
+	 * Supervivencia → Karts → Todos contra Todos (este, solo si bFreeForAllPlayable) → Rally (este, solo si bRallyPlayable).
 	 */
-	TORTUNABO_API ETNProcGameMode NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers, bool bFreeForAllPlayable);
+	TORTUNABO_API ETNProcGameMode NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers, bool bFreeForAllPlayable,
+		bool bRallyPlayable = true);
 
 	/** NextSelectorMode con lo que hay en esta build (IsModePlayable). */
 	TORTUNABO_API ETNProcGameMode NextSelectorMode(ETNProcGameMode Current, int32 ConnectedPlayers);
@@ -76,13 +114,24 @@ namespace TNLobbyMission
 
 	/**
 	 * Anfitrión: fija el modo en su GameInstance y lo replica en el lobby (general y selectores). false en un cliente, sin
-	 * GameInstance o si no se puede (2 vs 2 sin exactamente cuatro jugadores, o un modo que no se puede jugar en esta build).
-	 * Con el mismo modo no cambia nada (true).
+	 * GameInstance o si el modo no se puede jugar en esta build. El 2 vs 2 se puede elegir con cualquier número de
+	 * jugadores (#632): si al salir del lobby no son cuatro, ATN_HQGameMode lo juega como Carrera. Con el mismo modo no
+	 * cambia nada (true).
 	 */
 	TORTUNABO_API bool SetMode(const UObject* WorldContext, ETNProcGameMode Mode);
 
 	/** Anfitrión: fija la dificultad y la replica en el lobby. false en un cliente o sin GameInstance. */
 	TORTUNABO_API bool SetDifficulty(const UObject* WorldContext, ETNProcDifficulty Difficulty);
+
+	/** Circuito del Rally y plazas por buggy (Rally y Karts) que tiene ahora la GameInstance de esta máquina (el circuito, ya resuelto). */
+	TORTUNABO_API FName GetHostRallyMap(const UObject* WorldContext);
+	TORTUNABO_API int32 GetHostRallySeats(const UObject* WorldContext);
+
+	/** Anfitrión: fija el circuito del Rally (uno de RallyMapOptions) y lo replica en el lobby. false en un cliente. */
+	TORTUNABO_API bool SetRallyMap(const UObject* WorldContext, FName Variant);
+
+	/** Anfitrión: fija las plazas por buggy del Rally y de Karts (1 o 2) y las replica en el lobby. false en un cliente. */
+	TORTUNABO_API bool SetRallySeats(const UObject* WorldContext, int32 Seats);
 
 	/** Servidor: vuelve a copiar la misión de la GameInstance en el general y en los selectores de este mundo. */
 	TORTUNABO_API void SyncLobby(const UObject* WorldContext);

@@ -82,6 +82,9 @@ struct TORTUNABO_API FTNRoomConfig
 	FString Code;
 	/** Cerrada: no entra nadie nuevo (los que ya estaban sí pueden volver). */
 	bool bLocked = false;
+	/** Rally: circuito de LVL_Rally; Rally y Karts: tortugas por buggy (1 o 2). */
+	FName RallyVariant = FName(TEXT("E01B_espana_rally"));
+	int32 RallySeats = 2;
 };
 
 /** Plazas que se pueden elegir al crear la sala. */

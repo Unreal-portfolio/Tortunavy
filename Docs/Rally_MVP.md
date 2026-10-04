@@ -64,6 +64,15 @@ bots hasta `MinTeams` y los bots ajustados a la dificultad (`ConfigureBot`) vive
 (`TN_RallyGameModeLobby.cpp`) y valen para los dos modos; `ATN_KartGameMode` solo cambia la pista y el buggy. Viniendo
 del lobby (`?FromLobby`), al acabar los resultados se vuelve a él, también desde el menú de pausa.
 
+## Menú (#632)
+
+El Rally es un modo propio del menú (`ETNProcGameMode::Rally`, aparte de Karts): «Crear partida», la pestaña «Misión» del
+general y la pizarra ofrecen Cooperativo, Carrera, Supervivencia, Karts, Todos contra Todos, Rally y 2 vs 2
+(`TNLobbyMission::MenuModes`). Con el Rally se elige el circuito (`TNLobbyMission::RallyMapOptions`: los manifests de
+`Scripts/terrain_volumes/Variants` con `"mode": "rally"`) y, con el Rally o Karts, las tortugas por buggy. El lobby viaja a
+`LVL_Rally?Variant=<v>?FromLobby` y al acabar se vuelve a él. En una build cocinada sin manifests el Rally no se ofrece,
+como Todos contra Todos sin su arena. El 2 vs 2 se puede elegir siempre; si al salir no son cuatro, se juega Carrera.
+
 ## Arquitectura
 
 | Pieza | Carpeta | Qué hace |
