@@ -37,6 +37,10 @@ namespace TNRallyPhysicsMeasure
 		ATN_RallyAIController* Pilot = Buggy ? World.SpawnActor<ATN_RallyAIController>() : nullptr;
 		if (!Buggy || !Pilot)
 		{
+			if (Buggy)
+			{
+				Buggy->Destroy();
+			}
 			return Out;
 		}
 		Pilot->Possess(Buggy);

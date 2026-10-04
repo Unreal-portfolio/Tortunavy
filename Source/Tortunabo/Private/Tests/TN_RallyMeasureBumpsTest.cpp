@@ -57,6 +57,8 @@ namespace TNRallyMeasureBumps
 		float MaxTiltDeg = 0.f;
 		float EntryKmh = 0.f;
 		bool bSpawned = true;
+		/** Si ha pasado el tren entero (sin esto, un buggy atascado antes no mediría nada). */
+		bool bPassed = false;
 	};
 
 	/** Trenes de baches (baches y baches_aviso) del manifest con su arco en la spline de la pista. */
@@ -174,6 +176,7 @@ namespace TNRallyMeasureBumps
 			}
 			if (FromStart > TrainLength + ExitCm)
 			{
+				Out.bPassed = true;
 				break;
 			}
 			bInTrain = true;
@@ -220,6 +223,7 @@ bool FTNRallyMeasureBumpsFullThrottleTest::RunTest(const FString& Parameters)
 			AddInfo(FString::Printf(TEXT("%s, %s"), Variant, *Describe(Train, TEXT("a fondo"), Fast)));
 			const FString Where = FString::Printf(TEXT("%s %s"), Variant, *Train.Id);
 			TestTrue(*FString::Printf(TEXT("%s: buggy puesto"), *Where), Fast.bSpawned);
+			TestTrue(*FString::Printf(TEXT("%s a fondo: pasa el tren entero"), *Where), Fast.bPassed);
 			TestFalse(*FString::Printf(TEXT("%s a fondo no vuelca"), *Where), Fast.bFlipped);
 			TestTrue(*FString::Printf(TEXT("%s: llega a más de 80 km/h (%.0f)"), *Where, Fast.EntryKmh), Fast.EntryKmh > 80.f);
 			if (Train.Pattern == TEXT("tabla_lavar") || bWarning)
@@ -231,6 +235,7 @@ bool FTNRallyMeasureBumpsFullThrottleTest::RunTest(const FString& Parameters)
 			{
 				const FPass Braking = DriveThrough(Test, *Track, Train, BrakingEntryKmh, true);
 				AddInfo(FString::Printf(TEXT("%s, %s"), Variant, *Describe(Train, TEXT("frenando"), Braking)));
+				TestTrue(*FString::Printf(TEXT("%s frenando: pasa el tren entero"), *Where), Braking.bPassed);
 				TestFalse(*FString::Printf(TEXT("%s frenando no vuelca"), *Where), Braking.bFlipped);
 				TestTrue(*FString::Printf(TEXT("%s frenando no despega (%.2f s en el aire)"), *Where, Braking.MaxAirSeconds),
 					Braking.MaxAirSeconds <= MaxAirSeconds);
