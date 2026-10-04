@@ -49,6 +49,21 @@ namespace TNRallyDressingActor
 	constexpr double TireEdgeClearanceCm = 10.0;
 	/** Fracción del grueso de un neumático que la pila se hunde en el suelo. */
 	constexpr double TireSinkFraction = 0.15;
+	/** Alto de una pieza de valla (palos y cuerda, sacos, troncos, castillos) para el gálibo (cm). */
+	constexpr double FencePieceHeightCm = 150.0;
+	/** Radio de un palo de la valla de palos y cuerda (cm). */
+	constexpr double PostRopeRadiusCm = 30.0;
+
+	TNRallyDressing::FBarrierPiece MakeBarrierPiece(const FVector& Center, double RadiusCm, double BottomZ, double TopZ, bool bRail)
+	{
+		TNRallyDressing::FBarrierPiece Piece;
+		Piece.Center = Center;
+		Piece.RadiusCm = RadiusCm;
+		Piece.BottomZ = BottomZ;
+		Piece.TopZ = TopZ;
+		Piece.bRail = bRail;
+		return Piece;
+	}
 
 	/** Tortuga del público de pie (base en el origen, mirando a +X, ~1,4 m): caparazón, peto, cabeza, brazos en alto y pies. */
 	void BuildSpectatorTurtle(TNProcMesh::FTNProcMeshBuffers& Buffers, int32 Variant)
@@ -174,7 +189,12 @@ bool ATN_RallyTrackDressing::Build(const TNRallyDressing::FTrackData& InTrack, i
 	const double Base = BaseOffsetCm(RoadHalfWidthCm(Track, Params), Params);
 	const FBarrierPlan Plan = PlanBarriers(Track, ProbeDrops(Track, Base), Params);
 	FTNRallyDressingBatches Batches;
+	// Ninguna pieza de la barrera dentro de la calzada de ningún tramo, también del que pasa por debajo (#693).
+	RoadFootprint = MakeUnique<FRoadFootprint>(Track, Params);
+	CollectRoofIgnoredActors();
 	AddRails(Track, Plan, Seed, Batches);
+	RoadFootprint.Reset();
+	RoofIgnoredActors.Reset();
 	// Primero lo lejano y grande; el decorado cercano rellena alrededor sin pisarlo.
 	const TArray<FSpot> FarSpots = AddFarDecor(Track, Plan, Seed, Batches);
 	AddDecor(Track, Plan, Seed, FarSpots, Batches);
@@ -187,6 +207,8 @@ bool ATN_RallyTrackDressing::Build(const TNRallyDressing::FTrackData& InTrack, i
 	CreateComponents(Batches);
 	UE_LOG(LogTNRally, Log, TEXT("[RallyDressing] Semilla %d: %d tramos de carril, %d piezas de límite, %d de decorado, %d lejanas, %d de público y %d pórticos."),
 		Seed, RailSegmentCount, BarrierPieceCount, DecorCount, FarDecorCount, SpectatorCount, GateMeshCount);
+	UE_LOG(LogTNRally, Log, TEXT("[RallyDressing] Piezas de la barrera quitadas (#693): %d invadían la calzada y %d quedaban bajo un techo sobre ella."),
+		BlockedOnRoadCount, BlockedUnderRoofCount);
 	// Comprobación de #303 con el trazado de verdad: ningún hueco de la barrera más ancho que una tortuga.
 	for (int32 Side = LeftSide; Side <= RightSide; ++Side)
 	{
@@ -214,8 +236,11 @@ void ATN_RallyTrackDressing::ClearDressing()
 	DressedGates.Reset();
 	TireStackBases[0].Reset();
 	TireStackBases[1].Reset();
+	BarrierPieces.Reset();
 	RailSegmentCount = 0;
 	BarrierPieceCount = 0;
+	BlockedOnRoadCount = 0;
+	BlockedUnderRoofCount = 0;
 	DecorCount = 0;
 	FarDecorCount = 0;
 	SpectatorCount = 0;
@@ -393,7 +418,19 @@ void ATN_RallyTrackDressing::AddRails(const TNRallyDressing::FTrackData& Track, 
 			const TArray<FVector> Points = RunPoints(Track, Barrier, Barrier.Runs[RunIndex], Side, Edge);
 			for (int32 Point = 0; Point + 1 < Points.Num(); ++Point)
 			{
-				AddRailSegment(Cube, Points[Point], Points[Point + 1], Batches);
+				// El carril tampoco entra en la calzada de otro tramo (#693): el de un paso superior sobre la de debajo.
+				const FVector& A = Points[Point];
+				const FVector& B = Points[Point + 1];
+				const double Yaw = FMath::RadiansToDegrees(FMath::Atan2(B.Y - A.Y, B.X - A.X));
+				TArray<FBarrierPiece, TInlineAllocator<3>> Probes;
+				for (const FVector& At : { A, 0.5 * (A + B), B })
+				{
+					Probes.Add(TNRallyDressingActor::MakeBarrierPiece(At, 0.5 * RailThicknessCm, At.Z - RailSinkCm, At.Z - RailSinkCm + RailHeightCm, true));
+				}
+				if (TryPlaceBarrierPieces(Probes, Yaw, Side))
+				{
+					AddRailSegment(Cube, A, B, Batches);
+				}
 			}
 			if (!bVisuals || BarrierStyles.Num() == 0)
 			{
@@ -441,23 +478,24 @@ void ATN_RallyTrackDressing::AddBarrierRun(const TNRallyDressing::FTrackData& Tr
 	switch (Style)
 	{
 	case ETNRallyBarrierStyle::PostRope:
-		AddPostRopeRun(TNRallyDressing::ResamplePolyline(Grounded, TNRallyDressingActor::PostRopeSegmentCm), RunSeed, Batches);
+		AddPostRopeRun(TNRallyDressing::ResamplePolyline(Grounded, TNRallyDressingActor::PostRopeSegmentCm), Side, RunSeed, Batches);
 		break;
 	case ETNRallyBarrierStyle::Sandbags:
-		AddPieceRun(Grounded, ETNBeachElement::Sandbags, ETNBeachElement::Sandbags, 0.55f, RunSeed, Batches);
+		AddPieceRun(Grounded, ETNBeachElement::Sandbags, ETNBeachElement::Sandbags, 0.55f, Side, RunSeed, Batches);
 		break;
 	case ETNRallyBarrierStyle::Logs:
-		AddPieceRun(Grounded, ETNBeachElement::MossyLog, ETNBeachElement::Driftwood, 0.5f, RunSeed, Batches);
+		AddPieceRun(Grounded, ETNBeachElement::MossyLog, ETNBeachElement::Driftwood, 0.5f, Side, RunSeed, Batches);
 		break;
 	case ETNRallyBarrierStyle::Castles:
-		AddPieceRun(Grounded, ETNBeachElement::SandCastleSmall, ETNBeachElement::ToyBucket, 0.6f, RunSeed, Batches);
+		AddPieceRun(Grounded, ETNBeachElement::SandCastleSmall, ETNBeachElement::ToyBucket, 0.6f, Side, RunSeed, Batches);
 		break;
 	default:
 		break;
 	}
 }
 
-void ATN_RallyTrackDressing::AddPostRopeRun(const TArray<TNRallyDressing::FPolySpot>& Spots, int32 RunSeed, FTNRallyDressingBatches& Batches)
+void ATN_RallyTrackDressing::AddPostRopeRun(const TArray<TNRallyDressing::FPolySpot>& Spots, int32 Side, int32 RunSeed,
+	FTNRallyDressingBatches& Batches)
 {
 	using namespace TNRallyDressingActor;
 	// El caminito de palos de la playa tiene dos filas: se queda la del lado -Y, centrada en la línea del límite.
@@ -465,7 +503,19 @@ void ATN_RallyTrackDressing::AddPostRopeRun(const TArray<TNRallyDressing::FPolyS
 	const float Cull = TNBeachDecorKit::CullDistanceFor(ETNBeachElement::WoodenPostPath, PostRopeSize);
 	for (int32 Slot = 0; Slot < Spots.Num(); ++Slot)
 	{
-		const FTransform ItemXf(FRotator(0.0, Spots[Slot].YawDeg, 0.0), Spots[Slot].Location);
+		// Un tramo de valla es largo: cuentan sus dos extremos y el centro (#693).
+		const FVector& At = Spots[Slot].Location;
+		const FVector HalfAlong = FRotator(0.0, Spots[Slot].YawDeg, 0.0).Vector() * (0.5 * Spots[Slot].SeparationCm);
+		TArray<TNRallyDressing::FBarrierPiece, TInlineAllocator<3>> Probes;
+		for (const FVector& Probe : { At - HalfAlong, At, At + HalfAlong })
+		{
+			Probes.Add(MakeBarrierPiece(Probe, PostRopeRadiusCm, Probe.Z, Probe.Z + FencePieceHeightCm, false));
+		}
+		if (!TryPlaceBarrierPieces(Probes, Spots[Slot].YawDeg, Side))
+		{
+			continue;
+		}
+		const FTransform ItemXf(FRotator(0.0, Spots[Slot].YawDeg, 0.0), At);
 		TMap<int32, TArray<FTransform>> ByPiece;
 		TNBeachDecorKit::TilePlacements(ETNBeachElement::WoodenPostPath, TNRallyDressing::SubSeed(RunSeed, Slot, 2), PostRopeSize,
 			static_cast<float>(Spots[Slot].SeparationCm), ByPiece);
@@ -491,16 +541,25 @@ void ATN_RallyTrackDressing::AddPostRopeRun(const TArray<TNRallyDressing::FPolyS
 	}
 }
 
-void ATN_RallyTrackDressing::AddPieceRun(const TArray<FVector>& Points, ETNBeachElement First, ETNBeachElement Second, float Size, int32 RunSeed,
-	FTNRallyDressingBatches& Batches)
+void ATN_RallyTrackDressing::AddPieceRun(const TArray<FVector>& Points, ETNBeachElement First, ETNBeachElement Second, float Size, int32 Side,
+	int32 RunSeed, FTNRallyDressingBatches& Batches)
 {
+	using namespace TNRallyDressingActor;
 	// Piezas casi tocándose, alineadas con el límite (su eje X local es su largo) y alternando las dos recetas.
 	const double Spacing = 1.7 * TNBeach::FootprintRadius(First) * Size;
 	const TArray<TNRallyDressing::FPolySpot> Spots = TNRallyDressing::ResamplePolyline(Points, Spacing);
 	for (int32 Slot = 0; Slot < Spots.Num(); ++Slot)
 	{
 		const ETNBeachElement Element = Slot % 2 == 0 ? First : Second;
-		const FTransform ItemXf(FRotator(0.0, Spots[Slot].YawDeg, 0.0), Spots[Slot].Location);
+		const FVector& At = Spots[Slot].Location;
+		// Hacia la calzada ocupa media huella: la pieza es larga a lo largo del límite y estrecha de lado (#693).
+		const TNRallyDressing::FBarrierPiece Probe = MakeBarrierPiece(At, 0.5 * TNBeach::FootprintRadius(Element) * Size, At.Z,
+			At.Z + FencePieceHeightCm, false);
+		if (!TryPlaceBarrierPieces(MakeArrayView(&Probe, 1), Spots[Slot].YawDeg, Side))
+		{
+			continue;
+		}
+		const FTransform ItemXf(FRotator(0.0, Spots[Slot].YawDeg, 0.0), At);
 		if (AddBeachPiece(Element, TNRallyDressing::SubSeed(RunSeed, Slot, 1), Size, ItemXf, false, false, Batches))
 		{
 			++BarrierPieceCount;
@@ -542,13 +601,21 @@ void ATN_RallyTrackDressing::AddTireRun(const TNRallyDressing::FTrackData& Track
 		const double BelowRoad = FMath::Max(0.0, Spot.Location.Z - GroundZ - TireSinkFraction * Thickness);
 		const int32 Levels = FMath::Clamp(MinLevels + FMath::CeilToInt32(BelowRoad / Thickness), MinLevels, MaxTireStackLevels);
 		const FVector Ground(Spot.Location.X, Spot.Location.Y, GroundZ);
+		// Ni dentro de la calzada de ningún tramo (la pila de un paso superior que cae a la calzada de debajo) ni bajo un
+		// techo sobre ella (un túnel o su boca), #693.
+		const double BottomZ = GroundZ - TireSinkFraction * Thickness;
+		const TNRallyDressing::FBarrierPiece Stack = MakeBarrierPiece(Ground, 0.5 * TireDiameterCm, BottomZ, BottomZ + Levels * Thickness, false);
+		if (!TryPlaceBarrierPieces(MakeArrayView(&Stack, 1), Spot.YawDeg, Side))
+		{
+			continue;
+		}
 		for (int32 Level = 0; Level < Levels; ++Level)
 		{
 			const FQuat Rotation = FRotator(0.0, Spot.YawDeg + 37.0 * Level, 0.0).Quaternion() * Lying;
 			const FVector Base = Ground + FVector(0.0, 0.0, (Level - TireSinkFraction) * Thickness);
 			Out.Add(FitUniformOnGround(Mesh, Base, Rotation, Scale));
 		}
-		Bases.Add(Ground - FVector(0.0, 0.0, TireSinkFraction * Thickness));
+		Bases.Add(FVector(Ground.X, Ground.Y, BottomZ));
 		++BarrierPieceCount;
 	}
 }

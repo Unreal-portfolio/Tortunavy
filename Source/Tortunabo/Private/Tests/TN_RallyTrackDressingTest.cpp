@@ -242,6 +242,8 @@ bool FTNRallyDressingRoadEdgeTest::RunTest(const FString& Parameters)
 		for (FTrackData Track : { Straight(30000.0), Circle(2000.0, true), Circle(8000.0, false) })
 		{
 			Track.RoadWidthCm = Width;
+			// En curva, la barrera se aparta la flecha de la cuerda entre dos muestras (#693): 1 / cos(medio giro por paso).
+			const double Sag = Track.bClosed ? 1.0 / FMath::Cos(0.5 * 2.0 * UE_DOUBLE_PI / Track.Samples.Num()) : 1.0;
 			const FBarrierPlan Plan = PlanBarriers(Track, DropsOn(Track.Samples.Num(), RightSide, 5, 15), Params);
 			TestEqual(*FString::Printf(TEXT("Calzada de %.0f m: el borde del corredor es la barrera"), Width / 100.0), Plan.BaseOffsetCm, Expected);
 			double Farthest = 0.0;
@@ -255,8 +257,8 @@ bool FTNRallyDressingRoadEdgeTest::RunTest(const FString& Parameters)
 					Nearest = FMath::Min(Nearest, Offset);
 				}
 			}
-			TestTrue(*FString::Printf(TEXT("Calzada de %.0f m: todas las muestras a media calzada + %.0f cm (de %.1f a %.1f)"), Width / 100.0,
-				Params.RoadEdgeMarginCm, Nearest, Farthest), FMath::IsNearlyEqual(Nearest, Expected, 1.0) && FMath::IsNearlyEqual(Farthest, Expected, 1.0));
+			TestTrue(*FString::Printf(TEXT("Calzada de %.0f m: todas las muestras a media calzada + %.0f cm y la flecha (de %.1f a %.1f)"), Width / 100.0,
+				Params.RoadEdgeMarginCm, Nearest, Farthest), FMath::IsNearlyEqual(Nearest, Expected * Sag, 1.0) && FMath::IsNearlyEqual(Farthest, Expected * Sag, 1.0));
 		}
 	}
 	TestEqual(TEXT("Sin road_width_m, la calzada por defecto (14 m)"), RoadHalfWidthCm(FTrackData(), Params), 700.0);

@@ -267,6 +267,23 @@ namespace TNRallyDressing
 			return Flags;
 		}
 
+		/** Giro del eje (radianes, sin signo) en un paso alrededor de la muestra Index: la media de los dos pasos que la rodean. */
+		double StepTurn(const FTrackData& Track, int32 Index)
+		{
+			const int32 Num = Track.Samples.Num();
+			const int32 Prev = WrapIndex(Index - 1, Num, Track.bClosed);
+			const int32 Next = WrapIndex(Index + 1, Num, Track.bClosed);
+			const int32 From = Prev == INDEX_NONE ? Index : Prev;
+			const int32 To = Next == INDEX_NONE ? Index : Next;
+			const int32 Steps = (From != Index ? 1 : 0) + (To != Index ? 1 : 0);
+			if (Steps == 0)
+			{
+				return 0.0;
+			}
+			const double Turn = FMath::FindDeltaAngleRadians(YawRadians(Track.Samples[From].Direction), YawRadians(Track.Samples[To].Direction));
+			return FMath::Abs(Turn) / Steps;
+		}
+
 		/** Desplazamiento de cada muestra con límite: el de la curva (o el borde en una caída), suavizado y sin pisar otro tramo. */
 		FBarrierSide SideBarrier(const FTrackData& Track, const FBarrierPlan& Plan, const FSideFlags& Flags, int32 Side,
 			const FBarrierParams& Params)
@@ -295,9 +312,15 @@ namespace TNRallyDressing
 			{
 				if (Smooth[Index] > 0.0)
 				{
-					// El suavizado no mete la barrera en la calzada donde el tramo se ensancha.
-					const double Offset = Params.bHugRoad ? FMath::Max(Smooth[Index], Half[Index] + FMath::Max(0.0, Params.RoadEdgeMarginCm))
-						: Smooth[Index];
+					// El suavizado no mete la barrera en la calzada donde el tramo se ensancha. Y como la barrera es una polilínea por
+					// las muestras, en una curva cerrada la cuerda entre dos se acerca al eje (la flecha, 1 - cos de medio giro), y más
+					// si a la vez cambia el ancho: se toma el mayor semiancho de las muestras vecinas y se aparta la flecha, para que
+					// ninguna pila entre en la calzada (#693).
+					const int32 Prev = WrapIndex(Index - 1, Num, Track.bClosed);
+					const int32 Next = WrapIndex(Index + 1, Num, Track.bClosed);
+					const double Widest = FMath::Max3(Half[Index], Prev == INDEX_NONE ? 0.0 : Half[Prev], Next == INDEX_NONE ? 0.0 : Half[Next]);
+					const double Hug = (Widest + FMath::Max(0.0, Params.RoadEdgeMarginCm)) / FMath::Max(0.5, FMath::Cos(0.5 * StepTurn(Track, Index)));
+					const double Offset = Params.bHugRoad ? FMath::Max(Smooth[Index], Hug) : Smooth[Index];
 					Result.OffsetCm[Index] = CrowdedOffset(Track, Index, Side, Offset, Half[Index], Params);
 				}
 			}

@@ -280,12 +280,84 @@ namespace TNRallyDressing
 	/** True si Point (en planta) está a ClearCm o más de todas las muestras del eje. */
 	TORTUNABO_API bool IsClearOfTrack(const FTrackData& Track, const FVector& Point, double ClearCm);
 
+	/**
+	 * Gálibo de la calzada (#693): el espacio por el que pasa el buggy, que ninguna pieza de la barrera puede ocupar. En planta,
+	 * el ancho de cada tramo (FAxisSample::RoadWidthCm o el del trazado); en altura, de BelowCm por debajo de la calzada a
+	 * AboveCm por encima (el gálibo de los túneles del generador, 6 m).
+	 */
+	struct FRoadClearance
+	{
+		double BelowCm = 100.0;
+		double AboveCm = 600.0;
+		/** Lo que una pieza puede entrar sin contar (cm): la cuerda de la barrera por fuera de las curvas cerradas. */
+		double ToleranceCm = 5.0;
+	};
+
+	/**
+	 * Calzada de todo el trazado (tramos del eje con su ancho y su cota) en una rejilla en planta: dice si una pieza de la
+	 * barrera invade la calzada de algún tramo, también la de otro tramo que pasa por debajo (cruces y bocas de túnel, #693).
+	 */
+	class TORTUNABO_API FRoadFootprint
+	{
+	public:
+		FRoadFootprint(const FTrackData& Track, const FBarrierParams& Params, const FRoadClearance& InClearance = FRoadClearance());
+
+		/**
+		 * Lo que entra (cm, en planta) en la calzada de algún tramo un cilindro vertical de radio RadiusCm centrado en Center,
+		 * de BottomZ a TopZ, si a esa altura corta su gálibo; 0 si no entra.
+		 */
+		double IntrusionCm(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const;
+
+		/** IntrusionCm por encima de la tolerancia de FRoadClearance. */
+		bool Intrudes(const FVector& Center, double RadiusCm, double BottomZ, double TopZ) const
+		{
+			return IntrusionCm(Center, RadiusCm, BottomZ, TopZ) > Clearance.ToleranceCm;
+		}
+
+		/**
+		 * Cota de la calzada en Point (en planta): la del tramo que lo cubre más cercana a ReferenceZ (en un cruce hay dos);
+		 * FallbackZ si Point no cae en ninguna calzada.
+		 */
+		double RoadZAt(const FVector& Point, double ReferenceZ, double FallbackZ) const;
+
+		const FRoadClearance& GetClearance() const { return Clearance; }
+		bool IsEmpty() const { return Segments.Num() == 0; }
+
+	private:
+		struct FSegment
+		{
+			FVector A = FVector::ZeroVector;
+			FVector B = FVector::ZeroVector;
+			double HalfA = 0.0;
+			double HalfB = 0.0;
+		};
+
+		FIntPoint CellOf(double X, double Y) const;
+
+		FRoadClearance Clearance;
+		double CellCm = 2000.0;
+		double MaxHalfCm = 0.0;
+		TArray<FSegment> Segments;
+		TMap<FIntPoint, TArray<int32>> Cells;
+	};
+
 	enum class ESpotKind : uint8
 	{
 		Beach,
 		Crab,
 		Spectator,
 		Far
+	};
+
+	/** Pieza de la barrera ya colocada (#693): cilindro vertical que ocupa, para comprobar que no invade la calzada. */
+	struct FBarrierPiece
+	{
+		FVector Center = FVector::ZeroVector;
+		double RadiusCm = 0.0;
+		double BottomZ = 0.0;
+		double TopZ = 0.0;
+		/** Tramo del carril de colisión (invisible) en vez de una pieza que se ve. */
+		bool bRail = false;
 	};
 
 	/** Sitio de una pieza del decorado (a la cota del eje: el actor busca el suelo). Entry: índice de la entrada o variante. */
@@ -440,6 +512,17 @@ public:
 	 */
 	const TArray<FVector>& GetTireStackBases(int32 Side) const { return TireStackBases[Side == TNRallyDressing::LeftSide ? 0 : 1]; }
 
+	/** Piezas de la barrera colocadas (pilas, piezas de valla y tramos del carril), con lo que ocupan. La usan los tests de #693. */
+	const TArray<TNRallyDressing::FBarrierPiece>& GetBarrierPieces() const { return BarrierPieces; }
+
+	/** Piezas de la barrera que no se han puesto porque invadían la calzada o quedaban bajo un techo sobre ella (#693). */
+	UFUNCTION(BlueprintPure, Category = "Rally|Decorado")
+	int32 GetBlockedBarrierCount() const { return BlockedOnRoadCount + BlockedUnderRoofCount; }
+
+	/** De GetBlockedBarrierCount, las que quedaban bajo un techo sobre la calzada (túnel o su boca). */
+	UFUNCTION(BlueprintPure, Category = "Rally|Decorado")
+	int32 GetRoofBlockedBarrierCount() const { return BlockedUnderRoofCount; }
+
 protected:
 	// ── Límites ──
 
@@ -499,6 +582,14 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Límites", meta = (ClampMin = "30"))
 	float TireDiameterCm = 120.f;
+
+	/**
+	 * Techo sobre la calzada (#693): una pieza de la barrera no se pone si, entre ella y la calzada, hay algo a menos de esta
+	 * altura por encima de su cara de arriba (bóveda de un túnel, su boca o el tablero de un paso superior). Ahí el límite
+	 * es la pared.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Límites", meta = (ClampMin = "100"))
+	float RoofProbeCm = 1000.f;
 
 	/** Pisos de cada pila; donde el suelo queda por debajo de la calzada se añaden los que falten para asomar lo mismo. */
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Límites", meta = (ClampMin = "1", ClampMax = "6"))
@@ -619,9 +710,17 @@ private:
 	void AddRailSegment(UStaticMesh* Cube, const FVector& A, const FVector& B, FTNRallyDressingBatches& Batches);
 	void AddBarrierRun(const TNRallyDressing::FTrackData& Track, const TArray<FVector>& Points, ETNRallyBarrierStyle Style, int32 Side,
 		int32 RunSeed, FTNRallyDressingBatches& Batches);
-	void AddPostRopeRun(const TArray<TNRallyDressing::FPolySpot>& Spots, int32 RunSeed, FTNRallyDressingBatches& Batches);
-	void AddPieceRun(const TArray<FVector>& Points, ETNBeachElement First, ETNBeachElement Second, float Size, int32 RunSeed,
+	void AddPostRopeRun(const TArray<TNRallyDressing::FPolySpot>& Spots, int32 Side, int32 RunSeed, FTNRallyDressingBatches& Batches);
+	void AddPieceRun(const TArray<FVector>& Points, ETNBeachElement First, ETNBeachElement Second, float Size, int32 Side, int32 RunSeed,
 		FTNRallyDressingBatches& Batches);
+	/**
+	 * Todas o ninguna (#693): las piezas (con rumbo YawDeg, en el lado Side) se ponen si ninguna invade la calzada de ningún
+	 * tramo ni, las que se ven (no el carril), queda bajo un techo sobre la calzada. Si se ponen, las apunta en BarrierPieces;
+	 * si no, cuenta el motivo.
+	 */
+	bool TryPlaceBarrierPieces(TConstArrayView<TNRallyDressing::FBarrierPiece> Pieces, double YawDeg, int32 Side);
+	/** Algo por encima (RoofProbeCm) entre la pieza y la calzada, en su sitio y un poco antes y después. */
+	bool IsUnderRoof(const FVector& Center, double RadiusCm, double TopZ, double YawDeg, int32 Side) const;
 	/** Pilas de neumáticos a lo largo de Points (a la cota de la calzada), cada una apoyada en su suelo. */
 	void AddTireRun(const TNRallyDressing::FTrackData& Track, const TArray<FVector>& Points, int32 Side, FTNRallyDressingBatches& Batches);
 	/**
@@ -673,9 +772,23 @@ private:
 	/** Base de cada pila de neumáticos por lado (GetTireStackBases). */
 	TArray<FVector> TireStackBases[2];
 
+	/** Piezas de la barrera colocadas (GetBarrierPieces). */
+	TArray<TNRallyDressing::FBarrierPiece> BarrierPieces;
+
+	/** Calzada del trazado mientras se construye (Build): las piezas de la barrera no la invaden (#693). */
+	TUniquePtr<TNRallyDressing::FRoadFootprint> RoadFootprint;
+
+	/** Mientras se construye: la pista y lo que pone sobre la calzada (cajas, puertas), que no son un techo (#693). */
+	TArray<TWeakObjectPtr<const AActor>> RoofIgnoredActors;
+
+	/** La pista y los actores que son suyos (cajas «?», puertas): las sondas de techo no los cuentan. */
+	void CollectRoofIgnoredActors();
+
 	bool bVisuals = true;
 	int32 RailSegmentCount = 0;
 	int32 BarrierPieceCount = 0;
+	int32 BlockedOnRoadCount = 0;
+	int32 BlockedUnderRoofCount = 0;
 	int32 DecorCount = 0;
 	int32 FarDecorCount = 0;
 	int32 SpectatorCount = 0;
