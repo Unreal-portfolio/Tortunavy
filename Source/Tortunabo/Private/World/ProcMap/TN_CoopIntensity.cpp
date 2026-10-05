@@ -280,4 +280,9 @@ namespace TNCoopIntensity
 			default: return true;
 		}
 	}
+
+	bool AllowsAnnelid(EDifficulty Tramo)
+	{
+		return Tramo == EDifficulty::Easy || Tramo == EDifficulty::Medium;
+	}
 }

@@ -120,4 +120,10 @@ namespace TNCoopIntensity
 	 * Medio hasta los de normal (1) y en Difícil todos.
 	 */
 	bool AllowsHazard(EDifficulty Tramo, bool bEnemy, int32 MinDifficulty);
+
+	/** Anélidos poliquetos (#792) por tramo con dificultad Fácil o Medio. */
+	constexpr int32 ANNELIDS_PER_TRAMO = 1;
+
+	/** Anélido poliqueto (#792): aliado que solo sale en tramos Fácil y Medio. */
+	bool AllowsAnnelid(EDifficulty Tramo);
 }

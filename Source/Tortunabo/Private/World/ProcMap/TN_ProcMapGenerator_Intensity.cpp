@@ -1,8 +1,10 @@
-// Tabla de intensidad del cooperativo (#788): el plan por tramos y lo que coloca el generador con él.
+// Tabla de intensidad del cooperativo (#788): el plan por tramos y lo que coloca el generador con él (enemigos de los
+// módulos de diseño y, #792, los anélidos poliquetos de los tramos Fácil y Medio).
 
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_CoopIntensity.h"
 #include "World/ProcMap/TN_ProcWaterActors.h"
+#include "World/ProcMap/TN_ProcAnnelid.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/TN_CrabSpawnZone.h"
 #include "World/TN_SeagullSpawnZone.h"
@@ -192,4 +194,54 @@ void ATN_ProcMapGenerator::SpawnIntensityEnemies()
 		UE_LOG(LogTortunabo, Log, TEXT("[Intensidad] Tramo %d (%s): %d de %d algas de la tabla colocadas."),
 			t + 1, TNCoopIntensity::DifficultyName(IntensityPlan[t].Difficulty), Placed, Wanted);
 	}
+}
+
+void ATN_ProcMapGenerator::SpawnIntensityAllies()
+{
+	using namespace TNProcIntensityDetail;
+	UWorld* World = GetWorld();
+	if (IntensityPlan.Num() == 0 || !World || World->GetNetMode() == NM_Client)
+	{
+		return;
+	}
+	// Al borde del camino (a la vista, sin estorbar el paso) y, si el sitio no vale, en las muestras de al lado.
+	constexpr double ANNELID_SIDE = 0.75;
+	constexpr double ANNELID_RADIUS = 150.0;
+	constexpr int32 SEARCH_SAMPLES = 8;
+	TArray<int32> Samples;
+	int32 Placed = 0;
+	for (int32 t = 0; t < IntensityPlan.Num(); ++t)
+	{
+		if (!TNCoopIntensity::AllowsAnnelid(IntensityPlan[t].Difficulty))
+		{
+			continue;
+		}
+		CollectTramoSamples(t, Samples);
+		for (int32 k = 0; k < TNCoopIntensity::ANNELIDS_PER_TRAMO && Samples.Num() > 0; ++k)
+		{
+			const double Frac = (static_cast<double>(k) + 0.5) / static_cast<double>(TNCoopIntensity::ANNELIDS_PER_TRAMO);
+			const int32 Middle = FMath::Clamp(FMath::FloorToInt32(Frac * Samples.Num()), 0, Samples.Num() - 1);
+			const double Side = ((t + k) % 2 == 0) ? ANNELID_SIDE : -ANNELID_SIDE;
+			for (int32 Try = 0; Try <= 2 * SEARCH_SAMPLES; ++Try)
+			{
+				// 0, +1, -1, +2, -2...
+				const int32 Offset = (Try % 2 == 1) ? (Try + 1) / 2 : -(Try / 2);
+				const int32 Index = Middle + Offset;
+				FVector2D Where;
+				double Ground = 0.0;
+				if (!Samples.IsValidIndex(Index) || !PathSideSpot(Samples[Index], Side, Where, Ground)
+					|| !FarFromSpots(HazardSpots, Where, ANNELID_RADIUS))
+				{
+					continue;
+				}
+				if (SpawnMapActor(ATN_ProcAnnelid::StaticClass(), FTransform(MapToWorld2D(Where, Ground)), true))
+				{
+					HazardSpots.Add(FVector(Where.X, Where.Y, ANNELID_RADIUS));
+					++Placed;
+				}
+				break;
+			}
+		}
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Intensidad] Anélidos poliquetos colocados: %d."), Placed);
 }

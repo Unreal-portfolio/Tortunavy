@@ -326,6 +326,8 @@ private:
 	bool IntensityAllowsHazard(int32 BranchIndex, int32 PathIndex, const UClass* Class, int32 MinDifficulty) const;
 	/** Servidor: enemigos de los módulos de diseño del plan, repartidos por su tramo del camino principal (#788). */
 	void SpawnIntensityEnemies();
+	/** Servidor: anélidos poliquetos (#792) al borde del camino en los tramos Fácil y Medio del plan. */
+	void SpawnIntensityAllies();
 	/** Muestras del camino principal del tramo Tramo donde se puede poner algo (sin las especiales: salida, puentes...). */
 	void CollectTramoSamples(int32 Tramo, TArray<int32>& OutSamples) const;
 	/** Punto del mapa a un lado del camino en la muestra Sample (Side en -1..1 del medio ancho); false si cae al agua o en un desnivel. */
