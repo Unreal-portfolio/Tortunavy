@@ -36,6 +36,9 @@ const FName ATN_Buggy::TintParameterName(TEXT("PaintColor"));
 const FName ATN_Buggy::DriverSeatSocket(TEXT("Seat_Driver"));
 const FName ATN_Buggy::GunnerSeatSocket(TEXT("Seat_Gunner"));
 const FName ATN_Buggy::MuzzleSocket(TEXT("Muzzle_Gunner"));
+const FName ATN_Buggy::AppliedSteeringProperty(TEXT("SteeringInput"));
+const FName ATN_Buggy::AppliedThrottleProperty(TEXT("ThrottleInput"));
+const FName ATN_Buggy::AppliedBrakeProperty(TEXT("BrakeInput"));
 // Art/Source/Vehicles/Buggy/manifest.json (sockets_cm).
 const FVector ATN_Buggy::GunnerSeatLocal(-80.f, 0.f, 127.38f);
 const FVector ATN_Buggy::DriverSeatLocal(22.f, 0.f, 92.38f);
@@ -617,6 +620,38 @@ void ATN_Buggy::ApplyBumpKicks()
 		PrevContactPoint[Index] = State.ContactPoint;
 		bPrevWheelContact[Index] = State.bInContact;
 	}
+}
+
+namespace TNBuggyDetail
+{
+	/** Una entrada procesada de Chaos (protegida pero reflejada) por su nombre; 0 si no hay movimiento o el motor la renombra. */
+	float ReadAppliedInput(const UChaosWheeledVehicleMovementComponent* Move, const FFloatProperty* Property)
+	{
+		return Move && Property ? Property->GetPropertyValue_InContainer(Move) : 0.f;
+	}
+
+	const FFloatProperty* FindAppliedInput(FName Name)
+	{
+		return CastField<FFloatProperty>(UChaosVehicleMovementComponent::StaticClass()->FindPropertyByName(Name));
+	}
+}
+
+float ATN_Buggy::GetAppliedSteering() const
+{
+	static const FFloatProperty* Property = TNBuggyDetail::FindAppliedInput(AppliedSteeringProperty);
+	return TNBuggyDetail::ReadAppliedInput(GetWheeledMovement(), Property);
+}
+
+float ATN_Buggy::GetAppliedThrottle() const
+{
+	static const FFloatProperty* Property = TNBuggyDetail::FindAppliedInput(AppliedThrottleProperty);
+	return TNBuggyDetail::ReadAppliedInput(GetWheeledMovement(), Property);
+}
+
+float ATN_Buggy::GetAppliedBrake() const
+{
+	static const FFloatProperty* Property = TNBuggyDetail::FindAppliedInput(AppliedBrakeProperty);
+	return TNBuggyDetail::ReadAppliedInput(GetWheeledMovement(), Property);
 }
 
 float ATN_Buggy::GetDamageStatScale(float MinScale) const

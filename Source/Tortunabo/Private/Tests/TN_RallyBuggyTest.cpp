@@ -198,7 +198,7 @@ bool FTNRallyBuggySpeedCapTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("con daño y turbo, la punta del turbo por la fracción"), SpeedCapCms(Damaged), 3200.f, 0.01f);
 	FSpeedCapInput DamagedInWater = Damaged;
 	DamagedInWater.bWading = true;
-	TestEqual(TEXT("con daño en el agua, el tope del agua si es menor"), SpeedCapCms(DamagedInWater), 1500.f, 0.01f);
+	TestEqual(TEXT("con daño en el agua, el tope del agua también baja con el daño"), SpeedCapCms(DamagedInWater), 1200.f, 0.01f);
 
 	TestEqual(TEXT("vida llena: estadística entera"), DamageStatScale(1.f, 0.6f), 1.f);
 	TestEqual(TEXT("sin vida: el mínimo"), DamageStatScale(0.f, 0.6f), 0.6f, 0.0001f);

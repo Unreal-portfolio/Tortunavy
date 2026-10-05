@@ -199,7 +199,8 @@ namespace TNBuggy
 		}
 		if (In.bWading)
 		{
-			Limit(In.TopSpeedCms * FMath::Clamp(In.WaterSpeedMultiplier, 0.f, 1.f));
+			// Con daño, el agua frena también (#719, #720).
+			Limit(In.TopSpeedCms * FMath::Clamp(In.WaterSpeedMultiplier, 0.f, 1.f) * FMath::Clamp(In.DamageScale, 0.f, 1.f));
 		}
 		if (In.DamageScale < 1.f)
 		{

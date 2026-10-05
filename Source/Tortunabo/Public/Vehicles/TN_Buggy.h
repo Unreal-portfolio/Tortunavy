@@ -126,6 +126,21 @@ public:
 	UMaterialInterface* GetBoostFlameMaterial() const;
 	UChaosWheeledVehicleMovementComponent* GetWheeledMovement() const;
 
+	/**
+	 * Dirección, acelerador y freno que aplica Chaos en esta máquina: los de la conductora local o, en el servidor y en las
+	 * demás máquinas, los que ella manda (ReplicatedState). GetSteeringInput, GetThrottleInput y GetBrakeInput de Chaos dan la
+	 * entrada cruda, que solo existe en la máquina que conduce: en el servidor, la de una conductora cliente era siempre 0 y la
+	 * balsa de Karts no remaba (el cliente se quedaba atascado en el agua, #710).
+	 */
+	float GetAppliedSteering() const;
+	float GetAppliedThrottle() const;
+	float GetAppliedBrake() const;
+
+	/** Nombres de esas propiedades (protegidas) en UChaosVehicleMovementComponent; el test Tortunabo.Rally.Buggy.AppliedInputs los comprueba. */
+	static const FName AppliedSteeringProperty;
+	static const FName AppliedThrottleProperty;
+	static const FName AppliedBrakeProperty;
+
 	/** Segundos de tinta en pantalla que quedan (0 = limpia). Vale en cualquier máquina. */
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	float GetInkSecondsLeft() const;

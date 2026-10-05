@@ -72,12 +72,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
 	float MinWaterDepthCm = 70.f;
 
-	/** Empuje del acelerador en el agua (cm/s²) y velocidad máxima flotando (cm/s, unos 30 km/h). */
+	/**
+	 * Empuje del acelerador en el agua (cm/s²). La velocidad máxima flotando es la del agua del buggy (#719): la punta por
+	 * UTN_BuggyData::WaterSpeedMultiplier y por lo que le quite la vida perdida (GetMaxFloatSpeedCms).
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
 	float PaddleAccelCms2 = 900.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
-	float MaxFloatSpeedCms = 850.f;
+	/** Velocidad máxima flotando (cm/s): la mitad de la punta del buggy con el ajuste de serie, menos con daño. */
+	float GetMaxFloatSpeedCms() const;
 
 	/** Giro máximo en el agua (grados por segundo). */
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")

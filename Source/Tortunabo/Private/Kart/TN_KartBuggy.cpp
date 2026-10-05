@@ -413,7 +413,8 @@ void ATN_KartBuggy::ApplyLeanSteering()
 	{
 		return;
 	}
-	const float Wanted = TNKart::LeanSteerMultiplier(GetGunnerLean(), Move->GetSteeringInput());
+	// La dirección que aplica Chaos: en el servidor, la de la conductora cliente (la cruda ahí es 0, #710).
+	const float Wanted = TNKart::LeanSteerMultiplier(GetGunnerLean(), GetAppliedSteering());
 	const bool bNeutral = FMath::Abs(Wanted - 1.f) < TNKartBuggyDetail::LeanSteerEpsilon;
 	// ATN_Buggy::ApplyWheelFriction vuelve a poner el ángulo del ajuste cada vez que cambia la fricción (freno de mano,
 	// charco): con la inclinación se reaplica cada fotograma; sin ella basta con devolverlo una vez.

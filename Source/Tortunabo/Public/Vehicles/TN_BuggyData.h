@@ -248,7 +248,8 @@ public:
 
 	/**
 	 * En el agua (#719): con las ruedas metidas (vados del Rally, mar y pozas de los mapas generados), la punta sin turbo por
-	 * esto. Flotando como balsa (Karts) ya va más despacio (UTN_KartTraversalComponent::MaxFloatSpeedCms).
+	 * esto, y también flotando como balsa en Karts (UTN_KartTraversalComponent::GetMaxFloatSpeedCms). Con daño, además, por la
+	 * fracción de DamagedTopSpeedScale.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agua", meta = (ClampMin = "0.1", ClampMax = "1"))
 	float WaterSpeedMultiplier = 0.5f;

@@ -170,7 +170,7 @@ namespace TNBuggy
 		/** Con las ruedas metidas en el agua, la punta sin turbo por WaterSpeedMultiplier. */
 		bool bWading = false;
 		float WaterSpeedMultiplier = 1.f;
-		/** Fracción de la punta que deja la vida perdida (1 = sin daño): se aplica a la punta del turbo que lleve. */
+		/** Fracción de la punta que deja la vida perdida (1 = sin daño): se aplica a la punta del turbo que lleve y al agua. */
 		float DamageScale = 1.f;
 	};
 
