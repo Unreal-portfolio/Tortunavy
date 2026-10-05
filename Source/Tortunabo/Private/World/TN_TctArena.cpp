@@ -19,6 +19,8 @@ namespace TNTctArenaDetail
 {
 	/** El mar del mapa procedural (animado). */
 	const TCHAR* SeaMaterialPath = TEXT("/Game/ProcMap/Materials/MI_ProcSeaAnim.MI_ProcSeaAnim");
+	/** La arena de la playa del Rally y del Coop (grano triplanar, rizos y arena mojada sobre el color de vértice). */
+	const TCHAR* SandMaterialPath = TEXT("/Game/Blueprints/Gameplay/GridMap/M_GridTerrainWet.M_GridTerrainWet");
 	const TCHAR* PlaneMeshPath = TEXT("/Engine/BasicShapes/Plane.Plane");
 	/** Lado del plano básico del motor (uu). */
 	constexpr double PlaneSize = 100.0;
@@ -58,6 +60,39 @@ ATN_TctArena::ATN_TctArena()
 	{
 		WaterPlane->SetMaterial(0, SeaMaterial.Object);
 	}
+	// Arena de playa en vez del material genérico del cargador (M_GridTerrain).
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> SandMaterial(TNTctArenaDetail::SandMaterialPath);
+	if (SandMaterial.Succeeded())
+	{
+		TerrainMaterial = SandMaterial.Object;
+	}
+}
+
+const TCHAR* ATN_TctArena::SandMaterialPath()
+{
+	return TNTctArenaDetail::SandMaterialPath;
+}
+
+void ATN_TctArena::ApplySandMaterial()
+{
+	// Una arena colocada a mano en un nivel podría traer otro material guardado: manda la arena de playa.
+	UMaterialInterface* Sand = TerrainMaterial && TerrainMaterial->GetPathName() == SandMaterialPath()
+		? TerrainMaterial.Get() : LoadObject<UMaterialInterface>(nullptr, SandMaterialPath());
+	if (!Sand)
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[TcT] No está %s: la arena se queda con el material del cargador."), SandMaterialPath());
+		return;
+	}
+	TerrainMaterial = Sand;
+	TArray<UProceduralMeshComponent*> Meshes;
+	GetComponents(Meshes);
+	for (UProceduralMeshComponent* Mesh : Meshes)
+	{
+		if (Mesh && Mesh->GetMaterial(0) != Sand)
+		{
+			Mesh->SetMaterial(0, Sand);
+		}
+	}
 }
 
 void ATN_TctArena::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -90,6 +125,7 @@ void ATN_TctArena::BeginPlay()
 	{
 		ArenaVariant = Variant;
 	}
+	ApplySandMaterial();
 	// La base construye la malla si hace falta y, en el servidor, pone las zonas de muerte del manifest.
 	Super::BeginPlay();
 	FitWaterPlane();
@@ -108,6 +144,7 @@ void ATN_TctArena::ServerSetArenaVariant(FName NewVariant)
 	// (el BeginPlay de la base ya no la repite) para que el GameMode pueda medir la arena en StartPlay.
 	TArray<UProceduralMeshComponent*> Meshes;
 	GetComponents(Meshes);
+	ApplySandMaterial();
 	if (Variant != NewVariant || Meshes.Num() == 0)
 	{
 		Variant = NewVariant;
@@ -128,6 +165,7 @@ void ATN_TctArena::OnRep_ArenaVariant()
 	// Antes de BeginPlay no hace falta: BeginPlay la construye con la variante ya puesta.
 	if (HasActorBegunPlay())
 	{
+		ApplySandMaterial();
 		Recargar();
 		FitWaterPlane();
 	}
