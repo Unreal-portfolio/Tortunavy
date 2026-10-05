@@ -221,6 +221,30 @@ namespace TNVRHands
 	constexpr float VignetteFullSpeed = 900.f;
 	/** Giro suave (grados/s) que oscurece del todo. */
 	constexpr float VignetteFullTurnRate = 120.f;
+
+	// ── Ajustes de VR (#647) ─────────────────────────────────────────────────
+
+	/** Fuerza de la viñeta de confort del ajuste (0 apagada, 1 la de serie, 2 el doble); fuera de rango se recorta. */
+	inline float VignetteStrengthFromSetting(uint8 Setting)
+	{
+		return static_cast<float>(FMath::Clamp<int32>(Setting, 0, 2));
+	}
+
+	/** Fuerza de la vibración del ajuste (encendida 1, apagada 0). */
+	inline float HapticScaleFromSetting(bool bOn)
+	{
+		return bOn ? 1.f : 0.f;
+	}
+
+	/**
+	 * Lo que vale una fuerza que tiene ajuste y variable de consola (TN.VR.ComfortVignette, TN.VR.Haptics): si alguien
+	 * tocó la consola (o la línea de comandos), manda ella; si no, el ajuste del menú.
+	 */
+	inline float ConsoleOrSetting(float ConsoleValue, bool bConsoleTouched, float SettingValue)
+	{
+		return bConsoleTouched ? ConsoleValue : SettingValue;
+	}
+
 	/** Intensidad de viñeta del motor (VignetteIntensity) a tope, con Strength 1. */
 	constexpr float VignetteMaxIntensity = 1.1f;
 

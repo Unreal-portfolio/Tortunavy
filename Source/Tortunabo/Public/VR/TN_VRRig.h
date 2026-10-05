@@ -229,6 +229,9 @@ private:
 	void UpdateCurvedPanel(float ArcDeg);
 	void BuildLoadingDome();
 	void UpdateLoadingDome(APlayerController* PC);
+	/** Fuerza de la viñeta de confort y de la vibración: el ajuste de Ajustes > Realidad virtual o, si se ha tocado, la consola. */
+	float GetVignetteStrength() const;
+	float GetHapticScale() const;
 	void BuildCoverDome(float Alpha);
 	void UpdateViewCover();
 

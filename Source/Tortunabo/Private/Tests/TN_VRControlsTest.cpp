@@ -212,4 +212,31 @@ bool FTNVRViewCoverTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRSettingsTest,
+	"Tortunabo.VR.Settings",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRSettingsTest::RunTest(const FString& Parameters)
+{
+	using namespace TNVRHands;
+	// De serie: la viñeta normal y la vibración encendida (como las variables de consola de antes).
+	const FTNGameSettings Defaults;
+	TestEqual(TEXT("Viñeta de serie: normal"), static_cast<int32>(Defaults.VRVignette), 1);
+	TestTrue(TEXT("Vibración de serie: encendida"), Defaults.bVRHaptics);
+	TestEqual(TEXT("Normal = 1"), VignetteStrengthFromSetting(1), 1.f);
+	TestEqual(TEXT("Apagada = 0"), VignetteStrengthFromSetting(0), 0.f);
+	TestEqual(TEXT("Fuerte = 2"), VignetteStrengthFromSetting(2), 2.f);
+	TestEqual(TEXT("Un valor guardado de más se recorta"), VignetteStrengthFromSetting(9), 2.f);
+	TestEqual(TEXT("Vibración encendida"), HapticScaleFromSetting(true), 1.f);
+	TestEqual(TEXT("Vibración apagada"), HapticScaleFromSetting(false), 0.f);
+	// La consola manda si se ha tocado; si no, el ajuste.
+	TestEqual(TEXT("Consola sin tocar: el ajuste"), ConsoleOrSetting(1.f, false, 2.f), 2.f);
+	TestEqual(TEXT("Consola tocada: la consola"), ConsoleOrSetting(0.f, true, 2.f), 0.f);
+	// El ajuste apagado apaga la viñeta de verdad (ComfortVignette con fuerza 0 es 0) y el doble la dobla.
+	TestEqual(TEXT("Apagada: sin viñeta"), ComfortVignette(3000.f, 0.f, VignetteStrengthFromSetting(0)), 0.f);
+	TestTrue(TEXT("Fuerte: el doble que normal"), FMath::IsNearlyEqual(ComfortVignette(3000.f, 0.f, VignetteStrengthFromSetting(2)),
+		2.f * ComfortVignette(3000.f, 0.f, VignetteStrengthFromSetting(1))));
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS
