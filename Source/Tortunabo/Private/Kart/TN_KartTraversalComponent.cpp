@@ -131,7 +131,7 @@ void UTN_KartTraversalComponent::CacheMapActors()
 	}
 }
 
-bool UTN_KartTraversalComponent::FindWaterSurface(const FVector& Location, float& OutSurfaceZ) const
+bool UTN_KartTraversalComponent::FindWaterSurfaceAt(const FVector& Location, float MinDepthCm, float& OutSurfaceZ) const
 {
 	// Pozas de las cascadas (agua por encima del mar).
 	for (const TWeakObjectPtr<ATN_ProcSlideZone>& Weak : Slides)
@@ -153,7 +153,7 @@ bool UTN_KartTraversalComponent::FindWaterSurface(const FVector& Location, float
 		return false;
 	}
 	const float SeaZ = Map->GetSeaLevelWorldZ();
-	if (SeaZ - Map->GetTerrainHeightAt(Location) < MinWaterDepthCm)
+	if (SeaZ - Map->GetTerrainHeightAt(Location) < FMath::Max(MinDepthCm, 0.f))
 	{
 		return false;
 	}
@@ -172,7 +172,7 @@ void UTN_KartTraversalComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	CacheMapActors();
 	const FVector Location = Kart->GetActorLocation();
 	float SurfaceZ = 0.f;
-	const bool bWater = FindWaterSurface(Location, SurfaceZ);
+	const bool bWater = FindWaterSurfaceAt(Location, MinWaterDepthCm, SurfaceZ);
 	const bool bWasFloating = bFloating;
 	const float AboveFloatLine = static_cast<float>(Location.Z) - (SurfaceZ + FloatLineCm);
 	bFloating = bWater && AboveFloatLine < (bFloating ? TNKartTraversalDetail::LeaveWaterAboveCm : TNKartTraversalDetail::EnterWaterAboveCm);

@@ -58,6 +58,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Karts|Agua")
 	float GetFold01() const { return Fold01; }
 
+	/**
+	 * Cota del agua bajo Location (el mar o la poza de una cascada); false si ahí no hay agua de al menos MinDepthCm. Con 0,
+	 * también la orilla poco honda por la que el kart rueda (#719).
+	 */
+	bool FindWaterSurfaceAt(const FVector& Location, float MinDepthCm, float& OutSurfaceZ) const;
+
 	/** Línea de flotación: el origen del kart flota esto por encima del agua (cm). */
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
 	float FloatLineCm = 15.f;
@@ -95,8 +101,6 @@ private:
 	ATN_Buggy* GetKart() const;
 	/** Generador, géiseres y toboganes del nivel (locales en cada máquina; se buscan cuando hay mapa). */
 	void CacheMapActors();
-	/** Cota del agua bajo Location (el mar o la poza de una cascada); false si ahí no hay agua bastante honda. */
-	bool FindWaterSurface(const FVector& Location, float& OutSurfaceZ) const;
 
 	/** Servidor y conductora local. */
 	void ApplyRaft(float DeltaSeconds, float SurfaceZ);

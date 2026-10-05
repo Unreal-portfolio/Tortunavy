@@ -138,6 +138,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool IsInPuddle() const { return bInPuddle; }
 
+	/** Si va por el agua (#719): WadeMinWheels ruedas metidas. Lo calcula cada máquina con la cota del agua. */
+	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
+	bool IsWading() const { return bWading; }
+
+	/** Fracción de una estadística con la vida que le queda (#720): 1 con la vida llena, MinScale a 0. */
+	float GetDamageStatScale(float MinScale) const;
+
 	/** Si el motor está cortado (semáforo, salida anticipada, reaparición o fin). */
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool IsEngineLocked() const;
@@ -258,6 +265,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	/** Cota del agua en Location: la de la pista del Rally (los karts añaden el mar y las pozas). False si ahí no hay agua. */
+	virtual bool FindWaterSurfaceZ(const FVector& Location, double& OutZ) const;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Buggy")
 	TObjectPtr<UTN_BuggyData> Data;
 
@@ -347,7 +357,10 @@ private:
 	void ApplyEngineTorque();
 	void ApplySteeringAssist();
 	void ApplyBumpKicks();
-	void ApplyPuddleSpeedCap();
+	/** Tope de velocidad del charco, del agua (#719) y de la vida perdida (#720), en cada máquina que simula el chasis. */
+	void ApplySpeedCaps();
+	/** Recalcula bWading con la cota del agua y el borde de abajo de cada rueda, en cada máquina. */
+	void UpdateWading();
 	/** Antivuelco (TNBuggy::AntiRollAccel) en cada máquina que simula el chasis. */
 	void ApplyAntiRoll();
 	void HoldLockedInPlace();
@@ -623,6 +636,10 @@ private:
 	bool bWheelFrictionApplied = false;
 	float AppliedGripMultiplier = 1.f;
 	bool bEngineTorqueLockedApplied = false;
+	/** Fracción del par por la vida perdida con la que se puso el par del motor por última vez (#720). */
+	float AppliedDamageTorqueScale = 1.f;
+	/** Ruedas metidas en el agua (#719). */
+	bool bWading = false;
 	/** Fuerza del turbo con la que se puso el par del motor por última vez. */
 	float AppliedBoostStrength = 0.f;
 	/** Avance lineal de la rampa del turbo [0, 1] y fuerza que da (UTN_BuggyData::EvaluateBoostRamp). */

@@ -370,6 +370,17 @@ void ATN_KartBuggy::MeasureRideHeight()
 	}
 }
 
+bool ATN_KartBuggy::FindWaterSurfaceZ(const FVector& Location, double& OutZ) const
+{
+	float SurfaceZ = 0.f;
+	if (Traversal && Traversal->FindWaterSurfaceAt(Location, 0.f, SurfaceZ))
+	{
+		OutZ = SurfaceZ;
+		return true;
+	}
+	return Super::FindWaterSurfaceZ(Location, OutZ);
+}
+
 void ATN_KartBuggy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

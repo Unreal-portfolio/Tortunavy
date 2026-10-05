@@ -94,6 +94,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	/** Además de la pista del Rally, el mar, sus orillas y las pozas de las cascadas del mapa generado (#719). */
+	virtual bool FindWaterSurfaceZ(const FVector& Location, double& OutZ) const override;
 
 	/**
 	 * Karts: las cajas «?» dan objetos (UTN_KartItemComponent) que usa la artillera o, si va sola, la conductora, y la
