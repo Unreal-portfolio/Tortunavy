@@ -19,6 +19,11 @@ enum class ETNCoopItem : uint8
 	PufferFish,
 	/** Cáscara resbaladiza: se lanza al suelo (8 m como mucho) y deja un parche; quien lo pisa resbala un instante. */
 	SlipperyPeel,
+	/**
+	 * Concha: se lanza hasta 10 m y aturde al enemigo al que da (nunca a una tortuga). Distinta de la concha trampa de DT_Items
+	 * (UseType Conch, que se deja en el suelo): por eso su ItemId es «Coop_StunShell_<n>».
+	 */
+	StunShell,
 	Count
 };
 
@@ -84,6 +89,16 @@ namespace TNCoopItemTuning
 	inline constexpr float PeelSlipSpeed = 700.f;
 	inline constexpr float PeelSlipUp = 280.f;
 	inline constexpr float PeelEnemyStunSeconds = 1.5f;
+
+	/**
+	 * Concha: alcance (cm), grosor de la mira para encontrar al enemigo, segundos de aturdimiento, distancia a la que el
+	 * enemigo puede haberse movido mientras vuela y aún le da, y segundos que se queda en el suelo si no iba a nadie.
+	 */
+	inline constexpr float ShellRange = 1000.f;
+	inline constexpr float ShellAimRadius = 80.f;
+	inline constexpr float ShellStunSeconds = 4.f;
+	inline constexpr float ShellHitSlack = 200.f;
+	inline constexpr float ShellRestSeconds = 1.5f;
 
 	/** Objetos lanzados en arco: velocidad media (cm/s) para el tiempo de vuelo, mínimo de vuelo (s) y altura del arco. */
 	inline constexpr float ThrowSpeed = 1600.f;
@@ -199,4 +214,12 @@ namespace TNCoopItemRules
 	 * estaba casi parada), algo más rápido que iba y nunca menos de PeelSlipSpeed, con PeelSlipUp hacia arriba.
 	 */
 	TORTUNABO_API FVector SlipVelocity(const FVector& Velocity, const FVector& Facing);
+
+	// ── Concha ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+	/** La concha aturde a algo solo si es un enemigo que se deja aturdir y no es una tortuga. */
+	TORTUNABO_API bool CanShellStun(bool bIsTurtle, bool bIsEnemy, bool bAcceptsStun);
+
+	/** El enemigo sigue donde iba la concha al llegar (a menos de ShellHitSlack del punto). */
+	TORTUNABO_API bool IsShellHit(const FVector& AimedAt, const FVector& EnemyNow);
 }

@@ -143,6 +143,34 @@ namespace TNCoopItemArtDetail
 		Kit::AddFrustum(B, FVector(0.0, 0.0, 4.5), FVector(0.0, 0.0, 9.5), 1.6, 1.1, 6, Kit::Rgb(0x6E4A1A, 0.f), Kit::Rgb(0x3A2408, 0.f), false, true);
 	}
 
+	/**
+	 * Concha para lanzar (unos 26 cm): una caracola de espiral (no la vieira de los puntos, para no confundirlas), con
+	 * nudos en las vueltas y la boca rosa.
+	 */
+	void BuildStunShell(FBuffers& B)
+	{
+		const FLinearColor Shell = Kit::Rgb(0xF4E6D8, 0.35f);
+		const FLinearColor Band = Kit::Rgb(0xC98B6B, 0.3f);
+		Kit::AddFrustum(B, FVector(-8.0, 0.0, 0.0), FVector(13.0, 0.0, 0.0), 9.0, 1.2, 14, Shell, Shell, true, false);
+		// Vueltas de la espiral: bandas y nudos.
+		for (int32 Turn = 0; Turn < 4; ++Turn)
+		{
+			const double X = -5.0 + Turn * 4.5;
+			const double R = 9.0 - (X + 8.0) * (7.8 / 21.0);
+			Kit::AddFrustum(B, FVector(X, 0.0, 0.0), FVector(X + 1.2, 0.0, 0.0), R + 0.6, R + 0.3, 14, Band, Band, false, false);
+			for (int32 Knob = 0; Knob < 5; ++Knob)
+			{
+				const double A = Kit::KitTwoPi * (Knob + 0.5 * Turn) / 5.0;
+				Kit::AddBall(B, FVector(X + 0.6, FMath::Cos(A) * (R + 0.6), FMath::Sin(A) * (R + 0.6)), 1.4, 6, Shell);
+			}
+		}
+		// Boca abierta, rosa por dentro.
+		Kit::AddEllipsoid(B, FVector(-9.0, 1.5, -1.5), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(3.0, 8.0, 7.0), 12, 6,
+			Kit::Rgb(0xFF9EB0, 0.4f));
+		Kit::AddEllipsoid(B, FVector(-10.5, 1.5, -1.5), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(1.5, 5.5, 4.5), 10, 5,
+			Kit::Rgb(0xE0607A, 0.3f));
+	}
+
 	/** Corona de pinchos alrededor de la tortuga protegida. */
 	void BuildPufferSpikes(FBuffers& B)
 	{
@@ -169,6 +197,9 @@ namespace TNCoopItemArtDetail
 			return true;
 		case ETNCoopItem::SlipperyPeel:
 			BuildPeel(B);
+			return true;
+		case ETNCoopItem::StunShell:
+			BuildStunShell(B);
 			return true;
 		case ETNCoopItem::None:
 		default:
@@ -268,6 +299,29 @@ namespace TNCoopItemArtDetail
 		Body(Painter, Stem, 0x2A1A06, 0x8A5A24, 0x5A3A10, 26.f, 56.f);
 	}
 
+	void PaintStunShell(TNHUDArt::FPainter& Painter)
+	{
+		using namespace TNHUDArt;
+		// Caracola de lado: cono con la punta arriba a la derecha y la boca abajo a la izquierda, con bandas y chispa de golpe.
+		const TArray<FVector2f> Cone = { { 30.f, 70.f }, { 50.f, 38.f }, { 104.f, 18.f }, { 86.f, 74.f }, { 58.f, 98.f } };
+		const auto ShellBody = [&Cone](float px, float py) { return Polygon(px, py, Cone) - 6.f; };
+		const auto Mouth = [](float px, float py) { return Ellipse(px, py, 40.f, 84.f, 22.f, 16.f); };
+		const TArray<FVector2f> Spark = StarPoints(102.f, 96.f, 4, 5.f, 16.f);
+		const auto SparkSdf = [&Spark](float px, float py) { return Polygon(px, py, Spark); };
+		Painter.Sticker([&](float px, float py) { return FMath::Min(FMath::Min(ShellBody(px, py), Mouth(px, py)), SparkSdf(px, py)); }, 5.f);
+		TNCoopItemArtDetail::Body(Painter, ShellBody, 0x5A3020, 0xFFF4E6, 0xE2C2A6, 18.f, 98.f);
+		for (int32 Index = 0; Index < 3; ++Index)
+		{
+			const float T = 0.3f + Index * 0.2f;
+			const FVector2f A = FMath::Lerp(FVector2f(40.f, 54.f), FVector2f(100.f, 22.f), T);
+			const FVector2f C = FMath::Lerp(FVector2f(52.f, 96.f), FVector2f(92.f, 70.f), T);
+			Painter.Fill([&, A, C](float px, float py) { return FMath::Max(Segment(px, py, A.X, A.Y, C.X, C.Y, 2.5f), ShellBody(px, py) + 1.f); }, Hex(0xC98B6B));
+		}
+		TNCoopItemArtDetail::Body(Painter, Mouth, 0x5A2030, 0xFFB3C1, 0xE0607A, 70.f, 100.f);
+		Painter.Fill([](float px, float py) { return Ellipse(px, py, 40.f, 86.f, 11.f, 7.f); }, Hex(0xA8344E));
+		Painter.Fill(SparkSdf, Gold);
+	}
+
 	/** Dibuja el objeto en Painter. false si no tiene icono. */
 	bool PaintKind(TNHUDArt::FPainter& Painter, ETNCoopItem Kind)
 	{
@@ -278,6 +332,9 @@ namespace TNCoopItemArtDetail
 			return true;
 		case ETNCoopItem::SlipperyPeel:
 			PaintPeel(Painter);
+			return true;
+		case ETNCoopItem::StunShell:
+			PaintStunShell(Painter);
 			return true;
 		case ETNCoopItem::None:
 		default:

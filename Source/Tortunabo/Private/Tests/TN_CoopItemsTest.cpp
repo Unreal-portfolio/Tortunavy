@@ -264,4 +264,41 @@ bool FTNCoopItemsPeelTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCoopItemsShellTest,
+	"Tortunabo.Coop.Items.StunShell",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNCoopItemsShellTest::RunTest(const FString& Parameters)
+{
+	// Ficha y apilado: hasta 3 en el inventario, peso 10, ItemId propio (no la concha trampa de DT_Items).
+	const FTNCoopItemSpec& Spec = TNCoopItemRules::Spec(ETNCoopItem::StunShell);
+	TestEqual(TEXT("Límite de apilado 3"), Spec.MaxStack, 3);
+	TestEqual(TEXT("Peso 10"), Spec.LootWeight, 10.f);
+	TestEqual(TEXT("ItemId propio"), TNCoopItemRules::MakeItemId(ETNCoopItem::StunShell, 3), FName(TEXT("Coop_StunShell_3")));
+	int32 Count = 0;
+	TestEqual(TEXT("2 + 1: se apila"), TNCoopItemRules::DecideStack(ETNCoopItem::StunShell, 2, ETNCoopItem::StunShell, 1, Count), ETNCoopStack::Merge);
+	TestEqual(TEXT("Tres en el hueco"), Count, 3);
+	TestEqual(TEXT("La cuarta no se coge"), TNCoopItemRules::DecideStack(ETNCoopItem::StunShell, 3, ETNCoopItem::StunShell, 1, Count), ETNCoopStack::Full);
+	TestEqual(TEXT("Con otra cosa: otro hueco"), TNCoopItemRules::DecideStack(ETNCoopItem::SlipperyPeel, 1, ETNCoopItem::StunShell, 1, Count),
+		ETNCoopStack::Separate);
+	TestEqual(TEXT("Tras lanzar una de tres quedan dos"), TNCoopItemRules::ItemIdAfterUse(FName(TEXT("Coop_StunShell_3"))), FName(TEXT("Coop_StunShell_2")));
+
+	// Objetivo: solo enemigos que se dejan aturdir; nunca tortugas.
+	TestTrue(TEXT("Enemigo que se marea: sí"), TNCoopItemRules::CanShellStun(false, true, true));
+	TestFalse(TEXT("Enemigo que no se marea: no"), TNCoopItemRules::CanShellStun(false, true, false));
+	TestFalse(TEXT("Tortuga: nunca"), TNCoopItemRules::CanShellStun(true, false, true));
+	TestFalse(TEXT("Tortuga aunque implemente la interfaz: nunca"), TNCoopItemRules::CanShellStun(true, true, true));
+	TestFalse(TEXT("Decorado: no"), TNCoopItemRules::CanShellStun(false, false, true));
+
+	// Alcance de 10 m y acierto al llegar.
+	TestEqual(TEXT("Alcance de 10 m"), TNCoopItemTuning::ShellRange, 1000.f);
+	const FVector Origin(0.0, 0.0, 50.0);
+	TestEqual(TEXT("Más lejos se recorta a 10 m"),
+		FVector::Dist2D(Origin, TNCoopItemRules::ClampThrowTarget(Origin, FVector(3000.0, 0.0, 0.0), TNCoopItemTuning::ShellRange)), 1000.0, 0.1);
+	TestTrue(TEXT("El enemigo sigue ahí: le da"), TNCoopItemRules::IsShellHit(FVector(500.0, 0.0, 0.0), FVector(560.0, 40.0, 0.0)));
+	TestFalse(TEXT("Se ha ido lejos: falla"), TNCoopItemRules::IsShellHit(FVector(500.0, 0.0, 0.0), FVector(900.0, 0.0, 0.0)));
+	TestTrue(TEXT("Aturde unos segundos"), TNCoopItemTuning::ShellStunSeconds >= 2.f);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

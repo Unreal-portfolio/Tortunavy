@@ -13,6 +13,8 @@ namespace TNCoopItemRulesDetail
 		{ ETNCoopItem::PufferFish, TEXT("PufferFish"), 1, 1, 15.f },
 		// Cáscaras resbaladizas: lanzar, rango 8 m, suelo o enemigo, desestabiliza, peso 15 %, límite de apilado 2.
 		{ ETNCoopItem::SlipperyPeel, TEXT("SlipperyPeel"), 2, 1, 15.f },
+		// Conchas: lanzar, aturdir, rango 10 m, objetivo enemigo, peso 10 %, límite de apilado 3.
+		{ ETNCoopItem::StunShell, TEXT("StunShell"), 3, 1, 10.f },
 	};
 	static_assert(UE_ARRAY_COUNT(Specs) == static_cast<int32>(ETNCoopItem::Count), "Una ficha por objeto del coop, en el orden del enum");
 }
@@ -244,4 +246,14 @@ FVector TNCoopItemRules::SlipVelocity(const FVector& Velocity, const FVector& Fa
 	}
 	const double SlideSpeed = FMath::Max(static_cast<double>(TNCoopItemTuning::PeelSlipSpeed), Speed * 1.2);
 	return Dir * SlideSpeed + FVector(0.0, 0.0, TNCoopItemTuning::PeelSlipUp);
+}
+
+bool TNCoopItemRules::CanShellStun(bool bIsTurtle, bool bIsEnemy, bool bAcceptsStun)
+{
+	return !bIsTurtle && bIsEnemy && bAcceptsStun;
+}
+
+bool TNCoopItemRules::IsShellHit(const FVector& AimedAt, const FVector& EnemyNow)
+{
+	return FVector::Dist(AimedAt, EnemyNow) <= TNCoopItemTuning::ShellHitSlack;
 }

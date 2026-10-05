@@ -51,6 +51,13 @@ namespace TNCoopItemsDetail
 			UTN_CoopItemComponent* Effects = UTN_CoopItemComponent::FindOrAddOn(Turtle);
 			return Effects && Effects->GrantPuffer();
 		}
+		case ETNCoopItem::StunShell:
+			if (!ATN_CoopThrownItem::ServerThrowShell(Turtle))
+			{
+				return false;
+			}
+			TNTctItems::PlayCue(Turtle, ETNRaceSound::Throw, 1.3f);
+			return true;
 		case ETNCoopItem::SlipperyPeel:
 			if (!ATN_CoopThrownItem::ServerThrow(Turtle, static_cast<uint8>(Kind), TNCoopItemTuning::PeelRange))
 			{
@@ -71,6 +78,7 @@ FText TNCoopItems::DisplayName(ETNCoopItem Kind)
 	{
 	case ETNCoopItem::PufferFish: return NSLOCTEXT("TNCoop", "ItemPufferFish", "Pez globo");
 	case ETNCoopItem::SlipperyPeel: return NSLOCTEXT("TNCoop", "ItemSlipperyPeel", "Cáscara resbaladiza");
+	case ETNCoopItem::StunShell: return NSLOCTEXT("TNCoop", "ItemStunShell", "Concha");
 	case ETNCoopItem::None:
 	default:
 		return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
@@ -93,7 +101,7 @@ int32 TNCoopItems::CountOf(const FTN_InventoryItem& Item)
 
 bool TNCoopItems::IsAimed(ETNCoopItem Kind)
 {
-	return Kind == ETNCoopItem::SlipperyPeel;
+	return Kind == ETNCoopItem::SlipperyPeel || Kind == ETNCoopItem::StunShell;
 }
 
 bool TNCoopItems::ParseKind(const FString& Text, ETNCoopItem& OutKind)
