@@ -1139,6 +1139,14 @@ void ATortugaCharacter::OnJumped_Implementation()
 	{
 		MulticastPlaySfx(JumpSound);
 	}
+	// Título Saltarín (#798): el servidor cuenta los saltos de cada jugadora.
+	if (HasAuthority())
+	{
+		if (ATN_CoopPlayerState* TNPS = GetPlayerState<ATN_CoopPlayerState>())
+		{
+			TNPS->RegisterJump();
+		}
+	}
 }
 
 void ATortugaCharacter::Jump()

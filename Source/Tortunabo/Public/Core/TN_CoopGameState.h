@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
 #include "Core/TN_MatchFlowTypes.h"
+#include "Core/TN_EndTitles.h"
 #include "TN_CoopGameState.generated.h"
 
 /** @brief Disparado en clientes cuando MatchFlowState replica, y manualmente en server vía BroadcastFlowStateChange(). */
@@ -137,6 +138,13 @@ public:
 	void Server_UpsertRaceResult(int32 InPlayerId, const FString& InPlayerName,
 		int32 InFinishRank, float InFinishTime, int32 InRaceScore, bool bInEliminated);
 
+	/**
+	 * Título Saltarín de la partida (#798): quien más ha saltado (empate: quien entró antes en la sala). Lo decide el
+	 * servidor al entrar en Results (BroadcastFlowStateChange) y lo enseña la pantalla de resultados.
+	 */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Titles")
+	FTN_EndTitle JumperTitle;
+
 	// ── Quick Chat ────────────────────────────────────────────────────────────
 	/** Disparado en todas las máquinas cuando llega un nuevo mensaje de Quick Chat. Bindear en BP o C++. */
 	UPROPERTY(BlueprintAssignable, Category = "QuickChat")
@@ -178,4 +186,7 @@ private:
 	int32 PersistedCoopScoreThisRace = 0;
 
 	int32 NextQuickChatSequence = 0;
+
+	/** Servidor: decide los títulos de fin de partida con los PlayerState de la sala. */
+	void AwardEndTitles();
 };

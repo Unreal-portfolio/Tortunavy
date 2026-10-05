@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-05 23:19\n"
-"PO-Revision-Date: 2026-10-05 23:19\n"
+"POT-Creation-Date: 2026-10-05 23:24\n"
+"PO-Revision-Date: 2026-10-05 23:24\n"
 "Language-Team: \n"
 "Language: zh-Hans\n"
 "MIME-Version: 1.0\n"
@@ -6076,162 +6076,162 @@ msgid "No se han podido cargar los créditos."
 msgstr "无法加载制作人员名单。"
 
 #. Key:	QuickChatFallback
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(306)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(306)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(315)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(315)
 msgctxt "TNHUD,QuickChatFallback"
 msgid "Mensaje #{0}"
 msgstr "消息 #{0}"
 
 #. Key:	ResultsRankEliminated
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(361)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(361)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
 msgctxt "TNHUD,ResultsRankEliminated"
 msgid "Eliminado"
 msgstr "被淘汰"
 
 #. Key:	ResultsRankPlace
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(365)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(365)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(374)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(374)
 msgctxt "TNHUD,ResultsRankPlace"
 msgid "Puesto: #{0}"
 msgstr "名次：#{0}"
 
 #. Key:	ResultsTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(377)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(377)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(386)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(386)
 msgctxt "TNHUD,ResultsTime"
 msgid "Tiempo: {0}s"
 msgstr "用时：{0} 秒"
 
 #. Key:	ResultsSpectatorHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(385)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(385)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(394)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(394)
 msgctxt "TNHUD,ResultsSpectatorHint"
 msgid "Scroll para cambiar de jugador"
 msgstr "滚动滚轮切换玩家"
 
 #. Key:	ScoreboardRank
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(511)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(511)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(520)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(520)
 msgctxt "TNHUD,ScoreboardRank"
 msgid "{0}º"
 msgstr "第{0}名"
 
 #. Key:	ScoreboardTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(518)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(518)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(527)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(527)
 msgctxt "TNHUD,ScoreboardTime"
 msgid "{0}s"
 msgstr "{0} 秒"
 
 #. Key:	ReturningToLobby
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(541)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(541)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(550)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(550)
 msgctxt "TNHUD,ReturningToLobby"
 msgid "Volviendo al lobby en: {0}"
 msgstr "{0} 秒后返回大厅"
 
 #. Key:	ResultsTitleEliminated
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(548)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(548)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(557)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(557)
 msgctxt "TNHUD,ResultsTitleEliminated"
 msgid "¡Eliminado!"
 msgstr "被淘汰啦！"
 
 #. Key:	ResultsTitleFirst
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(553)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(553)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
 msgctxt "TNHUD,ResultsTitleFirst"
 msgid "¡Primero!"
 msgstr "第一名！"
 
 #. Key:	ResultsTitleSecond
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(554)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(554)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(563)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(563)
 msgctxt "TNHUD,ResultsTitleSecond"
 msgid "Segundo"
 msgstr "第二名"
 
 #. Key:	ResultsTitleThird
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(555)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(555)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
 msgctxt "TNHUD,ResultsTitleThird"
 msgid "Tercero"
 msgstr "第三名"
 
 #. Key:	ResultsTitlePlace
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(558)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(558)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(567)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(567)
 msgctxt "TNHUD,ResultsTitlePlace"
 msgid "Puesto #{0}"
 msgstr "第{0}名"
 
 #. Key:	FlowWaiting
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(572)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(572)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(581)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(581)
 msgctxt "TNHUD,FlowWaiting"
 msgid "Sala: {0}/{1} | Zona: {2}/{3}"
 msgstr "房间：{0}/{1} | 区域：{2}/{3}"
 
 #. Key:	FlowCountdown
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(576)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(576)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(585)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(585)
 msgctxt "TNHUD,FlowCountdown"
 msgid "¡Todos listos! Empieza en: {0}"
 msgstr "全员就绪！{0} 秒后开始"
 
 #. Key:	FlowPreparing
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(578)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(578)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(587)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(587)
 msgctxt "TNHUD,FlowPreparing"
 msgid "Preparando..."
 msgstr "准备中……"
 
 #. Key:	FlowInProgress
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(580)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(580)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(589)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(589)
 msgctxt "TNHUD,FlowInProgress"
 msgid "Carrera en curso. Meta: {0}/{1}"
 msgstr "比赛进行中。已到终点：{0}/{1}"
 
 #. Key:	FlowWaitingHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(594)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(594)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(603)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(603)
 msgctxt "TNHUD,FlowWaitingHint"
 msgid "El contador arranca cuando todos los jugadores conectados estén en la zona."
 msgstr "所有在线玩家都进入区域后才会开始倒计时。"
 
 #. Key:	FlowCountdownDetail
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(596)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(596)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(605)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(605)
 msgctxt "TNHUD,FlowCountdownDetail"
 msgid "Conectados: {0}/{1} | Zona: {2}/{3}"
 msgstr "已连接：{0}/{1} | 区域：{2}/{3}"
 
 #. Key:	FlowCinematicHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(600)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(600)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(609)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(609)
 msgctxt "TNHUD,FlowCinematicHint"
 msgid "Mantente preparado para el viaje al mapa de carrera."
 msgstr "做好前往竞速地图的准备。"
 
 #. Key:	FlowDeathZone
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(608)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(608)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(617)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(617)
 msgctxt "TNHUD,FlowDeathZone"
 msgid "Peligro: sal de la zona de muerte ({0}s)"
 msgstr "危险：快离开死亡区域（{0} 秒）"
 
 #. Key:	FlowFinishHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(613)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(613)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(622)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(622)
 msgctxt "TNHUD,FlowFinishHint"
 msgid "Cruza la meta para pasar a espectador."
 msgstr "冲过终点线，就能转为观战。"
 
 #. Key:	ChatLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(651)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(651)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(660)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(660)
 msgctxt "TNHUD,ChatLine"
 msgid "{0}: {1}"
 msgstr "{0}：{1}"
@@ -6377,53 +6377,60 @@ msgid "Dejando la partida… suelta B para quedarte"
 msgstr "正在退出游戏…… 松开 B 就能留下"
 
 #. Key:	CoopScoreDolls
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(13)
-#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(13)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(14)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(14)
 msgctxt "TNHUD,CoopScoreDolls"
 msgid "Muñecos tortuga: {0}/{1}  +{2}"
 msgstr "乌龟玩偶：{0}/{1}  +{2}"
 
 #. Key:	CoopScoreShells
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(15)
-#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(15)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(16)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(16)
 msgctxt "TNHUD,CoopScoreShells"
 msgid "Conchas del nivel: {0}/{1}  +{2}"
 msgstr "关卡贝壳：{0}/{1}  +{2}"
 
 #. Key:	CoopScoreFinished
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(18)
-#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(18)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(19)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(19)
 msgctxt "TNHUD,CoopScoreFinished"
 msgid "Llegada a la meta  +{0}"
 msgstr "抵达终点  +{0}"
 
 #. Key:	CoopScoreNotFinished
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(19)
-#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(19)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(20)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(20)
 msgctxt "TNHUD,CoopScoreNotFinished"
 msgid "Sin llegar a la meta  +{0}"
 msgstr "未抵达终点  +{0}"
 
 #. Key:	CoopScorePuzzle
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(21)
-#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(21)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(22)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(22)
 msgctxt "TNHUD,CoopScorePuzzle"
 msgid "Eficiencia de puzle: {0}  +{1}"
 msgstr "解谜效率：{0}  +{1}"
 
 #. Key:	CoopScoreNoPuzzle
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(23)
-#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(23)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(24)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(24)
 msgctxt "TNHUD,CoopScoreNoPuzzle"
 msgid "Sin puzles en el nivel  +{0}"
 msgstr "本关没有谜题  +{0}"
 
 #. Key:	CoopScoreTotal
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(24)
-#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(24)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(25)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(25)
 msgctxt "TNHUD,CoopScoreTotal"
 msgid "Puntuación final: {0}"
 msgstr "最终得分：{0}"
+
+#. Key:	EndTitleJumper
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(35)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(35)
+msgctxt "TNHUD,EndTitleJumper"
+msgid "Saltarín: {0} ({1} {1}|plural(one=salto,other=saltos))"
+msgstr "跳跳达人：{0}（{1}次）"
 
 #. Key:	ShellGain
 #. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1051)
@@ -6468,22 +6475,22 @@ msgid "Anima a los demás hasta que lleguen al agua."
 msgstr "为其他小龟加油，直到他们冲进水里。"
 
 #. Key:	PreviewSay
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1535)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1535)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1540)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1540)
 msgctxt "TNHUD,PreviewSay"
 msgid "¡Por aquí, que hay conchas!"
 msgstr "这边这边，有贝壳！"
 
 #. Key:	WheelHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1763)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1763)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
 msgctxt "TNHUD,WheelHint"
 msgid "Apunta con el ratón"
 msgstr "用鼠标指向选项"
 
 #. Key:	WheelHintPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1763)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1763)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
 msgctxt "TNHUD,WheelHintPad"
 msgid "Apunta con el stick"
 msgstr "用摇杆指向选项"

@@ -1,6 +1,7 @@
 #include "UI/HUD/TN_ResultsTexts.h"
 
 #include "Core/TN_CoopScore.h"
+#include "Core/TN_EndTitles.h"
 #include "Core/TN_LocText.h"
 
 FText TNResultsTexts::CoopScoreBreakdown(const FTN_CoopScoreBreakdown& Score)
@@ -23,4 +24,14 @@ FText TNResultsTexts::CoopScoreBreakdown(const FTN_CoopScoreBreakdown& Score)
 		: FText::Format(NSLOCTEXT("TNHUD", "CoopScoreNoPuzzle", "Sin puzles en el nivel  +{0}"), TNLocText::Int(Score.PuzzlePoints)));
 	Lines.Add(FText::Format(NSLOCTEXT("TNHUD", "CoopScoreTotal", "Puntuación final: {0}"), TNLocText::Int(Score.Total)));
 	return FText::Join(INVTEXT("\n"), Lines);
+}
+
+FText TNResultsTexts::JumperTitle(const FTN_EndTitle& Title)
+{
+	if (!Title.IsAwarded())
+	{
+		return FText::GetEmpty();
+	}
+	return FText::Format(NSLOCTEXT("TNHUD", "EndTitleJumper", "Saltarín: {0} ({1} {1}|plural(one=salto,other=saltos))"),
+		TNLocText::PlayerName(Title.PlayerName), Title.Count);
 }

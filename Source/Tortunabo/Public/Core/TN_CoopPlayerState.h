@@ -257,6 +257,17 @@ public:
 	UFUNCTION()
 	void OnRep_CoopScore();
 
+	/**
+	 * Servidor: saltos de la partida (#798, título Saltarín). Lo suma ATortugaCharacter::OnJumped en el servidor. No se
+	 * replica: el título lo decide el servidor (ATN_CoopGameState::JumperTitle). Empieza de cero en cada mapa (el
+	 * PlayerState es nuevo tras el viaje); no lo toca ResetForNewRace, así cuentan todas las rondas.
+	 */
+	UPROPERTY()
+	int32 JumpCount = 0;
+
+	/** Servidor: un salto más. */
+	void RegisterJump() { if (HasAuthority()) { ++JumpCount; } }
+
 	/** Pareja de la ronda actual en 2vs2 (0 o 1). -1 fuera de 2vs2. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
 	int32 TeamIndex = -1;

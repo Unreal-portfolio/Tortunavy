@@ -174,8 +174,17 @@ void UTN_CoopFlowHUDWidget::RefreshTexts()
 	}
 }
 
-void UTN_CoopFlowHUDWidget::RefreshResultsExtras(const ATN_CoopGameState* /*GameState*/)
+void UTN_CoopFlowHUDWidget::RefreshResultsExtras(const ATN_CoopGameState* GameState)
 {
+	if (EndTitleText)
+	{
+		const FText Title = GameState ? TNResultsTexts::JumperTitle(GameState->JumperTitle) : FText::GetEmpty();
+		if (!Title.EqualTo(EndTitleText->GetText()))
+		{
+			EndTitleText->SetText(Title);
+		}
+		EndTitleText->SetVisibility(Title.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
+	}
 	const APlayerController* PC = GetOwningPlayer();
 	const ATN_CoopPlayerState* PS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
 	if (CoopScoreText)

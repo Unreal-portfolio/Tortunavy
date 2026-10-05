@@ -1424,6 +1424,11 @@ void UTN_RunFlowHUDWidget::BuildTree()
 		CoopScoreText->SetJustification(ETextJustify::Center);
 		CoopScoreText->SetVisibility(ESlateVisibility::Collapsed);
 		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(CoopScoreText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 0.f, 0.f, 14.f)); }
+		// Títulos de fin de partida (#798): Saltarín, en dorado.
+		EndTitleText = MakeText(Tree, TEXT("EndTitleText"), FText::GetEmpty(), TEXT("Bold"), 20, TNHUDArt::Gold);
+		EndTitleText->SetJustification(ETextJustify::Center);
+		EndTitleText->SetVisibility(ESlateVisibility::Collapsed);
+		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(EndTitleText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 0.f, 0.f, 12.f)); }
 
 		// Clasificación: una fila por jugador que cabe (puesto, nombre, tiempo, puntos con su concha), alternando el fondo.
 		// Las cuatro primeras se ven siempre; de la quinta a la octava, solo si hay tantos resultados (ApplyScoreboardDensity,

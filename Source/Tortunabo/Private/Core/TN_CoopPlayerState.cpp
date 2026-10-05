@@ -198,6 +198,7 @@ void ATN_CoopPlayerState::CopyProperties(APlayerState* PlayerState)
 	Target->TeamIndex = TeamIndex;
 	Target->TurtleDollsCollected = TurtleDollsCollected;
 	Target->CollectedShellPoints = CollectedShellPoints;
+	Target->JumpCount = JumpCount;
 	Target->CoopScore = CoopScore;
 	Target->EquippedHelmetId = EquippedHelmetId;
 	Target->EquippedSkinId = EquippedSkinId;

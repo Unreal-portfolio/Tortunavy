@@ -70,6 +70,10 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> CoopScoreText;
 
+	// Títulos de fin de partida (#798): «Saltarín: nombre (N saltos)». Oculto si nadie se lo lleva.
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> EndTitleText;
+
 	// "Scroll para cambiar de jugador"  — shown only while spectating
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> SpectatorHint;
