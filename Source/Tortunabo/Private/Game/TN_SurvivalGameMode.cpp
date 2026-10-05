@@ -4,6 +4,7 @@
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_GameModeSpawnUtils.h"
 #include "Game/TN_SurvivalLoot.h"
+#include "Multiplayer/MP_GameInstance.h"
 #include "Player/TortugaCharacter.h"
 #include "World/TN_ChunkManager.h"
 #include "World/TN_StormVolume.h"
@@ -56,7 +57,12 @@ void ATN_SurvivalGameMode::StartPlay()
 		const FString SeedOption = UGameplayStatics::ParseOption(OptionsString, TEXT("SurvivalSeed"));
 		const int32 Seed = SeedOption.IsEmpty() ? FMath::RandRange(1, 1 << 30) : FCString::Atoi(*SeedOption);
 		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Semilla de la partida: %d (?SurvivalSeed=%d para repetirla)."), Seed, Seed);
-		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap());
+		// La dificultad elegida con el general decide en qué mapa del catálogo se empieza (#730); ?ProcDifficulty= manda.
+		const ETNProcDifficulty Difficulty = ResolveDifficulty();
+		const int32 StartDifficulty = TNSurvivalLogic::StartMapDifficulty(Difficulty);
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Dificultad %s: el nivel 1 juega un mapa de dificultad %d y cada nivel sube una hasta 5."),
+			*UEnum::GetValueAsString(Difficulty), StartDifficulty);
+		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap(), StartDifficulty);
 	}
 	else
 	{
@@ -77,6 +83,20 @@ void ATN_SurvivalGameMode::StartPlay()
 
 	Super::StartPlay();
 	PublishLevel();
+}
+
+ETNProcDifficulty ATN_SurvivalGameMode::ResolveDifficulty() const
+{
+	ETNProcDifficulty Difficulty = ETNProcDifficulty::Normal;
+	if (const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
+	{
+		Difficulty = GI->SelectedProcDifficulty;
+	}
+	const FString Option = UGameplayStatics::ParseOption(OptionsString, TEXT("ProcDifficulty"));
+	if (Option.Equals(TEXT("Easy"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Easy; }
+	else if (Option.Equals(TEXT("Normal"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Normal; }
+	else if (Option.Equals(TEXT("Hard"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Hard; }
+	return Difficulty;
 }
 
 uint32 ATN_SurvivalGameMode::ParseFirstLevelMap() const

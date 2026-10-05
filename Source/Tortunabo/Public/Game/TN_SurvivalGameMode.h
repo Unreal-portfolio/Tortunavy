@@ -12,8 +12,9 @@ class ATN_PathStorm;
  * @brief Modo Supervivencia: niveles cortos uno tras otro hasta que queda una tortuga.
  *
  * Se juega en LVL_Run con ?game=Survival (alias en DefaultEngine.ini). ATN_ChunkManager pasa al modo por niveles: cada
- * nivel es un mapa del catálogo de Supervivencia (#515) generado entero (ATN_ProcMapGenerator, #274): el nivel N juega
- * uno de dificultad min(N, 5) que no haya salido en la partida (TN_SurvivalMapSelection.h, #518). La semilla de la
+ * nivel es un mapa del catálogo de Supervivencia (#515) generado entero (ATN_ProcMapGenerator, #274) que no haya salido en
+ * la partida (TN_SurvivalMapSelection.h, #518). El nivel 1 juega uno de la dificultad que marca la elegida con el general
+ * (fácil 1, normal 3, difícil 5; ?ProcDifficulty= manda, #730) y cada nivel sube una hasta 5. La semilla de la
  * partida es al azar o la de ?SurvivalSeed=N; ?SurvivalMap=<semilla> fija el mapa del nivel 1.
  *  - La espera del lobby es en el corral de LVL_Run; al empezar, todos salen desde la salida del mapa del nivel 1.
  *  - Quien llega a la meta espera como espectador; cuando todos los vivos han llegado, se genera el siguiente
@@ -115,6 +116,9 @@ private:
 
 	/** Da a cada una de Survivors los cocos de su puesto de llegada al nivel anterior (Arrivals, mismo orden; <0 = sin hora). */
 	void GiveStartItems(const TArray<APlayerController*>& Survivors, const TArray<float>& Arrivals);
+
+	/** Dificultad de la partida: la elegida con el general (UMP_GameInstance::SelectedProcDifficulty); ?ProcDifficulty= manda. */
+	ETNProcDifficulty ResolveDifficulty() const;
 
 	/** Semilla de ?SurvivalMap= si es un mapa del catálogo (o el de pruebas); 0 si no se pide o no es válida. */
 	uint32 ParseFirstLevelMap() const;
