@@ -68,6 +68,12 @@ namespace TNSurvivalCatalog
 	constexpr double GiantCrabSearchReach = 2000.0;
 	/** Un cangrejo gigante cada tanto de un tramo (cm), sin pasar de los que diga el catálogo. */
 	constexpr double GiantCrabSpacing = 2000.0;
+	/**
+	 * Dos cangrejos gigantes nunca a menos de esto (cm, a lo largo del camino): eliminan y no van en grupo (#734). Su correa
+	 * es de ~30 m, así que nunca persiguen dos a la vez. El que quedaría más cerca se cambia por un enjambre de pulgas, que
+	 * se esquiva andando y no elimina.
+	 */
+	constexpr double GiantCrabMinGap = 6000.0;
 	/** Zonas de gaviotas de un tramo: una cada tanto (cm) del camino. */
 	constexpr double GullZoneSpacing = 3000.0;
 	/** Radio (cm) del charco de arenas movedizas como mucho (y no más que el camino). */
@@ -409,6 +415,8 @@ namespace TNSurvivalCatalog
 		if (M.Num() < 2 || !FindMap(Seed)) { return Out; }
 		const double Total = M.Last().S;
 		int32 Side = 1;
+		// Dónde van ya los cangrejos gigantes (GiantCrabMinGap).
+		TArray<double> GiantCrabAlong;
 
 		for (const FTrapSpot& Spot : TrapsOf(Seed, DensityPct))
 		{
@@ -457,7 +465,16 @@ namespace TNSurvivalCatalog
 					for (const double S : Spread(From, To, GiantCrabCount(From, To, Spot.Count), 0.0))
 					{
 						const int32 i = WidestNear(M, NearestFree(M, SampleAtDistance(M, S)), GiantCrabSearchReach);
-						if (i != INDEX_NONE) { Out.Add(At(M, ETrap::Crab, i, 0.0)); }
+						if (i == INDEX_NONE) { continue; }
+						// Nunca dos juntos: si ya hay uno cerca, pulgas en su lugar.
+						const bool bCrowded = GiantCrabAlong.ContainsByPredicate([&M, i](double A) { return FMath::Abs(A - M[i].S) < GiantCrabMinGap; });
+						if (bCrowded)
+						{
+							Out.Add(At(M, ETrap::SandFleas, i, 0.0));
+							continue;
+						}
+						GiantCrabAlong.Add(M[i].S);
+						Out.Add(At(M, ETrap::Crab, i, 0.0));
 					}
 					break;
 				}

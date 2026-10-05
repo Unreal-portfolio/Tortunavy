@@ -115,6 +115,8 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalCatalogPlacementTest,
 bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 {
 	using namespace TNSurvivalCatalog;
+	int32 TotalCrabs = 0;
+	double TotalMeters = 0.0;
 	for (const FMapEntry& M : CatalogAndTestMaps())
 	{
 		const FString Ctx = FString::Printf(TEXT("semilla %u (%s)"), M.Seed, M.Name);
@@ -138,6 +140,21 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 		}
 		TMap<ETrap, int32> PlacedByTrap;
 		for (const FTrapPlacement& P : Plan) { PlacedByTrap.FindOrAdd(P.Trap)++; }
+		// Los cangrejos gigantes que quedarían juntos son pulgas (#734): se cuentan juntos.
+		ExpectedByTrap.FindOrAdd(ETrap::SandFleas) += ExpectedByTrap.FindRef(ETrap::Crab);
+		ExpectedByTrap.Remove(ETrap::Crab);
+		PlacedByTrap.FindOrAdd(ETrap::SandFleas) += PlacedByTrap.FindRef(ETrap::Crab);
+		PlacedByTrap.Remove(ETrap::Crab);
+		TArray<double> CrabAlong;
+		for (const FTrapPlacement& P : Plan) { if (P.Trap == ETrap::Crab) { CrabAlong.Add(P.Along); } }
+		CrabAlong.Sort();
+		for (int32 k = 1; k < CrabAlong.Num(); ++k)
+		{
+			TestTrue(Ctx + FString::Printf(TEXT(": cangrejos gigantes a %.0f m (nunca juntos)"), (CrabAlong[k] - CrabAlong[k - 1]) / 100.0),
+				CrabAlong[k] - CrabAlong[k - 1] >= GiantCrabMinGap);
+		}
+		TotalCrabs += CrabAlong.Num();
+		TotalMeters += L.Main.Last().S / 100.0;
 		for (const TPair<ETrap, int32>& Pair : ExpectedByTrap)
 		{
 			TestEqual(Ctx + FString::Printf(TEXT(": todas las %s colocadas"), TrapName(Pair.Key)), PlacedByTrap.FindRef(Pair.Key), Pair.Value);
@@ -226,6 +243,8 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 				&& TNProcMap::GapStyleOf(L.Features[B.Feature]) == TNProcMap::EGapStyle::Beam);
 		}
 	}
+	AddInfo(FString::Printf(TEXT("Cangrejos gigantes: %d en %.0f m de camino (uno cada %.0f m)."), TotalCrabs, TotalMeters,
+		TotalCrabs > 0 ? TotalMeters / TotalCrabs : 0.0));
 	return true;
 }
 
