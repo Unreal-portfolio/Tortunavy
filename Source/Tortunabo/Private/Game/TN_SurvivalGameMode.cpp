@@ -29,6 +29,8 @@ namespace
 ATN_SurvivalGameMode::ATN_SurvivalGameMode()
 {
 	bAllowRevive = false;
+	// El panel de resultados dice qué la ha eliminado (#728).
+	bRecordDeathCause = true;
 
 	// Los mismos Blueprints que BP_RunGameMode (como ATN_ProcMapGameMode): la clase C++ sirve tal cual como
 	// ?game=Survival sin un BP propio.

@@ -1,5 +1,6 @@
 #include "UI/HUD/TN_CoopFlowHUDWidget.h"
 #include "Core/TN_CoopGameState.h"
+#include "Core/TN_DeathCause.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_LocText.h"
 #include "Blueprint/WidgetTree.h"
@@ -341,7 +342,8 @@ void UTN_CoopFlowHUDWidget::ShowResultsPanel(const ATN_CoopGameState* GameState)
 	{
 		if (bEliminated)
 		{
-			ResultsRankText->SetText(NSLOCTEXT("TNHUD", "ResultsRankEliminated", "Eliminado"));
+			// Qué la ha eliminado (#728); sin causa conocida, «Eliminado».
+			ResultsRankText->SetText(TNDeathCause::Describe(TNPS->DeathCause));
 		}
 		else if (bFinishedNorm)
 		{

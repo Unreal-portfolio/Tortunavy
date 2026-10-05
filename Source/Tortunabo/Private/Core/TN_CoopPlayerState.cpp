@@ -108,6 +108,7 @@ void ATN_CoopPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ATN_CoopPlayerState, FinishTimeSeconds);
 	DOREPLIFETIME(ATN_CoopPlayerState, FinishRank);
 	DOREPLIFETIME(ATN_CoopPlayerState, bIsEliminated);
+	DOREPLIFETIME(ATN_CoopPlayerState, DeathCause);
 	DOREPLIFETIME(ATN_CoopPlayerState, RaceScore);
 	DOREPLIFETIME(ATN_CoopPlayerState, RoundWins);
 	DOREPLIFETIME(ATN_CoopPlayerState, RaceShellHalves);
@@ -188,6 +189,7 @@ void ATN_CoopPlayerState::CopyProperties(APlayerState* PlayerState)
 	Target->bIsDBNO = Saved.bIsDBNO;
 	Target->bHasFinishedRun = Saved.bHasFinishedRun;
 	Target->bIsEliminated = Saved.bIsEliminated;
+	Target->DeathCause = Saved.bIsEliminated ? DeathCause : ETNDeathCause::Unknown;
 	Target->FinishRank = FinishRank;
 	Target->FinishTimeSeconds = FinishTimeSeconds;
 	Target->RaceScore = RaceScore;
@@ -208,6 +210,7 @@ void ATN_CoopPlayerState::ResetForNewRace()
 	DBNOBleedoutTimeRemaining = -1.f;
 	FinishRank = 0;
 	bIsEliminated = false;
+	DeathCause = ETNDeathCause::Unknown;
 	FinishTimeSeconds = -1.f;
 	DeathZoneTimeRemaining = -1.f;
 	RaceScore = 0;

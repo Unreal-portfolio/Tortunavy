@@ -260,7 +260,7 @@ void ATN_SeagullActor::TickStrikeCountdowns()
 			// Matar al jugador (mismo efecto que zona de muerte)
 			if (ATN_RunGameMode* RunGameMode = GetWorld()->GetAuthGameMode<ATN_RunGameMode>())
 			{
-				RunGameMode->MarkPlayerDead(PC);
+				RunGameMode->MarkPlayerDeadBy(PC, ETNDeathCause::Seagull);
 			}
 		}
 	}

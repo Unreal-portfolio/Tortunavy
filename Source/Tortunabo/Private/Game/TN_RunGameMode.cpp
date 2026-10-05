@@ -536,6 +536,15 @@ void ATN_RunGameMode::MarkPlayerFinished(APlayerController* PlayerController)
 	UpdateRoundProgressAndMaybeFinish();
 }
 
+void ATN_RunGameMode::MarkPlayerDeadBy(APlayerController* PlayerController, ETNDeathCause Cause)
+{
+	// Las subclases pasan por aquí con Super::MarkPlayerDead: la causa llega hasta donde se elimina.
+	const ETNDeathCause Previous = PendingDeathCause;
+	PendingDeathCause = Cause;
+	MarkPlayerDead(PlayerController);
+	PendingDeathCause = Previous;
+}
+
 void ATN_RunGameMode::MarkPlayerDead(APlayerController* PlayerController)
 {
 	if (!HasAuthority() || !PlayerController)
@@ -579,12 +588,13 @@ void ATN_RunGameMode::MarkPlayerDead(APlayerController* PlayerController)
 	// Guardamos el tiempo real de muerte para que la UI pueda ordenar eliminados por tiempo.
 	TNPS->FinishRank = 0;
 	TNPS->bIsEliminated = true;
+	TNPS->DeathCause = bRecordDeathCause ? PendingDeathCause : ETNDeathCause::Unknown;
 	TNPS->FinishTimeSeconds = GetWorld()->GetTimeSeconds() - MatchStartServerTime;
 	TNPS->DeathZoneTimeRemaining = -1.f;
 	TNPS->ForceNetUpdate();
 
-	UE_LOG(LogTortunabo, Log, TEXT("[DEATH] '%s' eliminated · time=%.2fs · score=%d"),
-		*GetNameSafe(PlayerController), TNPS->FinishTimeSeconds, TNPS->RaceScore);
+	UE_LOG(LogTortunabo, Log, TEXT("[DEATH] '%s' eliminated · time=%.2fs · score=%d · causa=%s"),
+		*GetNameSafe(PlayerController), TNPS->FinishTimeSeconds, TNPS->RaceScore, *UEnum::GetValueAsString(TNPS->DeathCause));
 
 	// Scoreboard global — eliminado al final del array
 	if (ATN_CoopGameState* GS = GetGameState<ATN_CoopGameState>())
@@ -1128,7 +1138,7 @@ void ATN_RunGameMode::TickDBNOBleedout()
 		{
 			UE_LOG(LogTortunabo, Log, TEXT("[DBNO] %s bleedout expired → dying for real"), *GetNameSafe(PC));
 			DBNOPlayers.Remove(WeakPC);
-			MarkPlayerDead(PC);
+			MarkPlayerDeadBy(PC, ETNDeathCause::Bleedout);
 		}
 	}
 
@@ -1181,7 +1191,7 @@ void ATN_RunGameMode::CheckAllAliveDBNO()
 		{
 			if (APlayerController* PC = WeakPC.Get())
 			{
-				MarkPlayerDead(PC);
+				MarkPlayerDeadBy(PC, ETNDeathCause::Bleedout);
 			}
 		}
 		DBNOPlayers.Empty();
