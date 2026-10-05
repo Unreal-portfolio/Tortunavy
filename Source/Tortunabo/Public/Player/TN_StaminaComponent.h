@@ -59,6 +59,21 @@ public:
 	float ComputeMaxWalkSpeed(bool bSprinting, float EnvironmentMultiplier, float RaceMultiplier = 1.f) const;
 
 	/**
+	 * Como ComputeMaxWalkSpeed, pero los topes predichos (llevar a otra, mareo: TNMovementLimits::PredictedCapBit) son los
+	 * del movimiento que se simula (MovePredictedCaps), no los que tiene ahora esta máquina (#575, #574).
+	 */
+	float ComputeMoveMaxWalkSpeed(bool bSprinting, float EnvironmentMultiplier, float RaceMultiplier, uint8 MovePredictedCaps) const;
+
+	/** Los topes predichos que tiene puestos esta máquina (bits de TNMovementLimits). */
+	uint8 GetPredictedCapMask() const { return PredictedCapMask; }
+
+	/**
+	 * Servidor: con qué topes predichos simula el movimiento de su dueño, que pide ClaimedMask
+	 * (TNMovementLimits::ResolvePredictedCaps con lo que tiene el servidor y cuándo lo cambió).
+	 */
+	uint8 ResolveClientPredictedCaps(uint8 ClaimedMask) const;
+
+	/**
 	 * @brief Otorga stamina ilimitada durante DurationSeconds (Barrita Energética / boosts).
 	 * @param DurationSeconds Duración del boost.
 	 * @note Al expirar, activa PostBoostExhaustion (multiplicadores de velocidad y drenaje).
@@ -256,6 +271,17 @@ private:
 	 * Min(baseSpeed, cap).
 	 */
 	float ActiveSpeedCap = TNumericLimits<float>::Max();
+
+	/** El menor de los topes que no son predichos (los predichos los pone cada movimiento: ComputeMoveMaxWalkSpeed). */
+	float UnpredictedSpeedCap = TNumericLimits<float>::Max();
+
+	/** Topes predichos puestos ahora, su último valor y cuándo se pusieron o quitaron (hora del mundo). */
+	uint8 PredictedCapMask = 0;
+	float PredictedCapValues[TNMovementLimits::NumPredictedCaps] = { TNMovementLimits::NoCap, TNMovementLimits::NoCap };
+	double PredictedCapChangedAt[TNMovementLimits::NumPredictedCaps] = { -1.e9, -1.e9 };
+
+	/** Tras cambiar SpeedCaps: el tope que manda, el de los no predichos y la velocidad. */
+	void RefreshSpeedCaps();
 
 	/** Límites de salto y escalas de gravedad por quien los pone, y los valores de base guardados al poner el primero. */
 	TMap<FName, TNMovementLimits::FJumpLimit> JumpLimits;

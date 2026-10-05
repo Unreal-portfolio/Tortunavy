@@ -119,6 +119,7 @@ namespace TNBellySlide
 			SavedDiveYaw = 0;
 			SavedJumpStartVelocity = FVector::ZeroVector;
 			SavedSwimHopCooldown = 0.f;
+			SavedPredictedCaps = 0;
 		}
 
 		virtual void SetMoveFor(ACharacter* C, float InDeltaTime, FVector const& NewAccel, FNetworkPredictionData_Client_Character& ClientData) override
@@ -128,6 +129,8 @@ namespace TNBellySlide
 			bSavedWantsToSprint = TurtleMove && TurtleMove->InputWantsToSprint();
 			// El turbo de este movimiento (ControlledCharacterMove lo acaba de tomar de los objetos de carrera).
 			SavedRaceBoost = TurtleMove ? TurtleMove->GetRaceBoostMultiplier() : 1.f;
+			// Los topes predichos de este movimiento (también los ha tomado ControlledCharacterMove; #575, #574).
+			SavedPredictedCaps = TurtleMove ? TurtleMove->GetMovePredictedCaps() : 0;
 		}
 
 		virtual uint8 GetCompressedFlags() const override
@@ -186,6 +189,11 @@ namespace TNBellySlide
 			{
 				return false;
 			}
+			// Con otros topes predichos tampoco: el tope empieza y acaba en un movimiento concreto.
+			if (Other && Other->SavedPredictedCaps != SavedPredictedCaps)
+			{
+				return false;
+			}
 			return Super::CanCombineWith(NewMove, InCharacter, MaxDelta);
 		}
 
@@ -198,6 +206,7 @@ namespace TNBellySlide
 				TurtleMove->RestoreRaceBoost(SavedRaceBoost);
 				TurtleMove->RestoreMoveStartDive(SavedDiveYaw, SavedJumpStartVelocity);
 				TurtleMove->RestoreSwimHopCooldown(SavedSwimHopCooldown);
+				TurtleMove->RestoreMovePredictedCaps(SavedPredictedCaps);
 			}
 		}
 
@@ -206,6 +215,11 @@ namespace TNBellySlide
 			// Un cambio de fase (caer de tripa, levantarse) se reenvía si se pierde.
 			const FTNSavedMove_Turtle* Acked = static_cast<const FTNSavedMove_Turtle*>(LastAckedMove.Get());
 			if (Acked && Acked->SavedBellyPhase != SavedBellyPhase)
+			{
+				return true;
+			}
+			// Poner o quitar un tope predicho también: si se pierde, el servidor seguiría con el de antes.
+			if (Acked && Acked->SavedPredictedCaps != SavedPredictedCaps)
 			{
 				return true;
 			}
@@ -229,6 +243,8 @@ namespace TNBellySlide
 		FVector SavedJumpStartVelocity = FVector::ZeroVector;
 		/** Espera del brinco desde el agua al empezar el movimiento (s de simulación, #573). */
 		float SavedSwimHopCooldown = 0.f;
+		/** Topes de velocidad predichos con que se hizo (bits de TNMovementLimits; #575, #574). */
+		uint8 SavedPredictedCaps = 0;
 	};
 
 	class FTNNetworkPredictionData_Client_Turtle : public FNetworkPredictionData_Client_Character
@@ -1076,6 +1092,16 @@ void UTN_TurtleMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 		RaceBoostMultiplier = (bClaimsBoost && Items) ? FMath::Max(1.f, Items->ResolveOwnerBoostMultiplier()) : 1.f;
 	}
 
+	// Topes predichos (#575, #574). Servidor, movimiento de un cliente: los que pide, si los acepta (gracia tras cada cambio
+	// en el servidor); al repetir en el dueño, ya los puso PrepMoveFor.
+	if (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority && !CharacterOwner->IsLocallyControlled())
+	{
+		const ATortugaCharacter* Turtle = GetTurtle();
+		const UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+		const uint8 Claimed = TurtleNetworkMoveData.GetPredictedCaps(GetCurrentNetworkMoveData());
+		MovePredictedCaps = Stamina ? Stamina->ResolveClientPredictedCaps(Claimed) : 0;
+	}
+
 	// Panzazo pedido (#24). Servidor: el giro viene en los datos del movimiento del cliente; al repetir en el dueño, ya lo
 	// puso PrepMoveFor.
 	bMoveWantsDive = (Flags & TNDiveLogic::DiveRequestFlag) != 0;
@@ -1113,6 +1139,10 @@ void UTN_TurtleMovementComponent::ControlledCharacterMove(const FVector& InputVe
 	// (FTNSavedMove_Turtle::SetMoveFor) antes de simularlo y el servidor lo valida al recibirlo.
 	const UTN_RaceItemComponent* Items = RaceItems.Get();
 	RaceBoostMultiplier = Items ? FMath::Max(1.f, Items->GetSpeedMultiplier()) : 1.f;
+	// Igual con los topes predichos (#575, #574): los que conoce ahora.
+	const ATortugaCharacter* Turtle = GetTurtle();
+	const UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+	MovePredictedCaps = Stamina ? Stamina->GetPredictedCapMask() : 0;
 	Super::ControlledCharacterMove(InputVector, DeltaSeconds);
 }
 
@@ -1130,7 +1160,10 @@ float UTN_TurtleMovementComponent::GetMaxSpeed() const
 	const UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
 	if (Stamina && !IsCrouching() && (MovementMode == MOVE_Walking || MovementMode == MOVE_NavWalking || MovementMode == MOVE_Falling))
 	{
-		Base = Stamina->ComputeMaxWalkSpeed(Stamina->CanSprint(bWantsToSprint), MoveWadingMultiplier, RaceBoostMultiplier);
+		// Los topes predichos (llevar a otra, mareo) son los del movimiento; un proxy simulado no simula: los de la máquina.
+		const bool bSimulatedProxy = CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_SimulatedProxy;
+		const uint8 PredictedCaps = bSimulatedProxy ? Stamina->GetPredictedCapMask() : MovePredictedCaps;
+		Base = Stamina->ComputeMoveMaxWalkSpeed(Stamina->CanSprint(bWantsToSprint), MoveWadingMultiplier, RaceBoostMultiplier, PredictedCaps);
 	}
 	if (!IsMovingOnGround())
 	{
@@ -1277,6 +1310,11 @@ void UTN_TurtleMovementComponent::RestoreMoveStartDive(uint16 InYaw, const FVect
 	{
 		Turtle->SetJumpStartHorizontalVelocity(InJumpStartVelocity);
 	}
+}
+
+uint8 UTN_TurtleMovementComponent::GetSavedMovePredictedCaps(const FSavedMove_Character& Move)
+{
+	return static_cast<const TNBellySlide::FTNSavedMove_Turtle&>(Move).SavedPredictedCaps;
 }
 
 uint16 UTN_TurtleMovementComponent::GetSavedMoveDiveYaw(const FSavedMove_Character& Move)

@@ -3,6 +3,7 @@
 
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Core/TN_Log.h"
+#include "Player/TN_MovementLimits.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Components/CapsuleComponent.h"
@@ -55,6 +56,12 @@ uint16 FTNTurtleNetworkMoveDataContainer::GetDiveYaw(const FCharacterNetworkMove
 	return MoveData ? MoveData->DiveYaw : 0;
 }
 
+uint8 FTNTurtleNetworkMoveDataContainer::GetPredictedCaps(const FCharacterNetworkMoveData* Data) const
+{
+	const FTNTurtleNetworkMoveData* MoveData = FindTurtleData(Data);
+	return MoveData ? MoveData->PredictedCaps : 0;
+}
+
 void FTNTurtleNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType)
 {
 	FCharacterNetworkMoveData::ClientFillNetworkMoveData(ClientMove, MoveType);
@@ -63,6 +70,8 @@ void FTNTurtleNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Charac
 	LaunchId = TurtleMove ? TurtleMove->GetServerLaunch().GetIdForMove(ClientMove.TimeStamp) : 0;
 	// El panzazo que pide este movimiento (su marca ya va en CompressedMoveFlags): la dirección (#24).
 	DiveYaw = (CompressedMoveFlags & TNDiveLogic::DiveRequestFlag) != 0 ? UTN_TurtleMovementComponent::GetSavedMoveDiveYaw(ClientMove) : 0;
+	// Los topes predichos con que el dueño ha hecho este movimiento (#575, #574).
+	PredictedCaps = UTN_TurtleMovementComponent::GetSavedMovePredictedCaps(ClientMove) & TNMovementLimits::PredictedCapAllBits;
 }
 
 bool FTNTurtleNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType)
@@ -80,6 +89,10 @@ bool FTNTurtleNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterM
 	}
 	// Con la marca del panzazo (ya leída con lo de serie), su giro: 16 bits; sin ella, nada.
 	TNDiveLogic::SerializeDiveRequest(Ar, CompressedMoveFlags, DiveYaw);
+	// Los topes predichos: un bit cada uno.
+	uint8 Caps = PredictedCaps & TNMovementLimits::PredictedCapAllBits;
+	Ar.SerializeBits(&Caps, TNMovementLimits::NumPredictedCaps);
+	PredictedCaps = Caps & TNMovementLimits::PredictedCapAllBits;
 	return bBaseOk && !Ar.IsError();
 }
 

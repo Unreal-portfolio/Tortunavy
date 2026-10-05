@@ -102,4 +102,7 @@ struct FTNTurtleNetworkMoveData : public FCharacterNetworkMoveData
 
 	/** Giro del panzazo que pide este movimiento (TNDiveLogic::CompressDiveYaw; 0 sin panzazo). */
 	uint16 DiveYaw = 0;
+
+	/** Topes predichos que pide este movimiento (bits de TNMovementLimits: llevar a otra, mareo; #575, #574). */
+	uint8 PredictedCaps = 0;
 };

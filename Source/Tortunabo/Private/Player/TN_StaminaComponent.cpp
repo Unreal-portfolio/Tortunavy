@@ -2,6 +2,7 @@
 #include "Player/TN_InventoryComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 
 UTN_StaminaComponent::UTN_StaminaComponent()
@@ -78,6 +79,19 @@ float UTN_StaminaComponent::ComputeMaxWalkSpeed(bool bSprinting, float Environme
 	In.EnvironmentMultiplier = EnvironmentMultiplier;
 	In.RaceMultiplier = RaceMultiplier;
 	In.Cap = ActiveSpeedCap;
+	return TNMovementLimits::ResolveWalkSpeed(In);
+}
+
+float UTN_StaminaComponent::ComputeMoveMaxWalkSpeed(bool bSprinting, float EnvironmentMultiplier, float RaceMultiplier, uint8 MovePredictedCaps) const
+{
+	TNMovementLimits::FWalkSpeedInputs In;
+	In.WalkSpeed = WalkSpeed;
+	In.SprintSpeed = SprintSpeed;
+	In.bSprinting = bSprinting;
+	In.PostBoostMultiplier = bPostBoostPenaltyActive ? PostBoostSpeedMultiplier : 1.f;
+	In.EnvironmentMultiplier = EnvironmentMultiplier;
+	In.RaceMultiplier = RaceMultiplier;
+	In.Cap = TNMovementLimits::ResolveMoveSpeedCap(UnpredictedSpeedCap, MovePredictedCaps, PredictedCapValues);
 	return TNMovementLimits::ResolveWalkSpeed(In);
 }
 
@@ -322,16 +336,57 @@ void UTN_StaminaComponent::ApplyMovementSpeed() const
 
 void UTN_StaminaComponent::SetSpeedCap(FName Source, float Cap)
 {
+	if (const uint8 Bit = TNMovementLimits::PredictedCapBit(Source))
+	{
+		const int32 Index = TNMovementLimits::PredictedCapIndex(Bit);
+		if ((PredictedCapMask & Bit) == 0)
+		{
+			const UWorld* World = GetWorld();
+			PredictedCapChangedAt[Index] = World ? World->GetTimeSeconds() : 0.0;
+		}
+		PredictedCapMask |= Bit;
+		PredictedCapValues[Index] = Cap;
+	}
 	SpeedCaps.Add(Source, Cap);
-	ActiveSpeedCap = TNMovementLimits::ResolveSpeedCap(SpeedCaps);
-	ApplyMovementSpeed();
+	RefreshSpeedCaps();
 }
 
 void UTN_StaminaComponent::ClearSpeedCap(FName Source)
 {
+	if (const uint8 Bit = TNMovementLimits::PredictedCapBit(Source); (PredictedCapMask & Bit) != 0)
+	{
+		const UWorld* World = GetWorld();
+		PredictedCapChangedAt[TNMovementLimits::PredictedCapIndex(Bit)] = World ? World->GetTimeSeconds() : 0.0;
+		PredictedCapMask &= ~Bit;
+	}
 	SpeedCaps.Remove(Source);
+	RefreshSpeedCaps();
+}
+
+void UTN_StaminaComponent::RefreshSpeedCaps()
+{
 	ActiveSpeedCap = TNMovementLimits::ResolveSpeedCap(SpeedCaps);
+	UnpredictedSpeedCap = TNMovementLimits::NoCap;
+	for (const TPair<FName, float>& Pair : SpeedCaps)
+	{
+		if (TNMovementLimits::PredictedCapBit(Pair.Key) == 0)
+		{
+			UnpredictedSpeedCap = FMath::Min(UnpredictedSpeedCap, Pair.Value);
+		}
+	}
 	ApplyMovementSpeed();
+}
+
+uint8 UTN_StaminaComponent::ResolveClientPredictedCaps(uint8 ClaimedMask) const
+{
+	const UWorld* World = GetWorld();
+	const double Now = World ? World->GetTimeSeconds() : 0.0;
+	double SecondsSinceChange[TNMovementLimits::NumPredictedCaps];
+	for (int32 Index = 0; Index < TNMovementLimits::NumPredictedCaps; ++Index)
+	{
+		SecondsSinceChange[Index] = Now - PredictedCapChangedAt[Index];
+	}
+	return TNMovementLimits::ResolvePredictedCaps(ClaimedMask & TNMovementLimits::PredictedCapAllBits, PredictedCapMask, SecondsSinceChange);
 }
 
 void UTN_StaminaComponent::SetJumpLimit(FName Source, float Cap, float Multiplier)

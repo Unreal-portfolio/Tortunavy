@@ -108,4 +108,79 @@ namespace TNMovementLimits
 	{
 		return Multiplier > 1.f ? BaseAcceleration * (1.f + (Multiplier - 1.f) * 2.f) : BaseAcceleration;
 	}
+
+	// ── Topes predichos en el movimiento (#575, #574) ─────────────────────────
+	// Los pone el servidor (coger a otra tortuga, el mareo) y el dueño se entera media ida y vuelta después. Antes cada
+	// máquina los aplicaba al enterarse: durante ese rato el cliente y el servidor andaban a velocidades distintas y el
+	// servidor corregía. Ahora el dueño pide en cada movimiento los que conoce (un bit cada uno en FTNTurtleNetworkMoveData)
+	// y el servidor simula ese movimiento con lo que pide mientras el cambio sea reciente (PredictedCapGraceSeconds); pasada
+	// la gracia manda lo que diga el servidor, pida lo que pida el cliente.
+
+	/** Topes predichos: uno por bit, en este orden. */
+	inline constexpr int32 NumPredictedCaps = 2;
+	inline constexpr uint8 PredictedCapMareoBit = 1 << 0;
+	inline constexpr uint8 PredictedCapCarryBit = 1 << 1;
+	inline constexpr uint8 PredictedCapAllBits = (1 << NumPredictedCaps) - 1;
+
+	/** Margen tras poner o quitar un tope en el servidor en que vale lo que pida el cliente (s). */
+	inline constexpr float PredictedCapGraceSeconds = 0.5f;
+
+	/** Bit del tope de Source si es de los predichos (0 si no). */
+	inline uint8 PredictedCapBit(FName Source)
+	{
+		if (Source == MareoSource()) { return PredictedCapMareoBit; }
+		if (Source == CarrySource()) { return PredictedCapCarryBit; }
+		return 0;
+	}
+
+	/** Posición (0..NumPredictedCaps-1) del bit Bit, que tiene que ser uno solo de los predichos. */
+	inline int32 PredictedCapIndex(uint8 Bit)
+	{
+		return Bit == PredictedCapCarryBit ? 1 : 0;
+	}
+
+	/**
+	 * Servidor, movimiento de un cliente: si aplica un tope predicho. Si el cliente pide lo mismo que tiene el servidor, eso;
+	 * si no, lo que pide el cliente solo mientras el cambio del servidor sea reciente (el cliente aún no se ha enterado);
+	 * pasada la gracia, lo del servidor.
+	 */
+	inline bool ShouldApplyPredictedCap(bool bClientClaims, bool bServerActive, double SecondsSinceServerChange,
+		float GraceSeconds = PredictedCapGraceSeconds)
+	{
+		if (bClientClaims == bServerActive)
+		{
+			return bServerActive;
+		}
+		return SecondsSinceServerChange < GraceSeconds ? bClientClaims : bServerActive;
+	}
+
+	/** Servidor: los topes predichos con que simula el movimiento de un cliente que pide ClaimedMask. */
+	inline uint8 ResolvePredictedCaps(uint8 ClaimedMask, uint8 ServerActiveMask, const double (&SecondsSinceChange)[NumPredictedCaps],
+		float GraceSeconds = PredictedCapGraceSeconds)
+	{
+		uint8 Result = 0;
+		for (int32 Index = 0; Index < NumPredictedCaps; ++Index)
+		{
+			const uint8 Bit = static_cast<uint8>(1 << Index);
+			if (ShouldApplyPredictedCap((ClaimedMask & Bit) != 0, (ServerActiveMask & Bit) != 0, SecondsSinceChange[Index], GraceSeconds))
+			{
+				Result |= Bit;
+			}
+		}
+		return Result;
+	}
+
+	/** Tope de un movimiento: el de los topes sin predecir y el de cada tope predicho de MoveMask (con su valor). */
+	inline float ResolveMoveSpeedCap(float UnpredictedCap, uint8 MoveMask, const float (&PredictedValues)[NumPredictedCaps])
+	{
+		float Result = UnpredictedCap;
+		for (int32 Index = 0; Index < NumPredictedCaps; ++Index)
+		{
+			if ((MoveMask & (1 << Index)) != 0)
+			{
+				Result = FMath::Min(Result, PredictedValues[Index]);
+			}
+		}
+		return Result;
+	}
 }

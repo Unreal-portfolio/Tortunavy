@@ -42,6 +42,9 @@ struct FTNTurtleNetworkMoveDataContainer : public FCharacterNetworkMoveDataConta
 	/** Giro del panzazo que pide Data, si es uno de estos datos (0 si no). */
 	uint16 GetDiveYaw(const FCharacterNetworkMoveData* Data) const;
 
+	/** Topes predichos que pide Data, si es uno de estos datos (0 si no). */
+	uint8 GetPredictedCaps(const FCharacterNetworkMoveData* Data) const;
+
 	virtual void ClientFillNetworkMoveData(const FSavedMove_Character* ClientNewMove, const FSavedMove_Character* ClientPendingMove,
 		const FSavedMove_Character* ClientOldMove) override;
 
@@ -185,6 +188,21 @@ public:
 
 	/** Repetición o combinación de movimientos (FTNSavedMove_Turtle): la espera con que empezó ese movimiento. */
 	void RestoreSwimHopCooldown(float InSeconds);
+
+	// ── Topes de velocidad predichos: llevar a otra y mareo (#575, #574) ────
+	// Quien la mueve toma al empezar cada movimiento los topes predichos que conoce (UTN_StaminaComponent::
+	// GetPredictedCapMask) y los guarda en él; el cliente los manda al servidor en FTNTurtleNetworkMoveData y el servidor
+	// simula ese movimiento con los que acepta (UTN_StaminaComponent::ResolveClientPredictedCaps). GetMaxSpeed usa los del
+	// movimiento, no los de la máquina: así el tope empieza y acaba en el mismo movimiento en el dueño y en el servidor.
+
+	/** Topes predichos del movimiento que se simula (bits de TNMovementLimits). */
+	uint8 GetMovePredictedCaps() const { return MovePredictedCaps; }
+
+	/** Repetición de movimientos (FTNSavedMove_Turtle::PrepMoveFor): los topes con que se hizo. */
+	void RestoreMovePredictedCaps(uint8 InMask) { MovePredictedCaps = InMask; }
+
+	/** Topes predichos que pide el movimiento guardado Move. */
+	static uint8 GetSavedMovePredictedCaps(const FSavedMove_Character& Move);
 
 	// ── Turbo de los objetos de carrera (issue #22) ─────────────────────────
 	// Va en la predicción como el panzazo: quien mueve la tortuga (su dueño o el anfitrión) toma el multiplicador de
@@ -592,6 +610,9 @@ private:
 
 	/** Multiplicador del vadeo en este paso del movimiento (1 = fuera del agua). */
 	float MoveWadingMultiplier = 1.f;
+
+	/** Topes predichos del movimiento que se simula (ver GetMovePredictedCaps). */
+	uint8 MovePredictedCaps = 0;
 
 	/** Espera del brinco desde el agua (s de simulación) y la de antes del brinco del movimiento que se está guardando. */
 	float SwimHopCooldown = 0.f;
