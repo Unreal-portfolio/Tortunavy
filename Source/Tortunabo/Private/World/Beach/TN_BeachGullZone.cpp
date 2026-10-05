@@ -476,15 +476,17 @@ void ATN_BeachGullZone::BuildBirds()
 		return;
 	}
 
-	// Mallas de la fauna (gaviota y pelícano), compartidas por pieza, y la mandíbula de abajo de cada una.
+	// Mallas de la fauna (gaviota y pelícano) con el pico de abajo aparte, compartidas por pieza (TNBeachMeshes::BuildBirdParts).
 	TArray<TNFauna::FTNFaunaPart> GullParts;
 	TArray<TNFauna::FTNFaunaPart> PelicanParts;
 	TNFauna::FTNFaunaRig GullRig;
 	TNFauna::FTNFaunaRig PelicanRig;
-	TNFauna::TNFaunaBuildSpecies(TNFauna::ETNFaunaSpecies::Gull, GullParts, GullRig);
+	TNFauna::FTNFaunaBirdJaw GullJaw;
+	TNFauna::FTNFaunaBirdJaw PelicanJaw;
+	TNBeachMeshes::BuildBirdParts(false, GullParts, GullRig, GullJaw);
 	if (bWithPelican)
 	{
-		TNFauna::TNFaunaBuildSpecies(TNFauna::ETNFaunaSpecies::Pelican, PelicanParts, PelicanRig);
+		TNBeachMeshes::BuildBirdParts(true, PelicanParts, PelicanRig, PelicanJaw);
 	}
 	for (int32 b = 0; b < Birds.Num(); ++b)
 	{
@@ -508,7 +510,7 @@ void ATN_BeachGullZone::BuildBirds()
 					continue;
 				}
 				const TNProcMesh::FTNProcMeshBuffers& Buffers = Part.Mesh;
-				UStaticMesh* Mesh = TNBeachKit::CachedMesh(FString::Printf(TEXT("Beach.%s.%d"), Bird.bPelican ? TEXT("Pelican") : TEXT("Gull"), i),
+				UStaticMesh* Mesh = TNBeachKit::CachedMesh(TNBeachMeshes::BirdPartKey(Bird.bPelican, i),
 					[&Buffers](TNProcMesh::FTNProcMeshBuffers& M) { M = Buffers; });
 				USceneComponent* Parent = bIsBody ? BirdRoot : static_cast<USceneComponent*>(BodyComp);
 				UStaticMeshComponent* Comp = TNBeachKit::AddPart(this, Parent ? Parent : BirdRoot, Mesh, Part.Pivot, false, TNBeachGull::BirdSlot(Bird.bPelican, Part.Bone));
@@ -530,11 +532,12 @@ void ATN_BeachGullZone::BuildBirds()
 			}
 		}
 		Bird.NumParts = BirdParts.Num() - Bird.FirstPart;
-		// Mandíbula de abajo en la base del pico: se abre para coger a la tortuga y para graznar.
+		// Pico de abajo en su base: se abre para coger a la tortuga y para graznar.
 		UStaticMeshComponent* HeadComp = BirdParts.IsValidIndex(Bird.Head) ? BirdParts[Bird.Head].Get() : nullptr;
 		const bool bPelican = Bird.bPelican;
-		UStaticMesh* JawMesh = TNBeachKit::CachedMesh(bPelican ? TEXT("Beach.Pelican.Jaw") : TEXT("Beach.Gull.Jaw"),
-			[bPelican](TNProcMesh::FTNProcMeshBuffers& M) { TNBeachMeshes::BuildBirdJaw(M, bPelican); });
+		const TNFauna::FTNFaunaBirdJaw& JawData = bPelican ? PelicanJaw : GullJaw;
+		UStaticMesh* JawMesh = TNBeachKit::CachedMesh(TNBeachMeshes::BirdJawKey(bPelican),
+			[&JawData](TNProcMesh::FTNProcMeshBuffers& M) { M = JawData.Mesh; });
 		Jaws.Add(HeadComp ? TNBeachKit::AddPart(this, HeadComp, JawMesh, TNBeachMeshes::BirdGeom(bPelican).BeakBase, false,
 			bPelican ? TN_ART("Beach.Pelican.Jaw") : TN_ART("Beach.Gull.Jaw")) : nullptr);
 

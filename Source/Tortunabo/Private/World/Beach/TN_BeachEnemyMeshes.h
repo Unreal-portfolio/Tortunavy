@@ -684,24 +684,29 @@ namespace TNBeachMeshes
 	}
 
 	/**
-	 * Mandíbula de abajo (medidas de la fauna, pivote en la base del pico): cuña del color del pico pegada por debajo del
-	 * de arriba; cerrada no se nota y al girar hacia abajo el pico se abre. El pelícano lleva debajo su bolsa naranja.
+	 * Piezas del ave de la fauna que abre el pico (las gaviotas y el pelícano de la zona de gaviotas, la gaviota justiciera
+	 * y el pelícano taxi): la cabeza lleva la mitad de arriba del pico y Jaw, la de abajo (con la bolsa del pelícano), con
+	 * su pivote en BirdGeom(bPelican).BeakBase. Cerrado es un solo pico; girando Jaw hacia abajo se abre. Antes iba el pico
+	 * entero en la cabeza y una mandíbula suelta debajo, que se veía como un segundo pico mal puesto (#738).
 	 */
-	inline void BuildBirdJaw(FTNProcMeshBuffers& M, bool bPelican)
+	inline void BuildBirdParts(bool bPelican, TArray<TNFauna::FTNFaunaPart>& Parts, TNFauna::FTNFaunaRig& Rig, TNFauna::FTNFaunaBirdJaw& Jaw)
 	{
-		const FBirdGeom G = BirdGeom(bPelican);
-		const FVector Tip = G.BeakTip - G.BeakBase;
-		const FVector Low(0.0, 0.0, -G.BeakR * 0.45);
-		const FVector Mid = Tip * 0.5 + Low;
-		TNProcMesh::TNProcAddCylinder(M, Low, Mid, G.BeakR * 0.7, G.BeakR * 0.55, 4, G.BeakC * 0.92f, true);
-		TNProcMesh::TNProcAddCylinder(M, Mid, Tip * 0.97 + Low * 0.6, G.BeakR * 0.55, G.BeakR * 0.15, 4, G.BeakTipC * 0.9f, true);
-		// Por dentro de la boca, rojo oscuro (se ve al abrir).
-		M.AddBox(Tip * 0.35 + Low * 0.3, FVector::ForwardVector, FVector(Tip.Size() * 0.3, G.BeakR * 0.35, G.BeakR * 0.12), Rgb(0.55f, 0.1f, 0.12f));
-		if (bPelican)
-		{
-			TNFauna::TNFaunaBlob(M, Tip * 0.45 + FVector(0.0, 0.0, -G.BeakR * 1.4), FVector(Tip.Size() * 0.4, G.BeakR * 0.95, G.BeakR * 1.2),
-				Rgb(1.f, 0.6f, 0.22f), Rgb(0.92f, 0.52f, 0.18f), 6, 3);
-		}
+		TNFauna::TNFaunaBuildSpecies(bPelican ? TNFauna::ETNFaunaSpecies::Pelican : TNFauna::ETNFaunaSpecies::Gull, Parts, Rig, &Jaw);
+	}
+
+	/**
+	 * Nombres en la caché de mallas (TNBeachKit::CachedMesh) de la pieza Index de BuildBirdParts y de su pico de abajo. No
+	 * son los de las piezas de la gaviota de TNFaunaBuildSpecies sin más (Beach.Gull.N, la de ATN_EnemySeagull, con el pico
+	 * entero): la cabeza es otra.
+	 */
+	inline FString BirdPartKey(bool bPelican, int32 Index)
+	{
+		return FString::Printf(TEXT("Beach.%s.Hinged.%d"), bPelican ? TEXT("Pelican") : TEXT("Gull"), Index);
+	}
+
+	inline FString BirdJawKey(bool bPelican)
+	{
+		return bPelican ? TEXT("Beach.Pelican.Jaw") : TEXT("Beach.Gull.Jaw");
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────

@@ -148,6 +148,9 @@ public:
 	virtual FVector GetHitStunAnchor() const override;
 	virtual float GetHitStunScale() const override;
 
+	/** La gaviota (o el pelícano) la sube y vuela con ella en el pico: la cámara de la llevada se aleja mientras tanto. */
+	virtual bool CarriesHeldTurtleThroughAir() const override { return true; }
+
 protected:
 	virtual void ApplySpec() override;
 	virtual void BeginPlay() override;

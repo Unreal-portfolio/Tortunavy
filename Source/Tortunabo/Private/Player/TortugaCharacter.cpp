@@ -16,6 +16,7 @@
 #include "Player/TN_ShellBody.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TN_ShellImpactFXComponent.h"
+#include "Player/TN_CarriedCamera.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
 #include "Player/TN_HeadLook.h"
@@ -31,6 +32,7 @@
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TN_TurtleActionSfx.h"
 #include "World/TN_InteractableBase.h"
+#include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachTrampoline.h"
 #include "GameFramework/PlayerState.h"
 #include "Components/SceneComponent.h"
@@ -679,12 +681,22 @@ void ATortugaCharacter::TickCameraInterp(float DeltaTime)
 	if (!IsLocallyControlled()) { return; }
 	if (!CameraBoom || !FollowCamera) { return; }
 	// En primera persona (VR o sin gafas) la cámara es otra (TortugaCharacter_VR.cpp, TortugaCharacter_FirstPerson.cpp).
-	if (bVRViewActive || bFirstPersonActive) { return; }
+	if (bVRViewActive || bFirstPersonActive)
+	{
+		CameraCarriedPull = 0.f;
+		return;
+	}
 
 	const bool bSprinting = StaminaComponent && StaminaComponent->IsSprinting();
 
+	// Llevada por el aire (la gaviota o el pelícano de la zona de gaviotas): la cámara se aleja y sube un poco para ver
+	// adónde la llevan; al soltarla vuelve a su sitio sin saltos (Player/TN_CarriedCamera.h).
+	CameraCarriedPull = TNCarriedCamera::StepPull(CameraCarriedPull, ATN_BeachEnemy::IsTurtleCarriedThroughAir(this), DeltaTime,
+		CameraCarriedRiseSeconds, CameraCarriedReturnSeconds);
+	const float CarriedK = TNCarriedCamera::Ease(CameraCarriedPull);
+
 	// ── Interpolación de longitud del brazo ───────────────────────────────────
-	const float TargetArmLength = bSprinting ? CameraArmLengthSprint : CameraArmLengthDefault;
+	const float TargetArmLength = (bSprinting ? CameraArmLengthSprint : CameraArmLengthDefault) + CarriedK * CameraCarriedExtraArm;
 	CameraBoom->TargetArmLength = FMath::FInterpTo(
 		CameraBoom->TargetArmLength,
 		TargetArmLength,
@@ -735,7 +747,7 @@ void ATortugaCharacter::TickCameraInterp(float DeltaTime)
 		FollowCamera->SetRelativeRotation(FRotator(CameraAimPitchOffset, 0.f, 0.f) + CarryShake);
 
 		FVector RelLoc = CameraBoomRelativeOffset;
-		RelLoc.Z += CameraFloorLiftCurrent;
+		RelLoc.Z += CameraFloorLiftCurrent + CarriedK * CameraCarriedLift;
 		CameraBoom->SetRelativeLocation(RelLoc);
 
 		// DIAGNOSTIC: log cada 1s con datos del trace (para depurar si clamp activa).

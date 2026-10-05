@@ -986,10 +986,12 @@ void ATN_RacePelicanTaxi::BuildVisuals()
 	}
 	bVisualsBuilt = true;
 
-	// El pelícano de la fauna por piezas (las mismas mallas que el de la zona de gaviotas: se comparten por nombre).
+	// El pelícano de la fauna por piezas, con el pico de abajo aparte (las mismas mallas que el de la zona de gaviotas: se
+	// comparten por nombre).
 	TArray<TNFauna::FTNFaunaPart> Parts;
 	TNFauna::FTNFaunaRig FaunaRig;
-	TNFauna::TNFaunaBuildSpecies(TNFauna::ETNFaunaSpecies::Pelican, Parts, FaunaRig);
+	TNFauna::FTNFaunaBirdJaw JawData;
+	TNBeachMeshes::BuildBirdParts(true, Parts, FaunaRig, JawData);
 	PelicanRoot = NewObject<USceneComponent>(this, NAME_None, RF_Transient);
 	PelicanRoot->SetupAttachment(GetRootComponent());
 	PelicanRoot->SetAbsolute(true, true, true);
@@ -1006,7 +1008,7 @@ void ATN_RacePelicanTaxi::BuildVisuals()
 				continue;
 			}
 			const TNProcMesh::FTNProcMeshBuffers& Buffers = Part.Mesh;
-			UStaticMesh* PartMesh = TNBeachKit::CachedMesh(FString::Printf(TEXT("Beach.Pelican.%d"), i),
+			UStaticMesh* PartMesh = TNBeachKit::CachedMesh(TNBeachMeshes::BirdPartKey(true, i),
 				[&Buffers](TNProcMesh::FTNProcMeshBuffers& M) { M = Buffers; });
 			USceneComponent* ParentComp = bIsBody ? PelicanRoot.Get() : static_cast<USceneComponent*>(BodyComp);
 			UStaticMeshComponent* Comp = TNBeachKit::AddPart(this, ParentComp ? ParentComp : PelicanRoot.Get(), PartMesh, Part.Pivot, false);
@@ -1027,9 +1029,9 @@ void ATN_RacePelicanTaxi::BuildVisuals()
 			}
 		}
 	}
-	// Mandíbula de abajo con su bolsa, en la base del pico: se abre para coger, para soltar y para graznar.
+	// Pico de abajo con su bolsa, en su base: se abre para coger, para soltar y para graznar.
 	UStaticMeshComponent* HeadComp = PelicanParts.IsValidIndex(HeadIndex) ? PelicanParts[HeadIndex].Get() : nullptr;
-	UStaticMesh* JawMesh = TNBeachKit::CachedMesh(TEXT("Beach.Pelican.Jaw"), [](TNProcMesh::FTNProcMeshBuffers& M) { TNBeachMeshes::BuildBirdJaw(M, true); });
+	UStaticMesh* JawMesh = TNBeachKit::CachedMesh(TNBeachMeshes::BirdJawKey(true), [&JawData](TNProcMesh::FTNProcMeshBuffers& M) { M = JawData.Mesh; });
 	JawPart = HeadComp ? TNBeachKit::AddPart(this, HeadComp, JawMesh, TNBeachMeshes::BirdGeom(true).BeakBase, false) : nullptr;
 
 	ShadowPart = TNBeachKit::AddShadow(this, 0.38f);

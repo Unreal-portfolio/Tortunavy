@@ -179,6 +179,15 @@ public:
 	static ATN_BeachEnemy* FindHolder(const ATortugaCharacter* Turtle);
 
 	/**
+	 * true si quien sujeta a esta tortuga en esta máquina se la lleva por el aire (CarriesHeldTurtleThroughAir): mientras
+	 * tanto su cámara se aleja para ver adónde va (ATortugaCharacter::TickCameraInterp).
+	 */
+	static bool IsTurtleCarriedThroughAir(const ATortugaCharacter* Turtle);
+
+	/** Se lleva por el aire a la tortuga que sujeta (la zona de gaviotas); no la que tiene en la boca o arrastra por el suelo. */
+	virtual bool CarriesHeldTurtleThroughAir() const { return false; }
+
+	/**
 	 * Servidor: quien sujete a esta tortuga la suelta ya, como el seguro de tiempo (no la vuelve a coger en 2 s). La usa la
 	 * red de seguridad de ATN_BeachRaceGameMode antes de devolverla encima de la arena. true si alguien la sujetaba.
 	 */

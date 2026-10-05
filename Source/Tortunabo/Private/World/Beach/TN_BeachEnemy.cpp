@@ -388,6 +388,17 @@ ATN_BeachEnemy* ATN_BeachEnemy::FindHolder(const ATortugaCharacter* Turtle)
 	return nullptr;
 }
 
+bool ATN_BeachEnemy::IsTurtleCarriedThroughAir(const ATortugaCharacter* Turtle)
+{
+	// La lista de llevadas es corta: solo se busca quién la sujeta si está en ella.
+	if (!IsTurtleHeld(Turtle))
+	{
+		return false;
+	}
+	const ATN_BeachEnemy* Holder = FindHolder(Turtle);
+	return Holder && Holder->CarriesHeldTurtleThroughAir();
+}
+
 bool ATN_BeachEnemy::ServerReleaseHeldTurtle(ATortugaCharacter* Turtle, const TCHAR* Reason)
 {
 	if (!Turtle || !Turtle->HasAuthority())
