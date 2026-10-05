@@ -42,6 +42,10 @@ namespace TNRallyTurret
 			// Bote propio (#771): sin proyectil ni retroceso; dos botes por caja.
 			Spec = { 0.f, 0.f, 0.f, 0.f, 0.5f, 2 };
 			break;
+		case ETNRallyAmmo::Arpon:
+			// Arpón (#772): rápido y con poca caída; una carga por caja.
+			Spec = { HarpoonSpeedCms, HarpoonGravityScale, HarpoonLifeSeconds, HarpoonRecoilCms, 0.6f, 1 };
+			break;
 		default:
 			break;
 		}
@@ -481,5 +485,37 @@ namespace TNRallyTurret
 		const double Along = FVector::DotProduct(To, FlatForward);
 		const double Side = (To - FlatForward * Along).Size();
 		return !FlatForward.IsNearlyZero() && Along > 0.0 && Along - RadiusCm <= HopPuddleLookAheadCm && Side <= RadiusCm;
+	}
+}
+
+namespace TNRallyTurret
+{
+	float HarpoonTopSpeedCms(float TopSpeedCms)
+	{
+		return TopSpeedCms * HarpoonTopSpeedFactor;
+	}
+
+	FVector HarpoonPullAccel(const FVector& PullerVelocity, const FVector& ToTarget, float DeltaSeconds, float TopSpeedCms)
+	{
+		const FVector Flat(ToTarget.X, ToTarget.Y, 0.f);
+		if (Flat.Size() < HarpoonMinDistanceCm)
+		{
+			return FVector::ZeroVector;
+		}
+		const FVector Dir = Flat.GetSafeNormal();
+		const float Along = static_cast<float>(FVector::DotProduct(PullerVelocity, Dir));
+		const float Room = HarpoonTopSpeedCms(TopSpeedCms) - Along;
+		if (Room <= 0.f)
+		{
+			return FVector::ZeroVector;
+		}
+		// El último paso solo llega al tope: nunca lo pasa.
+		const float Accel = DeltaSeconds > 0.f ? FMath::Min(HarpoonAccelCms2, Room / DeltaSeconds) : HarpoonAccelCms2;
+		return Dir * Accel;
+	}
+
+	bool BotHarpoonInRange(float AheadCm)
+	{
+		return AheadCm >= BotHarpoonMinCm && AheadCm <= BotHarpoonMaxCm;
 	}
 }

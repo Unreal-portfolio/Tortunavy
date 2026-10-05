@@ -254,7 +254,7 @@ namespace TNBuggyDebug
 	{
 		const ETNRallyAmmo Order[] = { ETNRallyAmmo::Coco, ETNRallyAmmo::Alga, ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Tinta,
 			ETNRallyAmmo::Ancla, ETNRallyAmmo::Concha, ETNRallyAmmo::ConchaGuiada, ETNRallyAmmo::Erizos,
-			ETNRallyAmmo::Medusa };
+			ETNRallyAmmo::Medusa, ETNRallyAmmo::Arpon };
 		for (int32 Index = 0; Index < UE_ARRAY_COUNT(Order); ++Index)
 		{
 			const ETNRallyAmmo Ammo = Order[Index];
@@ -335,7 +335,7 @@ namespace TNBuggyDebug
 	}
 
 	FAutoConsoleCommandWithWorldAndArgs CmdGiveAmmo(TEXT("TN.Rally.GiveAmmo"),
-		TEXT("Rally y karts (servidor o partida sola): TN.Rally.GiveAmmo Concha|ConchaGuiada|Alga|Tinta|Burbuja|Mortero|Ancla|Erizos|Medusa [cargas]: munición especial de las cajas «?» para el buggy del jugador (sin cargas, las de una caja)."),
+		TEXT("Rally y karts (servidor o partida sola): TN.Rally.GiveAmmo Concha|ConchaGuiada|Alga|Tinta|Burbuja|Mortero|Ancla|Erizos|Medusa|Arpon [cargas]: munición especial de las cajas «?» para el buggy del jugador (sin cargas, las de una caja)."),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 		{
 			ATN_Buggy* Buggy = FindPlayerBuggy(World);
@@ -343,7 +343,7 @@ namespace TNBuggyDebug
 			const ETNRallyAmmo Ammo = Value == INDEX_NONE ? ETNRallyAmmo::None : static_cast<ETNRallyAmmo>(Value);
 			if (!Buggy || !Buggy->HasAuthority() || !TNRallyTurret::IsSpecial(Ammo))
 			{
-				UE_LOG(LogTNRally, Display, TEXT("TN.Rally.GiveAmmo: hace falta un buggy propio en el servidor y una munición especial (Concha, ConchaGuiada, Alga, Tinta, Burbuja, Mortero, Ancla, Erizos o Medusa)."));
+				UE_LOG(LogTNRally, Display, TEXT("TN.Rally.GiveAmmo: hace falta un buggy propio en el servidor y una munición especial (Concha, ConchaGuiada, Alga, Tinta, Burbuja, Mortero, Ancla, Erizos, Medusa o Arpon)."));
 				return;
 			}
 			const int32 Charges = Args.Num() > 1 ? FMath::Max(1, FCString::Atoi(*Args[1])) : TNRally::ChargesFor(Ammo);

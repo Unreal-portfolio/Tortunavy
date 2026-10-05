@@ -359,4 +359,36 @@ namespace TNRallyTurret
 
 	/** Bots: un charco de radio RadiusCm por delante (en la dirección Forward), a menos de HopPuddleLookAheadCm de su borde. */
 	TORTUNABO_API bool IsPuddleAhead(const FVector& Buggy, const FVector& Forward, const FVector& Puddle, float RadiusCm = AlgaPuddleRadiusCm);
+
+	// ── Arpón (#772) ────────────────────────────────────────────────────────────
+
+	/** Vuelo del arpón: rápido y con poca caída. */
+	constexpr float HarpoonSpeedCms = 7000.f;
+	constexpr float HarpoonGravityScale = 0.2f;
+	constexpr float HarpoonLifeSeconds = 1.5f;
+	constexpr float HarpoonRecoilCms = 80.f;
+	/** Remolque: tira del buggy propio hacia el alcanzado HarpoonSeconds con HarpoonAccelCms2 (cm/s²). */
+	constexpr float HarpoonSeconds = 2.f;
+	constexpr float HarpoonAccelCms2 = 1800.f;
+	/** Tope del remolque: fracción de la velocidad punta del buggy (BuggyTopSpeedCms). */
+	constexpr float HarpoonTopSpeedFactor = 1.15f;
+	/** Más cerca que esto (cm) del alcanzado ya no tira (no lo embiste por la cuerda). */
+	constexpr float HarpoonMinDistanceCm = 400.f;
+	/** Distancias (cm) al de delante con las que un bot dispara el arpón. */
+	constexpr float BotHarpoonMinCm = 1500.f;
+	constexpr float BotHarpoonMaxCm = 6000.f;
+
+	/** Velocidad (cm/s) hasta la que remolca el arpón: el 115 % de la punta. */
+	TORTUNABO_API float HarpoonTopSpeedCms(float TopSpeedCms = BuggyTopSpeedCms);
+
+	/**
+	 * Aceleración (cm/s²) del remolque del arpón sobre el buggy propio: horizontal hacia el alcanzado (ToTarget, desde el
+	 * propio buggy) de HarpoonAccelCms2, y recortada para que su velocidad hacia él no pase de HarpoonTopSpeedCms en este
+	 * paso de DeltaSeconds. Nula ya en el tope o a menos de HarpoonMinDistanceCm.
+	 */
+	TORTUNABO_API FVector HarpoonPullAccel(const FVector& PullerVelocity, const FVector& ToTarget, float DeltaSeconds,
+		float TopSpeedCms = BuggyTopSpeedCms);
+
+	/** Bots: el arpón, al de delante si está a entre BotHarpoonMinCm y BotHarpoonMaxCm. */
+	TORTUNABO_API bool BotHarpoonInRange(float AheadCm);
 }

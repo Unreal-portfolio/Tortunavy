@@ -69,6 +69,8 @@ UTN_BuggyTurretComponent::UTN_BuggyTurretComponent()
 	FireSoundByAmmo.Add(ETNRallyAmmo::Erizos, CocoFinder.Object);
 	// Medusa saltarina (#771): el bote suena como la burbuja.
 	FireSoundByAmmo.Add(ETNRallyAmmo::Medusa, BurbujaFinder.Object);
+	// Arpón (#772): suena como el ancla.
+	FireSoundByAmmo.Add(ETNRallyAmmo::Arpon, AnclaFinder.Object);
 }
 
 void UTN_BuggyTurretComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -1,10 +1,11 @@
-// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770), ráfaga de erizos (#715) y medusa saltarina (#771). Lógica pura (TNRallyTurret) y,
+// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770), ráfaga de erizos (#715), medusa saltarina (#771) y arpón (#772). Lógica pura (TNRallyTurret) y,
 // para el charco, un mundo con física sin ventana (TN_RallyPhysicsTestKit.h). Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Turret; Quit" -nullrhi -unattended -NoSteam
 
 #include "Misc/AutomationTest.h"
 #include "TN_RallyPhysicsTestKit.h"
 #include "EngineUtils.h"
+#include "Vehicles/TN_RallyHarpoon.h"
 #include "Vehicles/TN_RallyProjectile.h"
 #include "Rally/TN_RallyLogic.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
@@ -350,6 +351,112 @@ bool FTNRallyTurretMedusaHopTest::RunTest(const FString& Parameters)
 	const double Rise = Peak - Rest;
 	TestTrue(FString::Printf(TEXT("sube unos 3 m (%.0f cm)"), Rise), FMath::Abs(Rise - 300.0) <= 50.0);
 	TestTrue(TEXT("y va por el aire"), bWasAirborne);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretArponTest, "Tortunabo.Rally.Turret.Arpon",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretArponTest::RunTest(const FString& Parameters)
+{
+	using namespace TNRallyTurret;
+	const FAmmoSpec Spec = SpecFor(ETNRallyAmmo::Arpon);
+	TestEqual(TEXT("arpón rápido: 7000 cm/s"), Spec.SpeedCms, 7000.f);
+	TestEqual(TEXT("que cae poco: gravedad 0,2"), Spec.GravityScale, 0.2f);
+	TestEqual(TEXT("una carga por caja"), TNRally::ChargesFor(ETNRallyAmmo::Arpon), 1);
+	TestEqual(TEXT("remolca 2 s"), HarpoonSeconds, 2.f);
+
+	// Tira hacia el alcanzado, en horizontal, con 1800 cm/s².
+	const float Dt = 1.f / 60.f;
+	const FVector Pull = HarpoonPullAccel(FVector::ZeroVector, FVector(3000.0, 0.0, 500.0), Dt);
+	TestTrue(TEXT("parado: 1800 cm/s² hacia el alcanzado"), Pull.Equals(FVector(HarpoonAccelCms2, 0.0, 0.0), 0.01));
+	const FVector Side = HarpoonPullAccel(FVector(2000.0, 0.0, 0.0), FVector(0.0, -3000.0, 0.0), Dt);
+	TestTrue(TEXT("hacia donde esté, también de lado"), Side.Equals(FVector(0.0, -HarpoonAccelCms2, 0.0), 0.01));
+	TestTrue(TEXT("pegado a él ya no tira"), HarpoonPullAccel(FVector::ZeroVector, FVector(HarpoonMinDistanceCm - 1.f, 0.0, 0.0), Dt).IsNearlyZero());
+
+	// Tope: el 115 % de la punta, sin pasarse nunca aunque se integre a pasos.
+	const float Cap = HarpoonTopSpeedCms();
+	TestEqual(TEXT("tope al 115 % de la punta"), Cap, BuggyTopSpeedCms * 1.15f, 0.01f);
+	TestTrue(TEXT("en el tope no tira"), HarpoonPullAccel(FVector(Cap, 0.0, 0.0), FVector(3000.0, 0.0, 0.0), Dt).IsNearlyZero());
+	TestTrue(TEXT("pasado el tope (cuesta abajo) tampoco"), HarpoonPullAccel(FVector(Cap + 500.f, 0.0, 0.0), FVector(3000.0, 0.0, 0.0), Dt).IsNearlyZero());
+	FVector Velocity(BuggyTopSpeedCms, 0.0, 0.0);
+	float MaxSpeed = 0.f;
+	for (int32 Step = 0; Step < 2 * 60; ++Step)
+	{
+		Velocity += HarpoonPullAccel(Velocity, FVector(5000.0, 0.0, 0.0), Dt) * Dt;
+		MaxSpeed = FMath::Max(MaxSpeed, static_cast<float>(Velocity.X));
+	}
+	TestTrue(FString::Printf(TEXT("a la punta, el remolque la sube (%.0f cm/s)"), MaxSpeed), MaxSpeed > BuggyTopSpeedCms + 100.f);
+	TestTrue(TEXT("y nunca pasa del tope"), MaxSpeed <= Cap + 0.01f);
+
+	// Bots y reparto.
+	TestTrue(TEXT("bot: al de delante a 30 m"), BotHarpoonInRange(3000.f));
+	TestFalse(TEXT("bot: pegado (10 m), no"), BotHarpoonInRange(1000.f));
+	TestFalse(TEXT("bot: lejos (80 m), no"), BotHarpoonInRange(8000.f));
+	TestFalse(TEXT("bot: sin nadie delante, no"), BotHarpoonInRange(-1.f));
+	using TNRally::EBotSpecialShot;
+	TestEqual(TEXT("bot: arpón al de delante"), static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::Arpon, 0.5f, 3000.f, -1.f)),
+		static_cast<int32>(EBotSpecialShot::AtAhead));
+	TestTrue(TEXT("más arpones detrás que delante"), TNRally::AmmoWeightsForPlace(8, 8).Arpon > TNRally::AmmoWeightsForPlace(1, 8).Arpon);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretArponTowTest, "Tortunabo.Rally.Turret.ArponTow",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretArponTowTest::RunTest(const FString& Parameters)
+{
+	using namespace TNTurretAmmoTest;
+	// Dos buggies parados a 30 m: el arpón que da en el de delante remolca al que lo dispara; con escudo, no.
+	for (const bool bShielded : { false, true })
+	{
+		FPhysicsWorld Test(bShielded ? TEXT("TNRallyArponShieldWorld") : TEXT("TNRallyArponWorld"));
+		if (!Test.World || !SpawnFlatGround(*Test.World))
+		{
+			AddError(TEXT("No se ha podido montar el suelo"));
+			return false;
+		}
+		ATN_Buggy* Shooter = SpawnBuggy(*Test.World, FTransform(FVector(0.0, 0.0, SpawnLiftCm)));
+		ATN_Buggy* Ahead = SpawnBuggy(*Test.World, FTransform(FVector(3000.0, 0.0, SpawnLiftCm)));
+		if (!TestNotNull(TEXT("buggies"), Shooter) || !Ahead)
+		{
+			return false;
+		}
+		Settle(Test, *Shooter);
+		if (bShielded)
+		{
+			Ahead->GrantShield();
+		}
+		const FVector Muzzle = Shooter->GetActorLocation() + FVector(300.0, 0.0, 60.0);
+		const FTransform Spawn(FRotator::ZeroRotator, Muzzle);
+		ATN_RallyProjectile* Harpoon = Test.World->SpawnActorDeferred<ATN_RallyProjectile>(ATN_RallyProjectile::StaticClass(), Spawn,
+			Shooter, Shooter, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		if (!TestNotNull(TEXT("arpón"), Harpoon))
+		{
+			return false;
+		}
+		Harpoon->Init(ETNRallyAmmo::Arpon, FVector(TNRallyTurret::HarpoonSpeedCms, 0.0, 0.0), Shooter);
+		Harpoon->FinishSpawning(Spawn);
+		bool bTethered = false;
+		float MaxSpeed = 0.f;
+		for (int32 Step = 0; Step < FMath::RoundToInt32(1.5f * StepsPerSecond); ++Step)
+		{
+			Test.Step();
+			bTethered |= TActorIterator<ATN_RallyHarpoonTether>(Test.World) ? true : false;
+			MaxSpeed = FMath::Max(MaxSpeed, static_cast<float>(Shooter->GetVelocity().X));
+		}
+		if (bShielded)
+		{
+			TestFalse(TEXT("con escudo no hay remolque"), bTethered);
+			TestFalse(TEXT("y el escudo se gasta"), Ahead->IsShielded());
+			TestTrue(FString::Printf(TEXT("el que dispara no se mueve (%.0f cm/s)"), MaxSpeed), MaxSpeed < 100.f);
+		}
+		else
+		{
+			TestTrue(TEXT("el arpón se clava y tira"), bTethered);
+			TestTrue(FString::Printf(TEXT("el que dispara gana velocidad hacia el de delante (%.0f cm/s)"), MaxSpeed), MaxSpeed > 300.f);
+		}
+	}
 	return true;
 }
 

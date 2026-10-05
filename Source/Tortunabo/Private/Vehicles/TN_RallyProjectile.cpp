@@ -7,6 +7,7 @@
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_RallyAnchor.h"
 #include "Vehicles/TN_RallyFXParticles.h"
+#include "Vehicles/TN_RallyHarpoon.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -48,6 +49,7 @@ namespace TNRallyFX
 		case ETNRallyAmmo::Alga: return 24.f;
 		case ETNRallyAmmo::Ancla: return 26.f;
 		case ETNRallyAmmo::Erizos: return 10.f;
+		case ETNRallyAmmo::Arpon: return 14.f;
 		default: return 18.f;
 		}
 	}
@@ -123,6 +125,7 @@ namespace TNRallyLook
 		case ETNRallyAmmo::ConchaGuiada: return FLinearColor(0.95f, 0.25f, 0.20f);
 		case ETNRallyAmmo::Erizos: return FLinearColor(0.30f, 0.12f, 0.35f);
 		case ETNRallyAmmo::Medusa: return FLinearColor(0.95f, 0.55f, 0.85f);
+		case ETNRallyAmmo::Arpon: return FLinearColor(0.55f, 0.62f, 0.68f);
 		default: return FLinearColor(0.35f, 0.20f, 0.08f);
 		}
 	}
@@ -343,6 +346,7 @@ void ATN_RallyProjectile::Impact(ATN_Buggy* HitBuggy, const FVector& Where, bool
 		break;
 	case ETNRallyAmmo::Coco:
 	case ETNRallyAmmo::Ancla:
+	case ETNRallyAmmo::Arpon:
 		HitBuggyWith(HitBuggy, Where, Dir, bGunnerHit);
 		ATN_RallyBurstFX::Broadcast(Via, ETNRallyBurstKind::CocoHit, Where, 80.f);
 		break;
@@ -375,6 +379,11 @@ void ATN_RallyProjectile::HitBuggyWith(ATN_Buggy* HitBuggy, const FVector& Where
 		{
 			TNRallyHitLog::NotifyServer(Shooter.Get(), HitBuggy, Ammo, Where, !bLanded);
 		}
+		// Arpón (#772): solo si se clava (sin escudo ni fantasma) tira del buggy que lo ha disparado (el dueño).
+		if (bLanded && Ammo == ETNRallyAmmo::Arpon)
+		{
+			ATN_RallyHarpoonTether::Attach(Cast<ATN_Buggy>(GetOwner()), HitBuggy, Where);
+		}
 		return;
 	}
 	// Sin componente de vida (un buggy de otra clase): los efectos de siempre, sin daño ni empujón en el punto.
@@ -384,6 +393,12 @@ void ATN_RallyProjectile::HitBuggyWith(ATN_Buggy* HitBuggy, const FVector& Where
 	case ETNRallyAmmo::Tinta: HitBuggy->ApplyInk(); break;
 	case ETNRallyAmmo::Mortero: HitBuggy->ApplyMortarBlast(); break;
 	case ETNRallyAmmo::Erizos: HitBuggy->ApplySpikeHit(Dir); break;
+	case ETNRallyAmmo::Arpon:
+		if (!HitBuggy->TryConsumeShield())
+		{
+			ATN_RallyHarpoonTether::Attach(Cast<ATN_Buggy>(GetOwner()), HitBuggy, Where);
+		}
+		break;
 	case ETNRallyAmmo::Ancla:
 		if (!HitBuggy->TryConsumeShield())
 		{

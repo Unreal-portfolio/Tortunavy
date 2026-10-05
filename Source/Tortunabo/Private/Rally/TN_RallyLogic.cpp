@@ -4,6 +4,7 @@
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Vehicles/TN_RallyTurretLogic.h"
 
 DEFINE_LOG_CATEGORY(LogTNRally);
 
@@ -402,6 +403,8 @@ namespace TNRally
 		Weights.Erizos = T <= 0.5f ? 2.5f : FMath::Lerp(2.5f, 0.8f, (T - 0.5f) * 2.f);
 		// Medusa saltarina (#771): sobre todo para los últimos.
 		Weights.Medusa = FMath::Lerp(0.5f, 2.5f, T);
+		// Arpón (#772): sobre todo para los últimos, que tienen a quién remolcarse.
+		Weights.Arpon = FMath::Lerp(0.4f, 2.f, T);
 		return Weights;
 	}
 
@@ -421,6 +424,7 @@ namespace TNRally
 		if ((Pick -= Weights.ConchaGuiada) < 0.f) { return ETNRallyAmmo::ConchaGuiada; }
 		if ((Pick -= Weights.Erizos) < 0.f) { return ETNRallyAmmo::Erizos; }
 		if ((Pick -= Weights.Medusa) < 0.f) { return ETNRallyAmmo::Medusa; }
+		if ((Pick -= Weights.Arpon) < 0.f) { return ETNRallyAmmo::Arpon; }
 		return ETNRallyAmmo::Tinta;
 	}
 
@@ -438,6 +442,7 @@ namespace TNRally
 		case ETNRallyAmmo::Mortero:
 		case ETNRallyAmmo::ConchaGuiada:
 		case ETNRallyAmmo::Erizos:
+		case ETNRallyAmmo::Arpon:
 			return 1;
 		default:
 			return 0;
@@ -467,6 +472,10 @@ namespace TNRally
 		case ETNRallyAmmo::Medusa:
 			// Bote propio (#771): para esquivar una teledirigida o un charco; si no, al rato.
 			Shot = bHopThreat || HeldSeconds >= BotJellyfishDelaySeconds ? EBotSpecialShot::Free : EBotSpecialShot::Hold;
+			break;
+		case ETNRallyAmmo::Arpon:
+			// Remolque (#772): al de delante, ni pegado ni demasiado lejos.
+			Shot = TNRallyTurret::BotHarpoonInRange(AheadCm) ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold;
 			break;
 		default:
 			Shot = bAheadInRange ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold;
