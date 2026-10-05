@@ -1,4 +1,4 @@
-// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770) y ráfaga de erizos (#715). Lógica pura (TNRallyTurret) y,
+// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770), ráfaga de erizos (#715) y medusa saltarina (#771). Lógica pura (TNRallyTurret) y,
 // para el charco, un mundo con física sin ventana (TN_RallyPhysicsTestKit.h). Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Turret; Quit" -nullrhi -unattended -NoSteam
 
@@ -275,6 +275,81 @@ bool FTNRallyTurretErizosTest::RunTest(const FString& Parameters)
 		static_cast<int32>(EBotSpecialShot::AtAhead));
 	TestEqual(TEXT("bot: con el de delante lejos, se espera"), static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::Erizos, 0.5f, 9000.f, -1.f)),
 		static_cast<int32>(EBotSpecialShot::Hold));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretMedusaTest, "Tortunabo.Rally.Turret.Medusa",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretMedusaTest::RunTest(const FString& Parameters)
+{
+	using namespace TNRallyTurret;
+	constexpr float Gravity = 980.f;
+	TestTrue(TEXT("la medusa es especial"), IsSpecial(ETNRallyAmmo::Medusa));
+	TestTrue(TEXT("y no lanza nada: actúa sobre el propio buggy"), IsSelfAmmo(ETNRallyAmmo::Medusa) && !IsSelfAmmo(ETNRallyAmmo::Mortero));
+	TestEqual(TEXT("dos cargas por caja"), TNRally::ChargesFor(ETNRallyAmmo::Medusa), 2);
+	TestEqual(TEXT("sin retroceso"), SpecFor(ETNRallyAmmo::Medusa).RecoilCms, 0.f);
+	// El impulso que sube 3 m en llano: sqrt(2 · 980 · 300) ≈ 767 cm/s.
+	TestEqual(TEXT("el impulso de 3 m"), HopUpCms(JellyfishHopCm, Gravity), 766.8f, 0.5f);
+	const float Apex = HopApexCm(JellyfishUpCms, Gravity);
+	TestTrue(FString::Printf(TEXT("el de la medusa sube 3 m ± 0,5 (%.0f cm)"), Apex), FMath::Abs(Apex - 300.f) <= 50.f);
+	TestTrue(TEXT("en el suelo se puede botar"), CanHop(false));
+	TestFalse(TEXT("en el aire, no"), CanHop(true));
+	TestFalse(TEXT("en el aire no le toca el charco"), PuddleAffects(false, 1.f, true));
+	TestTrue(TEXT("en el suelo, sí"), PuddleAffects(false, 1.f, false));
+
+	// Peligros que hacen botar a un bot.
+	TestTrue(TEXT("una teledirigida que le persigue a 20 m"), IsShellThreat(FVector::ZeroVector, FVector(-2000.0, 0.0, 0.0), true));
+	TestFalse(TEXT("la misma, si persigue a otro"), IsShellThreat(FVector::ZeroVector, FVector(-2000.0, 0.0, 0.0), false));
+	TestFalse(TEXT("la suya, pero lejos"), IsShellThreat(FVector::ZeroVector, FVector(-6000.0, 0.0, 0.0), true));
+	TestTrue(TEXT("un charco 20 m por delante"), IsPuddleAhead(FVector::ZeroVector, FVector::ForwardVector, FVector(2000.0, 300.0, 0.0)));
+	TestFalse(TEXT("un charco detrás"), IsPuddleAhead(FVector::ZeroVector, FVector::ForwardVector, FVector(-1000.0, 0.0, 0.0)));
+	TestFalse(TEXT("un charco a un lado"), IsPuddleAhead(FVector::ZeroVector, FVector::ForwardVector, FVector(1000.0, 2000.0, 0.0)));
+	TestFalse(TEXT("un charco muy lejos"), IsPuddleAhead(FVector::ZeroVector, FVector::ForwardVector, FVector(9000.0, 0.0, 0.0)));
+
+	using TNRally::EBotSpecialShot;
+	auto Shot = [](float Held, bool bThreat) { return static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::Medusa, Held, 2000.f, 2000.f, bThreat)); };
+	TestEqual(TEXT("bot: con un peligro, bota ya"), Shot(0.2f, true), static_cast<int32>(EBotSpecialShot::Free));
+	TestEqual(TEXT("bot: sin peligro, se espera"), Shot(0.2f, false), static_cast<int32>(EBotSpecialShot::Hold));
+	TestEqual(TEXT("bot: sin peligro, al rato bota"), Shot(TNRally::BotJellyfishDelaySeconds, false), static_cast<int32>(EBotSpecialShot::Free));
+	TestTrue(TEXT("más medusas detrás que delante"), TNRally::AmmoWeightsForPlace(8, 8).Medusa > TNRally::AmmoWeightsForPlace(1, 8).Medusa);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretMedusaHopTest, "Tortunabo.Rally.Turret.MedusaHop",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretMedusaHopTest::RunTest(const FString& Parameters)
+{
+	using namespace TNTurretAmmoTest;
+	// Buggy parado en llano con el impulso de la medusa: sube unos 3 m (± 0,5) y vuelve al suelo.
+	FPhysicsWorld Test(TEXT("TNRallyMedusaHopWorld"));
+	if (!Test.World || !SpawnFlatGround(*Test.World))
+	{
+		AddError(TEXT("No se ha podido montar el suelo"));
+		return false;
+	}
+	ATN_Buggy* Buggy = SpawnBuggy(*Test.World, FTransform(FVector(0.0, 0.0, SpawnLiftCm)));
+	if (!TestNotNull(TEXT("buggy"), Buggy))
+	{
+		return false;
+	}
+	Settle(Test, *Buggy);
+	TestFalse(TEXT("parado está en el suelo"), Buggy->IsAirborne());
+	const double Rest = Buggy->GetActorLocation().Z;
+	Buggy->ApplyVelocityImpulse(FVector::UpVector * TNRallyTurret::JellyfishUpCms);
+	double Peak = Rest;
+	bool bWasAirborne = false;
+	for (int32 Step = 0; Step < 3 * StepsPerSecond; ++Step)
+	{
+		Buggy->SetAIDriveInput(0.f, 0.f, 0.f, true);
+		Test.Step();
+		Peak = FMath::Max(Peak, Buggy->GetActorLocation().Z);
+		bWasAirborne |= Buggy->IsAirborne();
+	}
+	const double Rise = Peak - Rest;
+	TestTrue(FString::Printf(TEXT("sube unos 3 m (%.0f cm)"), Rise), FMath::Abs(Rise - 300.0) <= 50.0);
+	TestTrue(TEXT("y va por el aire"), bWasAirborne);
 	return true;
 }
 

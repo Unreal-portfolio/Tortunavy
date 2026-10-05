@@ -138,6 +138,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool IsInPuddle() const { return bInPuddle; }
 
+	/** Si ninguna rueda toca el suelo (cada máquina lo calcula en su Tick). En el aire no le tocan conchas ni charcos (#771). */
+	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
+	bool IsAirborne() const { return bAirborne; }
+
 	/** Si el motor está cortado (semáforo, salida anticipada, reaparición o fin). */
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool IsEngineLocked() const;

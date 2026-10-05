@@ -203,3 +203,10 @@ private:
 	/** Partículas de la ráfaga (vacío en un servidor dedicado). */
 	TSharedPtr<TNRallyParticles::FEmitterSet> Particles;
 };
+
+/** Peligros de la pista que un bot puede saltar con la medusa (#771). */
+namespace TNRallyHazards
+{
+	/** Servidor: una concha teledirigida persigue a Buggy de cerca o tiene un charco de alga justo delante. */
+	TORTUNABO_API bool HopThreatNear(const ATN_Buggy& Buggy);
+}

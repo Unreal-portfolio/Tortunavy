@@ -38,6 +38,10 @@ namespace TNRallyTurret
 			// Cada púa (#715): rápida, cae poco y empuja poco; la cadencia es la de la ráfaga y una carga da una ráfaga.
 			Spec = { ErizosSpeedCms, ErizosGravityScale, ErizosLifeSeconds, ErizosRecoilCms, ErizosSpikeInterval, 1 };
 			break;
+		case ETNRallyAmmo::Medusa:
+			// Bote propio (#771): sin proyectil ni retroceso; dos botes por caja.
+			Spec = { 0.f, 0.f, 0.f, 0.f, 0.5f, 2 };
+			break;
 		default:
 			break;
 		}
@@ -323,9 +327,9 @@ namespace TNRallyTurret
 		return AlgaSpinYawDegPerSecond * Alpha * (bClockwise ? 1.f : -1.f);
 	}
 
-	bool PuddleAffects(bool bIsDropper, float PuddleAgeSeconds)
+	bool PuddleAffects(bool bIsDropper, float PuddleAgeSeconds, bool bAirborne)
 	{
-		return !bIsDropper || PuddleAgeSeconds >= AlgaDropperGraceSeconds;
+		return !bAirborne && (!bIsDropper || PuddleAgeSeconds >= AlgaDropperGraceSeconds);
 	}
 
 	bool IsPuddleGround(const FVector& Normal)
@@ -440,5 +444,42 @@ namespace TNRallyTurret
 			return FVector::DotProduct(PushDir, Right) >= 0.0 ? Right : -Right;
 		}
 		return Lateral.GetSafeNormal();
+	}
+}
+
+namespace TNRallyTurret
+{
+	bool IsSelfAmmo(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::Medusa;
+	}
+
+	float HopUpCms(float HeightCm, float GravityCms2)
+	{
+		return FMath::Sqrt(2.f * FMath::Max(GravityCms2, 0.f) * FMath::Max(HeightCm, 0.f));
+	}
+
+	float HopApexCm(float UpCms, float GravityCms2)
+	{
+		return GravityCms2 > 0.f ? FMath::Square(FMath::Max(UpCms, 0.f)) / (2.f * GravityCms2) : 0.f;
+	}
+
+	bool CanHop(bool bAirborne)
+	{
+		return !bAirborne;
+	}
+
+	bool IsShellThreat(const FVector& Buggy, const FVector& Shell, bool bTargetsMe)
+	{
+		return bTargetsMe && FVector::DistSquared(Buggy, Shell) <= FMath::Square(HopShellThreatCm);
+	}
+
+	bool IsPuddleAhead(const FVector& Buggy, const FVector& Forward, const FVector& Puddle, float RadiusCm)
+	{
+		const FVector FlatForward = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
+		const FVector To(Puddle.X - Buggy.X, Puddle.Y - Buggy.Y, 0.f);
+		const double Along = FVector::DotProduct(To, FlatForward);
+		const double Side = (To - FlatForward * Along).Size();
+		return !FlatForward.IsNearlyZero() && Along > 0.0 && Along - RadiusCm <= HopPuddleLookAheadCm && Side <= RadiusCm;
 	}
 }

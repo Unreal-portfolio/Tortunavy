@@ -238,8 +238,10 @@ namespace TNRally
 		float ConchaGuiada = 0.f;
 		/** Ráfaga de erizos (#715): sobre todo los primeros y la mitad de la tabla. */
 		float Erizos = 0.f;
+		/** Medusa saltarina (#771): sobre todo los últimos. */
+		float Medusa = 0.f;
 
-		float Total() const { return Alga + Burbuja + Mortero + Tinta + Ancla + Concha + ConchaGuiada + Erizos; }
+		float Total() const { return Alga + Burbuja + Mortero + Tinta + Ancla + Concha + ConchaGuiada + Erizos + Medusa; }
 	};
 
 	/**
@@ -252,7 +254,7 @@ namespace TNRally
 	/** Elige munición con una tirada en [0, 1). Nunca Coco ni None. */
 	TORTUNABO_API ETNRallyAmmo PickAmmo(const FAmmoWeights& Weights, float Roll01);
 
-	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2, Concha 2, Concha teledirigida 1, Erizos 1 (una ráfaga). */
+	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2, Concha 2, Concha teledirigida 1, Erizos 1 (una ráfaga), Medusa 2. */
 	TORTUNABO_API int32 ChargesFor(ETNRallyAmmo Ammo);
 
 	/** Hacia dónde dispara un bot su munición especial (ShouldBotFireSpecial). */
@@ -277,14 +279,18 @@ namespace TNRally
 	inline constexpr float BotBubbleDelaySeconds = 1.5f;
 	/** Alcance de los bots con la ráfaga de erizos (cm): al de delante, de cerca (#715). */
 	inline constexpr float BotErizosRangeCm = 4000.f;
+	/** Sin peligro que saltar, la medusa se gasta al rato (s, #771). */
+	inline constexpr float BotJellyfishDelaySeconds = 4.f;
 
 	/**
 	 * Bot sin artillera humana (#629): qué hace con la especial Ammo que lleva HeldSeconds. AheadCm y BehindCm, distancia
 	 * al buggy de justo delante y de justo detrás (negativa si no hay). Conchas, mortero, tinta y ancla, al de delante a
 	 * menos de BotSpecialRangeCm; el alga, al de detrás a menos de BotAlgaBehindRangeCm (si no, al de delante); la burbuja,
-	 * al rato. Pasados BotMaxHoldSeconds, la gasta igual.
+	 * al rato; la medusa (#771), con bHopThreat (una teledirigida le persigue o tiene un charco delante) o al rato. Pasados
+	 * BotMaxHoldSeconds, la gasta igual.
 	 */
-	TORTUNABO_API EBotSpecialShot ShouldBotFireSpecial(ETNRallyAmmo Ammo, float HeldSeconds, float AheadCm, float BehindCm);
+	TORTUNABO_API EBotSpecialShot ShouldBotFireSpecial(ETNRallyAmmo Ammo, float HeldSeconds, float AheadCm, float BehindCm,
+		bool bHopThreat = false);
 
 	// ---- Spline y parrilla ----
 

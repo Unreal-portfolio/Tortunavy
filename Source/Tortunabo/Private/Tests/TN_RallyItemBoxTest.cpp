@@ -15,7 +15,7 @@ namespace TNItemBoxTest
 {
 	/** Munición especial que puede salir de una caja «?». */
 	const ETNRallyAmmo BoxAmmo[] = { ETNRallyAmmo::Concha, ETNRallyAmmo::ConchaGuiada, ETNRallyAmmo::Alga, ETNRallyAmmo::Tinta,
-		ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Ancla, ETNRallyAmmo::Erizos };
+		ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Ancla, ETNRallyAmmo::Erizos, ETNRallyAmmo::Medusa };
 
 	/** Veces que sale cada munición con Rolls tiradas uniformes (índice = valor de ETNRallyAmmo). */
 	TArray<int32> CountRolls(const TNRally::FAmmoWeights& Weights, int32 Rolls)
@@ -85,9 +85,13 @@ bool FTNRallyItemBoxAmmoTest::RunTest(const FString& Parameters)
 		const FString Name = UEnum::GetValueAsString(Ammo);
 		const FAmmoSpec Spec = SpecFor(Ammo);
 		TestTrue(*(Name + TEXT(": la caja da cargas")), TNRally::ChargesFor(Ammo) > 0);
-		TestTrue(*(Name + TEXT(": el retroceso empuja al buggy")), Spec.RecoilCms > 0.f);
 		TestTrue(*(Name + TEXT(": tiene cadencia")), Spec.FireInterval > 0.f);
-		TestTrue(*(Name + TEXT(": sale de la torreta")), Spec.SpeedCms > 0.f && Spec.LifeSeconds > 0.f);
+		// La medusa (#771) no lanza nada: actúa sobre el propio buggy, sin retroceso.
+		if (!IsSelfAmmo(Ammo))
+		{
+			TestTrue(*(Name + TEXT(": el retroceso empuja al buggy")), Spec.RecoilCms > 0.f);
+			TestTrue(*(Name + TEXT(": sale de la torreta")), Spec.SpeedCms > 0.f && Spec.LifeSeconds > 0.f);
+		}
 		// La caja sustituye la especial que llevara y se puede seleccionar con la rueda.
 		const FSpecial Given = Give(Ammo, TNRally::ChargesFor(Ammo));
 		TestTrue(*(Name + TEXT(": se puede disparar")), CanFireSpecial(Given));

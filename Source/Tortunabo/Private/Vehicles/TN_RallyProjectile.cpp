@@ -1,4 +1,5 @@
 #include "Vehicles/TN_RallyProjectile.h"
+#include "Kart/TN_KartShell.h"
 #include "Rally/TN_RallyHitReport.h"
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyHealthComponent.h"
@@ -121,6 +122,7 @@ namespace TNRallyLook
 		case ETNRallyAmmo::Concha: return FLinearColor(0.25f, 0.85f, 0.45f);
 		case ETNRallyAmmo::ConchaGuiada: return FLinearColor(0.95f, 0.25f, 0.20f);
 		case ETNRallyAmmo::Erizos: return FLinearColor(0.30f, 0.12f, 0.35f);
+		case ETNRallyAmmo::Medusa: return FLinearColor(0.95f, 0.55f, 0.85f);
 		default: return FLinearColor(0.35f, 0.20f, 0.08f);
 		}
 	}
@@ -566,7 +568,7 @@ void ATN_RallyAlgaPuddle::Tick(float DeltaSeconds)
 		{
 			continue;
 		}
-		if (Immune.Contains(Buggy) || !TNRallyTurret::PuddleAffects(Buggy == Dropper.Get(), Age))
+		if (Immune.Contains(Buggy) || !TNRallyTurret::PuddleAffects(Buggy == Dropper.Get(), Age, Buggy->IsAirborne()))
 		{
 			continue;
 		}
@@ -671,4 +673,31 @@ void ATN_RallyBurstFX::Tick(float DeltaSeconds)
 	const float Grow = 1.f - FMath::Square(1.f - Alpha);
 	const float Shrink = Alpha > 0.8f ? 1.f - (Alpha - 0.8f) / 0.2f : 1.f;
 	Mesh->SetRelativeScale3D(FVector(FMath::Max(0.01f, Grow * Shrink) * RadiusCm / TNRallyFX::BasicShapeRadiusCm));
+}
+
+// ── Peligros que salta la medusa (#771) ───────────────────────────────────────
+
+bool TNRallyHazards::HopThreatNear(const ATN_Buggy& Buggy)
+{
+	UWorld* World = Buggy.GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+	const FVector Location = Buggy.GetActorLocation();
+	for (TActorIterator<ATN_KartShell> It(World); It; ++It)
+	{
+		if (TNRallyTurret::IsShellThreat(Location, It->GetActorLocation(), It->IsHomingAt(&Buggy)))
+		{
+			return true;
+		}
+	}
+	for (TActorIterator<ATN_RallyAlgaPuddle> It(World); It; ++It)
+	{
+		if (TNRallyTurret::IsPuddleAhead(Location, Buggy.GetActorForwardVector(), It->GetActorLocation()))
+		{
+			return true;
+		}
+	}
+	return false;
 }

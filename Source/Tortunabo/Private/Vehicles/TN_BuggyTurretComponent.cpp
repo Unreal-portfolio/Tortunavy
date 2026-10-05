@@ -67,6 +67,8 @@ UTN_BuggyTurretComponent::UTN_BuggyTurretComponent()
 	FireSoundByAmmo.Add(ETNRallyAmmo::Ancla, AnclaFinder.Object);
 	// Ráfaga de erizos (#715): cada púa suena como el coco, el disparo de la torreta más corto.
 	FireSoundByAmmo.Add(ETNRallyAmmo::Erizos, CocoFinder.Object);
+	// Medusa saltarina (#771): el bote suena como la burbuja.
+	FireSoundByAmmo.Add(ETNRallyAmmo::Medusa, BurbujaFinder.Object);
 }
 
 void UTN_BuggyTurretComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -316,6 +318,19 @@ bool UTN_BuggyTurretComponent::TryFire(bool bSpecial, const FVector& WorldDir)
 
 bool UTN_BuggyTurretComponent::LaunchAmmo(ETNRallyAmmo Ammo, const FVector& Dir, const FVector& Muzzle)
 {
+	if (TNRallyTurret::IsSelfAmmo(Ammo))
+	{
+		// Medusa saltarina (#771): sin proyectil; el bote es un impulso vertical en el servidor, como el del mortero. En el
+		// aire no se puede usar (no se gasta la carga).
+		ATN_Buggy* Self = GetBuggy();
+		if (!TNRallyTurret::CanHop(Self->IsAirborne()))
+		{
+			return false;
+		}
+		Self->ApplyVelocityImpulse(FVector::UpVector * TNRallyTurret::JellyfishUpCms);
+		ATN_RallyBurstFX::Broadcast(Self, ETNRallyBurstKind::BubblePop, Self->GetActorLocation(), 220.f);
+		return true;
+	}
 	if (!TNRallyTurret::IsGroundShell(Ammo))
 	{
 		return SpawnProjectile(Ammo, Dir, Muzzle) != nullptr;

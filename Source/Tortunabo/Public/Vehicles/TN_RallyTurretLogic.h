@@ -257,8 +257,11 @@ namespace TNRallyTurret
 	 */
 	TORTUNABO_API float PuddleEntrySpinDegPerSecond(float SpeedCms, bool bClockwise);
 
-	/** Si el charco afecta a un buggy: a quien lo soltó (Karts), no durante sus primeros AlgaDropperGraceSeconds. */
-	TORTUNABO_API bool PuddleAffects(bool bIsDropper, float PuddleAgeSeconds);
+	/**
+	 * Si el charco afecta a un buggy: a quien lo soltó (Karts), no durante sus primeros AlgaDropperGraceSeconds; a uno en el
+	 * aire (el bote de la medusa, #771), nunca.
+	 */
+	TORTUNABO_API bool PuddleAffects(bool bIsDropper, float PuddleAgeSeconds, bool bAirborne = false);
 
 	/** Si una normal de impacto es suelo donde puede quedar un charco (no una pared). */
 	TORTUNABO_API bool IsPuddleGround(const FVector& Normal);
@@ -328,4 +331,32 @@ namespace TNRallyTurret
 	 * morro (de lado); si PushDir va a lo largo del morro, hacia el lado al que se incline o, recto, a la derecha.
 	 */
 	TORTUNABO_API FVector SpikePushDir(const FVector& Forward, const FVector& PushDir);
+
+	// ── Medusa saltarina (#771) ─────────────────────────────────────────────────
+
+	/** Altura del bote (cm) en llano y cambio de velocidad hacia arriba que la da con la gravedad normal (sqrt(2 g h)). */
+	constexpr float JellyfishHopCm = 300.f;
+	constexpr float JellyfishUpCms = 770.f;
+	/** Una concha teledirigida que persigue al buggy a menos de esto (cm) es motivo para botar (bots). */
+	constexpr float HopShellThreatCm = 2500.f;
+	/** Un charco por delante a menos de esto (cm, del centro del buggy al borde del charco) también. */
+	constexpr float HopPuddleLookAheadCm = 2500.f;
+
+	/** Munición que no lanza nada: actúa sobre el propio buggy (la medusa). */
+	TORTUNABO_API bool IsSelfAmmo(ETNRallyAmmo Ammo);
+
+	/** Cambio de velocidad vertical (cm/s) que sube HeightCm con la gravedad GravityCms2 (positiva). */
+	TORTUNABO_API float HopUpCms(float HeightCm, float GravityCms2);
+
+	/** Altura (cm) que sube un cambio de velocidad vertical UpCms con la gravedad GravityCms2 (positiva). */
+	TORTUNABO_API float HopApexCm(float UpCms, float GravityCms2);
+
+	/** Si se puede usar la medusa: con el buggy en el aire, no. */
+	TORTUNABO_API bool CanHop(bool bAirborne);
+
+	/** Bots: una concha teledirigida que le persigue (bTargetsMe) a menos de HopShellThreatCm. */
+	TORTUNABO_API bool IsShellThreat(const FVector& Buggy, const FVector& Shell, bool bTargetsMe);
+
+	/** Bots: un charco de radio RadiusCm por delante (en la dirección Forward), a menos de HopPuddleLookAheadCm de su borde. */
+	TORTUNABO_API bool IsPuddleAhead(const FVector& Buggy, const FVector& Forward, const FVector& Puddle, float RadiusCm = AlgaPuddleRadiusCm);
 }

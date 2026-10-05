@@ -391,8 +391,8 @@ void ATN_BuggyGunnerPawn::SpawnLocalTracer(bool bSpecial, const FRotator& Aim, c
 	const bool bFireSpecial = bSpecial || TNRallyTurret::IsSpecial(Turret->GetSelectedAmmo());
 	const ETNRallyAmmo Ammo = bFireSpecial ? Turret->GetSpecialAmmo() : ETNRallyAmmo::Coco;
 	const bool bCanFire = bFireSpecial ? (Ammo != ETNRallyAmmo::None && Turret->GetSpecialCharges() > 0) : !Turret->IsOverheated();
-	// Las conchas no vuelan (corren por el suelo): no hay trazador que adelantar.
-	if (!bCanFire || TNRallyTurret::IsGroundShell(Ammo))
+	// Las conchas no vuelan (corren por el suelo) y la medusa no lanza nada (#771): no hay trazador que adelantar.
+	if (!bCanFire || TNRallyTurret::IsGroundShell(Ammo) || TNRallyTurret::IsSelfAmmo(Ammo))
 	{
 		return;
 	}

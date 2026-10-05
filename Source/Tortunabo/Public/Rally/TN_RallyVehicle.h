@@ -36,7 +36,9 @@ enum class ETNRallyAmmo : uint8
 	/** Concha que persigue al buggy de justo delante. */
 	ConchaGuiada,
 	/** Ráfaga de erizos (#715): una carga son 12 púas rápidas mientras se mantiene el gatillo. */
-	Erizos
+	Erizos,
+	/** Medusa saltarina (#771): sin proyectil, hace botar unos 3 m al buggy propio. */
+	Medusa
 };
 
 UINTERFACE(MinimalAPI, meta = (CannotImplementInterfaceInBlueprint))
