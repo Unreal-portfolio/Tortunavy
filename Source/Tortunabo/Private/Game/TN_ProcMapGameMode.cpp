@@ -15,6 +15,7 @@
 #include "World/ProcMap/TN_ProcEggNest.h"
 #include "World/ProcMap/TN_ProcStartStructure.h"
 #include "World/ProcMap/TN_PathStorm.h"
+#include "World/ProcMap/TN_SandStorm.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -71,6 +72,7 @@ ATN_ProcMapGameMode::ATN_ProcMapGameMode()
 	GameStateClass = ATN_ProcMapGameState::StaticClass();
 	GeneratorClass = ATN_ProcMapGenerator::StaticClass();
 	PathStormClass = ATN_PathStorm::StaticClass();
+	SandStormClass = ATN_SandStorm::StaticClass();
 
 	// Los mismos Blueprints que BP_RunGameMode: así la clase C++ ya sirve como
 	// GameMode Override de LVL_ProcMap aunque no exista un BP propio.
@@ -397,6 +399,7 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 
 	bRoundActive = true;
 	StartStormIfNeeded();
+	StartSandStormIfNeeded();
 
 	// La salida se abre con el «¡ADELANTE!» de la pantalla de carga: gira la puerta 2 o se rompen los huevos.
 	GetWorldTimerManager().ClearTimer(StartStructureOpenHandle);
@@ -613,6 +616,32 @@ void ATN_ProcMapGameMode::StartStormIfNeeded()
 		const float Speed = WalkSpeed > 0.f ? FMath::Min(Profile.StormSpeed, WalkSpeed) : Profile.StormSpeed;
 		Storm->StartStorm(Generator, Speed, Profile.StormGraceSeconds);
 	}
+}
+
+void ATN_ProcMapGameMode::StartSandStormIfNeeded()
+{
+	if (Mode != ETNProcGameMode::Coop || !SandStormClass || !Generator)
+	{
+		if (SandStorm) { SandStorm->StopCycle(); }
+		return;
+	}
+	if (!SandStorm)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SandStorm = GetWorld()->SpawnActor<ATN_SandStorm>(SandStormClass, FTransform::Identity, Params);
+	}
+	if (SandStorm)
+	{
+		// La semilla del mapa: con TN.Proc o una semilla fija, las tormentas llegan siempre igual.
+		SandStorm->StartCycle(Generator->GetNetConfig().Seed ^ 0x790);
+	}
+}
+
+void ATN_ProcMapGameMode::StopStorms()
+{
+	if (Storm) { Storm->StopStorm(); }
+	if (SandStorm) { SandStorm->StopCycle(); }
 }
 
 float ATN_ProcMapGameMode::GetTurtleWalkSpeed() const
@@ -999,10 +1028,7 @@ void ATN_ProcMapGameMode::UpdateRoundProgressAndMaybeFinish()
 			bRoundActive = false;
 			bMatchOver = true;
 			GetWorldTimerManager().ClearTimer(RoundTimeLimitHandle);
-			if (Storm)
-			{
-				Storm->StopStorm();
-			}
+			StopStorms();
 			SyncGameState();
 		}
 		return;
@@ -1113,10 +1139,7 @@ void ATN_ProcMapGameMode::EndRound(const TArray<APlayerController*>& Winners, co
 		GetWorldTimerManager().ClearTimer(Pending.Value);
 	}
 	PendingRespawns.Reset();
-	if (Storm)
-	{
-		Storm->StopStorm();
-	}
+	StopStorms();
 
 	for (APlayerController* Winner : Winners)
 	{
@@ -1260,10 +1283,7 @@ void ATN_ProcMapGameMode::EnterFinalResults()
 	bMatchOver = true;
 	bRoundActive = false;
 	GetWorldTimerManager().ClearTimer(RoundTimeLimitHandle);
-	if (Storm)
-	{
-		Storm->StopStorm();
-	}
+	StopStorms();
 
 	// Carrera y 2vs2: la tabla final es la de rondas ganadas (el widget de
 	// resultados de siempre la muestra con el puesto y los puntos).

@@ -69,6 +69,7 @@
 #include "OnlineSubsystem.h"
 #include "Styling/SlateTypes.h"
 #include "VR/TN_VRMode.h"
+#include "World/ProcMap/TN_SandStormRules.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
 // del bloque.
@@ -2680,6 +2681,16 @@ void UTN_PauseMenuWidget::FillGameTab()
 				[](float V) { return TNPauseUI::Percent(V); },
 				[WeakSettings](float V) { if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([V](FTNGameSettings& D) { D.ColorFilterStrength = V; }); } });
 			Row->SetDescription(NSLOCTEXT("TNPause", "FilterStrengthDesc", "Cuánto corrige el filtro para daltónicos."));
+		}
+		if (UTN_PauseRow* Row = AddListRow(SettingsList))
+		{
+			// Por debajo de MIN_VISUAL la tormenta de arena se seguiría viendo igual (es su mínimo).
+			Row->SetupSlider(NSLOCTEXT("TNPause", "WeatherEffects", "Efectos del clima"), TNSandStorm::MIN_VISUAL, 1.f, 0.05f,
+				FMath::Max(Data.WeatherEffects, TNSandStorm::MIN_VISUAL),
+				[](float V) { return TNPauseUI::Percent(V); },
+				[WeakSettings](float V) { if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([V](FTNGameSettings& D) { D.WeatherEffects = V; }); } });
+			Row->SetDescription(NSLOCTEXT("TNPause", "WeatherEffectsDesc",
+				"Cuánto cierran la vista la niebla y el color de la tormenta de arena. Bájalo si te cuesta ver o te marea. El viento sigue empujando igual."));
 		}
 		AddToggleRow(NSLOCTEXT("TNPause", "Talkers", "Quién habla (texto)"),
 			NSLOCTEXT("TNPause", "TalkersDesc", "A la derecha de la pantalla, el nombre de quien está hablando por voz. Para jugar sin sonido o si oyes mal."),

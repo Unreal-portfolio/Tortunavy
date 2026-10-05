@@ -9,6 +9,7 @@
 class ATN_ProcMapGenerator;
 class ATN_ProcEggNest;
 class ATN_PathStorm;
+class ATN_SandStorm;
 class ATN_ProcMapGameState;
 class UTN_ProcMapSettings;
 class ATortugaCharacter;
@@ -88,6 +89,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ProcMap")
 	TSubclassOf<ATN_PathStorm> PathStormClass;
 
+	/** Clase de la tormenta de arena periódica del Coop (#790). Vacía = sin tormenta de arena. */
+	UPROPERTY(EditDefaultsOnly, Category = "ProcMap")
+	TSubclassOf<ATN_SandStorm> SandStormClass;
+
 	/** Modo si se abre LVL_ProcMap sin pasar por el lobby. */
 	UPROPERTY(EditDefaultsOnly, Category = "ProcMap|Testing")
 	ETNProcGameMode ModeWithoutLobby = ETNProcGameMode::Coop;
@@ -150,6 +155,9 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_PathStorm> Storm;
 
+	UPROPERTY(Transient)
+	TObjectPtr<ATN_SandStorm> SandStorm;
+
 	ETNProcGameMode Mode = ETNProcGameMode::Coop;
 	ETNProcDifficulty Difficulty = ETNProcDifficulty::Normal;
 	/** Cómo se sale en cada ronda: lo del lobby, la opción de URL ProcStart o TN.Proc.StartStyle. */
@@ -201,6 +209,10 @@ private:
 	void FreezeWaitingPlayers();
 	void UnfreezeAllPlayers();
 	void StartStormIfNeeded();
+	/** Coop: arranca el ciclo de la tormenta de arena (#790) con una semilla de la ronda. */
+	void StartSandStormIfNeeded();
+	/** Para las dos tormentas (entre rondas y al acabar la partida). */
+	void StopStorms();
 
 	/** Velocidad de andar (cm/s) de la tortuga más lenta en juego, o la del peón por defecto; 0 si no se sabe. */
 	float GetTurtleWalkSpeed() const;

@@ -187,6 +187,7 @@ namespace TNGameSettingsDetail
 		S.FieldOfViewOffset = FMath::Clamp(S.FieldOfViewOffset, -30.f, 30.f);
 		S.ColorFilter = static_cast<uint8>(FMath::Clamp<int32>(S.ColorFilter, 0, 3));
 		S.ColorFilterStrength = FMath::Clamp(S.ColorFilterStrength, 0.f, 1.f);
+		S.WeatherEffects = FMath::Clamp(S.WeatherEffects, 0.f, 1.f);
 		S.Brightness = FMath::Clamp(S.Brightness, 0.f, 1.f);
 		S.UIScale = FMath::Clamp(S.UIScale, MinUIScale, MaxUIScale);
 		S.VRMode = static_cast<uint8>(FMath::Clamp<int32>(S.VRMode, 0, 2));
@@ -960,6 +961,7 @@ void UTN_GameSettingsSubsystem::ResetGroup(ETNSettingsGroup Group)
 		Target.ColorFilterStrength = Defaults.ColorFilterStrength;
 		Target.UIScale = Defaults.UIScale;
 		Target.bShowTalkers = Defaults.bShowTalkers;
+		Target.WeatherEffects = Defaults.WeatherEffects;
 		// Idioma sin elegir (el del sistema, o el español) y el ojo de pez de serie.
 		Target.Language = Defaults.Language;
 		Target.bFisheye = Defaults.bFisheye;

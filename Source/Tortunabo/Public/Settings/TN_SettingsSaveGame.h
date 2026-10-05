@@ -152,6 +152,13 @@ struct FTNGameSettings
 	bool bShowTalkers = false;
 
 	/**
+	 * Efectos del clima (0..1): cuánto se ve la niebla y el tinte de la tormenta de arena del coop (#790). 1 = como está
+	 * pensado; menos, atenuado (nunca del todo: TNSandStorm::MIN_VISUAL). No cambia el freno ni el empuje.
+	 */
+	UPROPERTY()
+	float WeatherEffects = 1.f;
+
+	/**
 	 * Idioma del juego: código de cultura de la lista de idiomas (UTN_LanguageSettings; «es-ES», «en», «pt-BR»...). Vacío =
 	 * todavía sin elegir: se usa el idioma del sistema si está en la lista y, si no, el español.
 	 */

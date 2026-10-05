@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-05 23:24\n"
-"PO-Revision-Date: 2026-10-05 23:24\n"
+"POT-Creation-Date: 2026-10-05 23:35\n"
+"PO-Revision-Date: 2026-10-05 23:35\n"
 "Language-Team: \n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -4613,589 +4613,589 @@ msgid "Vuelta {0}/{1} · {2}"
 msgstr "Tur {0}/{1} · {2}"
 
 #. Key:	NoKey
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1648)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1648)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1650)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1650)
 msgctxt "TNSettings,NoKey"
 msgid "—"
 msgstr "—"
 
 #. Key:	Space
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1653)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1653)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1655)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1655)
 msgctxt "TNKeys,Space"
 msgid "Espacio"
 msgstr "Boşluk"
 
 #. Key:	LeftShift
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1654)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1654)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
 msgctxt "TNKeys,LeftShift"
 msgid "Mayús izq."
 msgstr "Sol Shift"
 
 #. Key:	RightShift
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1654)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1654)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
 msgctxt "TNKeys,RightShift"
 msgid "Mayús der."
 msgstr "Sağ Shift"
 
 #. Key:	LeftCtrl
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1655)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1655)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
 msgctxt "TNKeys,LeftCtrl"
 msgid "Ctrl izq."
 msgstr "Sol Ctrl"
 
 #. Key:	RightCtrl
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1655)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1655)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
 msgctxt "TNKeys,RightCtrl"
 msgid "Ctrl der."
 msgstr "Sağ Ctrl"
 
 #. Key:	Alt
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
 msgctxt "TNKeys,Alt"
 msgid "Alt"
 msgstr "Alt"
 
 #. Key:	AltGr
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1656)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
 msgctxt "TNKeys,AltGr"
 msgid "Alt Gr"
 msgstr "Alt Gr"
 
 #. Key:	Backspace
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
 msgctxt "TNKeys,Backspace"
 msgid "Retroceso"
 msgstr "Backspace"
 
 #. Key:	Escape
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1657)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
 msgctxt "TNKeys,Escape"
 msgid "Esc"
 msgstr "Esc"
 
 #. Key:	Enter
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
 msgctxt "TNKeys,Enter"
 msgid "Intro"
 msgstr "Enter"
 
 #. Key:	Tab
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1658)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
 msgctxt "TNKeys,Tab"
 msgid "Tab"
 msgstr "Tab"
 
 #. Key:	CapsLock
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1659)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1661)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1661)
 msgctxt "TNKeys,CapsLock"
 msgid "Bloq Mayús"
 msgstr "Caps Lock"
 
 #. Key:	PageDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
 msgctxt "TNKeys,PageDown"
 msgid "Av Pág"
 msgstr "Page Down"
 
 #. Key:	PageUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1660)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
 msgctxt "TNKeys,PageUp"
 msgid "Re Pág"
 msgstr "Page Up"
 
 #. Key:	Delete
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1661)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1661)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
 msgctxt "TNKeys,Delete"
 msgid "Supr"
 msgstr "Delete"
 
 #. Key:	Insert
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1661)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1661)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
 msgctxt "TNKeys,Insert"
 msgid "Insert"
 msgstr "Insert"
 
 #. Key:	End
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
 msgctxt "TNKeys,End"
 msgid "Fin"
 msgstr "End"
 
 #. Key:	Home
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1662)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
 msgctxt "TNKeys,Home"
 msgid "Inicio"
 msgstr "Home"
 
 #. Key:	ArrowDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1665)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1665)
 msgctxt "TNKeys,ArrowDown"
 msgid "Flecha abajo"
 msgstr "Aşağı ok"
 
 #. Key:	ArrowUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1663)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1665)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1665)
 msgctxt "TNKeys,ArrowUp"
 msgid "Flecha arriba"
 msgstr "Yukarı ok"
 
 #. Key:	ArrowLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1666)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1666)
 msgctxt "TNKeys,ArrowLeft"
 msgid "Flecha izquierda"
 msgstr "Sol ok"
 
 #. Key:	ArrowRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1664)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1666)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1666)
 msgctxt "TNKeys,ArrowRight"
 msgid "Flecha derecha"
 msgstr "Sağ ok"
 
 #. Key:	Mouse
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1665)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1665)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1667)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1667)
 msgctxt "TNKeys,Mouse"
 msgid "Ratón"
 msgstr "Fare"
 
 #. Key:	MouseLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1667)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1667)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
 msgctxt "TNKeys,MouseLeft"
 msgid "Clic izquierdo"
 msgstr "Sol tık"
 
 #. Key:	MouseRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1667)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1667)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
 msgctxt "TNKeys,MouseRight"
 msgid "Clic derecho"
 msgstr "Sağ tık"
 
 #. Key:	MouseMiddle
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1668)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1668)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1670)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1670)
 msgctxt "TNKeys,MouseMiddle"
 msgid "Clic de la rueda"
 msgstr "Tekerlek tıkı"
 
 #. Key:	MouseSide1
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1671)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1671)
 msgctxt "TNKeys,MouseSide1"
 msgid "Botón lateral 1"
 msgstr "Yan tuş 1"
 
 #. Key:	MouseSide2
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1669)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1671)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1671)
 msgctxt "TNKeys,MouseSide2"
 msgid "Botón lateral 2"
 msgstr "Yan tuş 2"
 
 #. Key:	Wheel
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1670)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1670)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1672)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1672)
 msgctxt "TNKeys,Wheel"
 msgid "Rueda"
 msgstr "Tekerlek"
 
 #. Key:	PadLeftStick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1672)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1672)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1674)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1674)
 msgctxt "TNKeys,PadLeftStick"
 msgid "Stick izquierdo"
 msgstr "Sol analog"
 
 #. Key:	PadRightStick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1672)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1672)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1674)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1674)
 msgctxt "TNKeys,PadRightStick"
 msgid "Stick derecho"
 msgstr "Sağ analog"
 
 #. Key:	PadFaceBottom
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1675)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1675)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
 msgctxt "TNKeys,PadFaceBottom"
 msgid "A / Cruz"
 msgstr "A / Çarpı"
 
 #. Key:	PadFaceRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1675)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1675)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
 msgctxt "TNKeys,PadFaceRight"
 msgid "B / Círculo"
 msgstr "B / Daire"
 
 #. Key:	PadFaceLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1676)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1676)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
 msgctxt "TNKeys,PadFaceLeft"
 msgid "X / Cuadrado"
 msgstr "X / Kare"
 
 #. Key:	PadFaceTop
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1676)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1676)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
 msgctxt "TNKeys,PadFaceTop"
 msgid "Y / Triángulo"
 msgstr "Y / Üçgen"
 
 #. Key:	PadLeftShoulder
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1679)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1679)
 msgctxt "TNKeys,PadLeftShoulder"
 msgid "LB / L1"
 msgstr "LB / L1"
 
 #. Key:	PadRightShoulder
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1677)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1679)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1679)
 msgctxt "TNKeys,PadRightShoulder"
 msgid "RB / R1"
 msgstr "RB / R1"
 
 #. Key:	PadLeftTrigger
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
 msgctxt "TNKeys,PadLeftTrigger"
 msgid "LT / L2"
 msgstr "LT / L2"
 
 #. Key:	PadRightTrigger
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1678)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
 msgctxt "TNKeys,PadRightTrigger"
 msgid "RT / R2"
 msgstr "RT / R2"
 
 #. Key:	PadDpadDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1682)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1682)
 msgctxt "TNKeys,PadDpadDown"
 msgid "Cruceta abajo"
 msgstr "Yön tuşu aşağı"
 
 #. Key:	PadDpadUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1680)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1682)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1682)
 msgctxt "TNKeys,PadDpadUp"
 msgid "Cruceta arriba"
 msgstr "Yön tuşu yukarı"
 
 #. Key:	PadDpadLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1681)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1681)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1683)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1683)
 msgctxt "TNKeys,PadDpadLeft"
 msgid "Cruceta izquierda"
 msgstr "Yön tuşu sol"
 
 #. Key:	PadDpadRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1681)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1681)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1683)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1683)
 msgctxt "TNKeys,PadDpadRight"
 msgid "Cruceta derecha"
 msgstr "Yön tuşu sağ"
 
 #. Key:	PadLeftStickClick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1682)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1682)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1684)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1684)
 msgctxt "TNKeys,PadLeftStickClick"
 msgid "Clic stick izquierdo"
 msgstr "Sol analog tıkı"
 
 #. Key:	PadRightStickClick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1683)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1683)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1685)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1685)
 msgctxt "TNKeys,PadRightStickClick"
 msgid "Clic stick derecho"
 msgstr "Sağ analog tıkı"
 
 #. Key:	PadSelect
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1684)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1684)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1686)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1686)
 msgctxt "TNKeys,PadSelect"
 msgid "Select / Vista"
 msgstr "Select / Görünüm"
 
 #. Key:	PadStart
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1684)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1684)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1686)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1686)
 msgctxt "TNKeys,PadStart"
 msgid "Start / Menú"
 msgstr "Start / Menü"
 
 #. Key:	ActMove
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1697)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1697)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1699)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1699)
 msgctxt "TNSettings,ActMove"
 msgid "Moverse"
 msgstr "Hareket"
 
 #. Key:	ActLook
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1698)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1698)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1700)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1700)
 msgctxt "TNSettings,ActLook"
 msgid "Mover la cámara"
 msgstr "Kamerayı döndür"
 
 #. Key:	ActJump
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1699)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1699)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1701)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1701)
 msgctxt "TNSettings,ActJump"
 msgid "Saltar"
 msgstr "Zıpla"
 
 #. Key:	ActSprint
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1700)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1700)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1702)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1702)
 msgctxt "TNSettings,ActSprint"
 msgid "Correr"
 msgstr "Koş"
 
 #. Key:	ActInteract
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1701)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1701)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1703)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1703)
 msgctxt "TNSettings,ActInteract"
 msgid "Usar, coger y lanzar"
 msgstr "Kullan, al ve fırlat"
 
 #. Key:	ActShell
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1702)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1702)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1704)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1704)
 msgctxt "TNSettings,ActShell"
 msgid "Meterse en el caparazón"
 msgstr "Kabuğa gir"
 
 #. Key:	ActDrop
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1703)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1703)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1705)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1705)
 msgctxt "TNSettings,ActDrop"
 msgid "Soltar el objeto"
 msgstr "Eşyayı bırak"
 
 #. Key:	ActRotate
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1704)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1704)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1706)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1706)
 msgctxt "TNSettings,ActRotate"
 msgid "Cambiar de objeto"
 msgstr "Eşya değiştir"
 
 #. Key:	ActEmotes
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1705)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1705)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1707)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1707)
 msgctxt "TNSettings,ActEmotes"
 msgid "Rueda de bailes"
 msgstr "Dans çarkı"
 
 #. Key:	ActChat
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1706)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1706)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1708)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1708)
 msgctxt "TNSettings,ActChat"
 msgid "Frases rápidas"
 msgstr "Hızlı cümleler"
 
 #. Key:	ActWheelPick
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1707)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1707)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1709)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1709)
 msgctxt "TNSettings,ActWheelPick"
 msgid "Elegir en la rueda"
 msgstr "Çarkta seç"
 
 #. Key:	CameraRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1839)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1839)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1841)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1841)
 msgctxt "TNSettings,CameraRow"
 msgid "Cambiar de cámara"
 msgstr "Kamerayı değiştir"
 
 #. Key:	TalkRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1845)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1845)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1847)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1847)
 msgctxt "TNSettings,TalkRow"
 msgid "Hablar (pulsar para hablar)"
 msgstr "Konuş (bas-konuş)"
 
 #. Key:	PauseRow
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1851)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1851)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1853)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1853)
 msgctxt "TNSettings,PauseRow"
 msgid "Abrir y cerrar este menú"
 msgstr "Bu menüyü aç ve kapat"
 
 #. Key:	NotEditable
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1957)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1957)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1959)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1959)
 msgctxt "TNSettings,NotEditable"
 msgid "«{0}» no se cambia con {1}: va con {2}."
 msgstr "“{0}” {1} ile değiştirilemez: her zaman {2} ile çalışır."
 
 #. Key:	Reserved
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1963)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1963)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1965)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1965)
 msgctxt "TNSettings,Reserved"
 msgid "{0} está reservada (menú, consola o editor). Prueba con otra."
 msgstr "{0} ayrılmış bir tuş (menü, konsol ya da editör). Başka bir tane dene."
 
 #. Key:	Unchanged
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1970)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1970)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1972)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1972)
 msgctxt "TNSettings,Unchanged"
 msgid "«{0}» ya iba con {1}."
 msgstr "“{0}” zaten şu tuşa atanmış: {1}."
 
 #. Key:	Swapped
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1987)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1987)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1989)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1989)
 msgctxt "TNSettings,Swapped"
 msgid "{0} estaba en «{1}»: ahora «{1}» va con {2}."
 msgstr "{0} tuşu “{1}” işlevindeydi: artık “{1}” için {2} kullanılıyor."
 
 #. Key:	Emptied
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1989)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1989)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1991)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1991)
 msgctxt "TNSettings,Emptied"
 msgid "{0} estaba en «{1}», que se queda sin tecla en {2}."
 msgstr "{0} tuşu “{1}” işlevindeydi; artık o işlevin tuşu yok ({2})."
 
 #. Key:	Assigned
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1996)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1996)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1998)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(1998)
 msgctxt "TNSettings,Assigned"
 msgid "«{0}»: {1}."
 msgstr "“{0}”: {1}."
 
 #. Key:	AlreadyDefault
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(2062)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(2062)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(2064)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(2064)
 msgctxt "TNSettings,AlreadyDefault"
 msgid "«{0}» ya iba con las de serie."
 msgstr "“{0}” zaten varsayılan tuşlarla çalışıyor."
 
 #. Key:	MoveForward
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(364)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(364)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(365)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(365)
 msgctxt "TNSettings,MoveForward"
 msgid "Avanzar"
 msgstr "İleri"
 
 #. Key:	MoveBack
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(365)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(365)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(366)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(366)
 msgctxt "TNSettings,MoveBack"
 msgid "Retroceder"
 msgstr "Geri"
 
 #. Key:	MoveLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(366)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(366)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(367)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(367)
 msgctxt "TNSettings,MoveLeft"
 msgid "Ir a la izquierda"
 msgstr "Sola git"
 
 #. Key:	MoveRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(367)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(367)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(368)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(368)
 msgctxt "TNSettings,MoveRight"
 msgid "Ir a la derecha"
 msgstr "Sağa git"
 
 #. Key:	DirNext
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(370)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(370)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
 msgctxt "TNSettings,DirNext"
 msgid "siguiente"
 msgstr "sonraki"
 
 #. Key:	DirPrevious
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(370)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(370)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
 msgctxt "TNSettings,DirPrevious"
 msgid "anterior"
 msgstr "önceki"
 
 #. Key:	DirBack
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
 msgctxt "TNSettings,DirBack"
 msgid "atrás"
 msgstr "geri"
 
 #. Key:	DirForward
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(371)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
 msgctxt "TNSettings,DirForward"
 msgid "adelante"
 msgstr "ileri"
 
 #. Key:	DirLeft
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
 msgctxt "TNSettings,DirLeft"
 msgid "izquierda"
 msgstr "sol"
 
 #. Key:	DirRight
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(372)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
 msgctxt "TNSettings,DirRight"
 msgid "derecha"
 msgstr "sağ"
 
 #. Key:	DirDown
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(374)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(374)
 msgctxt "TNSettings,DirDown"
 msgid "abajo"
 msgstr "aşağı"
 
 #. Key:	DirUp
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(373)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(374)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(374)
 msgctxt "TNSettings,DirUp"
 msgid "arriba"
 msgstr "yukarı"
 
 #. Key:	DirectionFmt
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(376)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(376)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(377)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(377)
 msgctxt "TNSettings,DirectionFmt"
 msgid "{0} ({1})"
 msgstr "{0} ({1})"
 
 #. Key:	WordKeyboard
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(381)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(381)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(382)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(382)
 msgctxt "TNSettings,WordKeyboard"
 msgid "el teclado y el ratón"
 msgstr "klavye ve fare"
 
 #. Key:	WordPad
-#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(381)
-#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(381)
+#. SourceLocation:	Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(382)
+#: Source/Tortunabo/Private/Settings/TN_GameSettingsSubsystem.cpp(382)
 msgctxt "TNSettings,WordPad"
 msgid "el mando"
 msgstr "oyun kolu"
@@ -7133,2437 +7133,2451 @@ msgid "Vuelve a buscar las salas públicas (F5 o Y del mando). La lista se actua
 msgstr "Herkese açık odaları yeniden arar (F5 ya da oyun kolunda Y). Liste zaten kendiliğinden yenilenir."
 
 #. Key:	FpsFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1153)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1153)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1154)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1154)
 msgctxt "TNPause,FpsFmt"
 msgid "{0} FPS · {1} ms"
 msgstr "{0} FPS · {1} ms"
 
 #. Key:	TalkerMe
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1231)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1231)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1232)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1232)
 msgctxt "TNPause,TalkerMe"
 msgid "Tú hablas"
 msgstr "Sen konuşuyorsun"
 
 #. Key:	TalkerOther
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1231)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1231)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1232)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1232)
 msgctxt "TNPause,TalkerOther"
 msgid "{0} habla"
 msgstr "{0} konuşuyor"
 
 #. Key:	Title
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1343)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1343)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1344)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1344)
 msgctxt "TNPause,Title"
 msgid "PAUSA"
 msgstr "DURAKLATMA"
 
 #. Key:	PauseHomeNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1361)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1361)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1362)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1362)
 msgctxt "TNLocal,PauseHomeNote"
 msgid "La partida está parada para todos mientras este menú está abierto."
 msgstr "Bu menü açıkken oyun herkes için durur."
 
 #. Key:	HomeNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1362)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1362)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1363)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1363)
 msgctxt "TNPause,HomeNote"
 msgid "La partida sigue en marcha mientras miras el menú: tu tortuga se queda quieta."
 msgstr "Menüye bakarken oyun devam eder: kaplumbağan olduğu yerde durur."
 
 #. Key:	Resume
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1386)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1386)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1387)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1387)
 msgctxt "TNPause,Resume"
 msgid "Continuar"
 msgstr "Devam et"
 
 #. Key:	ResumeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1387)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1387)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1388)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1388)
 msgctxt "TNPause,ResumeDesc"
 msgid "Vuelve a la partida."
 msgstr "Oyuna dön."
 
 #. Key:	Settings
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1389)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1389)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1390)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1390)
 msgctxt "TNPause,Settings"
 msgid "Ajustes"
 msgstr "Ayarlar"
 
 #. Key:	SettingsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1390)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1390)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1391)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1391)
 msgctxt "TNPause,SettingsDesc"
 msgid "Gráficos, sonido, voz, controles y accesibilidad. Todo se aplica al momento."
 msgstr "Grafik, ses, konuşma, kontroller ve erişilebilirlik. Her şey anında uygulanır."
 
 #. Key:	Controls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1392)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1392)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1393)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1393)
 msgctxt "TNPause,Controls"
 msgid "Controles"
 msgstr "Kontroller"
 
 #. Key:	ControlsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1393)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1393)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1394)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1394)
 msgctxt "TNPause,ControlsDesc"
 msgid "Todas las teclas y botones del juego, con teclado y ratón o con mando."
 msgstr "Oyunun tüm tuşları ve düğmeleri: klavye-fare ve oyun kolu için."
 
 #. Key:	ButtonDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1400)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1400)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1401)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1401)
 msgctxt "TNCredits,ButtonDesc"
 msgid "Quién ha hecho Tortunavy y las licencias de lo que usa: arte, fuentes y motor."
 msgstr "Tortunavy'yi kimlerin yaptığı ve kullandıklarının lisansları: görseller, yazı tipleri ve motor."
 
 #. Key:	PauseSkip
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1409)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1409)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1410)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1410)
 msgctxt "TNTutorial,PauseSkip"
 msgid "Saltar el tutorial"
 msgstr "Eğitimi atla"
 
 #. Key:	PauseSkipDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1410)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1410)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1411)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1411)
 msgctxt "TNTutorial,PauseSkipDesc"
 msgid "Bajas directamente al lobby del castillo y no vuelve a salir en las siguientes partidas."
 msgstr "Doğrudan kalenin lobisine inersin ve sonraki oyunlarda bir daha çıkmaz."
 
 #. Key:	PauseSkipTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1418)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1418)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1419)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1419)
 msgctxt "TNTutorial,PauseSkipTitle"
 msgid "¿Saltar el tutorial?"
 msgstr "Eğitim atlansın mı?"
 
 #. Key:	PauseSkipText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1419)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1419)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1420)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1420)
 msgctxt "TNTutorial,PauseSkipText"
 msgid "Vuelves al lobby y el tutorial queda hecho en este ordenador. Las teclas siempre están en Controles."
 msgstr "Lobiye dönersin ve eğitim bu bilgisayarda tamamlandı sayılır. Tuşlar her zaman Kontroller'de."
 
 #. Key:	PauseSkipYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1420)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1420)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1421)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1421)
 msgctxt "TNTutorial,PauseSkipYes"
 msgid "Saltar"
 msgstr "Atla"
 
 #. Key:	PauseTutorial
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1439)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1439)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1440)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1440)
 msgctxt "TNLocal,PauseTutorial"
 msgid "Hacer el tutorial"
 msgstr "Eğitimi yap"
 
 #. Key:	PauseTutorialDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1440)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1440)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1441)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1441)
 msgctxt "TNLocal,PauseTutorialDesc"
 msgid "Subes a las islas del cielo y aprendes todo lo que hace una tortuga. Se salta desde este menú."
 msgstr "Gökyüzü adalarına çıkıp bir kaplumbağanın yapabildiği her şeyi öğrenirsin. Bu menüden atlanabilir."
 
 #. Key:	PauseLeave
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1459)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1459)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1460)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1460)
 msgctxt "TNLocal,PauseLeave"
 msgid "Dejar de jugar"
 msgstr "Oynamayı bırak"
 
 #. Key:	PauseLeaveDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1460)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1460)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1461)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1461)
 msgctxt "TNLocal,PauseLeaveDesc"
 msgid "Tu tortuga se va y tu vista desaparece. Para volver, pulsa Start en tu mando. También se sale manteniendo B en el lobby."
 msgstr "Kaplumbağan gider ve görüntün kaybolur. Geri dönmek için oyun kolunda Start’a bas. Lobide B’ye basılı tutarak da çıkılabilir."
 
 #. Key:	PauseLeaveTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1468)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1468)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1469)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1469)
 msgctxt "TNLocal,PauseLeaveTitle"
 msgid "¿Dejar de jugar?"
 msgstr "Oynamayı bırakıyor musun?"
 
 #. Key:	PauseLeaveText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1469)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1469)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1470)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1470)
 msgctxt "TNLocal,PauseLeaveText"
 msgid "Tu tortuga se va de la partida y los demás siguen jugando."
 msgstr "Kaplumbağan oyundan ayrılır, diğerleri oynamaya devam eder."
 
 #. Key:	LeaveYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1470)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1470)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1471)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1471)
 msgctxt "TNPause,LeaveYes"
 msgid "Salir"
 msgstr "Çık"
 
 #. Key:	Room
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1493)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1493)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1494)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1494)
 msgctxt "TNPause,Room"
 msgid "Sala"
 msgstr "Oda"
 
 #. Key:	RoomDescHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1496)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1496)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1497)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1497)
 msgctxt "TNPause,RoomDescHost"
 msgid "El nombre y el código de tu sala, cerrarla para que no entre nadie más y expulsar a alguien."
 msgstr "Odanın adı ve kodu; kimse girmesin diye kapatabilir ve birini atabilirsin."
 
 #. Key:	RoomDescGuest
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1497)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1497)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1498)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1498)
 msgctxt "TNPause,RoomDescGuest"
 msgid "El nombre y el código de la sala y quién está dentro."
 msgstr "Odanın adı ve kodu ve içeridekiler."
 
 #. Key:	Lobby
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1505)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1505)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1506)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1506)
 msgctxt "TNPause,Lobby"
 msgid "Volver al lobby"
 msgstr "Lobiye dön"
 
 #. Key:	LobbyDescHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1506)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1506)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1507)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1507)
 msgctxt "TNPause,LobbyDescHost"
 msgid "Acaba la ronda y lleva a todo el grupo de vuelta al lobby del castillo."
 msgstr "Turu bitirir ve tüm grubu kalenin lobisine geri götürür."
 
 #. Key:	LobbyDescGuest
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1507)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1507)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1508)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1508)
 msgctxt "TNPause,LobbyDescGuest"
 msgid "Al grupo lo lleva al lobby el anfitrión; tú sales de la partida al menú principal."
 msgstr "Grubu lobiye ev sahibi götürür; sen oyundan çıkıp ana menüye dönersin."
 
 #. Key:	LeaveGame
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1512)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1512)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1513)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1513)
 msgctxt "TNPause,LeaveGame"
 msgid "Salir de la partida"
 msgstr "Oyundan çık"
 
 #. Key:	MainMenu
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1512)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1512)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1513)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1513)
 msgctxt "TNPause,MainMenu"
 msgid "Menú principal"
 msgstr "Ana menü"
 
 #. Key:	LeaveGameDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1514)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1514)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1515)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1515)
 msgctxt "TNPause,LeaveGameDesc"
 msgid "Sales de la sesión y vuelves al menú principal. Los demás siguen jugando."
 msgstr "Oturumdan çıkıp ana menüye dönersin. Diğerleri oynamaya devam eder."
 
 #. Key:	MainMenuDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1515)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1515)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1516)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1516)
 msgctxt "TNPause,MainMenuDesc"
 msgid "Cierra la partida para todos y vuelve al menú principal."
 msgstr "Oyunu herkes için kapatır ve ana menüye döner."
 
 #. Key:	Quit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1517)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1517)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1518)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1518)
 msgctxt "TNPause,Quit"
 msgid "Salir al escritorio"
 msgstr "Masaüstüne çık"
 
 #. Key:	QuitDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1518)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1518)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1519)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1519)
 msgctxt "TNPause,QuitDesc"
 msgid "Cierra Tortunavy."
 msgstr "Tortunavy'yi kapatır."
 
 #. Key:	TabGraphics
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1529)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1529)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
 msgctxt "TNPause,TabGraphics"
 msgid "GRÁFICOS"
 msgstr "GRAFİK"
 
 #. Key:	TabSound
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1529)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1529)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
 msgctxt "TNPause,TabSound"
 msgid "SONIDO"
 msgstr "SES"
 
 #. Key:	TabControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1531)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1531)
 msgctxt "TNPause,TabControls"
 msgid "CONTROLES"
 msgstr "KONTROLLER"
 
 #. Key:	TabGame
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1531)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1531)
 msgctxt "TNPause,TabGame"
 msgid "JUEGO"
 msgstr "OYUN"
 
 #. Key:	TabVoice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1530)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1531)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1531)
 msgctxt "TNPause,TabVoice"
 msgid "VOZ"
 msgstr "KONUŞMA"
 
 #. Key:	TabDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1543)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1543)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1544)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1544)
 msgctxt "TNPause,TabDesc"
 msgid "Q y E (o LB y RB) cambian de pestaña."
 msgstr "Q ve E (ya da LB ve RB) sekmeleri değiştirir."
 
 #. Key:	ControlsTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1589)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1589)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1590)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1590)
 msgctxt "TNPause,ControlsTitle"
 msgid "CONTROLES"
 msgstr "KONTROLLER"
 
 #. Key:	ColAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1594)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1594)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1595)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1595)
 msgctxt "TNPause,ColAction"
 msgid "ACCIÓN"
 msgstr "İŞLEM"
 
 #. Key:	ColKeyboard
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1595)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1595)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1596)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1596)
 msgctxt "TNPause,ColKeyboard"
 msgid "TECLADO Y RATÓN"
 msgstr "KLAVYE VE FARE"
 
 #. Key:	ColPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1597)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1597)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1598)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1598)
 msgctxt "TNPause,ColPad"
 msgid "MANDO"
 msgstr "OYUN KOLU"
 
 #. Key:	RoomTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1614)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1614)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1615)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1615)
 msgctxt "TNPause,RoomTitle"
 msgid "SALA"
 msgstr "ODA"
 
 #. Key:	Yes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1651)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1651)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1652)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1652)
 msgctxt "TNPause,Yes"
 msgid "Sí"
 msgstr "Evet"
 
 #. Key:	No
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1659)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1659)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1660)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1660)
 msgctxt "TNPause,No"
 msgid "Cancelar"
 msgstr "İptal"
 
 #. Key:	Off
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1745)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1745)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1746)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1746)
 msgctxt "TNPause,Off"
 msgid "No"
 msgstr "Kapalı"
 
 #. Key:	On
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1745)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1745)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1746)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1746)
 msgctxt "TNPause,On"
 msgid "Sí"
 msgstr "Açık"
 
 #. Key:	ModeHQ
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1807)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1807)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1808)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1808)
 msgctxt "TNPause,ModeHQ"
 msgid "Lobby · el cuartel"
 msgstr "Lobi · karargâh"
 
 #. Key:	ModeLobby
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1807)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1807)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1808)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1808)
 msgctxt "TNPause,ModeLobby"
 msgid "Lobby · el castillo de arena"
 msgstr "Lobi · kum kalesi"
 
 #. Key:	ModeTerrain
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1811)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1811)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1812)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1812)
 msgctxt "TNPause,ModeTerrain"
 msgid "Solo terreno · paseo por el mapa procedural"
 msgstr "Yalnızca arazi · rastgele haritada gezinti"
 
 #. Key:	DiffEasy
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1815)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1815)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1816)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1816)
 msgctxt "TNPause,DiffEasy"
 msgid "fácil"
 msgstr "kolay"
 
 #. Key:	DiffNormal
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1815)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1815)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1816)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1816)
 msgctxt "TNPause,DiffNormal"
 msgid "normal"
 msgstr "normal"
 
 #. Key:	DiffHard
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1816)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1816)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1817)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1817)
 msgctxt "TNPause,DiffHard"
 msgid "difícil"
 msgstr "zor"
 
 #. Key:	ModeKarts
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1818)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1818)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1819)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1819)
 msgctxt "TNPause,ModeKarts"
 msgid "Karts · el camino del cooperativo · {0} · semilla {1}"
 msgstr "Kartlar · co-op yolu · {0} · tohum {1}"
 
 #. Key:	ModeRallyCircuit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1823)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1823)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1824)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1824)
 msgctxt "TNPause,ModeRallyCircuit"
 msgid "Rally · {0}"
 msgstr "Ralli · {0}"
 
 #. Key:	ModeBeach
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1833)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1833)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1834)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1834)
 msgctxt "TNPause,ModeBeach"
 msgid "Carrera en la playa · ronda {0} · gana quien llegue a {1} conchas"
 msgstr "Plaj yarışı · tur {0} · {1} deniz kabuğuna ilk ulaşan kazanır"
 
 #. Key:	ModeRace
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1834)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1834)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1835)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1835)
 msgctxt "TNPause,ModeRace"
 msgid "Carrera · ronda {0} · gana quien llegue a {1} victorias"
 msgstr "Yarış · tur {0} · {1} galibiyete ilk ulaşan kazanır"
 
 #. Key:	Mode2v2
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1837)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1837)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1838)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1838)
 msgctxt "TNPause,Mode2v2"
 msgid "2 contra 2 · ronda {0} · gana la pareja que llegue a {1}"
 msgstr "2'ye 2 · tur {0} · önce {1} sayısına ulaşan çift kazanır"
 
 #. Key:	ModeFreeForAll
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1845)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1845)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1846)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1846)
 msgctxt "TNPause,ModeFreeForAll"
 msgid "Todos contra Todos · ronda {0} · gana quien llegue a {1} rondas"
 msgstr "Herkes Herkese Karşı · tur {0} · {1} tura ilk ulaşan kazanır"
 
 #. Key:	ModeFreeForAllArena
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1846)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1846)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1847)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1847)
 msgctxt "TNPause,ModeFreeForAllArena"
 msgid "Todos contra Todos · {2} · ronda {0} · gana quien llegue a {1} rondas"
 msgstr "Herkes Herkese Karşı · {2} · tur {0} · {1} tura ilk ulaşan kazanır"
 
 #. Key:	ModeCoop
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1855)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1855)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1856)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1856)
 msgctxt "TNPause,ModeCoop"
 msgid "Cooperativo · ronda {0} de {1} · {2} · semilla {3}"
 msgstr "Kooperatif · tur {0}/{1} · {2} · tohum {3}"
 
 #. Key:	ModeSurvival
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1864)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1864)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1865)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1865)
 msgctxt "TNPause,ModeSurvival"
 msgid "Supervivencia · nivel tras nivel hasta que quede una"
 msgstr "Hayatta Kalma · tek biri kalana kadar seviye seviye"
 
 #. Key:	ModeClassic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1865)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1865)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1866)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1866)
 msgctxt "TNPause,ModeClassic"
 msgid "Carrera clásica"
 msgstr "Klasik yarış"
 
 #. Key:	RoomPrivateCode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1883)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1883)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1884)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1884)
 msgctxt "TNPause,RoomPrivateCode"
 msgid "privada · código {0}"
 msgstr "özel · kod {0}"
 
 #. Key:	RoomPublic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1884)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1884)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1885)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1885)
 msgctxt "TNPause,RoomPublic"
 msgid "pública"
 msgstr "herkese açık"
 
 #. Key:	RoomLockedTag
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1887)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1887)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1888)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1888)
 msgctxt "TNPause,RoomLockedTag"
 msgid " · cerrada"
 msgstr " · kapalı"
 
 #. Key:	RoomSessionFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1888)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1888)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1889)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1889)
 msgctxt "TNPause,RoomSessionFmt"
 msgid "«{Room}» de {Host} · {Kind} · {Players}/{Max} tortugas{Locked}"
 msgstr "“{Room}”, kuran {Host} · {Kind} · {Players}/{Max} kaplumbağa{Locked}"
 
 #. Key:	SessionNoCode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1896)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1896)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1897)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1897)
 msgctxt "TNPause,SessionNoCode"
 msgid "Partida de {0} · {1} de {2} tortugas"
 msgstr "{0} oyunu · {1}/{2} kaplumbağa"
 
 #. Key:	SessionFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1898)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1898)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1899)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1899)
 msgctxt "TNPause,SessionFmt"
 msgid "Partida de {0} · sala {1} · {2} de {3} tortugas"
 msgstr "{0} oyunu · oda {1} · {2}/{3} kaplumbağa"
 
 #. Key:	RoleGuest
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1904)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1904)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1905)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1905)
 msgctxt "TNPause,RoleGuest"
 msgid "Estás de invitado"
 msgstr "Misafirsin"
 
 #. Key:	RoleHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1905)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1905)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1906)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1906)
 msgctxt "TNPause,RoleHost"
 msgid "Eres el anfitrión"
 msgstr "Ev sahibisin"
 
 #. Key:	RoleSolo
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1905)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1905)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1906)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1906)
 msgctxt "TNPause,RoleSolo"
 msgid "Partida local"
 msgstr "Yerel oyun"
 
 #. Key:	PauseSession
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1907)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1907)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1908)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1908)
 msgctxt "TNLocal,PauseSession"
 msgid "Partida local · {0} tortugas · menú del jugador {1}: solo lo maneja él"
 msgstr "Yerel oyun · {0} kaplumbağa · {1}. oyuncunun menüsü: yalnızca o kullanır"
 
 #. Key:	SessionLocal
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1909)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1909)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1910)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1910)
 msgctxt "TNPause,SessionLocal"
 msgid "{0} · {1} tortugas conectadas"
 msgstr "{0} · {1} kaplumbağa bağlı"
 
 #. Key:	ChipLocal
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1963)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1963)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1964)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(1964)
 msgctxt "TNLocal,ChipLocal"
 msgid "En este PC"
 msgstr "Bu bilgisayarda"
 
 #. Key:	GuestSettingsNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2081)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2081)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2082)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2082)
 msgctxt "TNLocal,GuestSettingsNote"
 msgid "Jugador {0}: estos ajustes son solo tuyos y duran esta partida. El sonido, la imagen y el idioma los elige el jugador 1."
 msgstr "Oyuncu {0}: bu ayarlar yalnızca senindir ve bu oyun boyunca geçerlidir. Sesi, görüntüyü ve dili 1. oyuncu seçer."
 
 #. Key:	PrimarySettingsNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2087)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2087)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2088)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2088)
 msgctxt "TNLocal,PrimarySettingsNote"
 msgid "La cámara, los controles, el temblor y el campo de visión son solo tuyos; lo demás vale para todos los jugadores de este PC."
 msgstr "Kamera, kontroller, sarsıntı ve görüş alanı yalnızca senindir; geri kalanı bu bilgisayardaki tüm oyuncular için geçerlidir."
 
 #. Key:	HeadScreen
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2118)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2118)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2119)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2119)
 msgctxt "TNPause,HeadScreen"
 msgid "PANTALLA"
 msgstr "EKRAN"
 
 #. Key:	EditorVideoNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2121)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2121)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2122)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2122)
 msgctxt "TNPause,EditorVideoNote"
 msgid "En el editor la ventana es la del editor: el modo de ventana y la resolución solo cambian en el juego."
 msgstr "Editörde pencere editörün penceresidir: pencere modu ve çözünürlük yalnızca oyunda değişir."
 
 #. Key:	WinBorderless
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2125)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2125)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2126)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2126)
 msgctxt "TNPause,WinBorderless"
 msgid "Ventana sin bordes"
 msgstr "Kenarlıksız pencere"
 
 #. Key:	WinFull
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2125)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2125)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2126)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2126)
 msgctxt "TNPause,WinFull"
 msgid "Pantalla completa"
 msgstr "Tam ekran"
 
 #. Key:	WinWindowed
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2126)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2126)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2127)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2127)
 msgctxt "TNPause,WinWindowed"
 msgid "Ventana"
 msgstr "Pencere"
 
 #. Key:	WindowMode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2131)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2131)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2132)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2132)
 msgctxt "TNPause,WindowMode"
 msgid "Modo de ventana"
 msgstr "Pencere modu"
 
 #. Key:	WindowModeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2142)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2142)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2143)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2143)
 msgctxt "TNPause,WindowModeDesc"
 msgid "Pantalla completa va más fina; sin bordes deja cambiar de programa al momento."
 msgstr "Tam ekran daha akıcıdır; kenarlıksız modda programlar arasında anında geçebilirsin."
 
 #. Key:	Resolution
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2149)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2149)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2150)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2150)
 msgctxt "TNPause,Resolution"
 msgid "Resolución"
 msgstr "Çözünürlük"
 
 #. Key:	ResolutionDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2157)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2157)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2158)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2158)
 msgctxt "TNPause,ResolutionDesc"
 msgid "Las que admite tu pantalla. Si no ves bien la nueva, se deshace sola en unos segundos."
 msgstr "Ekranının desteklediği çözünürlükler. Yenisi düzgün görünmezse birkaç saniye içinde kendiliğinden geri alınır."
 
 #. Key:	ResScale
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2165)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2165)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2166)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2166)
 msgctxt "TNPause,ResScale"
 msgid "Escala de resolución"
 msgstr "Çözünürlük ölçeği"
 
 #. Key:	ResScaleFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2166)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2166)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2167)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2167)
 msgctxt "TNPause,ResScaleFmt"
 msgid "{0} %"
 msgstr "%{0}"
 
 #. Key:	ResScaleDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2173)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2173)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2174)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2174)
 msgctxt "TNPause,ResScaleDesc"
 msgid "Pinta el juego a menos resolución y lo estira: más fotogramas a cambio de nitidez."
 msgstr "Oyunu daha düşük çözünürlükte çizip büyütür: netlik pahasına daha fazla kare."
 
 #. Key:	VSync
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2176)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2176)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2177)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2177)
 msgctxt "TNPause,VSync"
 msgid "Sincronización vertical"
 msgstr "Dikey senkronizasyon"
 
 #. Key:	VSyncDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2177)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2177)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2178)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2178)
 msgctxt "TNPause,VSyncDesc"
 msgid "Quita los cortes de la imagen a cambio de un poco de retraso en los controles."
 msgstr "Görüntüdeki yırtılmayı giderir, karşılığında kontrollerde küçük bir gecikme olur."
 
 #. Key:	FpsLimitFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2189)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2189)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2190)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2190)
 msgctxt "TNPause,FpsLimitFmt"
 msgid "{0} FPS"
 msgstr "{0} FPS"
 
 #. Key:	NoLimit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2190)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2190)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2191)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2191)
 msgctxt "TNPause,NoLimit"
 msgid "Sin límite"
 msgstr "Sınırsız"
 
 #. Key:	FpsLimit
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2195)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2195)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2196)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2196)
 msgctxt "TNPause,FpsLimit"
 msgid "Límite de fotogramas"
 msgstr "Kare sınırı"
 
 #. Key:	FpsLimitDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2201)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2201)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2202)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2202)
 msgctxt "TNPause,FpsLimitDesc"
 msgid "Tope de fotogramas por segundo: ahorra batería y calor sin que se note."
 msgstr "Saniyedeki kare üst sınırı: pil ve ısı tasarrufu sağlar, fark edilmez."
 
 #. Key:	Brightness
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2206)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2206)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2207)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2207)
 msgctxt "TNPause,Brightness"
 msgid "Brillo"
 msgstr "Parlaklık"
 
 #. Key:	BrightnessDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2209)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2209)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2210)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2210)
 msgctxt "TNPause,BrightnessDesc"
 msgid "Gamma de la imagen. 50 % es el brillo de siempre."
 msgstr "Görüntünün gama değeri. %50 olağan parlaklıktır."
 
 #. Key:	ShowFps
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2211)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2211)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2212)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2212)
 msgctxt "TNPause,ShowFps"
 msgid "Mostrar FPS"
 msgstr "FPS'yi göster"
 
 #. Key:	ShowFpsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2212)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2212)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2213)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2213)
 msgctxt "TNPause,ShowFpsDesc"
 msgid "Contador de fotogramas por segundo abajo a la derecha (y el peor fotograma, en milisegundos)."
 msgstr "Sağ altta saniyedeki kare sayacı (ve en kötü kare, milisaniye olarak)."
 
 #. Key:	HeadQuality
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2218)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2218)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2219)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2219)
 msgctxt "TNPause,HeadQuality"
 msgid "CALIDAD"
 msgstr "KALİTE"
 
 #. Key:	Overall
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2219)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2219)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2220)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2220)
 msgctxt "TNPause,Overall"
 msgid "Calidad general"
 msgstr "Genel kalite"
 
 #. Key:	OverallDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2220)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2220)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2221)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2221)
 msgctxt "TNPause,OverallDesc"
 msgid "Pone todas las partes de abajo a la vez. Si luego cambias una, aquí sale «Personalizada»."
 msgstr "Aşağıdaki tüm ayarları birden yapar. Sonra birini değiştirirsen burada “Özel” yazar."
 
 #. Key:	AutoQuality
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2243)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2243)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2244)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2244)
 msgctxt "TNPause,AutoQuality"
 msgid "Calidad recomendada"
 msgstr "Önerilen kalite"
 
 #. Key:	AutoQualityAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2253)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2253)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2254)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2254)
 msgctxt "TNPause,AutoQualityAction"
 msgid "Probar el equipo"
 msgstr "Bilgisayarı dene"
 
 #. Key:	AutoQualityDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2254)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2254)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2255)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2255)
 msgctxt "TNPause,AutoQualityDesc"
 msgid "Mide tu equipo (la imagen se congela un momento) y elige la calidad que aguanta bien."
 msgstr "Bilgisayarını ölçer (görüntü bir an donar) ve rahat çalışan kaliteyi seçer."
 
 #. Key:	ResFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2309)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2309)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2310)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2310)
 msgctxt "TNPause,ResFmt"
 msgid "{0} × {1}"
 msgstr "{0} × {1}"
 
 #. Key:	HeadVolume
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2335)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2335)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2336)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2336)
 msgctxt "TNPause,HeadVolume"
 msgid "VOLUMEN"
 msgstr "SES SEVİYESİ"
 
 #. Key:	Master
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2336)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2336)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2337)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2337)
 msgctxt "TNPause,Master"
 msgid "General"
 msgstr "Genel"
 
 #. Key:	MasterDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2336)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2336)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2337)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2337)
 msgctxt "TNPause,MasterDesc"
 msgid "Todo lo que suena en el juego, voces incluidas."
 msgstr "Oyunda duyulan her şey, sesler dahil."
 
 #. Key:	Music
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2338)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2338)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2339)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2339)
 msgctxt "TNPause,Music"
 msgid "Música"
 msgstr "Müzik"
 
 #. Key:	MusicDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2338)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2338)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2339)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2339)
 msgctxt "TNPause,MusicDesc"
 msgid "La música de la tienda, del probador y de fin de partida."
 msgstr "Dükkân, kabin ve oyun sonu müziği."
 
 #. Key:	Effects
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2340)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2340)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2341)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2341)
 msgctxt "TNPause,Effects"
 msgid "Efectos"
 msgstr "Efektler"
 
 #. Key:	EffectsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2341)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2341)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2342)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2342)
 msgctxt "TNPause,EffectsDesc"
 msgid "Pasos, saltos, trampas, enemigos, conchas, bailes y los sonidos de los menús."
 msgstr "Adımlar, zıplamalar, tuzaklar, düşmanlar, deniz kabukları, danslar ve menü sesleri."
 
 #. Key:	Ambient
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2343)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2343)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2344)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2344)
 msgctxt "TNPause,Ambient"
 msgid "Ambiente"
 msgstr "Ortam"
 
 #. Key:	AmbientDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2343)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2343)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2344)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2344)
 msgctxt "TNPause,AmbientDesc"
 msgid "Olas, viento, selva, cascadas y el resto del paisaje sonoro."
 msgstr "Dalgalar, rüzgâr, orman, şelaleler ve manzaranın diğer sesleri."
 
 #. Key:	MuteBackground
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2345)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2345)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2346)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2346)
 msgctxt "TNPause,MuteBackground"
 msgid "Silenciar sin el foco de la ventana"
 msgstr "Odak dışında sessize al"
 
 #. Key:	MuteBackgroundDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2346)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2346)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2347)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2347)
 msgctxt "TNPause,MuteBackgroundDesc"
 msgid "Si cambias a otro programa, el juego se calla (voces incluidas) hasta que vuelvas."
 msgstr "Başka bir programa geçersen oyun (sesler dahil) sen dönene kadar susar."
 
 #. Key:	VoiceElsewhere
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2351)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2351)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2352)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2352)
 msgctxt "TNPause,VoiceElsewhere"
 msgid "La voz de los compañeros y el micrófono están en la pestaña VOZ."
 msgstr "Arkadaşların sesi ve mikrofon KONUŞMA sekmesinde."
 
 #. Key:	ResetSound
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2354)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2354)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2355)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2355)
 msgctxt "TNPause,ResetSound"
 msgid "Restablecer el sonido"
 msgstr "Sesi sıfırla"
 
 #. Key:	ResetAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2358)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2358)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2359)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2359)
 msgctxt "TNPause,ResetAction"
 msgid "Restablecer"
 msgstr "Sıfırla"
 
 #. Key:	ResetSoundDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2359)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2359)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2360)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2360)
 msgctxt "TNPause,ResetSoundDesc"
 msgid "Todos los volúmenes al 100 % y el juego suena también sin el foco."
 msgstr "Tüm ses seviyeleri %100 olur ve oyun odak dışındayken de çalar."
 
 #. Key:	HeadMates
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2374)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2374)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2375)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2375)
 msgctxt "TNPause,HeadMates"
 msgid "COMPAÑEROS"
 msgstr "ARKADAŞLAR"
 
 #. Key:	MatesVoice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2375)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2375)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2376)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2376)
 msgctxt "TNPause,MatesVoice"
 msgid "Voz de los compañeros"
 msgstr "Arkadaşların sesi"
 
 #. Key:	MatesVoiceDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2375)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2375)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2376)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2376)
 msgctxt "TNPause,MatesVoiceDesc"
 msgid "Volumen de la voz de todos los demás jugadores."
 msgstr "Diğer tüm oyuncuların ses seviyesi."
 
 #. Key:	PlayerVoice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2394)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2394)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2395)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2395)
 msgctxt "TNPause,PlayerVoice"
 msgid "Voz de {0}"
 msgstr "{0} kişisinin sesi"
 
 #. Key:	PlayerVoiceDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2395)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2395)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2396)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2396)
 msgctxt "TNPause,PlayerVoiceDesc"
 msgid "Solo cambia cómo lo oyes tú. Hasta el 200 % si habla muy bajito."
 msgstr "Yalnızca senin duyduğunu değiştirir. Çok kısık konuşuyorsa %200'e kadar."
 
 #. Key:	PlayerMute
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2400)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2400)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2401)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2401)
 msgctxt "TNPause,PlayerMute"
 msgid "Silenciar a {0}"
 msgstr "{0} kişisini sustur"
 
 #. Key:	PlayerMuteDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2401)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2401)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2402)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2402)
 msgctxt "TNPause,PlayerMuteDesc"
 msgid "Dejas de oírle. No se entera nadie."
 msgstr "Onu duymayı bırakırsın. Kimse fark etmez."
 
 #. Key:	NoMates
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2410)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2410)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2411)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2411)
 msgctxt "TNPause,NoMates"
 msgid "Cuando haya más tortugas en la partida, aquí podrás ajustar la voz de cada una o silenciarla."
 msgstr "Oyunda daha çok kaplumbağa olunca burada her birinin sesini ayarlayabilir ya da susturabilirsin."
 
 #. Key:	HeadMic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2413)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2413)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2414)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2414)
 msgctxt "TNPause,HeadMic"
 msgid "MICRÓFONO"
 msgstr "MİKROFON"
 
 #. Key:	MuteMe
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2414)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2414)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2415)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2415)
 msgctxt "TNPause,MuteMe"
 msgid "Silenciar mi micrófono"
 msgstr "Mikrofonumu sustur"
 
 #. Key:	MuteMeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2414)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2414)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2415)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2415)
 msgctxt "TNPause,MuteMeDesc"
 msgid "No se envía nada de lo que digas."
 msgstr "Söylediklerin hiçbir şekilde gönderilmez."
 
 #. Key:	OpenMic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2421)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2421)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2422)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2422)
 msgctxt "TNPause,OpenMic"
 msgid "Voz abierta"
 msgstr "Açık mikrofon"
 
 #. Key:	PushToTalk
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2421)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2421)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2422)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2422)
 msgctxt "TNPause,PushToTalk"
 msgid "Pulsar para hablar"
 msgstr "Bas-konuş"
 
 #. Key:	MicMode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2422)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2422)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2423)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2423)
 msgctxt "TNPause,MicMode"
 msgid "Modo"
 msgstr "Mod"
 
 #. Key:	MicModeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2426)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2426)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2427)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2427)
 msgctxt "TNPause,MicModeDesc"
 msgid "Voz abierta: se te oye al hablar más alto que el umbral. Pulsar para hablar: solo con la tecla pulsada."
 msgstr "Açık mikrofon: eşikten yüksek sesle konuşunca duyulursun. Bas-konuş: yalnızca tuş basılıyken."
 
 #. Key:	TalkKeyDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2428)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2428)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2429)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2429)
 msgctxt "TNPause,TalkKeyDesc"
 msgid "Con el modo pulsar para hablar: mantén esta tecla o este botón. Intro o clic: cambiar; Supr, Y o clic derecho: la de serie."
 msgstr "Bas-konuş modunda bu tuşu ya da düğmeyi basılı tut. Enter ya da tık: değiştir; Delete, Y ya da sağ tık: varsayılan."
 
 #. Key:	DefaultMic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2434)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2434)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2435)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2435)
 msgctxt "TNPause,DefaultMic"
 msgid "Predeterminado de Windows"
 msgstr "Windows varsayılanı"
 
 #. Key:	MicDevice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2444)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2444)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2445)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2445)
 msgctxt "TNPause,MicDevice"
 msgid "Micrófono"
 msgstr "Mikrofon"
 
 #. Key:	MicLater
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2452)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2452)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2453)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2453)
 msgctxt "TNPause,MicLater"
 msgid "Micrófono elegido: se abre al reaparecer o al cambiar de mapa."
 msgstr "Mikrofon seçildi: yeniden doğunca ya da harita değişince açılır."
 
 #. Key:	MicNow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2453)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2453)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2454)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2454)
 msgctxt "TNPause,MicNow"
 msgid "Ese es el micrófono que ya se está usando."
 msgstr "Şu an kullanılan mikrofon bu."
 
 #. Key:	MicGone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2457)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2457)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2458)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2458)
 msgctxt "TNPause,MicGone"
 msgid "No conectado: el predeterminado"
 msgstr "Bağlı değil: varsayılan"
 
 #. Key:	MicDeviceDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2458)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2458)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2459)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2459)
 msgctxt "TNPause,MicDeviceDesc"
 msgid "El que se usa para hablar. Se cambia al reaparecer o al cambiar de mapa: el micrófono abierto no se puede cambiar sin riesgo de colgar el juego."
 msgstr "Konuşmak için kullanılan. Yeniden doğunca ya da harita değişince değişir: açık mikrofon, oyunu kilitleme riski olmadan değiştirilemez."
 
 #. Key:	MicSensitivity
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2464)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2464)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2465)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2465)
 msgctxt "TNPause,MicSensitivity"
 msgid "Sensibilidad"
 msgstr "Hassasiyet"
 
 #. Key:	MicSensitivityDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2467)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2467)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2468)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2468)
 msgctxt "TNPause,MicSensitivityDesc"
 msgid "Más alta: se te oye aunque hables bajito. Más baja: no se cuela el ruido de fondo. Mira la raya dorada del medidor."
 msgstr "Yüksek: kısık konuşsan da duyulursun. Düşük: arka plan gürültüsü karışmaz. Göstergedeki altın çizgiye bak."
 
 #. Key:	MicGain
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2471)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2471)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2472)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2472)
 msgctxt "TNPause,MicGain"
 msgid "Ganancia"
 msgstr "Kazanç"
 
 #. Key:	MicGainDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2474)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2474)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2475)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2475)
 msgctxt "TNPause,MicGainDesc"
 msgid "Sube o baja tu voz antes de enviarla. 100 % es la de siempre."
 msgstr "Sesini göndermeden önce yükseltir ya da alçaltır. %100 olağan seviyedir."
 
 #. Key:	MicMeter
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2478)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2478)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2479)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2479)
 msgctxt "TNPause,MicMeter"
 msgid "Nivel del micrófono"
 msgstr "Mikrofon seviyesi"
 
 #. Key:	NoMic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2485)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2485)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2486)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2486)
 msgctxt "TNPause,NoMic"
 msgid "Sin micrófono"
 msgstr "Mikrofon yok"
 
 #. Key:	MicMuted
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2491)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2491)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2492)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2492)
 msgctxt "TNPause,MicMuted"
 msgid "Silenciado"
 msgstr "Susturuldu"
 
 #. Key:	HoldToTalk
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2494)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2494)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2495)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2495)
 msgctxt "TNPause,HoldToTalk"
 msgid "Mantén {0}"
 msgstr "{0} tuşunu basılı tut"
 
 #. Key:	MicPending
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2496)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2496)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2497)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2497)
 msgctxt "TNPause,MicPending"
 msgid "Micro nuevo al reaparecer"
 msgstr "Yeniden doğunca yeni mikrofon"
 
 #. Key:	Heard
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2497)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2497)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2498)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2498)
 msgctxt "TNPause,Heard"
 msgid "¡Se te oye!"
 msgstr "Duyuluyorsun!"
 
 #. Key:	Quiet
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2497)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2497)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2498)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2498)
 msgctxt "TNPause,Quiet"
 msgid "En silencio"
 msgstr "Sessiz"
 
 #. Key:	MicMeterDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2499)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2499)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2500)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2500)
 msgctxt "TNPause,MicMeterDesc"
 msgid "Habla y mira la barra: cuando pasa de la raya dorada, se te oye."
 msgstr "Konuş ve çubuğa bak: altın çizgiyi geçince duyulursun."
 
-#. Key:	PercentFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(250)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(250)
-msgctxt "TNPause,PercentFmt"
-msgid "{0} %"
-msgstr "%{0}"
-
 #. Key:	ResetVoice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2503)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2503)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2504)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2504)
 msgctxt "TNPause,ResetVoice"
 msgid "Restablecer la voz"
 msgstr "Konuşmayı sıfırla"
 
 #. Key:	ResetVoiceDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2508)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2508)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2509)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2509)
 msgctxt "TNPause,ResetVoiceDesc"
 msgid "Voz abierta, micrófono predeterminado con su sensibilidad y ganancia de siempre y nadie silenciado."
 msgstr "Açık mikrofon, varsayılan mikrofon, her zamanki hassasiyet ve kazanç, kimse susturulmamış."
 
+#. Key:	PercentFmt
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(251)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(251)
+msgctxt "TNPause,PercentFmt"
+msgid "{0} %"
+msgstr "%{0}"
+
 #. Key:	HeadCamera
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2537)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2537)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2538)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2538)
 msgctxt "TNPause,HeadCamera"
 msgid "CÁMARA"
 msgstr "KAMERA"
 
 #. Key:	MouseSens
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2538)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2538)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2539)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2539)
 msgctxt "TNPause,MouseSens"
 msgid "Sensibilidad del ratón"
 msgstr "Fare hassasiyeti"
 
 #. Key:	MouseSensDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2538)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2538)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2539)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2539)
 msgctxt "TNPause,MouseSensDesc"
 msgid "Lo rápido que gira la cámara con el ratón. 100 % es la de siempre."
 msgstr "Kameranın fareyle ne kadar hızlı döndüğü. %100 olağan hızdır."
 
 #. Key:	PadSens
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2540)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2540)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2541)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2541)
 msgctxt "TNPause,PadSens"
 msgid "Sensibilidad del mando"
 msgstr "Oyun kolu hassasiyeti"
 
 #. Key:	PadSensDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2540)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2540)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2541)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2541)
 msgctxt "TNPause,PadSensDesc"
 msgid "Lo rápido que gira la cámara con el stick derecho."
 msgstr "Kameranın sağ analogla ne kadar hızlı döndüğü."
 
 #. Key:	InvertMouse
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2542)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2542)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2543)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2543)
 msgctxt "TNPause,InvertMouse"
 msgid "Invertir eje Y (ratón)"
 msgstr "Y eksenini ters çevir (fare)"
 
 #. Key:	InvertMouseDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2542)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2542)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2543)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2543)
 msgctxt "TNPause,InvertMouseDesc"
 msgid "Subir el ratón mira hacia abajo, como en un avión."
 msgstr "Fareyi yukarı itince aşağı bakar, uçaklardaki gibi."
 
 #. Key:	InvertPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2547)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2547)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2548)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2548)
 msgctxt "TNPause,InvertPad"
 msgid "Invertir eje Y (mando)"
 msgstr "Y eksenini ters çevir (oyun kolu)"
 
 #. Key:	InvertPadDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2547)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2547)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2548)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2548)
 msgctxt "TNPause,InvertPadDesc"
 msgid "Subir el stick derecho mira hacia abajo."
 msgstr "Sağ analogu yukarı itince aşağı bakar."
 
 #. Key:	PadVibration
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2552)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2552)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2553)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2553)
 msgctxt "TNPause,PadVibration"
 msgid "Vibración del mando"
 msgstr "Oyun kolu titreşimi"
 
 #. Key:	PadVibrationDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2553)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2553)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2554)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2554)
 msgctxt "TNPause,PadVibrationDesc"
 msgid "El mando vibra al recibir un golpe, más fuerte cuanto más fuerte es."
 msgstr "Darbe aldığında oyun kolu titrer; darbe ne kadar sertse titreşim o kadar güçlü olur."
 
 #. Key:	DeviceNote
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2558)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2558)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2559)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2559)
 msgctxt "TNPause,DeviceNote"
 msgid "La cámara usa la sensibilidad del último aparato que hayas tocado: ratón o mando."
 msgstr "Kamera, en son dokunduğun aygıtın hassasiyetini kullanır: fare ya da oyun kolu."
 
 #. Key:	SeeControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2561)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2561)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2562)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2562)
 msgctxt "TNPause,SeeControls"
 msgid "Cambiar teclas y botones"
 msgstr "Tuşları ve düğmeleri değiştir"
 
 #. Key:	SeeAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2564)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2564)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2565)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2565)
 msgctxt "TNPause,SeeAction"
 msgid "Abrir"
 msgstr "Aç"
 
 #. Key:	SeeControlsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2565)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2565)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2566)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2566)
 msgctxt "TNPause,SeeControlsDesc"
 msgid "Todas las teclas y los botones del mando del juego: se cambian ahí mismo."
 msgstr "Oyunun tüm tuşları ve oyun kolu düğmeleri: orada değiştirilir."
 
 #. Key:	ResetControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2569)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2569)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2570)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2570)
 msgctxt "TNPause,ResetControls"
 msgid "Restablecer los controles"
 msgstr "Kontrolleri sıfırla"
 
 #. Key:	ResetControlsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2574)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2574)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2575)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2575)
 msgctxt "TNPause,ResetControlsDesc"
 msgid "Sensibilidad al 100 % y sin invertir (las teclas se restablecen en su página)."
 msgstr "Hassasiyet %100 ve ters çevirme yok (tuşlar kendi sayfasında sıfırlanır)."
 
 #. Key:	HeadLanguage
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2594)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2594)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2595)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2595)
 msgctxt "TNPause,HeadLanguage"
 msgid "IDIOMA / LANGUAGE"
 msgstr "IDIOMA / LANGUAGE"
 
 #. Key:	Language
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2606)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2606)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2607)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2607)
 msgctxt "TNPause,Language"
 msgid "Idioma / Language"
 msgstr "Idioma / Language"
 
 #. Key:	LanguageDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2617)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2617)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2618)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2618)
 msgctxt "TNPause,LanguageDesc"
 msgid "El idioma de todo el juego, al momento. Sin elegir, el de tu sistema. «Restablecer esta pestaña» lo vuelve a poner así."
 msgstr "Tüm oyunun dili, anında değişir. Seçilmezse sistemin dili kullanılır. “Bu sekmeyi sıfırla” onu böyle geri getirir."
 
 #. Key:	Shake
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2622)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2622)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
 msgctxt "TNPause,Shake"
 msgid "Temblor de cámara"
 msgstr "Kamera sarsıntısı"
 
 #. Key:	ShakeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2623)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2624)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2624)
 msgctxt "TNPause,ShakeDesc"
 msgid "Golpes, quads de la carrera, tormenta... Apágalo si te marea."
 msgstr "Darbeler, yarıştaki dört tekerlekliler, fırtına... Başın dönüyorsa kapat."
 
 #. Key:	Fov
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2642)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2642)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2643)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2643)
 msgctxt "TNPause,Fov"
 msgid "Campo de visión"
 msgstr "Görüş alanı"
 
 #. Key:	FovFmt
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2643)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2643)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2644)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2644)
 msgctxt "TNPause,FovFmt"
 msgid "{0}°"
 msgstr "{0}°"
 
 #. Key:	FovDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2645)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2645)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2646)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2646)
 msgctxt "TNPause,FovDesc"
 msgid "Cuánto se ve a los lados. Al correr se abre un poco más, como siempre."
 msgstr "Yanlara ne kadar görüldüğü. Koşarken her zamanki gibi biraz daha açılır."
 
 #. Key:	Fisheye
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2650)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2650)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2651)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2651)
 msgctxt "TNPause,Fisheye"
 msgid "Ojo de pez leve"
 msgstr "Hafif balık gözü"
 
 #. Key:	FisheyeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2651)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2651)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2652)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2652)
 msgctxt "TNPause,FisheyeDesc"
 msgid "Curva un poco los bordes de la imagen para que todo se vea aún más inmenso. No toca el HUD. Apágalo si te marea."
 msgstr "Görüntünün kenarlarını biraz kavisler; her şey daha da devasa görünür. HUD'a dokunmaz. Başın dönüyorsa kapat."
 
 #. Key:	HeadInterface
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2657)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2657)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2658)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2658)
 msgctxt "TNPause,HeadInterface"
 msgid "INTERFAZ"
 msgstr "ARAYÜZ"
 
 #. Key:	UIScale
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2660)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2660)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2661)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2661)
 msgctxt "TNPause,UIScale"
 msgid "Tamaño de la interfaz"
 msgstr "Arayüz boyutu"
 
 #. Key:	UIScaleDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2663)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2663)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2664)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2664)
 msgctxt "TNPause,UIScaleDesc"
 msgid "Agranda o achica el HUD y los menús del juego (el editor no cambia). Este menú se encoge si no cabe."
 msgstr "Oyunun HUD'ını ve menülerini büyütür ya da küçültür (editör değişmez). Sığmazsa bu menü küçülür."
 
 #. Key:	HeadAccess
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2666)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2666)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2667)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2667)
 msgctxt "TNPause,HeadAccess"
 msgid "ACCESIBILIDAD"
 msgstr "ERİŞİLEBİLİRLİK"
 
 #. Key:	FilterDeuter
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2669)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2669)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
 msgctxt "TNPause,FilterDeuter"
 msgid "Deuteranopía (verde)"
 msgstr "Deuteranopi (yeşil)"
 
 #. Key:	FilterNone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2669)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2669)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
 msgctxt "TNPause,FilterNone"
 msgid "No"
 msgstr "Yok"
 
 #. Key:	FilterProtan
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
 msgctxt "TNPause,FilterProtan"
 msgid "Protanopía (rojo)"
 msgstr "Protanopi (kırmızı)"
 
 #. Key:	FilterTritan
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2670)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
 msgctxt "TNPause,FilterTritan"
 msgid "Tritanopía (azul)"
 msgstr "Tritanopi (mavi)"
 
 #. Key:	ColorFilter
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2671)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2672)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2672)
 msgctxt "TNPause,ColorFilter"
 msgid "Filtro para daltónicos"
 msgstr "Renk körlüğü filtresi"
 
 #. Key:	ColorFilterDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2675)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2675)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2676)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2676)
 msgctxt "TNPause,ColorFilterDesc"
 msgid "Corrige los colores de toda la imagen para distinguirlos mejor: el mapa, el HUD y sus marcadores."
 msgstr "Tüm görüntünün renklerini daha iyi ayırt etmek için düzeltir: harita, HUD ve işaretleri."
 
 #. Key:	FilterStrength
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2679)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2679)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2680)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2680)
 msgctxt "TNPause,FilterStrength"
 msgid "Intensidad del filtro"
 msgstr "Filtre yoğunluğu"
 
 #. Key:	FilterStrengthDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2682)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2682)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2683)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2683)
 msgctxt "TNPause,FilterStrengthDesc"
 msgid "Cuánto corrige el filtro para daltónicos."
 msgstr "Renk körlüğü filtresinin ne kadar düzelttiği."
 
+#. Key:	WeatherEffects
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2688)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2688)
+msgctxt "TNPause,WeatherEffects"
+msgid "Efectos del clima"
+msgstr "Hava efektleri"
+
+#. Key:	WeatherEffectsDesc
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2692)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2692)
+msgctxt "TNPause,WeatherEffectsDesc"
+msgid "Cuánto cierran la vista la niebla y el color de la tormenta de arena. Bájalo si te cuesta ver o te marea. El viento sigue empujando igual."
+msgstr "Kum fırtınasının sisi ve rengi görüşü ne kadar kapatsın. Görmekte zorlanıyorsan ya da başın dönüyorsa azalt. Rüzgâr yine aynı şekilde iter."
+
 #. Key:	Talkers
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2684)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2684)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2695)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2695)
 msgctxt "TNPause,Talkers"
 msgid "Quién habla (texto)"
 msgstr "Kim konuşuyor (metin)"
 
 #. Key:	TalkersDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2685)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2685)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2696)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2696)
 msgctxt "TNPause,TalkersDesc"
 msgid "A la derecha de la pantalla, el nombre de quien está hablando por voz. Para jugar sin sonido o si oyes mal."
 msgstr "Ekranın sağında, sesle konuşanın adı görünür. Sessiz oynamak ya da kötü duymak için."
 
 #. Key:	CameraFirst
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2695)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2695)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2706)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2706)
 msgctxt "TNPause,CameraFirst"
 msgid "Primera persona"
 msgstr "Birinci kişi"
 
 #. Key:	CameraThird
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2695)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2695)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2706)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2706)
 msgctxt "TNPause,CameraThird"
 msgid "Tercera persona"
 msgstr "Üçüncü kişi"
 
 #. Key:	CameraView
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2696)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2696)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2707)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2707)
 msgctxt "TNPause,CameraView"
 msgid "Cámara"
 msgstr "Kamera"
 
 #. Key:	CameraViewDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2701)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2701)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2712)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2712)
 msgctxt "TNPause,CameraViewDesc"
 msgid "Primera persona: la vista va en la cabeza de tu tortuga (también tumbada) y al mirar abajo ves tu cuerpo, tus aletas y tu lengua. Dentro del caparazón se ve desde dentro, a oscuras. También se cambia jugando con {0} o, con el mando, con {1} (en Controles, «Cambiar de cámara»)."
 msgstr "Birinci kişi: görüş kaplumbağanın kafasında durur (yatarken de) ve aşağı bakınca gövdeni, yüzgeçlerini ve dilini görürsün. Kabuğun içindeyken içeriden, karanlıkta görürsün. Oynarken {0} ile ya da kumandada {1} ile de değiştirebilirsin (Kontroller'de, “Kamerayı değiştir”)."
 
 #. Key:	HeadVR
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2707)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2707)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2718)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2718)
 msgctxt "TNPause,HeadVR"
 msgid "REALIDAD VIRTUAL"
 msgstr "SANAL GERÇEKLİK"
 
 #. Key:	VRModeAuto
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2710)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2710)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
 msgctxt "TNPause,VRModeAuto"
 msgid "Automático"
 msgstr "Otomatik"
 
 #. Key:	VRModeOff
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2710)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2710)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
 msgctxt "TNPause,VRModeOff"
 msgid "Desactivado"
 msgstr "Kapalı"
 
 #. Key:	VRModeSim
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2711)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2711)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2722)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2722)
 msgctxt "TNPause,VRModeSim"
 msgid "Simulado sin gafas"
 msgstr "Gözlüksüz simülasyon"
 
 #. Key:	VRMode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2712)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2712)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2723)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2723)
 msgctxt "TNPause,VRMode"
 msgid "Modo VR"
 msgstr "VR modu"
 
 #. Key:	VRModeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2716)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2716)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2727)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2727)
 msgctxt "TNPause,VRModeDesc"
 msgid "Automático: en primera persona con las gafas si el juego arranca con ellas (-vr o «VR Preview»). Desactivado: con gafas, la pantalla plana de siempre. Simulado: el modo VR sin gafas, con el ratón como aleta, para probarlo en el PC."
 msgstr "Otomatik: oyun gözlükle başlarsa (-vr veya «VR Preview») gözlükle birinci şahıs. Kapalı: gözlükle her zamanki düz ekran. Simülasyon: gözlüksüz VR modu, fare yüzgeç olarak, bilgisayarda denemek için."
 
 #. Key:	VRTurn30
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2732)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2732)
 msgctxt "TNPause,VRTurn30"
 msgid "Por pasos de 30°"
 msgstr "30° adımlarla"
 
 #. Key:	VRTurn45
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2721)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2732)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2732)
 msgctxt "TNPause,VRTurn45"
 msgid "Por pasos de 45°"
 msgstr "45° adımlarla"
 
 #. Key:	VRTurnSmooth
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2722)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2722)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2733)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2733)
 msgctxt "TNPause,VRTurnSmooth"
 msgid "Suave"
 msgstr "Yumuşak"
 
 #. Key:	VRTurn
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2723)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2723)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2734)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2734)
 msgctxt "TNPause,VRTurn"
 msgid "Giro en VR"
 msgstr "VR'da dönüş"
 
 #. Key:	VRTurnDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2727)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2727)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2738)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2738)
 msgctxt "TNPause,VRTurnDesc"
 msgid "Cómo gira la tortuga con el stick derecho. A pasos marea mucho menos; suave, para quien ya está acostumbrado."
 msgstr "Kaplumbağa sağ çubukla nasıl döner. Adımlarla çok daha az mide bulandırır; yumuşak olanı alışmış olanlar için."
 
 #. Key:	ResetGame
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2734)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2734)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2745)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2745)
 msgctxt "TNPause,ResetGame"
 msgid "Restablecer esta pestaña"
 msgstr "Bu sekmeyi sıfırla"
 
 #. Key:	ResetGameGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2739)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2739)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2750)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2750)
 msgctxt "TNLocal,ResetGameGuestDesc"
 msgid "Temblor de cámara encendido y campo de visión de siempre (solo los tuyos)."
 msgstr "Kamera sarsıntısı açık ve her zamanki görüş alanı (yalnızca seninkiler)."
 
 #. Key:	ResetGameDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2740)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2740)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2751)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2751)
 msgctxt "TNPause,ResetGameDesc"
 msgid "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla», el idioma de tu sistema, la cámara en tercera persona y el modo VR automático con giro a pasos de 30°."
 msgstr "Kamera sarsıntısı ve balık gözü açık, olağan görüş alanı ve arayüz, renk filtresi yok, “Kim konuşuyor” yok, sistemin dili, üçüncü kişi kamerası ve 30°'lik adımlarla dönen otomatik VR modu."
 
 #. Key:	ResetAll
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2744)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2744)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2755)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2755)
 msgctxt "TNPause,ResetAll"
 msgid "Restablecer todos los ajustes"
 msgstr "Tüm ayarları sıfırla"
 
 #. Key:	ResetAllTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2751)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2751)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2762)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2762)
 msgctxt "TNPause,ResetAllTitle"
 msgid "¿Restablecer todos los ajustes?"
 msgstr "Tüm ayarlar sıfırlansın mı?"
 
 #. Key:	ResetAllGuestText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2752)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2752)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2763)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2763)
 msgctxt "TNLocal,ResetAllGuestText"
 msgid "Tu cámara, tus controles (teclas y botones incluidos), el temblor y el campo de visión vuelven a los de serie."
 msgstr "Kameran, kontrollerin (tuşlar ve düğmeler dahil), sarsıntı ve görüş alanı varsayılana döner."
 
 #. Key:	ResetAllText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2753)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2753)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2764)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2764)
 msgctxt "TNPause,ResetAllText"
 msgid "Sonido, voz, micrófono, controles (teclas incluidas), juego (idioma incluido), brillo y FPS vuelven a los de serie. La calidad gráfica y la pantalla no se tocan."
 msgstr "Ses, konuşma, mikrofon, kontroller (tuşlar dahil), oyun (dil dahil), parlaklık ve FPS varsayılana döner. Grafik kalitesi ve ekrana dokunulmaz."
 
 #. Key:	ResetAllYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2754)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2754)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2765)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2765)
 msgctxt "TNPause,ResetAllYes"
 msgid "Restablecer"
 msgstr "Sıfırla"
 
 #. Key:	ResetAllDone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2760)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2760)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2771)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2771)
 msgctxt "TNPause,ResetAllDone"
 msgid "Todo como recién instalado (menos los gráficos)."
 msgstr "Her şey yeni kurulmuş gibi (grafikler hariç)."
 
 #. Key:	ResetAllGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2764)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2764)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2775)
 msgctxt "TNLocal,ResetAllGuestDesc"
 msgid "Todos tus ajustes de jugador a los de serie. Pide confirmación."
 msgstr "Tüm oyuncu ayarların varsayılana döner. Onay ister."
 
 #. Key:	ResetAllDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2765)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2765)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2776)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2776)
 msgctxt "TNPause,ResetAllDesc"
 msgid "Todo lo del menú a los valores de serie, menos la calidad gráfica y la pantalla. Pide confirmación."
 msgstr "Menüdeki her şey varsayılan değerlere döner, grafik kalitesi ve ekran hariç. Onay ister."
 
 #. Key:	KeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2790)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2790)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2801)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2801)
 msgctxt "TNPause,KeyRowDesc"
 msgid "Intro, A o clic: cambiar (pulsa luego la tecla o el botón). Supr, Y o clic derecho: la de serie."
 msgstr "Enter, A ya da tık: değiştir (sonra tuşa ya da düğmeye bas). Delete, Y ya da sağ tık: varsayılan."
 
 #. Key:	HeadPlay
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2793)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2793)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2804)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2804)
 msgctxt "TNPause,HeadPlay"
 msgid "JUGANDO"
 msgstr "OYNARKEN"
 
 #. Key:	KeyRowPadFixed
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2802)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2802)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2813)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2813)
 msgctxt "TNPause,KeyRowPadFixed"
 msgid "{0} Con el mando va con {1}."
 msgstr "{0} Oyun kolunda {1} ile çalışır."
 
 #. Key:	CameraKeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2805)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2805)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2816)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2816)
 msgctxt "TNPause,CameraKeyRowDesc"
 msgid "Tercera o primera persona, sin gafas (como Ajustes > Juego > Cámara). {0}"
 msgstr "Gözlüksüz üçüncü veya birinci kişi (Ayarlar > Oyun > Kamera ile aynı). {0}"
 
 #. Key:	NoMapping
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2812)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2812)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2823)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2823)
 msgctxt "TNPause,NoMapping"
 msgid "No se ha podido leer la lista de controles (IMC_Player)."
 msgstr "Kontrol listesi okunamadı (IMC_Player)."
 
 #. Key:	HeadMenu
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2818)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2818)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2829)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2829)
 msgctxt "TNLocal,HeadMenu"
 msgid "MENÚ"
 msgstr "MENÜ"
 
 #. Key:	HeadVoiceMenu
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2822)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2822)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2833)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2833)
 msgctxt "TNPause,HeadVoiceMenu"
 msgid "VOZ Y MENÚ"
 msgstr "KONUŞMA VE MENÜ"
 
 #. Key:	TalkKeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2823)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2823)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2834)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2834)
 msgctxt "TNPause,TalkKeyRowDesc"
 msgid "Solo con el modo pulsar para hablar (Ajustes > Voz). {0}"
 msgstr "Yalnızca bas-konuş modunda (Ayarlar > Konuşma). {0}"
 
 #. Key:	PauseKeyRowDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2825)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2825)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2836)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2836)
 msgctxt "TNPause,PauseKeyRowDesc"
 msgid "Esc lo abre y lo cierra siempre (en el editor, Tab). {0}"
 msgstr "Esc onu her zaman açar ve kapatır (editörde Tab). {0}"
 
 #. Key:	ResetKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2829)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2829)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2840)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2840)
 msgctxt "TNPause,ResetKeys"
 msgid "Restablecer todos los controles"
 msgstr "Tüm kontrolleri sıfırla"
 
 #. Key:	ResetKeysTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2836)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2836)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2847)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2847)
 msgctxt "TNPause,ResetKeysTitle"
 msgid "¿Restablecer los controles?"
 msgstr "Kontroller sıfırlansın mı?"
 
 #. Key:	ResetKeysText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2837)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2837)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2848)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2848)
 msgctxt "TNPause,ResetKeysText"
 msgid "Todas las teclas y los botones vuelven a los de serie (hablar y el menú incluidos)."
 msgstr "Tüm tuşlar ve düğmeler varsayılana döner (konuşma ve menü dahil)."
 
 #. Key:	ResetKeysYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2838)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2838)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2849)
 msgctxt "TNPause,ResetKeysYes"
 msgid "Restablecer"
 msgstr "Sıfırla"
 
 #. Key:	QShadows
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(284)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(284)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(285)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(285)
 msgctxt "TNPause,QShadows"
 msgid "Sombras"
 msgstr "Gölgeler"
 
 #. Key:	QShadowsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(284)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(284)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(285)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(285)
 msgctxt "TNPause,QShadowsDesc"
 msgid "Calidad y alcance de las sombras. Es de lo que más pesa."
 msgstr "Gölgelerin kalitesi ve menzili. En çok yük bindiren ayarlardan biri."
 
 #. Key:	ResetKeysDone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2847)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2847)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2858)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2858)
 msgctxt "TNPause,ResetKeysDone"
 msgid "Controles de serie."
 msgstr "Varsayılan kontroller."
 
 #. Key:	ResetKeysDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2851)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2851)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2862)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2862)
 msgctxt "TNPause,ResetKeysDesc"
 msgid "Todas las teclas y los botones a los de serie. Pide confirmación."
 msgstr "Tüm tuşlar ve düğmeler varsayılana döner. Onay ister."
 
 #. Key:	ResetKeysDescNone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2852)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2852)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2863)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2863)
 msgctxt "TNPause,ResetKeysDescNone"
 msgid "Ahora mismo ya van todos con los de serie."
 msgstr "Şu an hepsi zaten varsayılan."
 
 #. Key:	HeadFixed
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2856)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2856)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
 msgctxt "TNPause,HeadFixed"
 msgid "SIEMPRE IGUAL"
 msgstr "HEP AYNI"
 
 #. Key:	QEffects
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(286)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(286)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(287)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(287)
 msgctxt "TNPause,QEffects"
 msgid "Efectos"
 msgstr "Efektler"
 
 #. Key:	QEffectsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(286)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(286)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(287)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(287)
 msgctxt "TNPause,QEffectsDesc"
 msgid "Partículas: polvo, espuma, chispas, confeti..."
 msgstr "Parçacıklar: toz, köpük, kıvılcım, konfeti..."
 
 #. Key:	FixedDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2860)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2860)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2871)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2871)
 msgctxt "TNPause,FixedDesc"
 msgid "Va con el ratón y los sticks: su sensibilidad está en Ajustes > Controles."
 msgstr "Fare ve analoglarla çalışır: hassasiyeti Ayarlar > Kontroller'de."
 
 #. Key:	SpectateKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2862)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2862)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
 msgctxt "TNPause,SpectateKeys"
 msgid "← → · Re Pág · Av Pág · rueda"
 msgstr "← → · Page Up · Page Down · tekerlek"
 
 #. Key:	SpectateRow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2862)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2862)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2873)
 msgctxt "TNPause,SpectateRow"
 msgid "Espectador: cambiar de tortuga"
 msgstr "İzleyici: kaplumbağa değiştir"
 
 #. Key:	SpectateDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2863)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2863)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2874)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2874)
 msgctxt "TNPause,SpectateDesc"
 msgid "Cuando miras a los demás tras caer o llegar a la meta (la rueda, con la cámara fija)."
 msgstr "Düştükten ya da bitişe vardıktan sonra diğerlerini izlerken (tekerlek, sabit kamerada)."
 
 #. Key:	SpectatePad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2863)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2863)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2874)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2874)
 msgctxt "TNPause,SpectatePad"
 msgid "LB · RB · cruceta ← →"
 msgstr "LB · RB · yön tuşu ← →"
 
 #. Key:	SpectateCamKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2864)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2864)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2875)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2875)
 msgctxt "TNPause,SpectateCamKeys"
 msgid "C"
 msgstr "C"
 
 #. Key:	SpectateCamRow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2864)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2864)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2875)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2875)
 msgctxt "TNPause,SpectateCamRow"
 msgid "Espectador: cámara libre o fija"
 msgstr "İzleyici: serbest ya da sabit kamera"
 
 #. Key:	SpectateCamDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2865)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2865)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2876)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2876)
 msgctxt "TNPause,SpectateCamDesc"
 msgid "La libre gira con el ratón o el stick derecho, con tu sensibilidad."
 msgstr "Serbest kamera fareyle ya da sağ analogla, senin hassasiyetinle döner."
 
 #. Key:	SpectateZoomKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2877)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2877)
 msgctxt "TNPause,SpectateZoomKeys"
 msgid "Rueda"
 msgstr "Tekerlek"
 
 #. Key:	SpectateZoomRow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2866)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2877)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2877)
 msgctxt "TNPause,SpectateZoomRow"
 msgid "Espectador: acercar y alejar"
 msgstr "İzleyici: yakınlaştır ve uzaklaştır"
 
 #. Key:	SpectateZoomDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2878)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2878)
 msgctxt "TNPause,SpectateZoomDesc"
 msgid "Con la cámara libre."
 msgstr "Serbest kamerayla."
 
 #. Key:	SpectateZoomPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2867)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2878)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2878)
 msgctxt "TNPause,SpectateZoomPad"
 msgid "Gatillos"
 msgstr "Tetikler"
 
 #. Key:	MenuNav
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2868)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2868)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2879)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2879)
 msgctxt "TNPause,MenuNav"
 msgid "Moverse por los menús"
 msgstr "Menülerde gezinme"
 
 #. Key:	MenuNavKeys
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2868)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2868)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2879)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2879)
 msgctxt "TNPause,MenuNavKeys"
 msgid "Flechas · WASD · Intro · Esc"
 msgstr "Oklar · WASD · Enter · Esc"
 
 #. Key:	MenuNavPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2869)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2869)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2880)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2880)
 msgctxt "TNPause,MenuNavPad"
 msgid "Stick · cruceta · A · B"
 msgstr "Analog · yön tuşu · A · B"
 
 #. Key:	QFoliage
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(288)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(288)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(289)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(289)
 msgctxt "TNPause,QFoliage"
 msgid "Vegetación"
 msgstr "Bitki örtüsü"
 
 #. Key:	QFoliageDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(288)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(288)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(289)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(289)
 msgctxt "TNPause,QFoliageDesc"
 msgid "Cuánta hierba y plantas se pintan a la vez."
 msgstr "Aynı anda ne kadar çimen ve bitki çizilir."
 
 #. Key:	QView
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(290)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(290)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(291)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(291)
 msgctxt "TNPause,QView"
 msgid "Distancia de visión"
 msgstr "Görüş mesafesi"
 
 #. Key:	QViewDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(290)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(290)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(291)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(291)
 msgctxt "TNPause,QViewDesc"
 msgid "Hasta dónde se ven los detalles del mapa."
 msgstr "Haritanın ayrıntılarının ne kadar uzağa kadar görüldüğü."
 
 #. Key:	RoomPlaces
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2916)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2916)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2927)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2927)
 msgctxt "TNPause,RoomPlaces"
 msgid "{0}/{1} tortugas"
 msgstr "{0}/{1} kaplumbağa"
 
-#. Key:	HeadRoom
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2919)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2919)
-msgctxt "TNPause,HeadRoom"
-msgid "LA SALA"
-msgstr "ODA"
-
 #. Key:	QAA
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(292)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(292)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(293)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(293)
 msgctxt "TNPause,QAA"
 msgid "Antialiasing"
 msgstr "Kenar yumuşatma"
 
 #. Key:	QAADesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(292)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(292)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(293)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(293)
 msgctxt "TNPause,QAADesc"
 msgid "Suaviza los bordes de sierra de los objetos."
 msgstr "Nesnelerin tırtıklı kenarlarını yumuşatır."
 
+#. Key:	HeadRoom
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2930)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2930)
+msgctxt "TNPause,HeadRoom"
+msgid "LA SALA"
+msgstr "ODA"
+
 #. Key:	RoomUnknown
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2922)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2922)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2933)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2933)
 msgctxt "TNPause,RoomUnknown"
 msgid "Aún no ha llegado la información de la sala: un momento..."
 msgstr "Odanın bilgisi henüz gelmedi: bir saniye..."
 
 #. Key:	RoomName
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2928)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2928)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2939)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2939)
 msgctxt "TNPause,RoomName"
 msgid "Nombre"
 msgstr "Ad"
 
 #. Key:	RoomNamePrivateDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2930)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2930)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2941)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2941)
 msgctxt "TNPause,RoomNamePrivateDesc"
 msgid "Sala privada: no sale en la lista de partidas; se entra con el código o por invitación de Steam."
 msgstr "Özel oda: oyun listesinde görünmez; kodla ya da Steam davetiyle girilir."
 
 #. Key:	RoomNamePublicDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2931)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2931)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2942)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2942)
 msgctxt "TNPause,RoomNamePublicDesc"
 msgid "Sala pública: sale en la lista de partidas del menú principal («Unirse»)."
 msgstr "Herkese açık oda: ana menüdeki oyun listesinde görünür (“Katıl”)."
 
 #. Key:	RoomCode
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2936)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2936)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2947)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2947)
 msgctxt "TNPause,RoomCode"
 msgid "Código de la sala"
 msgstr "Oda kodu"
 
 #. Key:	RoomCopy
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2936)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2936)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2947)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2947)
 msgctxt "TNPause,RoomCopy"
 msgid "Copiar"
 msgstr "Kopyala"
 
 #. Key:	QTextures
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(294)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(294)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(295)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(295)
 msgctxt "TNPause,QTextures"
 msgid "Texturas"
 msgstr "Dokular"
 
 #. Key:	QTexturesDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(294)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(294)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(295)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(295)
 msgctxt "TNPause,QTexturesDesc"
 msgid "Nitidez de las texturas (usa memoria de vídeo)."
 msgstr "Dokuların netliği (video belleği kullanır)."
 
 #. Key:	RoomCopied
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2942)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2942)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2953)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2953)
 msgctxt "TNPause,RoomCopied"
 msgid "Código {0} copiado: pégalo donde quieras (Ctrl+V)."
 msgstr "{0} kodu kopyalandı: istediğin yere yapıştır (Ctrl+V)."
 
 #. Key:	RoomCodeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2945)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2945)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2956)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2956)
 msgctxt "TNPause,RoomCodeDesc"
 msgid "Con este código se entra en la sala desde el menú principal («Unirse» y escribirlo). Intro, A o clic: copiarlo."
 msgstr "Bu kodla ana menüden odaya girilir (“Katıl” ve kodu yaz). Enter, A ya da tık: kopyala."
 
 #. Key:	RoomClosed
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2953)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2953)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2964)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2964)
 msgctxt "TNPause,RoomClosed"
 msgid "Cerrada"
 msgstr "Kapalı"
 
 #. Key:	RoomOpen
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2953)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2953)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2964)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2964)
 msgctxt "TNPause,RoomOpen"
 msgid "Abierta"
 msgstr "Açık"
 
 #. Key:	RoomDoor
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2954)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2954)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2965)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2965)
 msgctxt "TNPause,RoomDoor"
 msgid "Entrada"
 msgstr "Giriş"
 
-#. Key:	RoomLockedNotice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2959)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2959)
-msgctxt "TNPause,RoomLockedNotice"
-msgid "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
-msgstr "Oda kapalı: kimse giremez (içeridekiler geri dönebilir)."
-
 #. Key:	QPost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(296)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(296)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(297)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(297)
 msgctxt "TNPause,QPost"
 msgid "Postprocesado"
 msgstr "Son işlem"
 
 #. Key:	QPostDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(296)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(296)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(297)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(297)
 msgctxt "TNPause,QPostDesc"
 msgid "Brillos, desenfoque de movimiento y otros acabados de la imagen."
 msgstr "Parlamalar, hareket bulanıklığı ve görüntünün diğer son dokunuşları."
 
+#. Key:	RoomLockedNotice
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2970)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2970)
+msgctxt "TNPause,RoomLockedNotice"
+msgid "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
+msgstr "Oda kapalı: kimse giremez (içeridekiler geri dönebilir)."
+
 #. Key:	RoomUnlockedNotice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2960)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2960)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2971)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2971)
 msgctxt "TNPause,RoomUnlockedNotice"
 msgid "Sala abierta: puede entrar gente otra vez."
 msgstr "Oda açık: yeniden girilebilir."
 
 #. Key:	RoomDoorDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2963)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2963)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2974)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2974)
 msgctxt "TNPause,RoomDoorDesc"
 msgid "Cerrada: no entra nadie nuevo, ni por la lista, ni con el código ni por invitación. Los que ya están siguen y pueden volver si se les cae la conexión."
 msgstr "Kapalı: yeni kimse giremez; ne listeden, ne kodla, ne davetle. İçeridekiler kalır ve bağlantıları koparsa geri dönebilir."
 
 #. Key:	RoomDoorGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2971)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2971)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2982)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2982)
 msgctxt "TNPause,RoomDoorGuestDesc"
 msgid "Solo el anfitrión puede cerrar la sala o expulsar a alguien."
 msgstr "Odayı yalnızca ev sahibi kapatabilir ya da birini atabilir."
 
 #. Key:	RoomInvite
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2977)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2977)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2988)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2988)
 msgctxt "TNPause,RoomInvite"
 msgid "Invitar a amigos de Steam"
 msgstr "Steam arkadaşlarını davet et"
 
 #. Key:	QGI
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(298)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(298)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(299)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(299)
 msgctxt "TNPause,QGI"
 msgid "Iluminación global"
 msgstr "Küresel aydınlatma"
 
 #. Key:	QGIDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(298)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(298)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(299)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(299)
 msgctxt "TNPause,QGIDesc"
 msgid "Luz que rebota en el entorno. En Baja, el mapa se ve más plano."
 msgstr "Çevreden sekip gelen ışık. Düşükte harita daha yassı görünür."
 
 #. Key:	RoomInviteAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2980)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2980)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2991)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2991)
 msgctxt "TNPause,RoomInviteAction"
 msgid "Abrir Steam"
 msgstr "Steam'i aç"
 
 #. Key:	RoomInviteDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2981)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2981)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2992)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2992)
 msgctxt "TNPause,RoomInviteDesc"
 msgid "La lista de amigos de Steam, para invitarles (la invitación también vale en las salas privadas)."
 msgstr "Steam arkadaş listesi, onları davet etmek için (davet özel odalarda da geçerlidir)."
 
 #. Key:	HeadRoomPlayers
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2987)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2987)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2998)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(2998)
 msgctxt "TNPause,HeadRoomPlayers"
 msgid "TORTUGAS EN LA SALA · {0}"
 msgstr "ODADAKİ KAPLUMBAĞALAR · {0}"
 
 #. Key:	QReflections
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(300)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(300)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(301)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(301)
 msgctxt "TNPause,QReflections"
 msgid "Reflejos"
 msgstr "Yansımalar"
 
 #. Key:	QReflectionsDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(300)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(300)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(301)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(301)
 msgctxt "TNPause,QReflectionsDesc"
 msgid "Reflejos del agua y de las superficies brillantes."
 msgstr "Suyun ve parlak yüzeylerin yansımaları."
 
 #. Key:	PlayerRowHostDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3017)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3017)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3028)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3028)
 msgctxt "TNPause,PlayerRowHostDesc"
 msgid "Intro, A o clic: opciones de esta tortuga (expulsarla de la sala)."
 msgstr "Enter, A ya da tık: bu kaplumbağa için seçenekler (odadan at)."
 
 #. Key:	PlayerRowGuestDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3018)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3018)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3029)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3029)
 msgctxt "TNPause,PlayerRowGuestDesc"
 msgid "Solo el anfitrión puede expulsar a alguien."
 msgstr "Yalnızca ev sahibi birini atabilir."
 
 #. Key:	PlayerRowMeDesc
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3018)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3018)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3029)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3029)
 msgctxt "TNPause,PlayerRowMeDesc"
 msgid "Tu tortuga."
 msgstr "Senin kaplumbağan."
 
 #. Key:	PlayerOptionsText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3050)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3050)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3061)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3061)
 msgctxt "TNPause,PlayerOptionsText"
 msgid "Opciones del anfitrión para {0}."
 msgstr "{0} için ev sahibi seçenekleri."
 
 #. Key:	PlayerKick
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3051)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3051)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3062)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3062)
 msgctxt "TNPause,PlayerKick"
 msgid "Expulsar"
 msgstr "At"
 
 #. Key:	KickTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3058)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3058)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3069)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3069)
 msgctxt "TNPause,KickTitle"
 msgid "¿Expulsar a {0}?"
 msgstr "{0} atılsın mı?"
 
 #. Key:	KickText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3059)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3059)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3070)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3070)
 msgctxt "TNPause,KickText"
 msgid "Sale de la partida y vuelve al menú principal. No podrá volver a entrar en esta sala mientras dure."
 msgstr "Oyundan çıkar ve ana menüye döner. Bu oda sürdüğü müddetçe tekrar giremez."
 
 #. Key:	KickYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3060)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3060)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3071)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3071)
 msgctxt "TNPause,KickYes"
 msgid "Sí, expulsar"
 msgstr "Evet, at"
 
 #. Key:	KickDone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3070)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3070)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3081)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3081)
 msgctxt "TNPause,KickDone"
 msgid "{0} ha sido expulsado de la sala."
 msgstr "{0} odadan atıldı."
 
 #. Key:	KickGone
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3071)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3071)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3082)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3082)
 msgctxt "TNPause,KickGone"
 msgid "{0} ya no está en la sala."
 msgstr "{0} artık odada değil."
 
 #. Key:	QLow
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(308)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(308)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
 msgctxt "TNPause,QLow"
 msgid "Baja"
 msgstr "Düşük"
 
 #. Key:	QMedium
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(308)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(308)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
 msgctxt "TNPause,QMedium"
 msgid "Media"
 msgstr "Orta"
 
 #. Key:	QEpic
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(310)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(310)
 msgctxt "TNPause,QEpic"
 msgid "Épica"
 msgstr "Epik"
 
 #. Key:	QHigh
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(309)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(310)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(310)
 msgctxt "TNPause,QHigh"
 msgid "Alta"
 msgstr "Yüksek"
 
 #. Key:	LobbyGuestTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3113)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3113)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3124)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3124)
 msgctxt "TNPause,LobbyGuestTitle"
 msgid "¿Salir de la partida?"
 msgstr "Oyundan çıkılsın mı?"
 
 #. Key:	LobbyGuestText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3114)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3114)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3125)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3125)
 msgctxt "TNPause,LobbyGuestText"
 msgid "Solo el anfitrión puede llevar al grupo al lobby. Tú vuelves al menú principal y los demás siguen jugando."
 msgstr "Grubu lobiye yalnızca ev sahibi götürebilir. Sen ana menüye dönersin, diğerleri oynamaya devam eder."
 
 #. Key:	LobbyTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3128)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3128)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3139)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3139)
 msgctxt "TNPause,LobbyTitle"
 msgid "¿Volver al lobby?"
 msgstr "Lobiye dönülsün mü?"
 
 #. Key:	LobbyText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3129)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3129)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3140)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3140)
 msgctxt "TNPause,LobbyText"
 msgid "La ronda se acaba para todos y el grupo vuelve al lobby del castillo."
 msgstr "Tur herkes için biter ve grup kalenin lobisine döner."
 
 #. Key:	LobbyYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3130)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3130)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3141)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3141)
 msgctxt "TNPause,LobbyYes"
 msgid "Al lobby"
 msgstr "Lobiye"
 
 #. Key:	QCustom
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(316)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(316)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(317)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(317)
 msgctxt "TNPause,QCustom"
 msgid "Personalizada"
 msgstr "Özel"
 
 #. Key:	LeaveTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3160)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3160)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3171)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3171)
 msgctxt "TNPause,LeaveTitle"
 msgid "¿Salir de la partida?"
 msgstr "Oyundan çıkılsın mı?"
 
 #. Key:	MenuTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3160)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3160)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3171)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3171)
 msgctxt "TNPause,MenuTitle"
 msgid "¿Volver al menú principal?"
 msgstr "Ana menüye dönülsün mü?"
 
 #. Key:	LeaveText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3161)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3161)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3172)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3172)
 msgctxt "TNPause,LeaveText"
 msgid "Vuelves al menú principal. Los demás siguen jugando sin ti."
 msgstr "Ana menüye dönersin. Diğerleri sensiz oynamaya devam eder."
 
 #. Key:	MenuText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3162)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3162)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3173)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3173)
 msgctxt "TNPause,MenuText"
 msgid "La partida se cierra para todos: tus compañeros también vuelven al menú."
 msgstr "Oyun herkes için kapanır: arkadaşların da menüye döner."
 
 #. Key:	QCine
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(317)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(317)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(318)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(318)
 msgctxt "TNPause,QCine"
 msgid "Cine"
 msgstr "Sinema"
 
 #. Key:	QuitTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3182)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3182)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3193)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3193)
 msgctxt "TNPause,QuitTitle"
 msgid "¿Salir al escritorio?"
 msgstr "Masaüstüne çıkılsın mı?"
 
 #. Key:	QuitTextHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3183)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3183)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3194)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3194)
 msgctxt "TNPause,QuitTextHost"
 msgid "Se cierra Tortunavy y, como eres el anfitrión, la partida se acaba para todos."
 msgstr "Tortunavy kapanır ve ev sahibi olduğun için oyun herkes için biter."
 
 #. Key:	QuitText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3184)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3184)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3195)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3195)
 msgctxt "TNPause,QuitText"
 msgid "Se cierra Tortunavy."
 msgstr "Tortunavy kapanır."
 
 #. Key:	QuitYes
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3185)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3185)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3196)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3196)
 msgctxt "TNPause,QuitYes"
 msgid "Salir"
 msgstr "Çık"
 
 #. Key:	VideoTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3258)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3258)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3269)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3269)
 msgctxt "TNPause,VideoTitle"
 msgid "¿Mantener esta pantalla?"
 msgstr "Bu ekran korunsun mu?"
 
 #. Key:	VideoText
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3259)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3259)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3270)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3270)
 msgctxt "TNPause,VideoText"
 msgid "Si algo no se ve bien, no toques nada: se deshace sola en {0} s."
 msgstr "Bir şey düzgün görünmüyorsa hiçbir şeye dokunma: {0} sn içinde kendiliğinden geri alınır."
 
 #. Key:	VideoKeep
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3260)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3260)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3271)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3271)
 msgctxt "TNPause,VideoKeep"
 msgid "Mantener"
 msgstr "Koru"
 
 #. Key:	CaptureNotice
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3297)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3297)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3308)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3308)
 msgctxt "TNPause,CaptureNotice"
 msgid "Pulsa la tecla o el botón del mando para «{0}». Esc o Select/Vista: dejarlo como está."
 msgstr "“{0}” için tuşa ya da oyun kolu düğmesine bas. Esc ya da Select/Görünüm: olduğu gibi bırak."
 
 #. Key:	CaptureCancelled
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3335)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3335)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3346)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3346)
 msgctxt "TNPause,CaptureCancelled"
 msgid "Sin cambios."
 msgstr "Değişiklik yok."
 
 #. Key:	YouHost
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(357)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(357)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(358)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(358)
 msgctxt "TNPause,YouHost"
 msgid "Tú · anfitrión"
 msgstr "Sen · ev sahibi"
 
 #. Key:	HintSettings
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3577)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3577)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3588)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3588)
 msgctxt "TNPause,HintSettings"
 msgid "← →  Cambiar      Q E · LB RB  Pestañas      Esc · B  Volver      Tab · Start  Cerrar"
 msgstr "← →  Değiştir      Q E · LB RB  Sekmeler      Esc · B  Geri      Tab · Start  Kapat"
 
 #. Key:	You
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(358)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(358)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(359)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(359)
 msgctxt "TNPause,You"
 msgid "Tú"
 msgstr "Sen"
 
 #. Key:	HintControls
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3580)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3580)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3591)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3591)
 msgctxt "TNPause,HintControls"
 msgid "Intro · A  Cambiar      Supr · Y  De serie      Esc · B  Volver      Tab · Start  Cerrar"
 msgstr "Enter · A  Değiştir      Delete · Y  Varsayılan      Esc · B  Geri      Tab · Start  Kapat"
 
 #. Key:	HintRoom
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3583)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3583)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3594)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3594)
 msgctxt "TNPause,HintRoom"
 msgid "Intro · A  Elegir      ← →  Cambiar      Esc · B  Volver      Tab · Start  Cerrar"
 msgstr "Enter · A  Seç      ← →  Değiştir      Esc · B  Geri      Tab · Start  Kapat"
 
 #. Key:	HintPage
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3586)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3586)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3597)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3597)
 msgctxt "TNCredits,HintPage"
 msgid "↑ ↓ · LB RB  Desplazar      Esc · B  Volver      Tab · Start  Cerrar"
 msgstr "↑ ↓ · LB RB  Kaydır      Esc · B  Geri      Tab · Start  Kapat"
 
-#. Key:	HintHome
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3589)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3589)
-msgctxt "TNPause,HintHome"
-msgid "Intro · A  Elegir      Esc · B  Continuar      Tab · Start  Cerrar"
-msgstr "Enter · A  Seç      Esc · B  Devam      Tab · Start  Kapat"
-
 #. Key:	Host
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(359)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(359)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(360)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(360)
 msgctxt "TNPause,Host"
 msgid "Anfitrión"
 msgstr "Ev sahibi"
 
+#. Key:	HintHome
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3600)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(3600)
+msgctxt "TNPause,HintHome"
+msgid "Intro · A  Elegir      Esc · B  Continuar      Tab · Start  Cerrar"
+msgstr "Enter · A  Seç      Esc · B  Devam      Tab · Start  Kapat"
+
 #. Key:	Ping
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(362)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(362)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(363)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(363)
 msgctxt "TNPause,Ping"
 msgid "{0} ms"
 msgstr "{0} ms"
 
 #. Key:	PressAction
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(412)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(412)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(413)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(413)
 msgctxt "TNPause,PressAction"
 msgid "Pulsar"
 msgstr "Bas"
 
 #. Key:	PressKey
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(523)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(523)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(524)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(524)
 msgctxt "TNPause,PressKey"
 msgid "Pulsa una tecla..."
 msgstr "Bir tuşa bas..."
 
 #. Key:	OrButton
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(528)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(528)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(529)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(529)
 msgctxt "TNPause,OrButton"
 msgid "...o un botón"
 msgstr "...ya da bir düğmeye"
 
 #. Key:	PressButton
-#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(528)
-#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(528)
+#. SourceLocation:	Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(529)
+#: Source/Tortunabo/Private/UI/Pause/TN_PauseMenuWidget.cpp(529)
 msgctxt "TNPause,PressButton"
 msgid "Pulsa un botón..."
 msgstr "Bir düğmeye bas..."
