@@ -176,9 +176,11 @@ public:
 	 * @param InSeed      Semilla de la partida: decide qué mapa del catálogo juega cada nivel (#518).
 	 * @param InFirstMap  Semilla de un mapa del catálogo para el nivel 1 (?SurvivalMap=); 0 = elegirlo.
 	 * @param InStartDifficulty  Dificultad 1–5 del mapa del nivel 1; cada nivel sube una hasta 5 (#730).
+	 * @param InTrapDensityPct   Densidad de trampas de los mapas (%, 100 = las del catálogo, #730).
 	 */
-	void SetLevelMode(bool bEnable, int32 InSeed, uint32 InFirstMap = 0u, int32 InStartDifficulty = 1)
+	void SetLevelMode(bool bEnable, int32 InSeed, uint32 InFirstMap = 0u, int32 InStartDifficulty = 1, int32 InTrapDensityPct = 100)
 	{
+		LevelTrapDensityPct = FMath::Max(100, InTrapDensityPct);
 		bLevelMode = bEnable;
 		LevelSeed = InSeed;
 		FirstLevelMap = InFirstMap;
@@ -215,6 +217,9 @@ private:
 
 	/** Dificultad 1–5 del mapa del nivel 1 (la elegida con el general, #730); cada nivel sube una hasta 5. */
 	int32 LevelStartDifficulty = 1;
+
+	/** Densidad de trampas de los mapas de los niveles, en % (la de la dificultad elegida, #730). */
+	int32 LevelTrapDensityPct = 100;
 
 	/** Mapas del catálogo que han salido en la partida, en orden (se olvidan al agotar los de una dificultad). */
 	TArray<uint32> PlayedLevelMaps;

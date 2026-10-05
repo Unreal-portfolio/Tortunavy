@@ -264,8 +264,11 @@ namespace TNSurvivalCatalog
 		}
 	}
 
-	/** Las trampas de #516 de un mapa del catálogo sobre su layout. Vacío si la semilla no está en el catálogo. */
-	inline TArray<FTrapPlacement> PlaceLooseTraps(const TNProcMap::FLayout& L, uint32 Seed)
+	/**
+	 * Las trampas de #516 de un mapa del catálogo sobre su layout, con DensityPct % de densidad (TrapsOf, #730). Vacío si la
+	 * semilla no está en el catálogo.
+	 */
+	inline TArray<FTrapPlacement> PlaceLooseTraps(const TNProcMap::FLayout& L, uint32 Seed, int32 DensityPct = 100)
 	{
 		using namespace Placement;
 		TArray<FTrapPlacement> Out;
@@ -274,7 +277,7 @@ namespace TNSurvivalCatalog
 		const double Total = M.Last().S;
 		int32 Side = 1;
 
-		for (const FTrapSpot& Spot : TrapsOf(Seed))
+		for (const FTrapSpot& Spot : TrapsOf(Seed, DensityPct))
 		{
 			if (!IsLooseTrap(Spot.Trap)) { continue; }
 			const double From = Total * Spot.FromPct / 100.0;
@@ -487,8 +490,11 @@ namespace TNSurvivalCatalog
 
 	inline double YawOf(const FVector2D& Dir) { return FMath::RadiansToDegrees(FMath::Atan2(Dir.Y, Dir.X)); }
 
-	/** Los quads, puentes y placas de un mapa del catálogo sobre su layout. Vacío si la semilla no está en el catálogo. */
-	inline FTerrainTrapPlan PlaceTerrainTraps(const TNProcMap::FLayout& L, uint32 Seed)
+	/**
+	 * Los quads, puentes y placas de un mapa del catálogo sobre su layout, con DensityPct % de densidad (más quads; los
+	 * puentes y las placas no cambian). Vacío si la semilla no está en el catálogo.
+	 */
+	inline FTerrainTrapPlan PlaceTerrainTraps(const TNProcMap::FLayout& L, uint32 Seed, int32 DensityPct = 100)
 	{
 		using namespace Placement;
 		FTerrainTrapPlan Out;
@@ -497,7 +503,7 @@ namespace TNSurvivalCatalog
 		const double Total = M.Last().S;
 		auto PctOf = [&M, Total](int32 i) { return M.IsValidIndex(i) ? 100.0 * M[i].S / Total : -1000.0; };
 
-		for (const FTrapSpot& Spot : TrapsOf(Seed))
+		for (const FTrapSpot& Spot : TrapsOf(Seed, DensityPct))
 		{
 			const double From = Total * Spot.FromPct / 100.0;
 			const double To = Total * Spot.ToPct / 100.0;

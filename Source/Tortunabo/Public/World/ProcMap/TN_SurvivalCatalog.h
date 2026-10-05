@@ -226,11 +226,55 @@ namespace TNSurvivalCatalog
 		return nullptr;
 	}
 
-	/** Las trampas de una semilla del catálogo, en el orden del catálogo. */
-	inline TArray<FTrapSpot> TrapsOf(uint32 Seed)
+	/**
+	 * Si un punto del catálogo cuenta para la densidad de trampas (ScaleTrapSpots). Fuera, lo que depende de la forma del
+	 * mapa: las placas del atajo de la rama, los puentes que se rompen (van en los huecos) y las gaviotas (un tramo largo).
+	 */
+	inline bool ScalesWithDensity(ETrap T)
+	{
+		return T != ETrap::PressurePlate && T != ETrap::BreakableBridge && T != ETrap::Seagull;
+	}
+
+	/**
+	 * Los puntos con trampa de un mapa con DensityPct % de densidad (#730: normal 150, difícil 200). Con más de 100, se
+	 * añaden copias de los puntos que cuentan (ScalesWithDensity), repartidas por el recorrido: cada copia es la de un punto
+	 * corrida hasta medio camino del siguiente (o del final del recorrido). Los que no cuentan quedan igual. Determinista:
+	 * todas las máquinas sacan los mismos.
+	 */
+	inline TArray<FTrapSpot> ScaleTrapSpots(const TArray<FTrapSpot>& Spots, int32 DensityPct)
+	{
+		TArray<FTrapSpot> Out = Spots;
+		TArray<FTrapSpot> Scalable = Spots.FilterByPredicate([](const FTrapSpot& T) { return ScalesWithDensity(T.Trap); });
+		if (DensityPct <= 100 || Scalable.Num() == 0)
+		{
+			return Out;
+		}
+		auto CenterOf = [](const FTrapSpot& T) { return (static_cast<int32>(T.FromPct) + static_cast<int32>(T.ToPct)) * 0.5; };
+		Scalable.StableSort([&CenterOf](const FTrapSpot& A, const FTrapSpot& B) { return CenterOf(A) < CenterOf(B); });
+
+		const int32 N = Scalable.Num();
+		const int32 Extra = FMath::RoundToInt32(N * (DensityPct - 100) / 100.0);
+		for (int32 k = 0; k < Extra; ++k)
+		{
+			// Fuentes repartidas por la lista (con el doble, todas); una vuelta más si hiciera falta más de una copia.
+			const int32 Index = static_cast<int32>((k + 0.5) * N / FMath::Max(Extra, 1)) % N;
+			const FTrapSpot& Source = Scalable[Index];
+			const double Center = CenterOf(Source);
+			const double Next = Index + 1 < N ? CenterOf(Scalable[Index + 1]) : 97.0;
+			const int32 Shift = FMath::Max(1, FMath::RoundToInt32((Next - Center) * 0.5));
+			FTrapSpot Copy = Source;
+			Copy.FromPct = static_cast<uint8>(FMath::Clamp(static_cast<int32>(Source.FromPct) + Shift, 0, 97));
+			Copy.ToPct = static_cast<uint8>(FMath::Clamp(static_cast<int32>(Source.ToPct) + Shift, static_cast<int32>(Copy.FromPct), 97));
+			Out.Add(Copy);
+		}
+		return Out;
+	}
+
+	/** Las trampas de una semilla del catálogo, en el orden del catálogo (con DensityPct, más copias al final). */
+	inline TArray<FTrapSpot> TrapsOf(uint32 Seed, int32 DensityPct = 100)
 	{
 		TArray<FTrapSpot> Out;
 		for (const FTrapSpot& T : Traps) { if (T.Seed == Seed) { Out.Add(T); } }
-		return Out;
+		return ScaleTrapSpots(Out, DensityPct);
 	}
 }

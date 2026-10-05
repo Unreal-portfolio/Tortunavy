@@ -112,10 +112,12 @@ void ATN_ProcMapGenerator::PlanSurvivalTraps()
 		UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Semilla %u con dificultad %d fuera del catálogo: mapa sin trampas."), Seed, Difficulty);
 		return;
 	}
-	SurvivalTrapPlan = TNSurvivalCatalog::PlaceLooseTraps(Layout, Seed);
-	SurvivalTerrainPlan = TNSurvivalCatalog::PlaceTerrainTraps(Layout, Seed);
-	UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Mapa del catálogo «%s» (semilla %u, dificultad %d): %d trampas, %d cruces de quads, %d puentes que se rompen y %d atajos con placas."),
-		Entry->Name, Seed, Difficulty, SurvivalTrapPlan.Num(), SurvivalTerrainPlan.Quads.Num(), SurvivalTerrainPlan.Bridges.Num(),
+	// Con la densidad de trampas de la dificultad elegida (#730): la replica NetConfig, así todas colocan las mismas.
+	const int32 DensityPct = NetConfig.SurvivalTrapDensityPct > 0 ? NetConfig.SurvivalTrapDensityPct : 100;
+	SurvivalTrapPlan = TNSurvivalCatalog::PlaceLooseTraps(Layout, Seed, DensityPct);
+	SurvivalTerrainPlan = TNSurvivalCatalog::PlaceTerrainTraps(Layout, Seed, DensityPct);
+	UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Mapa del catálogo «%s» (semilla %u, dificultad %d, trampas al %d %%): %d trampas, %d cruces de quads, %d puentes que se rompen y %d atajos con placas."),
+		Entry->Name, Seed, Difficulty, DensityPct, SurvivalTrapPlan.Num(), SurvivalTerrainPlan.Quads.Num(), SurvivalTerrainPlan.Bridges.Num(),
 		SurvivalTerrainPlan.Shortcuts.Num());
 }
 

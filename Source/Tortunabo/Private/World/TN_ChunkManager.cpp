@@ -565,7 +565,7 @@ bool ATN_ChunkManager::BuildLevel(int32 Level)
 	const FTNSurvivalMapPick Pick = Forced.IsValid() ? Forced : TNSurvivalMapSelection::PickLevelMap(LevelSeed, Level, PlayedLevelMaps, LevelStartDifficulty);
 	if (Pick.IsValid())
 	{
-		Generator->ServerGenerateSurvival(static_cast<int32>(Pick.Seed), Pick.Difficulty);
+		Generator->ServerGenerateSurvival(static_cast<int32>(Pick.Seed), Pick.Difficulty, LevelTrapDensityPct);
 		if (Generator->IsMapReady())
 		{
 			PlayedLevelMaps = TNSurvivalMapSelection::RecordPlayed(PlayedLevelMaps, Pick);

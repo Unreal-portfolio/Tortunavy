@@ -141,13 +141,14 @@ void ATN_ProcMapGenerator::ServerGenerate(int32 InSeed, ETNProcGameMode InMode, 
 	ForceNetUpdate();
 }
 
-void ATN_ProcMapGenerator::ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty)
+void ATN_ProcMapGenerator::ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty, int32 InTrapDensityPct)
 {
 	if (!HasAuthority())
 	{
 		return;
 	}
 	NetConfig.SurvivalDifficulty = FMath::Clamp(InSurvivalDifficulty, TNProcMap::SurvivalMinDifficulty, TNProcMap::SurvivalMaxDifficulty);
+	NetConfig.SurvivalTrapDensityPct = FMath::Clamp(InTrapDensityPct, 100, 400);
 	ServerGenerate(InSeed, ETNProcGameMode::Survival, ETNProcDifficulty::Normal);
 }
 

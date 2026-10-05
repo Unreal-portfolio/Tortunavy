@@ -134,6 +134,12 @@ namespace TNSurvivalLogic
 		return FMath::Clamp(1 + 2 * static_cast<int32>(Difficulty), 1, 5);
 	}
 
+	/** Densidad de trampas (%) según la dificultad elegida con el general (#730): fácil 100, normal 150 y difícil 200. */
+	inline int32 TrapDensityPct(ETNProcDifficulty Difficulty)
+	{
+		return 100 + 50 * FMath::Clamp(static_cast<int32>(Difficulty), 0, 2);
+	}
+
 	/**
 	 * Dificultad 1–5 del mapa del nivel (TNProcMap::MakeSurvivalParams): el nivel 1 juega StartDifficulty y cada nivel sube
 	 * una hasta 5. Con la de fácil (1), el nivel N pide min(N, 5).

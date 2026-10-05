@@ -10,6 +10,7 @@
 #include "World/ProcMap/TN_ProcMapSurvival.h"
 #include "World/ProcMap/TN_SurvivalCatalog.h"
 #include "World/ProcMap/TN_SurvivalTrapPlacement.h"
+#include "Game/TN_SurvivalRules.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -220,6 +221,64 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 				&& TNProcMap::GapStyleOf(L.Features[B.Feature]) == TNProcMap::EGapStyle::Beam);
 		}
 	}
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Densidad de trampas según la dificultad elegida (#730)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalCatalogDensityTest,
+	"Tortunabo.Survival.Catalogo.Densidad",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNSurvivalCatalogDensityTest::RunTest(const FString& Parameters)
+{
+	using namespace TNSurvivalCatalog;
+	TestEqual(TEXT("Fácil: las del catálogo"), TNSurvivalLogic::TrapDensityPct(ETNProcDifficulty::Easy), 100);
+	TestEqual(TEXT("Normal: ×1,5"), TNSurvivalLogic::TrapDensityPct(ETNProcDifficulty::Normal), 150);
+	TestEqual(TEXT("Difícil: ×2"), TNSurvivalLogic::TrapDensityPct(ETNProcDifficulty::Hard), 200);
+
+	int32 Placed100 = 0;
+	int32 Placed150 = 0;
+	int32 Placed200 = 0;
+	for (const FMapEntry& M : CatalogAndTestMaps())
+	{
+		const FString Ctx = FString::Printf(TEXT("semilla %u (%s)"), M.Seed, M.Name);
+		const TArray<FTrapSpot> Base = TrapsOf(M.Seed);
+		int32 Scalable = 0;
+		for (const FTrapSpot& T : Base) { Scalable += ScalesWithDensity(T.Trap) ? 1 : 0; }
+
+		for (const int32 Pct : { 100, 150, 200 })
+		{
+			const TArray<FTrapSpot> Scaled = TrapsOf(M.Seed, Pct);
+			const int32 Expected = Base.Num() + FMath::RoundToInt32(Scalable * (Pct - 100) / 100.0);
+			TestEqual(FString::Printf(TEXT("%s al %d %%: puntos"), *Ctx, Pct), Scaled.Num(), Expected);
+			int32 Fixed = 0;
+			for (const FTrapSpot& T : Scaled)
+			{
+				TestTrue(FString::Printf(TEXT("%s al %d %%: dentro del recorrido"), *Ctx, Pct), T.FromPct <= T.ToPct && T.ToPct <= 100);
+				Fixed += ScalesWithDensity(T.Trap) ? 0 : 1;
+			}
+			TestEqual(FString::Printf(TEXT("%s al %d %%: placas, puentes y gaviotas sin cambiar"), *Ctx, Pct), Fixed, Base.Num() - Scalable);
+			TestTrue(FString::Printf(TEXT("%s al %d %%: determinista"), *Ctx, Pct), TrapsOf(M.Seed, Pct).Num() == Scaled.Num());
+		}
+
+		// Sobre el mapa: más densidad, más trampas colocadas (alguna puede no caber, pero nunca menos).
+		TNProcMap::FLayout L;
+		if (!TestTrue(Ctx + TEXT(": genera mapa"), TNProcMap::GenerateSurvivalLayout(M.Seed, M.Difficulty, L) != 0)) { continue; }
+		const int32 N100 = PlaceLooseTraps(L, M.Seed, 100).Num() + PlaceTerrainTraps(L, M.Seed, 100).Quads.Num();
+		const int32 N150 = PlaceLooseTraps(L, M.Seed, 150).Num() + PlaceTerrainTraps(L, M.Seed, 150).Quads.Num();
+		const int32 N200 = PlaceLooseTraps(L, M.Seed, 200).Num() + PlaceTerrainTraps(L, M.Seed, 200).Quads.Num();
+		TestTrue(Ctx + TEXT(": al 150 % no hay menos que al 100 %"), N150 >= N100);
+		TestTrue(Ctx + TEXT(": al 200 % no hay menos que al 150 %"), N200 >= N150);
+		Placed100 += N100;
+		Placed150 += N150;
+		Placed200 += N200;
+	}
+	AddInfo(FString::Printf(TEXT("Trampas colocadas en todo el catálogo: %d al 100 %%, %d al 150 %% y %d al 200 %%."), Placed100, Placed150, Placed200));
+	TestTrue(TEXT("En el catálogo, al 150 % al menos ×1,3"), Placed150 * 10 >= Placed100 * 13);
+	TestTrue(TEXT("En el catálogo, al 200 % al menos ×1,7"), Placed200 * 10 >= Placed100 * 17);
 	return true;
 }
 
