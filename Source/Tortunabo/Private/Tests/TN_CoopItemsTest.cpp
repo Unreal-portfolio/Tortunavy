@@ -4,6 +4,11 @@
 
 #include "Misc/AutomationTest.h"
 #include "Game/TN_CoopItemRules.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "Game/TN_CoopItemComponent.h"
+#include "GameFramework/Character.h"
+#include "World/Beach/TN_RaceItems.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -113,6 +118,98 @@ bool FTNCoopItemsLootTableTest::RunTest(const FString& Parameters)
 		ChanceSum += TNCoopItemRules::LootChance(Catalog, Kind);
 	}
 	TestEqual(TEXT("Probabilidad de los de código: su parte de la tabla"), ChanceSum, CodeTotal / Total, 1.e-4f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCoopItemsPufferTest,
+	"Tortunabo.Coop.Items.PufferFish",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNCoopItemsPufferTest::RunTest(const FString& Parameters)
+{
+	// Ficha: un uso, sin apilado, peso 15 en la tabla del coop.
+	const FTNCoopItemSpec& Spec = TNCoopItemRules::Spec(ETNCoopItem::PufferFish);
+	TestEqual(TEXT("Un uso"), Spec.Uses, 1);
+	TestEqual(TEXT("Límite de apilado 1"), Spec.MaxStack, 1);
+	TestEqual(TEXT("Peso 15"), Spec.LootWeight, 15.f);
+	int32 Count = 0;
+	TestEqual(TEXT("No se apila: el segundo no se coge"),
+		TNCoopItemRules::DecideStack(ETNCoopItem::PufferFish, 1, ETNCoopItem::PufferFish, 1, Count), ETNCoopStack::Full);
+	TestTrue(TEXT("Sale en la tabla del coop"), TNCoopItemRules::LootChance({ 15.f, 15.f }, ETNCoopItem::PufferFish) > 0.f);
+
+	// Duración: 5 s de protección y después el mareo corto.
+	FTNPufferState State;
+	TestFalse(TEXT("Sin comerlo no protege"), State.IsProtected(10.0));
+	TestTrue(TEXT("Se come"), State.Start(10.0, TNCoopItemTuning::PufferSeconds, TNCoopItemTuning::PufferDizzySeconds));
+	TestTrue(TEXT("Protegida al empezar"), State.IsProtected(10.0));
+	TestTrue(TEXT("Protegida a los 4,9 s"), State.IsProtected(14.9));
+	TestFalse(TEXT("Sin protección a los 5 s"), State.IsProtected(15.0));
+	TestFalse(TEXT("Sin mareo mientras protege"), State.IsDizzy(12.0));
+	TestTrue(TEXT("Mareada al acabar"), State.IsDizzy(15.1));
+	TestFalse(TEXT("El mareo es corto"), State.IsDizzy(15.0 + TNCoopItemTuning::PufferDizzySeconds + 0.01));
+	TestTrue(TEXT("Mareo corto (menos que la protección)"), TNCoopItemTuning::PufferDizzySeconds < TNCoopItemTuning::PufferSeconds);
+
+	// No se apila ni se alarga mientras dura.
+	TestFalse(TEXT("Otro durante la protección: no"), State.Start(12.0, TNCoopItemTuning::PufferSeconds, TNCoopItemTuning::PufferDizzySeconds));
+	TestEqual(TEXT("La protección no se alarga"), State.ProtectEnd, 15.0);
+	TestTrue(TEXT("Acabada, se puede comer otro"), State.Start(16.0, TNCoopItemTuning::PufferSeconds, TNCoopItemTuning::PufferDizzySeconds));
+	TestFalse(TEXT("El nuevo quita el mareo"), State.IsDizzy(16.5));
+	return true;
+}
+
+namespace TNCoopItemsTestDetail
+{
+	/** Mundo de juego sin ventana (con autoridad) para las pruebas con actores; DestroyWorld lo quita. */
+	UWorld* CreateWorld(const TCHAR* Name)
+	{
+		UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, Name);
+		if (World)
+		{
+			FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
+			Context.SetCurrentWorld(World);
+			World->InitializeActorsForPlay(FURL());
+		}
+		return World;
+	}
+
+	void DestroyWorld(UWorld* World)
+	{
+		if (World)
+		{
+			GEngine->DestroyWorldContext(World);
+			World->DestroyWorld(false);
+		}
+	}
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCoopItemsPufferWorldTest,
+	"Tortunabo.Coop.Items.PufferWorld",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNCoopItemsPufferWorldTest::RunTest(const FString& Parameters)
+{
+	UWorld* World = TNCoopItemsTestDetail::CreateWorld(TEXT("TNCoopPufferTestWorld"));
+	if (!TestNotNull(TEXT("Mundo de prueba"), World))
+	{
+		return false;
+	}
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ACharacter* Turtle = World->SpawnActor<ACharacter>(ACharacter::StaticClass(), FTransform(FVector(0.0, 0.0, 100.0)), Params);
+	if (TestNotNull(TEXT("Personaje"), Turtle))
+	{
+		TestFalse(TEXT("Sin pez globo se le puede derribar"), TNRaceItems::IsInvulnerable(Turtle));
+		UTN_CoopItemComponent* Effects = UTN_CoopItemComponent::FindOrAddOn(Turtle);
+		if (TestNotNull(TEXT("El servidor le añade el componente"), Effects))
+		{
+			TestTrue(TEXT("Come el pez globo"), Effects->GrantPuffer());
+			TestTrue(TEXT("Protegida: nada la derriba ni la aturde"), TNRaceItems::IsInvulnerable(Turtle));
+			TestFalse(TEXT("Otro mientras dura: no se apila"), Effects->GrantPuffer());
+			Effects->ClearEffects();
+			TestFalse(TEXT("Sin efectos vuelve a ser vulnerable"), TNRaceItems::IsInvulnerable(Turtle));
+		}
+	}
+	TNCoopItemsTestDetail::DestroyWorld(World);
 	return true;
 }
 

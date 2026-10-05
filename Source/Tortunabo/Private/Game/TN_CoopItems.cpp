@@ -3,6 +3,7 @@
 
 #include "Game/TN_CoopItems.h"
 #include "TN_CoopItemArt.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "Core/TN_Log.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
@@ -43,6 +44,12 @@ namespace TNCoopItemsDetail
 	{
 		switch (Kind)
 		{
+		case ETNCoopItem::PufferFish:
+		{
+			// No se apila: con la protección del anterior aún puesta, el «nop» y se queda en la mano.
+			UTN_CoopItemComponent* Effects = UTN_CoopItemComponent::FindOrAddOn(Turtle);
+			return Effects && Effects->GrantPuffer();
+		}
 		case ETNCoopItem::None:
 		default:
 			return false;
@@ -54,6 +61,7 @@ FText TNCoopItems::DisplayName(ETNCoopItem Kind)
 {
 	switch (Kind)
 	{
+	case ETNCoopItem::PufferFish: return NSLOCTEXT("TNCoop", "ItemPufferFish", "Pez globo");
 	case ETNCoopItem::None:
 	default:
 		return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");

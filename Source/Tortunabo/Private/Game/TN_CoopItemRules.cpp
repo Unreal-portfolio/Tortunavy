@@ -9,6 +9,8 @@ namespace TNCoopItemRulesDetail
 	/** Fichas, en el orden del enum (el índice es el valor). Peso, límite de apilado y usos: hoja ObjectsData del Excel. */
 	const FTNCoopItemSpec Specs[] = {
 		{ ETNCoopItem::None, TEXT("None"), 1, 1, 0.f },
+		// Pez Globo: consumir, 5 s, potencia x2, mareo, peso 15 %, límite de apilado 1.
+		{ ETNCoopItem::PufferFish, TEXT("PufferFish"), 1, 1, 15.f },
 	};
 	static_assert(UE_ARRAY_COUNT(Specs) == static_cast<int32>(ETNCoopItem::Count), "Una ficha por objeto del coop, en el orden del enum");
 }

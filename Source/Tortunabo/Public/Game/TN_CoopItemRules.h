@@ -15,6 +15,8 @@
 enum class ETNCoopItem : uint8
 {
 	None,
+	/** Pez globo: al comerlo, 5 s sin derribo ni aturdimiento («protección x2» sin vida) y un mareo corto al acabar. */
+	PufferFish,
 	Count
 };
 
@@ -58,7 +60,43 @@ namespace TNCoopItemTuning
 	 * nombres): 15, el más repetido del Excel. Con el tótem a 0,3 queda en 4,5.
 	 */
 	inline constexpr float CatalogWeightScale = 15.f;
+
+	/**
+	 * Pez globo: segundos de protección (nada la derriba ni la aturde), segundos del mareo de después y tope de velocidad
+	 * (cm/s) mientras dura el mareo (el del mareo de la cabezota).
+	 */
+	inline constexpr float PufferSeconds = 5.f;
+	inline constexpr float PufferDizzySeconds = 2.f;
+	inline constexpr float PufferDizzySpeedCap = 250.f;
 }
+
+/** Lo que el pez globo deja en una tortuga ahora (horas del servidor; 0 = nunca). */
+struct FTNPufferState
+{
+	double ProtectEnd = 0.0;
+	double DizzyEnd = 0.0;
+
+	/** Protegida ahora: ni derribo ni aturdimiento. */
+	bool IsProtected(double Now) const { return ProtectEnd > 0.0 && Now < ProtectEnd; }
+
+	/** Mareada por el pez globo ahora (el rato de después de la protección). */
+	bool IsDizzy(double Now) const { return !IsProtected(Now) && DizzyEnd > 0.0 && Now >= ProtectEnd && Now < DizzyEnd; }
+
+	/** Se puede comer otro: no se apila ni se alarga mientras dura la protección. */
+	bool CanStart(double Now) const { return !IsProtected(Now); }
+
+	/** Come uno a la hora Now: protección y, al acabar, el mareo. false (sin cambios) si aún dura el anterior. */
+	bool Start(double Now, float ProtectSeconds, float DizzySeconds)
+	{
+		if (!CanStart(Now))
+		{
+			return false;
+		}
+		ProtectEnd = Now + FMath::Max(0.f, ProtectSeconds);
+		DizzyEnd = ProtectEnd + FMath::Max(0.f, DizzySeconds);
+		return true;
+	}
+};
 
 /** Lo que sale de la tabla del coop: una fila de DT_Items (por su índice en la lista de pesos) o un objeto de código. */
 struct FTNCoopLootPick

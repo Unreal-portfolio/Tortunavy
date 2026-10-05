@@ -32,4 +32,7 @@ namespace TNCoopItemArt
 
 	/** El charco de pesca: agua, borde de arena mojada, piedras y una caña clavada. */
 	UStaticMesh* GetPoolMesh();
+
+	/** Corona de pinchos del pez globo alrededor de la tortuga protegida (centrada en el origen, unos 70 cm de radio). */
+	UStaticMesh* GetPufferSpikesMesh();
 }

@@ -1,6 +1,7 @@
 #include "World/Beach/TN_RaceItems.h"
 #include "Game/TN_TctItems.h"
 #include "Game/TN_CoopItems.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "Core/TN_GameplayPreload.h"
 #include "TN_RaceItemArt.h"
 #include "World/Beach/TN_RaceItemBox.h"
@@ -511,7 +512,8 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 bool TNRaceItems::IsInvulnerable(const AActor* Turtle)
 {
 	const UTN_RaceItemComponent* Comp = UTN_RaceItemComponent::FindOn(Turtle);
-	return Comp && Comp->IsInvulnerable();
+	// También la protección del pez globo (objeto del coop): ni derribo ni aturdimiento mientras dura.
+	return (Comp && Comp->IsInvulnerable()) || UTN_CoopItemComponent::IsTurtleProtected(Turtle);
 }
 
 bool TNRaceItems::IsRiding(const AActor* Turtle)

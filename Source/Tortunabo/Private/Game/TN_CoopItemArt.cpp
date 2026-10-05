@@ -71,11 +71,79 @@ namespace TNCoopItemArtDetail
 
 	// ── Objetos ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
+	/** Dirección I de Count repartidas por igual por la esfera (espiral de Fibonacci). */
+	FVector SphereDir(int32 I, int32 Count)
+	{
+		const double Z = 1.0 - 2.0 * (I + 0.5) / FMath::Max(1, Count);
+		const double R = FMath::Sqrt(FMath::Max(0.0, 1.0 - Z * Z));
+		const double Phi = I * 2.39996322972865332;
+		return FVector(FMath::Cos(Phi) * R, FMath::Sin(Phi) * R, Z);
+	}
+
+	/** Pincho cónico de Base hacia fuera (Dir), en dos tonos (la punta más oscura). */
+	void AddSpike(FBuffers& B, const FVector& Base, const FVector& Dir, double Length, double Radius, const FLinearColor& Color, const FLinearColor& Tip)
+	{
+		const FVector Mid = Base + Dir * (Length * 0.55);
+		Kit::AddFrustum(B, Base, Mid, Radius, Radius * 0.5, 6, Color, Color, false, false);
+		Kit::AddFrustum(B, Mid, Base + Dir * Length, Radius * 0.5, 0.0, 6, Tip, Tip, false, false);
+	}
+
+	/** Pez globo inflado (unos 30 cm): cuerpo amarillo con la tripa clara, pinchos, ojos saltones, boquita y cola. */
+	void BuildPufferFish(FBuffers& B)
+	{
+		const double Body = 12.0;
+		Kit::AddEllipsoid(B, FVector::ZeroVector, FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(Body, Body * 0.95, Body * 0.9), 16, 8,
+			Kit::Rgb(0xF2C14E, 0.15f));
+		Kit::AddEllipsoid(B, FVector(1.0, 0.0, -4.5), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(Body * 0.82, Body * 0.78, Body * 0.55),
+			14, 6, Kit::Rgb(0xFFF1C9, 0.1f));
+		constexpr int32 Spikes = 26;
+		for (int32 Index = 0; Index < Spikes; ++Index)
+		{
+			const FVector Dir = SphereDir(Index, Spikes);
+			if (Dir.X > 0.75)
+			{
+				continue; // la cara, sin pinchos
+			}
+			AddSpike(B, Dir * (Body * 0.92), Dir, 5.0, 1.5, Kit::Rgb(0xE0A73A, 0.1f), Kit::Rgb(0x8A5A1E, 0.1f));
+		}
+		for (const double Side : { -1.0, 1.0 })
+		{
+			Kit::AddBall(B, FVector(8.5, Side * 5.0, 4.0), 3.2, 10, Kit::Rgb(0xFFFFFF, 0.3f));
+			Kit::AddBall(B, FVector(11.0, Side * 5.6, 4.4), 1.6, 8, Kit::Rgb(0x13233B, 0.5f));
+		}
+		Kit::AddEllipsoid(B, FVector(12.0, 0.0, -0.5), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(1.6, 2.6, 1.8), 10, 5,
+			Kit::Rgb(0xFF7A52, 0.2f));
+		// Cola: dos lóbulos aplastados detrás.
+		Kit::AddEllipsoid(B, FVector(-14.0, 0.0, 2.5), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(4.0, 1.0, 4.5), 10, 5,
+			Kit::Rgb(0xE8A23C, 0.1f));
+		Kit::AddEllipsoid(B, FVector(-14.0, 0.0, -2.5), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(4.0, 1.0, 4.5), 10, 5,
+			Kit::Rgb(0xE8A23C, 0.1f));
+	}
+
+	/** Corona de pinchos alrededor de la tortuga protegida. */
+	void BuildPufferSpikes(FBuffers& B)
+	{
+		constexpr int32 Spikes = 34;
+		constexpr double Radius = 58.0;
+		for (int32 Index = 0; Index < Spikes; ++Index)
+		{
+			const FVector Dir = SphereDir(Index, Spikes);
+			if (Dir.Z < -0.7)
+			{
+				continue; // por debajo, en el suelo, no se verían
+			}
+			AddSpike(B, Dir * Radius, Dir, 20.0, 3.6, Kit::Rgb(0xF2C14E, 0.2f), Kit::Rgb(0x8A5A1E, 0.15f));
+		}
+	}
+
 	/** Construye la malla de Kind. false si no tiene. */
 	bool BuildKind(ETNCoopItem Kind, FBuffers& B)
 	{
 		switch (Kind)
 		{
+		case ETNCoopItem::PufferFish:
+			BuildPufferFish(B);
+			return true;
 		case ETNCoopItem::None:
 		default:
 			return false;
@@ -98,11 +166,60 @@ namespace TNCoopItemArtDetail
 
 	// ── Iconos ──────────────────────────────────────────────────────────────────────────────────────────────────────
 
+	/** Silueta con filo oscuro y degradado vertical (como los iconos de Todos contra Todos). */
+	template <typename FSdf>
+	void Body(TNHUDArt::FPainter& Painter, const FSdf& Sdf, uint32 Edge, uint32 Top, uint32 Bottom, float TopY, float BottomY)
+	{
+		using namespace TNHUDArt;
+		Painter.Fill([&Sdf](float px, float py) { return Sdf(px, py) - 2.f; }, Hex(Edge));
+		const FLinearColor TopColor = Hex(Top);
+		const FLinearColor BottomColor = Hex(Bottom);
+		Painter.Layer(Sdf, [&TopColor, &BottomColor, TopY, BottomY](float, float py)
+		{
+			return Mix(TopColor, BottomColor, (py - TopY) / FMath::Max(1.f, BottomY - TopY));
+		});
+	}
+
+	/** Estrella de Points puntas alrededor de (Cx, Cy) entre los radios Inner y Outer. */
+	TArray<FVector2f> StarPoints(float Cx, float Cy, int32 Points, float Inner, float Outer)
+	{
+		TArray<FVector2f> Out;
+		for (int32 Index = 0; Index < Points * 2; ++Index)
+		{
+			const float Angle = PI * Index / Points;
+			const float Radius = (Index % 2) ? Inner : Outer;
+			Out.Add(FVector2f(Cx + FMath::Cos(Angle) * Radius, Cy + FMath::Sin(Angle) * Radius));
+		}
+		return Out;
+	}
+
+	void PaintPufferFish(TNHUDArt::FPainter& Painter)
+	{
+		using namespace TNHUDArt;
+		const TArray<FVector2f> Star = StarPoints(60.f, 64.f, 14, 34.f, 48.f);
+		const TArray<FVector2f> TailPoints = { { 22.f, 64.f }, { 4.f, 44.f }, { 4.f, 84.f } };
+		const auto Spikes = [&Star](float px, float py) { return Polygon(px, py, Star); };
+		const auto Tail = [&TailPoints](float px, float py) { return Polygon(px, py, TailPoints); };
+		const auto Fish = [](float px, float py) { return Circle(px, py, 60.f, 64.f, 36.f); };
+		Painter.Sticker([&](float px, float py) { return FMath::Min(Spikes(px, py), Tail(px, py)); }, 5.f);
+		Body(Painter, Tail, 0x5A3A10, 0xF2B24A, 0xC9832A, 44.f, 84.f);
+		Body(Painter, Spikes, 0x5A3A10, 0xC9862E, 0x8A5A1E, 16.f, 112.f);
+		Body(Painter, Fish, 0x5A3A10, 0xFFD86B, 0xF0A93A, 28.f, 100.f);
+		Painter.Fill([&](float px, float py) { return FMath::Max(Ellipse(px, py, 62.f, 84.f, 26.f, 14.f), Fish(px, py) + 1.f); }, Hex(0xFFF3CF));
+		Painter.Fill([](float px, float py) { return Circle(px, py, 76.f, 52.f, 10.f); }, Hex(0xFFFFFF));
+		Painter.Fill([](float px, float py) { return Circle(px, py, 79.f, 53.f, 5.f); }, Hex(0x13233B));
+		Painter.Fill([](float px, float py) { return Ellipse(px, py, 95.f, 68.f, 4.f, 5.f); }, Hex(0xFF7A52));
+		Painter.Fill([](float px, float py) { return Ellipse(px, py, 50.f, 42.f, 10.f, 4.f); }, Hex(0xFFFFFF, 0.5f));
+	}
+
 	/** Dibuja el objeto en Painter. false si no tiene icono. */
 	bool PaintKind(TNHUDArt::FPainter& Painter, ETNCoopItem Kind)
 	{
 		switch (Kind)
 		{
+		case ETNCoopItem::PufferFish:
+			PaintPufferFish(Painter);
+			return true;
 		case ETNCoopItem::None:
 		default:
 			return false;
@@ -207,6 +324,24 @@ UStaticMesh* TNCoopItemArt::GetPoolMesh()
 		bBuilt = true;
 		TNCoopItemArtDetail::FBuffers Buffers;
 		TNCoopItemArtDetail::BuildPool(Buffers);
+		Cached = TNCoopItemArtDetail::Finish(Buffers);
+	}
+	return Cached;
+}
+
+UStaticMesh* TNCoopItemArt::GetPufferSpikesMesh()
+{
+	if (TNCoopItemArtDetail::IsHeadless())
+	{
+		return nullptr;
+	}
+	static UStaticMesh* Cached = nullptr;
+	static bool bBuilt = false;
+	if (!bBuilt)
+	{
+		bBuilt = true;
+		TNCoopItemArtDetail::FBuffers Buffers;
+		TNCoopItemArtDetail::BuildPufferSpikes(Buffers);
 		Cached = TNCoopItemArtDetail::Finish(Buffers);
 	}
 	return Cached;
