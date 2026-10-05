@@ -1169,6 +1169,8 @@ void ATN_ProcMapGameMode::StartNextRound()
 		Structure->Close();
 	}
 
+	// Las conchas de la ronda que acaba van al perfil antes del reinicio: Results solo guarda la última (#567).
+	BankRoundScoresToProfiles();
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
 		if (ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS))

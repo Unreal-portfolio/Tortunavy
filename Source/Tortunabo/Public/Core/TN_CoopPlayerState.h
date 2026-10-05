@@ -75,6 +75,13 @@ public:
 	void ResetForNewRace();
 
 	/**
+	 * Servidor: guarda en el perfil del jugador (tienda) el RaceScore de una ronda que se cierra sin pasar por Results,
+	 * antes de ResetForNewRace (#567). Lo llaman la carrera (StartNextRound, StartSprint) y el mapa procedural
+	 * (StartNextRound); Results sigue guardando la última ronda. Sin efecto en bots ni con RaceScore 0.
+	 */
+	void BankRoundScoreToProfile();
+
+	/**
 	 * @brief Indica si el servidor puede aceptar otro QuickChat de este jugador respetando el cooldown.
 	 * @param Now Tiempo actual del servidor (s).
 	 * @param CooldownSeconds Cooldown configurado entre mensajes (s).
@@ -199,6 +206,14 @@ public:
 	 */
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_RaceScore, Category = "Coop|Score")
 	int32 RaceScore = 0;
+
+	/**
+	 * Máquina del jugador (fiable): suma RoundScore a su perfil local (UMP_GameInstance::AddRaceScore). Lleva el valor
+	 * explícito para no depender del orden en que llegan RaceScore y MatchFlowState. Solo el primer jugador local, como
+	 * PersistLocalPlayerScoreIfResults.
+	 */
+	UFUNCTION(Client, Reliable)
+	void ClientBankRoundScore(int32 RoundScore);
 
 	/** @brief OnRep de RaceScore: dispara OnRaceScoreChanged para refrescar el HUD. */
 	UFUNCTION()

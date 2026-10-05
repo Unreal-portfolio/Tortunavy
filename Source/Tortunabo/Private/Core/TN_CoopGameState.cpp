@@ -24,7 +24,9 @@ void ATN_CoopGameState::SeamlessTravelTransitionCheckpoint(bool bToTransitionMap
 
 void ATN_CoopGameState::OnRep_MatchFlowState()
 {
-	// Fires on remote clients when the replicated value arrives
+	// Fires on remote clients when the replicated value arrives. Como en el servidor (BroadcastFlowStateChange): fuera de
+	// Results la partida siguiente empieza sin nada guardado (#567).
+	PersistedScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedScoreThisRace, MatchFlowState == ETNMatchFlowState::Results);
 	PersistLocalPlayerScoreIfResults();
 	OnMatchFlowStateChanged.Broadcast(MatchFlowState);
 }
@@ -78,10 +80,7 @@ void ATN_CoopGameState::BroadcastFlowStateChange()
 	// Must be called by game modes on the server after setting MatchFlowState.
 	// OnRep does NOT fire on the authoritative machine, so we broadcast manually.
 	// Al salir de Results, resetear el acumulador para el siguiente ciclo.
-	if (MatchFlowState != ETNMatchFlowState::Results)
-	{
-		PersistedScoreThisRace = 0;
-	}
+	PersistedScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedScoreThisRace, MatchFlowState == ETNMatchFlowState::Results);
 	PersistLocalPlayerScoreIfResults();
 	OnMatchFlowStateChanged.Broadcast(MatchFlowState);
 }

@@ -1303,6 +1303,8 @@ void ATN_BeachRaceGameMode::StartNextRound()
 {
 	++CurrentRound;
 	bShowPreRaceCountdown = true;
+	// Las conchas de la ronda que acaba van al perfil antes del reinicio: Results solo guarda la última (#567).
+	BankRoundScoresToProfiles();
 	ResetRoundPlayerStates();
 	SetFlowState(ETNMatchFlowState::WaitingForPlayers);
 	PrepareRound(true);
@@ -1435,6 +1437,7 @@ void ATN_BeachRaceGameMode::StartSprint()
 	bSprint = true;
 	++CurrentRound;
 	bShowPreRaceCountdown = true;
+	BankRoundScoresToProfiles();
 	ResetRoundPlayerStates();
 
 	// Las que no corren: sin tortuga y a espectadoras por la vía normal (el fantasma que sigue a las finalistas). No se
