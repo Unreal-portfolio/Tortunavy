@@ -6,6 +6,7 @@
 #include "Multiplayer/TN_LocalPlayerProfile.h"
 #include "Multiplayer/TN_LocalViews.h"
 #include "Multiplayer/TN_SaveGameIO.h"
+#include "Settings/TN_AutoQualityDecisions.h"
 #include "Settings/TN_SettingsMigration.h"
 #include "Audio/TN_AmbientSoundscape.h"
 #include "Audio/TN_AmbientSynthComponent.h"
@@ -443,6 +444,61 @@ private:
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Calidad del primer arranque (#556)
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace TNGameSettingsDetail
+{
+	/**
+	 * Primer arranque con pantalla: pasa la prueba del equipo (la misma que «Calidad recomendada» del menú de pausa), aplica la
+	 * calidad que aguanta, pone el tope de 60 FPS si no había ninguno y lo guarda. La marca de «ya hecha» son los resultados
+	 * que el motor deja en GameUserSettings.ini (LastCPUBenchmarkResult y LastGPUBenchmarkResult, -1 sin prueba): los
+	 * arranques siguientes no la repiten y respetan lo que el jugador haya cambiado. La decisión, en TNAutoQuality::Decide.
+	 */
+	void ApplyFirstBootQuality()
+	{
+		UGameUserSettings* GUS = UGameUserSettings::GetGameUserSettings();
+		if (!GUS)
+		{
+			return;
+		}
+		const float LastCPU = GUS->GetLastCPUBenchmarkResult();
+		const float LastGPU = GUS->GetLastGPUBenchmarkResult();
+		const TNAutoQuality::EDecision Decision = TNAutoQuality::Decide(GIsEditor, FApp::CanEverRender(), LastCPU, LastGPU);
+		if (Decision != TNAutoQuality::EDecision::RunBenchmark)
+		{
+			// En el editor sale un subsistema por jugador de PIE: ahí no se repite el aviso.
+			if (Decision == TNAutoQuality::EDecision::SkipEditor)
+			{
+				UE_LOG(LogTortunabo, Verbose, TEXT("[Calidad] Primer arranque: %s."), TNAutoQuality::DecisionName(Decision));
+			}
+			else
+			{
+				UE_LOG(LogTortunabo, Log, TEXT("[Calidad] Primer arranque: %s (CPU %.1f, GPU %.1f)."), TNAutoQuality::DecisionName(Decision), LastCPU, LastGPU);
+			}
+			return;
+		}
+
+		UE_LOG(LogTortunabo, Log, TEXT("[Calidad] Primer arranque sin prueba del equipo (CPU %.1f, GPU %.1f): se pasa ahora, tarda un par de segundos."), LastCPU, LastGPU);
+		const double Start = FPlatformTime::Seconds();
+		GUS->RunHardwareBenchmark();
+		GUS->ApplyHardwareBenchmarkResults();
+		const float OldLimit = GUS->GetFrameRateLimit();
+		const float NewLimit = TNAutoQuality::FirstBootFrameRateLimit(OldLimit);
+		GUS->SetFrameRateLimit(NewLimit);
+		GUS->ApplyNonResolutionSettings();
+		GUS->SaveSettings();
+
+		const Scalability::FQualityLevels Applied = Scalability::GetQualityLevels();
+		UE_LOG(LogTortunabo, Log, TEXT("[Calidad] Prueba del equipo en %.1f s: CPU %.1f, GPU %.1f. Calidad aplicada: general %d, resolución %.0f%%, distancia %d, antialiasing %d, sombras %d, iluminación global %d, reflejos %d, postproceso %d, texturas %d, efectos %d, vegetación %d, sombreado %d. Tope de FPS %.0f%s."),
+			FPlatformTime::Seconds() - Start, GUS->GetLastCPUBenchmarkResult(), GUS->GetLastGPUBenchmarkResult(), GUS->GetOverallScalabilityLevel(),
+			Applied.ResolutionQuality, Applied.ViewDistanceQuality, Applied.AntiAliasingQuality, Applied.ShadowQuality, Applied.GlobalIlluminationQuality,
+			Applied.ReflectionQuality, Applied.PostProcessQuality, Applied.TextureQuality, Applied.EffectsQuality, Applied.FoliageQuality, Applied.ShadingQuality,
+			NewLimit, OldLimit > 0.f ? TEXT(" (el que ya había)") : TEXT(""));
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Ciclo de vida
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -481,6 +537,8 @@ void UTN_GameSettingsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 	BaseDisplayGamma = Base.DisplayGamma;
 	LoadSettings();
+	// Primer arranque fuera del editor: calidad según el equipo y tope de FPS (#556). Una vez; el resto de arranques la respetan.
+	TNGameSettingsDetail::ApplyFirstBootQuality();
 	CreateSoundClasses();
 	OriginalMapping = LoadObject<UInputMappingContext>(nullptr, TNGameSettingsDetail::PlayerMappingPath);
 	BuildDefaultBindings();
