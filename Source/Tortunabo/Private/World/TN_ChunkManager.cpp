@@ -570,8 +570,11 @@ bool ATN_ChunkManager::BuildLevel(int32 Level)
 		{
 			PlayedLevelMaps = TNSurvivalMapSelection::RecordPlayed(PlayedLevelMaps, Pick);
 			const TNSurvivalCatalog::FMapEntry* Entry = TNSurvivalCatalog::FindMap(Pick.Seed);
-			UE_LOG(LogTortunabo, Log, TEXT("[ChunkManager] Nivel %d: mapa del catálogo «%s» (semilla %u, dificultad %d; la partida empezó en la %d; camino de %.0f m)%s."),
+			FString Breakdown;
+			const int32 TrapCount = Generator->GetSurvivalTrapCount(&Breakdown);
+			UE_LOG(LogTortunabo, Log, TEXT("[ChunkManager] Nivel %d: mapa del catálogo «%s» (semilla %u, dificultad %d; la partida empezó en la %d; camino de %.0f m) con %d trampas al %d %% (%s)%s."),
 				Level, Entry ? Entry->Name : TEXT("?"), Pick.Seed, Pick.Difficulty, LevelStartDifficulty, Generator->GetMainPathLength() / 100.f,
+				TrapCount, LevelTrapDensityPct, *Breakdown,
 				Pick.bForgotPlayed ? TEXT("; ya habían salido todos los de su dificultad: se olvidan los jugados") : TEXT(""));
 			return true;
 		}

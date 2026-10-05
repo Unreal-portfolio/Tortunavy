@@ -53,6 +53,30 @@ namespace TNSurvivalCatalog
 		Trench            ///< Agujero de trinchera con rampa (ATN_BeachTrench) (#690).
 	};
 
+	/** Nombre de la trampa para el registro (en español, sin traducir: no se ve en pantalla). */
+	inline const TCHAR* TrapName(ETrap T)
+	{
+		switch (T)
+		{
+			case ETrap::BananaPeel:      return TEXT("cáscaras");
+			case ETrap::SlowZone:        return TEXT("zonas lentas");
+			case ETrap::Jellyfish:       return TEXT("medusas");
+			case ETrap::Crab:            return TEXT("zonas de cangrejos");
+			case ETrap::Seagull:         return TEXT("zonas de gaviotas");
+			case ETrap::Quad:            return TEXT("quads");
+			case ETrap::BreakableBridge: return TEXT("puentes que se rompen");
+			case ETrap::PressurePlate:   return TEXT("placas");
+			case ETrap::Quicksand:       return TEXT("arenas movedizas");
+			case ETrap::DragCrab:        return TEXT("cangrejos arrastradores");
+			case ETrap::BurrowCrab:      return TEXT("cangrejos subterráneos");
+			case ETrap::UrchinSpikes:    return TEXT("erizos enterrados");
+			case ETrap::TankTrap:        return TEXT("erizos checos");
+			case ETrap::TrashPile:       return TEXT("montones de basura");
+			case ETrap::Trench:          return TEXT("trincheras");
+			default:                     return TEXT("?");
+		}
+	}
+
 	/** Una trampa del catálogo: en un punto (From == To) o a lo largo de un tramo del recorrido. */
 	struct FTrapSpot
 	{

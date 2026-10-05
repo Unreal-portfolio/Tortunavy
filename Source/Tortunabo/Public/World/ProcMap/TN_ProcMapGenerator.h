@@ -131,6 +131,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "ProcMap")
 	bool IsMapReady() const { return bMapReady; }
 
+	/**
+	 * Supervivencia: trampas del mapa (las sueltas sin las sombrillas, los cruces de quads y los puentes que se rompen) y, en
+	 * OutBreakdown, cuántas de cada tipo («12 cáscaras, 3 medusas...», más las placas del atajo, que no cuentan).
+	 */
+	int32 GetSurvivalTrapCount(FString* OutBreakdown = nullptr) const;
+
 	/** Generación que ya está construida en ESTA máquina. */
 	UFUNCTION(BlueprintPure, Category = "ProcMap")
 	int32 GetBuiltGeneration() const { return BuiltGeneration; }

@@ -95,6 +95,37 @@ namespace
 	}
 }
 
+int32 ATN_ProcMapGenerator::GetSurvivalTrapCount(FString* OutBreakdown) const
+{
+	using TNSurvivalCatalog::ETrap;
+	// Por tipo, en el orden del enum; las sombrillas protegen de las gaviotas: no son trampas.
+	TMap<ETrap, int32> ByTrap;
+	for (const TNSurvivalCatalog::FTrapPlacement& P : SurvivalTrapPlan)
+	{
+		if (!P.bUmbrella) { ByTrap.FindOrAdd(P.Trap)++; }
+	}
+	if (SurvivalTerrainPlan.Quads.Num() > 0) { ByTrap.Add(ETrap::Quad, SurvivalTerrainPlan.Quads.Num()); }
+	if (SurvivalTerrainPlan.Bridges.Num() > 0) { ByTrap.Add(ETrap::BreakableBridge, SurvivalTerrainPlan.Bridges.Num()); }
+
+	int32 Total = 0;
+	TArray<FString> Parts;
+	ByTrap.KeySort([](ETrap A, ETrap B) { return static_cast<uint8>(A) < static_cast<uint8>(B); });
+	for (const TPair<ETrap, int32>& Pair : ByTrap)
+	{
+		Total += Pair.Value;
+		Parts.Add(FString::Printf(TEXT("%d %s"), Pair.Value, TNSurvivalCatalog::TrapName(Pair.Key)));
+	}
+	if (OutBreakdown)
+	{
+		*OutBreakdown = Parts.Num() > 0 ? FString::Join(Parts, TEXT(", ")) : FString(TEXT("ninguna"));
+		if (SurvivalTerrainPlan.Shortcuts.Num() > 0)
+		{
+			*OutBreakdown += FString::Printf(TEXT("; y %d atajos con placas"), SurvivalTerrainPlan.Shortcuts.Num());
+		}
+	}
+	return Total;
+}
+
 void ATN_ProcMapGenerator::PlanSurvivalTraps()
 {
 	SurvivalTrapPlan.Reset();
@@ -116,9 +147,10 @@ void ATN_ProcMapGenerator::PlanSurvivalTraps()
 	const int32 DensityPct = NetConfig.SurvivalTrapDensityPct > 0 ? NetConfig.SurvivalTrapDensityPct : 100;
 	SurvivalTrapPlan = TNSurvivalCatalog::PlaceLooseTraps(Layout, Seed, DensityPct);
 	SurvivalTerrainPlan = TNSurvivalCatalog::PlaceTerrainTraps(Layout, Seed, DensityPct);
-	UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Mapa del catálogo «%s» (semilla %u, dificultad %d, trampas al %d %%): %d trampas, %d cruces de quads, %d puentes que se rompen y %d atajos con placas."),
-		Entry->Name, Seed, Difficulty, DensityPct, SurvivalTrapPlan.Num(), SurvivalTerrainPlan.Quads.Num(), SurvivalTerrainPlan.Bridges.Num(),
-		SurvivalTerrainPlan.Shortcuts.Num());
+	FString Breakdown;
+	const int32 TrapCount = GetSurvivalTrapCount(&Breakdown);
+	UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Mapa del catálogo «%s» (semilla %u, dificultad %d, trampas al %d %%): %d trampas (%s)."),
+		Entry->Name, Seed, Difficulty, DensityPct, TrapCount, *Breakdown);
 }
 
 bool ATN_ProcMapGenerator::IsSurvivalBreakableGap(int32 Feature) const
