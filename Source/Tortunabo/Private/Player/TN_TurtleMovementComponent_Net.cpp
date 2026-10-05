@@ -5,6 +5,7 @@
 #include "Core/TN_Log.h"
 #include "Player/TN_MovementLimits.h"
 #include "Player/TN_ShellComponent.h"
+#include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
@@ -215,6 +216,16 @@ void UTN_TurtleMovementComponent::MoveAutonomous(float ClientTimeStamp, float De
 	if (FindServerLaunchForMove(ClientTimeStamp, LaunchVelocity))
 	{
 		Launch(LaunchVelocity);
+	}
+	// Topes predichos (#575, #574). Servidor, movimiento validado de un cliente: los que pide, si caen en la ventana del
+	// último cambio, medida con el tiempo de sus movimientos (este DeltaTime), no con la hora de llegada. Al repetir en el
+	// dueño, ya los puso PrepMoveFor.
+	if (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority && !CharacterOwner->IsLocallyControlled())
+	{
+		const ATortugaCharacter* Turtle = GetTurtle();
+		UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+		const uint8 Claimed = TurtleNetworkMoveData.GetPredictedCaps(GetCurrentNetworkMoveData());
+		MovePredictedCaps = Stamina ? Stamina->ConsumeClientPredictedCaps(Claimed, DeltaTime) : 0;
 	}
 	Super::MoveAutonomous(ClientTimeStamp, DeltaTime, CompressedFlags, NewAccel);
 }

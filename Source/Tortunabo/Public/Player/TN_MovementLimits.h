@@ -113,8 +113,14 @@ namespace TNMovementLimits
 	// Los pone el servidor (coger a otra tortuga, el mareo) y el dueño se entera media ida y vuelta después. Antes cada
 	// máquina los aplicaba al enterarse: durante ese rato el cliente y el servidor andaban a velocidades distintas y el
 	// servidor corregía. Ahora el dueño pide en cada movimiento los que conoce (un bit cada uno en FTNTurtleNetworkMoveData)
-	// y el servidor simula ese movimiento con lo que pide mientras el cambio sea reciente (PredictedCapGraceSeconds); pasada
-	// la gracia manda lo que diga el servidor, pida lo que pida el cliente.
+	// y el servidor simula ese movimiento con lo que pide solo dentro de la ventana que abrió su último cambio
+	// (FPredictedCapGrace); fuera de ella manda lo que diga el servidor, pida lo que pida el cliente.
+	//
+	// La ventana se mide con el reloj de movimientos del dueño (la suma de los DeltaTime de sus movimientos validados por el
+	// servidor), no con la hora de llegada: un movimiento que llega tarde por un retraso o una pérdida se juzga por cuándo se
+	// hizo. Se cierra en cuanto el dueño pide lo mismo que el servidor (ya se ha enterado) o al pasar
+	// PredictedCapGraceSeconds, y un cambio mientras está abierta no la alarga. Además, el tiempo concedido sale de un
+	// presupuesto (PredictedCapGraceBudgetSeconds) que se recarga despacio: coger y soltar sin parar no encadena exenciones.
 
 	/** Topes predichos: uno por bit, en este orden. */
 	inline constexpr int32 NumPredictedCaps = 2;
@@ -122,8 +128,14 @@ namespace TNMovementLimits
 	inline constexpr uint8 PredictedCapCarryBit = 1 << 1;
 	inline constexpr uint8 PredictedCapAllBits = (1 << NumPredictedCaps) - 1;
 
-	/** Margen tras poner o quitar un tope en el servidor en que vale lo que pida el cliente (s). */
+	/** Duración máxima de una ventana, en tiempo de movimientos del dueño (s): cubre ida y vuelta de hasta 0,5 s. */
 	inline constexpr float PredictedCapGraceSeconds = 0.5f;
+
+	/** Presupuesto máximo de tiempo concedido (s de movimientos): dos ventanas enteras seguidas. */
+	inline constexpr float PredictedCapGraceBudgetSeconds = 1.f;
+
+	/** Recarga del presupuesto por segundo de movimientos sin conceder: una ventana entera cada 2,5 s. */
+	inline constexpr float PredictedCapGraceRefillPerSecond = 0.2f;
 
 	/** Bit del tope de Source si es de los predichos (0 si no). */
 	inline uint8 PredictedCapBit(FName Source)
@@ -139,35 +151,60 @@ namespace TNMovementLimits
 		return Bit == PredictedCapCarryBit ? 1 : 0;
 	}
 
-	/**
-	 * Servidor, movimiento de un cliente: si aplica un tope predicho. Si el cliente pide lo mismo que tiene el servidor, eso;
-	 * si no, lo que pide el cliente solo mientras el cambio del servidor sea reciente (el cliente aún no se ha enterado);
-	 * pasada la gracia, lo del servidor.
-	 */
-	inline bool ShouldApplyPredictedCap(bool bClientClaims, bool bServerActive, double SecondsSinceServerChange,
-		float GraceSeconds = PredictedCapGraceSeconds)
+	/** Servidor, un tope predicho de un dueño: la ventana de su último cambio y el presupuesto que le queda. */
+	struct FPredictedCapGrace
 	{
-		if (bClientClaims == bServerActive)
+		bool bOpen = false;
+		/** Reloj de movimientos del dueño cuando se abrió (s). */
+		double OpenedAt = 0.0;
+		float Budget = PredictedCapGraceBudgetSeconds;
+	};
+
+	/**
+	 * Servidor: pone o quita el tope cuando el reloj de movimientos del dueño va por MoveClock. Abre la ventana si no hay
+	 * ninguna abierta; si ya la hay (el dueño aún no ha reconocido el cambio anterior), sigue la misma, sin alargarla.
+	 */
+	inline FPredictedCapGrace OpenPredictedCapGrace(const FPredictedCapGrace& Grace, double MoveClock)
+	{
+		FPredictedCapGrace Next = Grace;
+		if (!Grace.bOpen)
 		{
-			return bServerActive;
+			Next.bOpen = true;
+			Next.OpenedAt = MoveClock;
 		}
-		return SecondsSinceServerChange < GraceSeconds ? bClientClaims : bServerActive;
+		return Next;
 	}
 
-	/** Servidor: los topes predichos con que simula el movimiento de un cliente que pide ClaimedMask. */
-	inline uint8 ResolvePredictedCaps(uint8 ClaimedMask, uint8 ServerActiveMask, const double (&SecondsSinceChange)[NumPredictedCaps],
-		float GraceSeconds = PredictedCapGraceSeconds)
+	/** Resultado de un movimiento: si lleva el tope y cómo queda la ventana. */
+	struct FPredictedCapStep
 	{
-		uint8 Result = 0;
-		for (int32 Index = 0; Index < NumPredictedCaps; ++Index)
+		FPredictedCapGrace Grace;
+		bool bApply = false;
+	};
+
+	/**
+	 * Servidor, un movimiento validado del dueño que empieza en MoveClock y dura MoveDeltaSeconds: si aplica el tope.
+	 * Si el dueño pide lo mismo que el servidor, eso, y la ventana se cierra (lo ha reconocido). Si pide otra cosa, lo que
+	 * pide solo dentro de la ventana abierta (MoveClock - OpenedAt < PredictedCapGraceSeconds) y con presupuesto, que gasta
+	 * el tiempo del movimiento; si no, lo del servidor y la ventana se cierra. Sin conceder, el presupuesto se recarga.
+	 */
+	inline FPredictedCapStep StepPredictedCap(const FPredictedCapGrace& Grace, bool bClientClaims, bool bServerActive, double MoveClock,
+		float MoveDeltaSeconds)
+	{
+		const float Delta = FMath::Max(0.f, MoveDeltaSeconds);
+		FPredictedCapStep Out;
+		Out.Grace = Grace;
+		Out.bApply = bServerActive;
+		const bool bInWindow = Grace.bOpen && MoveClock - Grace.OpenedAt < PredictedCapGraceSeconds && Grace.Budget > 0.f;
+		if (bClientClaims != bServerActive && bInWindow)
 		{
-			const uint8 Bit = static_cast<uint8>(1 << Index);
-			if (ShouldApplyPredictedCap((ClaimedMask & Bit) != 0, (ServerActiveMask & Bit) != 0, SecondsSinceChange[Index], GraceSeconds))
-			{
-				Result |= Bit;
-			}
+			Out.bApply = bClientClaims;
+			Out.Grace.Budget = FMath::Max(0.f, Grace.Budget - Delta);
+			return Out;
 		}
-		return Result;
+		Out.Grace.bOpen = false;
+		Out.Grace.Budget = FMath::Min(PredictedCapGraceBudgetSeconds, Grace.Budget + Delta * PredictedCapGraceRefillPerSecond);
+		return Out;
 	}
 
 	/** Tope de un movimiento: el de los topes sin predecir y el de cada tope predicho de MoveMask (con su valor). */

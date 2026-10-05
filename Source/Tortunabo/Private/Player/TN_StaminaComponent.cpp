@@ -2,7 +2,6 @@
 #include "Player/TN_InventoryComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 
 UTN_StaminaComponent::UTN_StaminaComponent()
@@ -341,8 +340,7 @@ void UTN_StaminaComponent::SetSpeedCap(FName Source, float Cap)
 		const int32 Index = TNMovementLimits::PredictedCapIndex(Bit);
 		if ((PredictedCapMask & Bit) == 0)
 		{
-			const UWorld* World = GetWorld();
-			PredictedCapChangedAt[Index] = World ? World->GetTimeSeconds() : 0.0;
+			PredictedCapGrace[Index] = TNMovementLimits::OpenPredictedCapGrace(PredictedCapGrace[Index], ServerMoveClock);
 		}
 		PredictedCapMask |= Bit;
 		PredictedCapValues[Index] = Cap;
@@ -355,8 +353,8 @@ void UTN_StaminaComponent::ClearSpeedCap(FName Source)
 {
 	if (const uint8 Bit = TNMovementLimits::PredictedCapBit(Source); (PredictedCapMask & Bit) != 0)
 	{
-		const UWorld* World = GetWorld();
-		PredictedCapChangedAt[TNMovementLimits::PredictedCapIndex(Bit)] = World ? World->GetTimeSeconds() : 0.0;
+		const int32 Index = TNMovementLimits::PredictedCapIndex(Bit);
+		PredictedCapGrace[Index] = TNMovementLimits::OpenPredictedCapGrace(PredictedCapGrace[Index], ServerMoveClock);
 		PredictedCapMask &= ~Bit;
 	}
 	SpeedCaps.Remove(Source);
@@ -377,16 +375,20 @@ void UTN_StaminaComponent::RefreshSpeedCaps()
 	ApplyMovementSpeed();
 }
 
-uint8 UTN_StaminaComponent::ResolveClientPredictedCaps(uint8 ClaimedMask) const
+uint8 UTN_StaminaComponent::ConsumeClientPredictedCaps(uint8 ClaimedMask, float MoveDeltaSeconds)
 {
-	const UWorld* World = GetWorld();
-	const double Now = World ? World->GetTimeSeconds() : 0.0;
-	double SecondsSinceChange[TNMovementLimits::NumPredictedCaps];
+	const float Delta = FMath::Max(0.f, MoveDeltaSeconds);
+	uint8 Result = 0;
 	for (int32 Index = 0; Index < TNMovementLimits::NumPredictedCaps; ++Index)
 	{
-		SecondsSinceChange[Index] = Now - PredictedCapChangedAt[Index];
+		const uint8 Bit = static_cast<uint8>(1 << Index);
+		const TNMovementLimits::FPredictedCapStep Step = TNMovementLimits::StepPredictedCap(PredictedCapGrace[Index],
+			(ClaimedMask & Bit) != 0, (PredictedCapMask & Bit) != 0, ServerMoveClock, Delta);
+		PredictedCapGrace[Index] = Step.Grace;
+		Result |= Step.bApply ? Bit : 0;
 	}
-	return TNMovementLimits::ResolvePredictedCaps(ClaimedMask & TNMovementLimits::PredictedCapAllBits, PredictedCapMask, SecondsSinceChange);
+	ServerMoveClock += Delta;
+	return Result;
 }
 
 void UTN_StaminaComponent::SetJumpLimit(FName Source, float Cap, float Multiplier)

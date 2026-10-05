@@ -1092,16 +1092,6 @@ void UTN_TurtleMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 		RaceBoostMultiplier = (bClaimsBoost && Items) ? FMath::Max(1.f, Items->ResolveOwnerBoostMultiplier()) : 1.f;
 	}
 
-	// Topes predichos (#575, #574). Servidor, movimiento de un cliente: los que pide, si los acepta (gracia tras cada cambio
-	// en el servidor); al repetir en el dueño, ya los puso PrepMoveFor.
-	if (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority && !CharacterOwner->IsLocallyControlled())
-	{
-		const ATortugaCharacter* Turtle = GetTurtle();
-		const UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
-		const uint8 Claimed = TurtleNetworkMoveData.GetPredictedCaps(GetCurrentNetworkMoveData());
-		MovePredictedCaps = Stamina ? Stamina->ResolveClientPredictedCaps(Claimed) : 0;
-	}
-
 	// Panzazo pedido (#24). Servidor: el giro viene en los datos del movimiento del cliente; al repetir en el dueño, ya lo
 	// puso PrepMoveFor.
 	bMoveWantsDive = (Flags & TNDiveLogic::DiveRequestFlag) != 0;

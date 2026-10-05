@@ -68,10 +68,14 @@ public:
 	uint8 GetPredictedCapMask() const { return PredictedCapMask; }
 
 	/**
-	 * Servidor: con qué topes predichos simula el movimiento de su dueño, que pide ClaimedMask
-	 * (TNMovementLimits::ResolvePredictedCaps con lo que tiene el servidor y cuándo lo cambió).
+	 * Servidor, cada movimiento validado de su dueño (una vez por movimiento, con su DeltaTime): con qué topes predichos lo
+	 * simula si pide ClaimedMask (TNMovementLimits::StepPredictedCap con la ventana del último cambio de cada tope). Avanza
+	 * el reloj de movimientos del dueño, que es con el que se miden las ventanas.
 	 */
-	uint8 ResolveClientPredictedCaps(uint8 ClaimedMask) const;
+	uint8 ConsumeClientPredictedCaps(uint8 ClaimedMask, float MoveDeltaSeconds);
+
+	/** Reloj de movimientos del dueño en el servidor: la suma de los DeltaTime que ha validado (s). */
+	double GetServerMoveClock() const { return ServerMoveClock; }
 
 	/**
 	 * @brief Otorga stamina ilimitada durante DurationSeconds (Barrita Energética / boosts).
@@ -275,10 +279,13 @@ private:
 	/** El menor de los topes que no son predichos (los predichos los pone cada movimiento: ComputeMoveMaxWalkSpeed). */
 	float UnpredictedSpeedCap = TNumericLimits<float>::Max();
 
-	/** Topes predichos puestos ahora, su último valor y cuándo se pusieron o quitaron (hora del mundo). */
+	/** Topes predichos puestos ahora y su último valor. */
 	uint8 PredictedCapMask = 0;
 	float PredictedCapValues[TNMovementLimits::NumPredictedCaps] = { TNMovementLimits::NoCap, TNMovementLimits::NoCap };
-	double PredictedCapChangedAt[TNMovementLimits::NumPredictedCaps] = { -1.e9, -1.e9 };
+
+	/** Servidor: la ventana del último cambio de cada tope predicho y el reloj de movimientos del dueño que las mide. */
+	TNMovementLimits::FPredictedCapGrace PredictedCapGrace[TNMovementLimits::NumPredictedCaps];
+	double ServerMoveClock = 0.0;
 
 	/** Tras cambiar SpeedCaps: el tope que manda, el de los no predichos y la velocidad. */
 	void RefreshSpeedCaps();

@@ -192,8 +192,9 @@ public:
 	// ── Topes de velocidad predichos: llevar a otra y mareo (#575, #574) ────
 	// Quien la mueve toma al empezar cada movimiento los topes predichos que conoce (UTN_StaminaComponent::
 	// GetPredictedCapMask) y los guarda en él; el cliente los manda al servidor en FTNTurtleNetworkMoveData y el servidor
-	// simula ese movimiento con los que acepta (UTN_StaminaComponent::ResolveClientPredictedCaps). GetMaxSpeed usa los del
-	// movimiento, no los de la máquina: así el tope empieza y acaba en el mismo movimiento en el dueño y en el servidor.
+	// simula ese movimiento con los que acepta (UTN_StaminaComponent::ConsumeClientPredictedCaps, en MoveAutonomous).
+	// GetMaxSpeed usa los del movimiento, no los de la máquina: así el tope empieza y acaba en el mismo movimiento en el
+	// dueño y en el servidor.
 
 	/** Topes predichos del movimiento que se simula (bits de TNMovementLimits). */
 	uint8 GetMovePredictedCaps() const { return MovePredictedCaps; }
@@ -519,7 +520,10 @@ protected:
 	virtual void ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLocation,
 		UPrimitiveComponent* ClientMovementBase, FName ClientBaseBoneName, uint8 ClientMovementMode) override;
 
-	/** Servidor: el movimiento del cliente que estrena un lanzamiento concedido lo aplica; el cliente, al repetirlo, también. */
+	/**
+	 * Servidor: el movimiento del cliente que estrena un lanzamiento concedido lo aplica; el cliente, al repetirlo, también.
+	 * Y el servidor decide aquí con qué topes predichos simula el movimiento del cliente (con su DeltaTime validado).
+	 */
 	virtual void MoveAutonomous(float ClientTimeStamp, float DeltaTime, uint8 CompressedFlags, const FVector& NewAccel) override;
 
 	/** Cliente dueño: el lanzamiento concedido que ha llegado entra en este movimiento. */
