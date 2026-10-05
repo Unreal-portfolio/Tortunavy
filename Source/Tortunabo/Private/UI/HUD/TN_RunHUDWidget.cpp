@@ -36,6 +36,7 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Player/TN_SpectatorGhost.h"
 #include "UI/HUD/TN_HoldRingWidget.h"
+#include "UI/HUD/TN_SurvivalMinimap.h"
 #include "World/TN_EnemySeagull.h"
 #include "World/TN_InteractableBase.h"
 #include "World/TN_ScoreShells.h"
@@ -73,6 +74,12 @@ namespace TNRunHUDDetail
 	constexpr float TrackH = 66.f;
 	constexpr float TrackFrom = 0.1f;
 	constexpr float TrackTo = 0.84f;
+
+	/** Minimapa de Supervivencia: lado (px) y sitio bajo el contador de conchas y su «+N». */
+	constexpr float MinimapSide = 300.f;
+	const FVector2D MinimapOffset(-28.f, 140.f);
+	/** Tu caparazón en el minimapa (los compañeros llevan el suyo de MateColors). */
+	const FLinearColor MinimapOwnColor = TNHUDArt::CoralC;
 
 	/** Inventario: burbujas iguales en columnas de ancho fijo (el aro de cuerda rueda de una a otra). */
 	constexpr float BubbleSize = 90.f;
@@ -494,6 +501,12 @@ void UTN_RunHUDWidget::BuildTree()
 		}
 	}
 
+	// ── Minimapa de Supervivencia (a la derecha, bajo el contador; en los demás modos no se dibuja) ──
+	{
+		SurvivalMap = Make<UTN_SurvivalMinimap>(Tree, TEXT("SurvivalMinimap"));
+		Place(Canvas, MakeSize(Tree, SurvivalMap, MinimapSide, MinimapSide), FVector2D(1.f, 0.f), MinimapOffset);
+	}
+
 	// ── Pista de la playa al mar (arriba en el centro) ──
 	{
 		TrackRoot = Make<UOverlay>(Tree, TEXT("SeaTrack"));
@@ -606,6 +619,7 @@ void UTN_RunHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 	TickBadge(InDeltaTime);
 	TickInventory(InDeltaTime);
 	TickTrack(InDeltaTime);
+	TickMinimap();
 	BindShellEvents();
 	TickShellFlights(InDeltaTime, MyGeometry);
 	TickScore(InDeltaTime);
@@ -850,6 +864,44 @@ void UTN_RunHUDWidget::TickInventory(float DeltaTime)
 		RopeImage->SetRenderTranslation(FVector2D(RopeX, 0.f));
 		RopeImage->SetRenderTransformAngle(RopeX / Pitch * 180.f);
 	}
+}
+
+void UTN_RunHUDWidget::TickMinimap()
+{
+	using namespace TNRunHUDDetail;
+	if (!SurvivalMap || !SurvivalMap->HasMap()) { return; }
+	const UWorld* World = GetWorld();
+	APawn* SubjectPawn = nullptr;
+	APlayerState* SubjectState = nullptr;
+	TNGhost::GetHUDSubject(GetOwningPlayer(), SubjectPawn, SubjectState);
+	auto IsOut = [](const APlayerState* PS)
+	{
+		const ATN_CoopPlayerState* Coop = Cast<ATN_CoopPlayerState>(PS);
+		return Coop && (Coop->bHasFinishedRun || !Coop->bIsAlive);
+	};
+
+	// Los compañeros con el color de su fila en la tripulación (el mismo que en la pista) y tú (o a quien sigues).
+	TArray<FTNSurvivalMinimapMark> Marks;
+	const TArray<const APlayerState*> Crew = CrewOf(World, SubjectState);
+	for (int32 m = 0; m < Crew.Num() && m < MaxMates; ++m)
+	{
+		if (const APawn* P = TurtleOf(World, Crew[m]))
+		{
+			FTNSurvivalMinimapMark& Mark = Marks.AddDefaulted_GetRef();
+			Mark.Location = P->GetActorLocation();
+			Mark.Color = MateColors[m];
+			Mark.bOut = IsOut(Crew[m]);
+		}
+	}
+	if (SubjectPawn)
+	{
+		FTNSurvivalMinimapMark& Mark = Marks.AddDefaulted_GetRef();
+		Mark.Location = SubjectPawn->GetActorLocation();
+		Mark.Color = MinimapOwnColor;
+		Mark.bMine = true;
+		Mark.bOut = IsOut(SubjectState);
+	}
+	SurvivalMap->SetMarks(MoveTemp(Marks));
 }
 
 void UTN_RunHUDWidget::TickTrack(float DeltaTime)
