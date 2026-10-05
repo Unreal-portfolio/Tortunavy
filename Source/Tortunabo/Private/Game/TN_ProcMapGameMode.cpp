@@ -3,6 +3,7 @@
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_GameModeSpawnUtils.h"
+#include "Game/TN_RoundLeftovers.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Player/MP_GamePlayerController.h"
 #include "Player/TortugaCharacter.h"
@@ -1245,6 +1246,14 @@ void ATN_ProcMapGameMode::CleanupRoundActors()
 		{
 			It->Destroy();
 		}
+	}
+
+	// Lo que dejan las jugadoras (objetos soltados, pickups de bolas paradas, conchas trampa) no pasa a la ronda
+	// siguiente (#569): con el mapa nuevo quedaría flotando o enterrado, y una trampa armada seguiría inmovilizando.
+	const int32 Removed = TNRoundLeftovers::DestroyPlayerLeftovers(GetWorld());
+	if (Removed > 0)
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[ProcMapGameMode] Ronda %d: %d objetos sueltos quitados."), CurrentRound, Removed);
 	}
 }
 

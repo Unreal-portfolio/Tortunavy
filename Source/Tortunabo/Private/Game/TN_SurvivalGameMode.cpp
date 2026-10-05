@@ -3,6 +3,7 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_GameModeSpawnUtils.h"
+#include "Game/TN_RoundLeftovers.h"
 #include "World/TN_ChunkManager.h"
 #include "World/TN_StormVolume.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
@@ -297,6 +298,14 @@ void ATN_SurvivalGameMode::AdvanceLevel()
 		}
 	}
 	DeadPlayerPawns.Reset();
+
+	// Ni lo soltado ni las conchas trampa pasan al nivel siguiente (#569): con el terreno nuevo quedarían flotando o
+	// enterrados, y una trampa armada inmovilizaría a quien pasara por ella. Antes de construir: el nivel nuevo es síncrono.
+	const int32 Removed = TNRoundLeftovers::DestroyPlayerLeftovers(GetWorld());
+	if (Removed > 0)
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Nivel %d: %d objetos sueltos del nivel anterior quitados."), CurrentLevel, Removed);
+	}
 
 	if (!Manager->BuildLevel(CurrentLevel))
 	{
