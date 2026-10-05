@@ -337,6 +337,46 @@ bool TN_IsBotPlayerState(const APlayerState* PlayerState)
 	return Owner && !Owner->IsA<APlayerController>();
 }
 
+int32 TN_DropBotsFromSeamlessTravel(AGameStateBase* GameState, TArray<AActor*>& ActorList)
+{
+	TArray<APlayerState*> Bots;
+	ActorList.RemoveAll([&Bots](AActor* Actor)
+	{
+		APlayerState* PlayerState = Cast<APlayerState>(Actor);
+		if (!TN_IsBotPlayerState(PlayerState))
+		{
+			return false;
+		}
+		Bots.AddUnique(PlayerState);
+		return true;
+	});
+	if (GameState)
+	{
+		for (APlayerState* PlayerState : GameState->PlayerArray)
+		{
+			if (TN_IsBotPlayerState(PlayerState))
+			{
+				Bots.AddUnique(PlayerState);
+			}
+		}
+		// Si el GameState viaja (hacia el mapa de transición), no puede llevarse a quien se queda (#711).
+		for (APlayerState* Bot : Bots)
+		{
+			GameState->RemovePlayerState(Bot);
+		}
+	}
+	return Bots.Num();
+}
+
+int32 TN_RemoveStalePlayerStates(AGameStateBase* GameState)
+{
+	if (!GameState)
+	{
+		return 0;
+	}
+	return GameState->PlayerArray.RemoveAll([](const TObjectPtr<APlayerState>& PlayerState) { return !IsValid(PlayerState); });
+}
+
 int32 TN_CountConnectedCoopPlayers(const AGameStateBase* GameState)
 {
 	if (!GameState)

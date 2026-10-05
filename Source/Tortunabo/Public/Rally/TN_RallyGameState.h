@@ -116,6 +116,9 @@ class TORTUNABO_API ATN_RallyGameState : public AGameStateBase
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	/** Sin huecos nulos en el PlayerArray antes de que el motor los marque: viaja al mapa de transición y vuelve (#711). */
+	virtual void SeamlessTravelTransitionCheckpoint(bool bToTransitionMap) override;
+
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Rally")
 	ETNRallyPhase Phase = ETNRallyPhase::Warmup;
 

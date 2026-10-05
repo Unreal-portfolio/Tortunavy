@@ -36,6 +36,9 @@ class TORTUNABO_API ATN_CoopGameState : public AGameState
 public:
 	ATN_CoopGameState();
 
+	/** Sin huecos nulos en el PlayerArray antes de que el motor los marque: viaja al mapa de transición y vuelve (#711). */
+	virtual void SeamlessTravelTransitionCheckpoint(bool bToTransitionMap) override;
+
 	/**
 	 * @brief Notifica a los listeners locales que MatchFlowState ha cambiado.
 	 * @note Llamado por los GameModes tras cambiar la variable, porque OnRep
