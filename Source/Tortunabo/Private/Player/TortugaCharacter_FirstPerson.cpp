@@ -1,10 +1,15 @@
-// Primera persona de la tortuga (Docs/Modo_VR.md, «Primera persona»), con gafas y sin ellas: los ojos van en la cabeza
-// (también tumbada en el ragdoll) o en el centro del caparazón, y del cuerpo propio se ve todo menos la cabeza: el cuerpo,
-// las aletas, la lengua y las gotas de sudor al mirar abajo. Dentro del caparazón la vista es mucho más oscura. En VR los
-// brazos del cuerpo van a los mandos (IK en UTN_TurtleAnimInstance, manos de ATN_VRRig).
+// Primera persona de la tortuga (Docs/Modo_VR.md, «Primera persona»), con gafas y sin ellas: los ojos van en la cabeza, a
+// la altura de los de la malla (también tumbada en el ragdoll) o en el centro del caparazón, y del cuerpo propio se ve todo
+// menos la cabeza: el cuerpo, las aletas, la lengua y las gotas de sudor al mirar abajo. Dentro del caparazón la vista es
+// mucho más oscura. En VR los brazos del cuerpo van a los mandos (IK en UTN_TurtleAnimInstance, manos de ATN_VRRig).
 
 #include "Player/TortugaCharacter.h"
+#include "Player/TN_FirstPersonEyes.h"
+#include "Core/TN_CosmeticLook.h"
 #include "Core/TN_Log.h"
+#include "Engine/SkinnedAsset.h"
+#include "Engine/SkeletalMeshSocket.h"
+#include "ReferenceSkeleton.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
@@ -27,9 +32,17 @@ namespace TNFirstPersonDetail
 	const FName HeadBone(TEXT("Head"));
 	/** Centro del caparazón: el pecho de la tortuga metida dentro. */
 	const FName ShellCenterBone(TEXT("Spine1"));
-	/** Ojos respecto del hueso de la cabeza (cm): delante y encima, dentro de la cabeza (que no se pinta para uno mismo). */
+	/**
+	 * Malla sin socket de ojos que no es la de demo (no se sabe dónde tiene la cara): ojos respecto del hueso de la cabeza
+	 * (cm), delante y encima, dentro de la cabeza (que no se pinta para uno mismo).
+	 */
 	constexpr float EyeForward = 6.f;
 	constexpr float EyeUp = 6.f;
+	/**
+	 * Ojos de TotugaDemo_Rig (Scripts/build_cosmetics.py: esferas en (±4,47; 8,46; 46,06), radio 3,98): entre los dos, a
+	 * la altura de su centro. Más adelante, la lengua (que nace en (0; 12,8; 42,1)) quedaría a menos del plano cercano.
+	 */
+	const FVector DemoEyes(0.0, 8.5, 46.0);
 	/** Suavizado de los ojos (1/s): de pie quita el vaivén de la cabeza al andar; tumbada va casi pegada a ella. */
 	constexpr float EyeFollowStanding = 14.f;
 	constexpr float EyeFollowRagdoll = 30.f;
@@ -37,6 +50,58 @@ namespace TNFirstPersonDetail
 	constexpr float ShellDarkenSpeed = 6.f;
 	/** Tono de dentro del caparazón: la concha por dentro, cálida. */
 	const FVector ShellTint(1.0, 0.9, 0.74);
+}
+
+FName TNFirstPersonEyes::HeadBone()
+{
+	return TNFirstPersonDetail::HeadBone;
+}
+
+FName TNFirstPersonEyes::EyesSocket()
+{
+	static const FName Socket(TEXT("Eyes"));
+	return Socket;
+}
+
+FVector TNFirstPersonEyes::DemoEyes()
+{
+	return TNFirstPersonDetail::DemoEyes;
+}
+
+bool TNFirstPersonEyes::EyesInRefPose(const USkinnedAsset* Asset, FTransform& OutHeadRef, FVector& OutEyes, bool& bFromSocket)
+{
+	bFromSocket = false;
+	if (!Asset)
+	{
+		return false;
+	}
+	const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
+	auto RefPose = [&Ref](int32 Index)
+	{
+		FTransform Out = FTransform::Identity;
+		for (; Index != INDEX_NONE; Index = Ref.GetParentIndex(Index))
+		{
+			Out = Out * Ref.GetRefBonePose()[Index];
+		}
+		return Out;
+	};
+	const int32 HeadIndex = Ref.FindBoneIndex(HeadBone());
+	if (HeadIndex == INDEX_NONE)
+	{
+		return false;
+	}
+	OutHeadRef = RefPose(HeadIndex);
+	OutEyes = DemoEyes();
+	if (const USkeletalMeshSocket* Socket = Asset->FindSocket(EyesSocket()))
+	{
+		const int32 SocketBone = Ref.FindBoneIndex(Socket->BoneName);
+		if (SocketBone != INDEX_NONE)
+		{
+			OutEyes = RefPose(SocketBone).TransformPosition(Socket->RelativeLocation);
+			bFromSocket = true;
+		}
+	}
+	return true;
 }
 
 bool ATortugaCharacter::WantsFirstPersonView() const
@@ -193,13 +258,26 @@ FVector ATortugaCharacter::ComputeFirstPersonEye(bool bHeadsetStable) const
 	{
 		return Stable;
 	}
-	const FVector Head = Body->GetBoneLocation(HeadBone);
+	const FTransform Head = Body->GetSocketTransform(HeadBone, RTS_World);
+	// Los ojos de la malla: el hueso Head de TotugaDemo_Rig está en la base del cuello y los ojos, unos 20 cm por encima
+	// (a 6 cm del hueso, la vista salía del cuello y la lengua se veía por encima de ella).
+	FTransform HeadRef;
+	FVector EyesRef;
+	bool bFromSocket = false;
+	if (!TNFirstPersonEyes::EyesInRefPose(Body->GetSkinnedAsset(), HeadRef, EyesRef, bFromSocket)
+		|| (!bFromSocket && !UTN_CosmeticLook::IsDemoTurtle(Body)))
+	{
+		// Otra malla sin socket de ojos: un poco por delante y por encima del hueso de la cabeza.
+		return Head.GetLocation() + (bRagdoll ? FVector::ZeroVector : GetActorForwardVector() * EyeForward) + FVector(0.0, 0.0, EyeUp);
+	}
 	if (bRagdoll)
 	{
-		// Tumbada: pegada a la cabeza, esté donde esté el cuerpo.
-		return Head + FVector(0.0, 0.0, EyeUp);
+		// Tumbada: los ojos van con la cabeza, girada como esté y esté donde esté el cuerpo.
+		return Head.TransformPosition(HeadRef.InverseTransformPosition(EyesRef));
 	}
-	return Head + GetActorForwardVector() * EyeForward + FVector(0.0, 0.0, EyeUp);
+	// De pie: donde esté el hueso de la cabeza, con los ojos donde los tiene en la postura de referencia y el giro del cuerpo,
+	// no el de la cabeza (la espera la gira y la ladea unos 20°: la vista se iría 11 cm a un lado y se mecería con ella).
+	return Head.GetLocation() + Body->GetComponentTransform().TransformVector(EyesRef - HeadRef.GetLocation());
 }
 
 void ATortugaCharacter::ApplyFirstPersonBody(EFirstPersonBody NewBody)

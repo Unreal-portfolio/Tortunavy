@@ -40,8 +40,9 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
 ## Qué cambia en VR
 
 - **Primera persona.** Cámara VR en la cabeza de la tortuga, con el seguimiento de la cabeza: de pie, a una altura fija
-  (45 cm por encima del centro de la cápsula, `VREyeOffset`: que el paso no menee la vista); **tumbada, en el ragdoll y
-  derribada, pegada al hueso de la cabeza**, esté donde esté el cuerpo. Del cuerpo propio se ve todo **menos la cabeza**:
+  (45 cm por encima del centro de la cápsula, `VREyeOffset`, la de los ojos de la malla: que el paso no menee la vista);
+  **tumbada, en el ragdoll y derribada, en los ojos de la cabeza**, esté donde esté el cuerpo. En el modo simulado
+  (`TN.VR 2`), de pie también en los ojos, como la primera persona sin gafas. Del cuerpo propio se ve todo **menos la cabeza**:
   al mirar abajo se ven el cuerpo, los brazos, la lengua y las gotas de sudor. Los demás te ven normal. La tortuga mira
   hacia donde mira tu cabeza, también en las máquinas de los demás (`bVRPlayer` replicado). Andar va hacia donde miras.
 - **Brazos que siguen a los mandos.** Las manos del cuerpo de la tortuga van a donde están los mandos (IK de brazo y
@@ -237,8 +238,13 @@ derecho** en el juego (fila «Cambiar de cámara» de Controles, en «Jugando»:
 la de hablar, V de serie, que pide la estación de voz del tutorial), y con `TN.Camera` en la consola (manda sobre el
 ajuste). Con un menú o una rueda a la vista no cambia. Es la misma cámara que en VR (`TortugaCharacter_FirstPerson.cpp`):
 
-- En la cabeza, también tumbada en el ragdoll y derribada (sigue al hueso `Head`, suavizado para que el paso no menee).
-- Del cuerpo propio se ve todo menos la cabeza (se oculta el hueso `Head` y el casco solo en tu máquina): al mirar abajo,
+- En los ojos de la tortuga, también tumbada en el ragdoll y derribada (`TN_FirstPersonEyes.h`): entre los dos ojos de
+  la malla, unos 20 cm por encima del hueso `Head`, que en `TotugaDemo_Rig` está en la base del cuello (a 6 cm de él, la
+  vista salía del cuello y la lengua se veía por encima). De pie va con el hueso y el giro del cuerpo, no con el de la
+  cabeza (la espera la gira y la ladea), suavizada para que el paso no menee; tumbada, con la cabeza girada como esté. Una
+  malla de arte con otra cara puede llevar un socket `Eyes`. La lengua queda debajo: se ve al mirar abajo.
+- Del cuerpo propio se ve todo menos la cabeza (se oculta el hueso `Head`, el casco y las piezas de Arte pegadas a él, como
+  `Turtle.Eyes`, solo en tu máquina): al mirar abajo,
   el cuerpo, las aletas, la lengua y las gotas de sudor. Solo mientras la vista es la de tu tortuga
   (`ATortugaCharacter::IsLocalViewTarget`): en el probador, con la almeja o el gusano, o durante un fundido hacia otra
   vista, se pinta entera (ocultar un hueso vale para todas las cámaras). Con pantalla dividida la cabeza no se oculta (la
@@ -263,7 +269,8 @@ ajuste). Con un menú o una rueda a la vista no cambia. Es la misma cámara que 
    pared fina (`GrabThroughWall`), la caja más cercana que se ve y no la de detrás de la pared (`GrabNearestVisible`) y
    objeto destruido en la mano, que sale del registro (`GrabDestroyedInHand`). Y las de los vehículos, `Tortunabo.VR.Vehicle.*`:
    volante con una o dos manos (`WheelAngle`), apuntado con la mano (`HandAim`), inclinación con la cabeza (`HeadLean`)
-   y volante y asas a mano desde los ojos (`Reach`). Sin ventana:
+   y volante y asas a mano desde los ojos (`Reach`). Y la altura de los ojos de la primera persona respecto del hueso de la
+   cabeza, por encima de la boca, y la de las gafas (`FirstPersonEyes`). Sin ventana:
    `UnrealEditor-Cmd Tortunabo.uproject -ExecCmds="Automation RunTests Tortunabo.VR; Quit" -nullrhi -unattended`.
 2. **Modo simulado** en PIE (1 o 2 jugadores): consola `TN.VR 2` en la ventana que quieras probar. Lista de pruebas abajo.
 3. **Meta XR Simulator** (opcional, para probar el modo gafas de verdad sin gafas): el simulador de Meta hace de gafas y
