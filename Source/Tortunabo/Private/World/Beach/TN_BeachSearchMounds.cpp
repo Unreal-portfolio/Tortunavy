@@ -22,14 +22,21 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "HAL/IConsoleManager.h"
 #include "TimerManager.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
 // del bloque.
 namespace TNBeachMoundDetail
 {
+	TAutoConsoleVariable<int32> CVarMoundTilt(TEXT("TN.Beach.Mound.Tilt"), 1,
+		TEXT("Montículos de los rebuscables de la playa: 1 los echa sobre la cuesta como su anillo (#744); 0 los deja derechos, ")
+		TEXT("como antes, para comparar. Vale al montar la ronda (en -game, -dpcvars=TN.Beach.Mound.Tilt=0)."));
+
 	/** Cada cuánto (s) se decide qué montículos tiemblan (la pose, en cada fotograma). */
 	constexpr float CheckSeconds = 0.25f;
+	/** Si la colisión del terreno aún no está lista, cada cuánto (s) se reintenta apoyar un montículo (como su anillo). */
+	constexpr double RefitSeconds = 1.0;
 	/** Lo que tarda en aplastarse al quedar rebuscado (s). */
 	constexpr float FlattenSeconds = 0.35f;
 
@@ -41,6 +48,24 @@ namespace TNBeachMoundDetail
 	int32 VariantOf(uint8 Look)
 	{
 		return FMath::Clamp(static_cast<int32>(Look & 3u), 0, TNBeachDecorKit::NumSearchMoundVariants - 1);
+	}
+
+	/**
+	 * Inclinación (en el mundo, desde +Z) del suelo bajo un montículo de tamaño Size: la misma cuenta y a la misma distancia
+	 * del centro que el anillo fijo (TNSearchMarker), pero con la altura del generador (GetGroundHeightAt: igual en todas
+	 * las máquinas y sin esperar a la colisión de las teselas). Identidad si el suelo es demasiado empinado.
+	 */
+	FQuat GroundTiltAt(const ATN_BeachRaceGenerator& Gen, const FVector& Center, double Size)
+	{
+		const double Reach = static_cast<double>(TNSearchMarker::RingRadiusForFoot(static_cast<float>(TNBeachDecorKit::SearchMoundRadius * 1.1 * Size)));
+		FVector Rim[4];
+		for (int32 k = 0; k < 4; ++k)
+		{
+			const double Angle = UE_DOUBLE_HALF_PI * static_cast<double>(k);
+			Rim[k] = FVector(Center.X + FMath::Cos(Angle) * Reach, Center.Y + FMath::Sin(Angle) * Reach, 0.0);
+			Rim[k].Z = static_cast<double>(Gen.GetGroundHeightAt(Rim[k]));
+		}
+		return TNSearchMarker::GroundTilt(Rim[0], Rim[1], Rim[2], Rim[3]);
 	}
 
 	/** Instancia escondida (diminuta y bajo la arena) mientras la mueve un componente de la reserva, o ya aplanada. */
@@ -143,7 +168,7 @@ void ATN_BeachSearchRegistry::RefreshMounds()
 			if (MoundAnims[Slot].Flatten < 0.f)
 			{
 				MoundAnims[Slot].Flatten = 0.f;
-				EmitGrains(Mounds[i].LiveXf.GetLocation() + FVector(0.0, 0.0, TNBeachDecorKit::SearchMoundHeight), 8, 0.7f);
+				EmitGrains(Mounds[i].LiveXf.TransformPosition(FVector(0.0, 0.0, TNBeachDecorKit::SearchMoundHeight)), 8, 0.7f);
 			}
 			continue;
 		}
@@ -218,9 +243,20 @@ void ATN_BeachSearchRegistry::RebuildMounds()
 		const FTNBeachSearchMound& Net = SearchNet.Mounds[i];
 		const FVector Local(static_cast<double>(Net.X) * 2.0, static_cast<double>(Net.Y), static_cast<double>(Net.Z));
 		const double Yaw = static_cast<double>(Net.Yaw) * 360.0 / 256.0;
-		const FTransform Xf = FTransform(FQuat(FVector::UpVector, FMath::DegreesToRadians(Yaw)), Local,
+		FTransform Xf = FTransform(FQuat(FVector::UpVector, FMath::DegreesToRadians(Yaw)), Local,
 			FVector(static_cast<double>(TNBeachMoundDetail::SizeOf(Net.Look)))) * GenXf;
+		const FQuat YawRot = Xf.GetRotation();
+		const bool bTilt = TNBeachMoundDetail::CVarMoundTilt.GetValueOnGameThread() != 0;
+		// Echado sobre la cuesta, como su anillo (#744): en una pendiente no queda medio enterrado ni flotando. De entrada con
+		// la altura del generador; cerca de una cámara se apoya en la malla de verdad (FitMoundToGround).
+		if (Gen && bTilt)
+		{
+			Xf.SetRotation(TNBeachMoundDetail::GroundTiltAt(*Gen, Xf.GetLocation(), Xf.GetScale3D().X) * YawRot);
+		}
 		TNBeachSearchMoundTypes::FMound& Mound = Mounds.AddDefaulted_GetRef();
+		Mound.YawRot = YawRot;
+		// Con TN.Beach.Mound.Tilt 0 (para comparar), derechos como antes: tampoco se apoyan después.
+		Mound.bGroundFitted = !bTilt;
 		Mound.Variant = TNBeachMoundDetail::VariantOf(Net.Look);
 		Mound.LiveXf = Xf;
 		Mound.FlatXf = Xf;
@@ -337,6 +373,8 @@ void ATN_BeachSearchRegistry::UpdateMoundAnims()
 	}
 	const double RangeSq = FMath::Square(static_cast<double>(MoundAnimRange));
 	const double NearSq = FMath::Square(static_cast<double>(MoundNearTurtle));
+	const double FitSq = FMath::Square(static_cast<double>(MoundFitRange));
+	int32 FitsLeft = MaxMoundFitsPerCheck;
 	TArray<TPair<double, int32>> Wanted;
 	for (int32 i = 0; i < Mounds.Num(); ++i)
 	{
@@ -348,14 +386,20 @@ void ATN_BeachSearchRegistry::UpdateMoundAnims()
 			bNear |= FVector::DistSquared2D(Turtle, At) < NearSq;
 		}
 		Mound.bTurtleNear = bNear;
-		if (Mound.bFlatShown)
-		{
-			continue;
-		}
 		double Best = TNumericLimits<double>::Max();
 		for (const FVector& Camera : Cameras)
 		{
 			Best = FMath::Min(Best, FVector::DistSquared(Camera, At));
+		}
+		// Cerca de una cámara se apoya en la malla del terreno, como su anillo (también los ya aplanados).
+		if (!Mound.bGroundFitted && FitsLeft > 0 && Best < FitSq && Mound.FitTries < MaxMoundFitTries && World->GetTimeSeconds() >= Mound.NextFitTime)
+		{
+			--FitsLeft;
+			FitMoundToGround(i);
+		}
+		if (Mound.bFlatShown)
+		{
+			continue;
 		}
 		if (Best < RangeSq)
 		{
@@ -399,6 +443,74 @@ void ATN_BeachSearchRegistry::UpdateMoundAnims()
 		{
 			StartMoundAnim(Entry.Value);
 		}
+	}
+}
+
+void ATN_BeachSearchRegistry::FitMoundToGround(int32 Index)
+{
+	UWorld* World = GetWorld();
+	if (!World || !Mounds.IsValidIndex(Index))
+	{
+		return;
+	}
+	TNBeachSearchMoundTypes::FMound& Mound = Mounds[Index];
+	Mound.FitTries = static_cast<uint8>(FMath::Min(255, static_cast<int32>(Mound.FitTries) + 1));
+	// Sin colisión todavía (se está cocinando): otra vez en un segundo.
+	Mound.NextFitTime = World->GetTimeSeconds() + TNBeachMoundDetail::RefitSeconds;
+
+	// Las mismas cuatro trazas, a la misma distancia del centro, que las de su anillo (FitMarkerToGround): el mismo suelo.
+	const FVector Center = Mound.LiveXf.GetLocation();
+	const FVector Scale = Mound.LiveXf.GetScale3D();
+	const double Reach = static_cast<double>(TNSearchMarker::RingRadiusForFoot(static_cast<float>(TNBeachDecorKit::SearchMoundRadius * 1.1 * Scale.X)));
+	FVector Rim[4];
+	const int32 Hits = TNSearchMarker::TraceRimGround(World, Center, Reach, this, Rim);
+	if (Hits == 0)
+	{
+		return;
+	}
+	Mound.bGroundFitted = Hits == 4;
+	// La inclinación, la del plano del anillo; la altura de su pie, la del terreno justo debajo (solo las teselas: sin el
+	// decorado que le quede encima). En una cresta o una hondonada la media del anillo se aleja de ella y el montículo
+	// quedaría medio enterrado o flotando; sin ese dato (o si se aleja mucho), la media.
+	double GroundZ = (Rim[0].Z + Rim[1].Z + Rim[2].Z + Rim[3].Z) * 0.25;
+	float TerrainZ = 0.f;
+	const ATN_BeachRaceGenerator* Gen = ATN_BeachRaceGenerator::Find(this);
+	if (Gen && Gen->TraceTerrainAt(Center, TerrainZ) && FMath::Abs(static_cast<double>(TerrainZ) - GroundZ) <= 120.0 + 0.4 * Reach)
+	{
+		GroundZ = static_cast<double>(TerrainZ);
+	}
+	const FVector Ground(Center.X, Center.Y, GroundZ);
+	const FTransform Fitted(TNSearchMarker::GroundTilt(Rim[0], Rim[1], Rim[2], Rim[3]) * Mound.YawRot, Ground, Scale);
+	if (Fitted.Equals(Mound.LiveXf, 0.1f))
+	{
+		return;
+	}
+	Mound.LiveXf = Fitted;
+	Mound.FlatXf = Fitted;
+
+	// Su instancia visible (la viva, o la aplanada si ya está rebuscado) se pone al día. La del que tiembla la mueve su
+	// componente de la reserva con LiveXf en cada fotograma, y su instancia viva sigue escondida.
+	const int32 NumVariants = TNBeachDecorKit::NumSearchMoundVariants;
+	if (Mound.bFlatShown)
+	{
+		UInstancedStaticMeshComponent* FlatComp = MoundComps.IsValidIndex(NumVariants) ? MoundComps[NumVariants].Get() : nullptr;
+		if (IsValid(FlatComp))
+		{
+			TNArt::UpdateInstances(FlatComp, Mound.FlatInstance, { Fitted }, true, true, true);
+		}
+		return;
+	}
+	for (const TNBeachSearchMoundTypes::FMoundAnim& Anim : MoundAnims)
+	{
+		if (Anim.Mound == Index)
+		{
+			return;
+		}
+	}
+	UInstancedStaticMeshComponent* LiveComp = MoundComps.IsValidIndex(Mound.Variant) ? MoundComps[Mound.Variant].Get() : nullptr;
+	if (IsValid(LiveComp))
+	{
+		TNArt::UpdateInstances(LiveComp, Mound.LiveInstance, { Fitted }, true, true, true);
 	}
 }
 

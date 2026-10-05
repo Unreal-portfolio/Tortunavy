@@ -285,12 +285,22 @@ namespace TNBeachSearchMoundTypes
 	{
 		FTransform LiveXf;
 		FTransform FlatXf;
+		/** Giro alrededor de Z, sin la inclinación del suelo (la pose es esa inclinación x este giro; #744). */
+		FQuat YawRot = FQuat::Identity;
 		int32 Variant = 0;
 		int32 LiveInstance = INDEX_NONE;
 		int32 FlatInstance = INDEX_NONE;
 		bool bFlatShown = false;
 		/** Hay una tortuga cerca (tiembla más a menudo y más fuerte). */
 		bool bTurtleNear = false;
+		/**
+		 * Ya apoyado en la malla del terreno, con las mismas trazas que su anillo (FitMoundToGround). Hasta entonces, y para los
+		 * lejanos, la pose sale de la altura del generador (que no siempre coincide con la malla).
+		 */
+		bool bGroundFitted = false;
+		/** Veces que se ha intentado apoyar y a partir de cuándo (s del mundo) se vuelve a intentar. */
+		uint8 FitTries = 0;
+		double NextFitTime = 0.0;
 	};
 
 	/** Montículo que tiembla ahora (un componente de la reserva, cerca de una cámara local). */
@@ -365,6 +375,13 @@ public:
 	static constexpr float MoundNearTurtle = 1200.f;
 	/** Distancia (cm) a la cámara hasta la que se dibujan. */
 	static constexpr float MoundCullDistance = 12000.f;
+	/**
+	 * Distancia (cm) a una cámara local a la que un montículo se apoya en la malla del terreno (con las trazas de su anillo),
+	 * cuántos como mucho por revisión (cada 0,25 s) y cuántas veces se intenta si la colisión aún no está lista.
+	 */
+	static constexpr float MoundFitRange = 6500.f;
+	static constexpr int32 MaxMoundFitsPerCheck = 6;
+	static constexpr int32 MaxMoundFitTries = 8;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Search")
@@ -407,6 +424,11 @@ private:
 	UInstancedStaticMeshComponent* EnsureMoundComp(int32 Index);
 	void SetMoundFlat(int32 Index, bool bFlat);
 	void UpdateMoundAnims();
+	/**
+	 * Apoya el montículo Index en la malla del terreno: su sitio y su inclinación salen de las mismas cuatro trazas que usa su
+	 * anillo (TNSearchMarker::TraceRimGround), y así quedan en el mismo plano (#744). Sin colisión todavía, se reintenta.
+	 */
+	void FitMoundToGround(int32 Index);
 	void StartMoundAnim(int32 Index);
 	void StopMoundAnim(int32 Slot);
 	void StopAllMoundAnims();

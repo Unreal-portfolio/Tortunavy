@@ -3077,6 +3077,14 @@ Lo pidió el usuario: donde se puede rebuscar, un montículo de arena que vibre,
   El aviso «Mantén para rebuscar», el alcance, las chispitas, el anillo y la tierra que salta salen así junto al montículo, no
   por cualquier lado de un decorado que puede dar la vuelta de más de 20 m (el castillo enorme, el barco, la sombrilla con
   3,8 m de radio). Como el montículo del tutorial (huella y alto 110 cm).
+- **Apoyado en el suelo** (#744): el montículo se echa sobre la cuesta con el mismo plano que su anillo. De entrada
+  (`GroundTiltAt`) con la altura del generador, igual en todas las máquinas; y a menos de 65 m de una cámara local
+  (`FitMoundToGround`, 6 por revisión como mucho) se apoya en la malla del terreno con las mismas cuatro trazas del anillo
+  (`TNSearchMarker::TraceRimGround`, la normal sale de `TNSearchMarker::GroundTilt`) y su pie baja o sube a la cota de la
+  tesela bajo su centro (`ATN_BeachRaceGenerator::TraceTerrainAt`), porque la malla no siempre coincide con el generador
+  (en 317 montículos de una ronda, la cota difería una mediana de 3 cm y hasta 68 cm, y la normal hasta 34°). Sin colisión
+  aún se reintenta cada segundo (8 veces). `TN.Beach.Mound.Tilt 0` los deja derechos como antes, para comparar
+  (`-dpcvars=TN.Beach.Mound.Tilt=0` en `-game`; vale al montar la ronda).
 - **Cómo se ve**: lejos, quietos, en mallas instanciadas (una por variante y otra para los aplanados), sin sombra y
   hasta 120 m. Cerca de una cámara local (45 m, los 16 más cercanos), un componente de una reserva hace temblar el
   montículo **a ratos**: un temblor corto (0,35-0,6 s) cada 2,5-6 s, con 3 granitos de arena que saltan; con una

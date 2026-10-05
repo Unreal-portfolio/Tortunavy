@@ -134,6 +134,7 @@ necesita espera a que esté lista.
 | `tn.Search.Show 1` | Baliza y huella en cada decorado rebuscable a menos de 300 m (en la playa, solo los que tienen su actor ahora: los que están cerca de alguna tortuga). |
 | `TN.Beach.Loot.Reroll` | Quita el botín de la ronda (rebuscables, objetos y conchas) y lo vuelve a repartir. |
 | `TN.Beach.Loot 0` | Sin botín desde la ronda siguiente; con `1` vuelve. |
+| `TN.Beach.Mound.Tilt 0` | Los montículos de los rebuscables de la playa se quedan derechos, como antes de #744 (con `1`, lo normal, se echan sobre la cuesta y se apoyan en la malla como su anillo). Vale al montar la ronda; en `-game`: `-dpcvars=TN.Beach.Mound.Tilt=0`. |
 | `TN.Beach.Chest` | Un cofre de la playa delante de ti, con el frente hacia tu tortuga: 5,5 s manteniendo E, dos objetos de los mejores y seis conchas de puntos. `TN.Beach.Place clear` lo quita. |
 
 ### Rendimiento de la playa
