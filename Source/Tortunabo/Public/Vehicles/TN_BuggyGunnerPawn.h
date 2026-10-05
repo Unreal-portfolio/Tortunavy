@@ -8,6 +8,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Rally/TN_RallyCrewCalls.h"
+#include "Rally/TN_RallyVehicle.h"
 #include "Vehicles/TN_BuggyMath.h"
 #include "TN_BuggyGunnerPawn.generated.h"
 
@@ -119,6 +120,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Rally|Cámara")
 	float CameraKickRecoverSpeed = 9.f;
 
+	/** Alcance del rayo que busca lo que cubre la mira (cm) y a qué distancia se apunta si no encuentra nada. */
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Torreta")
+	float AimTraceRangeCm = 30000.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Rally|Torreta")
+	float AimDefaultRangeCm = 8000.f;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -157,6 +165,14 @@ private:
 
 	/** Cliente: trazador local inmediato hacia WorldDir si la torreta, tal como se ve aquí, puede disparar (#333). */
 	void SpawnLocalTracer(bool bSpecial, const FRotator& Aim, const FVector& WorldDir) const;
+
+	/**
+	 * Artillera local (#717): dirección en mundo con la que el disparo llega a donde cubre la mira (el centro de la pantalla):
+	 * traza desde la cámara hasta el primer obstáculo (o un punto lejano) y apunta desde la boca hacia él, subiendo lo que cae el
+	 * proyectil. Con la cámara por encima del hombro, que mira por debajo del cañón, el disparo salía más arriba que la mira.
+	 * Con la vista sentada (gafas) o sin buggy, el eje del cañón. Ya limitada como la limita el servidor (-10..+45 de cabeceo).
+	 */
+	FVector ComputeShotDirection(const FRotator& Aim, ETNRallyAmmo Ammo) const;
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerCycleAmmo(int32 Direction);

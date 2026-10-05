@@ -148,6 +148,50 @@ namespace TNRallyTurret
 		return ClampAim(Local.Rotation());
 	}
 
+	FVector ShotVelocity(const FVector& Dir, const FVector& InheritedCms, float SpeedCms)
+	{
+		const FVector Unit = Dir.GetSafeNormal();
+		const double Speed = FMath::Max(SpeedCms, 0.f);
+		const FVector Plain = Unit * Speed + InheritedCms;
+		if (Unit.IsNearlyZero() || InheritedCms.IsNearlyZero())
+		{
+			return Plain;
+		}
+		// Rapidez neta K en la dirección Unit tal que |K·Unit - Inherited| = Speed: K² - 2K(Unit·V) + |V|² - Speed² = 0.
+		const double AlongInherited = FVector::DotProduct(Unit, InheritedCms);
+		const double Discriminant = AlongInherited * AlongInherited - InheritedCms.SizeSquared() + Speed * Speed;
+		if (Discriminant <= 0.0)
+		{
+			return Plain;
+		}
+		const double Net = AlongInherited + FMath::Sqrt(Discriminant);
+		return Net > UE_KINDA_SMALL_NUMBER ? Unit * Net : Plain;
+	}
+
+	FVector AimedShotDirection(const FVector& Muzzle, const FVector& TargetPoint, const FVector& CameraForward,
+		const FVector& InheritedCms, float SpeedCms, float GravityCms2)
+	{
+		const FVector Forward = CameraForward.GetSafeNormal();
+		const FVector To = TargetPoint - Muzzle;
+		const double Distance = To.Size();
+		if (Distance < MinAimedDistanceCm || TargetPoint.ContainsNaN())
+		{
+			return Forward;
+		}
+		const FVector Straight = To / Distance;
+		if (!Forward.IsNearlyZero()
+			&& FVector::DotProduct(Straight, Forward) < FMath::Cos(FMath::DegreesToRadians(static_cast<double>(MaxAimedOffAxisDeg))))
+		{
+			return Forward;
+		}
+		// Caída durante el vuelo con la rapidez neta de la salida: se apunta tanto más arriba del punto.
+		const double NetSpeed = ShotVelocity(Straight, InheritedCms, SpeedCms).Size();
+		const double Flight = NetSpeed > UE_KINDA_SMALL_NUMBER ? Distance / NetSpeed : 0.0;
+		const double Drop = 0.5 * FMath::Max(GravityCms2, 0.f) * Flight * Flight;
+		const double MaxDrop = Distance * FMath::Tan(FMath::DegreesToRadians(static_cast<double>(MaxDropCompensationDeg)));
+		return (TargetPoint + FVector(0.0, 0.0, FMath::Min(Drop, MaxDrop)) - Muzzle).GetSafeNormal();
+	}
+
 	FVector ResolveClientFireDirection(const FVector& ServerDir, const FVector& ClientDir, float MaxErrorDeg)
 	{
 		const FVector Server = ServerDir.GetSafeNormal();
