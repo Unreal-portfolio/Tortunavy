@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachMine.h"
+#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachMineSynth.h"
@@ -559,7 +560,11 @@ void ATN_BeachMine::Explode(double Now)
 			// En bola hacia atrás y arriba, con algo de lado según dónde estuviera (si la pisan dos, no caen juntas).
 			const double SideOff = FMath::Clamp(FVector::DotProduct(Rel, Across) / FMath::Max(1.0, Blast), -1.0, 1.0);
 			const FVector Launch = Back * LaunchBack + Across * (SideOff * 160.0) + FVector::UpVector * LaunchUp;
-			TNBeach::StunTurtle(Turtle, StunSeconds, Launch);
+			// En Supervivencia, la explosión elimina (#732); el empujón de alrededor no.
+			if (!TNSurvivalHits::KillInSurvival(Turtle, this))
+			{
+				TNBeach::StunTurtle(Turtle, StunSeconds, Launch);
+			}
 			++Launched;
 		}
 		else if (TNBeachTrapKit::IsFreeTurtle(Turtle))

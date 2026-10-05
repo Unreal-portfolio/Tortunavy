@@ -54,8 +54,8 @@ namespace TNSurvivalCatalog
 	/**
 	 * Objetos del camino que hay que añadir al layout L para que su camino principal tenga SpotsPer100m rebuscables cada
 	 * 100 m, contando los que ya trae. Repartidos a partes iguales entre la salida y la meta (sin los 20 m de cada punta),
-	 * a lados alternos y por fuera del borde (asoman un poco al camino), lejos de los huecos, de las trampas (Loose y
-	 * Terrain) y de otro rebuscable; GroundZ da el suelo del mapa (si no está a la altura del camino, prueba el otro lado o
+	 * a lados alternos y por fuera del borde (asoman un poco al camino), lejos de los huecos, de las trampas que ocupan su
+	 * sitio (Loose con HoldsPlace, y los quads de Terrain) y de otro rebuscable; GroundZ da el suelo del mapa (si no está a la altura del camino, prueba el otro lado o
 	 * un poco más allá). Puede devolver menos si no caben.
 	 */
 	inline TArray<TNProcMap::FFeature> PlaceSearchProps(const TNProcMap::FLayout& L, const TArray<FTrapPlacement>& Loose,
@@ -88,9 +88,9 @@ namespace TNSurvivalCatalog
 			return Out;
 		}
 
-		// Dónde hay trampas, a lo largo del camino.
+		// Dónde hay trampas que ocupan su sitio (HoldsPlace), a lo largo del camino.
 		TArray<double> TrapAlong;
-		for (const FTrapPlacement& P : Loose) { TrapAlong.Add(P.Along); }
+		for (const FTrapPlacement& P : Loose) { if (HoldsPlace(P)) { TrapAlong.Add(P.Along); } }
 		for (const FQuadCrossing& Q : Terrain.Quads) { if (M.IsValidIndex(Q.Sample)) { TrapAlong.Add(M[Q.Sample].S); } }
 		auto NearTrap = [&TrapAlong](double S)
 		{

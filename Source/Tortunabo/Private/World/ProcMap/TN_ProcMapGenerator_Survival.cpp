@@ -7,17 +7,14 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "World/TN_BananaPeel.h"
-#include "World/TN_CrabActor.h"
-#include "World/TN_CrabSpawnZone.h"
-#include "World/TN_EnemySeagull.h"
 #include "World/TN_JellyfishActor.h"
 #include "World/TN_PressurePlate.h"
 #include "World/TN_QuadActor.h"
-#include "World/TN_SeagullSpawnZone.h"
 #include "World/TN_SlowZoneVolume.h"
 #include "World/TN_UmbrellaInteractable.h"
 #include "World/Beach/TN_BeachCreatureRules.h"
 #include "World/Beach/TN_BeachElement.h"
+#include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachShelterVolume.h"
 #include "World/Beach/TN_BeachTankTrap.h"
 #include "World/TN_Quicksand.h"
@@ -39,15 +36,15 @@ namespace
 	const TCHAR* BananaPath = TEXT("/Game/Blueprints/Gameplay/Hazards/BP_BananaPeel.BP_BananaPeel_C");
 	const TCHAR* SlowZonePath = TEXT("/Game/Blueprints/Gameplay/Hazards/BP_SlowZoneVolume.BP_SlowZoneVolume_C");
 	const TCHAR* JellyfishPath = TEXT("/Game/Blueprints/Gameplay/Items/BP_JellyfishActor.BP_JellyfishActor_C");
-	const TCHAR* CrabZonePath = TEXT("/Game/Blueprints/Gameplay/Enemies/Crabs/BP_CrabSpawnZone.BP_CrabSpawnZone_C");
-	const TCHAR* CrabPath = TEXT("/Game/Blueprints/Gameplay/Enemies/Crabs/BP_CrabActor.BP_CrabActor_C");
-	const TCHAR* SeagullZonePath = TEXT("/Game/Blueprints/Gameplay/Enemies/Seagull/BP_SeagullSpawnZone.BP_SeagullSpawnZone_C");
-	const TCHAR* SeagullPath = TEXT("/Game/Blueprints/Gameplay/Enemies/Seagull/BP_EnemySeagull.BP_EnemySeagull_C");
 	const TCHAR* UmbrellaPath = TEXT("/Game/Blueprints/Gameplay/Interaction/BP_UmbrellaInteractable.BP_UmbrellaInteractable_C");
 	const TCHAR* QuadPath = TEXT("/Game/Blueprints/Gameplay/Enemies/Quad/BP_QuadActor.BP_QuadActor_C");
 	const TCHAR* PlatePath = TEXT("/Game/Blueprints/Gameplay/Interaction/BP_PressurePlate.BP_PressurePlate_C");
 
-	/** Tamaño (SizeScale de la huella de la carrera) de cada criatura del Excel en los caminos de Supervivencia (3-6 m). */
+	/**
+	 * Tamaño (SizeScale de la huella de la carrera) de cada pieza de la playa en los caminos de Supervivencia (4,5-13 m de
+	 * ancho). Los enemigos que andan no bajan de su mínimo (lo recortan ellos): el cangrejo gigante va donde el camino es más
+	 * ancho. Las medidas que ocupan en la colocación (MineRadius, ClamTrapRadius) salen de estos tamaños.
+	 */
 	float SurvivalSizeScale(TNSurvivalCatalog::ETrap Trap)
 	{
 		using TNSurvivalCatalog::ETrap;
@@ -58,6 +55,16 @@ namespace
 			case ETrap::UrchinSpikes: return 0.5f;
 			case ETrap::TrashPile:    return 0.45f;
 			case ETrap::Trench:       return 0.5f;
+			case ETrap::Crab:         return 0.8f;
+			case ETrap::Seagull:      return 0.75f;
+			case ETrap::Mine:         return 0.6f;
+			case ETrap::Seaweed:      return 0.6f;
+			case ETrap::BarbedWire:   return 0.7f;
+			case ETrap::ToyTank:      return 0.8f;
+			case ETrap::SandFleas:    return 0.8f;
+			case ETrap::ClamTrap:     return 0.35f;
+			case ETrap::SeaUrchin:    return 0.75f;
+			case ETrap::HermitCrab:   return 0.8f;
 			default:                  return 1.f;
 		}
 	}
@@ -72,7 +79,34 @@ namespace
 			case ETrap::UrchinSpikes: return ETNBeachElement::UrchinSpikes;
 			case ETrap::TrashPile:    return ETNBeachElement::TrashPile;
 			case ETrap::Trench:       return ETNBeachElement::Trench;
+			case ETrap::Crab:         return ETNBeachElement::GiantCrab;
+			case ETrap::Seagull:      return ETNBeachElement::GullZone;
+			case ETrap::Mine:         return ETNBeachElement::Mine;
+			case ETrap::Seaweed:      return ETNBeachElement::Seaweed;
+			case ETrap::BarbedWire:   return ETNBeachElement::BarbedWire;
+			case ETrap::ToyTank:      return ETNBeachElement::ToyTank;
+			case ETrap::SandFleas:    return ETNBeachElement::SandFleas;
+			case ETrap::ClamTrap:     return ETNBeachElement::ClamTrap;
+			case ETrap::SeaUrchin:    return ETNBeachElement::SeaUrchin;
+			case ETrap::HermitCrab:   return ETNBeachElement::HermitCrab;
 			default:                  return ETNBeachElement::Count;
+		}
+	}
+
+	/** Lo que mira (cm, a lo largo del camino y a cada lado de su sitio) el pasillo de un enemigo de la playa. */
+	constexpr double RoamCorridorReach = 4000.0;
+
+	/** Largo (Spec.Extent) de la pieza de la playa de una trampa colocada: ancho de las algas, largo del alambre o del tramo. */
+	float SurvivalExtent(const TNSurvivalCatalog::FTrapPlacement& P)
+	{
+		using TNSurvivalCatalog::ETrap;
+		switch (P.Trap)
+		{
+			case ETrap::Seaweed:    return static_cast<float>(2.0 * P.Extent.Y);
+			case ETrap::BarbedWire:
+			case ETrap::ToyTank:
+			case ETrap::HermitCrab: return static_cast<float>(2.0 * P.Extent.X);
+			default:                return 0.f;
 		}
 	}
 
@@ -122,7 +156,7 @@ int32 ATN_ProcMapGenerator::GetSurvivalTrapCount(FString* OutBreakdown) const
 	TMap<ETrap, int32> ByTrap;
 	for (const TNSurvivalCatalog::FTrapPlacement& P : SurvivalTrapPlan)
 	{
-		if (!P.bUmbrella) { ByTrap.FindOrAdd(P.Trap)++; }
+		if (!P.bUmbrella && !P.bPart) { ByTrap.FindOrAdd(P.Trap)++; }
 	}
 	if (SurvivalTerrainPlan.Quads.Num() > 0) { ByTrap.Add(ETrap::Quad, SurvivalTerrainPlan.Quads.Num()); }
 	if (SurvivalTerrainPlan.Bridges.Num() > 0) { ByTrap.Add(ETrap::BreakableBridge, SurvivalTerrainPlan.Bridges.Num()); }
@@ -140,7 +174,7 @@ int32 ATN_ProcMapGenerator::GetSurvivalTrapCount(FString* OutBreakdown) const
 		*OutBreakdown = Parts.Num() > 0 ? FString::Join(Parts, TEXT(", ")) : FString(TEXT("ninguna"));
 		if (SurvivalTerrainPlan.Shortcuts.Num() > 0)
 		{
-			*OutBreakdown += FString::Printf(TEXT("; y %d atajos con placas"), SurvivalTerrainPlan.Shortcuts.Num());
+			*OutBreakdown += FString::Printf(TEXT("; y %d atajos con placas o puerta de conchas"), SurvivalTerrainPlan.Shortcuts.Num());
 		}
 	}
 	return Total;
@@ -226,25 +260,6 @@ void ATN_ProcMapGenerator::SpawnSurvivalTraps()
 					Zone->SetZoneExtent(P.Extent);
 				}
 				break;
-			case ETrap::Crab:
-				// Centrada en el suelo: la zona hace nacer los cangrejos a la altura de su centro (y ellos se pegan al suelo).
-				if (!bServer) { break; }
-				if (ATN_CrabSpawnZone* Zone = Cast<ATN_CrabSpawnZone>(SpawnMapActor(TrapClass<ATN_CrabSpawnZone>(CrabZonePath),
-					FTransform(Rot, MapToWorld2D(Where, Ground)), true)))
-				{
-					Zone->ConfigureZone(P.Extent, P.Count, LoadClass<ATN_CrabActor>(nullptr, CrabPath));
-				}
-				break;
-			case ETrap::Seagull:
-				// La zona va en los ejes del mapa (cubre el tramo entero).
-				if (!bServer) { break; }
-				if (ATN_SeagullSpawnZone* Zone = Cast<ATN_SeagullSpawnZone>(SpawnMapActor(TrapClass<ATN_SeagullSpawnZone>(SeagullZonePath),
-					FTransform(FRotator(0.0, Yaw0, 0.0), MapToWorld2D(Where, P.Location.Z + P.Extent.Z)), true)))
-				{
-					Zone->SetZoneExtent(P.Extent);
-					Zone->SetSeagullClassIfMissing(LoadClass<ATN_EnemySeagull>(nullptr, SeagullPath));
-				}
-				break;
 			case ETrap::Quicksand:
 				// Como la zona lenta: no se replica, la crea cada máquina (la del servidor decide quién queda atrapada).
 				if (ATN_Quicksand* Sand = Cast<ATN_Quicksand>(SpawnMapActor(ATN_Quicksand::StaticClass(), FTransform(Rot, MapToWorld2D(Where, Ground)), false)))
@@ -267,14 +282,42 @@ void ATN_ProcMapGenerator::SpawnSurvivalTraps()
 			case ETrap::UrchinSpikes:
 			case ETrap::TrashPile:
 			case ETrap::Trench:
+			case ETrap::Crab:
+			case ETrap::Seagull:
+			case ETrap::Mine:
+			case ETrap::Seaweed:
+			case ETrap::BarbedWire:
+			case ETrap::ToyTank:
+			case ETrap::SandFleas:
+			case ETrap::ClamTrap:
+			case ETrap::SeaUrchin:
+			case ETrap::HermitCrab:
 			{
+				// Piezas de la playa (#731-#734), con la marca de Supervivencia (las gaviotas sueltan antes).
 				if (!bServer) { break; }
 				FTNBeachElementSpec Spec;
 				Spec.Element = BeachElementOf(P.Trap);
 				Spec.Seed = static_cast<int32>(NetConfig.Seed) * 31 + P.Sample;
 				Spec.SizeScale = SurvivalSizeScale(P.Trap);
+				Spec.Extent = SurvivalExtent(P);
+				Spec.Flags = TNBeach::FlagSurvival;
 				if (ATN_BeachElement* Element = ATN_BeachElement::SpawnElement(World, FTransform(Rot, MapToWorld2D(Where, Ground)), Spec))
 				{
+					// Los que andan no salen del camino: fuera hay paredes o vacío.
+					if (ATN_BeachEnemy* Enemy = Cast<ATN_BeachEnemy>(Element))
+					{
+						TArray<FVector> Points;
+						TArray<float> HalfWidths;
+						for (const TNProcMap::FPathSample& S : Layout.Main)
+						{
+							if (FMath::Abs(S.S - P.Along) <= RoamCorridorReach)
+							{
+								Points.Add(MapToWorld2D(S.P, S.Z));
+								HalfWidths.Add(static_cast<float>(S.Width * 0.5));
+							}
+						}
+						Enemy->SetRoamCorridor(Points, HalfWidths);
+					}
 					SpawnedActors.Add(Element);
 				}
 				break;
@@ -315,6 +358,22 @@ void ATN_ProcMapGenerator::SpawnSurvivalTraps()
 	for (const FPlateShortcut& Sc : SurvivalTerrainPlan.Shortcuts)
 	{
 		const FVector2D G(Sc.Gate.X, Sc.Gate.Y);
+		if (Sc.bShellGate)
+		{
+			// #731: puerta de conchas en una pared tan ancha como la compuerta (semilla par: la variante de pared; la pared
+			// mide 0,95 de la huella a cada lado).
+			FTNBeachElementSpec Spec;
+			Spec.Element = ETNBeachElement::ShellGate;
+			Spec.Seed = (static_cast<int32>(NetConfig.Seed) * 31 + Sc.Branch) * 2;
+			Spec.SizeScale = FMath::Clamp(static_cast<float>((Sc.GateWidth * 0.5 + 10.0) / (0.95 * TNBeach::FootprintRadius(ETNBeachElement::ShellGate))), 0.5f, 2.f);
+			Spec.Flags = TNBeach::FlagSurvival;
+			if (ATN_BeachElement* Gate = ATN_BeachElement::SpawnElement(World,
+				FTransform(FRotator(0.0, Sc.GateYawDeg + Yaw0, 0.0), MapToWorld2D(G, TerrainHeightMap(G))), Spec))
+			{
+				SpawnedActors.Add(Gate);
+			}
+			continue;
+		}
 		ATN_ProcSabotageGate* Gate = Cast<ATN_ProcSabotageGate>(SpawnMapActor(GateClass,
 			FTransform(FRotator(0.0, Sc.GateYawDeg + Yaw0, 0.0), MapToWorld2D(G, TerrainHeightMap(G))), true));
 		if (Gate) { Gate->Setup(static_cast<float>(Sc.GateWidth), ShortcutGateHeight); }

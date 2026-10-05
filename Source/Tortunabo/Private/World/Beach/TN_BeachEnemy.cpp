@@ -979,7 +979,76 @@ FVector ATN_BeachEnemy::ResolveStep(const FVector& Next, float SelfRadius, bool 
 			}
 		}
 	}
-	return FVector(P.X, P.Y, Next.Z);
+	// Supervivencia: sin salirse del camino.
+	const FVector Kept = ClampToCorridor(FVector(P.X, P.Y, Next.Z), SelfRadius);
+	return FVector(Kept.X, Kept.Y, Next.Z);
+}
+
+void ATN_BeachEnemy::SetRoamCorridor(const TArray<FVector>& Points, const TArray<float>& HalfWidths)
+{
+	CorridorPoints.Reset();
+	CorridorHalfWidths.Reset();
+	if (Points.Num() < 2 || Points.Num() != HalfWidths.Num())
+	{
+		return;
+	}
+	for (int32 i = 0; i < Points.Num(); ++i)
+	{
+		CorridorPoints.Add(FVector2D(Points[i].X, Points[i].Y));
+		CorridorHalfWidths.Add(FMath::Max(0.f, HalfWidths[i]));
+	}
+}
+
+FVector ATN_BeachEnemy::ClampToCorridor(const FVector& P, float SelfRadius) const
+{
+	if (!HasRoamCorridor())
+	{
+		return P;
+	}
+	// El pasillo es la unión de los tramos del eje con su semiancho (menos el cuerpo): dentro de uno, vale; si no, al borde
+	// del que menos se sale.
+	const FVector2D Q(P.X, P.Y);
+	double BestOut = TNumericLimits<double>::Max();
+	FVector2D Best = Q;
+	for (int32 i = 0; i + 1 < CorridorPoints.Num(); ++i)
+	{
+		double T = 0.0;
+		const double Dist = TNProcMap::DistPointSegment(Q, CorridorPoints[i], CorridorPoints[i + 1], T);
+		const double Allowed = FMath::Max(0.0, static_cast<double>(FMath::Lerp(CorridorHalfWidths[i], CorridorHalfWidths[i + 1], static_cast<float>(T)) - SelfRadius));
+		if (Dist <= Allowed)
+		{
+			return P;
+		}
+		if (Dist - Allowed < BestOut)
+		{
+			BestOut = Dist - Allowed;
+			const FVector2D Axis = CorridorPoints[i] + (CorridorPoints[i + 1] - CorridorPoints[i]) * T;
+			Best = Axis + (Q - Axis).GetSafeNormal() * Allowed;
+		}
+	}
+	return FVector(Best.X, Best.Y, P.Z);
+}
+
+FVector ATN_BeachEnemy::CorridorDirectionAt(const FVector& P) const
+{
+	if (!HasRoamCorridor())
+	{
+		return FVector::ZeroVector;
+	}
+	const FVector2D Q(P.X, P.Y);
+	double BestDist = TNumericLimits<double>::Max();
+	FVector2D Dir = FVector2D::ZeroVector;
+	for (int32 i = 0; i + 1 < CorridorPoints.Num(); ++i)
+	{
+		double T = 0.0;
+		const double Dist = TNProcMap::DistPointSegment(Q, CorridorPoints[i], CorridorPoints[i + 1], T);
+		if (Dist < BestDist)
+		{
+			BestDist = Dist;
+			Dir = (CorridorPoints[i + 1] - CorridorPoints[i]).GetSafeNormal();
+		}
+	}
+	return FVector(Dir.X, Dir.Y, 0.0);
 }
 
 void ATN_BeachEnemy::ShowPop(const FText& Text, const FColor& Color, const FVector& WorldAt, float Size)

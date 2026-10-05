@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachGiantCrab.h"
+#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
@@ -279,7 +280,9 @@ void ATN_BeachGiantCrab::BuildRoute()
 	Route.Reset();
 	RouteStops.Reset();
 	const float BodyR = GetBodyRadius();
-	const float Yaw0 = ServerRng.FRandRange(0.f, 360.f);
+	// En Supervivencia, a lo largo del camino (#734); en la playa, hacia cualquier lado.
+	const FVector Along = CorridorDirectionAt(Home);
+	const float Yaw0 = Along.IsNearlyZero() ? ServerRng.FRandRange(0.f, 360.f) : static_cast<float>(Along.Rotation().Yaw);
 	const FVector Axis = FRotator(0.f, Yaw0, 0.f).Vector();
 	const FVector Side = FRotator(0.f, Yaw0 + 90.f, 0.f).Vector();
 	const float Kind = ServerRng.FRand();
@@ -383,6 +386,8 @@ void ATN_BeachGiantCrab::BuildRoute()
 		{
 			P = FMath::Lerp(P, Home, 0.3);
 		}
+		// En Supervivencia, dentro del camino: el óvalo o la recta se aplastan contra sus bordes.
+		P = ClampToCorridor(P, BodyR);
 		P.Z = Home.Z;
 	}
 	RouteIndex = ServerRng.RandRange(0, Route.Num() - 1);
@@ -497,6 +502,8 @@ FVector ATN_BeachGiantCrab::Integrate(float DeltaSeconds, bool* bOutBlocked)
 	{
 		Next = Home + FromHome.GetSafeNormal() * LeashRadius;
 	}
+	// Ni fuera del camino en Supervivencia (la correa no lo sabe).
+	Next = ClampToCorridor(Next, GetBodyRadius());
 	GroundTimer -= DeltaSeconds;
 	if (GroundTimer <= 0.f)
 	{
@@ -732,8 +739,11 @@ void ATN_BeachGiantCrab::ResolveSlam()
 			FVector Away = At - Impact;
 			Away.Z = 0.0;
 			Away = Away.GetSafeNormal();
-			// Despachurrada: casi en el sitio, un empujoncito hacia fuera.
-			StunTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabStunSeconds, Away * 320.0 + FVector(0.0, 0.0, 160.0));
+			// Despachurrada: casi en el sitio, un empujoncito hacia fuera. En Supervivencia, el mazazo elimina (#734).
+			if (!TNSurvivalHits::KillInSurvival(Turtle, this))
+			{
+				StunTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabStunSeconds, Away * 320.0 + FVector(0.0, 0.0, 160.0));
+			}
 			IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabIgnoreSeconds);
 			bHit = true;
 		}

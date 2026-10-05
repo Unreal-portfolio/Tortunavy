@@ -257,6 +257,21 @@ public:
 	static ATN_BeachEnemy* ServerHitWithProjectile(AActor* Projectile, const FVector& From, const FVector& To, float Radius,
 		float Seconds = TNBeachHitStun::ThrownSeconds);
 
+	/**
+	 * Servidor: pasillo del que no sale al andar (ResolveStep). Supervivencia le da el tramo del camino alrededor de su sitio
+	 * (#731-#734): fuera hay paredes o vacío. Puntos del eje en el mundo (la Z no cuenta) y el semiancho de cada uno. Vacío
+	 * (la playa): sin pasillo.
+	 */
+	void SetRoamCorridor(const TArray<FVector>& Points, const TArray<float>& HalfWidths);
+
+	bool HasRoamCorridor() const { return CorridorPoints.Num() >= 2; }
+
+	/** El punto más cercano a P dentro del pasillo con SelfRadius de margen al borde (P si no hay pasillo o ya está dentro). */
+	FVector ClampToCorridor(const FVector& P, float SelfRadius) const;
+
+	/** Dirección (unitaria, plana) del tramo del pasillo más cercano a P; cero sin pasillo. */
+	FVector CorridorDirectionAt(const FVector& P) const;
+
 	virtual void PostInitializeComponents() override;
 
 protected:
@@ -523,6 +538,10 @@ private:
 	/** Último objeto que lo ha mareado y cuándo (reloj del servidor): el mismo no lo vuelve a marear en cada fotograma. */
 	TWeakObjectPtr<AActor> LastHitInstigator;
 	double LastHitTime = -10.0;
+
+	/** Pasillo de SetRoamCorridor (eje en planta y semiancho de cada punto); vacío sin pasillo. */
+	TArray<FVector2D> CorridorPoints;
+	TArray<float> CorridorHalfWidths;
 
 	/** Rodear obstáculos: lado elegido (+1/-1, 0 = ninguno) y cuánto se mantiene. */
 	float AvoidSide = 0.f;

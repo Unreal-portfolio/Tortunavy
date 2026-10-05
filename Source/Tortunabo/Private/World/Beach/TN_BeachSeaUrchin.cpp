@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachSeaUrchin.h"
+#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
 #include "World/Beach/TN_BeachStun.h"
@@ -151,8 +152,12 @@ bool ATN_BeachSeaUrchin::CheckPricks()
 		Away.Z = 0.0;
 		Away = Away.IsNearlyZero() ? FRotator(0.f, SimYaw, 0.f).Vector() : Away.GetSafeNormal();
 		// Pinchazo: derribo con ragdoll y mareo, despedida hacia fuera y dando una vuelta hacia atrás.
+		// En Supervivencia, el pinchazo elimina (#732).
 		const FVector Tumble = FVector::CrossProduct(FVector::UpVector, Away) * TNBeachUrchin::PushSpin;
-		KnockDownTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinKnockSeconds, Away * TNBeachUrchin::PushSpeed + FVector(0.0, 0.0, TNBeachUrchin::PushUp), Tumble);
+		if (!TNSurvivalHits::KillInSurvival(Turtle, this))
+		{
+			KnockDownTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinKnockSeconds, Away * TNBeachUrchin::PushSpeed + FVector(0.0, 0.0, TNBeachUrchin::PushUp), Tumble);
+		}
 		IgnoreTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinIgnoreSeconds);
 		MulticastPrick(Turtle, (At + Center) * 0.5);
 		ServerSetState(TNBeachUrchin::ToByte(TNBeachUrchin::EState::Recoil), At);

@@ -1,8 +1,10 @@
 // Catálogo de mapas de Supervivencia (#515): 9 mapas por dificultad de la 1 a la 4 y 14 en la 5, sin semillas
 // repetidas, con trampas válidas, y cada semilla genera el mismo layout que cuando se eligió (huella).
 // Colocación (#516): ninguna trampa se pierde ni cae en un hueco, la salida, la meta o una unión; ninguna zona lenta
-// antes de un hueco; los obstáculos dejan 3 m de paso libre.
-// El mapa de pruebas (TestMaps) pasa por las mismas huellas y colocación, y tiene una trampa de cada tipo.
+// antes de un hueco (ni algas, ni conchas que atrapan); los obstáculos (también minas, conchas y alambres) dejan 3 m de
+// paso libre; el tanque y el cangrejo ermitaño van en un tramo recto.
+// El mapa de pruebas (TestMaps) pasa por las mismas huellas y colocación, y tiene una trampa de cada tipo menos la puerta de
+// conchas (#731), que va en una rama y la única que tiene es la de las placas: se prueba en El Desvío (semilla 11).
 // Correr desde Session Frontend (categoría "Tortunabo.Survival.Catalogo") o headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Survival.Catalogo; Quit" -nullrhi -unattended
 
@@ -17,9 +19,6 @@
 
 namespace
 {
-	/** Holgura (cm) de las esquinas de una zona de cangrejos fuera del ancho del camino (el cangrejo se pega al suelo al nacer). */
-	constexpr double CrabZoneEdgeTolerance = 150.0;
-
 	/** Los 50 mapas del catálogo y el mapa de pruebas. */
 	TArray<TNSurvivalCatalog::FMapEntry> CatalogAndTestMaps()
 	{
@@ -65,7 +64,8 @@ bool FTNSurvivalCatalogShareTest::RunTest(const FString& Parameters)
 		TestFalse(Ctx + TEXT(": su semilla no es del catálogo"), Seeds.Contains(M.Seed));
 		TSet<ETrap> Kinds;
 		for (const FTrapSpot& T : TrapsOf(M.Seed)) { Kinds.Add(T.Trap); }
-		TestEqual(Ctx + TEXT(": tiene todas las trampas"), Kinds.Num(), static_cast<int32>(ETrap::Trench) + 1);
+		TestFalse(Ctx + TEXT(": sin puerta de conchas (su rama es la de las placas)"), Kinds.Contains(ETrap::ShellGate));
+		TestEqual(Ctx + TEXT(": tiene todas las demás trampas"), Kinds.Num(), static_cast<int32>(LastTrap));
 	}
 	for (const FTrapSpot& T : Traps)
 	{
@@ -122,22 +122,26 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 		if (!TestTrue(Ctx + TEXT(": genera mapa"), TNProcMap::GenerateSurvivalLayout(M.Seed, M.Difficulty, L) != 0)) { continue; }
 		const TArray<FTrapPlacement> Plan = PlaceLooseTraps(L, M.Seed);
 
-		// Ninguna se pierde: una por cáscara, medusa y zona lenta; una zona por cada 16 m de tramo de cangrejos; la zona de
-		// gaviotas y sus sombrillas.
-		int32 Expected = 0;
+		// Ninguna se pierde: una por cada una del punto o del tramo; un cangrejo gigante cada 20 m de tramo; las zonas de
+		// gaviotas (una cada 30 m) y sus sombrillas.
+		TMap<ETrap, int32> ExpectedByTrap;
 		for (const FTrapSpot& T : TrapsOf(M.Seed))
 		{
+			const double From = L.Main.Last().S * T.FromPct / 100.0;
+			const double To = L.Main.Last().S * T.ToPct / 100.0;
 			switch (T.Trap)
 			{
-				case ETrap::BananaPeel: case ETrap::Jellyfish: case ETrap::SlowZone: Expected += T.Count; break;
-				case ETrap::Quicksand: case ETrap::DragCrab: case ETrap::BurrowCrab: case ETrap::UrchinSpikes:
-				case ETrap::TankTrap: case ETrap::TrashPile: case ETrap::Trench: Expected += T.Count; break;
-				case ETrap::Crab: Expected += CrabZoneCount(L.Main.Last().S * T.FromPct / 100.0, L.Main.Last().S * T.ToPct / 100.0, T.Count); break;
-				case ETrap::Seagull: Expected += 1 + (T.Umbrellas > 0 ? T.Umbrellas : DefaultUmbrellas); break;
-				default: break;
+				case ETrap::Crab: ExpectedByTrap.FindOrAdd(T.Trap) += GiantCrabCount(From, To, T.Count); break;
+				case ETrap::Seagull: ExpectedByTrap.FindOrAdd(T.Trap) += GullZoneCount(From, To) + (T.Umbrellas > 0 ? T.Umbrellas : DefaultUmbrellas); break;
+				default: if (IsLooseTrap(T.Trap)) { ExpectedByTrap.FindOrAdd(T.Trap) += T.Count; } break;
 			}
 		}
-		TestEqual(Ctx + TEXT(": todas las trampas colocadas"), Plan.Num(), Expected);
+		TMap<ETrap, int32> PlacedByTrap;
+		for (const FTrapPlacement& P : Plan) { PlacedByTrap.FindOrAdd(P.Trap)++; }
+		for (const TPair<ETrap, int32>& Pair : ExpectedByTrap)
+		{
+			TestEqual(Ctx + FString::Printf(TEXT(": todas las %s colocadas"), TrapName(Pair.Key)), PlacedByTrap.FindRef(Pair.Key), Pair.Value);
+		}
 
 		for (const FTrapPlacement& P : Plan)
 		{
@@ -159,25 +163,21 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 					P.Along - QuicksandMaxRadius, P.Along + QuicksandMaxRadius + SlowZoneGapClearance) < 0.0);
 			}
 
-			if (P.Trap == ETrap::Crab)
+			if (P.Trap == ETrap::Seaweed || P.Trap == ETrap::ClamTrap)
 			{
-				// Las esquinas de la caja de la zona (donde puede nacer un cangrejo) caen en el ancho del camino.
-				TestTrue(What + TEXT(": zona de cangrejos corta"), P.Extent.X <= CrabZoneHalfLength && P.Count >= 1);
-				const double Yaw = FMath::DegreesToRadians(P.YawDeg);
-				const FVector2D Fwd(FMath::Cos(Yaw), FMath::Sin(Yaw));
-				const FVector2D Left(-Fwd.Y, Fwd.X);
-				for (const FVector2D Corner : { FVector2D(1.0, 1.0), FVector2D(1.0, -1.0), FVector2D(-1.0, 1.0), FVector2D(-1.0, -1.0) })
-				{
-					const FVector2D Q = FVector2D(P.Location) + Fwd * (Corner.X * P.Extent.X) + Left * (Corner.Y * P.Extent.Y);
-					int32 Best = 0;
-					for (int32 j = 1; j < L.Main.Num(); ++j)
-					{
-						if (FVector2D::DistSquared(L.Main[j].P, Q) < FVector2D::DistSquared(L.Main[Best].P, Q)) { Best = j; }
-					}
-					const double Lateral = FMath::Abs(FVector2D::CrossProduct(L.Main[Best].Dir, Q - L.Main[Best].P));
-					TestTrue(What + FString::Printf(TEXT(": esquina de la zona de cangrejos a %.0f cm del eje (ancho %.0f)"), Lateral,
-						L.Main[Best].Width), Lateral <= L.Main[Best].Width * 0.5 + CrabZoneEdgeTolerance);
-				}
+				const double R = P.Trap == ETrap::Seaweed ? 500.0 : ClamTrapRadius;
+				TestTrue(What + TEXT(": algas o concha sin hueco en los 30 m siguientes"), Placement::GapEndBetween(L.Main,
+					P.Along - R, P.Along + R + SlowZoneGapClearance) < 0.0);
+			}
+			if (P.Trap == ETrap::ToyTank || P.Trap == ETrap::HermitCrab)
+			{
+				// Su tramo recto: dentro del camino y sin huecos.
+				TestTrue(What + FString::Printf(TEXT(": tramo recto de %.0f cm"), 2.0 * P.Extent.X),
+					P.Extent.X > 0.0 && Placement::StraightHalfLength(L.Main, P.Sample, P.Extent.X, 150.0) >= P.Extent.X);
+			}
+			if (P.Trap == ETrap::BarbedWire)
+			{
+				TestTrue(What + TEXT(": alambre de largo útil"), 2.0 * P.Extent.X >= MinWireLength);
 			}
 
 			// Paso libre: los obstáculos a menos de 1,5 m a lo largo del camino ocupan franjas de la sección.
@@ -207,11 +207,15 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 		{
 			Quads += T.Trap == ETrap::Quad ? T.Count : 0;
 			Bridges += T.Trap == ETrap::BreakableBridge ? 1 : 0;
-			Shortcuts += T.Trap == ETrap::PressurePlate ? 1 : 0;
+			Shortcuts += (T.Trap == ETrap::PressurePlate || T.Trap == ETrap::ShellGate) ? 1 : 0;
 		}
 		TestEqual(Ctx + TEXT(": cruces de quads"), Terrain.Quads.Num(), Quads);
 		TestEqual(Ctx + TEXT(": puentes que se rompen sobre una viga"), Terrain.Bridges.Num(), Bridges);
-		TestEqual(Ctx + TEXT(": atajos con placas en una rama"), Terrain.Shortcuts.Num(), Shortcuts);
+		TestEqual(Ctx + TEXT(": atajos con placas o puerta de conchas en una rama"), Terrain.Shortcuts.Num(), Shortcuts);
+		for (const FPlateShortcut& Sc : Terrain.Shortcuts)
+		{
+			TestTrue(Ctx + TEXT(": la puerta de conchas no lleva placas"), !Sc.bShellGate || Sc.Plates.Num() == 0);
+		}
 		for (const FQuadCrossing& Q : Terrain.Quads)
 		{
 			TestEqual(Ctx + TEXT(": quad fuera de huecos, salida, meta y uniones"), L.Main[Q.Sample].Flags & BlockedFlags, 0u);
@@ -347,7 +351,7 @@ bool FTNSurvivalCatalogSearchPropsTest::RunTest(const FString& Parameters)
 				TestFalse(Ctx + TEXT(": a 9 m de otro rebuscable"), bCrowded);
 				const double S = L.Main[FMath::Clamp(F.PathIndex, 0, L.Main.Num() - 1)].S;
 				bool bNearTrap = false;
-				for (const FTrapPlacement& P : Loose) { bNearTrap |= FMath::Abs(P.Along - S) < SearchPropTrapClearance; }
+				for (const FTrapPlacement& P : Loose) { bNearTrap |= HoldsPlace(P) && FMath::Abs(P.Along - S) < SearchPropTrapClearance; }
 				TestFalse(Ctx + TEXT(": lejos de las trampas"), bNearTrap);
 				TestTrue(Ctx + TEXT(": fuera de huecos, salida y meta"), Placement::IsFree(L.Main, F.PathIndex));
 				All.Add(C);
@@ -359,7 +363,10 @@ bool FTNSurvivalCatalogSearchPropsTest::RunTest(const FString& Parameters)
 		}
 		const double Average = MapCount > 0 ? SumDensity / MapCount : 0.0;
 		AddInfo(FString::Printf(TEXT("%s: %.2f rebuscables cada 100 m de media (objetivo %.1f; el que menos, %.2f)."), *DiffName, Average, Target, MinDensity));
-		TestTrue(DiffName + TEXT(": la media se acerca al objetivo"), Average >= Target * 0.85);
+		// En difícil, con 15 trampas cada 100 m (#730) los rebuscables no caben todos (lejos de las trampas y a 9 m entre sí):
+		// se acepta lo que quepa (decidido el 05-10, #731). Hoy salen ~6,3 de 7,5.
+		const double MinShare = Difficulty == ETNProcDifficulty::Hard ? 0.8 : 0.85;
+		TestTrue(DiffName + TEXT(": la media se acerca al objetivo"), Average >= Target * MinShare);
 	}
 	return true;
 }
