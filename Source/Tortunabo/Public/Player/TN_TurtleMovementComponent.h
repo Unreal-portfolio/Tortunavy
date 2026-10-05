@@ -55,21 +55,24 @@ private:
 };
 
 /**
- * Estado del panzazo del servidor tras el movimiento que corrige (#24): si estaba en un panzazo, su número y la semialtura
- * sin escalar de la cápsula. Con él, el dueño repite sus movimientos desde lo mismo que el servidor.
+ * Estado del servidor tras el movimiento que corrige: el del panzazo (#24: si estaba en un panzazo, su número y la
+ * semialtura sin escalar de la cápsula) y la espera del brinco desde el agua (#573). Con él, el dueño repite sus
+ * movimientos desde lo mismo que el servidor.
  */
 struct FTNDiveNetState
 {
 	bool bDiving = false;
 	uint8 Serial = 0;
 	float CapsuleHalfHeight = 0.f;
+	/** Espera del brinco desde el agua al acabar ese movimiento (s de simulación). */
+	float SwimHopCooldown = 0.f;
 	/** Movimiento del cliente tras el que se tomó (el de la corrección). */
 	float TimeStamp = -1.f;
 };
 
 /**
- * Respuesta del servidor a los movimientos del cliente: la de serie y, en las correcciones, el estado del panzazo del
- * servidor en el movimiento corregido (FTNDiveNetState, 6 bytes). El panzazo empieza dentro del movimiento (predicho): si el
+ * Respuesta del servidor a los movimientos del cliente: la de serie y, en las correcciones, el estado del panzazo y la
+ * espera del brinco del servidor en el movimiento corregido (FTNDiveNetState, 10 bytes). El panzazo empieza dentro del movimiento (predicho): si el
  * servidor no lo empezó (o sí y el dueño no), la corrección lleva también eso y el dueño lo repite desde ahí.
  */
 struct FTNTurtleMoveResponseDataContainer : public FCharacterMoveResponseDataContainer
@@ -186,7 +189,11 @@ public:
 	 */
 	float ConsumeMoveStartSwimHopCooldown();
 
-	/** Repetición o combinación de movimientos (FTNSavedMove_Turtle): la espera con que empezó ese movimiento. */
+	/**
+	 * Combinación de movimientos (FTNSavedMove_Turtle::CombineWith): la espera con que empezó el pendiente. Corrección del
+	 * servidor: la suya tras el movimiento corregido. Al repetir los movimientos no se restaura la guardada: se recalcula
+	 * desde la de la corrección.
+	 */
 	void RestoreSwimHopCooldown(float InSeconds);
 
 	// ── Topes de velocidad predichos: llevar a otra y mareo (#575, #574) ────

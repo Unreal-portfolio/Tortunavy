@@ -205,7 +205,10 @@ namespace TNBellySlide
 				TurtleMove->RestoreBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
 				TurtleMove->RestoreRaceBoost(SavedRaceBoost);
 				TurtleMove->RestoreMoveStartDive(SavedDiveYaw, SavedJumpStartVelocity);
-				TurtleMove->RestoreSwimHopCooldown(SavedSwimHopCooldown);
+				// La espera del brinco es estado, no entrada: no se restaura la que se predijo, que puede ser la que el servidor
+				// acaba de corregir. Sigue la de la corrección (ClientHandleMoveResponse) y la de los movimientos ya
+				// repetidos; el movimiento se queda con ella por si se vuelve a repetir o a combinar (#573).
+				SavedSwimHopCooldown = TurtleMove->GetSwimHopCooldown();
 				TurtleMove->RestoreMovePredictedCaps(SavedPredictedCaps);
 			}
 		}
@@ -1405,6 +1408,7 @@ void UTN_TurtleMovementComponent::ServerMoveHandleClientError(float ClientTimeSt
 		CorrectionDiveState.bDiving = Turtle && Turtle->IsDiving();
 		CorrectionDiveState.Serial = Turtle ? Turtle->GetDiveSerial() : 0;
 		CorrectionDiveState.CapsuleHalfHeight = Capsule ? Capsule->GetUnscaledCapsuleHalfHeight() : 0.f;
+		CorrectionDiveState.SwimHopCooldown = SwimHopCooldown;
 		CorrectionDiveState.TimeStamp = ClientTimeStamp;
 	}
 	UPrimitiveComponent* AdjustBase = Adjustment.NewBase;
@@ -1458,6 +1462,8 @@ void UTN_TurtleMovementComponent::ClientHandleMoveResponse(const FCharacterMoveR
 			// En su sitio: la posición de la corrección es la del centro de esa cápsula en el servidor.
 			Capsule->SetCapsuleHalfHeight(Server.CapsuleHalfHeight);
 		}
+		// La espera del brinco del servidor: los movimientos que se repiten la recalculan desde aquí (#573).
+		RestoreSwimHopCooldown(Server.SwimHopCooldown);
 	}
 	Super::ClientHandleMoveResponse(MoveResponse);
 }

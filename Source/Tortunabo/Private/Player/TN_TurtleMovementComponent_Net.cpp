@@ -121,6 +121,7 @@ void FTNTurtleMoveResponseDataContainer::ServerFillResponseData(const UCharacter
 	DiveState.bDiving = Turtle && Turtle->IsDiving();
 	DiveState.Serial = Turtle ? Turtle->GetDiveSerial() : 0;
 	DiveState.CapsuleHalfHeight = Capsule ? Capsule->GetUnscaledCapsuleHalfHeight() : 0.f;
+	DiveState.SwimHopCooldown = TurtleMove ? TurtleMove->GetSwimHopCooldown() : 0.f;
 	DiveState.TimeStamp = PendingAdjustment.TimeStamp;
 }
 
@@ -134,6 +135,8 @@ bool FTNTurtleMoveResponseDataContainer::Serialize(UCharacterMovementComponent& 
 		DiveState.bDiving = bDiving != 0;
 		Ar << DiveState.Serial;
 		Ar << DiveState.CapsuleHalfHeight;
+		Ar << DiveState.SwimHopCooldown;
+		DiveState.SwimHopCooldown = FMath::Max(0.f, DiveState.SwimHopCooldown);
 		DiveState.TimeStamp = ClientAdjustment.TimeStamp;
 	}
 	return bBaseOk && !Ar.IsError();
