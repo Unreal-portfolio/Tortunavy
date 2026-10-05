@@ -20,8 +20,8 @@ class ATN_PathStorm;
  *    nivel y, en cuanto su suelo tiene colisión, vuelven a salir desde la salida del mapa nuevo.
  *  - Morir es definitivo (sin DBNO ni rescate; el tótem sí salva) y los muertos espectan.
  *  - La tormenta sigue el camino (ATN_PathStorm, como en el Coop): aparece con las tortugas, 30 m por detrás de la salida
- *    de cada nivel, y echa a andar al momento, sin espera (#725). Cada nivel va algo más rápida
- *    (TNSurvivalLogic::StormSpeedForLevel): en el nivel 1, algo menos que andando; desde el 4, más, y hay que esprintar.
+ *    de cada nivel, y echa a andar al momento, sin espera (#725). Va siempre a la misma velocidad, algo menos que andando:
+ *    la dificultad la suben los mapas del catálogo (más trampas, camino más estrecho y más huecos en cada dificultad).
  *    La caja de LVL_Run (ATN_StormVolume) se quita.
  *  - En grupo gana la última viva; si las últimas mueren en el mismo nivel, la que murió más cerca de la meta.
  *    En solitario dura hasta que muere.
@@ -60,20 +60,11 @@ protected:
 	float LevelReadyTimeoutSeconds = 10.f;
 
 	/**
-	 * Velocidad (cm/s) de la tormenta por el camino en el nivel 1 (TNSurvivalLogic::StormSpeedForLevel). Algo por debajo de
-	 * andar (450): pararse a coger un objeto o caer derribada no la condena; a partir del nivel 4 (460) ya va más rápida que
-	 * andando.
+	 * Velocidad (cm/s) de la tormenta por el camino, la misma en todos los niveles. Algo por debajo de andar (450): pararse
+	 * a coger un objeto o caer derribada cuesta terreno pero no la condena. La dificultad la suben las trampas del mapa.
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
-	float StormSpeedFirstLevel = 400.f;
-
-	/** Lo que sube en cada nivel siguiente (cm/s). */
-	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
-	float StormSpeedPerLevel = 20.f;
-
-	/** Tope (cm/s): con trampas, saltos y curvas, más cerca de esprintar ya no se le escapa nadie. */
-	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
-	float StormSpeedMax = 600.f;
+	float StormSpeed = 400.f;
 
 	virtual void OnWaitingTimeout() override;
 

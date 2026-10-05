@@ -546,7 +546,7 @@ void ATN_SurvivalGameMode::StartLevelStorm()
 	{
 		return;
 	}
-	const float Speed = TNSurvivalLogic::StormSpeedForLevel(CurrentLevel, StormSpeedFirstLevel, StormSpeedPerLevel, StormSpeedMax);
+	const float Speed = StormSpeed;
 	// Sale a la vez que las tortugas, sin espera: solo la ventaja de aparecer 30 m por detrás de la salida.
 	Storm->StartStorm(Generator, Speed, 0.f);
 	UE_LOG(LogTortunabo, Log, TEXT("[Survival] Tormenta del nivel %d: %.0f cm/s por un camino de %.0f m."),

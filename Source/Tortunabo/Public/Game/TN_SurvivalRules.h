@@ -129,14 +129,4 @@ namespace TNSurvivalLogic
 	{
 		return FMath::Clamp(Level, 1, 5);
 	}
-
-	/**
-	 * Velocidad (cm/s) de la tormenta del camino en el nivel Level: FirstLevel en el nivel 1 y PerLevel más en cada
-	 * siguiente hasta Max. A diferencia del Coop, sin el tope de andar: va más rápida que una tortuga andando, así que
-	 * solo se le escapa esprintando, y cada derribo o cada parada a coger objetos le regala terreno.
-	 */
-	inline float StormSpeedForLevel(int32 Level, float FirstLevel, float PerLevel, float Max)
-	{
-		return FMath::Min(FirstLevel + PerLevel * FMath::Max(0, Level - 1), Max);
-	}
 }

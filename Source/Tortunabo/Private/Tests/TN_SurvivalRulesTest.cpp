@@ -155,21 +155,4 @@ bool FTNSurvivalDifficultyTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalStormSpeedTest,
-	"Tortunabo.Survival.StormSpeed",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNSurvivalStormSpeedTest::RunTest(const FString& Parameters)
-{
-	using namespace TNSurvivalLogic;
-
-	TestEqual(TEXT("Nivel 1: la de partida"), StormSpeedForLevel(1, 500.f, 20.f, 600.f), 500.f);
-	TestEqual(TEXT("Nivel 4: tres subidas"), StormSpeedForLevel(4, 500.f, 20.f, 600.f), 560.f);
-	TestEqual(TEXT("Sin pasar del máximo"), StormSpeedForLevel(20, 500.f, 20.f, 600.f), 600.f);
-	TestEqual(TEXT("Un nivel no válido cuenta como el 1"), StormSpeedForLevel(0, 500.f, 20.f, 600.f), 500.f);
-	return true;
-}
-
 #endif // WITH_DEV_AUTOMATION_TESTS
