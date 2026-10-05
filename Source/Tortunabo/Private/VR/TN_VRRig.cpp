@@ -9,6 +9,7 @@
 #include "Core/TN_Log.h"
 #include "Core/TN_ProjectMaterials.h"
 #include "Player/MP_GamePlayerController.h"
+#include "Player/TN_GhostCameraModifier.h"
 #include "Player/TortugaCharacter.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
@@ -23,6 +24,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
@@ -295,6 +297,18 @@ ATN_VRRig::ATN_VRRig()
 	// Detrás de la interfaz (mismo orden de translúcidos, menos prioridad).
 	LoadingDome->SetTranslucentSortPriority(50);
 	LoadingDome->SetVisibility(false);
+
+	// Esfera oscura que completa la cáscara de pantalla entera (#646): detrás de la interfaz, que se queda a la vista encima.
+	CoverDome = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("CoverDome"));
+	CoverDome->SetupAttachment(RigRoot);
+	CoverDome->SetUsingAbsoluteLocation(true);
+	CoverDome->SetUsingAbsoluteRotation(true);
+	CoverDome->SetUsingAbsoluteScale(true);
+	CoverDome->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CoverDome->SetGenerateOverlapEvents(false);
+	CoverDome->SetCastShadow(false);
+	CoverDome->SetTranslucentSortPriority(60);
+	CoverDome->SetVisibility(false);
 }
 
 void ATN_VRRig::BeginPlay()
@@ -427,6 +441,7 @@ void ATN_VRRig::OnModeChanged(ETNVRMode NewMode)
 		RemoveVRMapping();
 	}
 	RigCamera->bLockToHmd = bHeadset;
+	CoverDome->SetVisibility(false);
 	LaserBeam->SetVisibility(false);
 	LaserDot->SetVisibility(false);
 	bPanelPlaced = false;
@@ -534,6 +549,7 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 	UpdatePanel(PC, DeltaSeconds);
 	UpdatePointer(PC);
 	UpdateLoadingDome(PC);
+	UpdateViewCover();
 	UpdateComfortVignette(PC, Turtle, DeltaSeconds);
 	UpdateHaptics(PC, Turtle);
 }
@@ -583,6 +599,11 @@ void ATN_VRRig::UpdateViewAttachment(APlayerController* PC, ATortugaCharacter* T
 		{
 			// Sentada en un vehículo: con gafas, el asiento es el origen del seguimiento; simulado, su cámara.
 			Base = bHeadset ? static_cast<USceneComponent*>(Seat) : static_cast<USceneComponent*>(Seat->GetVRCamera());
+		}
+		else if (bHeadset && IsGhostVRView(PC))
+		{
+			// Fantasma con gafas (#646): sin Base. El rig se queda donde pone la vista UTN_GhostCameraModifier (la posición de
+			// la tortuga seguida con rumbo fijo), no colgado del brazo de cámara de la otra tortuga, que giraba con ella.
 		}
 		else if (UCameraComponent* Camera = TNVRRigDetail::FindActiveCamera(ViewTarget))
 		{
@@ -863,6 +884,30 @@ bool ATN_VRRig::GetViewPoint(APlayerController* PC, FVector& OutLocation, FRotat
 	return true;
 }
 
+bool ATN_VRRig::IsGhostVRView(APlayerController* PC) const
+{
+	APlayerCameraManager* Camera = PC ? PC->PlayerCameraManager.Get() : nullptr;
+	const UTN_GhostCameraModifier* Modifier = Camera
+		? Cast<UTN_GhostCameraModifier>(Camera->FindCameraModifierByClass(UTN_GhostCameraModifier::StaticClass())) : nullptr;
+	return Modifier && Modifier->IsVRViewActive();
+}
+
+bool ATN_VRRig::GetHeadWorldPose(FVector& OutLocation, float& OutYaw) const
+{
+	if (Mode != ETNVRMode::Headset || !UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		return false;
+	}
+	FRotator DeviceRotation = FRotator::ZeroRotator;
+	FVector DevicePosition = FVector::ZeroVector;
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(DeviceRotation, DevicePosition);
+	// La pose de las gafas está en el espacio del seguimiento, que cuelga del rig.
+	const FTransform& Rig = RigRoot->GetComponentTransform();
+	OutLocation = Rig.TransformPosition(DevicePosition);
+	OutYaw = static_cast<float>(FRotator::NormalizeAxis(Rig.Rotator().Yaw + DeviceRotation.Yaw));
+	return true;
+}
+
 float ATN_VRRig::FitDistance(const FVector& From, const FVector& Dir, float Desired) const
 {
 	UWorld* World = GetWorld();
@@ -962,6 +1007,17 @@ void ATN_VRRig::UpdatePanel(APlayerController* PC, float DeltaSeconds)
 	{
 		return;
 	}
+	// Fantasma con gafas (#646): sin cámara de la que colgar el HUD (la del juego es la de la otra tortuga). Suelto delante y
+	// siguiendo a la cabeza con retraso, como con TN.VR.HudFollow 1, desde donde está la cabeza de verdad.
+	const bool bGhostVR = Mode == ETNVRMode::Headset && IsGhostVRView(PC);
+	if (bGhostVR)
+	{
+		float HeadYaw = 0.f;
+		if (GetHeadWorldPose(ViewLocation, HeadYaw))
+		{
+			ViewRotation = FRotator(0.0, static_cast<double>(HeadYaw), 0.0);
+		}
+	}
 	const bool bPanelVisible = Screen->CountVisible() > 0;
 	ScreenPanel->SetVisibility(bPanelVisible);
 	CurvedPanel->SetVisibility(bPanelVisible);
@@ -1004,7 +1060,7 @@ void ATN_VRRig::UpdatePanel(APlayerController* PC, float DeltaSeconds)
 	// Con TN.VR.HudFollow 1, suelto delante y siguiendo a la cabeza con retraso (se lee mirando de reojo).
 	const float HudArc = CVarTNVRHudFov.GetValueOnGameThread();
 	const float HudDistance = CVarTNVRHudDistance.GetValueOnGameThread();
-	UCameraComponent* ViewCamera = CVarTNVRHudFollow.GetValueOnGameThread() == 0 ? GetViewCamera(PC) : nullptr;
+	UCameraComponent* ViewCamera = (CVarTNVRHudFollow.GetValueOnGameThread() == 0 && !bGhostVR) ? GetViewCamera(PC) : nullptr;
 	if (!bPanelPlaced)
 	{
 		HudYaw = static_cast<float>(ViewRotation.Yaw);
@@ -1305,45 +1361,92 @@ void ATN_VRRig::UpdateCurvedPanel(float ArcDeg)
 	}
 }
 
+namespace TNVRRigDetail
+{
+	/** Esfera de radio 1 vista desde dentro; ColorAt da el color de vértice de cada anillo según su altura (-1 abajo, 1 arriba). */
+	void BuildInsideSphere(UProceduralMeshComponent* Mesh, TFunctionRef<FLinearColor(double)> ColorAt, UMaterialInterface* Material)
+	{
+		constexpr int32 Rings = 18;
+		constexpr int32 Sides = 36;
+		TArray<FVector> Vertices;
+		TArray<int32> Triangles;
+		TArray<FVector> Normals;
+		TArray<FVector2D> UVs;
+		TArray<FLinearColor> Colors;
+		const TArray<FProcMeshTangent> NoTangents;
+		for (int32 r = 0; r <= Rings; ++r)
+		{
+			const double Theta = PI * r / Rings;
+			const double Z = FMath::Cos(Theta);
+			const double Ring = FMath::Sin(Theta);
+			const FLinearColor Color = ColorAt(Z);
+			for (int32 s = 0; s <= Sides; ++s)
+			{
+				const double Phi = 2.0 * PI * s / Sides;
+				const FVector Point(Ring * FMath::Cos(Phi), Ring * FMath::Sin(Phi), Z);
+				Vertices.Add(Point);
+				Normals.Add(-Point);
+				UVs.Add(FVector2D(static_cast<double>(s) / Sides, static_cast<double>(r) / Rings));
+				Colors.Add(Color);
+			}
+		}
+		for (int32 r = 0; r < Rings; ++r)
+		{
+			for (int32 s = 0; s < Sides; ++s)
+			{
+				const int32 A = r * (Sides + 1) + s;
+				const int32 B = A + Sides + 1;
+				Triangles.Append({ A, B, A + 1, A + 1, B, B + 1 });
+				Triangles.Append({ A, A + 1, B, A + 1, B + 1, B });
+			}
+		}
+		Mesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, Colors, NoTangents, false);
+		Mesh->SetMaterial(0, Material);
+	}
+
+	/** Radio (cm) de la esfera que tapa la vista: dentro del panel del HUD (150 cm), que se queda a la vista encima. */
+	constexpr float CoverRadius = 100.f;
+}
+
 void ATN_VRRig::BuildLoadingDome()
 {
 	// Esfera de radio 1 vista desde dentro, con el color de vértice de la playa (cielo, horizonte, mar y arena).
-	constexpr int32 Rings = 18;
-	constexpr int32 Sides = 36;
-	TArray<FVector> Vertices;
-	TArray<int32> Triangles;
-	TArray<FVector> Normals;
-	TArray<FVector2D> UVs;
-	TArray<FLinearColor> Colors;
-	const TArray<FProcMeshTangent> NoTangents;
-	for (int32 r = 0; r <= Rings; ++r)
+	TNVRRigDetail::BuildInsideSphere(LoadingDome, &TNVRRigDetail::DomeColor, TNVRRigDetail::DomeMaterial());
+}
+
+void ATN_VRRig::BuildCoverDome(float Alpha)
+{
+	// El color de la cáscara oscura de revivir (TN_GhostHatchWidget: ShellOuter), con la opacidad pedida.
+	FLinearColor Color = FLinearColor::FromSRGBColor(FColor(0x07, 0x08, 0x0F));
+	Color.A = Alpha;
+	TNVRRigDetail::BuildInsideSphere(CoverDome, [Color](double) { return Color; }, TNVRRigDetail::DomeMaterial());
+	CoverBuiltAlpha = Alpha;
+}
+
+void ATN_VRRig::UpdateViewCover()
+{
+	const float Cover = Mode == ETNVRMode::Headset ? TNVR::GetViewCover() : 0.f;
+	if (Cover <= 0.01f)
 	{
-		const double Theta = PI * r / Rings;
-		const double Z = FMath::Cos(Theta);
-		const double Ring = FMath::Sin(Theta);
-		const FLinearColor Color = TNVRRigDetail::DomeColor(Z);
-		for (int32 s = 0; s <= Sides; ++s)
+		if (CoverDome->IsVisible())
 		{
-			const double Phi = 2.0 * PI * s / Sides;
-			const FVector Point(Ring * FMath::Cos(Phi), Ring * FMath::Sin(Phi), Z);
-			Vertices.Add(Point);
-			Normals.Add(-Point);
-			UVs.Add(FVector2D(static_cast<double>(s) / Sides, static_cast<double>(r) / Rings));
-			Colors.Add(Color);
+			CoverDome->SetVisibility(false);
 		}
+		CoverBuiltAlpha = -1.f;
+		return;
 	}
-	for (int32 r = 0; r < Rings; ++r)
+	// En dieciseisavos: no se rehace la malla cada fotograma, solo mientras se oscurece o se aclara.
+	const float Alpha = FMath::RoundToFloat(Cover * 16.f) / 16.f;
+	if (CoverDome->GetNumSections() == 0 || !FMath::IsNearlyEqual(Alpha, CoverBuiltAlpha))
 	{
-		for (int32 s = 0; s < Sides; ++s)
-		{
-			const int32 A = r * (Sides + 1) + s;
-			const int32 B = A + Sides + 1;
-			Triangles.Append({ A, B, A + 1, A + 1, B, B + 1 });
-			Triangles.Append({ A, A + 1, B, A + 1, B + 1, B });
-		}
+		BuildCoverDome(Alpha);
 	}
-	LoadingDome->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, Colors, NoTangents, false);
-	LoadingDome->SetMaterial(0, TNVRRigDetail::DomeMaterial());
+	FVector Head = RigRoot->GetComponentLocation();
+	float HeadYaw = 0.f;
+	GetHeadWorldPose(Head, HeadYaw);
+	CoverDome->SetWorldLocationAndRotation(Head, FRotator::ZeroRotator);
+	CoverDome->SetWorldScale3D(FVector(TNVRRigDetail::CoverRadius));
+	CoverDome->SetVisibility(true);
 }
 
 void ATN_VRRig::UpdateLoadingDome(APlayerController* PC)

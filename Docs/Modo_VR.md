@@ -85,7 +85,13 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
   - sin temblores de cámara, sin ojo de pez, sin desenfoque de movimiento, sin aberración cromática ni profundidad de campo;
   - cortes secos en vez de fundidos de cámara (cambiar de tortuga como espectador, entrar y salir del probador);
   - la almeja y el gusano de la playa no se llevan la cámara (se sigue en primera persona);
-  - de fantasma espectador, la vista es la de la cámara del jugador seguido (sin la cámara libre que orbita sola).
+  - de fantasma espectador, con gafas (#646): ni cámara fija ni libre. La cabeza sigue la posición de la tortuga seguida
+    (detrás y arriba, sin retardo) y la base de la vista mira a un rumbo fijo (el de su cámara al empezar a mirarla), así que
+    solo gira con tu cabeza: el brazo de cámara de la otra tortuga llegaba tarde y giraba cuando giraba ese jugador
+    (`UTN_GhostCameraModifier`, `TNVRMath::GhostViewLocation`). El rig se queda ahí (no colgado del brazo de la otra tortuga) y
+    el HUD va suelto delante, siguiendo a la cabeza con retraso. Simulado (`TN.VR 2`): la cámara de la tortuga seguida, como antes;
+  - la cáscara de revivir tapa toda la vista (#646): el panel de la interfaz abarca unos 80°, así que, además de pintarse en él,
+    pide una esfera oscura alrededor de la cabeza (`TNVR::SetViewCover`, `ATN_VRRig::CoverDome`) que se aclara al abrirse.
 - **Voz**: con «Pulsar para hablar», el clic del stick izquierdo.
 - **Manos que no atraviesan el escenario**: la punta de cada aleta se queda en la superficie de paredes, suelo y rocas
   (lo que para la cámara, `ECC_Camera`), con los brazos del cuerpo y lo que se coge; no se coge ni se pulsa nada a través
@@ -347,6 +353,7 @@ Steam, así que no se juega con los del PC). Para mañana, mejor la opción A.
 | Tortuga | `Player/TortugaCharacter_VR.cpp` | `SetVRView` (cámara VR, cuerpo oculto, giro con la cabeza), `AddVRYaw`, `TickVRView`, `GetTurtleAimRotation`, `ServerSetVRAim`, `bVRPlayer`. |
 | Entrada OpenXR | `Config/DefaultInput.ini` | Asignaciones clásicas `TNVR_*` con los botones de los Touch: OpenXR crea sus acciones con ellas (sin ellas no llegan los botones). |
 | Ajustes | `FTNGameSettings::VRMode`, `VRTurn` | Ajustes > Juego > Realidad virtual. |
+| Fantasma | `Player/TN_GhostCameraModifier.*`, `ATN_VRRig::IsGhostVRView` | La vista del fantasma con gafas (#646). |
 
 Comandos: `TN.VR`, `TN.VR.Status`, `TN.VR.Recenter`, `TN.VR.HudDistance` (150), `TN.VR.HudFov` (80, arco del HUD),
 `TN.VR.HudFollow` (0 anclado a la cámara), `TN.VR.MenuDistance` (160), `TN.VR.MenuFov` (100, arco de los menús),
@@ -404,6 +411,8 @@ Sin gafas (modo simulado, PIE):
 6. Ruedas de emotes y de frases: salen en el panel y se eligen como siempre.
 7. Carrera: cuenta atrás, reloj de ronda, recuento, campeón y «¡ADELANTE!» salen en el panel; el huevo de carga también.
 8. Espectador/fantasma: se ve desde la cámara de la tortuga seguida, sin cámara libre; ←/→ cambian de tortuga sin fundido.
+   Con gafas (#646): la cabeza va sobre la tortuga seguida sin retardo y, aunque esa tortuga se vuelva o gire su jugador, la
+   vista no gira; solo con tu cabeza. Al revivir, la cáscara tapa toda la vista (no solo el panel) y se aclara al abrirse.
 9. Ajustes > Juego > Realidad virtual: «Modo VR» Simulado/Desactivado cambia en el acto; «Giro en VR» se guarda.
    «Restablecer esta pestaña» los deja en Automático y 30°.
    Con `TN.VR 2`, el aviso de interactuar dice «Gatillo derecho» y el tutorial nombra los botones Touch (#644).

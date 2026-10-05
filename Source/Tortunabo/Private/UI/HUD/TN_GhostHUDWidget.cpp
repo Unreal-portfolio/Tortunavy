@@ -264,16 +264,19 @@ void UTN_GhostHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 		SetTextIfChanged(FollowText, bFollowing
 			? FText::Format(NSLOCTEXT("TNGhost", "Watching", "Mirando a {0}"), SubjectName)
 			: NSLOCTEXT("TNGhost", "NobodyToWatch", "No queda nadie a quien mirar"));
-		SetTextIfChanged(CameraText, Mine->IsFreeCamera()
+		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(PC);
+		// Con gafas (#644, #646): la vista sigue a la tortuga y solo gira con la cabeza propia (no hay cámara libre ni fija),
+		// y el stick derecho cambia de tortuga.
+		const bool bVR = Devices && Devices->IsUsingVR(PC);
+		SetTextIfChanged(CameraText, bVR
+			? FText::Format(NSLOCTEXT("TNGhost", "VRCamera", "Sigues a {0}: mira con la cabeza"), SubjectName)
+			: Mine->IsFreeCamera()
 			? NSLOCTEXT("TNGhost", "FreeCamera", "Cámara libre: gira alrededor de la tortuga")
 			: FText::Format(NSLOCTEXT("TNGhost", "FixedCamera", "Cámara fija: lo que ve {0}"), SubjectName));
 		// Con mando, los nombres de los botones del que se tiene en las manos: LB/RB/RS en Xbox, L1/R1/R3 en PlayStation (#347).
 		const bool bPad = UTN_GameSettingsSubsystem::IsUsingGamepad(PC);
-		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(PC);
 		const ETNPadFamily Family = Devices ? Devices->GetPadFamily() : ETNPadFamily::Xbox;
 		auto PadName = [Family](const FKey& Key) { return TNInputGlyphs::GlyphFor(Key, Family).Label; };
-		// Con gafas (#644): el stick derecho cambia de tortuga (la cámara libre no hay en VR: la vista es la de la seguida).
-		const bool bVR = Devices && Devices->IsUsingVR(PC);
 		SetTextIfChanged(KeysText, bVR
 			? FText::Format(NSLOCTEXT("TNGhost", "KeysVR", "{0}  cambiar de tortuga"), TNVRControls::KeyName(FTNVRKeys::RightStickX))
 			: bPad

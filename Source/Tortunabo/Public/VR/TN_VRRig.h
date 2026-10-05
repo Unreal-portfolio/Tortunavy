@@ -164,6 +164,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "VR")
 	TObjectPtr<UProceduralMeshComponent> LoadingDome;
 
+	/** Esfera oscura alrededor de la cabeza que completa las cáscaras de pantalla entera (TNVR::GetViewCover, #646). */
+	UPROPERTY(VisibleAnywhere, Category = "VR")
+	TObjectPtr<UProceduralMeshComponent> CoverDome;
+	/** Opacidad con la que se construyó (en dieciseisavos; -1 sin construir). */
+	float CoverBuiltAlpha = -1.f;
+
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_VRScreenWidget> Screen;
 
@@ -199,6 +205,13 @@ private:
 
 	/** Cámara (de este fotograma o del anterior) desde la que se ve. */
 	bool GetViewPoint(APlayerController* PC, FVector& OutLocation, FRotator& OutRotation) const;
+	/**
+	 * Fantasma con gafas (#646): la vista la pone UTN_GhostCameraModifier (la posición de la tortuga seguida, con el rumbo
+	 * fijo): el rig se queda ahí y no en el brazo de cámara de la otra tortuga.
+	 */
+	bool IsGhostVRView(APlayerController* PC) const;
+	/** Dónde está la cabeza en el mundo (posición y rumbo): la pose de las gafas sobre el rig. false sin gafas. */
+	bool GetHeadWorldPose(FVector& OutLocation, float& OutYaw) const;
 	/** Distancia a la que cabe el panel delante de la vista sin meterse en una pared. */
 	float FitDistance(const FVector& From, const FVector& Dir, float Desired) const;
 	/** Igual para el HUD anclado: con el centro, los lados y el borde de abajo (que no lo tape el suelo al mirar abajo). */
@@ -216,6 +229,8 @@ private:
 	void UpdateCurvedPanel(float ArcDeg);
 	void BuildLoadingDome();
 	void UpdateLoadingDome(APlayerController* PC);
+	void BuildCoverDome(float Alpha);
+	void UpdateViewCover();
 
 	/** Agarres: coger objetos con física o, sin nada cerca, soltar el objeto (derecho) y correr (izquierdo). */
 	void UpdateGrips(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds);

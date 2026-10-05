@@ -167,4 +167,49 @@ bool FTNVRControlsDeviceTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRGhostViewTest,
+	"Tortunabo.VR.GhostView",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRGhostViewTest::RunTest(const FString& Parameters)
+{
+	using namespace TNVRMath;
+	const FVector Turtle(1000.0, -500.0, 40.0);
+	// Rumbo fijo hacia +X: la cabeza detrás (-X) y arriba, sobre la tortuga.
+	const FVector Behind = GhostViewLocation(Turtle, 0.f);
+	TestTrue(TEXT("Detrás del rumbo"), FMath::IsNearlyEqual(Behind.X, Turtle.X - GhostViewBack, 0.01));
+	TestTrue(TEXT("Misma Y"), FMath::IsNearlyEqual(Behind.Y, Turtle.Y, 0.01));
+	TestTrue(TEXT("Más alta"), FMath::IsNearlyEqual(Behind.Z, Turtle.Z + GhostViewUp, 0.01));
+	// Rumbo hacia +Y: detrás es -Y.
+	const FVector BehindY = GhostViewLocation(Turtle, 90.f);
+	TestTrue(TEXT("Detrás del rumbo (90°)"), FMath::IsNearlyEqual(BehindY.Y, Turtle.Y - GhostViewBack, 0.01) && FMath::IsNearlyEqual(BehindY.X, Turtle.X, 0.01));
+	// La posición sigue a la tortuga 1 a 1 y sin retardo; el rumbo no depende de ella (solo del rumbo fijo).
+	const FVector Moved = GhostViewLocation(Turtle + FVector(300.0, 0.0, 0.0), 0.f);
+	TestTrue(TEXT("Sigue a la tortuga al instante"), (Moved - Behind).Equals(FVector(300.0, 0.0, 0.0), 0.01));
+	// La base de la vista solo tiene rumbo: el cabeceo y el alabeo los pone la cabeza del jugador.
+	const FRotator Rotation = GhostViewRotation(135.f);
+	TestTrue(TEXT("Rumbo fijo"), FMath::IsNearlyEqual(Rotation.Yaw, 135.0, 0.01));
+	TestTrue(TEXT("Sin cabeceo"), FMath::IsNearlyZero(Rotation.Pitch));
+	TestTrue(TEXT("Sin alabeo"), FMath::IsNearlyZero(Rotation.Roll));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNVRViewCoverTest,
+	"Tortunabo.VR.ViewCover",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNVRViewCoverTest::RunTest(const FString& Parameters)
+{
+	// La cáscara de pantalla entera pide a la esfera del rig cuánto tapar (0-1).
+	const float Previous = TNVR::GetViewCover();
+	TNVR::SetViewCover(0.5f);
+	TestTrue(TEXT("Lo que se pide"), FMath::IsNearlyEqual(TNVR::GetViewCover(), 0.5f));
+	TNVR::SetViewCover(3.f);
+	TestTrue(TEXT("No pasa de 1"), FMath::IsNearlyEqual(TNVR::GetViewCover(), 1.f));
+	TNVR::SetViewCover(-1.f);
+	TestTrue(TEXT("No baja de 0"), FMath::IsNearlyZero(TNVR::GetViewCover()));
+	TNVR::SetViewCover(Previous);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

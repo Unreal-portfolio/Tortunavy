@@ -52,6 +52,17 @@ bool FTNVRKeys::IsVRKey(const FKey& Key)
 namespace TNVRModeDetail
 {
 	ETNVRMode CurrentMode = ETNVRMode::Off;
+	float ViewCover = 0.f;
+}
+
+void TNVR::SetViewCover(float Alpha)
+{
+	TNVRModeDetail::ViewCover = FMath::Clamp(Alpha, 0.f, 1.f);
+}
+
+float TNVR::GetViewCover()
+{
+	return TNVRModeDetail::ViewCover;
 }
 
 ETNVRMode TNVR::GetMode()

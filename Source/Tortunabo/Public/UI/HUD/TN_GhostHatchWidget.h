@@ -42,6 +42,9 @@ struct FTNGhostHatchShard
  * juntan con un «¡clac!»), se queda cerrada con la unión brillando mientras encima se enseña el puesto o el título de la
  * ronda, cada Knock es un «pum» desde dentro con su grieta de luz y Open la rompe (o la funde). La maneja
  * UTN_RaceScreensSubsystem.
+ *
+ * Con gafas (#646) el widget va en el panel de la interfaz (unos 80°) y, además, tapa el resto de la vista con una esfera
+ * oscura alrededor de la cabeza (TNVR::SetViewCover) que se aclara al abrirse la cáscara.
  */
 UCLASS()
 class TORTUNABO_API UTN_GhostHatchWidget : public UUserWidget
@@ -92,6 +95,8 @@ private:
 	/** Unión, grietas, trozos y motas (una semilla por transición), pinceles y los sonidos del huevo. */
 	void BuildShell();
 	void TickCurtain(float Now);
+	/** Con gafas (#646): el panel de la interfaz no abarca toda la vista; la esfera del rig (TNVR::SetViewCover) completa la cáscara. */
+	void UpdateVRCover(float Now) const;
 	void Finish();
 	float Elapsed() const;
 
