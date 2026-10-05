@@ -18,6 +18,7 @@
 #include "Multiplayer/TN_RoomNames.h"
 #include "Player/TortugaCharacter.h"
 #include "UI/Credits/TN_CreditsWidget.h"
+#include "Core/TN_GameModeSpawnUtils.h"
 #include "Kart/TN_KartGameState.h"
 #include "Lobby/TN_LobbyMission.h"
 #include "Rally/TN_RallyGameMode.h"
@@ -75,6 +76,8 @@ namespace TNPauseUI
 {
 	/** Medidas en unidades de la interfaz a 1080 p (el motor escala: a 720 p cabe igual y a 4K se dobla). */
 	constexpr float HeaderWidth = 1320.f;
+	/** Ancho máximo de la fila de jugadores dentro del cartel (el cartel menos sus márgenes): más ancha, se desplaza (#751). */
+	constexpr float PlayersRowMaxWidth = 1220.f;
 	constexpr float CardWidth = 1240.f;
 	constexpr float SettingsListHeight = 500.f;
 	constexpr float ControlsListHeight = 520.f;
@@ -323,6 +326,23 @@ namespace TNPauseUI
 	{
 		IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 		return OnlineSub ? OnlineSub->GetSessionInterface() : nullptr;
+	}
+
+	/** Jugadoras que salen en la cabecera: las personas, no los bots del Rally ni de Karts (#706). */
+	bool ShowsInRoster(const APlayerState* PS)
+	{
+		return PS && !TN_IsBotPlayerState(PS);
+	}
+
+	/** Cuántas personas hay en la partida (sin bots). */
+	int32 CountHumans(const AGameStateBase* State)
+	{
+		int32 Count = 0;
+		if (State)
+		{
+			for (const APlayerState* PS : State->PlayerArray) { Count += ShowsInRoster(PS) ? 1 : 0; }
+		}
+		return Count;
 	}
 
 	/**
@@ -1297,8 +1317,24 @@ UWidget* UTN_PauseMenuWidget::BuildHeader()
 	SessionText = TNPauseUI::Label(Tree, FText::GetEmpty(), TEXT("Regular"), 18, TNHUDArt::Foam);
 	SessionText->SetJustification(ETextJustify::Center);
 	TNPauseUI::AddV(Info, SessionText, FMargin(0.f, 2.f, 0.f, 0.f), HAlign_Center);
+	// Las fichas, centradas; si no caben en el cartel, la fila se desplaza en horizontal (rueda o barra) (#751).
 	PlayersBox = TNPauseUI::Make<UHorizontalBox>(Tree);
-	TNPauseUI::AddV(Info, PlayersBox, FMargin(0.f, 10.f, 0.f, 0.f), HAlign_Center);
+	UScrollBox* PlayersScroll = TNPauseUI::Make<UScrollBox>(Tree);
+	PlayersScroll->SetOrientation(Orient_Horizontal);
+	FScrollBarStyle BarStyle = PlayersScroll->GetWidgetBarStyle();
+	BarStyle.SetHorizontalBackgroundImage(TNHUDStyle::Rounded(FLinearColor(0.f, 0.02f, 0.04f, 0.5f), 4.f));
+	BarStyle.SetNormalThumbImage(TNHUDStyle::Rounded(TNHUDArt::Hex(0x62D2EA, 0.55f), 4.f));
+	BarStyle.SetHoveredThumbImage(TNHUDStyle::Rounded(TNHUDArt::Hex(0x62D2EA, 0.85f), 4.f));
+	BarStyle.SetDraggedThumbImage(TNHUDStyle::Rounded(TNHUDArt::Gold, 4.f));
+	PlayersScroll->SetWidgetBarStyle(BarStyle);
+	PlayersScroll->SetScrollbarThickness(FVector2D(8.f, 8.f));
+	PlayersScroll->SetScrollbarPadding(FMargin(0.f, 6.f, 0.f, 0.f));
+	PlayersScroll->SetConsumeMouseWheel(EConsumeMouseWheel::WhenScrollingPossible);
+	PlayersScroll->AddChild(PlayersBox);
+	USizeBox* PlayersRow = TNPauseUI::Make<USizeBox>(Tree);
+	PlayersRow->SetMaxDesiredWidth(TNPauseUI::PlayersRowMaxWidth);
+	PlayersRow->SetContent(PlayersScroll);
+	TNPauseUI::AddV(Info, PlayersRow, FMargin(0.f, 10.f, 0.f, 0.f), HAlign_Center);
 
 	// Cartel azul marino con la cinta «PAUSA» encima de su borde.
 	UOverlay* Stack = TNPauseUI::Make<UOverlay>(Tree);
@@ -1832,7 +1868,7 @@ void UTN_PauseMenuWidget::RefreshHeader()
 
 	// Sesión: la sala (nombre, código si es privada, «3/4» y si está cerrada) y su anfitrión; sin sala, la sesión como
 	// antes; sin sesión (editor, partida local), quién eres en la partida.
-	const int32 Players = State ? State->PlayerArray.Num() : 1;
+	const int32 Players = State ? FMath::Max(1, TNPauseUI::CountHumans(State)) : 1;
 	FText Session;
 	const IOnlineSessionPtr Sessions = TNPauseUI::SessionInterface();
 	const FNamedOnlineSession* Named = Sessions.IsValid() ? Sessions->GetNamedSession(NAME_GameSession) : nullptr;
@@ -1878,7 +1914,7 @@ void UTN_PauseMenuWidget::RefreshHeader()
 	TArray<TWeakObjectPtr<APlayerState>> Now;
 	if (State)
 	{
-		for (APlayerState* PS : State->PlayerArray) { if (PS) { Now.Add(PS); } }
+		for (APlayerState* PS : State->PlayerArray) { if (TNPauseUI::ShowsInRoster(PS)) { Now.Add(PS); } }
 	}
 	if (Now != ChipPlayers) { RebuildPlayers(); }
 }
@@ -1910,7 +1946,7 @@ void UTN_PauseMenuWidget::RebuildPlayers()
 	UWidgetTree* Tree = WidgetTree;
 	for (APlayerState* PS : State->PlayerArray)
 	{
-		if (!PS)
+		if (!TNPauseUI::ShowsInRoster(PS))
 		{
 			continue;
 		}
