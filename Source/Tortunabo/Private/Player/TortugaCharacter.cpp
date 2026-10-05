@@ -844,6 +844,7 @@ void ATortugaCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	GetWorldTimerManager().ClearTimer(KnockdownTimerHandle);
 	GetWorldTimerManager().ClearTimer(ReviveChannelTimerHandle);
 	GetWorldTimerManager().ClearTimer(RagdollFreezeTimerHandle);
+	GetWorldTimerManager().ClearTimer(MareoTimerHandle);
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -992,7 +993,8 @@ void ATortugaCharacter::RemoveBigHeadEffect()
 
 void ATortugaCharacter::ApplyMareoEffect(float Duration)
 {
-	if (!HasAuthority() || Duration <= 0.f)
+	// Muerta no se marea: el tope sobreviviría a la reaparición en el mismo actor (SetDeadVisual lo quita al morir).
+	if (!HasAuthority() || Duration <= 0.f || bIsDead)
 	{
 		return;
 	}
@@ -1006,7 +1008,12 @@ void ATortugaCharacter::ApplyMareoEffect(float Duration)
 
 void ATortugaCharacter::EndMareo()
 {
-	if (!HasAuthority() || !bMareo)
+	if (!HasAuthority())
+	{
+		return;
+	}
+	GetWorldTimerManager().ClearTimer(MareoTimerHandle);
+	if (!bMareo)
 	{
 		return;
 	}
