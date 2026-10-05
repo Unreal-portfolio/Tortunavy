@@ -542,6 +542,25 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Cinematic", meta = (ClampMin = "0.5", ClampMax = "20.0"))
 	float CameraFOVInterpSpeed = 5.f;
 
+	/** Brazo de más (cm) mientras un ave te lleva por el aire (Player/TN_CarriedCamera.h): se ve adónde te lleva. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Carried", meta = (ClampMin = "0", ClampMax = "1500"))
+	float CameraCarriedExtraArm = 260.f;
+
+	/** Altura de más (cm) del pivote del brazo mientras un ave te lleva por el aire. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Carried", meta = (ClampMin = "0", ClampMax = "600"))
+	float CameraCarriedLift = 90.f;
+
+	/** Segundos en alejarse del todo al cogerte el ave. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Carried", meta = (ClampMin = "0.1", ClampMax = "5.0"))
+	float CameraCarriedRiseSeconds = 0.9f;
+
+	/** Segundos en volver a la distancia de siempre al soltarte. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Carried", meta = (ClampMin = "0.1", ClampMax = "5.0"))
+	float CameraCarriedReturnSeconds = 1.4f;
+
+	/** Cuánto se ha alejado la cámara por ir llevada por el aire (0-1, TNCarriedCamera::StepPull). */
+	float CameraCarriedPull = 0.f;
+
 	/**
 	 * Lag de posición del spring arm (qué tan fluido sigue a la cápsula).
 	 * 6-10 = cinematic suave. 20+ = casi sin lag.
