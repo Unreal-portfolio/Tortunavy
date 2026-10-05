@@ -390,6 +390,14 @@ bool FTNRallyTurretArponTest::RunTest(const FString& Parameters)
 	TestTrue(FString::Printf(TEXT("a la punta, el remolque la sube (%.0f cm/s)"), MaxSpeed), MaxSpeed > BuggyTopSpeedCms + 100.f);
 	TestTrue(TEXT("y nunca pasa del tope"), MaxSpeed <= Cap + 0.01f);
 
+	// La cuerda se suelta con la reaparición de cualquiera de los dos o si se separan más que el alcance del arpón.
+	TestTrue(TEXT("más lejos que el alcance del vuelo"), HarpoonMaxDistanceCm > HarpoonSpeedCms * HarpoonLifeSeconds);
+	TestTrue(TEXT("a 60 m, sin reaparecer, sigue"), HarpoonHolds(6000.f, false, false));
+	TestTrue(TEXT("justo en el máximo, sigue"), HarpoonHolds(HarpoonMaxDistanceCm, false, false));
+	TestFalse(TEXT("pasado el máximo, se suelta"), HarpoonHolds(HarpoonMaxDistanceCm + 1.f, false, false));
+	TestFalse(TEXT("reaparece el que tira, se suelta"), HarpoonHolds(1000.f, true, false));
+	TestFalse(TEXT("reaparece el alcanzado, se suelta"), HarpoonHolds(1000.f, false, true));
+
 	// Bots y reparto.
 	TestTrue(TEXT("bot: al de delante a 30 m"), BotHarpoonInRange(3000.f));
 	TestFalse(TEXT("bot: pegado (10 m), no"), BotHarpoonInRange(1000.f));
@@ -461,6 +469,56 @@ bool FTNRallyTurretArponTowTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretArponRespawnTest, "Tortunabo.Rally.Turret.ArponRespawn",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretArponRespawnTest::RunTest(const FString& Parameters)
+{
+	using namespace TNTurretAmmoTest;
+	const auto TetherAlive = [](UWorld* World) { return static_cast<bool>(TActorIterator<ATN_RallyHarpoonTether>(World)); };
+	// La reaparición teletransporta el mismo actor: la cuerda se suelta si reaparece cualquiera de los dos (fantasma) o si
+	// el salto los separa más que HarpoonMaxDistanceCm.
+	enum class ECase : uint8 { PullerRespawns, TargetRespawns, TooFar };
+	for (const ECase Case : { ECase::PullerRespawns, ECase::TargetRespawns, ECase::TooFar })
+	{
+		FPhysicsWorld Test(*FString::Printf(TEXT("TNRallyArponRespawnWorld%d"), static_cast<int32>(Case)));
+		if (!Test.World || !SpawnFlatGround(*Test.World))
+		{
+			AddError(TEXT("No se ha podido montar el suelo"));
+			return false;
+		}
+		ATN_Buggy* Puller = SpawnBuggy(*Test.World, FTransform(FVector(0.0, 0.0, SpawnLiftCm)));
+		ATN_Buggy* Target = SpawnBuggy(*Test.World, FTransform(FVector(3000.0, 0.0, SpawnLiftCm)));
+		if (!TestNotNull(TEXT("buggies"), Puller) || !Target)
+		{
+			return false;
+		}
+		Settle(Test, *Puller);
+		if (!TestNotNull(TEXT("arpón clavado"), ATN_RallyHarpoonTether::Attach(Puller, Target, Target->GetActorLocation())))
+		{
+			return false;
+		}
+		Test.Advance(0.2f);
+		TestTrue(TEXT("antes de reaparecer, la cuerda sigue"), TetherAlive(Test.World));
+		switch (Case)
+		{
+		case ECase::PullerRespawns:
+			Puller->RallyTeleport(FTransform(FVector(0.0, -1500.0, SpawnLiftCm)), 0.f, 2.f);
+			break;
+		case ECase::TargetRespawns:
+			Target->RallyTeleport(FTransform(FVector(3000.0, 1500.0, SpawnLiftCm)), 0.f, 2.f);
+			break;
+		case ECase::TooFar:
+			// Sin fantasma: solo la distancia la suelta.
+			Target->RallyTeleport(FTransform(FVector(3000.0, TNRallyTurret::HarpoonMaxDistanceCm + 2000.0, SpawnLiftCm)), 0.f, 0.f);
+			break;
+		}
+		Test.Advance(0.1f);
+		TestFalse(*FString::Printf(TEXT("caso %d: la cuerda se suelta"), static_cast<int32>(Case)), TetherAlive(Test.World));
+	}
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretPezGloboTest, "Tortunabo.Rally.Turret.PezGlobo",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
@@ -477,6 +535,9 @@ bool FTNRallyTurretPezGloboTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("pasada la inmunidad, también quien la lanza"), PufferTriggers(PufferThrowerImmuneSeconds, 100.f, true));
 	TestEqual(TEXT("sin disparar no se hincha"), PufferInflate(-1.f), 1.f);
 	TestEqual(TEXT("al explotar, hinchada del todo"), PufferInflate(PufferInflateSeconds), PufferInflateScale);
+	TestEqual(TEXT("disparada con vida de sobra, no la cambia"), PufferLifeOnTrigger(10.f), 10.f);
+	TestTrue(TEXT("disparada a 0,1 s del final, vive hasta explotar"), PufferLifeOnTrigger(0.1f) > PufferInflateSeconds);
+	TestTrue(TEXT("sin vida por delante, también"), PufferLifeOnTrigger(0.f) > PufferInflateSeconds);
 	using TNRally::EBotSpecialShot;
 	TestEqual(TEXT("bot: con alguien detrás a 30 m, se la deja"),
 		static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::PezGlobo, 0.5f, 2000.f, 3000.f)), static_cast<int32>(EBotSpecialShot::AtBehind));
@@ -543,6 +604,35 @@ bool FTNRallyTurretPezGloboMineTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("a los 14,5 s sigue"), MineAlive(Test.World));
 		Test.Advance(1.f);
 		TestFalse(TEXT("a los 15 s, fuera"), MineAlive(Test.World));
+	}
+	{
+		// La pisan 0,2 s antes de que se acabe su vida (menos que el hinchado): explota igual.
+		FPhysicsWorld Test(TEXT("TNRallyPufferLateWorld"));
+		if (!Test.World || !SpawnFlatGround(*Test.World))
+		{
+			AddError(TEXT("No se ha podido montar el suelo"));
+			return false;
+		}
+		ATN_Buggy* Buggy = SpawnBuggy(*Test.World, FTransform(FVector(5000.0, 0.0, SpawnLiftCm)));
+		if (!TestNotNull(TEXT("buggy"), Buggy))
+		{
+			return false;
+		}
+		Settle(Test, *Buggy);
+		ATN_RallyPufferMine::SpawnOnGround(Test.World, FVector(0.0, 0.0, 50.0), nullptr);
+		Test.Advance(TNRallyTurret::PufferLifeSeconds - 0.2f);
+		TestTrue(TEXT("a los 14,8 s sigue sin disparar"), MineAlive(Test.World));
+		// A la altura a la que ya reposa: sin caer, el impulso de la explosión se mide entero.
+		const FVector Rest = Buggy->GetActorLocation();
+		Buggy->RallyTeleport(FTransform(Buggy->GetActorRotation(), FVector(200.0, 0.0, Rest.Z)), 0.f, 0.f);
+		float MaxUp = 0.f;
+		for (int32 Step = 0; Step < StepsPerSecond; ++Step)
+		{
+			Test.Step();
+			MaxUp = FMath::Max(MaxUp, static_cast<float>(Buggy->GetVelocity().Z));
+		}
+		TestFalse(TEXT("pasado su tiempo, ya no está"), MineAlive(Test.World));
+		TestTrue(FString::Printf(TEXT("pero ha explotado y lo levanta (%.0f cm/s)"), MaxUp), MaxUp > 200.f);
 	}
 	return true;
 }

@@ -518,6 +518,11 @@ namespace TNRallyTurret
 		return Dir * Accel;
 	}
 
+	bool HarpoonHolds(float DistanceCm, bool bPullerRespawnProtected, bool bTargetRespawnProtected)
+	{
+		return !bPullerRespawnProtected && !bTargetRespawnProtected && DistanceCm <= HarpoonMaxDistanceCm;
+	}
+
 	bool BotHarpoonInRange(float AheadCm)
 	{
 		return AheadCm >= BotHarpoonMinCm && AheadCm <= BotHarpoonMaxCm;
@@ -548,5 +553,10 @@ namespace TNRallyTurret
 		}
 		const float Alpha = FMath::Clamp(SinceTriggerSeconds / PufferInflateSeconds, 0.f, 1.f);
 		return FMath::Lerp(1.f, PufferInflateScale, Alpha);
+	}
+
+	float PufferLifeOnTrigger(float LifeLeftSeconds)
+	{
+		return FMath::Max(LifeLeftSeconds, PufferInflateSeconds + PufferExplodeMarginSeconds);
 	}
 }

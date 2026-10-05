@@ -137,6 +137,8 @@ void ATN_RallyPufferMine::CheckTrigger()
 		bTriggered = true;
 		TriggeredAt = GetWorld()->GetTimeSeconds();
 		TriggeredBy = Buggy;
+		// Pisada en los últimos PufferInflateSeconds de su vida, desaparecía sin explotar: la vida se alarga hasta la explosión.
+		SetLifeSpan(TNRallyTurret::PufferLifeOnTrigger(GetLifeSpan()));
 		ForceNetUpdate();
 		UE_LOG(LogTNBuggy, Verbose, TEXT("Pez globo: lo dispara %s a %.0f cm"), *Buggy->GetName(), Distance);
 		return;
@@ -163,6 +165,8 @@ void ATN_RallyPufferMine::OnRep_Triggered()
 	{
 		TriggeredAt = GetWorld()->GetTimeSeconds();
 		SetActorTickEnabled(true);
+		// Como en el servidor: el hinchado se ve entero aunque se dispare al final de la vida.
+		SetLifeSpan(TNRallyTurret::PufferLifeOnTrigger(GetLifeSpan()));
 	}
 }
 

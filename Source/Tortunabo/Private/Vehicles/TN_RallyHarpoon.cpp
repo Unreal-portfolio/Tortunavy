@@ -115,12 +115,12 @@ void ATN_RallyHarpoonTether::BeginPlay()
 
 FVector ATN_RallyHarpoonTether::GetHookLocation() const
 {
-	return Target ? Target->GetActorTransform().TransformPosition(LocalHook) : GetActorLocation();
+	return IsValid(Target) ? Target->GetActorTransform().TransformPosition(LocalHook) : GetActorLocation();
 }
 
 FVector ATN_RallyHarpoonTether::GetRopeStart() const
 {
-	if (!Puller)
+	if (!IsValid(Puller))
 	{
 		return GetActorLocation();
 	}
@@ -131,7 +131,7 @@ FVector ATN_RallyHarpoonTether::GetRopeStart() const
 void ATN_RallyHarpoonTether::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (!Puller || !Target)
+	if (!IsValid(Puller) || !IsValid(Target))
 	{
 		if (HasAuthority())
 		{
@@ -141,6 +141,14 @@ void ATN_RallyHarpoonTether::Tick(float DeltaSeconds)
 	}
 	if (HasAuthority())
 	{
+		// La reaparición teletransporta el mismo actor: sin esto, la cuerda cruzaba el mapa y tiraba hacia el punto de salida.
+		const float Distance = static_cast<float>(FVector::Dist(Puller->GetActorLocation(), Target->GetActorLocation()));
+		if (!TNRallyTurret::HarpoonHolds(Distance, Puller->IsRespawnProtected(), Target->IsRespawnProtected()))
+		{
+			UE_LOG(LogTNBuggy, Verbose, TEXT("%s: arpón suelto (%.0f cm, reaparición o demasiado lejos)"), *Puller->GetName(), Distance);
+			Destroy();
+			return;
+		}
 		ApplyPull(DeltaSeconds);
 	}
 	if (GetNetMode() != NM_DedicatedServer)

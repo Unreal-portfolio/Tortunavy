@@ -326,6 +326,18 @@ void ATN_BuggyGunnerPawn::OnFireCocoReleased(const FInputActionValue& Value)
 
 void ATN_BuggyGunnerPawn::OnFireSpecial(const FInputActionValue& Value)
 {
+	// Started y Triggered llegan en el mismo fotograma al pulsar: con la ráfaga, las dos comparten la cadencia de las púas
+	// (LastFireRequest) y solo la primera pide (y pinta su trazador), sea cual sea el orden.
+	const UTN_BuggyTurretComponent* Turret = Buggy ? Buggy->GetTurret() : nullptr;
+	if (Turret && TNRallyTurret::IsBurstAmmo(Turret->GetSpecialAmmo()))
+	{
+		const double Now = GetWorld()->GetTimeSeconds();
+		if (Now - LastFireRequest < TNRallyTurret::ErizosSpikeInterval)
+		{
+			return;
+		}
+		LastFireRequest = Now;
+	}
 	RequestFire(true);
 }
 

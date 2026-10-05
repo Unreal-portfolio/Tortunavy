@@ -457,7 +457,8 @@ void UTN_KartItemComponent::TickErizos()
 		return;
 	}
 	const double Now = World->GetTimeSeconds();
-	if (Now > ErizosBurst.HoldUntil)
+	// Como los demás objetos (UseItem): con el motor o las armas bloqueados (meta, reaparición, podio), la ráfaga se corta.
+	if (Now > ErizosBurst.HoldUntil || Kart->IsEngineLocked() || Kart->AreWeaponsLocked())
 	{
 		ErizosBurst = TNRallyTurret::FBurst();
 		return;

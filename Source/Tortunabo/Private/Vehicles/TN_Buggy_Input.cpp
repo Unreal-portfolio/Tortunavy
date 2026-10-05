@@ -177,10 +177,22 @@ void ATN_Buggy::OnFireCocoReleased(const FInputActionValue& Value)
 
 void ATN_Buggy::OnFireSpecial(const FInputActionValue& Value)
 {
-	if (!bGunnerSeated)
+	if (bGunnerSeated)
 	{
-		RequestDriverFire(true, bAimBackward);
+		return;
 	}
+	// Started y Triggered llegan en el mismo fotograma al pulsar: con la ráfaga, las dos comparten la cadencia de las púas
+	// (LastDriverFireRequest) y solo la primera pide, sea cual sea el orden.
+	if (Turret && TNRallyTurret::IsBurstAmmo(Turret->GetSpecialAmmo()))
+	{
+		const double Now = GetWorld()->GetTimeSeconds();
+		if (Now - LastDriverFireRequest < TNRallyTurret::ErizosSpikeInterval)
+		{
+			return;
+		}
+		LastDriverFireRequest = Now;
+	}
+	RequestDriverFire(true, bAimBackward);
 }
 
 void ATN_Buggy::RequestDriverFire(bool bSpecial, bool bBackward)

@@ -374,6 +374,11 @@ namespace TNRallyTurret
 	constexpr float HarpoonTopSpeedFactor = 1.15f;
 	/** Más cerca que esto (cm) del alcanzado ya no tira (no lo embiste por la cuerda). */
 	constexpr float HarpoonMinDistanceCm = 400.f;
+	/**
+	 * Más lejos que esto (cm) la cuerda se suelta: el arpón alcanza unos 105 m (HarpoonSpeedCms × HarpoonLifeSeconds) y el
+	 * remolque acerca, así que solo se pasa si uno de los dos se ha teletransportado (reaparición).
+	 */
+	constexpr float HarpoonMaxDistanceCm = 15000.f;
 	/** Distancias (cm) al de delante con las que un bot dispara el arpón. */
 	constexpr float BotHarpoonMinCm = 1500.f;
 	constexpr float BotHarpoonMaxCm = 6000.f;
@@ -388,6 +393,12 @@ namespace TNRallyTurret
 	 */
 	TORTUNABO_API FVector HarpoonPullAccel(const FVector& PullerVelocity, const FVector& ToTarget, float DeltaSeconds,
 		float TopSpeedCms = BuggyTopSpeedCms);
+
+	/**
+	 * Si la cuerda del arpón sigue: ninguno de los dos está en el fantasma de la reaparición (la reaparición teletransporta el
+	 * mismo actor) y están a como mucho HarpoonMaxDistanceCm.
+	 */
+	TORTUNABO_API bool HarpoonHolds(float DistanceCm, bool bPullerRespawnProtected, bool bTargetRespawnProtected);
 
 	/** Bots: el arpón, al de delante si está a entre BotHarpoonMinCm y BotHarpoonMaxCm. */
 	TORTUNABO_API bool BotHarpoonInRange(float AheadCm);
@@ -420,4 +431,13 @@ namespace TNRallyTurret
 
 	/** Escala de la mina hinchándose: 1 al dispararse y PufferInflateScale al explotar (SinceTrigger en s; < 0, sin disparar). */
 	TORTUNABO_API float PufferInflate(float SinceTriggerSeconds);
+
+	/** Vida (s) que sobra tras el hinchado de una mina disparada al final de su vida, para que la explosión llegue antes. */
+	constexpr float PufferExplodeMarginSeconds = 0.2f;
+
+	/**
+	 * Vida (s) que debe quedarle a una mina al dispararse con LifeLeftSeconds por delante: la que tenga o, si no le llega para
+	 * hincharse, PufferInflateSeconds + PufferExplodeMarginSeconds. Una mina disparada siempre explota.
+	 */
+	TORTUNABO_API float PufferLifeOnTrigger(float LifeLeftSeconds);
 }

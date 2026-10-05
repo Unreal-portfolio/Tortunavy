@@ -1,9 +1,14 @@
-// Objetos de los karts (#304): reparto por puesto, ruleta, decisiones de los bots y guiado de la concha. Lógica pura. La
+// Objetos de los karts (#304): reparto por puesto, ruleta, decisiones de los bots y guiado de la concha (lógica pura), y el
+// corte de la ráfaga de erizos con el kart bloqueado (mundo con física sin ventana, TN_RallyPhysicsTestKit.h). La
 // artillera está en TN_KartGunnerTest.cpp y la munición de las cajas «?» del Rally en TN_RallyItemBoxTest.cpp. Correr desde Session Frontend (categoría
 // "Tortunabo.Kart") o headless con UnrealEditor-Win64-DebugGame-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Kart; Quit".
 
 #include "Misc/AutomationTest.h"
+#include "TN_RallyPhysicsTestKit.h"
+#include "EngineUtils.h"
+#include "Kart/TN_KartItemComponent.h"
 #include "Kart/TN_KartItems.h"
+#include "Vehicles/TN_RallyProjectile.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -165,6 +170,61 @@ bool FTNKartItemTurretAmmoTest::RunTest(const FString& Parameters)
 	const double Apex = Start.Z + FMath::Square(Launch.Z) / (2.0 * -GravityZ);
 	TestTrue(FString::Printf(TEXT("y sube por encima de los karts (%.0f cm)"), Apex), Apex > 300.0);
 	TestEqual(TEXT("ráfaga de erizos de 3 s"), static_cast<float>(ErizosSpikes) * TNRallyTurret::ErizosSpikeInterval, ErizosSeconds, 0.001f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNKartItemErizosLockTest, "Tortunabo.Kart.Items.ErizosStopWhenLocked",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNKartItemErizosLockTest::RunTest(const FString& Parameters)
+{
+	using namespace TNRallyPhysicsMeasure;
+	const auto CountSpikes = [](UWorld* World)
+	{
+		int32 Count = 0;
+		for (TActorIterator<ATN_RallyProjectile> It(World); It; ++It)
+		{
+			++Count;
+		}
+		return Count;
+	};
+	// La ráfaga de 3 s se corta al bloquear el motor (meta) o las armas, como los demás objetos.
+	for (const bool bWeapons : { false, true })
+	{
+		FPhysicsWorld Test(bWeapons ? TEXT("TNKartErizosWeaponsWorld") : TEXT("TNKartErizosEngineWorld"));
+		if (!Test.World || !SpawnFlatGround(*Test.World))
+		{
+			AddError(TEXT("No se ha podido montar el suelo"));
+			return false;
+		}
+		ATN_Buggy* Kart = SpawnBuggy(*Test.World, FTransform(FVector(0.0, 0.0, SpawnLiftCm)));
+		if (!TestNotNull(TEXT("kart"), Kart))
+		{
+			return false;
+		}
+		UTN_KartItemComponent* Items = NewObject<UTN_KartItemComponent>(Kart, TEXT("KartItems"));
+		Items->RegisterComponent();
+		Settle(Test, *Kart);
+		Items->GiveItem(ETNKartItem::Erizos, true);
+		if (!TestTrue(TEXT("los erizos se usan"), Items->UseItem(false)))
+		{
+			return false;
+		}
+		Test.Advance(0.3f);
+		TestTrue(TEXT("la ráfaga saca púas"), CountSpikes(Test.World) > 0);
+		if (bWeapons)
+		{
+			Kart->SetWeaponsLocked(true);
+		}
+		else
+		{
+			Kart->SetEngineLocked(true);
+		}
+		// Las púas viven 1,5 s: pasado eso, sin ráfaga no queda ninguna (sin el corte seguirían saliendo hasta los 3 s).
+		Test.Advance(TNRallyTurret::ErizosLifeSeconds + 0.2f);
+		TestEqual(bWeapons ? TEXT("con las armas bloqueadas no salen más púas") : TEXT("con el motor bloqueado no salen más púas"),
+			CountSpikes(Test.World), 0);
+	}
 	return true;
 }
 
