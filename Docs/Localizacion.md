@@ -115,7 +115,7 @@ traducciones ya hechas viven en los `.archive`/`.po` y se conservan al volver a 
 - Espacios de nombres que hay: `TNPause` (menú de pausa), `TNSettings` (ajustes), `TNKeys` (nombres de teclas y botones), `TNRooms`
   (salas y menú principal), `TNRoomNames` (nombres de sala), `TNRace` (carrera y objetos), `TNBeach` (la playa), `TNHUD`
   (HUD y flujo de la partida), `TNGhost` (espectador), `TNLoading` (pantalla de carga), `TNText` y `TNTime` (listas y «m:ss»,
-  de `TNLocText`), `TNTutorial` (tutorial), `TNCredits` (créditos, [Créditos](Creditos.md)) y `Tortunabo` (lobby, tienda, briefing, avisos de interacción).
+  de `TNLocText`), `TNTutorial` (tutorial), `TNCredits` (créditos, [Créditos](Creditos.md)), `TNVRControls` (guía de los mandos Touch) y `Tortunabo` (lobby, tienda, briefing, avisos de interacción).
 - **Nunca `FText::FromString` con un literal ni un `FString` traducido a medias.** Un dato del jugador (nombre, código de sala,
   nombre del anfitrión) o un símbolo se marca como lo que es: `TNLocText::Literal(Nombre)`, `TNLocText::PlayerName(Nombre)`
   (si el nombre está vacío sale «Tortuga») o `INVTEXT("·")`. Así una búsqueda de `FromString` en el código solo encuentra lo que

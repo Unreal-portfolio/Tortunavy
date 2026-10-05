@@ -126,6 +126,14 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
 | Y | Rueda de emotes (mantener) | Atrás |
 | Menú (mando izquierdo) | Menú de pausa | Cerrar |
 
+Los avisos del juego nombran estos botones (#644): con el modo VR puesto, el aparato de los avisos
+(`UTN_InputDeviceSubsystem`, `ETNInputDevice::VR`) es siempre el de las gafas, y el aviso de interactuar dice «Gatillo
+derecho»; igual el tutorial, el HUD del fantasma («Stick derecho  cambiar de tortuga»), los karts («Usar: B», «Usar: Gatillo
+izquierdo», «Peso (cabeza · Stick izquierdo)»), el Rally («Mantén Y para volver a la pista», «Stick derecho: cambiar de vista»)
+y la lista de controles del briefing. Los nombres salen de `TNVRControls::KeyName` (también lo usa `KeyDisplayName`, así que
+Ajustes los dice igual) y el botón de cada acción, de `TNVRControls::KeyForAction`. Ajustes > Controles los enseña en solo
+lectura al final («Realidad virtual (mandos Touch)», `TNVRControls::GetGuide`). Sin VR no cambia nada.
+
 ## Vehículos: buggy del Rally y karts (con gafas)
 
 Decisión de Mokius (04-10-2026): los vehículos se juegan con las manos, programado en `ATN_Buggy` y `ATN_BuggyGunnerPawn`
@@ -170,8 +178,8 @@ para que el Rally y los karts lo hereden (#529).
 | Y | Enderezar (mantener: reaparecer) | Enderezar (mantener: reaparecer) |
 | Clic del stick derecho / izquierdo | Recentrar / hablar | Recentrar / hablar |
 
-Fuera de esto (otras tarjetas): los nombres de los botones Touch en los HUD, la munición, las notas y la tableta del Rally,
-la pausa y la salida en el Rally y los karts, y el rendimiento en estéreo.
+Fuera de esto (otras tarjetas): la munición, las notas y la tableta del Rally, la pausa y la salida en el Rally y los karts,
+y el rendimiento en estéreo. Los nombres de los botones Touch en los HUD ya están (#644, ver «Controles»).
 
 Piezas: `UTN_VRSeatComponent` (`VR/TN_VRSeatComponent.*`), `TNVRVehicle` (`VR/TN_VRVehicleMath.h`), `ATN_Buggy`
 (`Vehicles/TN_Buggy_VR.cpp`), `ATN_BuggyGunnerPawn` (`Vehicles/TN_BuggyGunnerPawn_VR.cpp`), las asas en
@@ -330,6 +338,7 @@ Steam, así que no se juega con los del PC). Para mañana, mejor la opción A.
 | `UTN_VRGrabComponent` | `VR/TN_VRGrabComponent.*` | En la tortuga: coger objetos con física con la mano (servidor si el actor se replica, local si no), quién lleva cada objeto, agarres enganchados y cápsula que no choca con lo que lleva. |
 | Manos del rig | `VR/TN_VRRigHands.cpp` | Agarres (coger, lanzar, anular), manos contra el escenario (`ATN_VRRig::BlockHandLocation`), vibración de los mandos y viñeta de confort. |
 | `TNVRHands` | `VR/TN_VRHandMath.h` | Cuentas de las manos sin mundo: ventana de velocidad, agarre enganchado, toques de vibración, viñeta y sitio del HUD. |
+| `TNVRControls` | `VR/TN_VRControls.*` | Nombre en pantalla de cada botón Touch, botón de cada acción y guía de controles de Ajustes (#644, #647). |
 | Primera persona | `Player/TortugaCharacter_FirstPerson.cpp` | Cámara en la cabeza (con y sin gafas), cuerpo sin cabeza (solo vista desde ella), caparazón oscuro, tecla de «Cambiar de cámara» (`FTNGameSettings::CameraKey`/`CameraPadKey`, fila `Camera` de `UTN_GameSettingsSubsystem`) y `TN.Camera`. |
 | IK de los brazos | `Player/TN_TurtleAnimInstance.cpp` (`ReachArm`) | Las manos del cuerpo van a los mandos en VR. |
 | `UTN_VRScreenWidget` | `VR/TN_VRScreenWidget.*` | La pantalla VR: lienzo de 1920 × 1080 donde van todos los widgets de pantalla completa con su ZOrder. Se quitan con `RemoveFromParent` de siempre. |
@@ -397,6 +406,7 @@ Sin gafas (modo simulado, PIE):
 8. Espectador/fantasma: se ve desde la cámara de la tortuga seguida, sin cámara libre; ←/→ cambian de tortuga sin fundido.
 9. Ajustes > Juego > Realidad virtual: «Modo VR» Simulado/Desactivado cambia en el acto; «Giro en VR» se guarda.
    «Restablecer esta pestaña» los deja en Automático y 30°.
+   Con `TN.VR 2`, el aviso de interactuar dice «Gatillo derecho» y el tutorial nombra los botones Touch (#644).
 10. Temblor de cámara y ojo de pez no se notan con el modo VR puesto, aunque estén encendidos.
 
 Con las Quest (VR Preview o `-vr`):

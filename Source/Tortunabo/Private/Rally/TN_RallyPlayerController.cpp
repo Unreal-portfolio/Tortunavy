@@ -129,8 +129,10 @@ void ATN_RallyPlayerController::SetupInputComponent()
 	{
 		return;
 	}
+	// Con gafas (#644), el stick derecho de los Touch (a un lado, como una dirección).
 	const TPair<FKey, int32> Bindings[] = { { EKeys::A, -1 }, { EKeys::Left, -1 }, { EKeys::Gamepad_LeftShoulder, -1 },
-		{ EKeys::D, 1 }, { EKeys::Right, 1 }, { EKeys::Gamepad_RightShoulder, 1 } };
+		{ FTNVRKeys::RightStickLeft, -1 }, { EKeys::D, 1 }, { EKeys::Right, 1 }, { EKeys::Gamepad_RightShoulder, 1 },
+		{ FTNVRKeys::RightStickRight, 1 } };
 	for (const TPair<FKey, int32>& Pair : Bindings)
 	{
 		FInputKeyBinding Binding{ FInputChord(Pair.Key), IE_Pressed };

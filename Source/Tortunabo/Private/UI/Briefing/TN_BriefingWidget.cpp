@@ -26,6 +26,7 @@
 #include "Lobby/TN_ShopKeeper.h"
 #include "Player/MP_GamePlayerController.h"
 #include "UI/Shop/TN_ShopWidgets.h"
+#include "VR/TN_VRControls.h"
 
 namespace TNBriefingUI
 {
@@ -202,7 +203,9 @@ namespace TNBriefingUI
 		{
 			if (Named.Key == Key) { return Named.Name; }
 		}
-		return Key.GetDisplayName(false);
+		// Con gafas, IMC_VR trae los botones de los mandos Touch: con su nombre, no con el del motor (#644).
+		const FText VRName = TNVRControls::KeyName(Key);
+		return VRName.IsEmpty() ? Key.GetDisplayName(false) : VRName;
 	}
 
 	/** Añade un nombre de tecla si no está ya (FText no se compara con ==: se mira el texto que se ve). */

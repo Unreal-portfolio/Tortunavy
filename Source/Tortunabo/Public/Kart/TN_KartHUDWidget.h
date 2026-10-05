@@ -58,6 +58,10 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UWidget> LeanPanel;
 
+	/** Título de las barras de peso (cambia con los botones del aparato: teclado, mando o gafas). */
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> LeanLabel;
+
 	UPROPERTY(Transient)
 	TObjectPtr<UProgressBar> LeanLeft;
 

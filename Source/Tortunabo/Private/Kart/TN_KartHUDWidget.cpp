@@ -15,6 +15,10 @@
 #include "Kart/TN_KartItemComponent.h"
 #include "Kart/TN_KartTrack.h"
 #include "Rally/TN_RallyPlayerState.h"
+#include "Settings/TN_GameSettingsSubsystem.h"
+#include "Settings/TN_InputDeviceSubsystem.h"
+#include "VR/TN_VRControls.h"
+#include "VR/TN_VRMode.h"
 
 namespace TNKartHUD
 {
@@ -77,7 +81,7 @@ void UTN_KartHUDWidget::BuildTree()
 
 	// Peso de la artillera: dos barras que crecen hacia cada lado desde el centro.
 	UVerticalBox* Lean = Make<UVerticalBox>(Tree);
-	UTextBlock* LeanLabel = MakeText(Tree, NSLOCTEXT("Karts", "LeanLabel", "Peso (A/D · stick izquierdo)"), TEXT("Regular"), 16,
+	LeanLabel = MakeText(Tree, NSLOCTEXT("Karts", "LeanLabel", "Peso (A/D · stick izquierdo)"), TEXT("Regular"), 16,
 		TNHUDStyle::TextDim);
 	if (UVerticalBoxSlot* LabelSlot = Lean->AddChildToVerticalBox(LeanLabel))
 	{
@@ -188,6 +192,14 @@ void UTN_KartHUDWidget::RefreshItem(const ATN_KartBuggy* Kart, bool bGunner)
 	const APlayerController* Player = GetOwningPlayer();
 	if (Kart->MayUseItems(Player))
 	{
+		// Con gafas (#644): el botón de los Touch (B conduciendo, el gatillo izquierdo de artillera), no las teclas ni el mando.
+		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(Player);
+		if (Devices && Devices->IsUsingVR(Player))
+		{
+			ItemHint->SetText(FText::Format(NSLOCTEXT("Karts", "UseHintVR", "Usar: {0}"),
+				TNVRControls::KeyName(bGunner ? FTNVRKeys::LeftTrigger : FTNVRKeys::B)));
+			return;
+		}
 		ItemHint->SetText(bGunner ? NSLOCTEXT("Karts", "UseHintGunner", "Usar: E · clic derecho · LT (con Q o LB, hacia atrás)")
 			: NSLOCTEXT("Karts", "UseHintDriver", "Usar: E · clic derecho · LB (con Q o B, hacia atrás)"));
 	}
@@ -234,6 +246,14 @@ void UTN_KartHUDWidget::RefreshLean(bool bGunner)
 		return;
 	}
 	const APlayerController* Player = GetOwningPlayer();
+	if (LeanLabel)
+	{
+		// Con gafas (#644) el peso se echa con la cabeza (y se suma el stick izquierdo).
+		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(Player);
+		LeanLabel->SetText(Devices && Devices->IsUsingVR(Player)
+			? FText::Format(NSLOCTEXT("Karts", "LeanLabelVR", "Peso (cabeza · {0})"), TNVRControls::KeyName(FTNVRKeys::LeftStickX))
+			: NSLOCTEXT("Karts", "LeanLabel", "Peso (A/D · stick izquierdo)"));
+	}
 	const ATN_KartGunnerPawn* Gunner = Player ? Cast<ATN_KartGunnerPawn>(Player->GetPawn()) : nullptr;
 	const float Lean = Gunner ? Gunner->GetLocalLean() : 0.f;
 	LeanLeft->SetPercent(FMath::Max(0.f, -Lean));

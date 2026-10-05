@@ -19,6 +19,9 @@
 #include "Rally/TN_RallyCameraDirector.h"
 #include "Rally/TN_RallyPlayerController.h"
 #include "Rally/TN_RallyTrack.h"
+#include "Settings/TN_InputDeviceSubsystem.h"
+#include "VR/TN_VRControls.h"
+#include "VR/TN_VRMode.h"
 #include "Sound/SoundBase.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Vehicles/TN_Buggy.h"
@@ -559,6 +562,11 @@ void UTN_RallyHUDWidget::RefreshSpectate(const ATN_RallyGameState& RallyState)
 	{
 		return;
 	}
+	// Con gafas (#644): el stick derecho (las teclas A/D y los botones LB/RB no hacen nada en los mandos Touch).
+	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(GetOwningPlayer());
+	SpectateHintText->SetText(Devices && Devices->IsUsingVR(GetOwningPlayer())
+		? FText::Format(NSLOCTEXT("Rally", "SpectateHintVR", "{0}: cambiar de vista"), TNVRControls::KeyName(FTNVRKeys::RightStickX))
+		: NSLOCTEXT("Rally", "SpectateHint", "A / D · LB / RB: cambiar de vista"));
 	const int32 Team = Director->GetSpectatedTeam();
 	const FTNRallyStanding* Watched = RallyState.Standings.FindByPredicate([Team](const FTNRallyStanding& Entry) { return Entry.TeamIndex == Team; });
 	SpectateText->SetText(Director->IsDroneView() || !Watched
@@ -591,7 +599,16 @@ void UTN_RallyHUDWidget::RefreshRespawnHint(const ATN_RallyGameState& RallyState
 		}
 		Input.DistanceToAxisCm = DistanceToTrackAxis(RallyState, Vehicle->GetActorLocation());
 	}
-	TNRallyHUD::Show(RespawnHintText, TNRallyRespawnHint::Update(RespawnHintState, Input, static_cast<float>(Step)));
+	const bool bShowRespawnHint = TNRallyRespawnHint::Update(RespawnHintState, Input, static_cast<float>(Step));
+	if (bShowRespawnHint)
+	{
+		// Con gafas (#644): la Y de los mandos Touch (enderezar; mantenida, reaparecer), no la R.
+		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(GetOwningPlayer());
+		RespawnHintText->SetText(Devices && Devices->IsUsingVR(GetOwningPlayer())
+			? FText::Format(NSLOCTEXT("Rally", "RespawnHintVR", "Mantén {0} para volver a la pista"), TNVRControls::KeyName(FTNVRKeys::Y))
+			: NSLOCTEXT("Rally", "RespawnHint", "Mantén R para volver a la pista"));
+	}
+	TNRallyHUD::Show(RespawnHintText, bShowRespawnHint);
 }
 
 float UTN_RallyHUDWidget::DistanceToTrackAxis(const ATN_RallyGameState& RallyState, const FVector& Location)

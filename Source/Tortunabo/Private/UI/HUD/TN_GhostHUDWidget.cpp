@@ -21,6 +21,7 @@
 #include "Player/TN_SpectatorGhost.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
+#include "VR/TN_VRControls.h"
 #include "VR/TN_VRMode.h"
 
 namespace TNGhostHUDDetail
@@ -271,7 +272,11 @@ void UTN_GhostHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(PC);
 		const ETNPadFamily Family = Devices ? Devices->GetPadFamily() : ETNPadFamily::Xbox;
 		auto PadName = [Family](const FKey& Key) { return TNInputGlyphs::GlyphFor(Key, Family).Label; };
-		SetTextIfChanged(KeysText, bPad
+		// Con gafas (#644): el stick derecho cambia de tortuga (la cámara libre no hay en VR: la vista es la de la seguida).
+		const bool bVR = Devices && Devices->IsUsingVR(PC);
+		SetTextIfChanged(KeysText, bVR
+			? FText::Format(NSLOCTEXT("TNGhost", "KeysVR", "{0}  cambiar de tortuga"), TNVRControls::KeyName(FTNVRKeys::RightStickX))
+			: bPad
 			? FText::Format(NSLOCTEXT("TNGhost", "KeysPadButtons", "{0} / {1}  cambiar   ·   {2}  cámara   ·   gatillos  zoom"),
 				PadName(EKeys::Gamepad_LeftShoulder), PadName(EKeys::Gamepad_RightShoulder), PadName(EKeys::Gamepad_RightThumbstick))
 			: NSLOCTEXT("TNGhost", "KeysMouse", "← / →  cambiar   ·   C  cámara   ·   rueda  zoom"));
