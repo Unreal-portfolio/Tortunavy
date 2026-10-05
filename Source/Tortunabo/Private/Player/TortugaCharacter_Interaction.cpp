@@ -149,9 +149,11 @@ void ATortugaCharacter::ServerTryInteract_Implementation(ATN_InteractableBase* I
 
 	if (!Interactable->CanInteract(this))
 	{
-		// Si falla en un pickup Y tenemos ítem equipado → asumir "inventario lleno"
-		// y usar/lanzar el ítem directamente, sin desperdiciar el input del jugador.
-		if (Cast<ATN_PickupInteractableBase>(Interactable)
+		// Solo si lo que impide cogerlo es el inventario lleno se usa/lanza el ítem de la mano, sin desperdiciar el input.
+		// Cogido por otra hace un instante (bTaken aún no había llegado a este cliente), desactivado o sin ítem: no se
+		// gasta nada (#570).
+		const ATN_PickupInteractableBase* Pickup = Cast<ATN_PickupInteractableBase>(Interactable);
+		if (Pickup && Pickup->IsBlockedOnlyByFullInventory(this)
 			&& InventoryComponent && InventoryComponent->HasEquippedItem())
 		{
 			if (bIsKnockedDown || bIsDead)
