@@ -169,6 +169,23 @@ public:
 	/** Lo que pide ahora el jugador (lo que se guarda en el movimiento nuevo). */
 	bool InputWantsToSprint() const { return bInputWantsToSprint; }
 
+	// ── Brinco desde el agua, predicho (#573) ───────────────────────────────
+	// Nadando, el salto de serie (ACharacter::Jump, marca FLAG_JumpPressed del movimiento) es un brinco: CanAttemptJump mira
+	// la espera y DoJump pone la velocidad del brinco. La espera (TNSwimHop) corre con el tiempo de simulación de los
+	// movimientos y va guardada en cada uno (FTNSavedMove_Turtle), así que el dueño y el servidor brincan en el mismo.
+
+	/** Espera que queda para el siguiente brinco (s de simulación; 0 = listo). */
+	float GetSwimHopCooldown() const { return SwimHopCooldown; }
+
+	/**
+	 * La espera al empezar el movimiento que se va a guardar (FTNSavedMove_Turtle::SetInitialPosition). El cliente lee el
+	 * salto antes de guardar el movimiento: si en él ha brincado, devuelve (y olvida) la de antes del brinco.
+	 */
+	float ConsumeMoveStartSwimHopCooldown();
+
+	/** Repetición o combinación de movimientos (FTNSavedMove_Turtle): la espera con que empezó ese movimiento. */
+	void RestoreSwimHopCooldown(float InSeconds);
+
 	// ── Turbo de los objetos de carrera (issue #22) ─────────────────────────
 	// Va en la predicción como el panzazo: quien mueve la tortuga (su dueño o el anfitrión) toma el multiplicador de
 	// UTN_RaceItemComponent al empezar cada movimiento y lo guarda en él (FTNSavedMove_Turtle: marca FLAG_Custom_1 al
@@ -575,6 +592,14 @@ private:
 
 	/** Multiplicador del vadeo en este paso del movimiento (1 = fuera del agua). */
 	float MoveWadingMultiplier = 1.f;
+
+	/** Espera del brinco desde el agua (s de simulación) y la de antes del brinco del movimiento que se está guardando. */
+	float SwimHopCooldown = 0.f;
+	bool bHasPreJumpSwimHop = false;
+	float PreJumpSwimHopCooldown = 0.f;
+
+	/** DoJump nadando: el brinco desde el agua en este movimiento (velocidad, espera y a caer). */
+	bool DoSwimHop(bool bReplayingMoves);
 
 	/**
 	 * Trampolines de la playa (#21), al empezar cada paso: si la cápsula toca el sensor de uno (ATN_BeachTrampoline) y no

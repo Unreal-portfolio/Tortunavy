@@ -350,6 +350,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swim", meta = (ClampMin = "0.0"))
 	float SwimHopForward = 250.f;
 
+public:
+	/** El estado de la tortuga permite el brinco desde el agua (ni derribada, ni muerta, ni en el caparazón). */
+	bool CanSwimHopNow() const;
+
+	/** Velocidad del brinco desde el agua con la orientación de ahora (TNSwimHop::HopVelocity). */
+	FVector GetSwimHopVelocity() const;
+
+protected:
+
 	// ── Caídas ───────────────────────────────────────────────────────────────
 
 	/** Caída libre a partir de la cual la tortuga se mete sola en el caparazón (cm). */
@@ -778,14 +787,6 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerPerformAirDash();
-
-	// ── Salto desde el agua (mismo patrón que el air dash: local + servidor) ──
-	float LastSwimHopTime = -10.f;
-	bool CanSwimHop() const;
-	void PerformSwimHop();
-
-	UFUNCTION(Server, Reliable)
-	void ServerSwimHop();
 
 	void Move(const FInputActionValue& Value);
 	void OnMoveReleased();

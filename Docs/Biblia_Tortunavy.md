@@ -2098,7 +2098,7 @@ juego. **No confirmado**.
 - **Velocidad** (`SwimSpeed` [C]): **625 cm/s**, con la flotabilidad en 1,08 (`SwimBuoyancy`: sube a la superficie). Con el
   Blueprint es **más rápido que esprintar (400)**; con el código estaba entre andar (450) y esprintar (800). Correr no acelera
   el nado (fija la velocidad máxima de andar, no la de nadar) [inferido del código].
-- **Salto del agua** (`PerformSwimHop`): impulso de **640 cm/s hacia arriba y 250 hacia delante**, cada 0,6 s como mucho, para
+- **Salto del agua** (`UTN_TurtleMovementComponent::DoJump` nadando, predicho en el movimiento: #573): impulso de **640 cm/s hacia arriba y 250 hacia delante**, cada 0,6 s de simulación como mucho, para
   subir a orillas e islotes. Nadando la plancha no existe: el salto es este.
 - **No se puede** entrar en el caparazón nadando (la bola se hundiría y saldría en el acto). La bola que cae al agua sale y nada.
   Un panzazo que acaba en el agua termina y nada. Las caídas en el agua no rompen.

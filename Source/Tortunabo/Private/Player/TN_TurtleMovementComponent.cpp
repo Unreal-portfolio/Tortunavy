@@ -3,6 +3,7 @@
 #include "Player/TN_DiveDecisions.h"
 #include "Player/TN_MovementLimits.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_SwimHopRules.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_WadingComponent.h"
 #include "World/Beach/TN_BeachTrampoline.h"
@@ -117,6 +118,7 @@ namespace TNBellySlide
 			bSavedWantsDive = false;
 			SavedDiveYaw = 0;
 			SavedJumpStartVelocity = FVector::ZeroVector;
+			SavedSwimHopCooldown = 0.f;
 		}
 
 		virtual void SetMoveFor(ACharacter* C, float InDeltaTime, FVector const& NewAccel, FNetworkPredictionData_Client_Character& ClientData) override
@@ -153,6 +155,20 @@ namespace TNBellySlide
 			{
 				TurtleMove->ConsumeMoveStartBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
 				TurtleMove->CaptureMoveStartDive(bSavedWantsDive, SavedDiveYaw, SavedJumpStartVelocity);
+				// La espera del brinco desde el agua de antes del brinco de este movimiento, si lo hay (#573).
+				SavedSwimHopCooldown = TurtleMove->ConsumeMoveStartSwimHopCooldown();
+			}
+		}
+
+		virtual void CombineWith(const FSavedMove_Character* OldMove, ACharacter* InCharacter, APlayerController* PC, const FVector& OldStartLocation) override
+		{
+			Super::CombineWith(OldMove, InCharacter, PC, OldStartLocation);
+			// El motor vuelve al principio del movimiento pendiente y simula los dos juntos: la espera del brinco, también
+			// (si no, se descontaría dos veces el tiempo del pendiente). SetInitialPosition la guarda después.
+			UTN_TurtleMovementComponent* TurtleMove = InCharacter ? Cast<UTN_TurtleMovementComponent>(InCharacter->GetCharacterMovement()) : nullptr;
+			if (TurtleMove && OldMove)
+			{
+				TurtleMove->RestoreSwimHopCooldown(static_cast<const FTNSavedMove_Turtle*>(OldMove)->SavedSwimHopCooldown);
 			}
 		}
 
@@ -181,6 +197,7 @@ namespace TNBellySlide
 				TurtleMove->RestoreBellyState(SavedBellyPhase, SavedBellyTime, SavedSlideSerial, SavedCapsuleHalfHeight, SavedBellySlopeTime);
 				TurtleMove->RestoreRaceBoost(SavedRaceBoost);
 				TurtleMove->RestoreMoveStartDive(SavedDiveYaw, SavedJumpStartVelocity);
+				TurtleMove->RestoreSwimHopCooldown(SavedSwimHopCooldown);
 			}
 		}
 
@@ -210,6 +227,8 @@ namespace TNBellySlide
 		uint16 SavedDiveYaw = 0;
 		/** Velocidad horizontal del último salto al empezar el movimiento (la inercia del panzazo). */
 		FVector SavedJumpStartVelocity = FVector::ZeroVector;
+		/** Espera del brinco desde el agua al empezar el movimiento (s de simulación, #573). */
+		float SavedSwimHopCooldown = 0.f;
 	};
 
 	class FTNNetworkPredictionData_Client_Turtle : public FNetworkPredictionData_Client_Character
@@ -351,6 +370,9 @@ void UTN_TurtleMovementComponent::UpdateCharacterStateBeforeMovement(float Delta
 	bPendingAirBounce = false;
 	// El movimiento ya se ha guardado (el cliente guarda antes de simular): lo de antes del brinco ya no sirve.
 	bHasPreJumpBelly = false;
+	bHasPreJumpSwimHop = false;
+	// La espera del brinco desde el agua corre con el tiempo de este movimiento, después de leer su salto (#573).
+	SwimHopCooldown = TNSwimHop::Advance(SwimHopCooldown, DeltaSeconds);
 	// El panzazo pedido (#24): quien la controla, el que acaba de pedir (ya está en el movimiento guardado); el servidor y
 	// la repetición en el dueño, el de las marcas del movimiento (UpdateFromCompressedFlags).
 	if (CharacterOwner && CharacterOwner->IsLocallyControlled() && !CharacterOwner->bClientUpdating)
@@ -1132,6 +1154,13 @@ float UTN_TurtleMovementComponent::GetMaxSpeed() const
 
 bool UTN_TurtleMovementComponent::CanAttemptJump() const
 {
+	if (IsSwimming())
+	{
+		// Nadando, el salto es el brinco desde el agua (#573): pasada la espera y si la tortuga puede (ni derribada, ni
+		// muerta, ni en el caparazón; el servidor lo comprueba igual en el mismo movimiento).
+		const ATortugaCharacter* Turtle = GetTurtle();
+		return IsJumpAllowed() && !bWantsToCrouch && Turtle && Turtle->CanSwimHopNow() && TNSwimHop::IsReady(SwimHopCooldown);
+	}
 	switch (BellyPhase)
 	{
 	case ETNBellyPhase::Slide:
@@ -1147,6 +1176,10 @@ bool UTN_TurtleMovementComponent::CanAttemptJump() const
 
 bool UTN_TurtleMovementComponent::DoJump(bool bReplayingMoves, float DeltaTime)
 {
+	if (IsSwimming())
+	{
+		return DoSwimHop(bReplayingMoves);
+	}
 	if (IsOnBelly())
 	{
 		// El brinco para levantarse de la tripa: primero la cápsula de pie; si no cabe, no salta.
@@ -1170,6 +1203,42 @@ bool UTN_TurtleMovementComponent::DoJump(bool bReplayingMoves, float DeltaTime)
 		}
 	}
 	return Super::DoJump(bReplayingMoves, DeltaTime);
+}
+
+bool UTN_TurtleMovementComponent::DoSwimHop(bool bReplayingMoves)
+{
+	const ATortugaCharacter* Turtle = GetTurtle();
+	if (!Turtle || !Turtle->CanJump())
+	{
+		return false;
+	}
+	// El cliente guarda este movimiento después de leer el salto: se queda con la espera de antes (no al repetir).
+	if (!bReplayingMoves)
+	{
+		bHasPreJumpSwimHop = true;
+		PreJumpSwimHopCooldown = SwimHopCooldown;
+	}
+	SwimHopCooldown = TNSwimHop::CooldownSeconds;
+	// Como el LaunchCharacter de antes (las dos componentes sustituidas), pero dentro de este movimiento.
+	Velocity = Turtle->GetSwimHopVelocity();
+	SetMovementMode(MOVE_Falling);
+	return true;
+}
+
+float UTN_TurtleMovementComponent::ConsumeMoveStartSwimHopCooldown()
+{
+	if (bHasPreJumpSwimHop)
+	{
+		bHasPreJumpSwimHop = false;
+		return PreJumpSwimHopCooldown;
+	}
+	return SwimHopCooldown;
+}
+
+void UTN_TurtleMovementComponent::RestoreSwimHopCooldown(float InSeconds)
+{
+	SwimHopCooldown = FMath::Max(0.f, InSeconds);
+	bHasPreJumpSwimHop = false;
 }
 
 FNetworkPredictionData_Client* UTN_TurtleMovementComponent::GetPredictionData_Client() const

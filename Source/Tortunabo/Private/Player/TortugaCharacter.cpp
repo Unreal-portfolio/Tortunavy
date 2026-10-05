@@ -23,6 +23,7 @@
 #include "Player/TN_TurtleFaceComponent.h"
 #include "Player/TN_SlopeTiltComponent.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_SwimHopRules.h"
 #include "Player/TN_WadingComponent.h"
 #include "VR/TN_VRGrabComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
@@ -1154,17 +1155,11 @@ void ATortugaCharacter::Jump()
 	if (GetWorld() && GetWorld()->GetTimeSeconds() < GetUpLockUntil) { return; }
 	if (CarryComponent && CarryComponent->IsBeingCarried()) { return; }
 
-	// Nadando: salto desde el agua para salir a orillas e isletas.
+	// Nadando: el salto es un brinco desde el agua para salir a orillas e isletas. Lo decide el movimiento con la marca de
+	// salto, predicho igual que en el servidor (UTN_TurtleMovementComponent::CanAttemptJump/DoJump, #573).
 	if (GetCharacterMovement()->IsSwimming())
 	{
-		if (CanSwimHop())
-		{
-			PerformSwimHop();
-			if (!HasAuthority())
-			{
-				ServerSwimHop();
-			}
-		}
+		Super::Jump();
 		return;
 	}
 
@@ -1209,26 +1204,14 @@ void ATortugaCharacter::PerformAirDashLocally()
 	LaunchCharacter(DashVelocity, true, true);
 }
 
-bool ATortugaCharacter::CanSwimHop() const
+bool ATortugaCharacter::CanSwimHopNow() const
 {
-	const UCharacterMovementComponent* CMC = GetCharacterMovement();
-	return CMC && CMC->IsSwimming() && !bIsKnockedDown && !bIsDead && !IsInShell()
-		&& GetWorld() && GetWorld()->GetTimeSeconds() - LastSwimHopTime >= 0.6f;
+	return !bIsKnockedDown && !bIsDead && !IsInShell();
 }
 
-void ATortugaCharacter::PerformSwimHop()
+FVector ATortugaCharacter::GetSwimHopVelocity() const
 {
-	LastSwimHopTime = GetWorld()->GetTimeSeconds();
-	const FVector Forward = FVector(GetActorForwardVector().X, GetActorForwardVector().Y, 0.f).GetSafeNormal();
-	LaunchCharacter(Forward * SwimHopForward + FVector::UpVector * SwimHopVelocity, true, true);
-}
-
-void ATortugaCharacter::ServerSwimHop_Implementation()
-{
-	if (CanSwimHop())
-	{
-		PerformSwimHop();
-	}
+	return TNSwimHop::HopVelocity(GetActorForwardVector(), SwimHopForward, SwimHopVelocity);
 }
 
 void ATortugaCharacter::ServerPerformAirDash_Implementation()
