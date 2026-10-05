@@ -108,6 +108,12 @@ public:
 	UTN_InventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	/**
+	 * Punto donde nacen la bola lanzada, la tinta y lo que se suelta: 120 cm delante y 40 cm por encima del centro de la
+	 * cápsula, recortado con un barrido para que nunca quede al otro lado de un muro, puerta o valla (#571).
+	 */
+	FVector GetItemSpawnLocation() const;
+
+	/**
 	 * Aplica el efecto de tinta de calamar (#13) en la máquina local del jugador afectado.
 	 * Muestra un overlay de material sobre la cámara durante Duration segundos.
 	 * Solo surte efecto en la máquina que controla localmente este personaje (IsLocallyControlled).
@@ -803,7 +809,6 @@ private:
 	void TryUseEquippedItem();
 	void RefreshSprintRequest();
 	void UpdateFocusedInteractable();
-	FVector GetItemSpawnLocation() const;
 	FVector GetItemForwardDirection() const;
 
 	void TickLegAnimation(float DeltaTime);
