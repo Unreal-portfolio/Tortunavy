@@ -34,6 +34,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buggy")
 	float MaxRPM = 3400.f;
 
+	/**
+	 * Multiplicador del par de la parte alta de la curva (desde el 80 % de MaxRPM; TNBuggy::TorqueCurveKeys). La punta la
+	 * fija ahí: subir MaxRPM sin subir esto apenas la cambia. 1 = el Rally; los karts (#742) lo suben.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buggy", meta = (ClampMin = "0.1"))
+	float TopEndTorqueScale = 1.f;
+
 	/** Relación final de la transmisión: junto con MaxRPM (en 1.ª) fija la punta. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Buggy")
 	float FinalDriveRatio = 2.0f;

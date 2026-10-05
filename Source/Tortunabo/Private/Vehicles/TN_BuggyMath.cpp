@@ -280,10 +280,11 @@ namespace TNBuggy
 		return Keys;
 	}
 
-	TArray<FCurveKey> TorqueCurveKeys(float MaxTorque)
+	TArray<FCurveKey> TorqueCurveKeys(float MaxTorque, float TopEndScale)
 	{
-		// Desde el 80 % de MaxRPM, el par absoluto de la curva antigua: con más MaxTorque, la fracción baja en proporción.
-		const float Scale = MaxTorque > UE_KINDA_SMALL_NUMBER ? LegacyMaxTorque / MaxTorque : 1.f;
+		// Desde el 80 % de MaxRPM, el par absoluto de la curva antigua (por TopEndScale): con más MaxTorque, la fracción baja
+		// en proporción.
+		const float Scale = MaxTorque > UE_KINDA_SMALL_NUMBER ? LegacyMaxTorque * FMath::Max(TopEndScale, 0.f) / MaxTorque : 1.f;
 		const TConstArrayView<FCurveKey> Legacy = LegacyTorqueCurveKeys();
 		TArray<FCurveKey> Keys = { { 0.f, 0.9f }, { 0.1f, 1.f }, { 0.55f, 1.f } };
 		for (const FCurveKey& Key : Legacy)

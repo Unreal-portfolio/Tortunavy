@@ -50,6 +50,33 @@ Reparto: `TNKart::ItemWeightsForPlace` (cuanto más atrás, más objetos buenos)
 - **Agua** (canales abiertos del camino, el mar y las pozas): el kart pliega las ruedas hacia abajo y flota como una balsa;
   acelerador y dirección lo mueven y en la orilla sube la rampa sobre sus ruedas. Salpicaduras al entrar y estela.
 
+## Conducción (#742)
+
+El kart de Karts conduce distinto del buggy del Rally (que sigue igual en `LVL_Rally`: `ATN_RallyKartBuggy` no lleva este ajuste).
+Medido con `Tortunabo.Kart.Measure.*` (llano, sin turbo; Rally → Karts):
+
+| | Rally | Karts |
+|---|---|---|
+| Punta | 111 km/h | 145 km/h (+30 %) |
+| 0-100 km/h | 3,5 s | 2,65 s (+33 % de aceleración media) |
+| 0-60 km/h | 1,9 s | 1,6 s (lo limita el agarre de salida) |
+
+- **Más punta y aceleración**: el régimen del motor y el par suben un 30 % y el par de la parte alta de la curva (el que fija la
+  punta) un 70 % (`TNKart::ApplyKartTuning`). El turbo, el acelerón del objeto y la estrella siguen a la punta nueva. El
+  antivuelco deja de corregir el alabeo a una velocidad un 30 % mayor.
+- **Dirección progresiva**: el buggy tiene tanto agarre que a 90 km/h un 10 % del volante ya daba 1,3 g. El ángulo de las ruedas
+  de la conductora humana baja con la velocidad (`TNKart::SpeedSteerMultiplier`: 1 parado, la mitad a 58 km/h, 0,13 a 125 km/h) y
+  ahora un 10 % del volante da 0,3-0,4 g y el volante a tope 1,5-2 g a cualquier velocidad. La IA no lo lleva: acota su giro por
+  aceleración lateral.
+- **Derrape con el freno de mano**: antes acababa en trompo (deriva media de 100° con el volante a tope). Ahora el freno de mano
+  conserva un cuarto de su par, las traseras agarran algo más (1,4 → 2,2) y, con él puesto, se devuelve el morro hacia la
+  velocidad pasados 22° de deriva: el derrape se sostiene a unos 20-35° con el volante a tope. Un derrape de más de 0,7 s (con el
+  freno puesto, en el suelo, a más de 22 km/h y girando o deslizando) da **mini-turbo al soltar el freno de mano**: 0,6 s a los
+  0,7 s de derrape, 1 s a los 1,4 s y 1,5 s a los 2,2 s (`TNKart::AdvanceDrift`, `ATN_Buggy::GrantTimedBoost`). Llama, sonido y
+  cámara son los del turbo, y la barra del turbo no se gasta.
+- **Para comparar**: `TN.Kart.Tuning 0` (antes de la partida) deja el kart como el buggy del Rally. `TN.Kart.SpeedScale` (1,3) y
+  `TN.Kart.TopEndTorque` (1,7) mueven la punta sin recompilar. Los bots no cambian de velocidad (74/84/94 km/h por dificultad).
+
 ## Controles propios de los karts
 
 | Acción | Conductora | Artillera |
@@ -87,10 +114,11 @@ completo y cómo funciona en `Docs/Modo_VR.md` («Vehículos»).
 | `ATN_KartGameState` | Hace la pista con el generador (`PrepareTrack`, el único gancho nuevo en el Rally). |
 | `ATN_KartTrack`, `TNKart::PlanRouteFromPath` | Pista desde el camino: puertas, línea del piloto IA, alas y cajas. |
 | `ATN_KartBuggy`, `ATN_KartGunnerPawn` | El buggy y la artillera de SkiTemplar con objetos, peso y cámara de la conductora sola. |
+| `TNKart::ApplyKartTuning`, `AdvanceDrift` | Conducción de los karts (#742): ajuste del buggy, dirección según la velocidad y mini-turbo del derrape. |
 | `UTN_KartItemComponent`, `ATN_KartItemBox`, `ATN_KartShell` | Objetos, cajas y conchas. |
 | `UTN_KartTraversalComponent` | Géiseres, cascadas y agua. |
 | `UTN_KartHUDWidget` | Objeto, ruleta, kilómetros que quedan y peso de la artillera. |
 | `TNProcMap::FGenParams::bDrivable` | El camino del cooperativo hecho para el kart (sin ramas, huecos ni cosas de las tortugas a pie). |
 
-Pruebas: `Tortunabo.Kart.*` (ruta, objetos, artillera, géiser y flotación), `Tortunabo.ProcMap.Drivable` y, con gafas,
+Pruebas: `Tortunabo.Kart.*` (ruta, objetos, artillera, géiser y flotación, `Tuning` y, con física y sin ventana, `Measure`), `Tortunabo.ProcMap.Drivable` y, con gafas,
 `Tortunabo.VR.Vehicle.*`. Comandos de prueba en `Docs/Comandos_Prueba.md` («Karts en el mapa del cooperativo» y «Modo VR»).

@@ -76,12 +76,40 @@ bool ATN_Buggy::IsBoosting() const
 	{
 		return false;
 	}
+	// El turbo regalado (mini-turbo del derrape de los karts) empuja en cualquier máquina por su hora de fin.
+	if (GetTimedBoostSecondsLeft() > 0.f)
+	{
+		return true;
+	}
 	// La conductora local (cliente) no recibe bBoostActive: lo predice con la misma regla que el servidor.
 	if (IsLocallyControlled() && !HasAuthority())
 	{
 		return bBoostHeld && BoostCharge01 > 0.f;
 	}
 	return bBoostActive;
+}
+
+void ATN_Buggy::GrantTimedBoost(float Seconds)
+{
+	if (Seconds <= 0.f)
+	{
+		return;
+	}
+	const float End = static_cast<float>(GetServerNow()) + Seconds;
+	if (End <= TimedBoostEndServerTime)
+	{
+		return;
+	}
+	TimedBoostEndServerTime = End;
+	if (HasAuthority())
+	{
+		ForceNetUpdate();
+	}
+}
+
+float ATN_Buggy::GetTimedBoostSecondsLeft() const
+{
+	return TimedBoostEndServerTime > 0.f ? FMath::Max(0.f, TimedBoostEndServerTime - static_cast<float>(GetServerNow())) : 0.f;
 }
 
 void ATN_Buggy::UpdateBoost(float DeltaSeconds)

@@ -86,9 +86,9 @@ namespace TNBuggyDetail
 	}
 
 	/** Curva de par (TNBuggy::TorqueCurveKeys) en rpm. Se lee al crear la simulación. */
-	void BuildTorqueCurve(FVehicleEngineConfig& Engine, float MaxRPM, float MaxTorque)
+	void BuildTorqueCurve(FVehicleEngineConfig& Engine, float MaxRPM, float MaxTorque, float TopEndScale)
 	{
-		const TArray<TNBuggy::FCurveKey> Keys = TNBuggy::TorqueCurveKeys(MaxTorque);
+		const TArray<TNBuggy::FCurveKey> Keys = TNBuggy::TorqueCurveKeys(MaxTorque, TopEndScale);
 		FillLinearCurve(*Engine.TorqueCurve.GetRichCurve(), Keys, MaxRPM, 1.f);
 	}
 
@@ -275,7 +275,7 @@ ATN_Buggy::ATN_Buggy()
 	const UTN_BuggyData* Defaults = GetDefault<UTN_BuggyData>();
 	Move->EngineSetup.MaxTorque = Defaults->MaxTorque;
 	Move->EngineSetup.MaxRPM = Defaults->MaxRPM;
-	BuildTorqueCurve(Move->EngineSetup, Defaults->MaxRPM, Defaults->MaxTorque);
+	BuildTorqueCurve(Move->EngineSetup, Defaults->MaxRPM, Defaults->MaxTorque, Defaults->TopEndTorqueScale);
 	ApplyDifferential(Move->DifferentialSetup, *Defaults);
 	Move->SteeringSetup.SteeringType = ESteeringType::AngleRatio;
 	Move->SteeringSetup.AngleRatio = TNBuggy::SteerAngleRatio;
@@ -322,7 +322,7 @@ void ATN_Buggy::PostInitializeComponents()
 	const UTN_BuggyData* Tuning = GetData();
 	Move->EngineSetup.MaxTorque = Tuning->MaxTorque;
 	Move->EngineSetup.MaxRPM = Tuning->MaxRPM;
-	TNBuggyDetail::BuildTorqueCurve(Move->EngineSetup, Tuning->MaxRPM, Tuning->MaxTorque);
+	TNBuggyDetail::BuildTorqueCurve(Move->EngineSetup, Tuning->MaxRPM, Tuning->MaxTorque, Tuning->TopEndTorqueScale);
 	TNBuggyDetail::BuildSteeringCurve(Move->SteeringSetup);
 	TNBuggyDetail::ApplySteeringResponse(*Move, *Tuning);
 	Move->TransmissionSetup.FinalRatio = Tuning->FinalDriveRatio;
@@ -379,6 +379,7 @@ void ATN_Buggy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(ATN_Buggy, BoostCharge01);
 	// La conductora predice su turbo con su botón (IsBoosting): solo lo reciben los demás.
 	DOREPLIFETIME_CONDITION(ATN_Buggy, bBoostActive, COND_SkipOwner);
+	DOREPLIFETIME(ATN_Buggy, TimedBoostEndServerTime);
 }
 
 void ATN_Buggy::Tick(float DeltaSeconds)

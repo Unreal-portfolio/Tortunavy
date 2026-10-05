@@ -175,6 +175,20 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	float GetBoostStrength() const { return BoostStrength01; }
 
+	/**
+	 * Turbo regalado durante Seconds (#742, el mini-turbo del derrape de los karts): cuenta como IsBoosting sin pisar el botón
+	 * ni gastar la barra, con la misma rampa, el mismo empuje, la llama y el sonido. Lo piden el servidor y la conductora
+	 * local (que lo predice); la hora de fin se replica al resto. Un turbo ya regalado no se acorta.
+	 */
+	void GrantTimedBoost(float Seconds);
+
+	/** Segundos que le quedan al turbo regalado (0 = ninguno). */
+	float GetTimedBoostSecondsLeft() const;
+
+	/** Freno de mano puesto (el de la conductora o el de la IA) y ninguna rueda en el suelo: para el derrape de los karts. */
+	bool IsHandbrakeHeld() const { return bHandbrakeHeld; }
+	bool IsAirborne() const { return bAirborne; }
+
 	/** Sacudida (0..1) para la cámara de la conductora local; en otras máquinas no hace nada. Para impactos y disparos. */
 	UFUNCTION(BlueprintCallable, Category = "Rally|Buggy")
 	void AddCameraTrauma(float Amount);
@@ -604,6 +618,10 @@ private:
 	/** Turbo empujando según el servidor. La conductora no lo recibe: lo predice con su botón (IsBoosting). */
 	UPROPERTY(Replicated)
 	bool bBoostActive = false;
+
+	/** Hora del servidor en que acaba el turbo regalado (GrantTimedBoost); 0 = ninguno. */
+	UPROPERTY(Replicated)
+	float TimedBoostEndServerTime = 0.f;
 
 	// ── Estado local o de servidor ─────────────────────────────────────────────
 	UPROPERTY(Transient)
