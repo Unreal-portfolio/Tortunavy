@@ -19,8 +19,8 @@ class ATN_PathStorm;
  *  - Quien llega a la meta espera como espectador; cuando todos los vivos han llegado, se genera el siguiente
  *    nivel y, en cuanto su suelo tiene colisión, vuelven a salir desde la salida del mapa nuevo.
  *  - Morir es definitivo (sin DBNO ni rescate; el tótem sí salva) y los muertos espectan.
- *  - La tormenta sigue el camino (ATN_PathStorm, como en el Coop): sale por detrás de la salida de cada nivel y cada
- *    nivel va algo más rápida (TNSurvivalLogic::StormSpeedForLevel). Más rápida que andando: hay que esprintar, y los
+ *  - La tormenta sigue el camino (ATN_PathStorm, como en el Coop): aparece con las tortugas, 30 m por detrás de la salida
+ *    de cada nivel, y echa a andar al momento, sin espera (#725). Cada nivel va algo más rápida (TNSurvivalLogic::StormSpeedForLevel). Más rápida que andando: hay que esprintar, y los
  *    derribos y las paradas a coger objetos se pagan. La caja de LVL_Run (ATN_StormVolume) se quita.
  *  - En grupo gana la última viva; si las últimas mueren en el mismo nivel, la que murió más cerca de la meta.
  *    En solitario dura hasta que muere.
@@ -72,10 +72,6 @@ protected:
 	/** Tope (cm/s): con trampas, saltos y curvas, más cerca de esprintar ya no se le escapa nadie. */
 	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
 	float StormSpeedMax = 600.f;
-
-	/** Segundos desde que salen hasta que la tormenta echa a andar (arranca 30 m por detrás de la salida). */
-	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
-	float StormGraceSeconds = 3.f;
 
 	virtual void OnWaitingTimeout() override;
 
@@ -153,11 +149,8 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_PathStorm> Storm;
 
-	/**
-	 * Lanza la tormenta por el camino del mapa del nivel, a la velocidad del nivel. Echa a andar StormGraceSeconds más
-	 * ExtraGraceSeconds después de que salgan.
-	 */
-	void StartLevelStorm(float ExtraGraceSeconds = 0.f);
+	/** Lanza la tormenta por el camino del mapa del nivel, a la velocidad del nivel: 30 m por detrás de la salida y sin espera. */
+	void StartLevelStorm();
 
 	/** Para la tormenta y quita las cuentas atrás (nivel superado o fin de partida). */
 	void StopLevelStorm();

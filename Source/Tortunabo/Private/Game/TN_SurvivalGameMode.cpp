@@ -529,7 +529,7 @@ void ATN_SurvivalGameMode::FinishSurvival(int32 WinnerId)
 	StartResults();
 }
 
-void ATN_SurvivalGameMode::StartLevelStorm(float ExtraGraceSeconds)
+void ATN_SurvivalGameMode::StartLevelStorm()
 {
 	const ATN_ChunkManager* Manager = FindChunkManager();
 	ATN_ProcMapGenerator* Generator = Manager ? Manager->GetLevelGenerator() : nullptr;
@@ -547,7 +547,8 @@ void ATN_SurvivalGameMode::StartLevelStorm(float ExtraGraceSeconds)
 		return;
 	}
 	const float Speed = TNSurvivalLogic::StormSpeedForLevel(CurrentLevel, StormSpeedFirstLevel, StormSpeedPerLevel, StormSpeedMax);
-	Storm->StartStorm(Generator, Speed, StormGraceSeconds + FMath::Max(0.f, ExtraGraceSeconds));
+	// Sale a la vez que las tortugas, sin espera: solo la ventaja de aparecer 30 m por detrás de la salida.
+	Storm->StartStorm(Generator, Speed, 0.f);
 	UE_LOG(LogTortunabo, Log, TEXT("[Survival] Tormenta del nivel %d: %.0f cm/s por un camino de %.0f m."),
 		CurrentLevel, Speed, Generator->GetMainPathLength() / 100.f);
 }
