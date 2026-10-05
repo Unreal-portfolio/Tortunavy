@@ -615,8 +615,44 @@ namespace TNFauna
 		FLinearColor ExtraC = FLinearColor(0.85f, 0.1f, 0.1f);
 	};
 
-	/** Ave: cuerpo con la cola, cabeza con el cuello y el pico, dos alas (abiertas en la malla) y dos patas. */
-	inline void TNFaunaBuildBird(const FTNFaunaBirdLook& L, bool bShadow, TArray<FTNFaunaPart>& Out, FTNFaunaRig& Rig)
+	/**
+	 * Pico de abajo de un ave que lo abre (las gaviotas y el pelícano de la playa: TNFaunaBuildBird con OutJaw). Mesh va en el
+	 * espacio de su pivote, la base del pico en el espacio de la cabeza (Pivot): girándolo hacia abajo se abre el pico.
+	 */
+	struct FTNFaunaBirdJaw
+	{
+		FTNProcMeshBuffers Mesh;
+		FVector Pivot = FVector::ZeroVector;
+	};
+
+	/**
+	 * Mitad de arriba (bUpper) o de abajo del tramo de pico de TNProcAddCylinder de 4 lados entre A y B (radios RA y RB):
+	 * las dos juntas son ese mismo tramo. La cara plana del corte, la de dentro de la boca, se pinta de Inside.
+	 */
+	inline void TNFaunaBeakHalf(FTNProcMeshBuffers& M, const FVector& A, const FVector& B, double RA, double RB, bool bUpper,
+		const FLinearColor& Color, const FLinearColor& Inside)
+	{
+		const FVector Ax = (B - A).GetSafeNormal();
+		if (Ax.IsNearlyZero()) { return; }
+		// Los mismos ejes que TNProcAddCylinder: U de lado y V hacia abajo (sus vértices a 0, 90, 180 y 270 grados).
+		const FVector U = FVector::CrossProduct(Ax, FMath::Abs(Ax.Z) < 0.9 ? FVector::UpVector : FVector::ForwardVector).GetSafeNormal();
+		const FVector V = FVector::CrossProduct(Ax, U);
+		const FVector Apex = bUpper ? -V : V;
+		const FVector A0 = A + U * RA, A1 = A + Apex * RA, A2 = A - U * RA;
+		const FVector B0 = B + U * RB, B1 = B + Apex * RB, B2 = B - U * RB;
+		M.AddQuad(A0, A1, B1, B0, U + Apex, Color);
+		M.AddQuad(A1, A2, B2, B1, Apex - U, Color);
+		M.AddQuad(A0, A2, B2, B0, -Apex, Inside);
+		M.AddTri(A0, A1, A2, -Ax, Color * 0.9f);
+		M.AddTri(B0, B1, B2, Ax, Color * 1.05f);
+	}
+
+	/**
+	 * Ave: cuerpo con la cola, cabeza con el cuello y el pico, dos alas (abiertas en la malla) y dos patas. Con OutJaw, el
+	 * pico se abre: la cabeza lleva solo la mitad de arriba y la de abajo (con la bolsa del pelícano) sale en OutJaw. Cerrado
+	 * es el mismo pico de una pieza (antes, una mandíbula suelta debajo del pico entero se veía como un segundo pico).
+	 */
+	inline void TNFaunaBuildBird(const FTNFaunaBirdLook& L, bool bShadow, TArray<FTNFaunaPart>& Out, FTNFaunaRig& Rig, FTNFaunaBirdJaw* OutJaw = nullptr)
 	{
 		const double HipDrop = L.Girth * 0.45;
 		const double BodyZ = L.Leg + HipDrop;
@@ -656,8 +692,29 @@ namespace TNFauna
 			const FVector Beak0 = HeadAt + FVector(L.Head * 0.95, 0.0, -L.Head * 0.1);
 			const FVector BeakMid = Beak0 + FVector(L.Beak * 0.5, 0.0, -L.Beak * 0.1 * L.BeakDroop);
 			const FVector BeakEnd = BeakMid + FVector(L.Beak * 0.5 * (1.0 - 0.45 * L.BeakDroop), 0.0, -L.Beak * 0.42 * L.BeakDroop);
-			TNProcAddCylinder(M, Beak0, BeakMid, L.BeakR, L.BeakR * 0.75, 4, L.BeakC, true);
-			TNProcAddCylinder(M, BeakMid, BeakEnd, L.BeakR * 0.75, L.BeakR * 0.2, 4, L.BeakTip, true);
+			if (OutJaw)
+			{
+				// El pico que se abre: arriba, en la cabeza; abajo, en su pieza (con su pivote en la base del pico).
+				const FLinearColor Palate(0.45f, 0.08f, 0.1f);
+				const FLinearColor MouthFloor(0.55f, 0.1f, 0.12f);
+				TNFaunaBeakHalf(M, Beak0, BeakMid, L.BeakR, L.BeakR * 0.75, true, L.BeakC, Palate);
+				TNFaunaBeakHalf(M, BeakMid, BeakEnd, L.BeakR * 0.75, L.BeakR * 0.2, true, L.BeakTip, Palate);
+				FTNProcMeshBuffers& J = OutJaw->Mesh;
+				J = FTNProcMeshBuffers();
+				OutJaw->Pivot = Beak0;
+				TNFaunaBeakHalf(J, FVector::ZeroVector, BeakMid - Beak0, L.BeakR, L.BeakR * 0.75, false, L.BeakC * 0.92f, MouthFloor);
+				TNFaunaBeakHalf(J, BeakMid - Beak0, BeakEnd - Beak0, L.BeakR * 0.75, L.BeakR * 0.2, false, L.BeakTip * 0.9f, MouthFloor);
+				if (L.Extra == 3)
+				{
+					// La bolsa del pelícano cuelga del pico de abajo y baja con él.
+					TNFaunaBlob(J, FVector(L.Beak * 0.45, 0.0, -L.BeakR * 1.5), FVector(L.Beak * 0.45, L.BeakR * 1.0, L.BeakR * 1.4), L.ExtraC, L.ExtraC * 0.9f, 6, 3);
+				}
+			}
+			else
+			{
+				TNProcAddCylinder(M, Beak0, BeakMid, L.BeakR, L.BeakR * 0.75, 4, L.BeakC, true);
+				TNProcAddCylinder(M, BeakMid, BeakEnd, L.BeakR * 0.75, L.BeakR * 0.2, 4, L.BeakTip, true);
+			}
 			const FVector EyeAt = HeadAt + FVector(L.Head * 0.35, 0.0, L.Head * 0.25);
 			if (L.Extra == 5)
 			{
@@ -687,9 +744,9 @@ namespace TNFauna
 					M.AddBox(HeadAt + FVector(-L.Head * 0.25, Side * L.Head * 0.74, L.Head * 0.2), FVector::ForwardVector, FVector(L.Head * 0.3, L.Head * 0.07, L.Head * 0.14), FLinearColor(0.2f, 0.5f, 0.95f));
 				}
 			}
-			else if (L.Extra == 3)
+			else if (L.Extra == 3 && !OutJaw)
 			{
-				// Bolsa del pelícano bajo el pico.
+				// Bolsa del pelícano bajo el pico (si el pico se abre, va con el de abajo).
 				TNFaunaBlob(M, Beak0 + FVector(L.Beak * 0.45, 0.0, -L.BeakR * 1.5), FVector(L.Beak * 0.45, L.BeakR * 1.0, L.BeakR * 1.4), L.ExtraC, L.ExtraC * 0.9f, 6, 3);
 			}
 			TNFaunaAddPart(Out, ETNFaunaBone::Head, FVector(L.Len * 0.7, 0.0, L.Girth * 0.45), MoveTemp(M), false, bShadow);
@@ -1369,8 +1426,11 @@ namespace TNFauna
 	// Receta de cada especie
 	// ─────────────────────────────────────────────────────────────────────────
 
-	/** Piezas y esqueleto de una especie. */
-	inline void TNFaunaBuildSpecies(ETNFaunaSpecies Species, TArray<FTNFaunaPart>& Out, FTNFaunaRig& Rig)
+	/**
+	 * Piezas y esqueleto de una especie. Con OutJaw, un ave lleva el pico de abajo aparte, para abrirlo (TNFaunaBuildBird);
+	 * los demás animales lo dejan vacío.
+	 */
+	inline void TNFaunaBuildSpecies(ETNFaunaSpecies Species, TArray<FTNFaunaPart>& Out, FTNFaunaRig& Rig, FTNFaunaBirdJaw* OutJaw = nullptr)
 	{
 		using FaunaSp = ETNFaunaSpecies;
 		const FTNFaunaSpec& Sp = TNFaunaSpec(Species);
@@ -1416,7 +1476,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.96f, 0.96f, 0.94f); L.Belly = Rgb(0.98f, 0.98f, 0.96f); L.WingC = Rgb(0.62f, 0.66f, 0.72f); L.WingTip = Rgb(0.12f, 0.12f, 0.14f);
 				L.HeadC = Rgb(0.97f, 0.97f, 0.95f); L.NeckC = L.HeadC; L.BeakC = Rgb(1.f, 0.8f, 0.15f); L.BeakTip = Rgb(0.9f, 0.2f, 0.1f);
 				L.LegC = Rgb(0.95f, 0.66f, 0.52f); L.TailC = Rgb(0.9f, 0.9f, 0.9f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Sandpiper:
@@ -1427,7 +1487,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.64f, 0.52f, 0.36f); L.Belly = Rgb(0.96f, 0.94f, 0.9f); L.WingC = Rgb(0.55f, 0.44f, 0.3f); L.WingTip = Rgb(0.28f, 0.22f, 0.16f);
 				L.HeadC = L.Plumage; L.NeckC = Rgb(0.8f, 0.72f, 0.6f); L.BeakC = Rgb(0.12f, 0.1f, 0.1f); L.BeakTip = L.BeakC;
 				L.LegC = Rgb(0.25f, 0.22f, 0.2f); L.TailC = Rgb(0.4f, 0.33f, 0.24f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Toucan:
@@ -1438,7 +1498,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.07f, 0.07f, 0.08f); L.Belly = Rgb(0.1f, 0.1f, 0.1f); L.WingC = Rgb(0.08f, 0.08f, 0.09f); L.WingTip = Rgb(0.05f, 0.05f, 0.06f);
 				L.HeadC = L.Plumage; L.NeckC = Rgb(1.f, 0.86f, 0.2f); L.BeakC = Rgb(1.f, 0.58f, 0.05f); L.BeakTip = Rgb(0.9f, 0.12f, 0.05f);
 				L.LegC = Rgb(0.35f, 0.45f, 0.7f); L.TailC = L.Plumage; L.ExtraC = Rgb(1.f, 0.86f, 0.2f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Heron:
@@ -1449,7 +1509,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.97f, 0.97f, 0.95f); L.Belly = L.Plumage; L.WingC = L.Plumage; L.WingTip = Rgb(0.92f, 0.92f, 0.94f);
 				L.HeadC = L.Plumage; L.NeckC = L.Plumage; L.BeakC = Rgb(1.f, 0.82f, 0.12f); L.BeakTip = L.BeakC;
 				L.LegC = Rgb(0.12f, 0.12f, 0.12f); L.TailC = L.Plumage;
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Flamingo:
@@ -1460,7 +1520,7 @@ namespace TNFauna
 				L.Plumage = Rgb(1.f, 0.52f, 0.62f); L.Belly = Rgb(1.f, 0.64f, 0.72f); L.WingC = Rgb(0.98f, 0.42f, 0.52f); L.WingTip = Rgb(0.08f, 0.08f, 0.08f);
 				L.HeadC = Rgb(1.f, 0.56f, 0.66f); L.NeckC = L.HeadC; L.BeakC = Rgb(0.96f, 0.88f, 0.84f); L.BeakTip = Rgb(0.08f, 0.08f, 0.08f);
 				L.LegC = Rgb(0.98f, 0.5f, 0.58f); L.TailC = Rgb(0.98f, 0.45f, 0.55f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Pelican:
@@ -1471,7 +1531,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.93f, 0.93f, 0.9f); L.Belly = Rgb(0.96f, 0.96f, 0.94f); L.WingC = Rgb(0.78f, 0.78f, 0.8f); L.WingTip = Rgb(0.15f, 0.15f, 0.16f);
 				L.HeadC = Rgb(0.97f, 0.96f, 0.88f); L.NeckC = Rgb(0.95f, 0.95f, 0.93f); L.BeakC = Rgb(1.f, 0.78f, 0.25f); L.BeakTip = Rgb(0.95f, 0.5f, 0.15f);
 				L.LegC = Rgb(0.95f, 0.55f, 0.2f); L.TailC = Rgb(0.85f, 0.85f, 0.85f); L.ExtraC = Rgb(1.f, 0.6f, 0.22f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Vulture:
@@ -1482,7 +1542,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.18f, 0.13f, 0.1f); L.Belly = Rgb(0.22f, 0.16f, 0.12f); L.WingC = Rgb(0.2f, 0.15f, 0.11f); L.WingTip = Rgb(0.08f, 0.06f, 0.05f);
 				L.HeadC = Rgb(0.88f, 0.38f, 0.32f); L.NeckC = Rgb(0.85f, 0.55f, 0.5f); L.BeakC = Rgb(0.88f, 0.84f, 0.72f); L.BeakTip = Rgb(0.25f, 0.2f, 0.18f);
 				L.LegC = Rgb(0.55f, 0.5f, 0.45f); L.TailC = Rgb(0.15f, 0.1f, 0.08f); L.ExtraC = Rgb(0.92f, 0.9f, 0.84f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Eagle:
@@ -1493,7 +1553,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.36f, 0.23f, 0.12f); L.Belly = Rgb(0.32f, 0.2f, 0.1f); L.WingC = Rgb(0.33f, 0.21f, 0.11f); L.WingTip = Rgb(0.14f, 0.09f, 0.05f);
 				L.HeadC = Rgb(0.97f, 0.97f, 0.95f); L.NeckC = L.HeadC; L.BeakC = Rgb(1.f, 0.8f, 0.12f); L.BeakTip = Rgb(0.95f, 0.7f, 0.1f);
 				L.LegC = Rgb(1.f, 0.8f, 0.15f); L.TailC = Rgb(0.97f, 0.97f, 0.95f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Pigeon:
@@ -1504,7 +1564,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.56f, 0.59f, 0.67f); L.Belly = Rgb(0.64f, 0.66f, 0.74f); L.WingC = Rgb(0.64f, 0.67f, 0.74f); L.WingTip = Rgb(0.25f, 0.26f, 0.3f);
 				L.HeadC = Rgb(0.45f, 0.48f, 0.56f); L.NeckC = Rgb(0.32f, 0.6f, 0.52f); L.BeakC = Rgb(0.22f, 0.22f, 0.24f); L.BeakTip = L.BeakC;
 				L.LegC = Rgb(0.92f, 0.36f, 0.36f); L.TailC = Rgb(0.4f, 0.42f, 0.5f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Hen:
@@ -1515,7 +1575,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.74f, 0.36f, 0.15f); L.Belly = Rgb(0.82f, 0.47f, 0.22f); L.WingC = Rgb(0.64f, 0.3f, 0.12f); L.WingTip = Rgb(0.46f, 0.2f, 0.08f);
 				L.HeadC = Rgb(0.76f, 0.38f, 0.17f); L.NeckC = Rgb(0.82f, 0.5f, 0.2f); L.BeakC = Rgb(1.f, 0.8f, 0.25f); L.BeakTip = L.BeakC;
 				L.LegC = Rgb(1.f, 0.8f, 0.22f); L.TailC = Rgb(0.28f, 0.14f, 0.08f); L.ExtraC = Rgb(0.92f, 0.12f, 0.1f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Roadrunner:
@@ -1526,7 +1586,7 @@ namespace TNFauna
 				L.Plumage = Rgb(0.46f, 0.36f, 0.22f); L.Belly = Rgb(0.92f, 0.88f, 0.78f); L.WingC = Rgb(0.36f, 0.28f, 0.2f); L.WingTip = Rgb(0.2f, 0.15f, 0.1f);
 				L.HeadC = Rgb(0.42f, 0.32f, 0.2f); L.NeckC = Rgb(0.7f, 0.62f, 0.5f); L.BeakC = Rgb(0.22f, 0.2f, 0.18f); L.BeakTip = L.BeakC;
 				L.LegC = Rgb(0.42f, 0.52f, 0.68f); L.TailC = Rgb(0.3f, 0.25f, 0.2f); L.ExtraC = Rgb(0.28f, 0.2f, 0.14f);
-				TNFaunaBuildBird(L, bShadow, Out, Rig);
+				TNFaunaBuildBird(L, bShadow, Out, Rig, OutJaw);
 				break;
 			}
 			case FaunaSp::Monkey:

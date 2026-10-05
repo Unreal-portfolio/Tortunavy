@@ -66,8 +66,10 @@ cooperativo. El cooperativo (lobby del castillo y mapa procedural) sigue igual.
   que cruzan la playa de lado a lado entre palmeras (temblor de pantalla, nube de humo, ruedas anchísimas: o fuera de su
   paso o en el hueco entre las ruedas; si te pillan, ragdoll lanzado); gaviotas y pelícanos que rondan por arriba, cada
   uno en su círculo (te cagan encima: ragdoll y mancha; bajan en picado con su sombra creciendo: esquiva con el panzazo;
-  o te cogen con el pico, cuelgas pataleando, te suben y te sueltan: en bola al caer); la tormenta de bañistas por
-  detrás, a ras de arena y más lenta que la carrera, con sombrillas, cubos y sillas de playa volando.
+  o te cogen con el pico, cuelgas pataleando, te suben y te sueltan: en bola al caer; mientras te llevan, tu cámara de
+  tercera persona se aleja y sube un poco para ver adónde vas y vuelve sin saltos al soltarte, `Player/TN_CarriedCamera.h`;
+  el pico es uno solo, con la mitad de abajo aparte para abrirlo, `TNBeachMeshes::BuildBirdParts`); la tormenta de
+  bañistas por detrás, a ras de arena y más lenta que la carrera, con sombrillas, cubos y sillas de playa volando.
 
 ## Terreno, nivel y reparto (`ATN_BeachRaceGenerator`, `TN_BeachLayout.h`)
 

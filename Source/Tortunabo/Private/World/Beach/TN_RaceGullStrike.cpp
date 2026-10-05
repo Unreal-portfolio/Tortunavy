@@ -772,10 +772,11 @@ void ATN_RaceGullStrike::BuildVisuals()
 	CourseForward = CourseForwardOf(this);
 	ShadowZ = static_cast<float>(GetActorLocation().Z);
 
-	// La gaviota de la fauna (la de las zonas de gaviotas): piezas compartidas y la mandíbula de abajo.
+	// La gaviota de la fauna (la de las zonas de gaviotas): piezas compartidas, con el pico de abajo aparte.
 	TArray<TNFauna::FTNFaunaPart> Parts;
 	TNFauna::FTNFaunaRig FaunaRig;
-	TNFauna::TNFaunaBuildSpecies(TNFauna::ETNFaunaSpecies::Gull, Parts, FaunaRig);
+	TNFauna::FTNFaunaBirdJaw JawData;
+	TNBeachMeshes::BuildBirdParts(false, Parts, FaunaRig, JawData);
 
 	GullRoot = NewObject<USceneComponent>(this, NAME_None, RF_Transient);
 	GullRoot->SetupAttachment(GetRootComponent());
@@ -796,7 +797,7 @@ void ATN_RaceGullStrike::BuildVisuals()
 				continue;
 			}
 			const FTNProcMeshBuffers& Buffers = Part.Mesh;
-			UStaticMesh* PartMesh = TNBeachKit::CachedMesh(FString::Printf(TEXT("Beach.Gull.%d"), PartIndex), [&Buffers](FTNProcMeshBuffers& M) { M = Buffers; });
+			UStaticMesh* PartMesh = TNBeachKit::CachedMesh(TNBeachMeshes::BirdPartKey(false, PartIndex), [&Buffers](FTNProcMeshBuffers& M) { M = Buffers; });
 			USceneComponent* Parent = bIsBody ? GullRoot.Get() : static_cast<USceneComponent*>(BodyComp);
 			UStaticMeshComponent* Comp = TNBeachKit::AddPart(this, Parent ? Parent : GullRoot.Get(), PartMesh, Part.Pivot, false);
 			if (bIsBody && !BodyComp)
@@ -817,7 +818,7 @@ void ATN_RaceGullStrike::BuildVisuals()
 		}
 	}
 	UStaticMeshComponent* HeadComp = GullParts.IsValidIndex(HeadPart) ? GullParts[HeadPart].Get() : nullptr;
-	UStaticMesh* JawMesh = TNBeachKit::CachedMesh(TEXT("Beach.Gull.Jaw"), [](FTNProcMeshBuffers& M) { TNBeachMeshes::BuildBirdJaw(M, false); });
+	UStaticMesh* JawMesh = TNBeachKit::CachedMesh(TNBeachMeshes::BirdJawKey(false), [&JawData](FTNProcMeshBuffers& M) { M = JawData.Mesh; });
 	Jaw = HeadComp ? TNBeachKit::AddPart(this, HeadComp, JawMesh, TNBeachMeshes::BirdGeom(false).BeakBase, false) : nullptr;
 
 	GullShadow = TNBeachKit::AddShadow(this, 0.38f);

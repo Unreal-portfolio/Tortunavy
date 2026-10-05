@@ -148,7 +148,7 @@ void ATN_EnemySeagull::BuildCodeArt()
 	{
 		return;
 	}
-	// La gaviota de la fauna (la de las zonas de gaviotas y la de la carrera): mismas piezas y misma caché de mallas.
+	// La gaviota de la fauna (la de las zonas de gaviotas y la de la carrera), con el pico entero en la cabeza: esta no lo abre.
 	TArray<TNFauna::FTNFaunaPart> Parts;
 	TNFauna::FTNFaunaRig Rig;
 	TNFauna::TNFaunaBuildSpecies(TNFauna::ETNFaunaSpecies::Gull, Parts, Rig);
