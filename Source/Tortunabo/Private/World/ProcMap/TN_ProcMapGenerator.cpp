@@ -429,7 +429,9 @@ bool ATN_ProcMapGenerator::MapCollisionUnder(const FVector& WorldLocation) const
 	if (!World) { return false; }
 	FHitResult Hit;
 	const FCollisionQueryParams Params(SCENE_QUERY_STAT(TNProcMapGround), false);
-	const bool bHit = World->LineTraceSingleByChannel(Hit, WorldLocation + FVector(0.0, 0.0, 200.0), WorldLocation - FVector(0.0, 0.0, 30000.0), ECC_WorldStatic, Params);
+	// Solo objetos estáticos: un kart aparcado en la parrilla, una tortuga o un bot encima no tapan el suelo (#755).
+	const bool bHit = World->LineTraceSingleByObjectType(Hit, WorldLocation + FVector(0.0, 0.0, 200.0), WorldLocation - FVector(0.0, 0.0, 30000.0),
+		FCollisionObjectQueryParams(ECC_WorldStatic), Params);
 	// El suelo de la estructura de salida (sala o montículo, replicada) también sostiene: su colisión es síncrona.
 	return bHit && (Hit.GetActor() == this || Cast<ATN_ProcStartStructure>(Hit.GetActor()) != nullptr);
 }

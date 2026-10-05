@@ -42,7 +42,12 @@ bool FTNRallyCameraFlatShotsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Resultados: el podio"), DecideShot(Results), EShot::Podium);
 	TNRallyCamera::FShotInput Warmup = Racing(false, false, -1.0, false);
 	Warmup.Phase = ETNRallyPhase::Warmup;
-	TestEqual(TEXT("Calentamiento: su cámara"), DecideShot(Warmup), EShot::Own);
+	TestEqual(TEXT("Calentamiento sin buggy: a un buggy de la parrilla (#756)"), DecideShot(Warmup), EShot::Spectate);
+	Warmup.bSeated = true;
+	TestEqual(TEXT("Calentamiento sentada: su cámara"), DecideShot(Warmup), EShot::Own);
+	TNRallyCamera::FShotInput Countdown = Racing(true, false, -1.0, false);
+	Countdown.Phase = ETNRallyPhase::Countdown;
+	TestEqual(TEXT("Semáforo sentada: su cámara"), DecideShot(Countdown), EShot::Own);
 	return true;
 }
 

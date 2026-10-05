@@ -39,7 +39,9 @@ namespace TNRallyCamera
 		}
 		if (!IsRaceOn(In.Phase))
 		{
-			return EShot::Own;
+			// Antes de la salida sin buggy (espera del mapa en Karts): a un buggy de la parrilla, no a la vista del mando sin
+			// peón, que en el mapa generado queda bajo el terreno (#756).
+			return In.bSeated ? EShot::Own : EShot::Spectate;
 		}
 		if (!In.bSeated)
 		{

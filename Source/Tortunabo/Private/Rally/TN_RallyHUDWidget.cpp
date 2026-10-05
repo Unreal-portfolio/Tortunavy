@@ -1,6 +1,7 @@
 #include "Rally/TN_RallyHUDWidget.h"
 
 #include "../UI/Race/TN_RaceUIKit.h"
+#include "Core/TN_GameModeSpawnUtils.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/ProgressBar.h"
@@ -34,6 +35,14 @@ namespace TNRallyHUD
 	constexpr float TextRefreshSeconds = 0.1f;
 	/** Paso máximo de la cuenta del aviso de reaparición (s): un tirón no lo enseña de golpe. */
 	constexpr double RespawnHintMaxStepSeconds = 0.5;
+
+	/** Personas en la partida (sin los bots): con una sola no hay a quién esperar. */
+	int32 CountHumans(const AGameStateBase& State)
+	{
+		int32 Count = 0;
+		for (const APlayerState* PS : State.PlayerArray) { Count += PS && !TN_IsBotPlayerState(PS) ? 1 : 0; }
+		return Count;
+	}
 
 	const FLinearColor LightOff(0.06f, 0.07f, 0.09f, 0.9f);
 	const FLinearColor LightRed(0.95f, 0.16f, 0.12f, 1.f);
@@ -460,7 +469,9 @@ void UTN_RallyHUDWidget::RefreshStatus(const ATN_RallyGameState& RallyState, dou
 	{
 	case ETNRallyPhase::Warmup:
 		// Sin cuenta atrás (#289): el semáforo es el único temporizador de la salida.
-		Status = RallyState.IsWaitingForPlayers() ? NSLOCTEXT("Rally", "WaitingForOthers", "Esperando a los demás…") : FText::GetEmpty();
+		// Solo si hay a quién esperar: sola (con bots o sin ellos), nada (#755).
+		Status = RallyState.IsWaitingForPlayers() && TNRallyHUD::CountHumans(RallyState) > 1
+			? NSLOCTEXT("Rally", "WaitingForOthers", "Esperando a los demás…") : FText::GetEmpty();
 		break;
 	case ETNRallyPhase::Racing:
 		Status = Mine ? FText::GetEmpty() : NSLOCTEXT("Rally", "Spectating", "Mirando la carrera");
