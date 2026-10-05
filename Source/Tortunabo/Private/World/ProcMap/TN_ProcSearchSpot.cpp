@@ -837,7 +837,7 @@ bool ATN_ProcSearchSpot::IsSpent() const
 
 bool ATN_ProcSearchSpot::CanInteract(APawn* Interactor) const
 {
-	if (!Super::CanInteract(Interactor) || IsSpent())
+	if (!Super::CanInteract(Interactor) || IsSpentFor(Interactor))
 	{
 		return false;
 	}
@@ -869,7 +869,7 @@ float ATN_ProcSearchSpot::GetHoldDuration() const
 
 float ATN_ProcSearchSpot::GetHoldProgress(const APawn* Interactor) const
 {
-	if (!Interactor || IsSpent() || SearchState.Searcher.Get() != Interactor)
+	if (!Interactor || IsSpentFor(Interactor) || SearchState.Searcher.Get() != Interactor)
 	{
 		return -1.f;
 	}
@@ -1307,7 +1307,7 @@ void ATN_ProcSearchSpot::Tick(float DeltaSeconds)
 		}
 	}
 	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
-	const bool bBusy = SearchState.Searcher != nullptr || bHopActive || (bNearView && !IsSpent()) || bMarkerAnimating
+	const bool bBusy = SearchState.Searcher != nullptr || bHopActive || (bNearView && !IsSpentForLocalView()) || bMarkerAnimating
 		|| Now - LastFxTime < TNSearchSpotDetail::FxTail || WantsFrameTick();
 	const float WantedInterval = bBusy ? 0.f : TNSearchSpotDetail::IdleTickInterval;
 	if (!FMath::IsNearlyEqual(GetActorTickInterval(), WantedInterval))
@@ -1331,7 +1331,7 @@ void ATN_ProcSearchSpot::TickLocalFX(float DeltaSeconds)
 
 	// Por buscar: alguna chispita dorada al pie, de vez en cuando («aquí se puede rebuscar»); en los decorados grandes,
 	// más de una a la vez por el borde (una por cada 30 m de perímetro de más).
-	if (bNearView && !IsSpent() && !SearchState.Searcher)
+	if (bNearView && !IsSpentForLocalView() && !SearchState.Searcher)
 	{
 		HintClock -= DeltaSeconds;
 		if (HintClock <= 0.f)
@@ -1379,7 +1379,7 @@ void ATN_ProcSearchSpot::TickLocalFX(float DeltaSeconds)
 		return;
 	}
 	const bool bFxQuiet = !bHopActive && !SearchState.Searcher && World->GetTimeSeconds() - LastFxTime >= TNSearchSpotDetail::FxTail;
-	if (bFxQuiet && (!bNearView || IsSpent()))
+	if (bFxQuiet && (!bNearView || IsSpentForLocalView()))
 	{
 		// Lejos de la cámara (o ya buscado) y sin nada vivo: fuera los emisores, para que no se acumulen instancias por
 		// todo el mapa. Si vuelven a hacer falta se crean otra vez (las mallas de partícula van en caché).
@@ -1706,7 +1706,7 @@ void ATN_ProcSearchSpot::TickMarker(float DeltaSeconds)
 	const double CameraDistance = TNLocalViews::ClosestCameraDistance(World, Center);
 	const double ViewDistance = CameraDistance < 1e8
 		? FMath::Max(0.0, CameraDistance - static_cast<double>(RingRadius)) : 0.0;
-	const bool bWant = !bPending && !IsSpent() && ViewDistance < static_cast<double>(MarkerDrawDistance);
+	const bool bWant = !bPending && !IsSpentForLocalView() && ViewDistance < static_cast<double>(MarkerDrawDistance);
 	MarkerAppear = bWant ? FMath::Min(1.f, MarkerAppear + TNSearchSpotDetail::MarkerAppearSpeed * DeltaSeconds)
 		: FMath::Max(0.f, MarkerAppear - TNSearchSpotDetail::MarkerHideSpeed * DeltaSeconds);
 	bMarkerAnimating = MarkerAppear > 0.f && ViewDistance < static_cast<double>(TNSearchSpotDetail::MarkerAnimDistance);

@@ -16,7 +16,7 @@ class UDataTable;
  *
  * Al empezar cada nivel desde el 2, las que llegaron antes a la meta del anterior salen con cocos (StartItemFor).
  *
- * Cada decorado se rellena RefillSeconds después de cada resultado, para que quien va primera no deje vacíos los de las
+ * Cada tortuga puede rebuscar cada decorado una vez (ATN_SurvivalSearchSpot): quien va primera no deja vacíos los de las
  * demás. La densidad de rebuscables es la de la carrera (TNBeachLoot): 70 % de suerte, casi todo el decorado elegible y 9 m de
  * centro a centro y 3 m de borde a borde como mínimo. La reparte ATN_ProcMapGenerator::SpawnSearchSpots.
  *
@@ -26,13 +26,6 @@ namespace TNSurvivalLoot
 {
 	/** Probabilidad de que salga algo al rebuscar (la de la playa, TNBeachLoot::SearchLuck). */
 	inline constexpr float SearchLuck = 0.7f;
-
-	/**
-	 * Cada decorado se vuelve a poder rebuscar estos segundos después de cada resultado: a las de detrás no les llegan
-	 * vacíos. Y como mucho deja MaxLootLying objetos sin recoger a la vez (al pasarse se quita el más viejo).
-	 */
-	inline constexpr float RefillSeconds = 5.f;
-	inline constexpr int32 MaxLootLying = 1;
 
 	/** Separación entre rebuscables (cm), la de la playa: de centro a centro y de borde a borde. */
 	inline constexpr double MinSpacing = 900.0;

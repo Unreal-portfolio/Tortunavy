@@ -86,8 +86,6 @@ bool FTNSurvivalLootDensityTest::RunTest(const FString& Parameters)
 	using namespace TNSurvivalLoot;
 
 	TestEqual(TEXT("70 % de suerte"), SearchLuck, 0.7f);
-	TestEqual(TEXT("Se rellenan a los 5 s"), RefillSeconds, 5.f);
-	TestEqual(TEXT("Un objeto sin recoger por decorado"), MaxLootLying, 1);
 	TestEqual(TEXT("9 m entre rebuscables"), MinSpacing, 900.0);
 	TestEqual(TEXT("Las formaciones, siempre"), SpotChance(0), 1.0);
 	TestEqual(TEXT("Los objetos del camino, casi siempre"), SpotChance(1), 0.85);
