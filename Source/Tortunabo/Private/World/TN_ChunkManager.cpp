@@ -565,16 +565,16 @@ bool ATN_ChunkManager::BuildLevel(int32 Level)
 	const FTNSurvivalMapPick Pick = Forced.IsValid() ? Forced : TNSurvivalMapSelection::PickLevelMap(LevelSeed, Level, PlayedLevelMaps, LevelStartDifficulty);
 	if (Pick.IsValid())
 	{
-		Generator->ServerGenerateSurvival(static_cast<int32>(Pick.Seed), Pick.Difficulty, LevelTrapDensityPct);
+		Generator->ServerGenerateSurvival(static_cast<int32>(Pick.Seed), Pick.Difficulty, LevelTrapsPer100mTenths);
 		if (Generator->IsMapReady())
 		{
 			PlayedLevelMaps = TNSurvivalMapSelection::RecordPlayed(PlayedLevelMaps, Pick);
 			const TNSurvivalCatalog::FMapEntry* Entry = TNSurvivalCatalog::FindMap(Pick.Seed);
 			FString Breakdown;
 			const int32 TrapCount = Generator->GetSurvivalTrapCount(&Breakdown);
-			UE_LOG(LogTortunabo, Log, TEXT("[ChunkManager] Nivel %d: mapa del catálogo «%s» (semilla %u, dificultad %d; la partida empezó en la %d; camino de %.0f m) con %d trampas al %d %% (%s)%s."),
+			UE_LOG(LogTortunabo, Log, TEXT("[ChunkManager] Nivel %d: mapa del catálogo «%s» (semilla %u, dificultad %d; la partida empezó en la %d; camino de %.0f m) con %d trampas (objetivo %.1f cada 100 m: %s)%s."),
 				Level, Entry ? Entry->Name : TEXT("?"), Pick.Seed, Pick.Difficulty, LevelStartDifficulty, Generator->GetMainPathLength() / 100.f,
-				TrapCount, LevelTrapDensityPct, *Breakdown,
+				TrapCount, LevelTrapsPer100mTenths / 10.0, *Breakdown,
 				Pick.bForgotPlayed ? TEXT("; ya habían salido todos los de su dificultad: se olvidan los jugados") : TEXT(""));
 			return true;
 		}

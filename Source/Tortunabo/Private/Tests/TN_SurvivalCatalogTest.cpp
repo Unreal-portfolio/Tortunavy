@@ -235,50 +235,52 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalCatalogDensityTest,
 bool FTNSurvivalCatalogDensityTest::RunTest(const FString& Parameters)
 {
 	using namespace TNSurvivalCatalog;
-	TestEqual(TEXT("Fácil: las del catálogo"), TNSurvivalLogic::TrapDensityPct(ETNProcDifficulty::Easy), 100);
-	TestEqual(TEXT("Normal: ×1,5"), TNSurvivalLogic::TrapDensityPct(ETNProcDifficulty::Normal), 150);
-	TestEqual(TEXT("Difícil: ×2"), TNSurvivalLogic::TrapDensityPct(ETNProcDifficulty::Hard), 200);
+	TestEqual(TEXT("Fácil: 6,5 cada 100 m"), TNSurvivalLogic::TrapsPer100mTenths(ETNProcDifficulty::Easy), 65);
+	TestEqual(TEXT("Normal: 10 cada 100 m"), TNSurvivalLogic::TrapsPer100mTenths(ETNProcDifficulty::Normal), 100);
+	TestEqual(TEXT("Difícil: 15 cada 100 m"), TNSurvivalLogic::TrapsPer100mTenths(ETNProcDifficulty::Hard), 150);
 
-	int32 Placed100 = 0;
-	int32 Placed150 = 0;
-	int32 Placed200 = 0;
-	for (const FMapEntry& M : CatalogAndTestMaps())
+	// Las copias de un punto no se amontonan: con el triple, cada punto lleva dos copias en sitios distintos.
 	{
-		const FString Ctx = FString::Printf(TEXT("semilla %u (%s)"), M.Seed, M.Name);
-		const TArray<FTrapSpot> Base = TrapsOf(M.Seed);
-		int32 Scalable = 0;
-		for (const FTrapSpot& T : Base) { Scalable += ScalesWithDensity(T.Trap) ? 1 : 0; }
-
-		for (const int32 Pct : { 100, 150, 200 })
-		{
-			const TArray<FTrapSpot> Scaled = TrapsOf(M.Seed, Pct);
-			const int32 Expected = Base.Num() + FMath::RoundToInt32(Scalable * (Pct - 100) / 100.0);
-			TestEqual(FString::Printf(TEXT("%s al %d %%: puntos"), *Ctx, Pct), Scaled.Num(), Expected);
-			int32 Fixed = 0;
-			for (const FTrapSpot& T : Scaled)
-			{
-				TestTrue(FString::Printf(TEXT("%s al %d %%: dentro del recorrido"), *Ctx, Pct), T.FromPct <= T.ToPct && T.ToPct <= 100);
-				Fixed += ScalesWithDensity(T.Trap) ? 0 : 1;
-			}
-			TestEqual(FString::Printf(TEXT("%s al %d %%: placas, puentes y gaviotas sin cambiar"), *Ctx, Pct), Fixed, Base.Num() - Scalable);
-			TestTrue(FString::Printf(TEXT("%s al %d %%: determinista"), *Ctx, Pct), TrapsOf(M.Seed, Pct).Num() == Scaled.Num());
-		}
-
-		// Sobre el mapa: más densidad, más trampas colocadas (alguna puede no caber, pero nunca menos).
-		TNProcMap::FLayout L;
-		if (!TestTrue(Ctx + TEXT(": genera mapa"), TNProcMap::GenerateSurvivalLayout(M.Seed, M.Difficulty, L) != 0)) { continue; }
-		const int32 N100 = PlaceLooseTraps(L, M.Seed, 100).Num() + PlaceTerrainTraps(L, M.Seed, 100).Quads.Num();
-		const int32 N150 = PlaceLooseTraps(L, M.Seed, 150).Num() + PlaceTerrainTraps(L, M.Seed, 150).Quads.Num();
-		const int32 N200 = PlaceLooseTraps(L, M.Seed, 200).Num() + PlaceTerrainTraps(L, M.Seed, 200).Quads.Num();
-		TestTrue(Ctx + TEXT(": al 150 % no hay menos que al 100 %"), N150 >= N100);
-		TestTrue(Ctx + TEXT(": al 200 % no hay menos que al 150 %"), N200 >= N150);
-		Placed100 += N100;
-		Placed150 += N150;
-		Placed200 += N200;
+		TArray<FTrapSpot> Two;
+		Two.Add({ 1u, ETrap::Jellyfish, 10, 10 });
+		Two.Add({ 1u, ETrap::Jellyfish, 40, 40 });
+		const TArray<FTrapSpot> Tripled = ScaleTrapSpots(Two, 300);
+		TestEqual(TEXT("Al 300 %: el triple de puntos"), Tripled.Num(), 6);
+		TSet<uint8> Where;
+		for (const FTrapSpot& T : Tripled) { Where.Add(T.FromPct); }
+		TestEqual(TEXT("Al 300 %: cada uno en su sitio"), Where.Num(), 6);
 	}
-	AddInfo(FString::Printf(TEXT("Trampas colocadas en todo el catálogo: %d al 100 %%, %d al 150 %% y %d al 200 %%."), Placed100, Placed150, Placed200));
-	TestTrue(TEXT("En el catálogo, al 150 % al menos ×1,3"), Placed150 * 10 >= Placed100 * 13);
-	TestTrue(TEXT("En el catálogo, al 200 % al menos ×1,7"), Placed200 * 10 >= Placed100 * 17);
+
+	for (const ETNProcDifficulty Difficulty : { ETNProcDifficulty::Easy, ETNProcDifficulty::Normal, ETNProcDifficulty::Hard })
+	{
+		const double Target = TNSurvivalLogic::TrapsPer100mTenths(Difficulty) / 10.0;
+		double SumDensity = 0.0;
+		double MinDensity = TNumericLimits<double>::Max();
+		double MaxDensity = 0.0;
+		int32 MapCount = 0;
+		int32 Short = 0;
+		for (const FMapEntry& M : TNSurvivalCatalog::Maps)
+		{
+			const FString Ctx = FString::Printf(TEXT("%s, semilla %u (%s)"), *UEnum::GetValueAsString(Difficulty), M.Seed, M.Name);
+			TNProcMap::FLayout L;
+			if (!TestTrue(Ctx + TEXT(": genera mapa"), TNProcMap::GenerateSurvivalLayout(M.Seed, M.Difficulty, L) != 0)) { continue; }
+			const int32 Pct = DensityPctForTarget(L, M.Seed, Target);
+			TestTrue(Ctx + TEXT(": % entre 100 y el tope"), Pct >= 100 && Pct <= MaxDensityPct);
+			TestEqual(Ctx + TEXT(": determinista"), DensityPctForTarget(L, M.Seed, Target), Pct);
+			const int32 TrapTotal = CountTraps(PlaceLooseTraps(L, M.Seed, Pct), PlaceTerrainTraps(L, M.Seed, Pct));
+			const double Density = TrapTotal * 10000.0 / L.Main.Last().S;
+			SumDensity += Density;
+			MinDensity = FMath::Min(MinDensity, Density);
+			MaxDensity = FMath::Max(MaxDensity, Density);
+			Short += Density < Target * 0.9 ? 1 : 0;
+			++MapCount;
+		}
+		const double Average = MapCount > 0 ? SumDensity / MapCount : 0.0;
+		AddInfo(FString::Printf(TEXT("%s: %.2f trampas cada 100 m de media (objetivo %.1f; de %.2f a %.2f; %d de %d mapas por debajo del 90 %%)."),
+			*UEnum::GetValueAsString(Difficulty), Average, Target, MinDensity, MaxDensity, Short, MapCount));
+		TestTrue(FString::Printf(TEXT("%s: la media llega al objetivo"), *UEnum::GetValueAsString(Difficulty)), Average >= Target * 0.95);
+		TestTrue(FString::Printf(TEXT("%s: la media no se pasa mucho"), *UEnum::GetValueAsString(Difficulty)), Average <= Target * 1.25);
+	}
 	return true;
 }
 

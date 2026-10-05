@@ -134,10 +134,18 @@ namespace TNSurvivalLogic
 		return FMath::Clamp(1 + 2 * static_cast<int32>(Difficulty), 1, 5);
 	}
 
-	/** Densidad de trampas (%) según la dificultad elegida con el general (#730): fácil 100, normal 150 y difícil 200. */
-	inline int32 TrapDensityPct(ETNProcDifficulty Difficulty)
+	/**
+	 * Densidad de trampas que se busca en cada mapa según la dificultad elegida con el general (#730), en décimas de trampa
+	 * cada 100 m de camino: fácil 6,5, normal 10 y difícil 15 (un chunk normal del Clásico lleva 7-11).
+	 */
+	inline int32 TrapsPer100mTenths(ETNProcDifficulty Difficulty)
 	{
-		return 100 + 50 * FMath::Clamp(static_cast<int32>(Difficulty), 0, 2);
+		switch (Difficulty)
+		{
+			case ETNProcDifficulty::Easy: return 65;
+			case ETNProcDifficulty::Hard: return 150;
+			default:                      return 100;
+		}
 	}
 
 	/**

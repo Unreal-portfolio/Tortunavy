@@ -60,10 +60,10 @@ void ATN_SurvivalGameMode::StartPlay()
 		// La dificultad elegida con el general decide en qué mapa del catálogo se empieza (#730); ?ProcDifficulty= manda.
 		const ETNProcDifficulty Difficulty = ResolveDifficulty();
 		const int32 StartDifficulty = TNSurvivalLogic::StartMapDifficulty(Difficulty);
-		const int32 TrapDensity = TNSurvivalLogic::TrapDensityPct(Difficulty);
-		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Dificultad %s: el nivel 1 juega un mapa de dificultad %d, cada nivel sube una hasta 5 y las trampas van al %d %%."),
-			*UEnum::GetValueAsString(Difficulty), StartDifficulty, TrapDensity);
-		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap(), StartDifficulty, TrapDensity);
+		const int32 TrapsPer100mTenths = TNSurvivalLogic::TrapsPer100mTenths(Difficulty);
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Dificultad %s: el nivel 1 juega un mapa de dificultad %d, cada nivel sube una hasta 5 y se buscan %.1f trampas cada 100 m."),
+			*UEnum::GetValueAsString(Difficulty), StartDifficulty, TrapsPer100mTenths / 10.0);
+		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap(), StartDifficulty, TrapsPer100mTenths);
 	}
 	else
 	{

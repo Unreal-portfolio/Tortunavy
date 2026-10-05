@@ -143,14 +143,18 @@ void ATN_ProcMapGenerator::PlanSurvivalTraps()
 		UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Semilla %u con dificultad %d fuera del catálogo: mapa sin trampas."), Seed, Difficulty);
 		return;
 	}
-	// Con la densidad de trampas de la dificultad elegida (#730): la replica NetConfig, así todas colocan las mismas.
-	const int32 DensityPct = NetConfig.SurvivalTrapDensityPct > 0 ? NetConfig.SurvivalTrapDensityPct : 100;
+	// Hasta la densidad de trampas de la dificultad elegida (#730): la replica NetConfig y el cálculo es determinista, así
+	// que todas las máquinas colocan las mismas.
+	const double TrapsPer100m = NetConfig.SurvivalTrapsPer100mTenths / 10.0;
+	const int32 DensityPct = TNSurvivalCatalog::DensityPctForTarget(Layout, Seed, TrapsPer100m);
 	SurvivalTrapPlan = TNSurvivalCatalog::PlaceLooseTraps(Layout, Seed, DensityPct);
 	SurvivalTerrainPlan = TNSurvivalCatalog::PlaceTerrainTraps(Layout, Seed, DensityPct);
 	FString Breakdown;
 	const int32 TrapCount = GetSurvivalTrapCount(&Breakdown);
-	UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Mapa del catálogo «%s» (semilla %u, dificultad %d, trampas al %d %%): %d trampas (%s)."),
-		Entry->Name, Seed, Difficulty, DensityPct, TrapCount, *Breakdown);
+	const double PathMeters = Layout.Main.Num() > 1 ? Layout.Main.Last().S / 100.0 : 0.0;
+	UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Mapa del catálogo «%s» (semilla %u, dificultad %d, %.0f m): %d trampas, %.1f cada 100 m (objetivo %.1f; puntos del catálogo al %d %%): %s."),
+		Entry->Name, Seed, Difficulty, PathMeters, TrapCount, PathMeters > 0.0 ? TrapCount * 100.0 / PathMeters : 0.0, TrapsPer100m,
+		DensityPct, *Breakdown);
 }
 
 bool ATN_ProcMapGenerator::IsSurvivalBreakableGap(int32 Feature) const

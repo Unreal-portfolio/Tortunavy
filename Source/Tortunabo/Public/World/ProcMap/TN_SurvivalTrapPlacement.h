@@ -590,4 +590,50 @@ namespace TNSurvivalCatalog
 		}
 		return Out;
 	}
+
+	/** Trampas de un plan, como las cuenta el registro: las sueltas sin las sombrillas, los cruces de quads y los puentes. */
+	inline int32 CountTraps(const TArray<FTrapPlacement>& Loose, const FTerrainTrapPlan& Terrain)
+	{
+		int32 Count = Terrain.Quads.Num() + Terrain.Bridges.Num();
+		for (const FTrapPlacement& P : Loose)
+		{
+			Count += P.bUmbrella ? 0 : 1;
+		}
+		return Count;
+	}
+
+	/** Tope del % de puntos que se prueba para llegar a una densidad (×15 los del catálogo). */
+	inline constexpr int32 MaxDensityPct = 1500;
+
+	/**
+	 * El % de puntos (ScaleTrapSpots) con el que el mapa de Seed sobre L llega a TrapsPer100m trampas cada 100 m de camino
+	 * (#730): el más bajo que llega, o MaxDensityPct si ni con ese caben. 100 si el catálogo ya trae bastantes (no se quitan).
+	 * Determinista: cada máquina saca el mismo con la misma densidad.
+	 */
+	inline int32 DensityPctForTarget(const TNProcMap::FLayout& L, uint32 Seed, double TrapsPer100m)
+	{
+		if (L.Main.Num() < 2 || TrapsPer100m <= 0.0)
+		{
+			return 100;
+		}
+		const int32 Target = FMath::RoundToInt32(TrapsPer100m * L.Main.Last().S / 10000.0);
+		auto CountAt = [&L, Seed](int32 Pct) { return CountTraps(PlaceLooseTraps(L, Seed, Pct), PlaceTerrainTraps(L, Seed, Pct)); };
+		if (CountAt(100) >= Target)
+		{
+			return 100;
+		}
+		if (CountAt(MaxDensityPct) < Target)
+		{
+			return MaxDensityPct;
+		}
+		// Búsqueda binaria del más bajo que llega (de 5 en 5 %: no hace falta más fino).
+		int32 Low = 100;
+		int32 High = MaxDensityPct;
+		while (High - Low > 5)
+		{
+			const int32 Mid = (Low + High) / 2;
+			if (CountAt(Mid) >= Target) { High = Mid; } else { Low = Mid; }
+		}
+		return High;
+	}
 }

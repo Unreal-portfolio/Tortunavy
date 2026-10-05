@@ -70,9 +70,12 @@ struct TORTUNABO_API FTNProcMapNetConfig
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
 	int32 SurvivalDifficulty = 0;
 
-	/** Supervivencia: densidad de trampas del catálogo en % (0 = 100; normal 150, difícil 200, #730). */
+	/**
+	 * Supervivencia: trampas que se buscan cada 100 m de camino, en décimas (0 = las del catálogo; fácil 65, normal 100,
+	 * difícil 150, #730). Cada máquina saca de aquí cuántas copias de los puntos del catálogo hacen falta.
+	 */
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
-	int32 SurvivalTrapDensityPct = 0;
+	int32 SurvivalTrapsPer100mTenths = 0;
 
 	/** Se incrementa en cada (re)generación, p. ej. entre rondas. 0 = sin mapa. */
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
@@ -118,7 +121,7 @@ public:
 	void ServerGenerate(int32 InSeed, ETNProcGameMode InMode, ETNProcDifficulty InDifficulty);
 
 	/** Servidor: genera el mapa de Supervivencia con esta semilla y dificultad 1–5 (un nivel de la partida, #274). */
-	void ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty, int32 InTrapDensityPct = 100);
+	void ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty, int32 InTrapsPer100mTenths = 0);
 
 	/** Genera con los parámetros de edición. Botón en el panel Details. */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "ProcMap")

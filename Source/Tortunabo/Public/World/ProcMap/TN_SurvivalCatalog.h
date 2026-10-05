@@ -260,10 +260,11 @@ namespace TNSurvivalCatalog
 	}
 
 	/**
-	 * Los puntos con trampa de un mapa con DensityPct % de densidad (#730: normal 150, difícil 200). Con más de 100, se
-	 * añaden copias de los puntos que cuentan (ScalesWithDensity), repartidas por el recorrido: cada copia es la de un punto
-	 * corrida hasta medio camino del siguiente (o del final del recorrido). Los que no cuentan quedan igual. Determinista:
-	 * todas las máquinas sacan los mismos.
+	 * Los puntos con trampa de un mapa con DensityPct % de puntos (100 = los del catálogo; el que haga falta para la densidad
+	 * de la dificultad, TNSurvivalCatalog::DensityPctForTarget, #730). Con más de 100 se añaden copias de los que cuentan
+	 * (ScalesWithDensity): a cada punto le tocan las mismas (las que sobran, repartidas), y sus copias van espaciadas por igual
+	 * en el tramo hasta el siguiente (o hasta el final del recorrido). Los que no cuentan quedan igual. Determinista: todas
+	 * las máquinas sacan los mismos.
 	 */
 	inline TArray<FTrapSpot> ScaleTrapSpots(const TArray<FTrapSpot>& Spots, int32 DensityPct)
 	{
@@ -277,19 +278,26 @@ namespace TNSurvivalCatalog
 		Scalable.StableSort([&CenterOf](const FTrapSpot& A, const FTrapSpot& B) { return CenterOf(A) < CenterOf(B); });
 
 		const int32 N = Scalable.Num();
-		const int32 Extra = FMath::RoundToInt32(N * (DensityPct - 100) / 100.0);
-		for (int32 k = 0; k < Extra; ++k)
+		const int64 Extra = FMath::RoundToInt64(N * (DensityPct - 100) / 100.0);
+		for (int32 i = 0; i < N; ++i)
 		{
-			// Fuentes repartidas por la lista (con el doble, todas); una vuelta más si hiciera falta más de una copia.
-			const int32 Index = static_cast<int32>((k + 0.5) * N / FMath::Max(Extra, 1)) % N;
-			const FTrapSpot& Source = Scalable[Index];
+			// Las de este punto: el reparto entero de Extra entre N (las que sobran caen repartidas por la lista).
+			const int32 Copies = static_cast<int32>((Extra * (i + 1)) / N - (Extra * i) / N);
+			if (Copies <= 0)
+			{
+				continue;
+			}
+			const FTrapSpot& Source = Scalable[i];
 			const double Center = CenterOf(Source);
-			const double Next = Index + 1 < N ? CenterOf(Scalable[Index + 1]) : 97.0;
-			const int32 Shift = FMath::Max(1, FMath::RoundToInt32((Next - Center) * 0.5));
-			FTrapSpot Copy = Source;
-			Copy.FromPct = static_cast<uint8>(FMath::Clamp(static_cast<int32>(Source.FromPct) + Shift, 0, 97));
-			Copy.ToPct = static_cast<uint8>(FMath::Clamp(static_cast<int32>(Source.ToPct) + Shift, static_cast<int32>(Copy.FromPct), 97));
-			Out.Add(Copy);
+			const double Next = i + 1 < N ? CenterOf(Scalable[i + 1]) : 97.0;
+			for (int32 j = 1; j <= Copies; ++j)
+			{
+				const int32 Shift = FMath::Max(1, FMath::RoundToInt32((Next - Center) * j / (Copies + 1.0)));
+				FTrapSpot Copy = Source;
+				Copy.FromPct = static_cast<uint8>(FMath::Clamp(static_cast<int32>(Source.FromPct) + Shift, 0, 97));
+				Copy.ToPct = static_cast<uint8>(FMath::Clamp(static_cast<int32>(Source.ToPct) + Shift, static_cast<int32>(Copy.FromPct), 97));
+				Out.Add(Copy);
+			}
 		}
 		return Out;
 	}
