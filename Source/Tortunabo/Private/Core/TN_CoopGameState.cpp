@@ -81,6 +81,7 @@ void ATN_CoopGameState::BroadcastFlowStateChange()
 	if (MatchFlowState != ETNMatchFlowState::Results)
 	{
 		PersistedScoreThisRace = 0;
+		PersistedDollsThisRace = 0;
 	}
 	PersistLocalPlayerScoreIfResults();
 	OnMatchFlowStateChanged.Broadcast(MatchFlowState);
@@ -118,6 +119,13 @@ void ATN_CoopGameState::PersistLocalPlayerScoreIfResults()
 					PersistedScoreThisRace = TNPS->RaceScore;
 					UE_LOG(LogTortunabo, Log, TEXT("[CoopGameState] Persisted RaceScore delta=%d (total=%d) for local player '%s'"),
 						Delta, PersistedScoreThisRace, *PS->GetPlayerName());
+				}
+				// Muñecos tortuga (#797): al contador del perfil, por diferencia igual que los puntos.
+				const int32 DollDelta = TNScoreLogic::ComputePersistDelta(TNPS->TurtleDollsCollected, PersistedDollsThisRace);
+				if (DollDelta > 0)
+				{
+					GI->AddTurtleDolls(DollDelta);
+					PersistedDollsThisRace = TNPS->TurtleDollsCollected;
 				}
 			}
 			break;

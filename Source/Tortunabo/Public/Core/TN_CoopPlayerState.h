@@ -220,6 +220,21 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
 	int32 RaceShellHalves = 0;
 
+	/**
+	 * Muñecos tortuga cogidos en la partida (#797, ATN_TurtleDoll): uno por muñeco y jugadora. Lo lee la puntuación final
+	 * del Coop y, al acabar, se suma al contador del perfil. No toca RaceScore ni las conchas. Lo resetea el GameMode al
+	 * empezar la partida; no ResetForNewRace (se llama en cada ronda).
+	 */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_TurtleDollsCollected, Category = "Coop|Collectibles")
+	int32 TurtleDollsCollected = 0;
+
+	/** @brief OnRep de TurtleDollsCollected: si ya se está en Results, guarda en el perfil lo que falte (por diferencia). */
+	UFUNCTION()
+	void OnRep_TurtleDollsCollected();
+
+	/** Servidor: suma un muñeco tortuga (ATN_TurtleDoll ya ha comprobado que esta jugadora no lo tenía). */
+	void AddTurtleDoll();
+
 	/** Pareja de la ronda actual en 2vs2 (0 o 1). -1 fuera de 2vs2. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
 	int32 TeamIndex = -1;

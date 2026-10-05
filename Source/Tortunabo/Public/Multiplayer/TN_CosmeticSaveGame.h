@@ -65,6 +65,13 @@ public:
 	int32 AccumulatedRaceScore = 0;
 
 	/**
+	 * Muñecos tortuga cogidos en total (#797): el contador del perfil (los logros de Steam quedan fuera). Aparte de las
+	 * conchas: no se gasta en la tienda.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Collectibles")
+	int32 TurtleDollsCollected = 0;
+
+	/**
 	 * En el perfil de la máquina (_Local), la cuenta de Steam que lo heredó (#83, TNCosmeticSlot). Vacío = sin heredar:
 	 * la primera cuenta que entre se lo queda; las demás empiezan de cero.
 	 */

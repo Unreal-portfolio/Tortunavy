@@ -1567,6 +1567,22 @@ int32 UMP_GameInstance::GetAccumulatedRaceScore() const
 	return CosmeticProfile ? CosmeticProfile->AccumulatedRaceScore : 0;
 }
 
+void UMP_GameInstance::AddTurtleDolls(int32 Count)
+{
+	if (Count <= 0 || !CosmeticProfile)
+	{
+		return;
+	}
+	CosmeticProfile->TurtleDollsCollected += Count;
+	SaveCosmeticProfile();
+	UE_LOG(LogTortunabo, Log, TEXT("[GameInstance] AddTurtleDolls: +%d → total=%d"), Count, CosmeticProfile->TurtleDollsCollected);
+}
+
+int32 UMP_GameInstance::GetTurtleDollsCollected() const
+{
+	return CosmeticProfile ? CosmeticProfile->TurtleDollsCollected : 0;
+}
+
 #if !UE_BUILD_SHIPPING
 // Para probar la tienda (los buggies cuestan conchas): suma conchas al perfil local y las guarda.
 static FAutoConsoleCommandWithWorldAndArgs GTNShopAddShellsCommand(

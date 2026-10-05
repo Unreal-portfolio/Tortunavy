@@ -12,4 +12,5 @@ void ATN_ProcMapGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ATN_ProcMapGameState, RoundResultText);
 	DOREPLIFETIME(ATN_ProcMapGameState, MapSeed);
 	DOREPLIFETIME(ATN_ProcMapGameState, EstimatedMinutes);
+	DOREPLIFETIME(ATN_ProcMapGameState, TurtleDollsTotal);
 }

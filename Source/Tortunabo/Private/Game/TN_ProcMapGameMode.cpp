@@ -15,6 +15,7 @@
 #include "World/ProcMap/TN_ProcEggNest.h"
 #include "World/ProcMap/TN_ProcStartStructure.h"
 #include "World/ProcMap/TN_PathStorm.h"
+#include "World/ProcMap/TN_TurtleDoll.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -366,6 +367,7 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 			if (CurrentRound == 1)
 			{
 				PS->RoundWins = 0;
+				PS->TurtleDollsCollected = 0;
 			}
 			PS->TeamIndex = -1;
 		}
@@ -374,6 +376,13 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 	{
 		AssignTwoVsTwoTeams();
 	}
+
+	if (CurrentRound == 1)
+	{
+		MatchTurtleDollsTotal = 0;
+		DollsCountedGeneration = 0;
+	}
+	CountRoundTurtleDolls();
 
 	PlacePlayersAtStart();
 
@@ -410,6 +419,22 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 		Generator ? Generator->GetNetConfig().Seed : 0,
 		Generator ? Generator->EstimateTraversalMinutes() : 0.f);
 	SyncGameState();
+}
+
+void ATN_ProcMapGameMode::CountRoundTurtleDolls()
+{
+	if (Mode != ETNProcGameMode::Coop || !Generator || !Generator->IsMapReady())
+	{
+		return;
+	}
+	// Sin regenerar entre rondas, los muñecos son los mismos (y quien los cogió ya los tiene): no se cuentan dos veces.
+	const int32 Generation = Generator->GetBuiltGeneration();
+	if (Generation == DollsCountedGeneration)
+	{
+		return;
+	}
+	DollsCountedGeneration = Generation;
+	MatchTurtleDollsTotal += ATN_TurtleDoll::CountInWorld(GetWorld());
 }
 
 void ATN_ProcMapGameMode::PlacePlayersAtStart()
@@ -1387,6 +1412,7 @@ void ATN_ProcMapGameMode::SyncGameState() const
 		GS->MapSeed = Generator->GetNetConfig().Seed;
 		GS->EstimatedMinutes = Generator->EstimateTraversalMinutes();
 	}
+	GS->TurtleDollsTotal = MatchTurtleDollsTotal;
 	GS->NotifyRoundInfoChanged();
 }
 

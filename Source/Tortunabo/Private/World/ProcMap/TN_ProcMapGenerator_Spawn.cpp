@@ -14,6 +14,8 @@
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
 #include "World/ProcMap/TN_ProcSearchSpot.h"
 #include "World/ProcMap/TN_ProcMapShells.h"
+#include "World/ProcMap/TN_ProcMapDolls.h"
+#include "World/ProcMap/TN_TurtleDoll.h"
 #include "World/TN_ScorePickup.h"
 #include "World/TN_ScoreShells.h"
 #include "TN_ProcMapKeepOut.h"
@@ -737,6 +739,36 @@ void ATN_ProcMapGenerator::SpawnShells()
 		SpotCounts[static_cast<int32>(EShellSpot::JumpArc)], SpotCounts[static_cast<int32>(EShellSpot::WallLedge)],
 		TierCounts[2], TierCounts[3], SpecialList.IsEmpty() ? TEXT("") : TEXT(": "), *SpecialList);
 	UE_LOG(LogTortunabo, Log, TEXT("[ProcMap] Conchas: %s"), *ShellSummary);
+
+	// Los muñecos del Coop, después de las conchas: no pisan ni los peligros ni las conchas del plan.
+	TArray<FVector> Occupied = HazardSpots;
+	Occupied.Reserve(Occupied.Num() + Plan.Num());
+	for (const TNProcMap::FShellSpawn& Spawn : Plan)
+	{
+		Occupied.Add(FVector(Spawn.Location.X, Spawn.Location.Y, 200.0));
+	}
+	SpawnTurtleDolls(Occupied);
+}
+
+void ATN_ProcMapGenerator::SpawnTurtleDolls(const TArray<FVector>& Occupied)
+{
+	if (NetConfig.Mode != ETNProcGameMode::Coop || bTerrainOnly || !Layout.bValid)
+	{
+		return;
+	}
+	TArray<TNProcMap::FDollSpawn> Plan;
+	TNProcMap::PlanTurtleDolls(Layout, Occupied, Plan);
+	const double Yaw0 = GetActorRotation().Yaw;
+	int32 Spawned = 0;
+	for (const TNProcMap::FDollSpawn& Doll : Plan)
+	{
+		const FVector2D At(Doll.Location.X, Doll.Location.Y);
+		const FVector2D Face = Doll.Facing.IsNearlyZero() ? FVector2D(1.0, 0.0) : Doll.Facing.GetSafeNormal();
+		const FTransform Where(FRotator(0.0, FMath::RadiansToDegrees(TNProcMap::AngleOf(Face)) + Yaw0, 0.0),
+			MapToWorld(FVector(At, TerrainHeightMap(At) + TNProcMap::DollDims::Hover)));
+		Spawned += SpawnMapActor(ATN_TurtleDoll::StaticClass(), Where, true) != nullptr ? 1 : 0;
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[ProcMap] Muñecos tortuga: %d de %d planificados."), Spawned, TNProcMap::DollDims::PerLevel);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

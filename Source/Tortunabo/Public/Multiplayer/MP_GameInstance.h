@@ -381,6 +381,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	int32 GetAccumulatedRaceScore() const;
 
+	// ── Coleccionables ──────────────────────────────────────────────────────
+
+	/**
+	 * Suma muñecos tortuga al contador del perfil local y lo guarda (#797). Lo llama ATN_CoopGameState al entrar en
+	 * Results, por diferencia con lo ya guardado en esa partida. No toca las conchas (AccumulatedRaceScore).
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Collectibles")
+	void AddTurtleDolls(int32 Count);
+
+	/** Muñecos tortuga cogidos en total por el jugador local. */
+	UFUNCTION(BlueprintPure, Category = "Collectibles")
+	int32 GetTurtleDollsCollected() const;
+
 	// ── Tutorial state ───────────────────────────────────────────────────────
 
 	/**
