@@ -2938,8 +2938,17 @@ void UTN_PauseMenuWidget::FillRoomList()
 		{
 			if (UTN_PauseRow* Row = AddListRow(RoomList))
 			{
-				Row->SetupButton(ETNPauseRowStyle::List, NSLOCTEXT("TNPause", "RoomInvite", "Invitar a amigos de Steam"), [WeakGameInstance]()
+				Row->SetupButton(ETNPauseRowStyle::List, NSLOCTEXT("TNPause", "RoomInvite", "Invitar a amigos de Steam"), [WeakThis, WeakGameInstance]()
 				{
+					// Con gafas la ventana de Steam no se ve (#648): se avisa en vez de abrirla.
+					if (TNVR::IsHeadset())
+					{
+						if (UTN_PauseMenuWidget* Menu = WeakThis.Get())
+						{
+							Menu->ShowNotice(NSLOCTEXT("TNPause", "RoomInviteVR", "Con las gafas puestas no se ve la ventana de Steam: quítatelas un momento para invitar a tus amigos."), 7.f);
+						}
+						return;
+					}
 					if (UMP_GameInstance* RoomOwner = WeakGameInstance.Get()) { RoomOwner->InviteFriends(); }
 				}, nullptr, NSLOCTEXT("TNPause", "RoomInviteAction", "Abrir Steam"));
 				Row->SetDescription(NSLOCTEXT("TNPause", "RoomInviteDesc", "La lista de amigos de Steam, para invitarles (la invitación también vale en las salas privadas)."));
