@@ -413,6 +413,7 @@ void UTN_TutorialPlayerComponent::ResetProgress()
 	bWasCarried = false;
 	bWasSwimming = false;
 	bDropKeyWasDown = false;
+	VRGripAge = 100.f;
 	LastEquipped = NAME_None;
 	LastStored = NAME_None;
 }
@@ -630,6 +631,11 @@ void UTN_TutorialPlayerComponent::TickTasks(float DeltaTime, ATortugaCharacter* 
 	const FName Stored = Inventory ? ItemIdOf(Inventory->GetStoredItem()) : NAME_None;
 	static const FName BallId(TEXT("ThrowableBall"));
 
+	// Con gafas, el agarre derecho es el de soltar: cuánto hace que está apretado.
+	const bool bVRGripDown = TNVR::IsEnabled()
+		&& TNTutorialRules::VRButtonDown(PC->GetInputAnalogKeyState(FTNVRKeys::RightGripAxis), PC->IsInputKeyDown(FTNVRKeys::RightGrip));
+	VRGripAge = bVRGripDown ? 0.f : VRGripAge + DeltaTime;
+
 	switch (static_cast<EStation>(Here))
 	{
 		case EStation::Welcome:
@@ -669,6 +675,11 @@ void UTN_TutorialPlayerComponent::TickTasks(float DeltaTime, ATortugaCharacter* 
 				MarkTask(Here, 1);
 			}
 			bDropKeyWasDown = bDropDown;
+			// Con gafas: soltar con el agarre (abrirlo despacio deja caer lo de la aleta; con impulso, lo lanza).
+			if (TNVR::IsEnabled() && TNTutorialRules::VRDropCounts(LastEquipped != NAME_None, Equipped != NAME_None, Stored != LastStored, VRGripAge))
+			{
+				MarkTask(Here, 1);
+			}
 			break;
 		}
 		case EStation::UseItem:
@@ -882,6 +893,34 @@ bool UTN_TutorialPlayerComponent::IsKeyDown(uint8 Key) const
 		if (FMath::Abs(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX)) > 0.3f || FMath::Abs(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftY)) > 0.3f)
 		{
 			return true;
+		}
+	}
+	// Los mandos de las gafas (#645): el stick izquierdo (andar, liberarse de Berta), el gatillo izquierdo (rueda de frases)
+	// y el clic del stick izquierdo (pulsar para hablar). Soltar va por el agarre derecho (TickTasks).
+	if (TNVR::IsEnabled())
+	{
+		switch (static_cast<TNTutorial::EKey>(Key))
+		{
+			case TNTutorial::EKey::Move:
+				if (TNTutorialRules::VRStickMoved(PC->GetInputAnalogKeyState(FTNVRKeys::LeftStickX), PC->GetInputAnalogKeyState(FTNVRKeys::LeftStickY)))
+				{
+					return true;
+				}
+				break;
+			case TNTutorial::EKey::ChatWheel:
+				if (TNTutorialRules::VRButtonDown(PC->GetInputAnalogKeyState(FTNVRKeys::LeftTriggerAxis), PC->IsInputKeyDown(FTNVRKeys::LeftTrigger)))
+				{
+					return true;
+				}
+				break;
+			case TNTutorial::EKey::Talk:
+				if (PC->IsInputKeyDown(FTNVRKeys::LeftStickClick))
+				{
+					return true;
+				}
+				break;
+			default:
+				break;
 		}
 	}
 	if (const TArray<FKey>* Keys = KeyKeys.Find(Key))

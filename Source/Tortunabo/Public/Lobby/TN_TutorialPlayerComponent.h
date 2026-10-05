@@ -143,6 +143,8 @@ private:
 	bool bCatapultBall = false;
 	float ChatWheelHeld = 0.f;
 	bool bDropKeyWasDown = false;
+	/** Con gafas: segundos desde que el agarre derecho estaba apretado (soltar con el agarre, #645). */
+	float VRGripAge = 100.f;
 	FName LastEquipped = NAME_None;
 	FName LastStored = NAME_None;
 
