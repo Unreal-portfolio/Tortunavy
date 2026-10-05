@@ -266,11 +266,11 @@ public:
 	 * vuelven al reaparecer o al curarse (salen de la vida replicada en cada máquina).
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Daño", meta = (ClampMin = "0.1", ClampMax = "1"))
-	float DamagedTorqueScale = 0.6f;
+	float DamagedTorqueScale = 0.8f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Daño", meta = (ClampMin = "0.1", ClampMax = "1"))
-	float DamagedTopSpeedScale = 0.7f;
+	float DamagedTopSpeedScale = 0.85f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Daño", meta = (ClampMin = "0.1", ClampMax = "1"))
-	float DamagedSteerScale = 0.75f;
+	float DamagedSteerScale = 0.9f;
 };

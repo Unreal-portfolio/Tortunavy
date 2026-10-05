@@ -55,6 +55,9 @@ public:
 	/** Quita Amount de vida (nada durante la invulnerabilidad tras reventar). Con 0, revienta. */
 	void ApplyDamage(float Amount);
 
+	/** Vida llena (al reaparecer en la pista, #720): quita el humo y la vida de las estadísticas. */
+	void RestoreFullHealth();
+
 	/**
 	 * Si el contacto del chasis de Owner con Other puede ser un choque. No lo son el propio buggy ni un proyectil (la
 	 * munición ya quita su daño en ReceiveAmmoHit) ni nada con movimiento de proyectil (objetos lanzados).
@@ -108,7 +111,6 @@ private:
 	void ApplyAmmoPush(ETNRallyAmmo Ammo, const FVector& WorldPoint, const FVector& ShotDir);
 	void ApplyAmmoEffect(ETNRallyAmmo Ammo, const FVector& WorldPoint);
 	void Explode();
-	void RestoreAfterDeath();
 	void UpdateSmoke();
 	/** Suelta una bocanada sobre el motor y programa la siguiente según la vida (sin SmokeFX). */
 	void SpawnSmokePuff();
