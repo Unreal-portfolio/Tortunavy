@@ -31,6 +31,8 @@
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Multiplayer/TN_LocalPlayerProfile.h"
 #include "Lobby/TN_LobbyMission.h"
+#include "Engine/NetDriver.h"
+#include "Multiplayer/TN_NetworkFailureDecisions.h"
 #include "Multiplayer/TN_RoomInfo.h"
 #include "Multiplayer/TN_SaveGameIO.h"
 #include "Settings/TN_GameplayAssetSettings.h"
@@ -1769,6 +1771,16 @@ void UMP_GameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, EN
 	}
 
 	UE_LOG(LogTortunabo, Warning, TEXT("[MP] NETWORK ERROR: %s - %s"), *FailureTypeStr, *ErrorString);
+
+	// ---------- SERVIDOR: se cae la conexión de UN invitado (timeout, red caída) ----------
+	// El motor cierra esa conexión y solo sale ese invitado; el anfitrión y los demás siguen en la partida (#657).
+	// Sin driver no se sabe de qué conexión es: se trata como hasta ahora.
+	const ENetMode FailedMode = NetDriver ? NetDriver->GetNetMode() : NM_Standalone;
+	if (TNNetFailure::IsGuestFailureOnHost(FailureType, FailedMode))
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[MP] %s en la conexión de un invitado: solo sale ese invitado, la partida sigue."), *FailureTypeStr);
+		return;
+	}
 
 	// ---------- CLIENTE: la sala no nos deja entrar (cerrada, llena o expulsado: HandleGameModePreLogin) ----------
 	if (ErrorString.StartsWith(TNRoomKeys::RefusePrefix()))
