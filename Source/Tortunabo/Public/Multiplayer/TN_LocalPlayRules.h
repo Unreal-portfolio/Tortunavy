@@ -68,6 +68,8 @@ namespace TNLocalPlay
 		Keyboard,
 		/** Ese mando ya tiene jugador (también el del jugador 1). */
 		AlreadyPlaying,
+		/** Con las gafas de VR activas no se entra: unas gafas son de un solo jugador y un invitado destruiría su rig (#639). */
+		VR,
 	};
 
 	struct FJoinQuery
@@ -77,6 +79,8 @@ namespace TNLocalPlay
 		int32 Players = 0;
 		bool bGamepad = false;
 		bool bDeviceHasPlayer = false;
+		/** Las gafas de VR están activas (TNVR::IsEnabled). */
+		bool bVR = false;
 	};
 
 	TORTUNABO_API EJoin DecideJoin(const FJoinQuery& Query);
