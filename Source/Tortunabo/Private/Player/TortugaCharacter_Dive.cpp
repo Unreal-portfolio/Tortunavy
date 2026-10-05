@@ -121,6 +121,12 @@ void ATortugaCharacter::TryDive()
 		TEXT("[Dive] DiveDir(input/camera)=(%.2f,%.2f,%.2f) ControlYaw=%.1f"),
 		DiveDir.X, DiveDir.Y, DiveDir.Z, ControlRot.Yaw);
 
+	// Con gafas y llevando a un compañero, el panzazo lo lanza hacia donde apunta la aleta (#649): el servidor la recibe ya.
+	if (CarryComponent && CarryComponent->IsCarrying())
+	{
+		SendVRAimToServer();
+	}
+
 	// Predicho (#24): en el siguiente movimiento, que también simula el servidor con las mismas reglas.
 	if (TNDiveNet::GPredict != 0)
 	{
