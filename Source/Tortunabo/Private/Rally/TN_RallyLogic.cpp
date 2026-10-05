@@ -262,6 +262,36 @@ namespace TNRally
 		return true;
 	}
 
+	double ArcDistance(double ArcA, double ArcB, double Length, bool bClosed)
+	{
+		if (!bClosed || Length <= 0.0)
+		{
+			return FMath::Abs(ArcB - ArcA);
+		}
+		const double Forward = WrapArc(ArcB - ArcA, Length, true);
+		return FMath::Min(Forward, Length - Forward);
+	}
+
+	bool SegmentSkirtsGate(const FVector& Prev, const FVector& Cur, const FTransform& Gate, const FVector& HalfExtent,
+		double MaxLateralCm, double TrackedArc, double GateArc, double Length, bool bClosed, double& OutAlpha)
+	{
+		const FVector A = Gate.InverseTransformPositionNoScale(Prev);
+		const FVector B = Gate.InverseTransformPositionNoScale(Cur);
+		if (!(A.X < 0.0 && B.X >= 0.0))
+		{
+			return false;
+		}
+		const double Alpha = A.X / (A.X - B.X);
+		const FVector Hit = FMath::Lerp(A, B, Alpha);
+		const bool bInsideRectangle = FMath::Abs(Hit.Y) <= HalfExtent.Y && FMath::Abs(Hit.Z) <= HalfExtent.Z;
+		if (bInsideRectangle || FMath::Abs(Hit.Y) > MaxLateralCm || ArcDistance(TrackedArc, GateArc, Length, bClosed) > SkirtGateArcSlackCm)
+		{
+			return false;
+		}
+		OutAlpha = Alpha;
+		return true;
+	}
+
 	TArray<int32> SortStandings(const TArray<FStandingKey>& Keys)
 	{
 		TArray<int32> Order;

@@ -79,6 +79,99 @@ bool FTNRallyGateTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// #705: salir del circuito y volver sin R. Un buggy que rodea una puerta por la hierba (fuera de su rectángulo, dentro del margen del
+// fuera de pista) la valida igualmente, con la regla del 60 % de siempre, y el progreso sigue: antes la puerta siguiente era WrongGate
+// para siempre y la vuelta no corría hasta pulsar R.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallySkirtGateTest, "Tortunabo.Rally.Logic.GateSkirt",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallySkirtGateTest::RunTest(const FString& Parameters)
+{
+	using namespace TNRally;
+	const FTransform Gate(FRotator::ZeroRotator, FVector::ZeroVector);
+	const FVector Half(200.0, 1200.0, 500.0);
+	double Alpha = 0.0;
+	const double Length = 60000.0;
+
+	TestEqual(TEXT("Distancia entre arcos en punto a punto"), ArcDistance(100.0, 59900.0, Length, false), 59800.0, 1e-9);
+	TestEqual(TEXT("Distancia entre arcos dando la vuelta al circuito"), ArcDistance(100.0, 59900.0, Length, true), 200.0, 1e-9);
+	TestEqual(TEXT("Distancia entre arcos en circuito, sin vuelta"), ArcDistance(59900.0, 100.0, Length, true), 200.0, 1e-9);
+
+	TestTrue(TEXT("Rodear la puerta a 20 m del eje (hierba) cuenta como paso"),
+		SegmentSkirtsGate(FVector(-100, 2000, 0), FVector(300, 2000, 0), Gate, Half, OffTrackDistanceCm, 0.0, 0.0, Length, false, Alpha));
+	TestEqual(TEXT("Fracción del cruce"), Alpha, 0.25, 1e-9);
+	TestTrue(TEXT("Por el otro lado también"),
+		SegmentSkirtsGate(FVector(-100, -3900, 0), FVector(300, -3900, 0), Gate, Half, OffTrackDistanceCm, 0.0, 0.0, Length, false, Alpha));
+	TestTrue(TEXT("Con el arco recorrido unos metros antes de la puerta (se evalúa cada 0,2 s)"),
+		SegmentSkirtsGate(FVector(-100, 2000, 0), FVector(300, 2000, 0), Gate, Half, OffTrackDistanceCm, -2500.0, 0.0, Length, false, Alpha));
+	TestTrue(TEXT("En circuito, con el arco a este lado de la vuelta y la puerta al otro"),
+		SegmentSkirtsGate(FVector(-100, 2000, 0), FVector(300, 2000, 0), Gate, Half, OffTrackDistanceCm, Length - 1000.0, 0.0, Length, true, Alpha));
+	TestTrue(TEXT("Por una cuneta 8 m por debajo de la calzada también"),
+		SegmentSkirtsGate(FVector(-100, 2500, -800), FVector(300, 2500, -800), Gate, Half, OffTrackDistanceCm, 0.0, 0.0, Length, false, Alpha));
+
+	TestFalse(TEXT("Por dentro del rectángulo no es rodear (ya lo cuenta SegmentCrossesGate)"),
+		SegmentSkirtsGate(FVector(-100, 0, 0), FVector(300, 0, 0), Gate, Half, OffTrackDistanceCm, 0.0, 0.0, Length, false, Alpha));
+	TestFalse(TEXT("A más de 40 m del eje ya es fuera de pista: no cuenta"),
+		SegmentSkirtsGate(FVector(-100, 4100, 0), FVector(300, 4100, 0), Gate, Half, OffTrackDistanceCm, 0.0, 0.0, Length, false, Alpha));
+	TestFalse(TEXT("En sentido contrario no cuenta"),
+		SegmentSkirtsGate(FVector(300, 2000, 0), FVector(-100, 2000, 0), Gate, Half, OffTrackDistanceCm, 0.0, 0.0, Length, false, Alpha));
+	TestFalse(TEXT("Sin llegar al plano no cuenta"),
+		SegmentSkirtsGate(FVector(-300, 2000, 0), FVector(-100, 2000, 0), Gate, Half, OffTrackDistanceCm, 0.0, 0.0, Length, false, Alpha));
+	TestFalse(TEXT("Otro nivel: el arco recorrido está lejos de la puerta (pasa por debajo o por encima)"),
+		SegmentSkirtsGate(FVector(-100, 2000, 0), FVector(300, 2000, 0), Gate, Half, OffTrackDistanceCm, 30000.0, 0.0, Length, false, Alpha));
+
+	// Vuelta completa de un punto a punto de 3 puertas (0, 200, 400 m) por la hierba, a 20 m del eje: nunca atraviesa un rectángulo.
+	const double GateX[3] = {0.0, 20000.0, 40000.0};
+	FLapRules Rules;
+	Rules.NumGates = 3;
+	Rules.Laps = 1;
+	Rules.bCircuit = false;
+	auto Drive = [&](double LateralCm, double StartX, double EndX, double& OutOdometer, int32& OutGatesPassed, int32& OutLastGate)
+	{
+		FVector Previous(StartX, LateralCm, 0.0);
+		for (double X = StartX + 500.0; X <= EndX; X += 500.0)
+		{
+			const FVector Current(X, LateralCm, 0.0);
+			OutOdometer += FVector::Dist(Previous, Current);
+			const int32 Next = Rules.NextGateIndex(OutGatesPassed);
+			const FTransform NextGate(FRotator::ZeroRotator, FVector(GateX[Next], 0.0, 0.0));
+			bool bForward = false;
+			const bool bCrossed = SegmentCrossesGate(Previous, Current, NextGate, Half, Alpha, bForward);
+			const double TrackedArc = FMath::Clamp(Current.X, 0.0, Length);
+			const bool bSkirted = !bCrossed
+				&& SegmentSkirtsGate(Previous, Current, NextGate, Half, OffTrackDistanceCm, TrackedArc, GateX[Next], Length, false, Alpha);
+			if (bCrossed || bSkirted)
+			{
+				const double Between = OutLastGate < 0 ? 0.0 : GateX[Next] - GateX[OutLastGate];
+				if (CheckGate(Next, Next, true, OutOdometer, Between, OutGatesPassed > 0) == EGateCheck::Valid)
+				{
+					++OutGatesPassed;
+					OutLastGate = Next;
+					OutOdometer = 0.0;
+				}
+			}
+			Previous = Current;
+		}
+	};
+	double Odometer = 0.0;
+	int32 GatesPassed = 0;
+	int32 LastGate = -1;
+	Drive(2000.0, -1000.0, 41000.0, Odometer, GatesPassed, LastGate);
+	TestEqual(TEXT("Recorrer el trazado por la hierba valida las tres puertas en orden"), GatesPassed, 3);
+	TestTrue(TEXT("...y llega a meta"), Rules.IsFinished(GatesPassed));
+
+	Odometer = 0.0;
+	GatesPassed = 0;
+	LastGate = -1;
+	Drive(0.0, -1000.0, 41000.0, Odometer, GatesPassed, LastGate);
+	TestEqual(TEXT("Por el centro, igual que siempre"), GatesPassed, 3);
+
+	// Atajo: rodear la puerta con menos del 60 % del recorrido entre puertas no cuenta (el margen es el de siempre).
+	TestTrue(TEXT("Rodear tras recorrer el 59 % es atajo"), CheckGate(1, 1, true, 11800.0, 20000.0, true) == EGateCheck::Shortcut);
+	TestTrue(TEXT("Rodear tras recorrer el 60 % vale"), CheckGate(1, 1, true, 12000.0, 20000.0, true) == EGateCheck::Valid);
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyLapsTest, "Tortunabo.Rally.Logic.Laps",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
