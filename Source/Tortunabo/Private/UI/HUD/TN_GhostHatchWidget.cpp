@@ -272,7 +272,7 @@ void UTN_GhostHatchWidget::BuildShell()
 			Synth->SetupAttachment(RootComp);
 		}
 		Synth->RegisterComponent();
-		Synth->Start();
+		Synth->KeepAwake();
 	}
 }
 

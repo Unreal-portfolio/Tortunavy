@@ -1,4 +1,5 @@
 #include "Audio/TN_ShellImpactSynth.h"
+#include "Audio/TN_AudioVoices.h"
 #include "TN_ShellImpactDSP.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
@@ -130,6 +131,8 @@ bool UTN_ShellImpactSynthComponent::Play(ETNShellImpactSound Sound, float Streng
 	}
 	if (!IsPlaying())
 	{
+		// Los golpes de la tortuga propia tienen voz reservada; los de las demás compiten con el resto del mundo.
+		TNAudioVoices::Apply(*this, TNAudioVoices::RankForOwner(GetOwner()));
 		Start();
 	}
 	// Un disparo por cola: 0,42 deja un golpe fuerte alrededor de -8 dBFS, por encima de los pasos y por debajo de un aterrizaje duro.

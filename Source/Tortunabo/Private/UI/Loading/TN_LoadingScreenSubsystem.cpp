@@ -1,4 +1,5 @@
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
+#include "Audio/TN_AudioVoices.h"
 #include "Multiplayer/TN_LocalViews.h"
 
 #include "STN_EggLoadingScreen.h"
@@ -48,6 +49,14 @@ namespace TNEggAudio
 		std::atomic<int32> WhooshCount{ 0 };
 		std::atomic<float> WhooshStrength{ 1.f };
 		std::atomic<float> Volume{ 0.85f };
+		/**
+		 * Cuentas ya oídas cuando el sintetizador se volvió a arrancar (UTN_EggSynthComponent::KeepAwake): un generador
+		 * nuevo empieza por ellas y solo suena lo que se pida después, no lo que ya sonó antes de pararse.
+		 */
+		std::atomic<int32> BaseCrack{ 0 };
+		std::atomic<int32> BasePop{ 0 };
+		std::atomic<int32> BaseKnock{ 0 };
+		std::atomic<int32> BaseWhoosh{ 0 };
 	};
 
 	constexpr float TwoPi = 6.2831853f;
@@ -55,10 +64,14 @@ namespace TNEggAudio
 	class FEggEngine
 	{
 	public:
-		void Init(float InSampleRate)
+		void Init(float InSampleRate, const FEggSharedParams& Params)
 		{
 			SampleRate = FMath::Max(8000.f, InSampleRate);
 			SetCrackTone(2800.f);
+			SeenCrack = Params.BaseCrack.load(std::memory_order_relaxed);
+			SeenPop = Params.BasePop.load(std::memory_order_relaxed);
+			SeenKnock = Params.BaseKnock.load(std::memory_order_relaxed);
+			SeenWhoosh = Params.BaseWhoosh.load(std::memory_order_relaxed);
 		}
 
 		void Render(float* Out, int32 Frames, int32 Channels, FEggSharedParams& Params)
@@ -290,7 +303,7 @@ namespace TNEggAudio
 			: Params(InParams)
 			, OutChannels(FMath::Max(1, InNumChannels))
 		{
-			DspEngine.Init(InSampleRate);
+			DspEngine.Init(InSampleRate, *Params);
 		}
 
 		virtual int32 OnGenerateAudio(float* OutAudio, int32 NumSamples) override
@@ -314,16 +327,59 @@ namespace TNEggAudio
 UTN_EggSynthComponent::UTN_EggSynthComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	// El tick solo cuenta el silencio para parar el sintetizador, dos veces por segundo; también con la partida parada
+	// (el huevo de la interfaz suena entre mapas y con el menú de pausa de la partida local).
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.TickInterval = 0.5f;
+	PrimaryComponentTick.bTickEvenWhenPaused = true;
 	bAutoActivate = false;
 	NumChannels = 1;
 	bAllowSpatialization = false;
 	SharedParams = MakeShared<TNEggAudio::FEggSharedParams, ESPMode::ThreadSafe>();
 }
 
+void UTN_EggSynthComponent::KeepAwake()
+{
+	if (!SharedParams.IsValid())
+	{
+		return;
+	}
+	IdleLeft = IdleStopSeconds;
+	if (!IsActive() && IsRegistered())
+	{
+		// El generador nuevo empieza por lo que ya se ha pedido: solo suena lo que venga a partir de aquí.
+		TNEggAudio::FEggSharedParams& P = *SharedParams;
+		P.BaseCrack.store(P.CrackCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+		P.BasePop.store(P.PopCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+		P.BaseKnock.store(P.KnockCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+		P.BaseWhoosh.store(P.WhooshCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+		TNAudioVoices::Apply(*this, bAllowSpatialization ? TNAudioVoices::ERank::World : TNAudioVoices::ERank::Reserved);
+		Start();
+	}
+	SetComponentTickEnabled(true);
+}
+
+void UTN_EggSynthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	IdleLeft -= DeltaTime;
+	if (IdleLeft <= 0.f)
+	{
+		// Callado: se libera la voz del mezclador hasta el próximo sonido.
+		if (IsActive())
+		{
+			Stop();
+		}
+		SetComponentTickEnabled(false);
+	}
+}
+
 void UTN_EggSynthComponent::PlayCrack(float Strength)
 {
 	if (SharedParams.IsValid())
 	{
+		KeepAwake();
 		SharedParams->CrackStrength.store(FMath::Clamp(Strength, 0.f, 1.f), std::memory_order_relaxed);
 		SharedParams->CrackCount.fetch_add(1, std::memory_order_relaxed);
 	}
@@ -333,6 +389,7 @@ void UTN_EggSynthComponent::PlayPop()
 {
 	if (SharedParams.IsValid())
 	{
+		KeepAwake();
 		SharedParams->PopCount.fetch_add(1, std::memory_order_relaxed);
 	}
 }
@@ -341,6 +398,7 @@ void UTN_EggSynthComponent::PlayKnock(float Strength)
 {
 	if (SharedParams.IsValid())
 	{
+		KeepAwake();
 		SharedParams->KnockStrength.store(FMath::Clamp(Strength, 0.f, 1.f), std::memory_order_relaxed);
 		SharedParams->KnockCount.fetch_add(1, std::memory_order_relaxed);
 	}
@@ -350,6 +408,7 @@ void UTN_EggSynthComponent::PlayWhoosh(float Strength)
 {
 	if (SharedParams.IsValid())
 	{
+		KeepAwake();
 		SharedParams->WhooshStrength.store(FMath::Clamp(Strength, 0.f, 1.f), std::memory_order_relaxed);
 		SharedParams->WhooshCount.fetch_add(1, std::memory_order_relaxed);
 	}
@@ -1293,7 +1352,7 @@ UTN_EggSynthComponent* UTN_LoadingScreenSubsystem::EnsureSynth()
 	}
 	Synth->RegisterComponent();
 	PC->AddInstanceComponent(Synth);
-	Synth->Start();
+	Synth->KeepAwake();
 	return Synth;
 }
 

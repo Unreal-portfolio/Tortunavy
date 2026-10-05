@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachMineSynth.h"
+#include "Audio/TN_AudioVoices.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -526,6 +527,7 @@ void UTN_BeachMineSynthComponent::Play(ETNBeachMineSound Sound, float Pitch, flo
 	}
 	if (!IsPlaying())
 	{
+		TNAudioVoices::Apply(*this, TNAudioVoices::ERank::World);
 		Start();
 	}
 	SfxQueue->Master.store(FMath::Clamp(Loudness, 0.f, 2.f), std::memory_order_relaxed);

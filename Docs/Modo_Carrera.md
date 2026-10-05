@@ -3004,6 +3004,47 @@ baja con ese volumen); en Efectos solo queda el golpe de la patada.
    truenos, el del cooperativo, se nota al meterse en los 70 m por delante del frente y sube dentro (`TN.Ambience.Debug 1`
    enseña «tormenta» en la mezcla). Bajar **Ambiente** lo baja.
 
+### Voces del mezclador (#737)
+
+Playtest del 04-10-2026: al cabo de un rato de carrera dejaban de sonar la música, los efectos de la tortuga y lo demás.
+El motor da a cada máquina 32 voces (`AudioMaxChannels=0` en Windows: el tope de la calidad por defecto) y, con más
+sonidos activos que voces, deja mudos los de menor «prioridad × volumen». Dos cosas se juntaban:
+
+- **Todo empataba arriba.** `USynthComponent` nace con `bAlwaysPlay` (prioridad máxima, sin mirar el volumen) y casi todo
+  suena por síntesis. Con más de 32 sintetizadores en marcha, el motor repartía las voces entre empates como le salía (la
+  música, de las primeras en arrancar, podía quedarse muda) y los sonidos de archivo (prioridad 1) ya no sonaban nunca.
+- **Sintetizadores que no se paraban.** El del mareo (`UTN_DizzyBirdsComponent::EnsureSound`) se arrancaba con el primer
+  derribo y no se paraba nunca: `SetDizzy(false)` solo lo dejaba en silencio, ocupando su voz, y había uno por cada tortuga
+  mareada alguna vez en la ronda. El del huevo de la pantalla de carga (`UTN_LoadingScreenSubsystem::EnsureSynth`) igual,
+  en el mando, toda la partida.
+
+Medido con `TN.Audio.Census` (`Docs/Comandos_Prueba.md`), 8 min con 4 tortugas del monkey: antes, a los 140 s ya había 35
+sonidos para 32 voces (3 mudos) y el mareo llegó a 8 sintetizadores callados en marcha; 30 de 31 sonidos con
+`bAlwaysPlay`.
+
+Ahora (`TNAudioVoices`, `Public/Audio/TN_AudioVoices.h`), cada sintetizador entra en un rango justo antes de cada `Start`:
+
+| Rango | Quién | Cómo |
+|---|---|---|
+| Reservada | Música 2D (carrera, fin de partida, menús), paisaje sonoro del jugador, avisos de la interfaz (`UTN_RaceCueSynthComponent`, conchas 2D, huevo 2D) y lo que suena **de la tortuga propia** (pasos y jadeo, golpes, mareo, tos, objetos que usa, latido; también sus sonidos de archivo por `TNTurtleActionSfx::PlayAt` y el latido de recurso) | `bAlwaysPlay`: nada le quita la voz. Son pocos a la vez (6-8 en el anfitrión con 3 jugadores locales) |
+| Mundo | Enemigos, trampas, minas, gusano, chapuzones, rebuscar, objetos y lo de **las demás tortugas** (`TNAudioVoices::RankForOwner`: un bot no es «propio») | Prioridad 1 × volumen, como los sonidos de archivo: si faltan voces, calla antes lo lejano y flojo |
+| Fondo | Fuentes 3D del ambiente (cascadas, géiseres, lava) y criaturas con `bAmbientBed` (burbujas del pulpo) | Prioridad 0,5: ceden antes que el mundo |
+
+Y los dos que no se paraban: el mareo se para 1,5 s después de acabar (su cola) y vuelve a arrancar en el siguiente; el
+huevo se para tras 3 s sin ningún sonido nuevo (`UTN_EggSynthComponent::KeepAwake`; el generador nuevo empieza por lo ya
+pedido, así que no repite crujidos viejos). Un sintetizador nuevo tiene que seguir la misma regla: parar cuando calla y
+pedir su rango antes de `Start` (si no, nace con `bAlwaysPlay`).
+
+Después, la misma medición: veredicto «ESTABLE» en el anfitrión y en el cliente, ningún sonido sin voz en 8 min, la música
+y la tortuga con voz en todas las muestras, de 4 a 10 sonidos con voz reservada a la vez y como mucho 2-3 mareos en marcha
+(los de ese momento). Los componentes de audio vivos de un cliente sí suben a lo largo de la ronda (86 → 287): son los de
+los actores de la playa que le van llegando por red, callados, y se liberan al rehacer la ronda; no ocupan voces.
+
+**Probar** (con sonido de verdad, 3 PC por Steam o PIE de 2): una carrera de 10-15 min con varias rondas; la música y los
+pasos propios suenan igual al final que al principio. En la consola de cualquier ventana, `TN.Audio.Census start 10` al
+empezar y `TN.Audio.Census stop` al acabar: veredicto «ESTABLE», «música … sin voz en 0» y «tortuga … sin voz en 0». Con
+`TN.Audio.Census` suelto tras un derribo: el mareo (`DizzySynth`) desaparece de la lista a los 2 s de levantarse.
+
 ## Botín en la playa (`TN_BeachLoot`)
 
 Como en el cooperativo, en la playa se rebusca en el decorado, hay objetos y power-ups por el suelo (para ti o para

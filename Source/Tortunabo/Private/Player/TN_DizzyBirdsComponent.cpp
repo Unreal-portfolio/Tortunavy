@@ -1,4 +1,5 @@
 #include "Player/TN_DizzyBirdsComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "Core/TN_ProjectMaterials.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -390,11 +391,18 @@ void UTN_DizzyBirdsComponent::SetDizzy(bool bInDizzy)
 {
 	const UWorld* World = GetWorld();
 	if (!World || !World->IsGameWorld() || World->GetNetMode() == NM_DedicatedServer) { return; }
+	const bool bWasDizzy = bDizzy;
 	bDizzy = bInDizzy;
 	if (bDizzy)
 	{
 		EnsureVisuals();
 		EnsureSound();
+		SetComponentTickEnabled(true);
+	}
+	else if (bWasDizzy)
+	{
+		// Se apaga con cola y, cuando ha callado, el sintetizador suelta su voz (TickComponent).
+		SoundTailLeft = SoundTailSeconds;
 		SetComponentTickEnabled(true);
 	}
 	if (Synth) { Synth->SetDizzySound(bDizzy); }
@@ -425,13 +433,29 @@ void UTN_DizzyBirdsComponent::EnsureVisuals()
 
 void UTN_DizzyBirdsComponent::EnsureSound()
 {
-	if (Synth || !FApp::CanEverRenderAudio()) { return; }
-	UTN_DizzySynthComponent* NewSynth = NewObject<UTN_DizzySynthComponent>(GetOwner(), NAME_None, RF_Transient);
-	NewSynth->SetupAttachment(this);
-	NewSynth->RegisterComponent();
-	NewSynth->SetDizzyVolume(SoundVolume);
-	NewSynth->Start();
-	Synth = NewSynth;
+	if (!FApp::CanEverRenderAudio()) { return; }
+	if (!Synth)
+	{
+		UTN_DizzySynthComponent* NewSynth = NewObject<UTN_DizzySynthComponent>(GetOwner(), NAME_None, RF_Transient);
+		NewSynth->SetupAttachment(this);
+		NewSynth->RegisterComponent();
+		NewSynth->SetDizzyVolume(SoundVolume);
+		Synth = NewSynth;
+	}
+	SoundTailLeft = 0.f;
+	if (!Synth->IsActive())
+	{
+		// Antes se arrancaba una vez y no se paraba nunca: cada tortuga mareada alguna vez se quedaba con una voz del
+		// mezclador en silencio para siempre (#737). Ahora suena solo mientras dura el mareo y su cola. La propia tortuga
+		// tiene voz reservada; las demás compiten como el resto del mundo.
+		TNAudioVoices::Apply(*Synth, TNAudioVoices::RankForOwner(GetOwner()));
+		Synth->Start();
+	}
+}
+
+bool UTN_DizzyBirdsComponent::IsSoundPlaying() const
+{
+	return Synth && Synth->IsActive();
 }
 
 FVector UTN_DizzyBirdsComponent::HeadTop() const
@@ -458,9 +482,18 @@ void UTN_DizzyBirdsComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	const bool bShow = Presence > 0.001f;
 	for (UStaticMeshComponent* Part : Birds) { if (Part && Part->IsVisible() != bShow) { Part->SetVisibility(bShow); } }
 	for (UStaticMeshComponent* Part : Stars) { if (Part && Part->IsVisible() != bShow) { Part->SetVisibility(bShow); } }
+	// Fin del mareo: tras la cola (el generador se apaga en ~0,55 s), el sintetizador se para y suelta su voz.
+	if (!bDizzy && IsSoundPlaying())
+	{
+		SoundTailLeft -= DeltaTime;
+		if (SoundTailLeft <= 0.f)
+		{
+			Synth->Stop();
+		}
+	}
 	if (!bShow)
 	{
-		if (!bDizzy) { SetComponentTickEnabled(false); }
+		if (!bDizzy && !IsSoundPlaying()) { SetComponentTickEnabled(false); }
 		return;
 	}
 

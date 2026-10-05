@@ -1,4 +1,5 @@
 #include "Player/TN_TurtleFoleyComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "TN_TurtleFoleyDSP.h"
 #include "Core/TN_Log.h"
 #include "Player/TortugaCharacter.h"
@@ -843,6 +844,8 @@ void UTN_TurtleFoleyComponent::StartSynth()
 {
 	if (IsActive()) { return; }
 	ConfigureAttenuation();
+	// Los pasos y el jadeo de la tortuga propia tienen voz reservada; los de las demás compiten con el resto del mundo.
+	TNAudioVoices::Apply(*this, TNAudioVoices::RankForOwner(GetOwner()));
 	Start();
 }
 

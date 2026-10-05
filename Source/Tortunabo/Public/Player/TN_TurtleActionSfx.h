@@ -43,8 +43,10 @@ namespace TNTurtleActionSfx
 	/**
 	 * Suena Sound una vez en Location. Si el recurso no trae atenuación propia, se le pone la natural (pleno hasta
 	 * InnerRadius cm, silencio en OuterRadius): sin ella el motor lo tocaba en 2D y lo oía todo el mapa igual de fuerte.
+	 * Con Source, el rango de voz de quien lo hace (TNAudioVoices::RankForOwner): la tortuga propia nunca se queda sin voz.
 	 */
-	TORTUNABO_API void PlayAt(UWorld* World, USoundBase* Sound, const FVector& Location, float InnerRadius, float OuterRadius);
+	TORTUNABO_API void PlayAt(UWorld* World, USoundBase* Sound, const FVector& Location, float InnerRadius, float OuterRadius,
+		const AActor* Source = nullptr);
 
 	/**
 	 * true mientras el latido sintetizado de Owner debe seguir: es una tortuga derribada y controlada en esta máquina.

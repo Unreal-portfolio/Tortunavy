@@ -528,7 +528,7 @@ void ATortugaCharacter::PlaySfxAtSelf(USoundBase* Sound) const
 {
 	if (!Sound || !GetWorld()) { return; }
 	// Con la atenuación natural de los sonidos del derribo si el recurso no trae la suya (antes sonaba en 2D en todo el mapa).
-	TNTurtleActionSfx::PlayAt(GetWorld(), Sound, GetActorLocation(), ReviveAudioInnerRadius, ReviveAudioOuterRadius);
+	TNTurtleActionSfx::PlayAt(GetWorld(), Sound, GetActorLocation(), ReviveAudioInnerRadius, ReviveAudioOuterRadius, this);
 }
 
 void ATortugaCharacter::MulticastPlaySfx_Implementation(USoundBase* Sound)

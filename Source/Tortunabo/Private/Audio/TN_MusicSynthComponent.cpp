@@ -1,4 +1,5 @@
 #include "Audio/TN_MusicSynthComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "TN_MusicSynthDSP.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
@@ -73,6 +74,8 @@ void UTN_MusicSynthComponent::OnRegister()
 	// Antes de que el padre cree el componente de audio y, si se autoactiva, arranque.
 	ConfigureChannels();
 	Super::OnRegister();
+	// La música del jugador (2D) nunca se queda sin voz; la radio 3D de la tienda compite con el resto del mundo (#737).
+	TNAudioVoices::Apply(*this, bSpatial ? TNAudioVoices::ERank::World : TNAudioVoices::ERank::Reserved);
 }
 
 void UTN_MusicSynthComponent::BeginPlay()

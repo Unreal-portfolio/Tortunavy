@@ -87,8 +87,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dizzy", meta = (ClampMin = "0.0", ClampMax = "1.5"))
 	float SoundVolume = 0.75f;
 
+	/** Segundos que sigue en marcha el sintetizador al acabar el mareo (su cola); luego se para y suelta la voz (#737). */
+	static constexpr float SoundTailSeconds = 1.5f;
+
+	/** El sintetizador del mareo está en marcha (ocupa una voz del mezclador). */
+	bool IsSoundPlaying() const;
+
 private:
 	void EnsureVisuals();
+	/** Crea el sintetizador la primera vez y lo arranca si estaba parado. */
 	void EnsureSound();
 	FVector HeadTop() const;
 
@@ -105,4 +112,6 @@ private:
 	/** 0 = oculto, 1 = del todo (escala de entrada y salida). */
 	float Presence = 0.f;
 	float Time = 0.f;
+	/** Cola que le queda al sonido tras acabar el mareo (s). */
+	float SoundTailLeft = 0.f;
 };
