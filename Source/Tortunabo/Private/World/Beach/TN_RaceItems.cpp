@@ -103,6 +103,12 @@ namespace TNRaceItemsDetail
 		return Cached;
 	}
 
+	/** La posición con la que se pesa un sorteo: la cima de una fortaleza siempre pesa como la última (1), sea cual sea el puesto. */
+	float EffectiveNorm(float Norm, ETNRaceLootSource Source)
+	{
+		return Source == ETNRaceLootSource::Summit ? 1.f : Norm;
+	}
+
 	/** Interpola el peso entre primera (0), a medias (0,5) y última (1). */
 	float Blend(const FItemInfo& Info, float Norm)
 	{
@@ -387,8 +393,9 @@ float TNRaceItems::PositionWeight(ETNRaceItem Item, float Norm, int32 Racers, ET
 	{
 		return 0.f;
 	}
-	float Weight = TNRaceItemsDetail::Blend(*Info, Norm);
-	if (Source == ETNRaceLootSource::Chest)
+	// Arriba de una fortaleza vale la tabla de las últimas para cualquier puesto, con los factores del cofre.
+	float Weight = TNRaceItemsDetail::Blend(*Info, TNRaceItemsDetail::EffectiveNorm(Norm, Source));
+	if (Source == ETNRaceLootSource::Chest || Source == ETNRaceLootSource::Summit)
 	{
 		Weight *= Info->ChestFactor;
 	}
@@ -420,9 +427,9 @@ float TNRaceItems::PositionWeightForUse(ETN_ItemUseType Use, float Norm, ETNRace
 		case ETN_ItemUseType::None:             return 0.f;
 		default:                                break;
 	}
-	const float Clamped = FMath::Clamp(Norm, 0.f, 1.f);
+	const float Clamped = FMath::Clamp(TNRaceItemsDetail::EffectiveNorm(Norm, Source), 0.f, 1.f);
 	float Weight = Clamped <= 0.5f ? FMath::Lerp(Lead, Mid, Clamped * 2.f) : FMath::Lerp(Mid, Last, (Clamped - 0.5f) * 2.f);
-	if (Source == ETNRaceLootSource::Chest)
+	if (Source == ETNRaceLootSource::Chest || Source == ETNRaceLootSource::Summit)
 	{
 		Weight *= ChestFactor;
 	}

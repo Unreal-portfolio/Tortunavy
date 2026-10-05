@@ -17,12 +17,12 @@ class UStaticMeshComponent;
  *   grande y tres en la colosal; la última es la cima.
  * - Subidas: rampa y escalera por fuera hasta el adarve, escalera y rampa por dentro, rampas de terraza en terraza (en
  *   espiral) y atajos arriesgados: torrecillas de cubo que se saltan y una pala tendida hasta una cornisa de 70 cm.
- * - Premio en la cima: un lanzador potenciado (catapulta o trampolín con TNBeach::FlagBoosted) en su borde +X que lanza
- *   mucho más lejos hacia el mar, un cofre (TreasureChest) y conchas de puntos de 50 y 100 (más alguna de 50 al final de
- *   los atajos). Los crea el servidor al construirla y los destruye con ella.
+ * - Premio en la cima: siempre una catapulta potenciada (TNBeach::FlagBoosted) en su borde +X que lanza mucho más lejos
+ *   hacia el mar, un cofre (TreasureChest con TNBeach::FlagSummitPrize: da lo mejor de la carrera para cualquier puesto,
+ *   ETNRaceLootSource::Summit) y conchas de puntos de 50 y 100 (más alguna de 50 al final de los atajos). Los crea el
+ *   servidor al construirla y los destruye con ella.
  *
- * Variantes por Spec.Seed: la espiral hacia un lado u otro (espejo en Y), catapulta o trampolín, el tinte de la arena y
- * los colores y adornos. Spec.SizeScale se recorta a 0,85-1,2 (por debajo no caben los pasillos de tortuga). Todo es
+ * Variantes por Spec.Seed: la espiral hacia un lado u otro (espejo en Y), el tinte de la arena y los colores y adornos. Spec.SizeScale se recorta a 0,85-1,2 (por debajo no caben los pasillos de tortuga). Todo es
  * arena de molde con colisión convexa por piezas (también para la cámara); las almenas, banderas y conchas no chocan.
  */
 UCLASS()

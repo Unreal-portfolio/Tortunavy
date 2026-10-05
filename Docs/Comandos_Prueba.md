@@ -51,7 +51,7 @@ necesita espera a que esté lista.
   - `Mine`: mina.
   - `Trampoline`: trampolín (4 variantes por semilla).
     - Caídas en red (#21): `TN.Beach.Drop <metros>[/<metros>...] [veces=1] [cada=3 s] [jugador=anfitrión]` en el anfitrión deja caer esa tortuga sobre lo más alto del trampolín de `TN.Beach.Place` más cercano (si no hay, crea uno de gelatina). Con `p.NetShowCorrections 1` y `NetEmulation.PktLag 120` en el cliente, `TN.Beach.Drop 5/7 10 4 1` hace diez caídas alternas de 5 y 7 m del jugador 1: tiene que rebotar igual en los dos y sin correcciones (solo las del propio teletransporte). La primera espera una vuelta para que el jugador acabe de entrar.
-  - `FortressMedium`, `FortressLarge`, `FortressColossal`: fortaleza de arena con premio en la cima (lanzador potenciado, cofre y conchas de 50 y 100). Mira hacia donde miras (lanza hacia allí) y sale lejos: la colosal, a ~54 m. Por ejemplo `TN.Beach.Place FortressColossal 1 0 7`; semillas seguidas cambian catapulta o trampolín y el lado de la espiral.
+  - `FortressMedium`, `FortressLarge`, `FortressColossal`: fortaleza de arena con premio en la cima (catapulta potenciada, cofre con lo mejor de la carrera para cualquier puesto y conchas de 50 y 100). Mira hacia donde miras (lanza hacia allí) y sale lejos: la colosal, a ~54 m. Por ejemplo `TN.Beach.Place FortressColossal 1 0 7`; semillas seguidas cambian el lado de la espiral.
 - **Lanzadores potenciados** (los de la cima de las fortalezas): `TN.Beach.PlaceBoosted <Catapult|Trampoline> [Tamaño=1] [Semilla]`, delante de ti y mirando hacia donde miras. `TN.Beach.Place clear` también los borra.
 - **Subir a la cima:** `TN.Beach.Fortress.Top [jugador=0]` lleva a esa tortuga a la cima de la fortaleza más cercana, detrás del lanzador y mirando hacia él.
   - `TreasureChest`: cofre (mira hacia donde mira tu tortuga; `TN.Beach.Chest` lo pone con el frente hacia ti).
@@ -161,7 +161,7 @@ Para usarlos, la tecla de siempre de usar el objeto de la mano (E si no hay nada
 | `TN.Race.Item <objeto\|list> [jugador=0]` | Da ese objeto a la tortuga (a la mano; si la mochila está llena, sustituye lo de la mano). |
 | `TN.Race.ItemUse <objeto> [jugador=0]` | Se lo da y lo usa en el acto (para ver el efecto sin más). Si no se puede usar (sin nadie a quien apuntar, sin sitio...), suena el «nop». |
 | `TN.Race.ItemBox [n=1]` / `TN.Race.ItemBox clear` | `n` cajas de objetos en fila delante de ti; `clear` quita las puestas así. |
-| `TN.Race.ItemRank [jugador=0]` | Puesto en la carrera y peso de cada objeto de carrera para ese puesto (rebuscar, caja y cofre). |
+| `TN.Race.ItemRank [jugador=0]` | Puesto en la carrera y peso de cada objeto de carrera para ese puesto (rebuscar, caja, cofre y cofre de la cima de una fortaleza). |
 | `TN.Race.Boost [segundos=3] [multiplicador=2] [jugador=0]` | Turbo sin gastar objeto. |
 | `TN.Race.Star [segundos=8] [jugador=0]` | Protector solar sin gastar objeto. |
 | `TN.Race.ItemClear` | Quita lo lanzado (cangrejos, minas, discos, gaviotas, nubes, pelícanos) y cancela los efectos de todas las tortugas. |

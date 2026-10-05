@@ -218,7 +218,8 @@ namespace TNBeachFortressKit
 		return Out;
 	}
 
-	inline FPlan MakePlan(ETNBeachElement Element, float SizeScale, uint32 Seed)
+	/** La semilla ya no decide nada del plan (antes, catapulta o trampolín; ahora siempre catapulta): se queda por quien llama. */
+	inline FPlan MakePlan(ETNBeachElement Element, float SizeScale, uint32 /*Seed*/)
 	{
 		FPlan P;
 		P.Size = SizeOf(Element);
@@ -331,25 +332,18 @@ namespace TNBeachFortressKit
 		// ── Cima: lanzador potenciado en el borde +X, cofre y conchas ──
 		const double Ks = P.Summit().K;
 		const double Zs = P.Summit().Z;
-		P.bCatapult = (TNBeachTrapKit::SeedOf(static_cast<int32>(Seed), 7u) % 100u) < 55u;
-		if (P.bCatapult)
-		{
-			// Brazo de lado a lado de la cima (las medidas de ATN_BeachCatapult::ApplySpec: largo 1,22·huella, entre 8,2 y 11,5 m).
-			const double Sc = FMath::Clamp((2.0 * Ks - 2.0 * SummitMargin) / (1.22 * 900.0), 0.72, 1.15);
-			const double Fc = 900.0 * Sc;
-			const double Len = FMath::Clamp(1.22 * Fc, 820.0, 1150.0);
-			const double PivotX = FMath::Clamp(0.2 * Fc, 110.0, 190.0);
-			P.LauncherSize = static_cast<float>(Sc);
-			P.LauncherAt = FVector(Ks - SummitMargin - PivotX - 0.32 * Len, 0.0, Zs);
-		}
-		else
-		{
-			const double Sc = FMath::Clamp(0.72 * Ks / 700.0, 0.5, 0.85);
-			P.LauncherSize = static_cast<float>(Sc);
-			P.LauncherAt = FVector(Ks - SummitMargin - 0.97 * 700.0 * Sc, 0.0, Zs);
-		}
-		// Cofre (ATN_BeachChest: 3,4 m de ancho) en el cuarto -X/+Y, al lado del cazo o del trampolín, con el frente (+X) hacia
-		// el mar como el lanzador: lo que suelta cae delante, en la cima.
+		// Siempre catapulta (antes, el 45 % de las veces, un trampolín que no compensaba la subida; #741): la que lanza más lejos
+		// hacia delante, a los 80-90 m que el reparto deja libres (FortressLandingAt).
+		P.bCatapult = true;
+		// Brazo de lado a lado de la cima (las medidas de ATN_BeachCatapult::ApplySpec: largo 1,22·huella, entre 8,2 y 11,5 m).
+		const double Sc = FMath::Clamp((2.0 * Ks - 2.0 * SummitMargin) / (1.22 * 900.0), 0.72, 1.15);
+		const double Fc = 900.0 * Sc;
+		const double Len = FMath::Clamp(1.22 * Fc, 820.0, 1150.0);
+		const double PivotX = FMath::Clamp(0.2 * Fc, 110.0, 190.0);
+		P.LauncherSize = static_cast<float>(Sc);
+		P.LauncherAt = FVector(Ks - SummitMargin - PivotX - 0.32 * Len, 0.0, Zs);
+		// Cofre (ATN_BeachChest: 3,4 m de ancho) en el cuarto -X/+Y, al lado del cazo de la catapulta, con el frente (+X) hacia
+		// el mar como el lanzador: lo que suelta cae delante, en la cima. Da lo mejor de la carrera (TNBeach::FlagSummitPrize).
 		P.ChestAt = FVector(-0.5 * Ks, 0.54 * Ks, Zs);
 		P.ChestYaw = 0.0;
 		const double C = Ks - 130.0;

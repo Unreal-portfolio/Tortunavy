@@ -171,6 +171,12 @@ namespace TNBeach
 	 */
 	constexpr uint8 FlagBoosted = 1 << 0;
 
+	/**
+	 * Cofre de la cima de una fortaleza: da lo mejor de la carrera, con la tabla de las últimas para cualquier puesto
+	 * (ETNRaceLootSource::Summit): subir hasta allí tiene que compensar.
+	 */
+	constexpr uint8 FlagSummitPrize = 1 << 1;
+
 	/** Veces el tamaño real al que va todo (la tortuga, una cría de ~5 cm, mide ~1,4 m en el juego). */
 	constexpr double Scale = 28.0;
 
