@@ -17,7 +17,7 @@ import re
 from datetime import date
 
 import objetos
-from base import REPO, ErrorTablero, cargar_proyecto, comentar, es_de, gh, poner_campo, usuario_actual
+from base import REPO, ErrorTablero, cargar_issue, comentar, es_de, gh, poner_campo, usuario_actual
 
 ETIQUETA = "peticion"
 COLOR = "D93F0B"
@@ -66,7 +66,7 @@ def para(issues: list[dict], login: str, aprobador: bool) -> list[dict]:
 
 
 def cmd_pedir(args: argparse.Namespace) -> None:
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     issue = proyecto["items"].get(args.numero)
     if issue is None:
         raise ErrorTablero(f"La issue #{args.numero} no está en el tablero.")

@@ -107,11 +107,12 @@ Scripts/textures/WaterSurface.bin
 # Mapas a partir de fotos (retratos): reproducen el relieve de una persona; no se suben (ver gen_terrain_portrait.py)
 Scripts/terrain_volumes/Variants/F*/
 
-# Cachés de herramientas (pytest, ruff, rumdl, superpowers)
+# Cachés de herramientas (pytest, ruff, rumdl, superpowers; ids del Project de tablero.py)
 .pytest_cache/
 .rumdl_cache/
 .ruff_cache/
 .superpowers/
+Scripts/tablero/.cache/
 
 # Logs de ejecución (Source/Logs: los registros que se guardaban junto al código; no van al repo)
 *.log

@@ -122,7 +122,7 @@ def test_bloquear_un_lote_no_le_pone_status_ni_etiqueta(monkeypatch, numero, cam
     monkeypatch.setattr(objetos, "leer_issue", _leer_issue(439, []))
     proyecto = _proyecto(439)
     proyecto["items"][440]["valores"] = {"Status": "Ready"}
-    monkeypatch.setattr(control, "cargar_proyecto", lambda _n: proyecto)
+    monkeypatch.setattr(control, "cargar_issue", lambda _n: proyecto)
     monkeypatch.setattr(control, "poner_campo", lambda *a: campos.append(a[1:]))
     control.cmd_bloquear(argparse.Namespace(numero=numero, por=[442]))
     etiquetado = any(a[:2] == ("issue", "edit") for a, _ in gh.llamadas)
