@@ -491,6 +491,8 @@ void ATN_ScorePickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComp, AActo
 	// Sumar puntos (server-auth). AddRaceScore difunde OnRaceScoreChanged también en
 	// el host del listen-server, cuyo OnRep no dispara → su HUD se refresca en vivo.
 	PS->AddRaceScore(ScoreValue);
+	// Para el término de conchas de la puntuación final del Coop (#789): solo cuenta, no suma más puntos.
+	PS->CollectedShellPoints += ScoreValue;
 	PS->ForceNetUpdate();
 	// Estallido (destello, chispas y «¡plin!») en todas las máquinas y, en la del jugador, las conchas que vuelan a su
 	// contador. Va por el PlayerState, que no se destruye: el multicast de esta concha se perdería con ella.

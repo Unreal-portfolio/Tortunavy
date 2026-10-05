@@ -394,6 +394,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Collectibles")
 	int32 GetTurtleDollsCollected() const;
 
+	/**
+	 * Suma la puntuación final del Coop al perfil local y lo guarda (#789). Lo llama ATN_CoopGameState al entrar en
+	 * Results, por diferencia con lo ya guardado en esa partida. No toca las conchas (AccumulatedRaceScore).
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Score")
+	void AddCoopScore(int32 Points);
+
+	/** Puntuación final del Coop acumulada por el jugador local. */
+	UFUNCTION(BlueprintPure, Category = "Score")
+	int32 GetAccumulatedCoopScore() const;
+
 	// ── Tutorial state ───────────────────────────────────────────────────────
 
 	/**

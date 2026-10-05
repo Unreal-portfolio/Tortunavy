@@ -1583,6 +1583,22 @@ int32 UMP_GameInstance::GetTurtleDollsCollected() const
 	return CosmeticProfile ? CosmeticProfile->TurtleDollsCollected : 0;
 }
 
+void UMP_GameInstance::AddCoopScore(int32 Points)
+{
+	if (Points <= 0 || !CosmeticProfile)
+	{
+		return;
+	}
+	CosmeticProfile->AccumulatedCoopScore += Points;
+	SaveCosmeticProfile();
+	UE_LOG(LogTortunabo, Log, TEXT("[GameInstance] AddCoopScore: +%d → total=%d"), Points, CosmeticProfile->AccumulatedCoopScore);
+}
+
+int32 UMP_GameInstance::GetAccumulatedCoopScore() const
+{
+	return CosmeticProfile ? CosmeticProfile->AccumulatedCoopScore : 0;
+}
+
 #if !UE_BUILD_SHIPPING
 // Para probar la tienda (los buggies cuestan conchas): suma conchas al perfil local y las guarda.
 static FAutoConsoleCommandWithWorldAndArgs GTNShopAddShellsCommand(

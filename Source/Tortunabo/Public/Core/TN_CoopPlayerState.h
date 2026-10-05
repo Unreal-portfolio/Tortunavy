@@ -4,6 +4,7 @@
 #include "Engine/NetSerialization.h"
 #include "GameFramework/PlayerState.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Core/TN_CoopScore.h"
 #include "TN_CoopPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRaceScoreChanged, int32, NewScore);
@@ -234,6 +235,27 @@ public:
 
 	/** Servidor: suma un muñeco tortuga (ATN_TurtleDoll ya ha comprobado que esta jugadora no lo tenía). */
 	void AddTurtleDoll();
+
+	/**
+	 * Servidor: puntos de concha cogidos en la partida (ATN_ScorePickup), para el término de conchas de la puntuación
+	 * final del Coop (#789). Solo cuenta: no suma nada a RaceScore. Lo resetea el GameMode al empezar la partida.
+	 */
+	UPROPERTY()
+	int32 CollectedShellPoints = 0;
+
+	/**
+	 * Puntuación final del Coop con su desglose (#789, TN_CoopScore.h). La calcula el servidor al entrar en Results; la
+	 * pantalla de resultados la enseña y la jugadora de esta máquina suma Total a su perfil. Aparte de las conchas.
+	 */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CoopScore, Category = "Coop|Score")
+	FTN_CoopScoreBreakdown CoopScore;
+
+	/** Servidor: pone la puntuación final y la empuja a los clientes. */
+	void SetCoopScore(const FTN_CoopScoreBreakdown& InScore);
+
+	/** @brief OnRep de CoopScore: si ya se está en Results, guarda en el perfil lo que falte (por diferencia). */
+	UFUNCTION()
+	void OnRep_CoopScore();
 
 	/** Pareja de la ronda actual en 2vs2 (0 o 1). -1 fuera de 2vs2. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")

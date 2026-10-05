@@ -16,6 +16,9 @@
 #include "World/ProcMap/TN_ProcStartStructure.h"
 #include "World/ProcMap/TN_PathStorm.h"
 #include "World/ProcMap/TN_TurtleDoll.h"
+#include "World/TN_PuzzleScoreSubsystem.h"
+#include "World/TN_ScorePickup.h"
+#include "Core/TN_CoopScore.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -368,6 +371,8 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 			{
 				PS->RoundWins = 0;
 				PS->TurtleDollsCollected = 0;
+				PS->CollectedShellPoints = 0;
+				PS->CoopScore = FTN_CoopScoreBreakdown();
 			}
 			PS->TeamIndex = -1;
 		}
@@ -380,9 +385,10 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 	if (CurrentRound == 1)
 	{
 		MatchTurtleDollsTotal = 0;
-		DollsCountedGeneration = 0;
+		MatchShellPointsTotal = 0;
+		CollectiblesCountedGeneration = 0;
 	}
-	CountRoundTurtleDolls();
+	CountRoundCollectibles();
 
 	PlacePlayersAtStart();
 
@@ -421,20 +427,58 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 	SyncGameState();
 }
 
-void ATN_ProcMapGameMode::CountRoundTurtleDolls()
+void ATN_ProcMapGameMode::CountRoundCollectibles()
 {
 	if (Mode != ETNProcGameMode::Coop || !Generator || !Generator->IsMapReady())
 	{
 		return;
 	}
-	// Sin regenerar entre rondas, los muñecos son los mismos (y quien los cogió ya los tiene): no se cuentan dos veces.
+	// Sin regenerar entre rondas, los muñecos y las conchas son los mismos: no se cuentan dos veces.
 	const int32 Generation = Generator->GetBuiltGeneration();
-	if (Generation == DollsCountedGeneration)
+	if (Generation == CollectiblesCountedGeneration)
 	{
 		return;
 	}
-	DollsCountedGeneration = Generation;
+	CollectiblesCountedGeneration = Generation;
 	MatchTurtleDollsTotal += ATN_TurtleDoll::CountInWorld(GetWorld());
+	for (TActorIterator<ATN_ScorePickup> It(GetWorld()); It; ++It)
+	{
+		if (IsValid(*It) && !It->IsActorBeingDestroyed())
+		{
+			MatchShellPointsTotal += FMath::Max(0, It->GetScoreValue());
+		}
+	}
+}
+
+void ATN_ProcMapGameMode::ComputeCoopScores()
+{
+	TArray<ATN_CoopPlayerState*> Players;
+	int32 TeamShellPoints = 0;
+	for (APlayerState* BasePS : GameState->PlayerArray)
+	{
+		if (ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS))
+		{
+			Players.Add(PS);
+			TeamShellPoints += PS->CollectedShellPoints;
+		}
+	}
+	const UTN_PuzzleScoreSubsystem* Puzzles = GetWorld()->GetSubsystem<UTN_PuzzleScoreSubsystem>();
+	TNCoopScore::FInputs In;
+	In.DollsTotal = MatchTurtleDollsTotal;
+	// Las conchas que salen después (rebuscables, enemigos) también cuentan: el total nunca queda por debajo de lo cogido.
+	In.ShellsCollected = TeamShellPoints;
+	In.ShellsTotal = FMath::Max(MatchShellPointsTotal, TeamShellPoints);
+	In.PuzzleEfficiency = Puzzles ? Puzzles->GetEfficiency() : -1.f;
+	for (ATN_CoopPlayerState* PS : Players)
+	{
+		In.DollsCollected = PS->TurtleDollsCollected;
+		In.bFinished = PS->bHasFinishedRun && !PS->bIsEliminated;
+		const FTN_CoopScoreBreakdown Score = TNCoopScore::Compute(In);
+		PS->SetCoopScore(Score);
+		UE_LOG(LogTortunabo, Log, TEXT("[ProcMapGameMode] Puntuación final de %s: %d (muñecos %d/%d +%d, conchas %d/%d +%d, meta +%d, puzle %.2f +%d)."),
+			*PS->GetPlayerName(), Score.Total, Score.DollsCollected, Score.DollsTotal, Score.DollPoints, Score.ShellsCollected,
+			Score.ShellsTotal, Score.ShellPoints, Score.FinishPoints, Score.PuzzleEfficiency, Score.PuzzlePoints);
+	}
 }
 
 void ATN_ProcMapGameMode::PlacePlayersAtStart()
@@ -1281,6 +1325,12 @@ void ATN_ProcMapGameMode::EnterFinalResults()
 	if (Storm)
 	{
 		Storm->StopStorm();
+	}
+
+	// Coop: la puntuación final con su desglose, antes de Results (el anfitrión la guarda en su perfil al entrar).
+	if (Mode == ETNProcGameMode::Coop)
+	{
+		ComputeCoopScores();
 	}
 
 	// Carrera y 2vs2: la tabla final es la de rondas ganadas (el widget de

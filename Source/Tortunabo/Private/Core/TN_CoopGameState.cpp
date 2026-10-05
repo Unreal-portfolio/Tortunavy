@@ -82,6 +82,7 @@ void ATN_CoopGameState::BroadcastFlowStateChange()
 	{
 		PersistedScoreThisRace = 0;
 		PersistedDollsThisRace = 0;
+		PersistedCoopScoreThisRace = 0;
 	}
 	PersistLocalPlayerScoreIfResults();
 	OnMatchFlowStateChanged.Broadcast(MatchFlowState);
@@ -126,6 +127,14 @@ void ATN_CoopGameState::PersistLocalPlayerScoreIfResults()
 				{
 					GI->AddTurtleDolls(DollDelta);
 					PersistedDollsThisRace = TNPS->TurtleDollsCollected;
+				}
+				// Puntuación final del Coop (#789): aparte de las conchas, por diferencia igual que los puntos.
+				const int32 CoopDelta = TNPS->CoopScore.bValid
+					? TNScoreLogic::ComputePersistDelta(TNPS->CoopScore.Total, PersistedCoopScoreThisRace) : 0;
+				if (CoopDelta > 0)
+				{
+					GI->AddCoopScore(CoopDelta);
+					PersistedCoopScoreThisRace = TNPS->CoopScore.Total;
 				}
 			}
 			break;

@@ -1419,6 +1419,11 @@ void UTN_RunFlowHUDWidget::BuildTree()
 		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(ResultsRankText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f)); }
 		ResultsTimeText = MakeText(Tree, TEXT("ResultsTimeText"), FText::GetEmpty(), TEXT("Regular"), 20, TNHUDArt::Foam);
 		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(ResultsTimeText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 2.f, 0.f, 14.f)); }
+		// Puntuación final del Coop (#789): solo se ve si la partida la tiene.
+		CoopScoreText = MakeText(Tree, TEXT("CoopScoreText"), FText::GetEmpty(), TEXT("Regular"), 18, FLinearColor::White);
+		CoopScoreText->SetJustification(ETextJustify::Center);
+		CoopScoreText->SetVisibility(ESlateVisibility::Collapsed);
+		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(CoopScoreText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 0.f, 0.f, 14.f)); }
 
 		// Clasificación: una fila por jugador que cabe (puesto, nombre, tiempo, puntos con su concha), alternando el fondo.
 		// Las cuatro primeras se ven siempre; de la quinta a la octava, solo si hay tantos resultados (ApplyScoreboardDensity,

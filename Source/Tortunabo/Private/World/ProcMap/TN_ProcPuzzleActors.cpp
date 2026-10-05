@@ -1,6 +1,7 @@
 #include "World/ProcMap/TN_ProcPuzzleActors.h"
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
 #include "Art/TN_Art.h"
+#include "World/TN_PuzzleScoreSubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -243,6 +244,11 @@ void ATN_ProcSwitch::SetTarget(AActor* InTarget, float InEffectSeconds)
 	CooldownSeconds = InEffectSeconds + 1.f;
 	TintKind = Cast<ATN_ProcSabotageGate>(InTarget) ? 2 : 1;
 	OnRep_TintKind();
+	// El muro de lanzamiento es un puzle (eficiencia de puzle del Coop, #789); la compuerta de sabotaje, no.
+	if (TintKind == 1)
+	{
+		UTN_PuzzleScoreSubsystem::Register(this);
+	}
 }
 
 void ATN_ProcSwitch::OnRep_TintKind()
@@ -265,6 +271,7 @@ void ATN_ProcSwitch::OnInteracted_Implementation(APawn* Interactor)
 	if (ATN_ProcThrowWall* Wall = Cast<ATN_ProcThrowWall>(Target.Get()))
 	{
 		Wall->LowerRamp(EffectSeconds);
+		UTN_PuzzleScoreSubsystem::NotifySolved(this);
 	}
 	else if (ATN_ProcSabotageGate* SabotageGate = Cast<ATN_ProcSabotageGate>(Target.Get()))
 	{

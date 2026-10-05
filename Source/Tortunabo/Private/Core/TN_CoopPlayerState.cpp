@@ -113,6 +113,7 @@ void ATN_CoopPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ATN_CoopPlayerState, RaceShellHalves);
 	DOREPLIFETIME(ATN_CoopPlayerState, TeamIndex);
 	DOREPLIFETIME(ATN_CoopPlayerState, TurtleDollsCollected);
+	DOREPLIFETIME(ATN_CoopPlayerState, CoopScore);
 }
 
 void ATN_CoopPlayerState::OnRep_RaceScore()
@@ -196,6 +197,8 @@ void ATN_CoopPlayerState::CopyProperties(APlayerState* PlayerState)
 	Target->RaceShellHalves = RaceShellHalves;
 	Target->TeamIndex = TeamIndex;
 	Target->TurtleDollsCollected = TurtleDollsCollected;
+	Target->CollectedShellPoints = CollectedShellPoints;
+	Target->CoopScore = CoopScore;
 	Target->EquippedHelmetId = EquippedHelmetId;
 	Target->EquippedSkinId = EquippedSkinId;
 	Target->EquippedShellId = EquippedShellId;
@@ -203,6 +206,24 @@ void ATN_CoopPlayerState::CopyProperties(APlayerState* PlayerState)
 }
 
 void ATN_CoopPlayerState::OnRep_TurtleDollsCollected()
+{
+	if (ATN_CoopGameState* GS = GetWorld() ? GetWorld()->GetGameState<ATN_CoopGameState>() : nullptr)
+	{
+		GS->PersistLocalPlayerScoreIfResults();
+	}
+}
+
+void ATN_CoopPlayerState::SetCoopScore(const FTN_CoopScoreBreakdown& InScore)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	CoopScore = InScore;
+	ForceNetUpdate();
+}
+
+void ATN_CoopPlayerState::OnRep_CoopScore()
 {
 	if (ATN_CoopGameState* GS = GetWorld() ? GetWorld()->GetGameState<ATN_CoopGameState>() : nullptr)
 	{
