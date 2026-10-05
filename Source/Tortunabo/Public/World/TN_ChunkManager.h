@@ -177,9 +177,12 @@ public:
 	 * @param InFirstMap  Semilla de un mapa del catálogo para el nivel 1 (?SurvivalMap=); 0 = elegirlo.
 	 * @param InStartDifficulty  Dificultad 1–5 del mapa del nivel 1; cada nivel sube una hasta 5 (#730).
 	 * @param InTrapsPer100mTenths  Trampas que se buscan cada 100 m de camino, en décimas (0 = las del catálogo, #730).
+	 * @param InSearchPer100mTenths Rebuscables que se buscan cada 100 m de camino, en décimas (0 = los del decorado, #724).
 	 */
-	void SetLevelMode(bool bEnable, int32 InSeed, uint32 InFirstMap = 0u, int32 InStartDifficulty = 1, int32 InTrapsPer100mTenths = 0)
+	void SetLevelMode(bool bEnable, int32 InSeed, uint32 InFirstMap = 0u, int32 InStartDifficulty = 1, int32 InTrapsPer100mTenths = 0,
+		int32 InSearchPer100mTenths = 0)
 	{
+		LevelSearchPer100mTenths = FMath::Max(0, InSearchPer100mTenths);
 		LevelTrapsPer100mTenths = FMath::Max(0, InTrapsPer100mTenths);
 		bLevelMode = bEnable;
 		LevelSeed = InSeed;
@@ -220,6 +223,9 @@ private:
 
 	/** Trampas que se buscan cada 100 m de camino en los mapas de los niveles, en décimas (la de la dificultad, #730). */
 	int32 LevelTrapsPer100mTenths = 0;
+
+	/** Rebuscables que se buscan cada 100 m de camino en los mapas de los niveles, en décimas (la de la dificultad, #724). */
+	int32 LevelSearchPer100mTenths = 0;
 
 	/** Mapas del catálogo que han salido en la partida, en orden (se olvidan al agotar los de una dificultad). */
 	TArray<uint32> PlayedLevelMaps;

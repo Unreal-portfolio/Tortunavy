@@ -77,6 +77,10 @@ struct TORTUNABO_API FTNProcMapNetConfig
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
 	int32 SurvivalTrapsPer100mTenths = 0;
 
+	/** Supervivencia: rebuscables que se buscan cada 100 m de camino, en décimas (0 = los del decorado; #724). */
+	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
+	int32 SurvivalSearchPer100mTenths = 0;
+
 	/** Se incrementa en cada (re)generación, p. ej. entre rondas. 0 = sin mapa. */
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
 	int32 Generation = 0;
@@ -121,7 +125,7 @@ public:
 	void ServerGenerate(int32 InSeed, ETNProcGameMode InMode, ETNProcDifficulty InDifficulty);
 
 	/** Servidor: genera el mapa de Supervivencia con esta semilla y dificultad 1–5 (un nivel de la partida, #274). */
-	void ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty, int32 InTrapsPer100mTenths = 0);
+	void ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty, int32 InTrapsPer100mTenths = 0, int32 InSearchPer100mTenths = 0);
 
 	/** Genera con los parámetros de edición. Botón en el panel Details. */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "ProcMap")
@@ -306,6 +310,12 @@ private:
 	 * editor). Antes de las mallas: el hueco con puente que se rompe se construye sin su viga.
 	 */
 	void PlanSurvivalTraps();
+	/**
+	 * Supervivencia (#724): añade al layout los objetos del camino que hacen falta para la densidad de rebuscables del mapa
+	 * (TNSurvivalCatalog::PlaceSearchProps), en todas las máquinas. Después del terreno (se apoyan en su suelo) y antes de las
+	 * mallas del decorado (BuildStructures los dibuja); SpawnSearchSpots los hace rebuscables siempre.
+	 */
+	void PlanSurvivalSearchProps();
 	/** ¿El hueco Feature lleva puente que se rompe en lugar de viga? */
 	bool IsSurvivalBreakableGap(int32 Feature) const;
 	/** Crea las trampas del plan: las replicadas y las de lógica de servidor en el servidor; las zonas lentas en cada máquina. */
@@ -412,6 +422,9 @@ private:
 	TArray<TNSurvivalCatalog::FTrapPlacement> SurvivalTrapPlan;
 	/** Quads, puentes que se rompen y placas del mapa del catálogo (#517). */
 	TNSurvivalCatalog::FTerrainTrapPlan SurvivalTerrainPlan;
+
+	/** Índices en Layout.Features de los objetos del camino añadidos para rebuscar (#724, PlanSurvivalSearchProps). */
+	TSet<int32> SurvivalSearchProps;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UPrimitiveComponent>> BoundaryWalls;

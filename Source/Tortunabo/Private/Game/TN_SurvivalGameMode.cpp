@@ -61,9 +61,10 @@ void ATN_SurvivalGameMode::StartPlay()
 		const ETNProcDifficulty Difficulty = ResolveDifficulty();
 		const int32 StartDifficulty = TNSurvivalLogic::StartMapDifficulty(Difficulty);
 		const int32 TrapsPer100mTenths = TNSurvivalLogic::TrapsPer100mTenths(Difficulty);
-		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Dificultad %s: el nivel 1 juega un mapa de dificultad %d, cada nivel sube una hasta 5 y se buscan %.1f trampas cada 100 m."),
-			*UEnum::GetValueAsString(Difficulty), StartDifficulty, TrapsPer100mTenths / 10.0);
-		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap(), StartDifficulty, TrapsPer100mTenths);
+		const int32 SearchPer100mTenths = TNSurvivalLogic::SearchSpotsPer100mTenths(Difficulty);
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Dificultad %s: el nivel 1 juega un mapa de dificultad %d, cada nivel sube una hasta 5 y se buscan %.1f trampas y %.1f rebuscables cada 100 m."),
+			*UEnum::GetValueAsString(Difficulty), StartDifficulty, TrapsPer100mTenths / 10.0, SearchPer100mTenths / 10.0);
+		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap(), StartDifficulty, TrapsPer100mTenths, SearchPer100mTenths);
 	}
 	else
 	{

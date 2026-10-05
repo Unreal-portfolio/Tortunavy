@@ -905,7 +905,10 @@ void ATN_ProcMapGenerator::SpawnSearchSpots()
 		{
 			if (bSurvival)
 			{
-				Candidate.Spec.Chance = TNSurvivalLoot::SpotChance(Candidate.Spec.Priority);
+				// Los objetos del camino añadidos para rebuscar (PlanSurvivalSearchProps) lo son siempre y van primero.
+				const bool bAdded = SurvivalSearchProps.Contains(f);
+				Candidate.Spec.Chance = bAdded ? 1.0 : TNSurvivalLoot::SpotChance(Candidate.Spec.Priority);
+				Candidate.Spec.Priority = bAdded ? -1 : Candidate.Spec.Priority;
 			}
 			Candidate.Feature = f;
 			Candidates.Add(Candidate);

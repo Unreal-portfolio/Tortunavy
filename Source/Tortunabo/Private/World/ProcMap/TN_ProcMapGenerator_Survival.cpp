@@ -2,6 +2,7 @@
 // TNSurvivalCatalog::PlaceLooseTraps y PlaceTerrainTraps (TN_SurvivalTrapPlacement.h); aquí se crean los actores.
 
 #include "World/ProcMap/TN_ProcMapGenerator.h"
+#include "World/ProcMap/TN_SurvivalSearchPlacement.h"
 #include "Core/TN_Log.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
@@ -93,6 +94,25 @@ namespace
 			default: return FColor::Black;
 		}
 	}
+}
+
+void ATN_ProcMapGenerator::PlanSurvivalSearchProps()
+{
+	SurvivalSearchProps.Reset();
+	if (NetConfig.Mode != ETNProcGameMode::Survival || NetConfig.SurvivalSearchPer100mTenths <= 0 || !TNSurvivalCatalog::FindMap(static_cast<uint32>(NetConfig.Seed)))
+	{
+		return;
+	}
+	const double SpotsPer100m = NetConfig.SurvivalSearchPer100mTenths / 10.0;
+	const TArray<TNProcMap::FFeature> Props = TNSurvivalCatalog::PlaceSearchProps(Layout, SurvivalTrapPlan, SurvivalTerrainPlan, SpotsPer100m,
+		static_cast<uint32>(NetConfig.Seed), [this](const FVector2D& C) { return TerrainHeightMap(C); });
+	for (const TNProcMap::FFeature& F : Props)
+	{
+		SurvivalSearchProps.Add(Layout.Features.Add(F));
+	}
+	const double PathMeters = Layout.Main.Num() > 1 ? Layout.Main.Last().S / 100.0 : 0.0;
+	UE_LOG(LogTortunabo, Log, TEXT("[Supervivencia] Rebuscables: %d objetos del camino añadidos para %.1f cada 100 m en %.0f m de camino."),
+		Props.Num(), SpotsPer100m, PathMeters);
 }
 
 int32 ATN_ProcMapGenerator::GetSurvivalTrapCount(FString* OutBreakdown) const

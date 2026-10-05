@@ -149,6 +149,20 @@ namespace TNSurvivalLogic
 	}
 
 	/**
+	 * Rebuscables que se buscan en cada mapa según la dificultad elegida (#724), en décimas cada 100 m de camino: 1 cada 2
+	 * trampas (fácil 3, normal 5, difícil 7,5). Donde más se sufre, más ayuda; y cada tortuga rebusca cada uno una vez.
+	 */
+	inline int32 SearchSpotsPer100mTenths(ETNProcDifficulty Difficulty)
+	{
+		switch (Difficulty)
+		{
+			case ETNProcDifficulty::Easy: return 30;
+			case ETNProcDifficulty::Hard: return 75;
+			default:                      return 50;
+		}
+	}
+
+	/**
 	 * Dificultad 1–5 del mapa del nivel (TNProcMap::MakeSurvivalParams): el nivel 1 juega StartDifficulty y cada nivel sube
 	 * una hasta 5. Con la de fácil (1), el nivel N pide min(N, 5).
 	 */

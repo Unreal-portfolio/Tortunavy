@@ -10,6 +10,7 @@
 #include "World/ProcMap/TN_ProcMapSurvival.h"
 #include "World/ProcMap/TN_SurvivalCatalog.h"
 #include "World/ProcMap/TN_SurvivalTrapPlacement.h"
+#include "World/ProcMap/TN_SurvivalSearchPlacement.h"
 #include "Game/TN_SurvivalRules.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -280,6 +281,85 @@ bool FTNSurvivalCatalogDensityTest::RunTest(const FString& Parameters)
 			*UEnum::GetValueAsString(Difficulty), Average, Target, MinDensity, MaxDensity, Short, MapCount));
 		TestTrue(FString::Printf(TEXT("%s: la media llega al objetivo"), *UEnum::GetValueAsString(Difficulty)), Average >= Target * 0.95);
 		TestTrue(FString::Printf(TEXT("%s: la media no se pasa mucho"), *UEnum::GetValueAsString(Difficulty)), Average <= Target * 1.25);
+	}
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rebuscables añadidos: 1 cada 2 trampas (#724)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalCatalogSearchPropsTest,
+	"Tortunabo.Survival.Catalogo.Rebuscables",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNSurvivalCatalogSearchPropsTest::RunTest(const FString& Parameters)
+{
+	using namespace TNSurvivalCatalog;
+	TestEqual(TEXT("Fácil: 3 cada 100 m"), TNSurvivalLogic::SearchSpotsPer100mTenths(ETNProcDifficulty::Easy), 30);
+	TestEqual(TEXT("Normal: 5 cada 100 m"), TNSurvivalLogic::SearchSpotsPer100mTenths(ETNProcDifficulty::Normal), 50);
+	TestEqual(TEXT("Difícil: 7,5 cada 100 m"), TNSurvivalLogic::SearchSpotsPer100mTenths(ETNProcDifficulty::Hard), 75);
+
+	for (const ETNProcDifficulty Difficulty : { ETNProcDifficulty::Easy, ETNProcDifficulty::Normal, ETNProcDifficulty::Hard })
+	{
+		const FString DiffName = UEnum::GetValueAsString(Difficulty);
+		const double Target = TNSurvivalLogic::SearchSpotsPer100mTenths(Difficulty) / 10.0;
+		const double TrapTarget = TNSurvivalLogic::TrapsPer100mTenths(Difficulty) / 10.0;
+		double SumDensity = 0.0;
+		double MinDensity = TNumericLimits<double>::Max();
+		int32 MapCount = 0;
+		for (const FMapEntry& M : TNSurvivalCatalog::Maps)
+		{
+			const FString Ctx = FString::Printf(TEXT("%s, semilla %u (%s)"), *DiffName, M.Seed, M.Name);
+			TNProcMap::FLayout L;
+			if (!TestTrue(Ctx + TEXT(": genera mapa"), TNProcMap::GenerateSurvivalLayout(M.Seed, M.Difficulty, L) != 0)) { continue; }
+			const int32 Pct = DensityPctForTarget(L, M.Seed, TrapTarget);
+			const TArray<FTrapPlacement> Loose = PlaceLooseTraps(L, M.Seed, Pct);
+			const FTerrainTrapPlan Terrain = PlaceTerrainTraps(L, M.Seed, Pct);
+			// Suelo de prueba: el del camino más cercano (como un mapa sin cortados junto al camino).
+			auto Ground = [&L](const FVector2D& C)
+			{
+				double Best = TNumericLimits<double>::Max();
+				double Z = 0.0;
+				for (const TNProcMap::FPathSample& Sm : L.Main)
+				{
+					const double D = FVector2D::DistSquared(C, Sm.P);
+					if (D < Best) { Best = D; Z = Sm.Z; }
+				}
+				return Z;
+			};
+			const TArray<TNProcMap::FFeature> Props = PlaceSearchProps(L, Loose, Terrain, Target, M.Seed, Ground);
+			TestEqual(Ctx + TEXT(": determinista"), PlaceSearchProps(L, Loose, Terrain, Target, M.Seed, Ground).Num(), Props.Num());
+
+			TArray<FVector2D> All;
+			int32 Existing = 0;
+			for (const TNProcMap::FFeature& F : L.Features)
+			{
+				if (IsExistingSearchable(F)) { All.Add(FVector2D(F.Location.X, F.Location.Y)); ++Existing; }
+			}
+			for (const TNProcMap::FFeature& F : Props)
+			{
+				const FVector2D C(F.Location.X, F.Location.Y);
+				TestTrue(Ctx + TEXT(": objeto del camino que se puede rebuscar"), F.Type == TNProcMap::EFeature::PathProp
+					&& IsSearchPropKind(static_cast<TNProcMap::EPathProp>(F.Aux)));
+				bool bCrowded = false;
+				for (const FVector2D& O : All) { bCrowded |= FVector2D::Distance(C, O) < SearchPropSpacing - 1.0; }
+				TestFalse(Ctx + TEXT(": a 9 m de otro rebuscable"), bCrowded);
+				const double S = L.Main[FMath::Clamp(F.PathIndex, 0, L.Main.Num() - 1)].S;
+				bool bNearTrap = false;
+				for (const FTrapPlacement& P : Loose) { bNearTrap |= FMath::Abs(P.Along - S) < SearchPropTrapClearance; }
+				TestFalse(Ctx + TEXT(": lejos de las trampas"), bNearTrap);
+				TestTrue(Ctx + TEXT(": fuera de huecos, salida y meta"), Placement::IsFree(L.Main, F.PathIndex));
+				All.Add(C);
+			}
+			const double Density = (Existing + Props.Num()) * 10000.0 / L.Main.Last().S;
+			SumDensity += Density;
+			MinDensity = FMath::Min(MinDensity, Density);
+			++MapCount;
+		}
+		const double Average = MapCount > 0 ? SumDensity / MapCount : 0.0;
+		AddInfo(FString::Printf(TEXT("%s: %.2f rebuscables cada 100 m de media (objetivo %.1f; el que menos, %.2f)."), *DiffName, Average, Target, MinDensity));
+		TestTrue(DiffName + TEXT(": la media se acerca al objetivo"), Average >= Target * 0.85);
 	}
 	return true;
 }
