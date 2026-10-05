@@ -171,6 +171,12 @@ namespace TNBeach
 	 */
 	constexpr uint8 FlagBoosted = 1 << 0;
 
+	/**
+	 * Pieza de Supervivencia (la pone ATN_ProcMapGenerator, #733): la que lo mire cambia lo que allí no encaja. Hoy, las
+	 * gaviotas sueltan al segundo y a poca altura a la que cogen.
+	 */
+	constexpr uint8 FlagSurvival = 1 << 1;
+
 	/** Veces el tamaño real al que va todo (la tortuga, una cría de ~5 cm, mide ~1,4 m en el juego). */
 	constexpr double Scale = 28.0;
 

@@ -364,6 +364,16 @@ private:
 	/** Hacia dónde mira la tortuga colgada (la misma dirección que el pájaro: hacia la salida). */
 	float HeldYaw() const;
 
+	/**
+	 * Vuelo con la tortuga en el pico: cuánto dura (s), cuánto la sube y cuánto la lleva hacia la salida (cm), y cuándo acaba
+	 * el ataque que la coge. En Supervivencia (TNBeach::FlagSurvival, #733), un segundo, poco alto y en el sitio.
+	 */
+	bool IsSurvivalGull() const { return (Spec.Flags & TNBeach::FlagSurvival) != 0; }
+	float CarrySeconds() const;
+	float CarryRise() const;
+	float CarryDistance() const;
+	float DiveEndHitTime() const;
+
 	/** Servidor: empieza un ataque (Kind 1 cagada, 2 picado) contra Victim con el pájaro BirdIndex. */
 	void StartAttack(ATortugaCharacter* Victim, uint8 InKind, int32 BirdIndex);
 	void ServerPoop(float Tau, float DeltaSeconds);

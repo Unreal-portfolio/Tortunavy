@@ -145,6 +145,12 @@ namespace TNBeachGull
 	/** Al soltarla: empujón de la bola hacia la salida (cm/s); el aturdimiento tras caer, en UTN_CombatTuning. */
 	constexpr float ReleaseLaunch = 350.f;
 	constexpr float DiveEndHit = StrikeTime + CarryTime + 2.4f;
+	/**
+	 * Supervivencia (#733): la suelta 1 s después de cogerla, a la altura que lleva entonces (CarryHeight sube despacio: ~2 m)
+	 * y donde la cogió, sin morir por la caída. El ataque acaba como en la playa, 2,4 s después de soltarla.
+	 */
+	constexpr float SurvivalCarryTime = 1.f;
+	constexpr float SurvivalCarryHeight = 700.f;
 	constexpr float DiveEndMiss = StrikeTime + PeckHold + 2.9f;
 	/** Del hueso de la espalda de la tortuga (Spine2) a la superficie del caparazón que muerde el pico (cm). */
 	constexpr float ShellBack = 35.f;
@@ -684,8 +690,8 @@ FVector ATN_BeachGullZone::AttackPos(const FBird& Bird, double Now, float Tau) c
 	if (Attack.Result == 1)
 	{
 		// Tras soltarla (el agarre lo coloca VisualTick): remonta desde donde la soltó y vuelve a su vuelta.
-		const FVector Release = RootForGrip(Bird, GripPath(CarryTime), CarryRotation(CarryTime), CarryHeadPitch(CarryTime));
-		const float B = Smooth01((Tau - StrikeTime - CarryTime) / (DiveEndHit - StrikeTime - CarryTime));
+		const FVector Release = RootForGrip(Bird, GripPath(CarrySeconds()), CarryRotation(CarrySeconds()), CarryHeadPitch(CarrySeconds()));
+		const float B = Smooth01((Tau - StrikeTime - CarrySeconds()) / (DiveEndHitTime() - StrikeTime - CarrySeconds()));
 		return FMath::Lerp(Release + FVector(0.0, 0.0, 1500.0 * B), Circle, static_cast<double>(B));
 	}
 	// Fallo: baja igual hasta clavar el pico en la arena (o en lo que la cubría), pica dos veces, remonta de largo y vuelve.
@@ -743,6 +749,26 @@ float ATN_BeachGullZone::GripDropFor(const ATortugaCharacter* Turtle) const
 	return Capsule ? Capsule->GetScaledCapsuleHalfHeight() * 0.75f : 70.f;
 }
 
+float ATN_BeachGullZone::CarrySeconds() const
+{
+	return IsSurvivalGull() ? TNBeachGull::SurvivalCarryTime : TNBeachGull::CarryTime;
+}
+
+float ATN_BeachGullZone::CarryRise() const
+{
+	return IsSurvivalGull() ? TNBeachGull::SurvivalCarryHeight : TNBeachGull::CarryHeight;
+}
+
+float ATN_BeachGullZone::CarryDistance() const
+{
+	return IsSurvivalGull() ? 0.f : TNBeachGull::CarryBack;
+}
+
+float ATN_BeachGullZone::DiveEndHitTime() const
+{
+	return TNBeachGull::DiveEndHit - TNBeachGull::CarryTime + CarrySeconds();
+}
+
 float ATN_BeachGullZone::HeldYaw() const
 {
 	return static_cast<float>(CourseBack.Rotation().Yaw);
@@ -756,8 +782,8 @@ FVector ATN_BeachGullZone::GripPath(float U) const
 	const float Rise = Smooth01((U - TugTime) / (RiseEnd - TugTime));
 	const float Tug = U < TugTime ? 110.f * FMath::Sin(PI * U / TugTime) : 0.f;
 	const float Glide = U > RiseEnd ? 80.f * FMath::Sin((U - RiseEnd) * 6.f) : 0.f;
-	const float Along = FMath::Pow(FMath::Clamp((U - 0.2f) / (CarryTime - 0.2f), 0.f, 1.f), 1.5f);
-	return Start + CourseBack * (CarryBack * Along) + FVector(0.0, 0.0, CarryHeight * Rise + Tug + Glide);
+	const float Along = FMath::Pow(FMath::Clamp((U - 0.2f) / (CarrySeconds() - 0.2f), 0.f, 1.f), 1.5f);
+	return Start + CourseBack * (CarryDistance() * Along) + FVector(0.0, 0.0, CarryRise() * Rise + Tug + Glide);
 }
 
 FRotator ATN_BeachGullZone::CarryRotation(float U) const
@@ -825,7 +851,7 @@ void ATN_BeachGullZone::BirdPose(int32 Index, double Now, FVector& OutRoot, FRot
 	const bool bAttacking = Attack.Kind != 0 && Attack.Bird == Index;
 	const float Tau = bAttacking ? static_cast<float>(Now - static_cast<double>(Attack.StartTime)) : 0.f;
 	const float U = Tau - StrikeTime;
-	if (bAttacking && Attack.Kind == 2 && Attack.Result == 1 && U >= 0.f && U < CarryTime)
+	if (bAttacking && Attack.Kind == 2 && Attack.Result == 1 && U >= 0.f && U < CarrySeconds())
 	{
 		OutRot = CarryRotation(U);
 		OutRoot = RootForGrip(Bird, GripPath(U), OutRot, CarryHeadPitch(U));
@@ -1240,12 +1266,12 @@ void ATN_BeachGullZone::ServerDive(float Tau, float DeltaSeconds)
 		const bool bGone = !IsValid(Carried) || Carried->IsDead();
 		// Se escurre si se mete en el caparazón (o si algo la derriba); si no, la suelta al acabar el vuelo.
 		const bool bSlipped = !bGone && (Carried->IsInShell() || Carried->IsKnockedDown());
-		if (bGone || bSlipped || U >= CarryTime)
+		if (bGone || bSlipped || U >= CarrySeconds())
 		{
 			ReleaseCarried();
 		}
 	}
-	if (Attack.Result != 0 && Tau >= (Attack.Result == 1 ? DiveEndHit : DiveEndMiss))
+	if (Attack.Result != 0 && Tau >= (Attack.Result == 1 ? DiveEndHitTime() : DiveEndMiss))
 	{
 		EndAttack(ServerNow(this));
 	}
@@ -1291,7 +1317,14 @@ void ATN_BeachGullZone::ReleaseCarried()
 		GroundHeightAt(Carried->GetActorLocation(), GroundZ);
 		const float Height = FMath::Max(0.f, static_cast<float>(Carried->GetActorLocation().Z) - GroundZ);
 		const float FallSeconds = FMath::Sqrt(2.f * Height / UTN_CombatTuning::Get().GullZoneGravity);
-		StunTurtle(Carried, FallSeconds + UTN_CombatTuning::Get().GullZoneAfterDropStunSeconds, CourseBack * ReleaseLaunch + FVector(0.0, 0.0, -50.0));
+		// En Supervivencia cae en el sitio y la caída no la elimina (#733): fuera del camino podría haber vacío.
+		const bool bSurvival = IsSurvivalGull();
+		if (bSurvival)
+		{
+			Carried->SetFallImmuneUntilLanded();
+		}
+		const FVector Push = bSurvival ? FVector::ZeroVector : CourseBack * ReleaseLaunch;
+		StunTurtle(Carried, FallSeconds + UTN_CombatTuning::Get().GullZoneAfterDropStunSeconds, Push + FVector(0.0, 0.0, -50.0));
 	}
 	ForceNetUpdate();
 }
@@ -1349,7 +1382,7 @@ bool ATN_BeachGullZone::GetHitCapsule(FVector& OutA, FVector& OutB, float& OutRa
 	bool bHittable = false;
 	if (Attack.Kind == 2)
 	{
-		bHittable = Tau >= ClimbTime && (Attack.Result != 1 || Tau - StrikeTime < CarryTime);
+		bHittable = Tau >= ClimbTime && (Attack.Result != 1 || Tau - StrikeTime < CarrySeconds());
 	}
 	else if (Attack.Kind == 3)
 	{
@@ -1415,7 +1448,7 @@ void ATN_BeachGullZone::TickHold()
 	{
 		ATortugaCharacter* Victim = Attack.Victim;
 		U = static_cast<float>(ServerNow(this) - static_cast<double>(Attack.StartTime)) - StrikeTime;
-		if (IsValid(Victim) && !Victim->IsDead() && U >= 0.f && U < CarryTime && !Victim->IsInShell() && !Victim->IsKnockedDown()
+		if (IsValid(Victim) && !Victim->IsDead() && U >= 0.f && U < CarrySeconds() && !Victim->IsInShell() && !Victim->IsKnockedDown()
 			&& !TNBeach::IsTurtleStunned(Victim))
 		{
 			Want = Victim;
@@ -1779,7 +1812,7 @@ void ATN_BeachGullZone::PoseBird(int32 Index, float DeltaSeconds, bool bAttackin
 			HeadYaw = 0.f;
 			JawTarget = 40.f;
 		}
-		else if (Attack.Result == 1 && U < CarryTime)
+		else if (Attack.Result == 1 && U < CarrySeconds())
 		{
 			// Con la tortuga en el pico: cabeza gacha (la del agarre), aleteo fuerte al subir y más suave al volar.
 			HeadPitch = CarryHeadPitch(U);
@@ -1792,7 +1825,7 @@ void ATN_BeachGullZone::PoseBird(int32 Index, float DeltaSeconds, bool bAttackin
 		else if (Attack.Result == 1)
 		{
 			// La ha soltado: pico abierto un momento y remonta.
-			JawTarget = U < CarryTime + 0.5f ? 35.f : 0.f;
+			JawTarget = U < CarrySeconds() + 0.5f ? 35.f : 0.f;
 			Flap = 40.f * FMath::Sin(Clock * 2.f * PI * 3.f * Rate);
 		}
 		else if (U < PeckHold)
@@ -1884,7 +1917,7 @@ void ATN_BeachGullZone::VisualTick(float DeltaSeconds)
 		const bool bAttacking = Attack.Kind != 0 && Attack.Bird == i;
 		const float Tau = bAttacking ? static_cast<float>(Now - static_cast<double>(Attack.StartTime)) : 0.f;
 		const float U = Tau - StrikeTime;
-		const bool bCarry = bAttacking && Attack.Kind == 2 && Attack.Result == 1 && U >= 0.f && U < CarryTime;
+		const bool bCarry = bAttacking && Attack.Kind == 2 && Attack.Result == 1 && U >= 0.f && U < CarrySeconds();
 		const bool bFirst = Bird.Pos.IsZero();
 		FVector NewPos;
 		if (bCarry)
@@ -2015,7 +2048,7 @@ void ATN_BeachGullZone::VisualTick(float DeltaSeconds)
 				Voice->SetWorldLocation(Bird.Pos);
 				Voice->Play(ETNBeachSfx::Swoop, Bird.bPelican ? 0.7f : 1.f, 1.3f);
 			}
-			if (bAttacking && Attack.Kind == 2 && Attack.Result == 1 && !bReleasePlayed && U >= CarryTime)
+			if (bAttacking && Attack.Kind == 2 && Attack.Result == 1 && !bReleasePlayed && U >= CarrySeconds())
 			{
 				bReleasePlayed = true;
 				Voice->SetWorldLocation(Bird.Pos);
