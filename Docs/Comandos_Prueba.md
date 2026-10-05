@@ -193,6 +193,29 @@ tensión y se aparta) y esperar el «¡TIEMPO!» (se calla). Si llegas tú, se c
 último minuto del tiempo de la ronda (el límite son 9 min), `TN.Race.Music.Tension 0.6`. El recuento, el título del sprint
 (`TN.Race.Sprint`) y el podio (`TN.Race.Champion`) también la callan porque ya tienen su música.
 
+## Sonido: voces del mezclador y recuento (#737)
+
+El motor da 32 voces por máquina; si hay más sonidos activos, calla los de menos prioridad. Reparto en `Docs/Modo_Carrera.md`
+(«Voces del mezclador»). Fuera de Shipping.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Audio.Census` | Una muestra en el registro (`[AudioCensus]`): sonidos activos (y cuántos con voz reservada, «siempre suenan»), voces en uso y tope, sonidos sin voz, componentes de audio vivos y sonando, sintetizadores vivos y activos, si la música de la carrera y la tortuga local tienen voz («con voz», «SIN VOZ», «parada») y los 8 tipos que más suenan (`activos/sin voz`). |
+| `TN.Audio.Census start [intervalo=10] [csv]` / `TN.Audio.Census stop` | Una muestra cada N s (con `csv`, también en `Saved/AudioCensus/<fecha>.csv`); `stop` escribe el veredicto: por serie, «estable» o «CRECE» (mediana del último tercio frente a la del primero, con 4 de margen o un 25 %) y cuántas veces la música o la tortuga se han quedado sin voz. «ESTABLE» si nada de lo que suena crece y nunca les falta la voz. |
+| `-TNAudioCensus[=10] [-TNAudioCensusOut=ruta.csv] [-TNAudioCensusSeconds=s]` | Lo mismo desde la línea de órdenes (con `-game`), en el servidor y en cada cliente; el veredicto sale al cerrarse el mundo. Necesita dispositivo de audio, y con `-nosound` no hay ninguno: para medir sin altavoces, `-DeterministicAudio -muteaudio` (mezclador sin salida y, además, silenciado) **en lugar de** `-nosound`. |
+
+Medición de #737 (8 min, 4 tortugas: 3 del monkey en el anfitrión y 1 en un cliente):
+
+```bash
+EXE="C:/Program Files/Epic Games/UE_5.6/Engine/Binaries/Win64/UnrealEditor-Win64-DebugGame.exe"
+PROJ="$(cygpath -m "$PWD")/Tortunabo.uproject"   # desde la raíz del repo
+NET="-NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver -ini:Engine:[OnlineSubsystem]:DefaultPlatformService=Null -NoSteam"
+COMUN="-game -RenderOffScreen -ResX=640 -ResY=360 -nohmd -DeterministicAudio -muteaudio -unattended -nosplash -log -TNAudioCensus=10 -TNQuitWhenDone"
+MSYS_NO_PATHCONV=1 "$EXE" "$PROJ" "/Game/Maps/Run/LVL_BeachRace?listen?BeachSeed=42" -port=7792 $NET $COMUN -TNMonkey=480:7 -TNMonkeyPlayers=3 -TNMonkeyNet=server &
+sleep 20   # el cliente, cuando el anfitrión ya escucha
+MSYS_NO_PATHCONV=1 "$EXE" "$PROJ" 127.0.0.1:7792 $NET $COMUN -TNMonkey=480:8 -TNMonkeyNet=client &
+```
+
 ## Golpes del caparazón
 
 Detalle en `Docs/Sonido_Tortuga.md` («Golpes del caparazón»). Sonido y mini efecto cuando la bola choca, en todas las máquinas
