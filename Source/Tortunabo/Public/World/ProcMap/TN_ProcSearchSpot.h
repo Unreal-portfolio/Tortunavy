@@ -6,10 +6,12 @@
 #include "World/TN_InteractableBase.h"
 #include "TN_ProcSearchSpot.generated.h"
 
+class AActor;
 class APawn;
 class UDataTable;
 class USphereComponent;
 class UStaticMeshComponent;
+class UWorld;
 struct FTN_InventoryItem;
 
 namespace TNSearchSynthDSP
@@ -50,6 +52,41 @@ enum class ETNSearchMarkerAnchor : uint8
 	Point,      ///< En un punto propio del rebuscable (el montículo de arena de la playa), algo mayor que él.
 	Pending,    ///< Tiene punto propio, pero esta máquina aún no lo conoce: sin anillo hasta entonces.
 };
+
+/**
+ * El suelo bajo el anillo fijo de un rebuscable y bajo su montículo de arena (#744): el mismo plano en los dos, para que el
+ * montículo se incline con la cuesta igual que el anillo.
+ */
+namespace TNSearchMarker
+{
+	/** Con una normal más tumbada que esto (Z mínima) el suelo es demasiado empinado: ni anillo ni montículo se inclinan. */
+	constexpr double MinTiltNormalZ = 0.6;
+
+	/**
+	 * Inclinación (desde +Z) del plano que forman cuatro puntos del suelo a 0°, 90°, 180° y 270° alrededor del centro, a la
+	 * misma distancia: la normal sale de las diagonales (0°/180° y 90°/270°). Identidad si es muy empinado (MinTiltNormalZ).
+	 */
+	inline FQuat GroundTilt(const FVector& P0, const FVector& P90, const FVector& P180, const FVector& P270)
+	{
+		const FVector Normal = FVector::CrossProduct(P0 - P180, P90 - P270).GetSafeNormal();
+		return Normal.Z > MinTiltNormalZ ? FQuat::FindBetweenNormals(FVector::UpVector, Normal) : FQuat::Identity;
+	}
+
+	/**
+	 * Mira el suelo bajo un anillo de radio RingRadius centrado en Center, en cuatro puntos de su circunferencia (0°, 90°, 180°
+	 * y 270°; el centro lo taparía el decorado o el montículo): una traza vertical contra WorldStatic, de 150 cm sobre Center a
+	 * 400 bajo él. Un punto sin suelo a mano (la colisión del terreno aún se está cocinando) o muy distinto del centro (un
+	 * escalón, otro nivel) cuenta como el suelo del centro. OutPoints son los cuatro puntos con su Z; devuelve cuántos dieron
+	 * suelo de verdad (4 = todos). Lo usan el anillo fijo y el montículo de arena de la playa: el mismo suelo para los dos.
+	 */
+	int32 TraceRimGround(const UWorld* World, const FVector& Center, double RingRadius, const AActor* IgnoreActor, FVector (&OutPoints)[4]);
+
+	/**
+	 * Radio (cm) del anillo fijo que rodea algo de radio FootRadius (la base del montículo o la huella del decorado): lo
+	 * justo para que los guiones queden un margen más allá de su borde. Es también la distancia a la que se mira el suelo.
+	 */
+	float RingRadiusForFoot(float FootRadius);
+}
 
 /** Huella del decorado (cápsula en planta a lo largo del +X del actor) y color del polvo de su bioma. Se replica una vez. */
 USTRUCT()

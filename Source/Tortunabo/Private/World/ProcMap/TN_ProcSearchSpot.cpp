@@ -1618,11 +1618,38 @@ void ATN_ProcSearchSpot::DrawDebugSpot(float DeltaSeconds)
 		FRotationMatrix::MakeFromZ(Axis).ToQuat(), Color, false, Life, SDPG_Foreground, 3.f);
 }
 
-float ATN_ProcSearchSpot::GetMarkerRing(FVector& OutCenter, bool& bOutPending) const
+int32 TNSearchMarker::TraceRimGround(const UWorld* World, const FVector& Center, double RingRadius, const AActor* IgnoreActor, FVector (&OutPoints)[4])
+{
+	const double MaxStep = 120.0 + 0.4 * RingRadius;
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(TN_SearchMarker), false, IgnoreActor);
+	int32 Hits = 0;
+	for (int32 k = 0; k < 4; ++k)
+	{
+		const double Angle = UE_DOUBLE_HALF_PI * static_cast<double>(k);
+		const double X = Center.X + FMath::Cos(Angle) * RingRadius;
+		const double Y = Center.Y + FMath::Sin(Angle) * RingRadius;
+		OutPoints[k] = FVector(X, Y, Center.Z);
+		FHitResult Hit;
+		if (World && World->LineTraceSingleByObjectType(Hit, FVector(X, Y, Center.Z + 150.0), FVector(X, Y, Center.Z - 400.0),
+			FCollisionObjectQueryParams(ECC_WorldStatic), Query) && FMath::Abs(Hit.ImpactPoint.Z - Center.Z) <= MaxStep)
+		{
+			OutPoints[k].Z = Hit.ImpactPoint.Z;
+			++Hits;
+		}
+	}
+	return Hits;
+}
+
+float TNSearchMarker::RingRadiusForFoot(float FootRadius)
 {
 	// Los guiones del anillo de los objetos del suelo van en la corona de fuera: se escala para que empiecen MarkerMargin cm
 	// más allá del borde de lo que rodea, y se vea alrededor en vez de quedar debajo.
 	const float DashStart = TNLootGlow::RingDashInnerRadius / TNLootGlow::RingUnitRadius;
+	return (FootRadius + TNSearchSpotDetail::MarkerMargin) / DashStart;
+}
+
+float ATN_ProcSearchSpot::GetMarkerRing(FVector& OutCenter, bool& bOutPending) const
+{
 	OutCenter = GetActorLocation();
 	bOutPending = false;
 
@@ -1633,7 +1660,7 @@ float ATN_ProcSearchSpot::GetMarkerRing(FVector& OutCenter, bool& bOutPending) c
 	{
 		case ETNSearchMarkerAnchor::Point:
 			OutCenter = OwnGround;
-			return FMath::Max(MarkerRadius, (OwnFoot + TNSearchSpotDetail::MarkerMargin) / DashStart);
+			return FMath::Max(MarkerRadius, TNSearchMarker::RingRadiusForFoot(OwnFoot));
 		case ETNSearchMarkerAnchor::Pending:
 			bOutPending = true;
 			break;
@@ -1643,7 +1670,7 @@ float ATN_ProcSearchSpot::GetMarkerRing(FVector& OutCenter, bool& bOutPending) c
 
 	// Sin él: abarca la huella entera. Es una cápsula que cabe en un círculo de radio Radius + HalfLength.
 	const float Footprint = SpotShape.Radius + SpotShape.HalfLength;
-	return FMath::Max(MarkerRadius, (Footprint + TNSearchSpotDetail::MarkerMargin) / DashStart);
+	return FMath::Max(MarkerRadius, TNSearchMarker::RingRadiusForFoot(Footprint));
 }
 
 void ATN_ProcSearchSpot::FitMarkerToGround(const FVector& Center, float RingRadius)
@@ -1666,29 +1693,13 @@ void ATN_ProcSearchSpot::FitMarkerToGround(const FVector& Center, float RingRadi
 	// circunferencia del anillo, que queda fuera, y el anillo se apoya en el plano que forman. Un punto sin suelo a mano
 	// (la colisión del terreno aún se está cocinando) o muy distinto del centro (un escalón, otro nivel) cuenta como el
 	// suelo del centro, que es donde se puso el actor o el montículo.
-	const double MaxStep = 120.0 + 0.4 * static_cast<double>(RingRadius);
-	FCollisionQueryParams Query(SCENE_QUERY_STAT(TN_SearchMarker), false, this);
 	FVector Points[4];
-	int32 Hits = 0;
-	for (int32 k = 0; k < 4; ++k)
-	{
-		const double Angle = UE_DOUBLE_HALF_PI * static_cast<double>(k);
-		const double X = Center.X + FMath::Cos(Angle) * static_cast<double>(RingRadius);
-		const double Y = Center.Y + FMath::Sin(Angle) * static_cast<double>(RingRadius);
-		Points[k] = FVector(X, Y, Center.Z);
-		FHitResult Hit;
-		if (World->LineTraceSingleByObjectType(Hit, FVector(X, Y, Center.Z + 150.0), FVector(X, Y, Center.Z - 400.0),
-			FCollisionObjectQueryParams(ECC_WorldStatic), Query) && FMath::Abs(Hit.ImpactPoint.Z - Center.Z) <= MaxStep)
-		{
-			Points[k].Z = Hit.ImpactPoint.Z;
-			++Hits;
-		}
-	}
+	const int32 Hits = TNSearchMarker::TraceRimGround(World, Center, static_cast<double>(RingRadius), this, Points);
 	bMarkerGrounded = Hits == 4;
 	MarkerGround = FVector(Center.X, Center.Y, (Points[0].Z + Points[1].Z + Points[2].Z + Points[3].Z) * 0.25);
-	// Normal del plano por las diagonales (+X/-X y +Y/-Y); con el suelo muy empinado, el anillo se queda plano.
-	const FVector Normal = FVector::CrossProduct(Points[0] - Points[2], Points[1] - Points[3]).GetSafeNormal();
-	MarkerTilt = Normal.Z > 0.6 ? FQuat::FindBetweenNormals(FVector::UpVector, Normal) : FQuat::Identity;
+	// Normal del plano por las diagonales (+X/-X y +Y/-Y); con el suelo muy empinado, el anillo se queda plano. Es la misma
+	// cuenta que inclina el montículo de arena de la playa (#744).
+	MarkerTilt = TNSearchMarker::GroundTilt(Points[0], Points[1], Points[2], Points[3]);
 }
 
 void ATN_ProcSearchSpot::TickMarker(float DeltaSeconds)
