@@ -20,8 +20,9 @@ class ATN_PathStorm;
  *    nivel y, en cuanto su suelo tiene colisión, vuelven a salir desde la salida del mapa nuevo.
  *  - Morir es definitivo (sin DBNO ni rescate; el tótem sí salva) y los muertos espectan.
  *  - La tormenta sigue el camino (ATN_PathStorm, como en el Coop): aparece con las tortugas, 30 m por detrás de la salida
- *    de cada nivel, y echa a andar al momento, sin espera (#725). Cada nivel va algo más rápida (TNSurvivalLogic::StormSpeedForLevel). Más rápida que andando: hay que esprintar, y los
- *    derribos y las paradas a coger objetos se pagan. La caja de LVL_Run (ATN_StormVolume) se quita.
+ *    de cada nivel, y echa a andar al momento, sin espera (#725). Cada nivel va algo más rápida
+ *    (TNSurvivalLogic::StormSpeedForLevel): en el nivel 1, algo menos que andando; desde el 4, más, y hay que esprintar.
+ *    La caja de LVL_Run (ATN_StormVolume) se quita.
  *  - En grupo gana la última viva; si las últimas mueren en el mismo nivel, la que murió más cerca de la meta.
  *    En solitario dura hasta que muere.
  * Las reglas están en TN_SurvivalRules.h (tests Tortunabo.Survival).
@@ -59,11 +60,12 @@ protected:
 	float LevelReadyTimeoutSeconds = 10.f;
 
 	/**
-	 * Velocidad (cm/s) de la tormenta por el camino en el nivel 1 (TNSurvivalLogic::StormSpeedForLevel). Por encima de
-	 * andar (450) y por debajo de lo que da esprintar a ratos con la stamina (unos 720 en llano).
+	 * Velocidad (cm/s) de la tormenta por el camino en el nivel 1 (TNSurvivalLogic::StormSpeedForLevel). Algo por debajo de
+	 * andar (450): pararse a coger un objeto o caer derribada no la condena; a partir del nivel 4 (460) ya va más rápida que
+	 * andando.
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
-	float StormSpeedFirstLevel = 500.f;
+	float StormSpeedFirstLevel = 400.f;
 
 	/** Lo que sube en cada nivel siguiente (cm/s). */
 	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
