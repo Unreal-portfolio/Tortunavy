@@ -60,8 +60,6 @@ namespace
 			case ETrap::Mine:         return 0.6f;
 			case ETrap::Seaweed:      return 0.6f;
 			case ETrap::BarbedWire:   return 0.7f;
-			case ETrap::ToyTank:      return 0.8f;
-			case ETrap::SandFleas:    return 0.8f;
 			case ETrap::ClamTrap:     return 0.35f;
 			case ETrap::SeaUrchin:    return 0.75f;
 			case ETrap::HermitCrab:   return 0.8f;
@@ -84,8 +82,6 @@ namespace
 			case ETrap::Mine:         return ETNBeachElement::Mine;
 			case ETrap::Seaweed:      return ETNBeachElement::Seaweed;
 			case ETrap::BarbedWire:   return ETNBeachElement::BarbedWire;
-			case ETrap::ToyTank:      return ETNBeachElement::ToyTank;
-			case ETrap::SandFleas:    return ETNBeachElement::SandFleas;
 			case ETrap::ClamTrap:     return ETNBeachElement::ClamTrap;
 			case ETrap::SeaUrchin:    return ETNBeachElement::SeaUrchin;
 			case ETrap::HermitCrab:   return ETNBeachElement::HermitCrab;
@@ -104,7 +100,6 @@ namespace
 		{
 			case ETrap::Seaweed:    return static_cast<float>(2.0 * P.Extent.Y);
 			case ETrap::BarbedWire:
-			case ETrap::ToyTank:
 			case ETrap::HermitCrab: return static_cast<float>(2.0 * P.Extent.X);
 			default:                return 0.f;
 		}
@@ -287,8 +282,6 @@ void ATN_ProcMapGenerator::SpawnSurvivalTraps()
 			case ETrap::Mine:
 			case ETrap::Seaweed:
 			case ETrap::BarbedWire:
-			case ETrap::ToyTank:
-			case ETrap::SandFleas:
 			case ETrap::ClamTrap:
 			case ETrap::SeaUrchin:
 			case ETrap::HermitCrab:

@@ -2,7 +2,7 @@
 // repetidas, con trampas válidas, y cada semilla genera el mismo layout que cuando se eligió (huella).
 // Colocación (#516): ninguna trampa se pierde ni cae en un hueco, la salida, la meta o una unión; ninguna zona lenta
 // antes de un hueco (ni algas, ni conchas que atrapan); los obstáculos (también minas, conchas y alambres) dejan 3 m de
-// paso libre; el tanque y el cangrejo ermitaño van en un tramo recto.
+// paso libre; el cangrejo ermitaño va en un tramo recto y los cangrejos gigantes nunca a menos de 60 m.
 // El mapa de pruebas (TestMaps) pasa por las mismas huellas y colocación, y tiene una trampa de cada tipo menos la puerta de
 // conchas (#731), que va en una rama y la única que tiene es la de las placas: se prueba en El Desvío (semilla 11).
 // Correr desde Session Frontend (categoría "Tortunabo.Survival.Catalogo") o headless:
@@ -140,10 +140,10 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 		}
 		TMap<ETrap, int32> PlacedByTrap;
 		for (const FTrapPlacement& P : Plan) { PlacedByTrap.FindOrAdd(P.Trap)++; }
-		// Los cangrejos gigantes que quedarían juntos son pulgas (#734): se cuentan juntos.
-		ExpectedByTrap.FindOrAdd(ETrap::SandFleas) += ExpectedByTrap.FindRef(ETrap::Crab);
+		// Los cangrejos gigantes que quedarían juntos son cangrejos subterráneos (#734): se cuentan juntos.
+		ExpectedByTrap.FindOrAdd(ETrap::BurrowCrab) += ExpectedByTrap.FindRef(ETrap::Crab);
 		ExpectedByTrap.Remove(ETrap::Crab);
-		PlacedByTrap.FindOrAdd(ETrap::SandFleas) += PlacedByTrap.FindRef(ETrap::Crab);
+		PlacedByTrap.FindOrAdd(ETrap::BurrowCrab) += PlacedByTrap.FindRef(ETrap::Crab);
 		PlacedByTrap.Remove(ETrap::Crab);
 		TArray<double> CrabAlong;
 		for (const FTrapPlacement& P : Plan) { if (P.Trap == ETrap::Crab) { CrabAlong.Add(P.Along); } }
@@ -186,7 +186,7 @@ bool FTNSurvivalCatalogPlacementTest::RunTest(const FString& Parameters)
 				TestTrue(What + TEXT(": algas o concha sin hueco en los 30 m siguientes"), Placement::GapEndBetween(L.Main,
 					P.Along - R, P.Along + R + SlowZoneGapClearance) < 0.0);
 			}
-			if (P.Trap == ETrap::ToyTank || P.Trap == ETrap::HermitCrab)
+			if (P.Trap == ETrap::HermitCrab)
 			{
 				// Su tramo recto: dentro del camino y sin huecos.
 				TestTrue(What + FString::Printf(TEXT(": tramo recto de %.0f cm"), 2.0 * P.Extent.X),

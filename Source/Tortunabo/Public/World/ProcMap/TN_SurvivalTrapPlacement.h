@@ -18,8 +18,8 @@
  *   - Los obstáculos (cáscaras, medusas, sombrillas, minas, conchas y alambres) dejan siempre al menos 3 m de paso
  *     libre: van tan al centro como lo permite el ancho del camino, alternando de lado.
  *   - Las algas y las conchas que atrapan, como las zonas lentas: nunca en los 30 m anteriores a un hueco.
- *   - Lo que se mueve en línea recta (tanque y cangrejo ermitaño) va en un tramo recto del camino; el cangrejo gigante,
- *     donde el camino es más ancho.
+ *   - El cangrejo ermitaño va en un tramo recto del camino; el cangrejo gigante, donde el camino es más ancho y nunca a
+ *     menos de 60 m de otro.
  */
 
 namespace TNSurvivalCatalog
@@ -58,20 +58,18 @@ namespace TNSurvivalCatalog
 	constexpr double ClamTrapRadius = 170.0;
 	/** El alambre deja al menos este largo (cm) sin poner si no cabe: un alambre más corto no merece la pena. */
 	constexpr double MinWireLength = 150.0;
-	/** Tanque y cangrejo ermitaño: tramo recto (cm) que buscan, como mucho y como poco (el ermitaño necesita su calle). */
-	constexpr double ToyTankMaxPatrol = 2000.0;
-	constexpr double ToyTankMinPatrol = 800.0;
+	/** Cangrejo ermitaño: tramo recto (cm) de su calle, como mucho y como poco. */
 	constexpr double HermitMaxLane = 3000.0;
 	constexpr double HermitMinLane = 1500.0;
-	/** Lo que se aparta (cm) como mucho un tanque, un ermitaño o un cangrejo gigante de su punto del catálogo buscando sitio. */
+	/** Lo que se aparta (cm) como mucho un ermitaño o un cangrejo gigante de su punto del catálogo buscando sitio. */
 	constexpr double StraightSearchReach = 8000.0;
 	constexpr double GiantCrabSearchReach = 2000.0;
 	/** Un cangrejo gigante cada tanto de un tramo (cm), sin pasar de los que diga el catálogo. */
 	constexpr double GiantCrabSpacing = 2000.0;
 	/**
 	 * Dos cangrejos gigantes nunca a menos de esto (cm, a lo largo del camino): eliminan y no van en grupo (#734). Su correa
-	 * es de ~30 m, así que nunca persiguen dos a la vez. El que quedaría más cerca se cambia por un enjambre de pulgas, que
-	 * se esquiva andando y no elimina.
+	 * es de ~30 m, así que nunca persiguen dos a la vez. El que quedaría más cerca se cambia por un cangrejo subterráneo:
+	 * no se mueve, avisa (su montículo tiembla) y se rodea.
 	 */
 	constexpr double GiantCrabMinGap = 6000.0;
 	/** Zonas de gaviotas de un tramo: una cada tanto (cm) del camino. */
@@ -124,7 +122,7 @@ namespace TNSurvivalCatalog
 		double YawDeg = 0.0;
 		/**
 		 * Semiejes (cm) de la caja de las zonas: X a lo largo del camino (o de YawDeg), Y a lo ancho. Algas: Y, el medio ancho
-		 * del camino. Alambre: X, su medio largo (YawDeg va de lado). Tanque y ermitaño: X, el medio tramo recto.
+		 * del camino. Alambre: X, su medio largo (YawDeg va de lado). Ermitaño: X, el medio tramo recto.
 		 */
 		FVector Extent = FVector::ZeroVector;
 		int32 Count = 1;
@@ -159,9 +157,7 @@ namespace TNSurvivalCatalog
 			case ETrap::Seagull: return P.bUmbrella;
 			case ETrap::Crab:
 			case ETrap::DragCrab:
-			case ETrap::SandFleas:
 			case ETrap::SeaUrchin:
-			case ETrap::ToyTank:
 			case ETrap::HermitCrab:
 				return false;
 			default:
@@ -466,11 +462,12 @@ namespace TNSurvivalCatalog
 					{
 						const int32 i = WidestNear(M, NearestFree(M, SampleAtDistance(M, S)), GiantCrabSearchReach);
 						if (i == INDEX_NONE) { continue; }
-						// Nunca dos juntos: si ya hay uno cerca, pulgas en su lugar.
+						// Nunca dos juntos: si ya hay uno cerca, un cangrejo subterráneo en su lugar (con su paso libre).
 						const bool bCrowded = GiantCrabAlong.ContainsByPredicate([&M, i](double A) { return FMath::Abs(A - M[i].S) < GiantCrabMinGap; });
 						if (bCrowded)
 						{
-							Out.Add(At(M, ETrap::SandFleas, i, 0.0));
+							PlaceObstacle(M, Out, ETrap::BurrowCrab, false, i, BurrowCrabRadius, Side,
+								[](double Width) { return CentralOffset(Width, BurrowCrabRadius); });
 							continue;
 						}
 						GiantCrabAlong.Add(M[i].S);
@@ -570,14 +567,12 @@ namespace TNSurvivalCatalog
 					}
 					break;
 				}
-				case ETrap::ToyTank:
 				case ETrap::HermitCrab:
 				{
-					// Van y vienen (el tanque) o ruedan (el ermitaño) en línea recta: en un tramo recto del camino cerca del punto.
-					// El ermitaño espera en el lado de la meta y rueda hacia quien llega (YawDeg hacia la salida).
-					const bool bTank = Spot.Trap == ETrap::ToyTank;
-					const double MinHalf = 0.5 * (bTank ? ToyTankMinPatrol : HermitMinLane);
-					const double MaxHalf = 0.5 * (bTank ? ToyTankMaxPatrol : HermitMaxLane);
+					// Rueda en línea recta: en un tramo recto del camino cerca del punto. Espera en el lado de la meta y rueda hacia
+					// quien llega (YawDeg hacia la salida).
+					const double MinHalf = 0.5 * HermitMinLane;
+					const double MaxHalf = 0.5 * HermitMaxLane;
 					for (const double S : Spread(From, To, Spot.Count, 2.0 * MaxHalf + 500.0))
 					{
 						double Half = 0.0;
@@ -585,13 +580,12 @@ namespace TNSurvivalCatalog
 							StraightSearchReach, Half);
 						if (i == INDEX_NONE) { continue; }
 						FTrapPlacement P = At(M, Spot.Trap, i, 0.0);
-						P.YawDeg += bTank ? 0.0 : 180.0;
+						P.YawDeg += 180.0;
 						P.Extent = FVector(Half, 0.0, 0.0);
 						Out.Add(P);
 					}
 					break;
 				}
-				case ETrap::SandFleas:
 				case ETrap::SeaUrchin:
 				{
 					// En el centro: se mueven por su zona, dentro del camino (ATN_BeachEnemy::SetRoamCorridor).

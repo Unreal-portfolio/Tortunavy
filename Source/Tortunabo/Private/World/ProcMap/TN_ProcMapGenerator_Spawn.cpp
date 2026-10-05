@@ -16,8 +16,10 @@
 #include "World/ProcMap/TN_SurvivalSearchSpot.h"
 #include "Game/TN_SurvivalLoot.h"
 #include "World/ProcMap/TN_ProcMapShells.h"
+#include "World/TN_CrabSpawnZone.h"
 #include "World/TN_ScorePickup.h"
 #include "World/TN_ScoreShells.h"
+#include "World/TN_SeagullSpawnZone.h"
 #include "TN_ProcMapKeepOut.h"
 #include "Core/TN_Log.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -516,6 +518,7 @@ void ATN_ProcMapGenerator::SpawnHazards()
 		return;
 	}
 	const bool bServer = World->GetNetMode() != NM_Client;
+	const bool bSurvival = NetConfig.Mode == ETNProcGameMode::Survival;
 	const double Yaw0 = GetActorRotation().Yaw;
 
 	struct FRuleSource
@@ -547,6 +550,12 @@ void ATN_ProcMapGenerator::SpawnHazards()
 		for (const FTNProcHazardEntry& E : Entries)
 		{
 			if (!E.ActorClass) { continue; }
+			// Supervivencia: sin los cangrejos pequeños ni las gaviotas de antes; sus trampas son el cangrejo gigante y las
+			// gaviotas de la playa del catálogo (#733, #734).
+			if (bSurvival && (E.ActorClass->IsChildOf(ATN_CrabSpawnZone::StaticClass()) || E.ActorClass->IsChildOf(ATN_SeagullSpawnZone::StaticClass())))
+			{
+				continue;
+			}
 			FRuleSource Src;
 			Src.Entry = E;
 			Src.Biome = Biome;
