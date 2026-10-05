@@ -328,6 +328,8 @@ void ATN_GeneralBriefing::FitSignText()
 	using namespace TNGeneralDetail;
 	// El rótulo cabe siempre dentro del cartel (también en el editor): parte del tamaño de siempre y se encoge si el
 	// nombre es largo, con un margen a cada lado.
+	// El servidor dedicado no carga los componentes sin colisión (UPrimitiveComponent::NeedsLoadForServer): sin cartel (#658).
+	if (!Sign) { return; }
 	Sign->SetText(HeadquartersName.ToUpper());
 	Sign->SetWorldSize(36.f);
 	const double MaxWidth = 2.0 * SignHalfW - 34.0;

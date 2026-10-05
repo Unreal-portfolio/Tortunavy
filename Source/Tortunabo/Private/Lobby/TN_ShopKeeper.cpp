@@ -248,6 +248,18 @@ FTransform ATN_ShopKeeper::KeeperTransform() const
 void ATN_ShopKeeper::BuildVisuals()
 {
 	using namespace TNShopKeeperDetail;
+	// El puesto crece alrededor del tendero (que se queda detrás del mostrador): choques y aviso, en todas las máquinas.
+	const double S = StallScale;
+	if (CounterBlock)
+	{
+		CounterBlock->SetBoxExtent(FVector(CounterHalfDepth + 4.0, CounterHalfWidth + 6.0, CounterHeight * 0.5) * S);
+		CounterBlock->SetRelativeLocation(FVector(CounterX, 0.0, CounterHeight * 0.5) * S);
+	}
+	if (Mesh) { Mesh->SetRelativeLocation(FVector((CounterX + 70.0) * S, 0.0, 60.0)); }
+	// Lo demás solo se ve. El servidor dedicado no carga los componentes sin colisión (tendero, sombrero, puesto y cartel:
+	// UPrimitiveComponent::NeedsLoadForServer) y llegan nulos al viajar al lobby (#658): sin pantalla no se construye nada.
+	if (IsRunningDedicatedServer() || !Keeper || !Stall || !Sign) { return; }
+
 	// La tortuga del personaje (malla, materiales y escala) y sus animaciones de los ajustes de arte.
 	KeeperCorrection = FTransform::Identity;
 	if (TNTurtleArt::ApplyBody(Keeper, KeeperTransform())) { KeeperDefaults.Reset(); }
@@ -259,14 +271,10 @@ void ATN_ShopKeeper::BuildVisuals()
 	// En el editor, el tendero en su espera (no en T).
 	UTN_NpcAnimInstance::PreviewInEditor(Keeper, IdleAnim);
 	BuildStall();
-	// El puesto crece alrededor del tendero (que se queda detrás del mostrador): malla, choques, cartel y aviso.
-	const double S = StallScale;
+	// Malla y cartel a la escala del puesto.
 	Stall->SetRelativeScale3D(FVector(S));
-	CounterBlock->SetBoxExtent(FVector(CounterHalfDepth + 4.0, CounterHalfWidth + 6.0, CounterHeight * 0.5) * S);
-	CounterBlock->SetRelativeLocation(FVector(CounterX, 0.0, CounterHeight * 0.5) * S);
 	Sign->SetRelativeLocation(FVector(SignX + 6.5, 0.0, SignZ) * S);
 	Sign->SetWorldSize(static_cast<float>(40.0 * S));
-	if (Mesh) { Mesh->SetRelativeLocation(FVector((CounterX + 70.0) * S, 0.0, 60.0)); }
 	// Luces: bajo el toldo sobre el tendero y el mostrador, delante de la estantería y en el farol del lado derecho.
 	if (CanopyLight)
 	{

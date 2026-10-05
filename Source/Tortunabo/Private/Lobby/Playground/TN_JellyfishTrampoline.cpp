@@ -742,8 +742,12 @@ void ATN_JellyfishTrampoline::BuildAll(bool bForce)
 	const bool bGameWorld = World && World->IsGameWorld();
 	if (bGameWorld)
 	{
-		TentaclePreview->SetStaticMesh(nullptr);
-		TentaclePreview->SetVisibility(false);
+		// El servidor dedicado no carga los componentes sin colisión (UPrimitiveComponent::NeedsLoadForServer, #658).
+		if (TentaclePreview)
+		{
+			TentaclePreview->SetStaticMesh(nullptr);
+			TentaclePreview->SetVisibility(false);
+		}
 		if (TentacleMesh)
 		{
 			BuildRuntimeTentacles();
@@ -753,8 +757,11 @@ void ATN_JellyfishTrampoline::BuildAll(bool bForce)
 	{
 		TNPlaygroundKit::FBuffers Legs;
 		TNJellyfishDetail::BuildTentacles(Legs, Pal, Scale, 0.0, 0.0);
-		TentaclePreview->SetStaticMesh(TNPlaygroundKit::BuildMesh(this, Legs, Mat));
-		TentaclePreview->SetVisibility(true);
+		if (TentaclePreview)
+		{
+			TentaclePreview->SetStaticMesh(TNPlaygroundKit::BuildMesh(this, Legs, Mat));
+			TentaclePreview->SetVisibility(true);
+		}
 	}
 }
 
