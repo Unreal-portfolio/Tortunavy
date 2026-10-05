@@ -597,8 +597,12 @@ void ATN_WobblyBridge::BuildAll(bool bForce)
 	const UWorld* World = GetWorld();
 	if (World && World->IsGameWorld())
 	{
-		DeckPreview->SetStaticMesh(nullptr);
-		DeckPreview->SetVisibility(false);
+		// El servidor dedicado no carga los componentes sin colisión (UPrimitiveComponent::NeedsLoadForServer, #658).
+		if (DeckPreview)
+		{
+			DeckPreview->SetStaticMesh(nullptr);
+			DeckPreview->SetVisibility(false);
+		}
 		if (DeckMesh)
 		{
 			BuildRuntimeDeck();
@@ -608,8 +612,11 @@ void ATN_WobblyBridge::BuildAll(bool bForce)
 	{
 		FBuffers Deck;
 		BuildDeck(Deck, PlankPose, Planks, Dims);
-		DeckPreview->SetStaticMesh(TNPlaygroundKit::BuildMesh(this, Deck, Mat));
-		DeckPreview->SetVisibility(true);
+		if (DeckPreview)
+		{
+			DeckPreview->SetStaticMesh(TNPlaygroundKit::BuildMesh(this, Deck, Mat));
+			DeckPreview->SetVisibility(true);
+		}
 	}
 }
 

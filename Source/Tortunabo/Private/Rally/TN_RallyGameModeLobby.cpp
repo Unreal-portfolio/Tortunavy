@@ -145,7 +145,10 @@ void ATN_RallyGameMode::GetSeamlessTravelActorList(bool bToTransition, TArray<AA
 {
 	Super::GetSeamlessTravelActorList(bToTransition, ActorList);
 	// Super guarda todo el PlayerArray; los bots se crean de nuevo en cada carrera y en el lobby no tienen plaza (#694).
-	ActorList.RemoveAll([](const AActor* Actor) { return TN_IsBotPlayerState(Cast<APlayerState>(Actor)); });
+	// Salen también del PlayerArray: el GameState viaja al mapa de transición y no puede llevarse a los que se quedan (#711).
+	const int32 Dropped = TN_DropBotsFromSeamlessTravel(GameState, ActorList);
+	UE_LOG(LogTNRally, Log, TEXT("[RallyGameMode] Viaje sin cortes (%s): %d bot(s) se quedan."),
+		bToTransition ? TEXT("a la transición") : TEXT("al destino"), Dropped);
 }
 
 void ATN_RallyGameMode::ReturnToLobbyNow()

@@ -1,6 +1,7 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopPlayerState.h"
+#include "Core/TN_GameModeSpawnUtils.h"
 #include "Core/TN_MatchFlowTypes.h"
 #include "Core/TN_ScoreDecisions.h"
 #include "Multiplayer/MP_GameInstance.h"
@@ -9,6 +10,16 @@
 
 ATN_CoopGameState::ATN_CoopGameState()
 {
+}
+
+void ATN_CoopGameState::SeamlessTravelTransitionCheckpoint(bool bToTransitionMap)
+{
+	// El motor marca cada PlayerState sin mirar si es nulo: uno que no viajó deja un hueco nulo tras el GC del mapa viejo (#711).
+	if (const int32 Removed = TN_RemoveStalePlayerStates(this))
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[CoopGameState] Viaje sin cortes: %d PlayerState que no viajaron fuera del PlayerArray."), Removed);
+	}
+	Super::SeamlessTravelTransitionCheckpoint(bToTransitionMap);
 }
 
 void ATN_CoopGameState::OnRep_MatchFlowState()

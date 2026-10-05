@@ -85,6 +85,26 @@ bool TN_IsPlayerStateLeaving(const APlayerState* PlayerState);
 bool TN_IsBotPlayerState(const APlayerState* PlayerState);
 
 /**
+ * @brief Deja a los bots fuera del viaje sin cortes: quita sus PlayerState de la lista de lo que viaja y del PlayerArray.
+ * @details AGameModeBase::GetSeamlessTravelActorList guarda el PlayerArray entero y, hacia el mapa de transición, también el
+ *          GameState. Un PlayerState que no viaja muere con el mapa viejo y el GC deja nulo su hueco en el PlayerArray del
+ *          GameState que sí viaja: al salir de la transición, AGameStateBase::SeamlessTravelTransitionCheckpoint lo leía y el
+ *          anfitrión crasheaba al volver al lobby desde el Rally y los Karts (#711).
+ * @param GameState GameState que viaja; nulo solo filtra la lista.
+ * @param ActorList Lista de GetSeamlessTravelActorList.
+ * @return Cuántos PlayerState de bots se quedan atrás.
+ */
+int32 TN_DropBotsFromSeamlessTravel(AGameStateBase* GameState, TArray<AActor*>& ActorList);
+
+/**
+ * @brief Quita del PlayerArray los huecos nulos o de PlayerState en destrucción.
+ * @details Lo usan los GameState del juego antes de AGameStateBase::SeamlessTravelTransitionCheckpoint, que marca cada
+ *          elemento sin mirar si es nulo (#711).
+ * @return Cuántos ha quitado.
+ */
+int32 TN_RemoveStalePlayerStates(AGameStateBase* GameState);
+
+/**
  * @brief Cuenta cuántos elementos del PlayerArray son ATN_CoopPlayerState (jugadores coop conectados), sin contar al
  *        que se está yendo (TN_IsPlayerStateLeaving) ni a los bots (TN_IsBotPlayerState, #694).
  * @param GameState GameState del que iterar PlayerArray; nulo devuelve 0.

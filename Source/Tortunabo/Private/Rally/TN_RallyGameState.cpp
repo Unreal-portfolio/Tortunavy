@@ -8,6 +8,7 @@
 #include "Misc/Crc.h"
 #include "Net/UnrealNetwork.h"
 #include "ProceduralMeshComponent.h"
+#include "Core/TN_GameModeSpawnUtils.h"
 #include "Kart/TN_KartItemBox.h"
 #include "Rally/TN_RallyLogic.h"
 #include "Rally/TN_RallyPlayerState.h"
@@ -27,6 +28,16 @@ void ATN_RallyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ATN_RallyGameState, bCircuit);
 	DOREPLIFETIME(ATN_RallyGameState, Variant);
 	DOREPLIFETIME(ATN_RallyGameState, Standings);
+}
+
+void ATN_RallyGameState::SeamlessTravelTransitionCheckpoint(bool bToTransitionMap)
+{
+	// El motor marca cada PlayerState sin mirar si es nulo: uno que no viajó deja un hueco nulo tras el GC del mapa viejo (#711).
+	if (const int32 Removed = TN_RemoveStalePlayerStates(this))
+	{
+		UE_LOG(LogTNRally, Warning, TEXT("[RallyGameState] Viaje sin cortes: %d PlayerState que no viajaron fuera del PlayerArray."), Removed);
+	}
+	Super::SeamlessTravelTransitionCheckpoint(bToTransitionMap);
 }
 
 const FTNRallyStanding* ATN_RallyGameState::FindStandingForPlayer(const APlayerState* Player) const

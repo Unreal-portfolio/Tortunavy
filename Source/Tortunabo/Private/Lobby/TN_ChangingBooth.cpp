@@ -476,6 +476,8 @@ void ATN_ChangingBooth::BuildLabel()
 		if (Old) { Old->DestroyComponent(); }
 	}
 	LabelLetters.Reset();
+	// Sin pantalla no hay etiqueta; el servidor dedicado tampoco carga la botella (sin colisión, #658).
+	if (IsRunningDedicatedServer() || !Bottle) { return; }
 	const FString Text = NSLOCTEXT("Tortunabo", "BoothLabel", "PROBADOR").ToString();
 	constexpr double Radius = WallR + 2.4;
 	constexpr double Tracking = 2.5;
@@ -625,5 +627,5 @@ void ATN_ChangingBooth::Tick(float DeltaSeconds)
 		WobbleTime = FMath::Max(0.f, WobbleTime - DeltaSeconds);
 		Squash = 0.035f * FMath::Sin(WobbleTime * 22.f) * FMath::Min(1.f, WobbleTime);
 	}
-	Bottle->SetRelativeScale3D(FVector(1.f + Squash, 1.f + Squash, 1.f - Squash * 0.8f));
+	if (Bottle) { Bottle->SetRelativeScale3D(FVector(1.f + Squash, 1.f + Squash, 1.f - Squash * 0.8f)); }
 }
