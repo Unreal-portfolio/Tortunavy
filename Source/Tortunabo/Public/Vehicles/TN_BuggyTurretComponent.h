@@ -198,4 +198,15 @@ private:
 	TNRallyTurret::FSpecial Special;
 	double LastCocoShot = -1000.0;
 	double LastSpecialShot = -1000.0;
+
+	// ── Ráfaga de erizos (#715) ──
+
+	/** Gatillo de la ráfaga: la empieza o la mantiene hacia WorldDir. False si no se puede disparar. */
+	bool TryHoldBurst(const FVector& WorldDir, double Now);
+	/** Servidor: dispara la púa que toque de la ráfaga hacia donde apunta la torreta. */
+	void TickBurst(double Now);
+	/** Si quien dispara la torreta es una persona (su gatillo hay que mantenerlo) y no un bot. */
+	bool IsHumanTrigger() const;
+
+	TNRallyTurret::FBurst Burst;
 };

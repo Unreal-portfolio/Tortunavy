@@ -271,4 +271,61 @@ namespace TNRallyTurret
 
 	/** Giro del disco del charco: su eje Z sobre la normal del suelo y su X lo más cerca posible de Forward. */
 	TORTUNABO_API FQuat PuddleRotation(const FVector& GroundNormal, const FVector& Forward);
+
+	// ── Ráfaga de erizos (#715) ─────────────────────────────────────────────────
+
+	/** Una carga: 12 púas en 1,5 s mientras se mantiene el gatillo. */
+	constexpr int32 ErizosSpikes = 12;
+	constexpr float ErizosBurstSeconds = 1.5f;
+	constexpr float ErizosSpikeInterval = ErizosBurstSeconds / ErizosSpikes;
+	/** Cada púa: rápida y con poca caída. */
+	constexpr float ErizosSpeedCms = 9000.f;
+	constexpr float ErizosGravityScale = 0.3f;
+	constexpr float ErizosLifeSeconds = 1.5f;
+	/** Cada púa que acierta: empujón lateral (cm/s) y bamboleo de la dirección (s). */
+	constexpr float ErizosLateralCms = 120.f;
+	constexpr float ErizosWobbleSeconds = 0.15f;
+	/** Retroceso de cada púa en el buggy propio (cm/s). */
+	constexpr float ErizosRecoilCms = 40.f;
+	/**
+	 * Lo que dura cada petición del gatillo de una persona (s): el cliente repite la petición cada ErizosSpikeInterval
+	 * mientras lo mantiene y, si deja de llegar, la ráfaga se para (y sigue donde iba al volver a apretar). Un bot no aprieta
+	 * nada: su ráfaga entera sale de una vez (BurstHoldSeconds).
+	 */
+	constexpr float ErizosHoldSeconds = 0.35f;
+
+	/** Munición que dispara en ráfaga mientras se mantiene el gatillo (los erizos). */
+	TORTUNABO_API bool IsBurstAmmo(ETNRallyAmmo Ammo);
+
+	/** Ráfaga en marcha: púas que quedan de la carga, hora de la siguiente y hasta cuándo sigue apretado el gatillo. */
+	struct FBurst
+	{
+		int32 SpikesLeft = 0;
+		double NextSpikeAt = 0.0;
+		double HoldUntil = -1.0;
+	};
+
+	/** Si queda alguna púa de la carga empezada. */
+	TORTUNABO_API bool IsBurstActive(const FBurst& Burst);
+
+	/**
+	 * Gatillo apretado en Now: sin ráfaga empezada, empieza una de Spikes púas con la primera ya; con ella, solo alarga el
+	 * gatillo hasta Now + HoldSeconds (las peticiones seguidas nunca adelantan las púas: la cadencia la lleva el servidor).
+	 */
+	TORTUNABO_API FBurst HoldBurst(const FBurst& Burst, double Now, float HoldSeconds, int32 Spikes = ErizosSpikes);
+
+	/** Si toca disparar una púa en Now: queda alguna, ha llegado su hora y el gatillo sigue apretado. */
+	TORTUNABO_API bool BurstSpikeDue(const FBurst& Burst, double Now);
+
+	/** Tras una púa en Now: una menos y la siguiente a Interval de la anterior (o de Now, si la ráfaga estaba parada). */
+	TORTUNABO_API FBurst AfterBurstSpike(const FBurst& Burst, double Now, float Interval = ErizosSpikeInterval);
+
+	/** Lo que alarga el gatillo cada petición: el de una persona, ErizosHoldSeconds; el de un bot, la ráfaga entera. */
+	TORTUNABO_API float BurstHoldSeconds(bool bHumanTrigger);
+
+	/**
+	 * Dirección del empujón de una púa sobre un buggy que mira a Forward: la parte horizontal de PushDir perpendicular al
+	 * morro (de lado); si PushDir va a lo largo del morro, hacia el lado al que se incline o, recto, a la derecha.
+	 */
+	TORTUNABO_API FVector SpikePushDir(const FVector& Forward, const FVector& PushDir);
 }

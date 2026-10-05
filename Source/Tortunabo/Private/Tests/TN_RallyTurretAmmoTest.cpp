@@ -1,4 +1,4 @@
-// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770). Lógica pura (TNRallyTurret) y,
+// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770) y ráfaga de erizos (#715). Lógica pura (TNRallyTurret) y,
 // para el charco, un mundo con física sin ventana (TN_RallyPhysicsTestKit.h). Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Turret; Quit" -nullrhi -unattended -NoSteam
 
@@ -6,6 +6,7 @@
 #include "TN_RallyPhysicsTestKit.h"
 #include "EngineUtils.h"
 #include "Vehicles/TN_RallyProjectile.h"
+#include "Rally/TN_RallyLogic.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -184,6 +185,96 @@ bool FTNRallyTurretAlgaGroundTest::RunTest(const FString& Parameters)
 			TestTrue(FString::Printf(TEXT("en el suelo (Z = %.1f)"), Puddle->GetActorLocation().Z), FMath::Abs(Puddle->GetActorLocation().Z) <= 10.0);
 		}
 	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretErizosTest, "Tortunabo.Rally.Turret.Erizos",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretErizosTest::RunTest(const FString& Parameters)
+{
+	using namespace TNRallyTurret;
+	const FAmmoSpec Spec = SpecFor(ETNRallyAmmo::Erizos);
+	TestTrue(TEXT("los erizos son munición especial"), IsSpecial(ETNRallyAmmo::Erizos));
+	TestTrue(TEXT("y de ráfaga"), IsBurstAmmo(ETNRallyAmmo::Erizos) && !IsBurstAmmo(ETNRallyAmmo::Coco) && !IsBurstAmmo(ETNRallyAmmo::Alga));
+	TestEqual(TEXT("púas rápidas: 9000 cm/s"), Spec.SpeedCms, 9000.f);
+	TestEqual(TEXT("que caen poco: gravedad 0,3"), Spec.GravityScale, 0.3f);
+	TestEqual(TEXT("retroceso de cada púa: 40 cm/s"), Spec.RecoilCms, 40.f);
+	TestEqual(TEXT("una carga por caja (una ráfaga)"), TNRally::ChargesFor(ETNRallyAmmo::Erizos), 1);
+	TestEqual(TEXT("la cadencia es la de las púas"), Spec.FireInterval, ErizosSpikeInterval, 0.0001f);
+
+	// Gatillo mantenido (una petición por fotograma, más de las que hacen falta): 12 púas en 1,5 s y se acaba.
+	constexpr double Dt = 1.0 / 60.0;
+	FBurst Burst;
+	int32 Spikes = 0;
+	double LastSpikeAt = -1.0;
+	for (double Now = 0.0; Now < 3.0; Now += Dt)
+	{
+		if (Now < 2.5)
+		{
+			Burst = HoldBurst(Burst, Now, BurstHoldSeconds(true));
+		}
+		while (BurstSpikeDue(Burst, Now))
+		{
+			Burst = AfterBurstSpike(Burst, Now);
+			++Spikes;
+			LastSpikeAt = Now;
+			if (!IsBurstActive(Burst))
+			{
+				break;
+			}
+		}
+		if (!IsBurstActive(Burst) && Spikes > 0)
+		{
+			break;
+		}
+	}
+	TestEqual(TEXT("una carga son 12 púas"), Spikes, ErizosSpikes);
+	TestTrue(FString::Printf(TEXT("en 1,5 s (la última a los %.2f s)"), LastSpikeAt), LastSpikeAt <= ErizosBurstSeconds && LastSpikeAt >= ErizosBurstSeconds - 0.25);
+
+	// El servidor lleva la cadencia: pedir muchas veces seguidas no adelanta la siguiente púa.
+	FBurst Spam = HoldBurst(FBurst(), 0.0, BurstHoldSeconds(true));
+	TestTrue(TEXT("la primera púa sale al apretar"), BurstSpikeDue(Spam, 0.0));
+	Spam = AfterBurstSpike(Spam, 0.0);
+	for (int32 Request = 0; Request < 10; ++Request)
+	{
+		Spam = HoldBurst(Spam, 0.01 * Request, BurstHoldSeconds(true));
+	}
+	TestFalse(TEXT("10 peticiones en 0,1 s no sacan otra púa"), BurstSpikeDue(Spam, 0.1));
+	TestTrue(TEXT("a su hora, sí"), BurstSpikeDue(Spam, ErizosSpikeInterval));
+	TestEqual(TEXT("y no empiezan otra ráfaga"), Spam.SpikesLeft, ErizosSpikes - 1);
+
+	// Al soltar el gatillo la ráfaga se para y sigue donde iba al volver a apretar.
+	FBurst Released = AfterBurstSpike(HoldBurst(FBurst(), 0.0, BurstHoldSeconds(true)), 0.0);
+	TestFalse(TEXT("suelto, no sale nada"), BurstSpikeDue(Released, 1.0));
+	Released = HoldBurst(Released, 1.0, BurstHoldSeconds(true));
+	TestTrue(TEXT("al volver a apretar, sale la siguiente"), BurstSpikeDue(Released, 1.0));
+	TestEqual(TEXT("de la misma carga"), Released.SpikesLeft, ErizosSpikes - 1);
+	Released = AfterBurstSpike(Released, 1.0);
+	TestEqual(TEXT("tras una pausa, la siguiente a su intervalo"), Released.NextSpikeAt, 1.0 + ErizosSpikeInterval, 0.0001);
+
+	// Un bot no mantiene nada: una petición le vale para la ráfaga entera.
+	TestTrue(TEXT("el gatillo de un bot dura la ráfaga entera"), BurstHoldSeconds(false) >= ErizosBurstSeconds);
+	TestTrue(TEXT("el de una persona se acaba si deja de apretar"), BurstHoldSeconds(true) < ErizosBurstSeconds);
+
+	// Empujón de cada púa: de lado, y hacia el lado contrario al que da.
+	TestTrue(TEXT("una púa desde la izquierda empuja a la derecha"),
+		SpikePushDir(FVector::ForwardVector, FVector(0.2, 1.0, 0.0)).Equals(FVector(0.0, 1.0, 0.0), 0.001));
+	TestTrue(TEXT("desde atrás, de lado igualmente"), FMath::IsNearlyZero(SpikePushDir(FVector::ForwardVector, FVector::ForwardVector).X));
+	TestEqual(TEXT("empujón lateral 120 cm/s"), ErizosLateralCms, 120.f);
+	TestEqual(TEXT("bamboleo 0,15 s"), ErizosWobbleSeconds, 0.15f);
+
+	// Reparto y bots.
+	const TNRally::FAmmoWeights First = TNRally::AmmoWeightsForPlace(1, 8);
+	const TNRally::FAmmoWeights Middle = TNRally::AmmoWeightsForPlace(4, 8);
+	const TNRally::FAmmoWeights Last = TNRally::AmmoWeightsForPlace(8, 8);
+	TestTrue(TEXT("más erizos delante que detrás"), First.Erizos > Last.Erizos);
+	TestTrue(TEXT("y en la mitad de la tabla, como delante"), Middle.Erizos >= First.Erizos * 0.9f && Middle.Erizos > Last.Erizos);
+	using TNRally::EBotSpecialShot;
+	TestEqual(TEXT("bot: erizos al de delante cerca"), static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::Erizos, 0.5f, 2500.f, -1.f)),
+		static_cast<int32>(EBotSpecialShot::AtAhead));
+	TestEqual(TEXT("bot: con el de delante lejos, se espera"), static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::Erizos, 0.5f, 9000.f, -1.f)),
+		static_cast<int32>(EBotSpecialShot::Hold));
 	return true;
 }
 

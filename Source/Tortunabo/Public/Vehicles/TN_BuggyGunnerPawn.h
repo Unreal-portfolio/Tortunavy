@@ -139,6 +139,7 @@ private:
 	void OnFireCoco(const FInputActionValue& Value);
 	void OnFireCocoReleased(const FInputActionValue& Value);
 	void OnFireSpecial(const FInputActionValue& Value);
+	void OnFireSpecialHeld(const FInputActionValue& Value);
 	void OnCycleAmmo(const FInputActionValue& Value);
 	void OnToggleCamera(const FInputActionValue& Value);
 	void OnSelfRightPressed(const FInputActionValue& Value);

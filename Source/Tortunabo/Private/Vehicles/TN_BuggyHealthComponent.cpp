@@ -239,6 +239,10 @@ void UTN_BuggyHealthComponent::ApplyAmmoEffect(ETNRallyAmmo Ammo, const FVector&
 	case ETNRallyAmmo::Ancla:
 		ATN_RallyAnchorTether::Attach(Buggy, WorldPoint);
 		break;
+	case ETNRallyAmmo::Erizos:
+		// Empujón lateral lejos del lado donde da la púa.
+		Buggy->ApplySpikeHit(Buggy->GetActorLocation() - WorldPoint);
+		break;
 	default:
 		break;
 	}

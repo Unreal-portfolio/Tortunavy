@@ -46,6 +46,7 @@ namespace TNRallyFX
 		case ETNRallyAmmo::Mortero: return 28.f;
 		case ETNRallyAmmo::Alga: return 24.f;
 		case ETNRallyAmmo::Ancla: return 26.f;
+		case ETNRallyAmmo::Erizos: return 10.f;
 		default: return 18.f;
 		}
 	}
@@ -119,6 +120,7 @@ namespace TNRallyLook
 		case ETNRallyAmmo::Ancla: return FLinearColor(0.45f, 0.47f, 0.50f);
 		case ETNRallyAmmo::Concha: return FLinearColor(0.25f, 0.85f, 0.45f);
 		case ETNRallyAmmo::ConchaGuiada: return FLinearColor(0.95f, 0.25f, 0.20f);
+		case ETNRallyAmmo::Erizos: return FLinearColor(0.30f, 0.12f, 0.35f);
 		default: return FLinearColor(0.35f, 0.20f, 0.08f);
 		}
 	}
@@ -342,6 +344,14 @@ void ATN_RallyProjectile::Impact(ATN_Buggy* HitBuggy, const FVector& Where, bool
 		HitBuggyWith(HitBuggy, Where, Dir, bGunnerHit);
 		ATN_RallyBurstFX::Broadcast(Via, ETNRallyBurstKind::CocoHit, Where, 80.f);
 		break;
+	case ETNRallyAmmo::Erizos:
+		// Púa de la ráfaga (#715): golpe pequeño; contra el escenario, sin ráfaga (son muchas).
+		HitBuggyWith(HitBuggy, Where, Dir, bGunnerHit);
+		if (HitBuggy)
+		{
+			ATN_RallyBurstFX::Broadcast(HitBuggy, ETNRallyBurstKind::CocoHit, Where, 40.f);
+		}
+		break;
 	default:
 		break;
 	}
@@ -371,6 +381,7 @@ void ATN_RallyProjectile::HitBuggyWith(ATN_Buggy* HitBuggy, const FVector& Where
 	case ETNRallyAmmo::Coco: HitBuggy->ApplyCocoHit(Dir); break;
 	case ETNRallyAmmo::Tinta: HitBuggy->ApplyInk(); break;
 	case ETNRallyAmmo::Mortero: HitBuggy->ApplyMortarBlast(); break;
+	case ETNRallyAmmo::Erizos: HitBuggy->ApplySpikeHit(Dir); break;
 	case ETNRallyAmmo::Ancla:
 		if (!HitBuggy->TryConsumeShield())
 		{

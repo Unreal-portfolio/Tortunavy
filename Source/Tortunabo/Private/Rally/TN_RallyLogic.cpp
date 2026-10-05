@@ -398,6 +398,8 @@ namespace TNRally
 		// Conchas de las cajas «?» (#629): la recta, sobre todo delante; la teledirigida, sobre todo detrás.
 		Weights.Concha = FMath::Lerp(3.f, 1.5f, T);
 		Weights.ConchaGuiada = FMath::Lerp(0.5f, 2.5f, T);
+		// Ráfaga de erizos (#715): igual de la cabeza a la mitad de la tabla y menos de ahí hacia atrás.
+		Weights.Erizos = T <= 0.5f ? 2.5f : FMath::Lerp(2.5f, 0.8f, (T - 0.5f) * 2.f);
 		return Weights;
 	}
 
@@ -415,6 +417,7 @@ namespace TNRally
 		if ((Pick -= Weights.Ancla) < 0.f) { return ETNRallyAmmo::Ancla; }
 		if ((Pick -= Weights.Concha) < 0.f) { return ETNRallyAmmo::Concha; }
 		if ((Pick -= Weights.ConchaGuiada) < 0.f) { return ETNRallyAmmo::ConchaGuiada; }
+		if ((Pick -= Weights.Erizos) < 0.f) { return ETNRallyAmmo::Erizos; }
 		return ETNRallyAmmo::Tinta;
 	}
 
@@ -430,6 +433,7 @@ namespace TNRally
 		case ETNRallyAmmo::Burbuja:
 		case ETNRallyAmmo::Mortero:
 		case ETNRallyAmmo::ConchaGuiada:
+		case ETNRallyAmmo::Erizos:
 			return 1;
 		default:
 			return 0;
@@ -452,6 +456,9 @@ namespace TNRally
 			break;
 		case ETNRallyAmmo::Burbuja:
 			Shot = HeldSeconds >= BotBubbleDelaySeconds ? EBotSpecialShot::Free : EBotSpecialShot::Hold;
+			break;
+		case ETNRallyAmmo::Erizos:
+			Shot = AheadCm >= 0.f && AheadCm <= BotErizosRangeCm ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold;
 			break;
 		default:
 			Shot = bAheadInRange ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold;

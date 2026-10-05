@@ -23,6 +23,10 @@ namespace TNRallyCombat
 		case ETNRallyAmmo::Ancla:
 			Spec = { 150.f, 0.f, 8.f };
 			break;
+		case ETNRallyAmmo::Erizos:
+			// Púa (#715): el empujón es lateral y lo da ATN_Buggy::ApplySpikeHit; aquí solo el daño.
+			Spec = { 0.f, 0.f, 2.f };
+			break;
 		default:
 			break;
 		}

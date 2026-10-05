@@ -236,8 +236,10 @@ namespace TNRally
 		float Ancla = 0.f;
 		float Concha = 0.f;
 		float ConchaGuiada = 0.f;
+		/** Ráfaga de erizos (#715): sobre todo los primeros y la mitad de la tabla. */
+		float Erizos = 0.f;
 
-		float Total() const { return Alga + Burbuja + Mortero + Tinta + Ancla + Concha + ConchaGuiada; }
+		float Total() const { return Alga + Burbuja + Mortero + Tinta + Ancla + Concha + ConchaGuiada + Erizos; }
 	};
 
 	/**
@@ -250,7 +252,7 @@ namespace TNRally
 	/** Elige munición con una tirada en [0, 1). Nunca Coco ni None. */
 	TORTUNABO_API ETNRallyAmmo PickAmmo(const FAmmoWeights& Weights, float Roll01);
 
-	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2, Concha 2, Concha teledirigida 1. */
+	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2, Concha 2, Concha teledirigida 1, Erizos 1 (una ráfaga). */
 	TORTUNABO_API int32 ChargesFor(ETNRallyAmmo Ammo);
 
 	/** Hacia dónde dispara un bot su munición especial (ShouldBotFireSpecial). */
@@ -273,6 +275,8 @@ namespace TNRally
 	inline constexpr float BotAlgaBehindRangeCm = 4000.f;
 	/** La burbuja se suelta al rato de cogerla (s). */
 	inline constexpr float BotBubbleDelaySeconds = 1.5f;
+	/** Alcance de los bots con la ráfaga de erizos (cm): al de delante, de cerca (#715). */
+	inline constexpr float BotErizosRangeCm = 4000.f;
 
 	/**
 	 * Bot sin artillera humana (#629): qué hace con la especial Ammo que lleva HeldSeconds. AheadCm y BehindCm, distancia

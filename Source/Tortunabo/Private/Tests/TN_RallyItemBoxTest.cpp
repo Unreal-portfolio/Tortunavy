@@ -15,13 +15,14 @@ namespace TNItemBoxTest
 {
 	/** Munición especial que puede salir de una caja «?». */
 	const ETNRallyAmmo BoxAmmo[] = { ETNRallyAmmo::Concha, ETNRallyAmmo::ConchaGuiada, ETNRallyAmmo::Alga, ETNRallyAmmo::Tinta,
-		ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Ancla };
+		ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Ancla, ETNRallyAmmo::Erizos };
 
 	/** Veces que sale cada munición con Rolls tiradas uniformes (índice = valor de ETNRallyAmmo). */
 	TArray<int32> CountRolls(const TNRally::FAmmoWeights& Weights, int32 Rolls)
 	{
 		TArray<int32> Counts;
-		Counts.SetNumZeroed(static_cast<int32>(ETNRallyAmmo::ConchaGuiada) + 1);
+		// Todos los valores del enum (con su _MAX): las municiones nuevas se añaden al final.
+		Counts.SetNumZeroed(StaticEnum<ETNRallyAmmo>()->NumEnums());
 		for (int32 Index = 0; Index < Rolls; ++Index)
 		{
 			++Counts[static_cast<int32>(TNRally::PickAmmo(Weights, (Index + 0.5f) / Rolls))];

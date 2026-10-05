@@ -245,3 +245,15 @@ void ATN_Buggy::ApplyPuddleEntrySpin()
 		Chassis->AddAngularImpulseInDegrees(GetActorUpVector() * SpinDeg, NAME_None, true);
 	}
 }
+
+void ATN_Buggy::ApplySpikeHit(const FVector& PushDir)
+{
+	if (!HasAuthority() || TryConsumeShield())
+	{
+		return;
+	}
+	// Púa de la ráfaga de erizos (#715): empujón lateral pequeño y un bamboleo corto (sin acortar el de un coco en marcha).
+	ApplyVelocityImpulse(TNRallyTurret::SpikePushDir(GetActorForwardVector(), PushDir) * TNRallyTurret::ErizosLateralCms);
+	WobbleEndServerTime = FMath::Max(WobbleEndServerTime, static_cast<float>(GetServerNow()) + TNRallyTurret::ErizosWobbleSeconds);
+	ForceNetUpdate();
+}

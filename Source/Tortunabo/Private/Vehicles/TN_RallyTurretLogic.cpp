@@ -34,6 +34,10 @@ namespace TNRallyTurret
 		case ETNRallyAmmo::ConchaGuiada:
 			Spec = { ShellSpeedCms, 0.f, 12.f, 250.f, 0.5f, 1 };
 			break;
+		case ETNRallyAmmo::Erizos:
+			// Cada púa (#715): rápida, cae poco y empuja poco; la cadencia es la de la ráfaga y una carga da una ráfaga.
+			Spec = { ErizosSpeedCms, ErizosGravityScale, ErizosLifeSeconds, ErizosRecoilCms, ErizosSpikeInterval, 1 };
+			break;
 		default:
 			break;
 		}
@@ -375,5 +379,66 @@ namespace TNRallyTurret
 			X = FVector::CrossProduct(Up, FMath::Abs(Up.X) < 0.9 ? FVector::ForwardVector : FVector::RightVector);
 		}
 		return FRotationMatrix::MakeFromZX(Up, X.GetSafeNormal()).ToQuat();
+	}
+}
+
+namespace TNRallyTurret
+{
+	bool IsBurstAmmo(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::Erizos;
+	}
+
+	bool IsBurstActive(const FBurst& Burst)
+	{
+		return Burst.SpikesLeft > 0;
+	}
+
+	FBurst HoldBurst(const FBurst& Burst, double Now, float HoldSeconds, int32 Spikes)
+	{
+		FBurst Out = Burst;
+		if (!IsBurstActive(Out))
+		{
+			Out.SpikesLeft = FMath::Max(0, Spikes);
+			Out.NextSpikeAt = Now;
+		}
+		Out.HoldUntil = FMath::Max(Out.HoldUntil, Now + FMath::Max(HoldSeconds, 0.f));
+		return Out;
+	}
+
+	bool BurstSpikeDue(const FBurst& Burst, double Now)
+	{
+		return IsBurstActive(Burst) && Now >= Burst.NextSpikeAt && Now <= Burst.HoldUntil;
+	}
+
+	FBurst AfterBurstSpike(const FBurst& Burst, double Now, float Interval)
+	{
+		FBurst Out = Burst;
+		Out.SpikesLeft = FMath::Max(0, Out.SpikesLeft - 1);
+		// A la hora prevista, aunque el fotograma llegue un poco tarde (la media no se retrasa); tras una pausa, desde ahora.
+		const double Next = Out.NextSpikeAt + Interval;
+		Out.NextSpikeAt = Next > Now ? Next : Now + Interval;
+		return Out;
+	}
+
+	float BurstHoldSeconds(bool bHumanTrigger)
+	{
+		return bHumanTrigger ? ErizosHoldSeconds : ErizosBurstSeconds + 0.5f;
+	}
+}
+
+namespace TNRallyTurret
+{
+	FVector SpikePushDir(const FVector& Forward, const FVector& PushDir)
+	{
+		const FVector FlatForward = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
+		const FVector Right(-FlatForward.Y, FlatForward.X, 0.f);
+		FVector Lateral(PushDir.X, PushDir.Y, 0.f);
+		Lateral -= FVector::DotProduct(Lateral, FlatForward) * FlatForward;
+		if (Lateral.IsNearlyZero(0.05f))
+		{
+			return FVector::DotProduct(PushDir, Right) >= 0.0 ? Right : -Right;
+		}
+		return Lateral.GetSafeNormal();
 	}
 }

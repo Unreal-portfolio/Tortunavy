@@ -228,6 +228,8 @@ public:
 	void NotePuddleContact();
 	/** Al entrar en un charco: giro corto de guiñada (#770, TNRallyTurret::PuddleEntrySpinDegPerSecond). */
 	void ApplyPuddleEntrySpin();
+	/** Púa de la ráfaga de erizos (#715): empujón lateral (lejos de PushDir) y bamboleo corto. */
+	void ApplySpikeHit(const FVector& PushDir);
 	/** Impulso de velocidad (cm/s) al chasis en el servidor, con ForceNetUpdate. */
 	void ApplyVelocityImpulse(const FVector& DeltaVelocity);
 
@@ -453,6 +455,7 @@ private:
 	void OnFireCoco(const FInputActionValue& Value);
 	void OnFireCocoReleased(const FInputActionValue& Value);
 	void OnFireSpecial(const FInputActionValue& Value);
+	void OnFireSpecialHeld(const FInputActionValue& Value);
 	void OnFireBackPressed(const FInputActionValue& Value);
 	void OnFireBackReleased(const FInputActionValue& Value);
 	void OnBoostPressed(const FInputActionValue& Value);

@@ -254,6 +254,7 @@ void ATN_BuggyGunnerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	Input->BindAction(Set->FireCoco, ETriggerEvent::Triggered, this, &ATN_BuggyGunnerPawn::OnFireCoco);
 	Input->BindAction(Set->FireCoco, ETriggerEvent::Completed, this, &ATN_BuggyGunnerPawn::OnFireCocoReleased);
 	Input->BindAction(Set->FireSpecial, ETriggerEvent::Started, this, &ATN_BuggyGunnerPawn::OnFireSpecial);
+	Input->BindAction(Set->FireSpecial, ETriggerEvent::Triggered, this, &ATN_BuggyGunnerPawn::OnFireSpecialHeld);
 	Input->BindAction(Set->CycleAmmo, ETriggerEvent::Started, this, &ATN_BuggyGunnerPawn::OnCycleAmmo);
 	Input->BindAction(Set->SelfRight, ETriggerEvent::Started, this, &ATN_BuggyGunnerPawn::OnSelfRightPressed);
 	Input->BindAction(Set->SelfRight, ETriggerEvent::Completed, this, &ATN_BuggyGunnerPawn::OnSelfRightReleased);
@@ -312,7 +313,8 @@ void ATN_BuggyGunnerPawn::OnFireCoco(const FInputActionValue& Value)
 	if (Now - LastFireRequest >= TNRallyTurret::SpecFor(Selected).FireInterval)
 	{
 		LastFireRequest = Now;
-		bMainFireLatched = TNRallyTurret::IsSpecial(Selected);
+		// La ráfaga de erizos (#715) se repite mientras se mantiene: el resto de especiales, una por pulsación.
+		bMainFireLatched = TNRallyTurret::IsSpecial(Selected) && !TNRallyTurret::IsBurstAmmo(Selected);
 		RequestFire(false);
 	}
 }
@@ -325,6 +327,23 @@ void ATN_BuggyGunnerPawn::OnFireCocoReleased(const FInputActionValue& Value)
 void ATN_BuggyGunnerPawn::OnFireSpecial(const FInputActionValue& Value)
 {
 	RequestFire(true);
+}
+
+void ATN_BuggyGunnerPawn::OnFireSpecialHeld(const FInputActionValue& Value)
+{
+	// Ráfaga de erizos (#715): mantener el botón especial repite la petición a la cadencia de las púas; el servidor la
+	// para si deja de llegar. Las demás especiales salen una vez por pulsación (OnFireSpecial).
+	const UTN_BuggyTurretComponent* Turret = Buggy ? Buggy->GetTurret() : nullptr;
+	if (!Turret || Turret->IsGunnerKnocked() || !TNRallyTurret::IsBurstAmmo(Turret->GetSpecialAmmo()))
+	{
+		return;
+	}
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (Now - LastFireRequest >= TNRallyTurret::ErizosSpikeInterval)
+	{
+		LastFireRequest = Now;
+		RequestFire(true);
+	}
 }
 
 void ATN_BuggyGunnerPawn::OnCycleAmmo(const FInputActionValue& Value)

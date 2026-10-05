@@ -126,6 +126,8 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UBorder> ResultsPanel;
 	UPROPERTY(Transient) TObjectPtr<UVerticalBox> ResultsRows;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> ResultsFooter;
+	/** Icono de la munición (#715): la especial cargada o, sin ella, el coco. */
+	UPROPERTY(Transient) TObjectPtr<UImage> AmmoIcon;
 
 	float TurretHeat = 0.f;
 	bool bTurretOverheated = false;
