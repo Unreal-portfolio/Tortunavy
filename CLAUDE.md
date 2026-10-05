@@ -117,7 +117,7 @@ uv run python Scripts/tablero/tablero.py volcado [--publicar <issue>]   # tabler
 uv run python Scripts/tablero/tablero.py avisos [--aplicar] [--publicar 196 --parte 127]   # lo que entró en dev sin revisión y el parte, al director
 ```
 
-Requiere `gh` autenticado con el scope de proyectos: `gh auth refresh -s project`. **Cada persona ejecuta `tablero.py` en local con su `gh`**: así sus comentarios y validaciones salen con su cuenta. El puente es para la rutina y para quien no tiene el repo a mano. Cada comando gasta unos 110 puntos de los 5000 por hora de la API de GraphQL de esa cuenta: no lances decenas seguidas. Si `coger` no puede cambiar de rama por cambios sin guardar, resuélvelo con la persona (commit o `git stash`); nunca los descartes.
+Requiere `gh` autenticado con el scope de proyectos: `gh auth refresh -s project`. **Cada persona ejecuta `tablero.py` en local con su `gh`**: así sus comentarios y validaciones salen con su cuenta. El puente es para la rutina y para quien no tiene el repo a mano. Los comandos de una issue (`coger`, `soltar`, `estado`, `campo`, `revision`, `ia`, `editor`, `pedir`, `bloquear`) la leen con una consulta dirigida de 1 punto (los ids de los campos se guardan 24 h en `Scripts/tablero/.cache`, ignorado por git); `sync`, `auditar`, `colisiones`, `volcado` y `pendiente` leen el Project entero, unos 55 de los 5000 puntos por hora de la API de GraphQL de esa cuenta: no los lances en bucle. Si `coger` no puede cambiar de rama por cambios sin guardar, resuélvelo con la persona (commit o `git stash`); nunca los descartes.
 
 ### Organización diaria: el puente y la rutina
 
