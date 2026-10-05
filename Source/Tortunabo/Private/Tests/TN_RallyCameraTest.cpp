@@ -1,8 +1,11 @@
 // Cámara de llegada, podio y espectador del Rally (#306): qué plano toca (con y sin VR), cuándo hay cámara lenta, el ciclo del
 // espectador con el dron y la geometría del podio. Correr con "Automation RunTests Tortunabo.Rally.Camera".
 
+#include "Kart/TN_KartBuggy.h"
 #include "Misc/AutomationTest.h"
 #include "Rally/TN_RallyCameraLogic.h"
+#include "Rally/TN_RallyKartBuggy.h"
+#include "Vehicles/TN_Buggy.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -82,7 +85,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyCameraSpectateTest, "Tortunabo.Rally.Ca
 bool FTNRallyCameraSpectateTest::RunTest(const FString& Parameters)
 {
 	using TNRallyCamera::CycleSpectate;
-	using TNRallyCamera::ClampSpectate;
 	// Tres buggies corriendo (0..2) y el dron (3).
 	TestEqual(TEXT("Siguiente del 0: el 1"), CycleSpectate(0, 1, 3, true), 1);
 	TestEqual(TEXT("Siguiente del 2: el dron"), CycleSpectate(2, 1, 3, true), 3);
@@ -90,9 +92,71 @@ bool FTNRallyCameraSpectateTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Anterior del 0: el dron"), CycleSpectate(0, -1, 3, true), 3);
 	TestEqual(TEXT("VR, anterior del 0: el 2 (sin dron)"), CycleSpectate(0, -1, 3, false), 2);
 	TestEqual(TEXT("Nadie corriendo y sin dron: nada"), CycleSpectate(0, 1, 0, false), static_cast<int32>(INDEX_NONE));
-	TestEqual(TEXT("Nadie corriendo: el dron"), ClampSpectate(2, 0, true), 0);
-	TestEqual(TEXT("El que se miraba ya no corre: el primero"), ClampSpectate(5, 2, true), 0);
-	TestEqual(TEXT("Sigue valiendo: el mismo"), ClampSpectate(1, 2, true), 1);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyCameraSpectateFollowTest, "Tortunabo.Rally.Camera.SpectateFollow",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FTNRallyCameraSpectateFollowTest::RunTest(const FString& Parameters)
+{
+	using TNRallyCamera::FSpectatePick;
+	using TNRallyCamera::FollowSpectate;
+	using TNRallyCamera::StepSpectate;
+
+	// #781: con cuatro equipos en carrera (anfitrión, cliente y dos bots; el espectador ya llegó), pulsar «siguiente» pasa
+	// por todos y por el dron, y vuelve al primero.
+	const TArray<int32> Racing = { 4, 0, 2, 1 };
+	FSpectatePick Pick = FollowSpectate(Racing, FSpectatePick(), true);
+	TestEqual(TEXT("Al entrar: el líder"), Pick.Team, 4);
+	TArray<int32> Seen = { Pick.Team };
+	for (int32 Press = 0; Press < Racing.Num(); ++Press)
+	{
+		Pick = StepSpectate(Racing, Pick, 1, true);
+		Seen.Add(Pick.bDrone ? INDEX_NONE : Pick.Team);
+	}
+	TestTrue(TEXT("Recorre los cuatro equipos y el dron"), Seen == TArray<int32>{ 4, 0, 2, 1, INDEX_NONE });
+	TestEqual(TEXT("Del dron, al líder"), StepSpectate(Racing, Pick, 1, true).Team, 4);
+	TestEqual(TEXT("Del líder hacia atrás, al dron"), StepSpectate(Racing, FollowSpectate(Racing, FSpectatePick(), true), -1, true).bDrone,
+		true);
+
+	// Se sigue al mismo equipo aunque adelante o le adelanten.
+	FSpectatePick OnTeam2 = FollowSpectate(Racing, FSpectatePick{ 2, 2, false }, true);
+	const TArray<int32> Overtaken = { 2, 4, 0, 1 };
+	OnTeam2 = FollowSpectate(Overtaken, OnTeam2, true);
+	TestEqual(TEXT("Adelanta: el mismo equipo"), OnTeam2.Team, 2);
+	TestEqual(TEXT("Adelanta: su nuevo puesto"), OnTeam2.Slot, 0);
+	TestEqual(TEXT("Siguiente del equipo seguido tras adelantar"), StepSpectate(Overtaken, OnTeam2, 1, true).Team, 4);
+
+	// El dron sigue siendo el dron aunque llegue alguien (antes saltaba al líder al bajar cuántos corren).
+	FSpectatePick Drone = StepSpectate(Racing, FSpectatePick{ 3, 1, false }, 1, true);
+	TestTrue(TEXT("Del último, al dron"), Drone.bDrone);
+	Drone = FollowSpectate(TArray<int32>{ 4, 0, 1 }, Drone, true);
+	TestTrue(TEXT("Llega uno: sigue el dron"), Drone.bDrone);
+	TestEqual(TEXT("Llega uno: hueco del dron al final"), Drone.Slot, 3);
+
+	// El equipo seguido llega a meta: el mismo hueco, o el primero si era el último.
+	TestEqual(TEXT("Llega el seguido: el del mismo hueco"), FollowSpectate(TArray<int32>{ 4, 2, 1 }, FSpectatePick{ 1, 0, false }, true).Team, 2);
+	TestEqual(TEXT("Llega el último seguido: el líder"), FollowSpectate(TArray<int32>{ 4, 0, 2 }, FSpectatePick{ 3, 1, false }, true).Team, 4);
+
+	// Sin dron (VR) y sin nadie corriendo.
+	TestEqual(TEXT("VR: del último, al primero"), StepSpectate(Racing, FSpectatePick{ 3, 1, false }, 1, false).Team, 4);
+	TestFalse(TEXT("VR: un dron anterior pasa a un buggy"), FollowSpectate(Racing, Drone, false).bDrone);
+	TestFalse(TEXT("Nadie corriendo: nada que mirar"), FollowSpectate(TArray<int32>(), Drone, true).HasTarget());
+	TestFalse(TEXT("Nadie corriendo: siguiente tampoco"), StepSpectate(TArray<int32>(), FSpectatePick(), 1, true).HasTarget());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyCameraSpectateRelevancyTest, "Tortunabo.Rally.Camera.SpectateRelevancy",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FTNRallyCameraSpectateRelevancyTest::RunTest(const FString& Parameters)
+{
+	// #781: el espectador solo puede seguir los buggies que existen en su máquina. Con la relevancia por distancia, en un
+	// cliente un buggy a más de 150 m de su peón (o de la parrilla) no se replicaba y desaparecía de la lista.
+	TestTrue(TEXT("Buggy del Rally siempre relevante"), GetDefault<ATN_RallyKartBuggy>()->bAlwaysRelevant);
+	TestTrue(TEXT("Kart siempre relevante"), GetDefault<ATN_KartBuggy>()->bAlwaysRelevant);
+	TestTrue(TEXT("Buggy base siempre relevante"), GetDefault<ATN_Buggy>()->bAlwaysRelevant);
 	return true;
 }
 
