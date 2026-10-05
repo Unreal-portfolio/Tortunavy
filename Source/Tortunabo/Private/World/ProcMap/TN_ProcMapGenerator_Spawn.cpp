@@ -571,6 +571,12 @@ void ATN_ProcMapGenerator::SpawnHazards()
 		const FRuleSource& Src = Sources[H.RuleId];
 		UClass* Class = Src.Entry.ActorClass;
 
+		// Coop (#788): la dificultad del tramo de la tabla de intensidad decide qué enemigos van (en Puzle, ninguno).
+		if (!IntensityAllowsHazard(H.BranchIndex, H.PathIndex, Class, static_cast<int32>(Src.Entry.MinDifficulty)))
+		{
+			continue;
+		}
+
 		// Solo la fauna de movimiento (corrientes, remolinos) vive en todas las máquinas;
 		// el resto (enemigos, spawners, pickups) lo crea el servidor y replica si procede.
 		const bool bLocalEverywhere = Class->IsChildOf(ATN_ProcWaterCurrent::StaticClass()) || Class->IsChildOf(ATN_ProcWhirlpool::StaticClass());

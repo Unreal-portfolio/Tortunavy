@@ -32,6 +32,9 @@ namespace TNProcMapGameModeDetail
 	TAutoConsoleVariable<int32> CVarProcStartStyle(TEXT("TN.Proc.StartStyle"), -1,
 		TEXT("Salida del mapa procedural: -1 = lo del lobby (por defecto), 0 = puerta doble, 1 = huevos. Vale desde la siguiente generación del mapa."));
 
+	TAutoConsoleVariable<int32> CVarCoopIntensityRound(TEXT("TN.Coop.IntensityRound"), 0,
+		TEXT("Coop (#788): ronda (1-5) con la que se lee la tabla de intensidad (Content/Data/Coop/IntensityTable.json). 0 = la ronda de la partida. Vale desde la siguiente generación del mapa."));
+
 	/** Con estructura de salida, un PlayerStart está ocupado si hay otro peón a menos de esto (los sitios de la sala distan ~2 m). */
 	constexpr double StructureStartTakenRadius = 80.0;
 
@@ -228,6 +231,10 @@ void ATN_ProcMapGameMode::GenerateRoundMap()
 	// para que TN.Proc.StartStyle valga sin reiniciar.
 	ResolveStartStyle();
 	Generator->SetStartStructureStyle(StartStyle);
+
+	// Coop (#788): la ronda con la que el generador lee la tabla de intensidad (TN.Coop.IntensityRound la fuerza).
+	const int32 ForcedIntensityRound = TNProcMapGameModeDetail::CVarCoopIntensityRound.GetValueOnGameThread();
+	Generator->SetCoopRound(ForcedIntensityRound > 0 ? ForcedIntensityRound : CurrentRound);
 
 	const int32 BaseSeed = UrlSeed != 0 ? UrlSeed : FixedSeed;
 	for (int32 Attempt = 0; Attempt < 3; ++Attempt)
