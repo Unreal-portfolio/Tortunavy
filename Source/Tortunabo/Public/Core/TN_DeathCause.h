@@ -27,6 +27,11 @@ enum class ETNDeathCause : uint8
 	Whirlpool        UMETA(DisplayName = "Remolino"),
 	Predator         UMETA(DisplayName = "Depredador marino"),
 	Bleedout         UMETA(DisplayName = "Sin reanimación"),
+	// Golpes que solo eliminan en Supervivencia (TNSurvivalHits, #732, #735).
+	Mine             UMETA(DisplayName = "Mina"),
+	SeaUrchin        UMETA(DisplayName = "Erizo de mar"),
+	HermitCrab       UMETA(DisplayName = "Cangrejo ermitaño"),
+	ThrownItem       UMETA(DisplayName = "Objeto lanzado"),
 	Count            UMETA(Hidden)
 };
 
@@ -37,7 +42,8 @@ namespace TNDeathCause
 
 	/**
 	 * La causa según quién pidió la muerte en ATortugaCharacter::RequestKill: la propia tortuga es una caída larga; el resto,
-	 * por la clase del actor (tormenta del camino, foso, remolino, depredador, cangrejo, gaviota, caca o quad).
+	 * por la clase del actor (tormenta del camino, foso, remolino, depredador, cangrejo, gaviota, caca, quad, mina, erizo de
+	 * mar, cangrejo ermitaño u objeto lanzado).
 	 */
 	TORTUNABO_API ETNDeathCause FromInstigator(const AActor* KillInstigator, const AActor* Victim);
 }

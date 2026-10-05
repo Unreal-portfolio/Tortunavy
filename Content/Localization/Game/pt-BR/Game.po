@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-05 10:14\n"
-"PO-Revision-Date: 2026-10-05 10:14\n"
+"POT-Creation-Date: 2026-10-05 14:49\n"
+"PO-Revision-Date: 2026-10-05 14:49\n"
 "Language-Team: \n"
 "Language: pt-BR\n"
 "MIME-Version: 1.0\n"
@@ -882,99 +882,127 @@ msgid "Verde tortuga, el clásico que nunca falla."
 msgstr "Verde tartaruga, o clássico que nunca falha."
 
 #. Key:	DeathCauseStorm
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(14)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(14)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(21)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(21)
 msgctxt "TNHUD,DeathCauseStorm"
 msgid "Te ha alcanzado la tormenta"
 msgstr "A tempestade te pegou"
 
 #. Key:	DeathCauseFall
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(15)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(15)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(22)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(22)
 msgctxt "TNHUD,DeathCauseFall"
 msgid "Caída desde demasiado alto"
 msgstr "Caiu de alto demais"
 
 #. Key:	DeathCauseKillVolume
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(16)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(16)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(23)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(23)
 msgctxt "TNHUD,DeathCauseKillVolume"
 msgid "Has caído a un foso mortal"
 msgstr "Você caiu num fosso mortal"
 
 #. Key:	DeathCauseVoid
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(17)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(17)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(24)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(24)
 msgctxt "TNHUD,DeathCauseVoid"
 msgid "Has caído al vacío"
 msgstr "Você caiu no vazio"
 
 #. Key:	DeathCauseDeathZone
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(18)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(18)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(25)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(25)
 msgctxt "TNHUD,DeathCauseDeathZone"
 msgid "Demasiado tiempo en zona mortal"
 msgstr "Tempo demais na zona mortal"
 
 #. Key:	DeathCauseWater
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(19)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(19)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(26)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(26)
 msgctxt "TNHUD,DeathCauseWater"
 msgid "Has caído al agua"
 msgstr "Você caiu na água"
 
 #. Key:	DeathCauseCrab
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(20)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(20)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(27)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(27)
 msgctxt "TNHUD,DeathCauseCrab"
 msgid "Te ha atrapado un cangrejo"
 msgstr "Um caranguejo te pegou"
 
 #. Key:	DeathCauseSeagull
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(21)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(21)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(28)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(28)
 msgctxt "TNHUD,DeathCauseSeagull"
 msgid "Te ha cazado una gaviota"
 msgstr "Uma gaivota te pegou"
 
 #. Key:	DeathCauseSeagullDropping
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(22)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(22)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(29)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(29)
 msgctxt "TNHUD,DeathCauseSeagullDropping"
 msgid "Te ha caído una caca de gaviota"
 msgstr "Uma gaivota fez cocô em você"
 
 #. Key:	DeathCauseQuad
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(23)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(23)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(30)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(30)
 msgctxt "TNHUD,DeathCauseQuad"
 msgid "Te ha atropellado un quad"
 msgstr "Um quadriciclo te atropelou"
 
 #. Key:	DeathCauseWhirlpool
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(24)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(24)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(31)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(31)
 msgctxt "TNHUD,DeathCauseWhirlpool"
 msgid "Te ha tragado un remolino"
 msgstr "Um redemoinho te engoliu"
 
 #. Key:	DeathCausePredator
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(25)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(25)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(32)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(32)
 msgctxt "TNHUD,DeathCausePredator"
 msgid "Te ha comido un depredador marino"
 msgstr "Um predador marinho te comeu"
 
 #. Key:	DeathCauseBleedout
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(26)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(26)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(33)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(33)
 msgctxt "TNHUD,DeathCauseBleedout"
 msgid "Nadie llegó a reanimarte"
 msgstr "Ninguém te reanimou a tempo"
 
+#. Key:	DeathCauseMine
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(34)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(34)
+msgctxt "TNHUD,DeathCauseMine"
+msgid "Te ha volado una mina"
+msgstr "Uma mina te explodiu"
+
+#. Key:	DeathCauseSeaUrchin
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(35)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(35)
+msgctxt "TNHUD,DeathCauseSeaUrchin"
+msgid "Te has pinchado con un erizo de mar"
+msgstr "Um ouriço-do-mar te espetou"
+
+#. Key:	DeathCauseHermitCrab
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(36)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(36)
+msgctxt "TNHUD,DeathCauseHermitCrab"
+msgid "Te ha arrollado un cangrejo ermitaño"
+msgstr "Um caranguejo-eremita te atropelou"
+
+#. Key:	DeathCauseThrownItem
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(37)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(37)
+msgctxt "TNHUD,DeathCauseThrownItem"
+msgid "Te ha dado un objeto lanzado"
+msgstr "Um objeto arremessado te acertou"
+
 #. Key:	ResultsRankEliminated
-#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(27)
-#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(27)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(38)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(38)
 msgctxt "TNHUD,ResultsRankEliminated"
 msgid "Eliminado"
 msgstr "Eliminado"
@@ -11102,57 +11130,57 @@ msgid "¡ZAS!"
 msgstr "ZÁS!"
 
 #. Key:	EnemyBonk
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1192)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1192)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1261)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1261)
 msgctxt "TNBeach,EnemyBonk"
 msgid "¡TOING!"
 msgstr "TOING!"
 
 #. Key:	CrabRam
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1275)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1275)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1285)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1285)
 msgctxt "TNBeach,CrabRam"
 msgid "¡EMBESTIDA!"
 msgstr "INVESTIDA!"
 
 #. Key:	CrabCrash
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1293)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1293)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1303)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1303)
 msgctxt "TNBeach,CrabCrash"
 msgid "¡CATAPLÁN!"
 msgstr "CATAPUM!"
 
 #. Key:	GullGrab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1515)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1515)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1548)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1548)
 msgctxt "TNBeach,GullGrab"
 msgid "¡ÑAC!"
 msgstr "NHAC!"
 
 #. Key:	GullSplat
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1550)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1550)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1583)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1583)
 msgctxt "TNBeach,GullSplat"
 msgid "¡PLOF!"
 msgstr "PLOF!"
 
 #. Key:	GullPeck
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1991)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1991)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(2024)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(2024)
 msgctxt "TNBeach,GullPeck"
 msgid "¡PIC!"
 msgstr "BICADA!"
 
 #. Key:	HermitPin
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
 msgctxt "TNBeach,HermitPin"
 msgid "¡BOLO!"
 msgstr "BOLICHE!"
 
 #. Key:	HermitStrike
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
 msgctxt "TNBeach,HermitStrike"
 msgid "¡STRIKE!"
 msgstr "STRIKE!"
@@ -11172,15 +11200,15 @@ msgid "¡UN REGALO!"
 msgstr "UM PRESENTE!"
 
 #. Key:	MineClick
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(642)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(642)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(647)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(647)
 msgctxt "TNBeach,MineClick"
 msgid "¡clic!"
 msgstr "clique!"
 
 #. Key:	MineBoom
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(657)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(657)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(662)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(662)
 msgctxt "TNBeach,MineBoom"
 msgid "¡BUM!"
 msgstr "BUM!"
@@ -11228,8 +11256,8 @@ msgid "¡ÑAM!"
 msgstr "NHAM!"
 
 #. Key:	UrchinPrick
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(288)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(288)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(293)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(293)
 msgctxt "TNBeach,UrchinPrick"
 msgid "¡PINCHAZO!"
 msgstr "ESPETADA!"
@@ -11277,8 +11305,8 @@ msgid "¡CRAC!"
 msgstr "CRAC!"
 
 #. Key:	FrisbeeBonk
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(552)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(552)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(557)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(557)
 msgctxt "TNRace,FrisbeeBonk"
 msgid "¡BONK!"
 msgstr "BONK!"
@@ -11389,8 +11417,8 @@ msgid "Silbato del sargento"
 msgstr "Apito do sargento"
 
 #. Key:	MineBoom
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(907)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(907)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(914)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(914)
 msgctxt "TNRace,MineBoom"
 msgid "¡BUM!"
 msgstr "BUM!"

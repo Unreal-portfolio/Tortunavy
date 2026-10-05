@@ -1,4 +1,5 @@
 #include "World/Beach/TN_RaceFrisbee.h"
+#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachStun.h"
@@ -355,7 +356,11 @@ void ATN_RaceFrisbee::ServerSweepHits(const FVector& Prev, const FVector& Cur)
 			continue;
 		}
 		HitThisPass.Add(VictimKey);
-		TNBeach::KnockDownTurtle(Victim, UTN_CombatTuning::Get().FrisbeeKnockSeconds, Heading * KnockPush + FVector(0.0, 0.0, KnockLift));
+		// En Supervivencia, el disco elimina (#735); en los demás modos, derriba.
+		if (!TNSurvivalHits::KillInSurvival(Victim, this))
+		{
+			TNBeach::KnockDownTurtle(Victim, UTN_CombatTuning::Get().FrisbeeKnockSeconds, Heading * KnockPush + FVector(0.0, 0.0, KnockLift));
+		}
 		MulticastHit(FVector_NetQuantize10(OnTurtle));
 		UE_LOG(LogTortunabo, Log, TEXT("[Carrera] El disco de %s derriba a %s."), *GetNameSafe(Thrower), *GetNameSafe(Victim));
 	}
