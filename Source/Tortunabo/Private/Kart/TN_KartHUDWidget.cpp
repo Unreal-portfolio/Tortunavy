@@ -147,8 +147,10 @@ void UTN_KartHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	bool bGunner = false;
 	const ATN_KartBuggy* Kart = FindLocalKart(bGunner);
-	RefreshItem(Kart, bGunner);
-	RefreshDistance(Kart, InDeltaTime);
+	// Con artillera, la conductora va sin interfaz: el objeto y la distancia los ve la artillera (#718).
+	const bool bDriverWithGunner = Kart && !bGunner && Kart->HasGunner();
+	RefreshItem(bDriverWithGunner ? nullptr : Kart, bGunner);
+	RefreshDistance(bDriverWithGunner ? nullptr : Kart, InDeltaTime);
 	RefreshLean(bGunner && Kart);
 }
 
