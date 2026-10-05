@@ -44,6 +44,7 @@
 #include "Core/TN_InventoryTypes.h"
 #include "Player/TN_CarryComponent.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItems.h"
 #include "Player/TN_InventoryComponent.h"
 #include "InputAction.h"
 #include "Voice/ProximityVoiceComponent.h"
@@ -650,6 +651,11 @@ bool UTN_RunHUDWidget::ShouldShowAimDot() const
 		// De la carrera, los que se lanzan a mano (el cangrejo va solo hacia su rival y el resto no se lanza).
 		const ETNRaceItem Kind = TNRaceItems::KindOf(Equipped);
 		return Kind == ETNRaceItem::SandMine || Kind == ETNRaceItem::Frisbee;
+	}
+	if (Use == ETN_ItemUseType::CoopItem)
+	{
+		// Del coop, los que se apuntan: se lanzan o disparan hacia la mira.
+		return TNCoopItems::IsAimed(TNCoopItems::KindOf(Equipped));
 	}
 	return Use == ETN_ItemUseType::Throwable || Use == ETN_ItemUseType::InkThrower;
 }

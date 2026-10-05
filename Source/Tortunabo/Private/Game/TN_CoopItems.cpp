@@ -14,6 +14,7 @@
 #include "Player/TN_InventoryComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "World/TN_CoopThrownItem.h"
 #include "World/TN_PickupInteractableBase.h"
 
 namespace TNCoopItemsDetail
@@ -50,6 +51,13 @@ namespace TNCoopItemsDetail
 			UTN_CoopItemComponent* Effects = UTN_CoopItemComponent::FindOrAddOn(Turtle);
 			return Effects && Effects->GrantPuffer();
 		}
+		case ETNCoopItem::SlipperyPeel:
+			if (!ATN_CoopThrownItem::ServerThrow(Turtle, static_cast<uint8>(Kind), TNCoopItemTuning::PeelRange))
+			{
+				return false;
+			}
+			TNTctItems::PlayCue(Turtle, ETNRaceSound::Throw, 1.1f);
+			return true;
 		case ETNCoopItem::None:
 		default:
 			return false;
@@ -62,6 +70,7 @@ FText TNCoopItems::DisplayName(ETNCoopItem Kind)
 	switch (Kind)
 	{
 	case ETNCoopItem::PufferFish: return NSLOCTEXT("TNCoop", "ItemPufferFish", "Pez globo");
+	case ETNCoopItem::SlipperyPeel: return NSLOCTEXT("TNCoop", "ItemSlipperyPeel", "Cáscara resbaladiza");
 	case ETNCoopItem::None:
 	default:
 		return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
@@ -80,6 +89,11 @@ int32 TNCoopItems::CountOf(const FTN_InventoryItem& Item)
 	ETNCoopItem Kind = ETNCoopItem::None;
 	int32 Count = 0;
 	return (Item.UseType == ETN_ItemUseType::CoopItem && TNCoopItemRules::ParseItemId(Item.ItemId, Kind, Count)) ? Count : 0;
+}
+
+bool TNCoopItems::IsAimed(ETNCoopItem Kind)
+{
+	return Kind == ETNCoopItem::SlipperyPeel;
 }
 
 bool TNCoopItems::ParseKind(const FString& Text, ETNCoopItem& OutKind)

@@ -32,6 +32,9 @@ namespace TNCoopItems
 	/** Cuenta de una fila del coop: apilados o usos que le quedan (0 si no lo es). */
 	TORTUNABO_API int32 CountOf(const FTN_InventoryItem& Item);
 
+	/** true si Kind se apunta (se lanza o se dispara hacia la mira): el HUD enseña la mira mientras se lleva en la mano. */
+	TORTUNABO_API bool IsAimed(ETNCoopItem Kind);
+
 	/** Lo que hay que buscar en la consola: el código («Harpoon»), sin mayúsculas, o el número. false si no es ninguno. */
 	TORTUNABO_API bool ParseKind(const FString& Text, ETNCoopItem& OutKind);
 

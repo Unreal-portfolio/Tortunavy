@@ -17,6 +17,8 @@ enum class ETNCoopItem : uint8
 	None,
 	/** Pez globo: al comerlo, 5 s sin derribo ni aturdimiento («protección x2» sin vida) y un mareo corto al acabar. */
 	PufferFish,
+	/** Cáscara resbaladiza: se lanza al suelo (8 m como mucho) y deja un parche; quien lo pisa resbala un instante. */
+	SlipperyPeel,
 	Count
 };
 
@@ -68,6 +70,26 @@ namespace TNCoopItemTuning
 	inline constexpr float PufferSeconds = 5.f;
 	inline constexpr float PufferDizzySeconds = 2.f;
 	inline constexpr float PufferDizzySpeedCap = 250.f;
+
+	/**
+	 * Cáscara resbaladiza: alcance (cm, en planta), radio del parche, diferencia de altura máxima para pisarlo, segundos hasta
+	 * que resbala (al caer), vida máxima del parche, velocidad del resbalón (por el suelo y hacia arriba: en el aire no hay
+	 * agarre ni apenas control) y mareo de los enemigos que lo pisan.
+	 */
+	inline constexpr float PeelRange = 800.f;
+	inline constexpr float PeelRadius = 70.f;
+	inline constexpr float PeelStepHeight = 120.f;
+	inline constexpr float PeelArmSeconds = 0.35f;
+	inline constexpr float PeelLifeSeconds = 45.f;
+	inline constexpr float PeelSlipSpeed = 700.f;
+	inline constexpr float PeelSlipUp = 280.f;
+	inline constexpr float PeelEnemyStunSeconds = 1.5f;
+
+	/** Objetos lanzados en arco: velocidad media (cm/s) para el tiempo de vuelo, mínimo de vuelo (s) y altura del arco. */
+	inline constexpr float ThrowSpeed = 1600.f;
+	inline constexpr float ThrowMinSeconds = 0.25f;
+	inline constexpr float ThrowArcBase = 90.f;
+	inline constexpr float ThrowArcPerCm = 0.12f;
 }
 
 /** Lo que el pez globo deja en una tortuga ahora (horas del servidor; 0 = nunca). */
@@ -154,4 +176,27 @@ namespace TNCoopItemRules
 
 	/** Probabilidad (0-1) de que la tabla dé el objeto de código Kind con esos pesos de DT_Items. */
 	TORTUNABO_API float LootChance(const TArray<float>& CatalogWeights, ETNCoopItem Kind);
+
+	// ── Lanzar en arco (cáscara y concha) ──────────────────────────────────────────────────────────────────────────────
+
+	/** Desired recortado a MaxRange (cm) en planta desde Origin; la altura de Desired se queda. */
+	TORTUNABO_API FVector ClampThrowTarget(const FVector& Origin, const FVector& Desired, float MaxRange);
+
+	/** Punto del arco de From a To a Alpha (0-1, recortado) con Height cm de altura sobre la recta en la mitad. */
+	TORTUNABO_API FVector ArcPoint(const FVector& From, const FVector& To, float Alpha, float Height);
+
+	/** Segundos de vuelo y altura del arco para una distancia (cm). */
+	TORTUNABO_API float ThrowFlightSeconds(float Distance);
+	TORTUNABO_API float ThrowArcHeight(float Distance);
+
+	// ── Cáscara resbaladiza ────────────────────────────────────────────────────────────────────────────────────────
+
+	/** Where está pisando el parche de Patch: dentro del radio en planta y a menos de PeelStepHeight de altura. */
+	TORTUNABO_API bool IsOnPatch(const FVector& Patch, const FVector& Where);
+
+	/**
+	 * Resbalón de quien pisa la cáscara yendo a Velocity y mirando a Facing: sigue hacia donde iba (o hacia donde mira si
+	 * estaba casi parada), algo más rápido que iba y nunca menos de PeelSlipSpeed, con PeelSlipUp hacia arriba.
+	 */
+	TORTUNABO_API FVector SlipVelocity(const FVector& Velocity, const FVector& Facing);
 }

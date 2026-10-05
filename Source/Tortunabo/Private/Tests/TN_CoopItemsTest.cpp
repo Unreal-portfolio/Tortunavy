@@ -213,4 +213,55 @@ bool FTNCoopItemsPufferWorldTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCoopItemsPeelTest,
+	"Tortunabo.Coop.Items.SlipperyPeel",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNCoopItemsPeelTest::RunTest(const FString& Parameters)
+{
+	// Ficha: se apilan dos, peso 15.
+	const FTNCoopItemSpec& Spec = TNCoopItemRules::Spec(ETNCoopItem::SlipperyPeel);
+	TestEqual(TEXT("Límite de apilado 2"), Spec.MaxStack, 2);
+	TestEqual(TEXT("Peso 15"), Spec.LootWeight, 15.f);
+	int32 Count = 0;
+	TestEqual(TEXT("La segunda se apila"), TNCoopItemRules::DecideStack(ETNCoopItem::SlipperyPeel, 1, ETNCoopItem::SlipperyPeel, 1, Count), ETNCoopStack::Merge);
+	TestEqual(TEXT("Dos en el hueco"), Count, 2);
+	TestEqual(TEXT("La tercera no"), TNCoopItemRules::DecideStack(ETNCoopItem::SlipperyPeel, 2, ETNCoopItem::SlipperyPeel, 1, Count), ETNCoopStack::Full);
+
+	// Alcance: 8 m en planta como mucho; lo que está más cerca se queda donde se apunta.
+	const FVector Origin(0.0, 0.0, 50.0);
+	const FVector Far = TNCoopItemRules::ClampThrowTarget(Origin, FVector(1500.0, 0.0, 30.0), TNCoopItemTuning::PeelRange);
+	TestTrue(TEXT("Lejos: a 8 m"), Far.Equals(FVector(800.0, 0.0, 30.0), 0.1));
+	const FVector Diagonal = TNCoopItemRules::ClampThrowTarget(Origin, FVector(1000.0, 1000.0, 0.0), TNCoopItemTuning::PeelRange);
+	TestEqual(TEXT("En diagonal, también 8 m"), FVector::Dist2D(Origin, Diagonal), 800.0, 0.1);
+	const FVector Near(500.0, 300.0, -20.0);
+	TestTrue(TEXT("Cerca: donde se apunta"), TNCoopItemRules::ClampThrowTarget(Origin, Near, TNCoopItemTuning::PeelRange).Equals(Near));
+	TestEqual(TEXT("El alcance de la cáscara es 8 m"), TNCoopItemTuning::PeelRange, 800.f);
+
+	// Arco determinista (cada máquina lo dibuja igual con la misma hora).
+	const FVector To(800.0, 0.0, 0.0);
+	TestTrue(TEXT("Sale de la mano"), TNCoopItemRules::ArcPoint(Origin, To, 0.f, 200.f).Equals(Origin));
+	TestTrue(TEXT("Cae donde debe"), TNCoopItemRules::ArcPoint(Origin, To, 1.f, 200.f).Equals(To));
+	TestTrue(TEXT("Por encima en la mitad"), TNCoopItemRules::ArcPoint(Origin, To, 0.5f, 200.f).Equals(FVector(400.0, 0.0, 225.0)));
+	TestTrue(TEXT("Más de 1 se queda en el suelo"), TNCoopItemRules::ArcPoint(Origin, To, 3.f, 200.f).Equals(To));
+	TestTrue(TEXT("Vuelo mínimo"), TNCoopItemRules::ThrowFlightSeconds(0.f) >= TNCoopItemTuning::ThrowMinSeconds);
+
+	// El parche: quien lo pisa (dentro del radio y a su altura).
+	const FVector Patch(1000.0, 0.0, 0.0);
+	TestTrue(TEXT("Encima: lo pisa"), TNCoopItemRules::IsOnPatch(Patch, Patch + FVector(20.0, 0.0, 0.0)));
+	TestFalse(TEXT("Fuera del radio: no"), TNCoopItemRules::IsOnPatch(Patch, Patch + FVector(TNCoopItemTuning::PeelRadius + 1.0, 0.0, 0.0)));
+	TestFalse(TEXT("Saltando por encima: no"), TNCoopItemRules::IsOnPatch(Patch, Patch + FVector(0.0, 0.0, TNCoopItemTuning::PeelStepHeight + 10.0)));
+
+	// Resbalón: hacia donde iba, algo en el aire y sin derribo (solo velocidad).
+	const FVector Running = TNCoopItemRules::SlipVelocity(FVector(400.0, 0.0, 0.0), FVector(0.0, 1.0, 0.0));
+	TestTrue(TEXT("Sigue hacia donde iba"), Running.X > 0.0 && FMath::IsNearlyZero(Running.Y));
+	TestTrue(TEXT("Nunca menos que el resbalón mínimo"), FVector(Running.X, Running.Y, 0.0).Size() >= TNCoopItemTuning::PeelSlipSpeed - 0.1);
+	TestEqual(TEXT("Algo hacia arriba (sin agarre)"), Running.Z, static_cast<double>(TNCoopItemTuning::PeelSlipUp), 0.1);
+	const FVector Standing = TNCoopItemRules::SlipVelocity(FVector::ZeroVector, FVector(0.0, 1.0, 0.0));
+	TestTrue(TEXT("Parada: hacia donde mira"), Standing.Y > 0.0 && FMath::IsNearlyZero(Standing.X));
+	const FVector Fast = TNCoopItemRules::SlipVelocity(FVector(1000.0, 0.0, 0.0), FVector::ForwardVector);
+	TestEqual(TEXT("Corriendo: algo más rápido que iba"), Fast.X, 1200.0, 0.1);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

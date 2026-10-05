@@ -11,6 +11,8 @@ namespace TNCoopItemRulesDetail
 		{ ETNCoopItem::None, TEXT("None"), 1, 1, 0.f },
 		// Pez Globo: consumir, 5 s, potencia x2, mareo, peso 15 %, límite de apilado 1.
 		{ ETNCoopItem::PufferFish, TEXT("PufferFish"), 1, 1, 15.f },
+		// Cáscaras resbaladizas: lanzar, rango 8 m, suelo o enemigo, desestabiliza, peso 15 %, límite de apilado 2.
+		{ ETNCoopItem::SlipperyPeel, TEXT("SlipperyPeel"), 2, 1, 15.f },
 	};
 	static_assert(UE_ARRAY_COUNT(Specs) == static_cast<int32>(ETNCoopItem::Count), "Una ficha por objeto del coop, en el orden del enum");
 }
@@ -196,4 +198,50 @@ float TNCoopItemRules::LootChance(const TArray<float>& CatalogWeights, ETNCoopIt
 		Total += FMath::Max(0.f, Spec(Other).LootWeight);
 	}
 	return Total > 0.f ? FMath::Max(0.f, Spec(Kind).LootWeight) / Total : 0.f;
+}
+
+FVector TNCoopItemRules::ClampThrowTarget(const FVector& Origin, const FVector& Desired, float MaxRange)
+{
+	const FVector2D Flat(Desired.X - Origin.X, Desired.Y - Origin.Y);
+	const double Range = FMath::Max(0.0, static_cast<double>(MaxRange));
+	if (Flat.Size() <= Range)
+	{
+		return Desired;
+	}
+	const FVector2D Clamped = Flat.GetSafeNormal() * Range;
+	return FVector(Origin.X + Clamped.X, Origin.Y + Clamped.Y, Desired.Z);
+}
+
+FVector TNCoopItemRules::ArcPoint(const FVector& From, const FVector& To, float Alpha, float Height)
+{
+	const double A = FMath::Clamp(static_cast<double>(Alpha), 0.0, 1.0);
+	return FMath::Lerp(From, To, A) + FVector(0.0, 0.0, 4.0 * Height * A * (1.0 - A));
+}
+
+float TNCoopItemRules::ThrowFlightSeconds(float Distance)
+{
+	return FMath::Max(TNCoopItemTuning::ThrowMinSeconds, FMath::Max(0.f, Distance) / TNCoopItemTuning::ThrowSpeed);
+}
+
+float TNCoopItemRules::ThrowArcHeight(float Distance)
+{
+	return TNCoopItemTuning::ThrowArcBase + FMath::Max(0.f, Distance) * TNCoopItemTuning::ThrowArcPerCm;
+}
+
+bool TNCoopItemRules::IsOnPatch(const FVector& Patch, const FVector& Where)
+{
+	return FVector::Dist2D(Patch, Where) <= TNCoopItemTuning::PeelRadius && FMath::Abs(Where.Z - Patch.Z) <= TNCoopItemTuning::PeelStepHeight;
+}
+
+FVector TNCoopItemRules::SlipVelocity(const FVector& Velocity, const FVector& Facing)
+{
+	const FVector Flat(Velocity.X, Velocity.Y, 0.0);
+	const double Speed = Flat.Size();
+	FVector Dir = Speed > 50.0 ? Flat / Speed : FVector(Facing.X, Facing.Y, 0.0).GetSafeNormal();
+	if (Dir.IsNearlyZero())
+	{
+		Dir = FVector::ForwardVector;
+	}
+	const double SlideSpeed = FMath::Max(static_cast<double>(TNCoopItemTuning::PeelSlipSpeed), Speed * 1.2);
+	return Dir * SlideSpeed + FVector(0.0, 0.0, TNCoopItemTuning::PeelSlipUp);
 }

@@ -120,6 +120,29 @@ namespace TNCoopItemArtDetail
 			Kit::Rgb(0xE8A23C, 0.1f));
 	}
 
+	/** Cáscara resbaladiza (unos 32 cm): cuatro tiras de piel de plátano abiertas en el suelo, con el rabito en medio. */
+	void BuildPeel(FBuffers& B)
+	{
+		constexpr int32 Flaps = 4;
+		for (int32 Index = 0; Index < Flaps; ++Index)
+		{
+			const double Yaw = Kit::KitTwoPi * (Index + 0.15 * (Index % 2)) / Flaps;
+			const FVector Out(FMath::Cos(Yaw), FMath::Sin(Yaw), 0.0);
+			const FVector Side(-Out.Y, Out.X, 0.0);
+			// La tira se curva hacia arriba en la punta: dos tramos, el de fuera algo levantado y con la punta oscura.
+			const FVector Near = Out * 6.0 + FVector(0.0, 0.0, 1.0);
+			const FVector Far = Out * 13.0 + FVector(0.0, 0.0, 2.5);
+			Kit::AddEllipsoid(B, Near, Out, Side, FVector::UpVector, FVector(6.0, 3.6, 1.2), 10, 4, Kit::Rgb(0xF5D547, 0.1f));
+			const FVector Lift = (Out + FVector(0.0, 0.0, 0.35)).GetSafeNormal();
+			Kit::AddEllipsoid(B, Far, Lift, Side, FVector::CrossProduct(Lift, Side).GetSafeNormal() * -1.0, FVector(5.0, 3.0, 1.0), 10, 4, Kit::Rgb(0xE9C33A, 0.1f));
+			Kit::AddBall(B, Out * 17.5 + FVector(0.0, 0.0, 4.0), 1.4, 6, Kit::Rgb(0x5A3A10, 0.f));
+		}
+		// Rabito y la pulpa que asoma.
+		Kit::AddEllipsoid(B, FVector(0.0, 0.0, 2.5), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(4.0, 4.0, 3.0), 10, 5,
+			Kit::Rgb(0xFFF2C2, 0.05f));
+		Kit::AddFrustum(B, FVector(0.0, 0.0, 4.5), FVector(0.0, 0.0, 9.5), 1.6, 1.1, 6, Kit::Rgb(0x6E4A1A, 0.f), Kit::Rgb(0x3A2408, 0.f), false, true);
+	}
+
 	/** Corona de pinchos alrededor de la tortuga protegida. */
 	void BuildPufferSpikes(FBuffers& B)
 	{
@@ -143,6 +166,9 @@ namespace TNCoopItemArtDetail
 		{
 		case ETNCoopItem::PufferFish:
 			BuildPufferFish(B);
+			return true;
+		case ETNCoopItem::SlipperyPeel:
+			BuildPeel(B);
 			return true;
 		case ETNCoopItem::None:
 		default:
@@ -212,6 +238,36 @@ namespace TNCoopItemArtDetail
 		Painter.Fill([](float px, float py) { return Ellipse(px, py, 50.f, 42.f, 10.f, 4.f); }, Hex(0xFFFFFF, 0.5f));
 	}
 
+	void PaintPeel(TNHUDArt::FPainter& Painter)
+	{
+		using namespace TNHUDArt;
+		// Cuatro tiras abiertas desde el centro, cada una una cápsula gruesa con la punta oscura.
+		const FVector2f Center(64.f, 70.f);
+		const float Angles[4] = { -150.f, -30.f, 40.f, 140.f };
+		const auto Flap = [&Center, &Angles](float px, float py, int32 Index)
+		{
+			const float A = FMath::DegreesToRadians(Angles[Index]);
+			return Segment(px, py, Center.X, Center.Y, Center.X + FMath::Cos(A) * 40.f, Center.Y + FMath::Sin(A) * 34.f, 11.f);
+		};
+		const auto All = [&Flap](float px, float py)
+		{
+			return FMath::Min(FMath::Min(Flap(px, py, 0), Flap(px, py, 1)), FMath::Min(Flap(px, py, 2), Flap(px, py, 3)));
+		};
+		const auto Stem = [](float px, float py) { return Box(px, py, 64.f, 40.f, 5.f, 14.f, 3.f); };
+		Painter.Sticker([&](float px, float py) { return FMath::Min(All(px, py), Stem(px, py)); }, 5.f);
+		for (int32 Index = 0; Index < 4; ++Index)
+		{
+			const auto One = [&Flap, Index](float px, float py) { return Flap(px, py, Index); };
+			Body(Painter, One, 0x5A4410, 0xFFE36B, 0xE0B530, 30.f, 110.f);
+			const float A = FMath::DegreesToRadians(Angles[Index]);
+			const float Tx = Center.X + FMath::Cos(A) * 40.f;
+			const float Ty = Center.Y + FMath::Sin(A) * 34.f;
+			Painter.Fill([Tx, Ty](float px, float py) { return Circle(px, py, Tx, Ty, 7.f); }, Hex(0x6E4A1A));
+		}
+		Painter.Fill([](float px, float py) { return Circle(px, py, 64.f, 70.f, 14.f); }, Hex(0xFFF3CF));
+		Body(Painter, Stem, 0x2A1A06, 0x8A5A24, 0x5A3A10, 26.f, 56.f);
+	}
+
 	/** Dibuja el objeto en Painter. false si no tiene icono. */
 	bool PaintKind(TNHUDArt::FPainter& Painter, ETNCoopItem Kind)
 	{
@@ -219,6 +275,9 @@ namespace TNCoopItemArtDetail
 		{
 		case ETNCoopItem::PufferFish:
 			PaintPufferFish(Painter);
+			return true;
+		case ETNCoopItem::SlipperyPeel:
+			PaintPeel(Painter);
 			return true;
 		case ETNCoopItem::None:
 		default:
