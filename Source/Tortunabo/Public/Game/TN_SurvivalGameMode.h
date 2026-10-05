@@ -6,6 +6,7 @@
 #include "TN_SurvivalGameMode.generated.h"
 
 class ATN_ChunkManager;
+class ATN_PathStorm;
 
 /**
  * @brief Modo Supervivencia: niveles cortos uno tras otro hasta que queda una tortuga.
@@ -18,6 +19,9 @@ class ATN_ChunkManager;
  *  - Quien llega a la meta espera como espectador; cuando todos los vivos han llegado, se genera el siguiente
  *    nivel y, en cuanto su suelo tiene colisión, vuelven a salir desde la salida del mapa nuevo.
  *  - Morir es definitivo (sin DBNO ni rescate; el tótem sí salva) y los muertos espectan.
+ *  - La tormenta sigue el camino (ATN_PathStorm, como en el Coop): sale por detrás de la salida de cada nivel y cada
+ *    nivel va algo más rápida (TNSurvivalLogic::StormSpeedForLevel). Más rápida que andando: hay que esprintar, y los
+ *    derribos y las paradas a coger objetos se pagan. La caja de LVL_Run (ATN_StormVolume) se quita.
  *  - En grupo gana la última viva; si las últimas mueren en el mismo nivel, la que murió más cerca de la meta.
  *    En solitario dura hasta que muere.
  * Las reglas están en TN_SurvivalRules.h (tests Tortunabo.Survival).
@@ -53,6 +57,25 @@ protected:
 	/** Espera máxima a que el suelo del mapa nuevo tenga colisión antes de soltar a los jugadores en él. */
 	UPROPERTY(EditDefaultsOnly, Category = "Survival", meta = (ClampMin = "1.0"))
 	float LevelReadyTimeoutSeconds = 10.f;
+
+	/**
+	 * Velocidad (cm/s) de la tormenta por el camino en el nivel 1 (TNSurvivalLogic::StormSpeedForLevel). Por encima de
+	 * andar (450) y por debajo de lo que da esprintar a ratos con la stamina (unos 720 en llano).
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
+	float StormSpeedFirstLevel = 500.f;
+
+	/** Lo que sube en cada nivel siguiente (cm/s). */
+	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
+	float StormSpeedPerLevel = 20.f;
+
+	/** Tope (cm/s): con trampas, saltos y curvas, más cerca de esprintar ya no se le escapa nadie. */
+	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
+	float StormSpeedMax = 600.f;
+
+	/** Segundos desde que salen hasta que la tormenta echa a andar (arranca 30 m por detrás de la salida). */
+	UPROPERTY(EditDefaultsOnly, Category = "Survival|Tormenta", meta = (ClampMin = "0.0"))
+	float StormGraceSeconds = 3.f;
 
 	virtual void OnWaitingTimeout() override;
 
@@ -113,4 +136,17 @@ private:
 
 	/** Fin de partida: puestos en el marcador y Resultados. */
 	void FinishSurvival(int32 WinnerId);
+
+	/** Tormenta del camino del nivel: se crea con el primero y se vuelve a lanzar desde la salida en cada uno. */
+	UPROPERTY(Transient)
+	TObjectPtr<ATN_PathStorm> Storm;
+
+	/**
+	 * Lanza la tormenta por el camino del mapa del nivel, a la velocidad del nivel. Echa a andar StormGraceSeconds más
+	 * ExtraGraceSeconds después de que salgan.
+	 */
+	void StartLevelStorm(float ExtraGraceSeconds = 0.f);
+
+	/** Para la tormenta y quita las cuentas atrás (nivel superado o fin de partida). */
+	void StopLevelStorm();
 };

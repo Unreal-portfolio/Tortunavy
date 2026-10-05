@@ -40,6 +40,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	/**
+	 * Servidor: crea la tormenta del mapa de Generator (parada hasta StartStorm). La clase es la de los ajustes del mapa
+	 * (UTN_ProcMapSettings::PathStormClass) si la hay; si no, DefaultClass, y sin ella, esta.
+	 */
+	static ATN_PathStorm* SpawnFor(UWorld* World, const ATN_ProcMapGenerator* Generator, TSubclassOf<ATN_PathStorm> DefaultClass = nullptr);
+
 	/** Servidor: arranca la tormenta tras GraceSeconds, a Speed cm/s por el camino. */
 	void StartStorm(ATN_ProcMapGenerator* InGenerator, float InSpeed, float GraceSeconds);
 

@@ -5,6 +5,7 @@
 #include "Core/TN_GameModeSpawnUtils.h"
 #include "World/TN_ChunkManager.h"
 #include "World/TN_StormVolume.h"
+#include "World/ProcMap/TN_PathStorm.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_SurvivalCatalog.h"
 #include "GameFramework/Character.h"
@@ -56,6 +57,18 @@ void ATN_SurvivalGameMode::StartPlay()
 	else
 	{
 		UE_LOG(LogTortunabo, Error, TEXT("[Survival] No hay ATN_ChunkManager en el mapa: Supervivencia necesita LVL_Run."));
+	}
+
+	// La tormenta va por el camino de cada nivel (StartLevelStorm): la caja de LVL_Run avanzaría en línea recta y cruzaría
+	// el camino por donde le tocara. Se quita antes del BeginPlay de los actores.
+	TArray<ATN_StormVolume*> BoxStorms;
+	for (TActorIterator<ATN_StormVolume> It(GetWorld()); It; ++It)
+	{
+		BoxStorms.Add(*It);
+	}
+	for (ATN_StormVolume* BoxStorm : BoxStorms)
+	{
+		BoxStorm->Destroy();
 	}
 
 	Super::StartPlay();
@@ -257,6 +270,7 @@ void ATN_SurvivalGameMode::UpdateRoundProgressAndMaybeFinish()
 	switch (Decision.Outcome)
 	{
 	case ETNSurvivalOutcome::Advance:
+		StopLevelStorm();
 		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Nivel %d superado. El siguiente sale en %.1f s."), CurrentLevel, LevelTransitionSeconds);
 		GetWorldTimerManager().SetTimer(LevelTransitionTimerHandle, this, &ATN_SurvivalGameMode::AdvanceLevel, LevelTransitionSeconds, false);
 		break;
@@ -352,12 +366,6 @@ void ATN_SurvivalGameMode::PollLevelReady()
 
 void ATN_SurvivalGameMode::SendSurvivorsToLevelStart()
 {
-	// Cada nivel sale del mismo sitio: la tormenta de LVL_Run vuelve a empezar con él (#448).
-	for (TActorIterator<ATN_StormVolume> It(GetWorld()); It; ++It)
-	{
-		It->ResetToInitialState();
-	}
-
 	const ATN_ChunkManager* Manager = FindChunkManager();
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
@@ -416,6 +424,8 @@ void ATN_SurvivalGameMode::SendSurvivorsToLevelStart()
 	}
 	FinishedPawns.Reset();
 	bLevelLoading = false;
+	// La tormenta sale con ellas, por detrás de la salida (#448: cada nivel empieza igual para todas).
+	StartLevelStorm();
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Survival] ═══ Nivel %d ═══"), CurrentLevel);
 	UpdateRoundProgressAndMaybeFinish();
@@ -431,6 +441,7 @@ void ATN_SurvivalGameMode::FinishSurvival(int32 WinnerId)
 	bLevelLoading = false;
 	GetWorldTimerManager().ClearTimer(LevelTransitionTimerHandle);
 	GetWorldTimerManager().ClearTimer(LevelReadyPollHandle);
+	StopLevelStorm();
 
 	const TArray<FTNSurvivalPlayer> Players = GatherPlayers();
 	const TArray<int32> Ranked = TNSurvivalLogic::RankPlayers(Players, WinnerId);
@@ -463,4 +474,35 @@ void ATN_SurvivalGameMode::FinishSurvival(int32 WinnerId)
 		CurrentLevel, StartingPlayers <= 1 ? TEXT("solitario,") : TEXT("gana"), WinnerId);
 
 	StartResults();
+}
+
+void ATN_SurvivalGameMode::StartLevelStorm(float ExtraGraceSeconds)
+{
+	const ATN_ChunkManager* Manager = FindChunkManager();
+	ATN_ProcMapGenerator* Generator = Manager ? Manager->GetLevelGenerator() : nullptr;
+	if (!Generator || !Generator->IsMapReady())
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Survival] El nivel %d no tiene mapa listo: va sin tormenta."), CurrentLevel);
+		return;
+	}
+	if (!Storm)
+	{
+		Storm = ATN_PathStorm::SpawnFor(GetWorld(), Generator);
+	}
+	if (!Storm)
+	{
+		return;
+	}
+	const float Speed = TNSurvivalLogic::StormSpeedForLevel(CurrentLevel, StormSpeedFirstLevel, StormSpeedPerLevel, StormSpeedMax);
+	Storm->StartStorm(Generator, Speed, StormGraceSeconds + FMath::Max(0.f, ExtraGraceSeconds));
+	UE_LOG(LogTortunabo, Log, TEXT("[Survival] Tormenta del nivel %d: %.0f cm/s por un camino de %.0f m."),
+		CurrentLevel, Speed, Generator->GetMainPathLength() / 100.f);
+}
+
+void ATN_SurvivalGameMode::StopLevelStorm()
+{
+	if (Storm)
+	{
+		Storm->StopStorm();
+	}
 }
