@@ -1,4 +1,5 @@
 #include "World/Beach/TN_RaceItemSynth.h"
+#include "Audio/TN_AudioVoices.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -1183,6 +1184,8 @@ void UTN_RaceItemSynthComponent::Play(ETNRaceSound Sound, float Pitch, float Vol
 	}
 	if (!IsPlaying())
 	{
+		// Lo que usa la tortuga propia (UTN_RaceItemComponent cuelga de ella) tiene voz reservada.
+		TNAudioVoices::Apply(*this, TNAudioVoices::RankForOwner(GetOwner()));
 		Start();
 	}
 	SfxQueue->Master.store(FMath::Clamp(Loudness, 0.f, 2.f), std::memory_order_relaxed);

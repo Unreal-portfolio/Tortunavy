@@ -1,5 +1,6 @@
 #include "Player/TN_TurtleActionSfx.h"
 
+#include "Audio/TN_AudioVoices.h"
 #include "Audio/TN_ScoreShellSynthComponent.h"
 #include "Core/TN_Log.h"
 #include "Audio/TN_ShellImpactSynth.h"
@@ -98,15 +99,11 @@ USoundBase* TNTurtleActionSfx::FindDefaultSound(ETNTurtleActionSfx Sfx)
 	}
 }
 
-void TNTurtleActionSfx::PlayAt(UWorld* World, USoundBase* Sound, const FVector& Location, float InnerRadius, float OuterRadius)
+void TNTurtleActionSfx::PlayAt(UWorld* World, USoundBase* Sound, const FVector& Location, float InnerRadius, float OuterRadius,
+	const AActor* Source)
 {
 	if (!Sound || !World || !World->bAllowAudioPlayback || World->IsNetMode(NM_DedicatedServer) || !GEngine || !GEngine->UseSound())
 	{
-		return;
-	}
-	if (Sound->AttenuationSettings)
-	{
-		UGameplayStatics::SpawnSoundAtLocation(World, Sound, Location);
 		return;
 	}
 	FAudioDevice::FCreateComponentParams Params(World);
@@ -117,18 +114,30 @@ void TNTurtleActionSfx::PlayAt(UWorld* World, USoundBase* Sound, const FVector& 
 		return;
 	}
 	Audio->SetWorldLocation(Location);
-	Audio->bAllowSpatialization = true;
-	Audio->bOverrideAttenuation = true;
-	Audio->AttenuationOverrides.bAttenuate = true;
-	Audio->AttenuationOverrides.bSpatialize = true;
-	Audio->AttenuationOverrides.AttenuationShape = EAttenuationShape::Sphere;
-	Audio->AttenuationOverrides.AttenuationShapeExtents = FVector(FMath::Max(0.f, InnerRadius));
-	Audio->AttenuationOverrides.FalloffDistance = FMath::Max(OuterRadius - InnerRadius, TNTurtleActionSfxDetail::MinFalloff);
-	Audio->AttenuationOverrides.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound;
+	const bool bOwnAttenuation = Sound->AttenuationSettings != nullptr;
+	if (bOwnAttenuation)
+	{
+		// Con la atenuación del recurso, como UGameplayStatics::SpawnSoundAtLocation.
+		Audio->bAllowSpatialization = Params.ShouldUseAttenuation();
+	}
+	else
+	{
+		Audio->bAllowSpatialization = true;
+		Audio->bOverrideAttenuation = true;
+		Audio->AttenuationOverrides.bAttenuate = true;
+		Audio->AttenuationOverrides.bSpatialize = true;
+		Audio->AttenuationOverrides.AttenuationShape = EAttenuationShape::Sphere;
+		Audio->AttenuationOverrides.AttenuationShapeExtents = FVector(FMath::Max(0.f, InnerRadius));
+		Audio->AttenuationOverrides.FalloffDistance = FMath::Max(OuterRadius - InnerRadius, TNTurtleActionSfxDetail::MinFalloff);
+		Audio->AttenuationOverrides.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound;
+	}
 	Audio->bAutoDestroy = true;
 	Audio->bStopWhenOwnerDestroyed = false;
+	// Lo que hace la tortuga propia (coger, lanzar, comer, derribo...) no se queda sin voz aunque el mapa vaya lleno (#737).
+	TNAudioVoices::Apply(*Audio, TNAudioVoices::RankForOwner(Source));
 	Audio->Play();
-	UE_LOG(LogTortunabo, Verbose, TEXT("[ActionSfx] %s con atenuación natural (%.0f-%.0f cm)"), *GetNameSafe(Sound), InnerRadius, OuterRadius);
+	UE_LOG(LogTortunabo, Verbose, TEXT("[ActionSfx] %s %s"), *GetNameSafe(Sound),
+		bOwnAttenuation ? TEXT("con su atenuación") : *FString::Printf(TEXT("con atenuación natural (%.0f-%.0f cm)"), InnerRadius, OuterRadius));
 }
 
 bool TNTurtleActionSfx::ShouldKeepHeartbeat(const AActor* Owner)

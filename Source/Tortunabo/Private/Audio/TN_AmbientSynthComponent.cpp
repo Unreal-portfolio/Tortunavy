@@ -1,4 +1,5 @@
 #include "Audio/TN_AmbientSynthComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "TN_AmbientSynthDSP.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
@@ -130,6 +131,9 @@ void UTN_AmbientSynthComponent::OnRegister()
 	// Antes de que el padre cree el componente de audio y, si se autoactiva, arranque.
 	ConfigureForKind();
 	Super::OnRegister();
+	// El paisaje sonoro del jugador (2D, uno) nunca se queda sin voz; las fuentes 3D (cascadas, géiseres, lava) son fondo
+	// y ceden la voz antes que nada (#737).
+	TNAudioVoices::Apply(*this, SourceKind == ETNAmbientSourceKind::Soundscape ? TNAudioVoices::ERank::Reserved : TNAudioVoices::ERank::Background);
 }
 
 void UTN_AmbientSynthComponent::BeginPlay()

@@ -162,7 +162,7 @@ void ATN_GhostEgg::BeginPlay()
 		Att.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound;
 		Synth->SetupAttachment(EggRoot);
 		Synth->RegisterComponent();
-		Synth->Start();
+		Synth->KeepAwake();
 	}
 	if (bHatched)
 	{

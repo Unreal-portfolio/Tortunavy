@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachSplashSynthComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -487,6 +488,7 @@ void UTN_BeachSplashSynthComponent::PlaySplashAt(const FVector& WorldAt, float S
 	SetWorldLocation(WorldAt);
 	if (!IsPlaying())
 	{
+		TNAudioVoices::Apply(*this, TNAudioVoices::ERank::World);
 		Start();
 	}
 	SplashQueue->Master.store(FMath::Clamp(Loudness, 0.f, 2.f), std::memory_order_relaxed);

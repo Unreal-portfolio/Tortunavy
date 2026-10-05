@@ -1,4 +1,5 @@
 #include "World/ProcMap/TN_ProcSearchSpot.h"
+#include "Audio/TN_AudioVoices.h"
 #include "Multiplayer/TN_LocalViews.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "TN_ProcMapAmbientFX.h"
@@ -630,6 +631,7 @@ void UTN_SearchSynthComponent::TriggerSound(ETNSearchSound Sound, float Pitch, f
 	}
 	if (!IsPlaying())
 	{
+		TNAudioVoices::Apply(*this, TNAudioVoices::ERank::World);
 		Start();
 	}
 	SfxQueue->Master.store(FMath::Clamp(Loudness, 0.f, 2.f), std::memory_order_relaxed);

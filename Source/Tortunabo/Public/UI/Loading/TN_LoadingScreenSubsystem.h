@@ -60,12 +60,25 @@ public:
 	/** Soplido que sube de tono: las mitades salen despedidas o se retiran (Strength 0-1). */
 	void PlayWhoosh(float Strength);
 
+	/**
+	 * Arranca el sintetizador si estaba parado y lo mantiene en marcha IdleStopSeconds; los Play* lo llaman solos. Antes
+	 * se arrancaba una vez y no se paraba nunca: el del mando ocupaba una voz del mezclador toda la partida (#737). 2D
+	 * (interfaz) con voz reservada; con espacialización (el huevo del fantasma en el mundo), como el resto del mundo.
+	 */
+	void KeepAwake();
+
+	/** Segundos sin ningún sonido nuevo tras los que se para (el más largo, el «¡pum!», dura menos de un segundo). */
+	static constexpr float IdleStopSeconds = 3.f;
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 protected:
 	virtual bool Init(int32& SampleRate) override;
 	virtual ISoundGeneratorPtr CreateSoundGenerator(const FSoundGeneratorInitParams& InParams) override;
 
 private:
 	TSharedPtr<TNEggAudio::FEggSharedParams, ESPMode::ThreadSafe> SharedParams;
+	float IdleLeft = 0.f;
 };
 
 /**

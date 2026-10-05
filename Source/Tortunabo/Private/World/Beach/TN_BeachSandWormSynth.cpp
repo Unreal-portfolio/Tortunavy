@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachSandWormSynth.h"
+#include "Audio/TN_AudioVoices.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -588,6 +589,7 @@ void UTN_BeachSandWormSynthComponent::EnsurePlaying()
 {
 	if (!IsPlaying())
 	{
+		TNAudioVoices::Apply(*this, TNAudioVoices::ERank::World);
 		Start();
 	}
 	SetComponentTickEnabled(true);

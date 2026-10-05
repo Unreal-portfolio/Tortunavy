@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include "Player/TortugaCharacter.h"
+#include "Audio/TN_AudioVoices.h"
 #include "Core/TN_Log.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -264,6 +265,8 @@ UAudioComponent* ATortugaCharacter::EnsureDBNOAudioComponent()
 	// Non-spatialized: only the local DBNO player hears the heartbeat.
 	DBNOAudioComponent->bAllowSpatialization = false;
 	DBNOAudioComponent->bIsUISound = true;  // Bypass distance culling — always audible for the local player.
+	// Solo lo oye el propio jugador: voz reservada, aunque el mapa vaya lleno de sonidos (#737).
+	TNAudioVoices::Apply(*DBNOAudioComponent, TNAudioVoices::ERank::Reserved);
 
 	// Auto-restart loop while DBNO.
 	DBNOAudioComponent->OnAudioFinished.AddDynamic(this, &ATortugaCharacter::OnDBNOAudioFinished);

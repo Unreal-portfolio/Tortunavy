@@ -1,4 +1,5 @@
 #include "Lobby/Playground/TN_PlaygroundSynthComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -448,6 +449,7 @@ void UTN_PlaygroundSynthComponent::TriggerSound(ETNPlaygroundSound Sound, float 
 	}
 	if (!IsPlaying())
 	{
+		TNAudioVoices::Apply(*this, TNAudioVoices::ERank::World);
 		Start();
 	}
 	SfxQueue->Master.store(FMath::Clamp(Loudness, 0.f, 2.f), std::memory_order_relaxed);

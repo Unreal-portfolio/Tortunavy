@@ -1,4 +1,5 @@
 #include "Audio/TN_ScoreShellSynthComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -523,6 +524,8 @@ void UTN_ScoreShellSynthComponent::TriggerSound(ETNScoreShellSound Sound, uint8 
 	}
 	if (!IsPlaying())
 	{
+		// 2D (interfaz, latido propio): voz reservada. 3D: la de la tortuga propia también; el resto, como el mundo.
+		TNAudioVoices::Apply(*this, bSpatial ? TNAudioVoices::RankForOwner(GetOwner()) : TNAudioVoices::ERank::Reserved);
 		Start();
 	}
 	ShellQueue->Master.store(FMath::Clamp(Loudness, 0.f, 2.f), std::memory_order_relaxed);

@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachCritterSynth.h"
+#include "Audio/TN_AudioVoices.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -795,6 +796,8 @@ void UTN_BeachCritterSynthComponent::EnsurePlaying()
 {
 	if (!IsPlaying())
 	{
+		// Las burbujas y demás fondos ceden la voz antes que los bichos que hacen algo.
+		TNAudioVoices::Apply(*this, bAmbientBed ? TNAudioVoices::ERank::Background : TNAudioVoices::ERank::World);
 		Start();
 	}
 	SetComponentTickEnabled(true);

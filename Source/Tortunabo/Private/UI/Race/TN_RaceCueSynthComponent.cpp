@@ -1,4 +1,5 @@
 #include "UI/Race/TN_RaceCueSynthComponent.h"
+#include "Audio/TN_AudioVoices.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Misc/App.h"
@@ -543,6 +544,8 @@ void UTN_RaceCueSynthComponent::Play(ETNRaceCue Cue, float Pitch, float Volume)
 	}
 	if (!IsPlaying())
 	{
+		// Avisos de la interfaz: voz reservada.
+		TNAudioVoices::Apply(*this, TNAudioVoices::ERank::Reserved);
 		Start();
 	}
 	CueQueue->Master.store(FMath::Clamp(Loudness, 0.f, 2.f), std::memory_order_relaxed);

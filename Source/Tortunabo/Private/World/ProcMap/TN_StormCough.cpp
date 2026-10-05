@@ -1,4 +1,5 @@
 #include "World/ProcMap/TN_StormCough.h"
+#include "Audio/TN_AudioVoices.h"
 #include "Core/TN_Log.h"
 #include "AudioDevice.h"
 #include "Engine/World.h"
@@ -1245,6 +1246,8 @@ void UTN_StormCoughComponent::UpdateCough()
 			if (bLocal || GetListenerDistance() < Reach + TNStormCough::StartMargin)
 			{
 				ConfigureAttenuation();
+				// La tos de la tortuga propia tiene voz reservada; la de las demás compite con el resto del mundo.
+				TNAudioVoices::Apply(*this, TNAudioVoices::RankForOwner(GetOwner()));
 				Start();
 			}
 		}
