@@ -180,6 +180,15 @@ namespace TNRaceItems
 	 */
 	TORTUNABO_API bool RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog, FTN_InventoryItem& OutItem);
 
+	/**
+	 * Igual, pero WeightOf da el peso final de cada objeto a partir del de la carrera (RaceWeight) y del puesto de Picker:
+	 * Kind es None en las filas de DT_Items (por su Use) y Use es RaceItem en los de carrera; 0 o menos lo quita. Lo usa
+	 * Supervivencia para su lista de objetos (TN_SurvivalLoot.h).
+	 */
+	TORTUNABO_API bool RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog,
+		TFunctionRef<float(ETN_ItemUseType Use, ETNRaceItem Kind, float RaceWeight, const FTNRaceRank& Rank)> WeightOf,
+		FTN_InventoryItem& OutItem);
+
 	/** Ruta de DT_Items (el catálogo de siempre). */
 	TORTUNABO_API const TCHAR* CatalogPath();
 
@@ -218,7 +227,10 @@ namespace TNRaceItems
 	/** Las tortugas en carrera (vivas, sin haber llegado). Lo mismo que ATN_BeachEnemy::GatherTurtles. */
 	TORTUNABO_API void GatherRacers(const UObject* WorldContext, TArray<ATortugaCharacter*>& Out);
 
-	/** Progreso de una tortuga por la playa (0 = salida, 1 = filo del acantilado); sin playa, a lo largo del eje X. */
+	/**
+	 * Progreso de una tortuga por la playa (0 = salida, 1 = filo del acantilado); en Supervivencia, lo recorrido del camino del
+	 * mapa del nivel (cm × 1e-5); sin ninguno de los dos, a lo largo del eje X. Solo vale para comparar.
+	 */
 	TORTUNABO_API float CourseProgress(const UObject* WorldContext, const FVector& Where);
 
 	/**
