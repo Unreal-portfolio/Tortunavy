@@ -146,6 +146,15 @@ void ATN_RallyGameMode::TickProgress()
 		{
 			HandleGateCrossing(Team, NextGate, bForward, Alpha, GetWorld()->GetDeltaSeconds());
 		}
+		else if (TNRally::SegmentSkirtsGate(Previous, Current, Gate, Track->GetGateHalfExtent(), TNRally::OffTrackDistanceCm, Team.Arc,
+			Track->GetGateArc(NextGate), Track->GetTrackLengthCm(), Track->IsCircuit(), Alpha))
+		{
+			// Salir del circuito y volver sin R (#705): el buggy rodea la puerta por la hierba o por un peralte, fuera de su
+			// rectángulo, pero sigue dentro del margen del fuera de pista. Cuenta como paso, con las mismas reglas (el 60 % de
+			// la spline sigue impidiendo los atajos); si no, la puerta siguiente era WrongGate para siempre y la vuelta no corría.
+			UE_LOG(LogTNRally, Verbose, TEXT("[RallyGameMode] Equipo %d: rodea la puerta %d por fuera de su rectángulo."), Team.TeamIndex, NextGate);
+			HandleGateCrossing(Team, NextGate, true, Alpha, GetWorld()->GetDeltaSeconds());
+		}
 		else if (UE_LOG_ACTIVE(LogTNRally, Verbose))
 		{
 			// Diagnóstico de puertas que no cuentan: cruza el plano de la puerta fuera de su rectángulo (#622, peraltes).

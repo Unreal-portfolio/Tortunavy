@@ -32,6 +32,8 @@ namespace TNRally
 	/** Ventana de búsqueda del arco s alrededor del anterior (lazos y niveles superpuestos). */
 	inline constexpr double ArcWindowBehindCm = 2000.0;
 	inline constexpr double ArcWindowAheadCm = 12000.0;
+	/** Puerta rodeada (#705): el arco recorrido ha de estar a menos de esto de la puerta (otro nivel que pasa por debajo no cuenta). */
+	inline constexpr double SkirtGateArcSlackCm = 5000.0;
 	/** Salida anticipada: desplazamiento hacia delante antes del verde que la delata. */
 	inline constexpr double EarlyStartDisplacementCm = 100.0;
 	/** Parrilla 2 × 4: primera fila a 10 m de la salida, 8 m entre filas y 3,5 m a cada lado del eje. */
@@ -146,6 +148,21 @@ namespace TNRally
 	 */
 	TORTUNABO_API bool SegmentCrossesGate(const FVector& Prev, const FVector& Cur, const FTransform& Gate, const FVector& HalfExtent,
 		double& OutAlpha, bool& bOutForward);
+
+	/**
+	 * Distancia (cm) entre dos arcos de la spline: la más corta dando la vuelta en circuito, la diferencia en punto a punto.
+	 */
+	TORTUNABO_API double ArcDistance(double ArcA, double ArcB, double Length, bool bClosed);
+
+	/**
+	 * Puerta rodeada (#705): el segmento Prev→Cur cruza hacia delante el plano de la puerta fuera de su rectángulo (por la
+	 * hierba, por el lado bajo de un peralte o por encima), de modo que SegmentCrossesGate no lo ve. Cuenta como paso si sigue
+	 * dentro del margen del fuera de pista (a menos de MaxLateralCm del eje de la puerta) y el arco recorrido TrackedArc está a
+	 * menos de SkirtGateArcSlackCm de GateArc (un tramo de otro nivel que pasa por debajo o por encima no vale). Quien la
+	 * llama aplica después CheckGate, así que la regla del 60 % sigue impidiendo los atajos. OutAlpha: fracción del cruce.
+	 */
+	TORTUNABO_API bool SegmentSkirtsGate(const FVector& Prev, const FVector& Cur, const FTransform& Gate, const FVector& HalfExtent,
+		double MaxLateralCm, double TrackedArc, double GateArc, double Length, bool bClosed, double& OutAlpha);
 
 	// ---- Puestos y puntos ----
 
