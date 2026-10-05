@@ -50,8 +50,13 @@ namespace TNSurvivalCatalog
 	constexpr double QuicksandMaxRadius = 380.0;
 	/** Separación (cm) a lo largo del camino entre las cáscaras de un grupo. */
 	constexpr double BananaSpacing = 250.0;
-	/** Medio largo (cm) de una zona lenta a lo largo del camino. */
-	constexpr double SlowZoneHalfLength = 500.0;
+	/** Medio largo (cm) de una zona lenta a lo largo del camino: 8 m de zona, un 20 % menos que los 10 m de antes (#724). */
+	constexpr double SlowZoneHalfLength = 400.0;
+	/**
+	 * Ancho de una zona lenta respecto al de antes (el camino entero más 1 m por lado): un 20 % menos (#724). En los tramos
+	 * anchos deja un poco de paso por los bordes.
+	 */
+	constexpr double SlowZoneWidthScale = 0.8;
 	/** Medio largo (cm) de cada zona de cangrejos: un tramo largo se parte en varias, que en una curva no se salen del camino. */
 	constexpr double CrabZoneHalfLength = 800.0;
 	/** Lo que se acorta como mucho (cm) una zona de cangrejos en una curva y el semiancho que se le busca. */
@@ -304,7 +309,7 @@ namespace TNSurvivalCatalog
 						const int32 i = NearestFree(M, SampleAtDistance(M, S));
 						if (i == INDEX_NONE) { continue; }
 						FTrapPlacement P = At(M, ETrap::SlowZone, i, 0.0);
-						P.Extent = FVector(SlowZoneHalfLength, M[i].Width * 0.5 + 100.0, 300.0);
+						P.Extent = FVector(SlowZoneHalfLength, (M[i].Width * 0.5 + 100.0) * SlowZoneWidthScale, 300.0);
 						Out.Add(P);
 					}
 					break;
