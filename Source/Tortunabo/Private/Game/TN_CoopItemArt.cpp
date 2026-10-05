@@ -171,6 +171,27 @@ namespace TNCoopItemArtDetail
 			Kit::Rgb(0xE0607A, 0.3f));
 	}
 
+	/** Arpón (unos 44 cm a lo largo de X): asta de madera, punta de metal con dos lengüetas, empuñadura y rollo de cuerda. */
+	void BuildHarpoon(FBuffers& B)
+	{
+		const FLinearColor Wood = Kit::Rgb(0x9A6A3A, 0.1f);
+		const FLinearColor Metal = Kit::Rgb(0xC9D2DC, 0.8f);
+		const FLinearColor Rope = Kit::Rgb(0xE8D7A8, 0.f);
+		Kit::AddRod(B, FVector(-22.0, 0.0, 0.0), FVector(12.0, 0.0, 0.0), 1.6, 8, Wood, FVector::UpVector);
+		Kit::AddFrustum(B, FVector(12.0, 0.0, 0.0), FVector(22.0, 0.0, 0.0), 2.6, 0.0, 10, Metal, Metal, true, false);
+		for (const double Side : { -1.0, 1.0 })
+		{
+			Kit::AddRod(B, FVector(15.0, 0.0, 0.0), FVector(11.0, Side * 3.6, 0.0), 0.7, 5, Metal, FVector::UpVector);
+		}
+		Kit::AddRod(B, FVector(-22.0, 0.0, 0.0), FVector(-12.0, 0.0, 0.0), 2.1, 8, Kit::Rgb(0x3A2A1E, 0.1f), FVector::UpVector);
+		// Rollo de cuerda atado al asta.
+		for (int32 Index = 0; Index < 10; ++Index)
+		{
+			const double A = Kit::KitTwoPi * Index / 10.0;
+			Kit::AddBall(B, FVector(-6.0 + FMath::Sin(A) * 1.0, FMath::Cos(A) * 4.2, FMath::Sin(A) * 4.2 - 1.5), 1.3, 6, Rope);
+		}
+	}
+
 	/** Corona de pinchos alrededor de la tortuga protegida. */
 	void BuildPufferSpikes(FBuffers& B)
 	{
@@ -200,6 +221,9 @@ namespace TNCoopItemArtDetail
 			return true;
 		case ETNCoopItem::StunShell:
 			BuildStunShell(B);
+			return true;
+		case ETNCoopItem::Harpoon:
+			BuildHarpoon(B);
 			return true;
 		case ETNCoopItem::None:
 		default:
@@ -322,6 +346,30 @@ namespace TNCoopItemArtDetail
 		Painter.Fill(SparkSdf, Gold);
 	}
 
+	void PaintHarpoon(TNHUDArt::FPainter& Painter)
+	{
+		using namespace TNHUDArt;
+		// En diagonal: empuñadura abajo a la izquierda, punta arriba a la derecha y la cuerda en bucle.
+		const auto Shaft = [](float px, float py) { return Segment(px, py, 18.f, 110.f, 92.f, 36.f, 5.f); };
+		const auto Grip = [](float px, float py) { return Segment(px, py, 16.f, 112.f, 36.f, 92.f, 7.f); };
+		const TArray<FVector2f> HeadPoints = { { 86.f, 28.f }, { 118.f, 10.f }, { 100.f, 42.f } };
+		const TArray<FVector2f> BarbPoints = { { 90.f, 38.f }, { 80.f, 30.f }, { 96.f, 30.f }, { 98.f, 46.f } };
+		const auto Head = [&HeadPoints](float px, float py) { return Polygon(px, py, HeadPoints); };
+		const auto Barb = [&BarbPoints](float px, float py) { return Polygon(px, py, BarbPoints); };
+		const auto Loop = [](float px, float py) { return FMath::Abs(Ellipse(px, py, 52.f, 84.f, 18.f, 11.f)) - 2.5f; };
+		const auto All = [&](float px, float py)
+		{
+			return FMath::Min(FMath::Min(FMath::Min(Shaft(px, py), Grip(px, py)), FMath::Min(Head(px, py), Barb(px, py))), Loop(px, py));
+		};
+		Painter.Sticker(All, 6.f);
+		Painter.Fill([&](float px, float py) { return Loop(px, py) + 1.2f; }, Hex(0x6A5A30));
+		Painter.Fill(Loop, Hex(0xF0E2B6));
+		Body(Painter, Shaft, 0x3A2410, 0xC89A5E, 0x8A5A2C, 36.f, 110.f);
+		Body(Painter, Grip, 0x1A120A, 0x5A4030, 0x2A1E14, 92.f, 112.f);
+		Body(Painter, Barb, 0x2A3038, 0xE6ECF2, 0x8A96A4, 28.f, 46.f);
+		Body(Painter, Head, 0x2A3038, 0xF4F8FC, 0x9AA6B4, 10.f, 42.f);
+	}
+
 	/** Dibuja el objeto en Painter. false si no tiene icono. */
 	bool PaintKind(TNHUDArt::FPainter& Painter, ETNCoopItem Kind)
 	{
@@ -335,6 +383,9 @@ namespace TNCoopItemArtDetail
 			return true;
 		case ETNCoopItem::StunShell:
 			PaintStunShell(Painter);
+			return true;
+		case ETNCoopItem::Harpoon:
+			PaintHarpoon(Painter);
 			return true;
 		case ETNCoopItem::None:
 		default:

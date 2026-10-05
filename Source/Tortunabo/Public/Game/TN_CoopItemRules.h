@@ -24,7 +24,32 @@ enum class ETNCoopItem : uint8
 	 * (UseType Conch, que se deja en el suelo): por eso su ItemId es «Coop_StunShell_<n>».
 	 */
 	StunShell,
+	/**
+	 * Arpón: 15 usos de un disparo de 15 m que pesca (trae a la mochila un objeto suelto o pesca en un charco a distancia) o
+	 * rescata (atrae hacia quien dispara a una compañera derribada o en el agua; si estaba derribada, la levanta).
+	 */
+	Harpoon,
 	Count
+};
+
+/** A qué puede dar el arpón. */
+enum class ETNHarpoonTarget : uint8
+{
+	None,
+	/** Una compañera derribada o en el agua: se la trae. */
+	Rescue,
+	/** Un objeto suelto en el suelo: a la mochila. */
+	Pickup,
+	/** Un charco de pesca fuera de su respiro: pesca a distancia. */
+	Pool
+};
+
+/** Algo que está en la línea del arpón: qué es, a qué distancia por la línea y si se le puede dar ahora. */
+struct FTNHarpoonCandidate
+{
+	ETNHarpoonTarget Type = ETNHarpoonTarget::None;
+	float Along = 0.f;
+	bool bValid = false;
 };
 
 /** Lo fijo de cada objeto. */
@@ -99,6 +124,18 @@ namespace TNCoopItemTuning
 	inline constexpr float ShellStunSeconds = 4.f;
 	inline constexpr float ShellHitSlack = 200.f;
 	inline constexpr float ShellRestSeconds = 1.5f;
+
+	/**
+	 * Arpón: alcance (cm), grosor de la línea, distancia a quien dispara a la que se queda la rescatada, tope y suelo de la
+	 * velocidad del tirón (cm/s), su parte hacia arriba y segundos entre levantar a una derribada y tirar de ella.
+	 */
+	inline constexpr float HarpoonRange = 1500.f;
+	inline constexpr float HarpoonAimRadius = 70.f;
+	inline constexpr float HarpoonStopShort = 160.f;
+	inline constexpr float HarpoonPullMin = 600.f;
+	inline constexpr float HarpoonPullMax = 1900.f;
+	inline constexpr float HarpoonPullUp = 520.f;
+	inline constexpr float HarpoonRecoverDelay = 0.2f;
 
 	/** Objetos lanzados en arco: velocidad media (cm/s) para el tiempo de vuelo, mínimo de vuelo (s) y altura del arco. */
 	inline constexpr float ThrowSpeed = 1600.f;
@@ -222,4 +259,24 @@ namespace TNCoopItemRules
 
 	/** El enemigo sigue donde iba la concha al llegar (a menos de ShellHitSlack del punto). */
 	TORTUNABO_API bool IsShellHit(const FVector& AimedAt, const FVector& EnemyNow);
+
+	// ── Arpón ──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Point está en la línea del arpón que sale de Start hacia Dir (unitario) con Range de largo y Radius de grosor (más
+	 * ExtraRadius: el del cuerpo). OutAlong: la distancia por la línea.
+	 */
+	TORTUNABO_API bool IsInShot(const FVector& Start, const FVector& Dir, float Range, const FVector& Point, float ExtraRadius, float& OutAlong);
+
+	/** El arpón rescata a una tortuga que no es quien dispara, viva y derribada o en el agua. */
+	TORTUNABO_API bool CanRescue(bool bIsSelf, bool bDead, bool bKnockedDown, bool bInWater);
+
+	/** El candidato al que da el arpón: el válido más cercano por la línea; INDEX_NONE si no hay ninguno. */
+	TORTUNABO_API int32 PickHarpoonTarget(const TArray<FTNHarpoonCandidate>& Candidates);
+
+	/**
+	 * Tirón del rescate: velocidad que lleva a la tortuga de From hacia To (quien dispara) hasta quedarse a HarpoonStopShort,
+	 * entre HarpoonPullMin y HarpoonPullMax, con algo hacia arriba (más si To está más alto). Ya cerca, solo un saltito.
+	 */
+	TORTUNABO_API FVector RescuePull(const FVector& From, const FVector& To);
 }

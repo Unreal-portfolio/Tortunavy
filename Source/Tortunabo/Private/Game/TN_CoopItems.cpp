@@ -9,6 +9,14 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Game/TN_TctItemComponent.h"
+#include "Game/TN_TctItemRules.h"
+#include "Player/TN_CarryComponent.h"
+#include "Player/TN_TurtleMovementComponent.h"
+#include "TimerManager.h"
+#include "World/TN_FishingPool.h"
 #include "Game/TN_BeachRaceGameState.h"
 #include "Game/TN_TctItems.h"
 #include "Player/TN_InventoryComponent.h"
@@ -40,6 +48,138 @@ namespace TNCoopItemsDetail
 		Inventory->TryReplaceEquippedItem(Remaining);
 	}
 
+	/** Tirón del rescate: Target va hacia Shooter (si ya no está o se ha muerto, nada). */
+	void PullTowards(ATortugaCharacter* Target, const ATortugaCharacter* Shooter)
+	{
+		if (IsValid(Target) && IsValid(Shooter) && !Target->IsDead())
+		{
+			UTN_TurtleMovementComponent::LaunchFromServer(Target, TNCoopItemRules::RescuePull(Target->GetActorLocation(), Shooter->GetActorLocation()));
+		}
+	}
+
+	/** El arpón rescata a Target: si está derribada la levanta y, un momento después, la trae; si está en el agua, la trae ya. */
+	bool RescueTurtle(ATortugaCharacter* Shooter, ATortugaCharacter* Target)
+	{
+		if (Target->IsKnockedDown())
+		{
+			Target->RecoverFromKnockdown();
+			// El tirón, cuando ya vuelve a moverse (el dueño estrena el lanzamiento en su movimiento: sin corrección).
+			const TWeakObjectPtr<ATortugaCharacter> WeakTarget(Target);
+			const TWeakObjectPtr<ATortugaCharacter> WeakShooter(Shooter);
+			FTimerHandle Pull;
+			Target->GetWorldTimerManager().SetTimer(Pull, FTimerDelegate::CreateWeakLambda(Target, [WeakTarget, WeakShooter]()
+			{
+				PullTowards(WeakTarget.Get(), WeakShooter.Get());
+			}), TNCoopItemTuning::HarpoonRecoverDelay, false);
+		}
+		else
+		{
+			PullTowards(Target, Shooter);
+		}
+		UE_LOG(LogTortunabo, Log, TEXT("[Coop] %s rescata con el arpón a %s."), *GetNameSafe(Shooter), *GetNameSafe(Target));
+		return true;
+	}
+
+	/** Si Other se puede rescatar ahora con el arpón de Shooter. */
+	bool IsRescuable(const ATortugaCharacter* Shooter, const ATortugaCharacter* Other)
+	{
+		const UCharacterMovementComponent* Move = Other->GetCharacterMovement();
+		const UTN_CarryComponent* Carry = Other->GetCarryComponent();
+		if (Carry && Carry->IsBeingCarried())
+		{
+			return false;
+		}
+		return TNCoopItemRules::CanRescue(Other == Shooter, Other->IsDead(), Other->IsKnockedDown(), Move && Move->IsSwimming());
+	}
+
+	/**
+	 * Arpón (servidor): disparo de HarpoonRange hacia la mira que da a lo primero que puede: una compañera que rescatar, un
+	 * objeto suelto (a la mochila) o un charco que pescar. Sin nada a lo que dar, el cable se ve pero no gasta el uso.
+	 */
+	bool UseHarpoon(ATortugaCharacter* Turtle)
+	{
+		UWorld* World = Turtle->GetWorld();
+		FRotator Aim = Turtle->GetTurtleAimRotation();
+		Aim.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Aim.Pitch), -30.f, 25.f);
+		Aim.Roll = 0.f;
+		const FVector Dir = Aim.Vector();
+		const FVector Start = Turtle->GetActorLocation() + FVector(0.0, 0.0, 35.0) + FVector(Dir.X, Dir.Y, 0.0).GetSafeNormal() * 45.0;
+		float Range = TNCoopItemTuning::HarpoonRange;
+		FHitResult WorldHit;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(CoopHarpoon), false, Turtle);
+		if (World && World->LineTraceSingleByObjectType(WorldHit, Start, Start + Dir * Range, FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+		{
+			// Lo que está en el suelo donde da (un objeto, un charco) también cuenta.
+			Range = FMath::Min(Range, static_cast<float>(WorldHit.Distance) + TNCoopItemTuning::PoolRadius);
+		}
+
+		TArray<FTNHarpoonCandidate> Candidates;
+		TArray<AActor*> Actors;
+		const auto Consider = [&](AActor* Actor, ETNHarpoonTarget Type, float ExtraRadius, bool bValid)
+		{
+			float Along = 0.f;
+			if (TNCoopItemRules::IsInShot(Start, Dir, Range, Actor->GetActorLocation(), ExtraRadius, Along))
+			{
+				Candidates.Add({ Type, Along, bValid });
+				Actors.Add(Actor);
+			}
+		};
+		for (TActorIterator<ATortugaCharacter> It(World); It; ++It)
+		{
+			if (*It != Turtle)
+			{
+				Consider(*It, ETNHarpoonTarget::Rescue, It->GetSimpleCollisionRadius(), IsRescuable(Turtle, *It));
+			}
+		}
+		for (TActorIterator<ATN_PickupInteractableBase> It(World); It; ++It)
+		{
+			// Un arpón no pesca otro arpón (al cogerlo recargaría el que se está usando).
+			const bool bHarpoon = TNCoopItems::KindOf(It->GetPickupItem()) == ETNCoopItem::Harpoon;
+			Consider(*It, ETNHarpoonTarget::Pickup, 30.f, !It->IsTaken() && !bHarpoon && It->CanInteract(Turtle));
+		}
+		for (TActorIterator<ATN_FishingPool> It(World); It; ++It)
+		{
+			Consider(*It, ETNHarpoonTarget::Pool, TNCoopItemTuning::PoolRadius, It->CanFishNow());
+		}
+
+		const int32 Pick = TNCoopItemRules::PickHarpoonTarget(Candidates);
+		FVector RopeEnd = Start + Dir * Range;
+		bool bDone = false;
+		if (Pick != INDEX_NONE)
+		{
+			AActor* Target = Actors[Pick];
+			RopeEnd = Target->GetActorLocation();
+			switch (Candidates[Pick].Type)
+			{
+			case ETNHarpoonTarget::Rescue:
+				bDone = RescueTurtle(Turtle, CastChecked<ATortugaCharacter>(Target));
+				break;
+			case ETNHarpoonTarget::Pickup:
+			{
+				ATN_PickupInteractableBase* Pickup = CastChecked<ATN_PickupInteractableBase>(Target);
+				Pickup->Interact(Turtle);
+				bDone = Pickup->IsTaken();
+				break;
+			}
+			case ETNHarpoonTarget::Pool:
+				bDone = CastChecked<ATN_FishingPool>(Target)->ServerHarpoonCatch(Turtle);
+				break;
+			default:
+				break;
+			}
+		}
+		if (UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle))
+		{
+			// El cable del garfio de Todos contra Todos (cosmético, en todas las máquinas).
+			Effects->MulticastShot(static_cast<uint8>(ETNTctItem::Grapple), Start, RopeEnd);
+		}
+		if (bDone)
+		{
+			TNTctItems::PlayCue(Turtle, ETNRaceSound::Catch, 0.9f);
+		}
+		return bDone;
+	}
+
 	/** Lo que hace Kind al usarlo (servidor). false si ahora no se puede (el objeto se queda). */
 	bool UseKind(ATortugaCharacter* Turtle, ETNCoopItem Kind, const FTN_InventoryItem& Item)
 	{
@@ -51,6 +191,8 @@ namespace TNCoopItemsDetail
 			UTN_CoopItemComponent* Effects = UTN_CoopItemComponent::FindOrAddOn(Turtle);
 			return Effects && Effects->GrantPuffer();
 		}
+		case ETNCoopItem::Harpoon:
+			return UseHarpoon(Turtle);
 		case ETNCoopItem::StunShell:
 			if (!ATN_CoopThrownItem::ServerThrowShell(Turtle))
 			{
@@ -79,6 +221,7 @@ FText TNCoopItems::DisplayName(ETNCoopItem Kind)
 	case ETNCoopItem::PufferFish: return NSLOCTEXT("TNCoop", "ItemPufferFish", "Pez globo");
 	case ETNCoopItem::SlipperyPeel: return NSLOCTEXT("TNCoop", "ItemSlipperyPeel", "Cáscara resbaladiza");
 	case ETNCoopItem::StunShell: return NSLOCTEXT("TNCoop", "ItemStunShell", "Concha");
+	case ETNCoopItem::Harpoon: return NSLOCTEXT("TNCoop", "ItemHarpoon", "Arpón");
 	case ETNCoopItem::None:
 	default:
 		return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
@@ -101,7 +244,7 @@ int32 TNCoopItems::CountOf(const FTN_InventoryItem& Item)
 
 bool TNCoopItems::IsAimed(ETNCoopItem Kind)
 {
-	return Kind == ETNCoopItem::SlipperyPeel || Kind == ETNCoopItem::StunShell;
+	return Kind == ETNCoopItem::SlipperyPeel || Kind == ETNCoopItem::StunShell || Kind == ETNCoopItem::Harpoon;
 }
 
 bool TNCoopItems::ParseKind(const FString& Text, ETNCoopItem& OutKind)

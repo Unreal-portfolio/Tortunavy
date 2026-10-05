@@ -15,6 +15,8 @@ namespace TNCoopItemRulesDetail
 		{ ETNCoopItem::SlipperyPeel, TEXT("SlipperyPeel"), 2, 1, 15.f },
 		// Conchas: lanzar, aturdir, rango 10 m, objetivo enemigo, peso 10 %, límite de apilado 3.
 		{ ETNCoopItem::StunShell, TEXT("StunShell"), 3, 1, 10.f },
+		// Arpón: usable, pescar objetos y rescate, 15 usos, rango 15 m, peso 30 %, límite de apilado 1.
+		{ ETNCoopItem::Harpoon, TEXT("Harpoon"), 1, 15, 30.f },
 	};
 	static_assert(UE_ARRAY_COUNT(Specs) == static_cast<int32>(ETNCoopItem::Count), "Una ficha por objeto del coop, en el orden del enum");
 }
@@ -256,4 +258,55 @@ bool TNCoopItemRules::CanShellStun(bool bIsTurtle, bool bIsEnemy, bool bAcceptsS
 bool TNCoopItemRules::IsShellHit(const FVector& AimedAt, const FVector& EnemyNow)
 {
 	return FVector::Dist(AimedAt, EnemyNow) <= TNCoopItemTuning::ShellHitSlack;
+}
+
+bool TNCoopItemRules::IsInShot(const FVector& Start, const FVector& Dir, float Range, const FVector& Point, float ExtraRadius, float& OutAlong)
+{
+	const double Along = FVector::DotProduct(Point - Start, Dir);
+	OutAlong = static_cast<float>(Along);
+	if (Along < 0.0 || Along > Range)
+	{
+		return false;
+	}
+	const double Lateral = FVector::Dist(Point, Start + Dir * Along);
+	return Lateral <= TNCoopItemTuning::HarpoonAimRadius + FMath::Max(0.f, ExtraRadius);
+}
+
+bool TNCoopItemRules::CanRescue(bool bIsSelf, bool bDead, bool bKnockedDown, bool bInWater)
+{
+	return !bIsSelf && !bDead && (bKnockedDown || bInWater);
+}
+
+int32 TNCoopItemRules::PickHarpoonTarget(const TArray<FTNHarpoonCandidate>& Candidates)
+{
+	int32 Best = INDEX_NONE;
+	for (int32 Index = 0; Index < Candidates.Num(); ++Index)
+	{
+		const FTNHarpoonCandidate& Candidate = Candidates[Index];
+		if (!Candidate.bValid || Candidate.Type == ETNHarpoonTarget::None)
+		{
+			continue;
+		}
+		if (Best == INDEX_NONE || Candidate.Along < Candidates[Best].Along)
+		{
+			Best = Index;
+		}
+	}
+	return Best;
+}
+
+FVector TNCoopItemRules::RescuePull(const FVector& From, const FVector& To)
+{
+	using namespace TNCoopItemTuning;
+	const FVector Rel(To.X - From.X, To.Y - From.Y, 0.0);
+	const double Dist = Rel.Size();
+	const double Travel = Dist - HarpoonStopShort;
+	if (Travel <= 1.0)
+	{
+		return FVector::UpVector * (HarpoonPullUp * 0.5);
+	}
+	// Lo justo para llegar cerca en el vuelo del tirón (más cuanto más lejos), con tope.
+	const double Speed = FMath::Clamp(Travel * 1.3, static_cast<double>(HarpoonPullMin), static_cast<double>(HarpoonPullMax));
+	const double Up = HarpoonPullUp + FMath::Clamp(To.Z - From.Z, 0.0, 600.0) * 0.8;
+	return Rel / Dist * Speed + FVector::UpVector * Up;
 }

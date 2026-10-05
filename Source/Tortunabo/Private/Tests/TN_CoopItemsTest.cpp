@@ -9,6 +9,7 @@
 #include "Game/TN_CoopItemComponent.h"
 #include "GameFramework/Character.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "World/TN_FishingPool.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -298,6 +299,98 @@ bool FTNCoopItemsShellTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("El enemigo sigue ahí: le da"), TNCoopItemRules::IsShellHit(FVector(500.0, 0.0, 0.0), FVector(560.0, 40.0, 0.0)));
 	TestFalse(TEXT("Se ha ido lejos: falla"), TNCoopItemRules::IsShellHit(FVector(500.0, 0.0, 0.0), FVector(900.0, 0.0, 0.0)));
 	TestTrue(TEXT("Aturde unos segundos"), TNCoopItemTuning::ShellStunSeconds >= 2.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCoopItemsHarpoonTest,
+	"Tortunabo.Coop.Items.Harpoon",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNCoopItemsHarpoonTest::RunTest(const FString& Parameters)
+{
+	// Ficha: 15 usos, uno por hueco, peso 30; los usos van en el ItemId (y el icono los enseña).
+	const FTNCoopItemSpec& Spec = TNCoopItemRules::Spec(ETNCoopItem::Harpoon);
+	TestEqual(TEXT("15 usos"), Spec.Uses, 15);
+	TestEqual(TEXT("Uno por hueco"), Spec.MaxStack, 1);
+	TestEqual(TEXT("Peso 30"), Spec.LootWeight, 30.f);
+	TestEqual(TEXT("Sale con los 15 usos"), TNCoopItemRules::InitialCount(ETNCoopItem::Harpoon), 15);
+	FName Id = TNCoopItemRules::MakeItemId(ETNCoopItem::Harpoon, 15);
+	TestEqual(TEXT("ItemId con los usos"), Id, FName(TEXT("Coop_Harpoon_15")));
+	int32 Shots = 0;
+	while (!Id.IsNone() && Shots < 100)
+	{
+		Id = TNCoopItemRules::ItemIdAfterUse(Id);
+		++Shots;
+	}
+	TestEqual(TEXT("Se gasta a los 15 disparos"), Shots, 15);
+	int32 Count = 0;
+	TestEqual(TEXT("Coger otro con el gastado: recarga"), TNCoopItemRules::DecideStack(ETNCoopItem::Harpoon, 4, ETNCoopItem::Harpoon, 15, Count), ETNCoopStack::Merge);
+	TestEqual(TEXT("Recargado a 15"), Count, 15);
+	TestEqual(TEXT("Con el lleno: no se coge"), TNCoopItemRules::DecideStack(ETNCoopItem::Harpoon, 15, ETNCoopItem::Harpoon, 15, Count), ETNCoopStack::Full);
+
+	// Alcance: 15 m por la línea de la mira, con su grosor.
+	TestEqual(TEXT("Alcance de 15 m"), TNCoopItemTuning::HarpoonRange, 1500.f);
+	const FVector Start = FVector::ZeroVector;
+	const FVector Dir = FVector::ForwardVector;
+	float Along = 0.f;
+	TestTrue(TEXT("A 10 m en la línea"), TNCoopItemRules::IsInShot(Start, Dir, TNCoopItemTuning::HarpoonRange, FVector(1000.0, 50.0, 0.0), 0.f, Along));
+	TestEqual(TEXT("Distancia por la línea"), Along, 1000.f, 0.1f);
+	TestFalse(TEXT("A 16 m, fuera de alcance"), TNCoopItemRules::IsInShot(Start, Dir, TNCoopItemTuning::HarpoonRange, FVector(1600.0, 0.0, 0.0), 0.f, Along));
+	TestFalse(TEXT("Detrás, no"), TNCoopItemRules::IsInShot(Start, Dir, TNCoopItemTuning::HarpoonRange, FVector(-10.0, 0.0, 0.0), 0.f, Along));
+	TestFalse(TEXT("Muy a un lado, no"), TNCoopItemRules::IsInShot(Start, Dir, TNCoopItemTuning::HarpoonRange, FVector(500.0, 200.0, 0.0), 0.f, Along));
+	TestTrue(TEXT("Un charco ancho a un lado, sí"), TNCoopItemRules::IsInShot(Start, Dir, TNCoopItemTuning::HarpoonRange, FVector(500.0, 200.0, 0.0), 150.f, Along));
+
+	// Rescate: solo compañeras vivas derribadas o en el agua.
+	TestTrue(TEXT("Derribada: sí"), TNCoopItemRules::CanRescue(false, false, true, false));
+	TestTrue(TEXT("En el agua: sí"), TNCoopItemRules::CanRescue(false, false, false, true));
+	TestFalse(TEXT("De pie y en tierra: no"), TNCoopItemRules::CanRescue(false, false, false, false));
+	TestFalse(TEXT("Muerta: no (no revive)"), TNCoopItemRules::CanRescue(false, true, true, true));
+	TestFalse(TEXT("A sí misma: no"), TNCoopItemRules::CanRescue(true, false, true, false));
+
+	// A qué da: lo válido más cercano por la línea.
+	TArray<FTNHarpoonCandidate> Candidates = {
+		{ ETNHarpoonTarget::Rescue, 300.f, false },
+		{ ETNHarpoonTarget::Pickup, 800.f, true },
+		{ ETNHarpoonTarget::Pool, 500.f, true },
+	};
+	TestEqual(TEXT("El válido más cercano"), TNCoopItemRules::PickHarpoonTarget(Candidates), 2);
+	Candidates[0].bValid = true;
+	TestEqual(TEXT("Una compañera derribada más cerca va antes"), TNCoopItemRules::PickHarpoonTarget(Candidates), 0);
+	TestEqual(TEXT("Sin nada: no da"), TNCoopItemRules::PickHarpoonTarget({}), INDEX_NONE);
+	TestEqual(TEXT("Nada válido: no da"), TNCoopItemRules::PickHarpoonTarget({ { ETNHarpoonTarget::Pickup, 100.f, false } }), INDEX_NONE);
+
+	// Tirón: hacia quien dispara, con tope y algo hacia arriba; ya al lado, solo un saltito.
+	const FVector Pull = TNCoopItemRules::RescuePull(FVector(1000.0, 0.0, 0.0), FVector::ZeroVector);
+	const double Flat = FVector(Pull.X, Pull.Y, 0.0).Size();
+	TestTrue(TEXT("Hacia quien dispara"), Pull.X < 0.0);
+	TestTrue(TEXT("Con tope"), Flat >= TNCoopItemTuning::HarpoonPullMin - 0.1 && Flat <= TNCoopItemTuning::HarpoonPullMax + 0.1);
+	TestTrue(TEXT("Algo hacia arriba"), Pull.Z >= TNCoopItemTuning::HarpoonPullUp - 0.1);
+	const FVector Close = TNCoopItemRules::RescuePull(FVector(100.0, 0.0, 0.0), FVector::ZeroVector);
+	TestTrue(TEXT("Al lado: solo un saltito"), FMath::IsNearlyZero(Close.X) && FMath::IsNearlyZero(Close.Y) && Close.Z > 0.0);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCoopItemsFishingPoolWorldTest,
+	"Tortunabo.Coop.Items.FishingPoolWorld",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNCoopItemsFishingPoolWorldTest::RunTest(const FString& Parameters)
+{
+	UWorld* World = TNCoopItemsTestDetail::CreateWorld(TEXT("TNCoopPoolTestWorld"));
+	if (!TestNotNull(TEXT("Mundo de prueba"), World))
+	{
+		return false;
+	}
+	ATN_FishingPool* Pool = ATN_FishingPool::ServerSpawn(World, FVector(0.0, 0.0, 0.0), 0.f);
+	if (TestNotNull(TEXT("Charco"), Pool))
+	{
+		TestEqual(TEXT("Se pesca manteniendo la tecla"), Pool->GetHoldDuration(), TNCoopItemTuning::FishSeconds);
+		TestFalse(TEXT("Recién puesto, no está en su respiro"), Pool->IsSpent());
+		TestTrue(TEXT("Se puede pescar"), Pool->CanFishNow());
+		TestFalse(TEXT("El arpón sin tortuga no pesca nada"), Pool->ServerHarpoonCatch(nullptr));
+		TestTrue(TEXT("Sigue sin respiro (no ha pescado)"), Pool->CanFishNow());
+	}
+	TNCoopItemsTestDetail::DestroyWorld(World);
 	return true;
 }
 

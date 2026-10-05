@@ -5,6 +5,9 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Game/TN_CoopItems.h"
+#include "Net/UnrealNetwork.h"
+#include "Player/TN_InventoryComponent.h"
+#include "Player/TortugaCharacter.h"
 
 namespace TNFishingPoolDetail
 {
@@ -60,6 +63,42 @@ ATN_FishingPool* ATN_FishingPool::ServerSpawn(UWorld* World, const FVector& Loca
 	ATN_FishingPool* Pool = World->SpawnActor<ATN_FishingPool>(ATN_FishingPool::StaticClass(), FTransform(FRotator(0.f, YawDeg, 0.f), Location), Params);
 	UE_LOG(LogTortunabo, Log, TEXT("[Coop] Charco de pesca en %s: %s."), *Location.ToCompactString(), Pool ? TEXT("creado") : TEXT("no se ha podido crear"));
 	return Pool;
+}
+
+void ATN_FishingPool::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATN_FishingPool, LastHarpoonCatch);
+}
+
+bool ATN_FishingPool::CanFishNow() const
+{
+	return !IsSpent() && GetSearchState().Searcher == nullptr && ServerNow() - static_cast<double>(LastHarpoonCatch) >= static_cast<double>(RepeatCooldown);
+}
+
+bool ATN_FishingPool::CanInteract(APawn* Interactor) const
+{
+	// Tras una captura con el arpón, el mismo respiro que tras una a mano.
+	return Super::CanInteract(Interactor) && ServerNow() - static_cast<double>(LastHarpoonCatch) >= static_cast<double>(RepeatCooldown);
+}
+
+bool ATN_FishingPool::ServerHarpoonCatch(APawn* Fisher)
+{
+	ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(Fisher);
+	UTN_InventoryComponent* Inventory = Turtle ? Turtle->GetInventoryComponent() : nullptr;
+	if (!HasAuthority() || !Inventory || !CanFishNow())
+	{
+		return false;
+	}
+	FTN_InventoryItem Item;
+	if (!PickLoot(Item, Fisher) || !Inventory->CanReceiveItem(Item, false) || !Inventory->TryAddOrReplaceEquipped(Item, false))
+	{
+		return false;
+	}
+	LastHarpoonCatch = static_cast<float>(ServerNow());
+	FlushNetDormancy();
+	UE_LOG(LogTortunabo, Log, TEXT("[Coop] %s pesca %s con el arpón en %s."), *GetNameSafe(Fisher), *Item.ItemId.ToString(), *GetName());
+	return true;
 }
 
 float ATN_FishingPool::GetLuck() const

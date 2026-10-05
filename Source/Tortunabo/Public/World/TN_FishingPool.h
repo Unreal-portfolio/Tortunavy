@@ -18,7 +18,7 @@ class UWorld;
  *    clavada) se construye en código en cada máquina con pantalla (TNCoopItemArt::GetPoolMesh), sin assets.
  *
  * Se coloca con la entrada «FishingPool» del bloque de colocaciones del mapa (categoría loot) o, para probar, con
- * TN.Coop.FishingPool.
+ * TN.Coop.FishingPool. El arpón (objeto del coop) también pesca en él a distancia, con el mismo respiro.
  */
 UCLASS()
 class TORTUNABO_API ATN_FishingPool : public ATN_ProcSearchSpot
@@ -29,9 +29,20 @@ public:
 	ATN_FishingPool();
 
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual bool CanInteract(APawn* Interactor) const override;
 
 	/** Servidor: crea un charco en Location (en el suelo) mirando a YawDeg. Null si no se ha podido. */
 	static ATN_FishingPool* ServerSpawn(UWorld* World, const FVector& Location, float YawDeg);
+
+	/** Se puede pescar ahora: fuera del respiro de la última captura (a mano o con el arpón) y sin nadie pescando. */
+	bool CanFishNow() const;
+
+	/**
+	 * Servidor: el arpón de Fisher pesca aquí a distancia. Si se puede pescar ahora, sortea un objeto de la tabla del modo y,
+	 * si le cabe, lo mete en la mochila de Fisher; empieza el respiro como una captura a mano. false si no ha dado nada.
+	 */
+	bool ServerHarpoonCatch(APawn* Fisher);
 
 protected:
 	virtual float GetLuck() const override;
@@ -40,4 +51,9 @@ protected:
 	/** Agua, orilla, piedras y caña (malla construida en código; sin colisión). */
 	UPROPERTY(VisibleAnywhere, Category = "Fishing")
 	TObjectPtr<UStaticMeshComponent> PoolMesh;
+
+private:
+	/** Hora del servidor de la última captura con el arpón (el respiro también cuenta desde ahí); replicada para el aviso. */
+	UPROPERTY(Replicated)
+	float LastHarpoonCatch = -1000.f;
 };
