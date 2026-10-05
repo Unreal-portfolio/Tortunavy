@@ -4,6 +4,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/App.h"
 #include "Net/UnrealNetwork.h"
@@ -18,6 +19,13 @@ namespace TNTctItemComponentDetail
 	FName HeavySource()
 	{
 		static const FName Name(TEXT("TctAnchor"));
+		return Name;
+	}
+
+	/** Quién pone el salto corto del charco de alga en UTN_StaminaComponent. */
+	FName SlipSource()
+	{
+		static const FName Name(TEXT("TctAlga"));
 		return Name;
 	}
 
@@ -142,6 +150,64 @@ void UTN_TctItemComponent::ApplyHeavy()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Resbalón del charco de alga
+// ─────────────────────────────────────────────────────────────────────────────
+
+void UTN_TctItemComponent::SetSlipping(FName Source, bool bSlipping)
+{
+	const bool bWas = IsSlipping();
+	if (bSlipping)
+	{
+		SlipSources.Add(Source);
+	}
+	else
+	{
+		SlipSources.Remove(Source);
+	}
+	if (bWas != IsSlipping())
+	{
+		ApplySlip(IsSlipping());
+	}
+}
+
+void UTN_TctItemComponent::ApplySlip(bool bSlip)
+{
+	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(GetOwner());
+	UCharacterMovementComponent* Movement = Turtle ? Turtle->GetCharacterMovement() : nullptr;
+	UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+	if (!Movement)
+	{
+		return;
+	}
+	if (bSlip)
+	{
+		BaseGroundFriction = Movement->GroundFriction;
+		BaseBrakingDeceleration = Movement->BrakingDecelerationWalking;
+		BaseMaxAcceleration = Movement->MaxAcceleration;
+		FTNTctGrip Base;
+		Base.GroundFriction = BaseGroundFriction;
+		Base.BrakingDeceleration = BaseBrakingDeceleration;
+		Base.MaxAcceleration = BaseMaxAcceleration;
+		const FTNTctGrip Slippery = TNTctItemRules::SlipperyGrip(Base);
+		Movement->GroundFriction = Slippery.GroundFriction;
+		Movement->BrakingDecelerationWalking = Slippery.BrakingDeceleration;
+		Movement->MaxAcceleration = Slippery.MaxAcceleration;
+		if (Stamina)
+		{
+			Stamina->SetJumpLimit(TNTctItemComponentDetail::SlipSource(), TNMovementLimits::NoCap, TNTctItemTuning::AlgaJumpMultiplier);
+		}
+		return;
+	}
+	Movement->GroundFriction = BaseGroundFriction;
+	Movement->BrakingDecelerationWalking = BaseBrakingDeceleration;
+	Movement->MaxAcceleration = BaseMaxAcceleration;
+	if (Stamina)
+	{
+		Stamina->ClearJumpLimit(TNTctItemComponentDetail::SlipSource());
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Estelas
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -252,6 +318,11 @@ void UTN_TctItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 void UTN_TctItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	if (IsSlipping())
+	{
+		SlipSources.Reset();
+		ApplySlip(false);
+	}
 	HeavyEnd = 0.f;
 	if (bHeavyApplied)
 	{

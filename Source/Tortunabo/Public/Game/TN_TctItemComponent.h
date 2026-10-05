@@ -18,6 +18,9 @@ class UStaticMeshComponent;
  *    servidor y los demás mueven igual a la tortuga.
  *  - Disparos (MulticastShot): la estela de la pistola de noqueo, el cable del garfio y el abanico del trabuco, en todas las
  *    máquinas con pantalla (cosmético).
+ *  - Resbalón del charco de alga (SetSlipping, #714): local, en cada máquina que mueve a la tortuga; lo ponen y lo quitan los
+ *    charcos (ATN_TctAlgaPuddle) con su nombre. Con alguno puesto, el agarre del movimiento es TNTctItemRules::SlipperyGrip
+ *    y el salto se queda corto; sin ninguno, vuelve el de antes.
  */
 UCLASS(ClassGroup = (Custom))
 class TORTUNABO_API UTN_TctItemComponent : public UActorComponent
@@ -45,6 +48,12 @@ public:
 
 	/** Lastrada ahora (cualquier máquina). */
 	bool IsHeavy() const;
+
+	/** Esta máquina: el charco Source empieza (bSlipping) o deja de hacer resbalar a la tortuga. */
+	void SetSlipping(FName Source, bool bSlipping);
+
+	/** Resbalando ahora en esta máquina (algún charco la tiene dentro). */
+	bool IsSlipping() const { return SlipSources.Num() > 0; }
 
 	/** Estela de un disparo de Kind (ETNTctItem) de From a To, en todas las máquinas con pantalla. */
 	UFUNCTION(NetMulticast, Unreliable)
@@ -78,4 +87,14 @@ private:
 	double Now() const;
 
 	bool bHeavyApplied = false;
+
+	/** Charcos que tienen dentro a la tortuga en esta máquina. */
+	TSet<FName> SlipSources;
+	/** El agarre de antes del primer charco (se devuelve al salir del último). */
+	float BaseGroundFriction = 0.f;
+	float BaseBrakingDeceleration = 0.f;
+	float BaseMaxAcceleration = 0.f;
+
+	/** Pone o quita el agarre del charco y el salto corto en el movimiento de la tortuga. */
+	void ApplySlip(bool bSlip);
 };

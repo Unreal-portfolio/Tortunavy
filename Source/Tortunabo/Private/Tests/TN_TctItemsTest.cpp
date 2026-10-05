@@ -20,7 +20,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTctItemsCatalogTest,
 bool FTNTctItemsCatalogTest::RunTest(const FString& Parameters)
 {
 	const TArray<ETNTctItem> Kinds = TNTctItemRules::AllKinds();
-	TestEqual(TEXT("Trece objetos"), Kinds.Num(), 13);
+	TestEqual(TEXT("Dieciséis objetos"), Kinds.Num(), 16);
+	// Sin malla IA de #600: llevan su malla en ejecución (TNTctItemMeshes).
+	const TSet<ETNTctItem> OwnMesh = { ETNTctItem::Cocobomba, ETNTctItem::Alga, ETNTctItem::GaviotaLadrona };
 
 	int32 InPool = 0;
 	TSet<FName> Ids;
@@ -58,7 +60,8 @@ bool FTNTctItemsCatalogTest::RunTest(const FString& Parameters)
 			TestEqual(FString::Printf(TEXT("%s: cargas de la fila"), Spec.Code), TNTctItems::ChargesOf(Item), Spec.Charges);
 			TestNotNull(FString::Printf(TEXT("%s: se puede soltar"), Spec.Code), Item.PickupActorClass.Get());
 		}
-		TestFalse(FString::Printf(TEXT("%s: malla IA de #600"), Spec.Code), TNTctItems::MeshPath(Kind).IsEmpty());
+		TestTrue(FString::Printf(TEXT("%s: malla IA de #600 o malla propia"), Spec.Code),
+			!TNTctItems::MeshPath(Kind).IsEmpty() || OwnMesh.Contains(Kind));
 	}
 	TestTrue(TEXT("Al menos siete objetos de combate en los puntos"), InPool >= 7);
 

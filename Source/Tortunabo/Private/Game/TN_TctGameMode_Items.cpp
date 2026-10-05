@@ -46,7 +46,7 @@ namespace TNTctGameModeItemsDetail
 	}
 
 	FAutoConsoleCommandWithWorldAndArgs CmdItem(TEXT("TN.Tct.Item"),
-		TEXT("Todos contra Todos: da un objeto a la tortuga N. TN.Tct.Item <objeto: KnockoutPistol, AirBlunderbuss, Grapple, Shovel, BeachBall, Anchor, JellyDart, InkPistol, Ball, ConchTrap, BigHead, SandMine, Frisbee o su número> [jugadora = 0]"),
+		TEXT("Todos contra Todos: da un objeto a la tortuga N. TN.Tct.Item <objeto: KnockoutPistol, AirBlunderbuss, Grapple, Shovel, BeachBall, Anchor, JellyDart, InkPistol, Ball, ConchTrap, BigHead, SandMine, Frisbee, Cocobomba, Alga, GaviotaLadrona o su número> [jugadora = 0]"),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 		{
 			const ETNTctItem Kind = Args.Num() > 0 ? ParseKind(Args[0]) : ETNTctItem::None;

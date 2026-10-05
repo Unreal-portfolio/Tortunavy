@@ -24,6 +24,9 @@ namespace TNTctItemRulesDetail
 		{ ETNTctItem::BigHead,        TEXT("BigHead"),        ETNTctItemSource::Catalog, 1, 0.4f },
 		{ ETNTctItem::SandMine,       TEXT("SandMine"),       ETNTctItemSource::Race,    1, 0.7f },
 		{ ETNTctItem::Frisbee,        TEXT("Frisbee"),        ETNTctItemSource::Race,    1, 0.7f },
+		{ ETNTctItem::Cocobomba,      TEXT("Cocobomba"),      ETNTctItemSource::Code,    2, 0.9f },
+		{ ETNTctItem::Alga,           TEXT("Alga"),           ETNTctItemSource::Code,    2, 0.8f },
+		{ ETNTctItem::GaviotaLadrona, TEXT("GaviotaLadrona"), ETNTctItemSource::Code,    1, 0.6f },
 	};
 	static_assert(UE_ARRAY_COUNT(Specs) == static_cast<int32>(ETNTctItem::Count), "Una ficha por objeto, en el orden del enum");
 
@@ -330,4 +333,57 @@ bool TNTctItemRules::AnchorSplash(const FVector& Center, const FVector& Victim, 
 	const double Near = 1.0 - FMath::Clamp(Dist / AnchorSplashRadius, 0.0, 1.0);
 	OutImpulse = Away * (AnchorImpulse * (0.4 + 0.6 * Near)) + FVector::UpVector * AnchorImpulseUp;
 	return true;
+}
+
+bool TNTctItemRules::CocoBlast(const FVector& Center, const FVector& Victim, FVector& OutVelocity)
+{
+	using namespace TNTctItemTuning;
+	OutVelocity = FVector::ZeroVector;
+	const FVector Rel = Victim - Center;
+	const double Dist = Rel.Size();
+	if (Dist > CocoBlastRadius)
+	{
+		return false;
+	}
+	const FVector Flat(Rel.X, Rel.Y, 0.0);
+	const FVector Away = Flat.Size() < 1.0 ? FVector::ForwardVector : Flat.GetSafeNormal();
+	const double Near = 1.0 - FMath::Clamp(Dist / CocoBlastRadius, 0.0, 1.0);
+	const double Push = FMath::Lerp(static_cast<double>(CocoPushFar), static_cast<double>(CocoPushNear), Near);
+	const double Up = FMath::Lerp(static_cast<double>(CocoUpFar), static_cast<double>(CocoUpNear), Near);
+	OutVelocity = Away * Push + FVector::UpVector * Up;
+	return true;
+}
+
+bool TNTctItemRules::IsInPuddle(const FVector& Center, float Radius, const FVector& Feet)
+{
+	using namespace TNTctItemTuning;
+	const double Height = Feet.Z - Center.Z;
+	return FVector::DistSquared2D(Center, Feet) <= FMath::Square(static_cast<double>(Radius))
+		&& Height <= AlgaPuddleReachUp && Height >= -AlgaPuddleReachDown;
+}
+
+int32 TNTctItemRules::PickThiefVictim(const FVector& Origin, const TArray<FVector>& Candidates, float Range)
+{
+	int32 Best = INDEX_NONE;
+	double BestSq = FMath::Square(static_cast<double>(Range));
+	for (int32 Index = 0; Index < Candidates.Num(); ++Index)
+	{
+		const double DistSq = FVector::DistSquared(Origin, Candidates[Index]);
+		if (DistSq <= BestSq)
+		{
+			BestSq = DistSq;
+			Best = Index;
+		}
+	}
+	return Best;
+}
+
+FTNTctGrip TNTctItemRules::SlipperyGrip(const FTNTctGrip& Base)
+{
+	using namespace TNTctItemTuning;
+	FTNTctGrip Out;
+	Out.GroundFriction = FMath::Max(0.f, Base.GroundFriction) * AlgaFrictionScale;
+	Out.BrakingDeceleration = FMath::Max(0.f, Base.BrakingDeceleration) * AlgaBrakingScale;
+	Out.MaxAcceleration = FMath::Max(0.f, Base.MaxAcceleration) * AlgaAccelerationScale;
+	return Out;
 }

@@ -2,6 +2,7 @@
 
 #include "Game/TN_TctItems.h"
 #include "TN_TctItemArt.h"
+#include "TN_TctItemMeshes.h"
 #include "Core/TN_Log.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
@@ -170,6 +171,9 @@ FText TNTctItems::DisplayName(ETNTctItem Kind)
 	case ETNTctItem::BigHead:        return NSLOCTEXT("TNTct", "ItemBigHead", "Cabezota");
 	case ETNTctItem::SandMine:       return TNRaceItems::DisplayName(ETNRaceItem::SandMine);
 	case ETNTctItem::Frisbee:        return TNRaceItems::DisplayName(ETNRaceItem::Frisbee);
+	case ETNTctItem::Cocobomba:      return NSLOCTEXT("TNTct", "ItemCocobomba", "Cocobomba");
+	case ETNTctItem::Alga:           return NSLOCTEXT("TNTct", "ItemAlga", "Charco de alga");
+	case ETNTctItem::GaviotaLadrona: return NSLOCTEXT("TNTct", "ItemGaviotaLadrona", "Gaviota ladrona");
 	default:                         return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
 	}
 }
@@ -205,6 +209,14 @@ FString TNTctItems::MeshPath(ETNTctItem Kind, bool bProjectile)
 
 FVector TNTctItems::MeshScale(ETNTctItem Kind, bool bProjectile, bool bFallback)
 {
+	// Mallas propias en ejecución (TNTctItemMeshes): ya van a su tamaño.
+	switch (Kind)
+	{
+	case ETNTctItem::Cocobomba:      return bProjectile ? FVector(1.3f) : FVector(1.f);
+	case ETNTctItem::Alga:           return FVector(1.f);
+	case ETNTctItem::GaviotaLadrona: return FVector(1.f);
+	default: break;
+	}
 	if (bFallback)
 	{
 		// Formas del motor de 100 uu: al tamaño aproximado de la malla IA.
@@ -232,6 +244,10 @@ UStaticMesh* TNTctItems::LoadMesh(ETNTctItem Kind, bool bProjectile)
 	if (!TNTctItemsDetail::CanRender())
 	{
 		return nullptr;
+	}
+	if (UStaticMesh* Own = TNTctItemMeshes::ForKind(Kind))
+	{
+		return Own;
 	}
 	const FString Path = MeshPath(Kind, bProjectile);
 	if (!Path.IsEmpty())
@@ -319,7 +335,7 @@ void TNTctItems::ResolveVisuals(FTN_InventoryItem& Item)
 	}
 	if (UStaticMesh* Mesh = LoadMesh(Kind, false))
 	{
-		const bool bFallback = Mesh->GetPathName().StartsWith(TEXT("/Engine/"));
+		const bool bFallback = Mesh->GetPathName().StartsWith(TEXT("/Engine/BasicShapes/"));
 		Item.EquippedMesh = Mesh;
 		Item.EquippedMeshScale = MeshScale(Kind, false, bFallback);
 	}

@@ -15,7 +15,7 @@ struct FTNTctShotData
 {
 	GENERATED_BODY()
 
-	/** ETNTctItem (BeachBall, Anchor o JellyDart). */
+	/** ETNTctItem (BeachBall, Anchor, JellyDart, Cocobomba o Alga). */
 	UPROPERTY()
 	uint8 Kind = 0;
 
@@ -37,6 +37,9 @@ struct FTNTctShotData
  *    y el servidor manda su posición y velocidad nuevas a todas (MulticastResync). Puede empujar varias veces.
  *  - Ancla: parábola pesada; al tocar a una tortuga o el suelo, derriba a las del círculo y las lastra (UTN_TctItemComponent).
  *  - Dardo: rápido y casi recto; marea a la primera tortuga que toca (MulticastApplyMareoEffect). Se clava en el escenario.
+ *  - Cocobomba (#714): parábola con poco rebote; no golpea al tocar: a los CocoFuseSeconds explota donde esté y lanza a todas
+ *    las del radio (TNTctItemRules::CocoBlast; el caparazón protege), también a quien la lanzó. Se ve el fogonazo en todas.
+ *  - Alga (#714): lanzamiento corto; al caer deja un charco de alga (ATN_TctAlgaPuddle) en el suelo.
  * Quien lo lanza no se golpea a sí misma en los primeros instantes. Se acaba solo (vida máxima) o al caer al agua de la arena.
  */
 UCLASS()
@@ -98,10 +101,22 @@ private:
 	void ServerHitTurtle(ATortugaCharacter* Victim);
 	/** Servidor: el ancla cae en Center. */
 	void ServerAnchorSplash(const FVector& Center);
+	/** Servidor: la cocobomba explota en Center. */
+	void ServerCocoBlast(const FVector& Center);
+	/** Servidor: el alga cae en Where y deja su charco. */
+	void ServerDropPuddle(const FVector& Where);
+	/** Máquinas con pantalla: el fogonazo de la cocobomba (se hincha y se apaga). */
+	void ShowBlast();
+	void TickBlast(float DeltaSeconds);
 	/** Servidor: acaba el ancla o el dardo en Location. */
 	void ServerFinish(const FVector& Location);
 	/** Cualquier máquina: se para (clavado o caído) en Location. */
 	void StopAt(const FVector& Location);
+
+	/** Fogonazo de la cocobomba (solo visual). */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> BlastMesh;
+	float BlastAge = -1.f;
 
 	bool bShotApplied = false;
 	bool bFinished = false;
