@@ -76,5 +76,13 @@ public class Tortunabo : ModuleRules
 			AddEngineThirdPartyPrivateStaticDependencies(Target, "Steamworks");
 		}
 		PrivateDefinitions.Add("TN_WITH_STEAMWORKS=" + (bWithSteamworks ? "1" : "0"));
+
+		// Mandos que no son de Xbox (#743, Docs/Mandos.md): un lector propio por DirectInput (IInputDeviceModule) para el
+		// DualShock 4, el DualSense, el Switch Pro y los HID genéricos en el editor y sin Steam Input. dinput8 viene con Windows.
+		PrivateDependencyModuleNames.Add("InputDevice");
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
+			PublicSystemLibraries.AddRange(new string[] { "dinput8.lib", "dxguid.lib" });
+		}
 	}
 }
