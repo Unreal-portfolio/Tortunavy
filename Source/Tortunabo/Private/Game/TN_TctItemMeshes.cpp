@@ -168,6 +168,8 @@ UStaticMesh* TNTctItemMeshes::ForKind(ETNTctItem Kind)
 	{
 	case ETNTctItem::Cocobomba: return Coconut();
 	case ETNTctItem::Alga:      return AlgaClump();
+	case ETNTctItem::Flotador:  return FloatRing();
+	case ETNTctItem::MedusaTrampolin: return JellyDome();
 	case ETNTctItem::GaviotaLadrona:
 	{
 		TNRaceItemArt::FHeldLook Look;

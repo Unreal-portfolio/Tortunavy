@@ -12,7 +12,8 @@ class UStaticMeshComponent;
 /**
  * Objeto en el suelo de Todos contra Todos (#651): el pickup de siempre (se coge con interactuar, con su marca dorada) que
  * avisa a su punto de objetos (ATN_TctItemPad) cuando alguien lo coge. El aviso dice el nombre del objeto («Coger Garfio»):
- * el objeto va replicado y cada máquina monta el texto.
+ * el objeto va replicado y cada máquina monta el texto. El flotador (#777) no va a la mano: se cuelga del caparazón
+ * (UTN_TctItemComponent::ServerGrantFloat), así que se coge aunque las manos estén llenas y no si ya se lleva uno.
  */
 UCLASS()
 class TORTUNABO_API ATN_TctItemPickup : public ATN_PickupInteractableBase
@@ -23,6 +24,7 @@ public:
 	ATN_TctItemPickup();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual bool CanInteract(APawn* Interactor) const override;
 	virtual void Interact(APawn* Interactor) override;
 
 	/** Servidor, antes de FinishSpawning: el objeto y su punto. */
@@ -40,6 +42,9 @@ private:
 	void OnRep_Kind();
 
 	void RefreshPrompt();
+
+	/** Servidor: el flotador se cuelga del caparazón de Interactor y el pickup se va. */
+	void TakeFloat(APawn* Interactor);
 
 	TWeakObjectPtr<ATN_TctItemPad> Pad;
 };

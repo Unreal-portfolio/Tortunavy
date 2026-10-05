@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Game/TN_TctRules.h"
 #include "TN_TctItemComponent.generated.h"
 
 class ACharacter;
@@ -21,6 +22,10 @@ class UStaticMeshComponent;
  *  - Resbalón del charco de alga (SetSlipping, #714): local, en cada máquina que mueve a la tortuga; lo ponen y lo quitan los
  *    charcos (ATN_TctAlgaPuddle) con su nombre. Con alguno puesto, el agarre del movimiento es TNTctItemRules::SlipperyGrip
  *    y el salto se queda corto; sin ninguno, vuelve el de antes.
+ *  - Flotador (#777): el servidor lo da (ServerGrantFloat) y decide con él las caídas al agua (ServerResolveFall, la regla
+ *    TNTctRules::ResolveFall). bHasFloat y la hora de fin de la flotación van replicados: cada máquina enseña el flotador
+ *    (en el caparazón o, flotando, a la cintura) y, mientras flota, quita la gravedad y frena a la tortuga en su
+ *    UTN_StaminaComponent, como el lastre. Al acabar, el GameMode la lanza al punto seco más cercano (ServerTakeRescue).
  */
 UCLASS(ClassGroup = (Custom))
 class TORTUNABO_API UTN_TctItemComponent : public UActorComponent
@@ -54,6 +59,24 @@ public:
 
 	/** Resbalando ahora en esta máquina (algún charco la tiene dentro). */
 	bool IsSlipping() const { return SlipSources.Num() > 0; }
+
+	/** Servidor: le da el flotador (en el caparazón, sin ocupar la mano). false si ya lleva uno. */
+	bool ServerGrantFloat();
+
+	/** Lleva el flotador sin estrenar (cualquier máquina). */
+	bool HasFloat() const { return bHasFloat; }
+
+	/** Flotando ahora tras salvarse del agua (cualquier máquina). */
+	bool IsFloating() const;
+
+	/**
+	 * Servidor: la regla del flotador ante una caída de Cause (TNTctRules::ResolveFall). true si queda eliminada; si el
+	 * flotador la salva, se gasta y empieza a flotar.
+	 */
+	bool ServerResolveFall(ETNTctFall Cause);
+
+	/** Servidor: true una sola vez, cuando acaba de flotar y toca lanzarla al punto seco. */
+	bool ServerTakeRescue();
 
 	/** Estela de un disparo de Kind (ETNTctItem) de From a To, en todas las máquinas con pantalla. */
 	UFUNCTION(NetMulticast, Unreliable)
@@ -97,4 +120,29 @@ private:
 
 	/** Pone o quita el agarre del charco y el salto corto en el movimiento de la tortuga. */
 	void ApplySlip(bool bSlip);
+
+	/** Lleva el flotador sin estrenar. */
+	UPROPERTY(ReplicatedUsing = OnRep_Float)
+	bool bHasFloat = false;
+
+	/** Hora del servidor en que acaba de flotar (0 = no flota). */
+	UPROPERTY(ReplicatedUsing = OnRep_Float)
+	float FloatEnd = 0.f;
+
+	UFUNCTION()
+	void OnRep_Float();
+
+	/** Pone o quita la flotación (sin gravedad y frenada) según FloatEnd y la hora del servidor. */
+	void ApplyFloat();
+	/** Enseña el flotador en el caparazón, a la cintura o nada. */
+	void RefreshFloatLook();
+
+	/** El flotador que pinta esta máquina. */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> FloatLook;
+
+	/** Servidor: la regla del flotador. */
+	FTNTctFloatState FloatRule;
+	bool bRescuePending = false;
+	bool bFloatApplied = false;
 };

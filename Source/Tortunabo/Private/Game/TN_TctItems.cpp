@@ -3,6 +3,7 @@
 #include "Game/TN_TctItems.h"
 #include "TN_TctItemArt.h"
 #include "TN_TctItemMeshes.h"
+#include "Game/TN_TctItemComponent.h"
 #include "Core/TN_Log.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
@@ -174,6 +175,8 @@ FText TNTctItems::DisplayName(ETNTctItem Kind)
 	case ETNTctItem::Cocobomba:      return NSLOCTEXT("TNTct", "ItemCocobomba", "Cocobomba");
 	case ETNTctItem::Alga:           return NSLOCTEXT("TNTct", "ItemAlga", "Charco de alga");
 	case ETNTctItem::GaviotaLadrona: return NSLOCTEXT("TNTct", "ItemGaviotaLadrona", "Gaviota ladrona");
+	case ETNTctItem::Flotador:       return NSLOCTEXT("TNTct", "ItemFlotador", "Flotador");
+	case ETNTctItem::MedusaTrampolin: return NSLOCTEXT("TNTct", "ItemMedusaTrampolin", "Medusa trampolín");
 	default:                         return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
 	}
 }
@@ -215,6 +218,8 @@ FVector TNTctItems::MeshScale(ETNTctItem Kind, bool bProjectile, bool bFallback)
 	case ETNTctItem::Cocobomba:      return bProjectile ? FVector(1.3f) : FVector(1.f);
 	case ETNTctItem::Alga:           return FVector(1.f);
 	case ETNTctItem::GaviotaLadrona: return FVector(1.f);
+	case ETNTctItem::Flotador:       return FVector(0.45f);
+	case ETNTctItem::MedusaTrampolin: return FVector(0.25f);
 	default: break;
 	}
 	if (bFallback)
@@ -350,6 +355,12 @@ bool TNTctItems::GiveItem(ATortugaCharacter* Turtle, ETNTctItem Kind)
 	if (!Turtle || !Turtle->HasAuthority())
 	{
 		return false;
+	}
+	if (Kind == ETNTctItem::Flotador)
+	{
+		// No va a la mano: se cuelga del caparazón.
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle);
+		return Effects && Effects->ServerGrantFloat();
 	}
 	FTN_InventoryItem Item;
 	UTN_InventoryComponent* Inventory = Turtle->GetInventoryComponent();

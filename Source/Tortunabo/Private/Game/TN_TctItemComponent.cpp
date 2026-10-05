@@ -1,5 +1,6 @@
 #include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctItemRules.h"
+#include "Core/TN_Log.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -8,6 +9,9 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/App.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/TN_TurtleMovementComponent.h"
+#include "TN_TctItemMeshes.h"
+#include "Game/TN_TctItems.h"
 #include "Player/TN_MovementLimits.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
@@ -19,6 +23,13 @@ namespace TNTctItemComponentDetail
 	FName HeavySource()
 	{
 		static const FName Name(TEXT("TctAnchor"));
+		return Name;
+	}
+
+	/** Quién quita la gravedad y frena a la tortuga mientras flota. */
+	FName FloatSource()
+	{
+		static const FName Name(TEXT("TctFloat"));
 		return Name;
 	}
 
@@ -58,6 +69,8 @@ void UTN_TctItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UTN_TctItemComponent, HeavyEnd);
+	DOREPLIFETIME(UTN_TctItemComponent, bHasFloat);
+	DOREPLIFETIME(UTN_TctItemComponent, FloatEnd);
 }
 
 UTN_TctItemComponent* UTN_TctItemComponent::FindOn(const AActor* Turtle)
@@ -113,8 +126,14 @@ void UTN_TctItemComponent::ClearEffects()
 		return;
 	}
 	HeavyEnd = 0.f;
+	bHasFloat = false;
+	FloatEnd = 0.f;
+	FloatRule = FTNTctFloatState();
+	bRescuePending = false;
 	GetOwner()->ForceNetUpdate();
 	ApplyHeavy();
+	ApplyFloat();
+	RefreshFloatLook();
 }
 
 bool UTN_TctItemComponent::IsHeavy() const
@@ -147,6 +166,129 @@ void UTN_TctItemComponent::ApplyHeavy()
 	}
 	bHeavyApplied = bWant && Stamina;
 	RefreshTick();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Flotador
+// ─────────────────────────────────────────────────────────────────────────────
+
+bool UTN_TctItemComponent::ServerGrantFloat()
+{
+	if (!GetOwner() || !GetOwner()->HasAuthority() || bHasFloat)
+	{
+		return false;
+	}
+	bHasFloat = true;
+	GetOwner()->ForceNetUpdate();
+	RefreshFloatLook();
+	return true;
+}
+
+bool UTN_TctItemComponent::IsFloating() const
+{
+	return FloatEnd > 0.f && Now() < FloatEnd;
+}
+
+bool UTN_TctItemComponent::ServerResolveFall(ETNTctFall Cause)
+{
+	ACharacter* Turtle = Cast<ACharacter>(GetOwner());
+	if (!Turtle || !Turtle->HasAuthority())
+	{
+		return Cause != ETNTctFall::None;
+	}
+	FloatRule.bHasFloat = bHasFloat;
+	const double Before = FloatRule.FloatEnd;
+	const bool bEliminated = TNTctRules::ResolveFall(Cause, FloatRule, Now(), TNTctItemTuning::FloatSeconds, TNTctItemTuning::FloatGraceSeconds);
+	if (FloatRule.FloatEnd != Before)
+	{
+		// Salvada: el flotador se gasta y empieza a flotar (sin la velocidad de la caída, subiendo despacio).
+		bHasFloat = false;
+		FloatEnd = static_cast<float>(FloatRule.FloatEnd);
+		bRescuePending = true;
+		Turtle->ForceNetUpdate();
+		UTN_TurtleMovementComponent::LaunchFromServer(Turtle, FVector(0.0, 0.0, TNTctItemTuning::FloatRiseSpeed));
+		TNTctItems::PlayCue(Turtle, ETNRaceSound::Boing, 0.7f);
+		ApplyFloat();
+		RefreshFloatLook();
+		UE_LOG(LogTortunabo, Log, TEXT("[TcT] %s se salva con el flotador."), *GetNameSafe(Turtle));
+	}
+	return bEliminated;
+}
+
+bool UTN_TctItemComponent::ServerTakeRescue()
+{
+	if (!bRescuePending || IsFloating())
+	{
+		return false;
+	}
+	bRescuePending = false;
+	ApplyFloat();
+	RefreshFloatLook();
+	return true;
+}
+
+void UTN_TctItemComponent::OnRep_Float()
+{
+	ApplyFloat();
+	RefreshFloatLook();
+}
+
+void UTN_TctItemComponent::ApplyFloat()
+{
+	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(GetOwner());
+	UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+	const bool bWant = IsFloating();
+	if (Stamina && bWant != bFloatApplied)
+	{
+		if (bWant)
+		{
+			Stamina->SetGravityScaleOverride(TNTctItemComponentDetail::FloatSource(), 0.f);
+			Stamina->SetSpeedCap(TNTctItemComponentDetail::FloatSource(), TNTctItemTuning::FloatSpeedCap);
+		}
+		else
+		{
+			Stamina->ClearGravityScaleOverride(TNTctItemComponentDetail::FloatSource());
+			Stamina->ClearSpeedCap(TNTctItemComponentDetail::FloatSource());
+		}
+	}
+	bFloatApplied = bWant && Stamina;
+	RefreshTick();
+}
+
+void UTN_TctItemComponent::RefreshFloatLook()
+{
+	AActor* Owner = GetOwner();
+	const bool bFloating = IsFloating();
+	if (!Owner || !TNTctItemComponentDetail::CanRender())
+	{
+		return;
+	}
+	if (!FloatLook && (bHasFloat || bFloating))
+	{
+		FloatLook = NewObject<UStaticMeshComponent>(Owner, NAME_None, RF_Transient);
+		FloatLook->SetStaticMesh(TNTctItemMeshes::FloatRing());
+		FloatLook->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		FloatLook->SetCastShadow(false);
+		FloatLook->SetupAttachment(Owner->GetRootComponent());
+		FloatLook->RegisterComponent();
+	}
+	if (!FloatLook)
+	{
+		return;
+	}
+	FloatLook->SetVisibility(bHasFloat || bFloating);
+	if (bFloating)
+	{
+		// A la cintura, en horizontal.
+		FloatLook->SetRelativeLocationAndRotation(FVector(0.0, 0.0, -25.0), FRotator::ZeroRotator);
+		FloatLook->SetRelativeScale3D(FVector(1.2));
+	}
+	else
+	{
+		// Colgado en el caparazón (a la espalda).
+		FloatLook->SetRelativeLocationAndRotation(FVector(-38.0, 0.0, 10.0), FRotator(75.0, 0.0, 0.0));
+		FloatLook->SetRelativeScale3D(FVector(0.6));
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -301,7 +443,7 @@ void UTN_TctItemComponent::TickTrails(float DeltaTime)
 
 void UTN_TctItemComponent::RefreshTick()
 {
-	SetComponentTickEnabled(bHeavyApplied || Trails.Num() > 0);
+	SetComponentTickEnabled(bHeavyApplied || bFloatApplied || bRescuePending || Trails.Num() > 0);
 }
 
 void UTN_TctItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -312,6 +454,12 @@ void UTN_TctItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	{
 		// Se acaba el lastre a la hora del servidor, en cada máquina (sin esperar otra réplica).
 		ApplyHeavy();
+	}
+	if (bFloatApplied && !IsFloating())
+	{
+		// Se acaba la flotación igual: cada máquina devuelve la gravedad a su hora.
+		ApplyFloat();
+		RefreshFloatLook();
 	}
 	RefreshTick();
 }
@@ -327,6 +475,16 @@ void UTN_TctItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (bHeavyApplied)
 	{
 		ApplyHeavy();
+	}
+	FloatEnd = 0.f;
+	if (bFloatApplied)
+	{
+		ApplyFloat();
+	}
+	if (FloatLook)
+	{
+		FloatLook->DestroyComponent();
+		FloatLook = nullptr;
 	}
 	for (const FTrail& Trail : Trails)
 	{

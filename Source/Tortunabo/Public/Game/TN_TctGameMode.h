@@ -12,6 +12,7 @@ class ATN_CoopPlayerState;
 class ATN_TctArena;
 class ATN_TctGameState;
 class ATN_TctItemPad;
+class ATortugaCharacter;
 
 /**
  * @brief Todos contra Todos (#651, plan maestro §3.4 y F7): rondas de supervivencia de 2 a 8 tortugas en una arena inventada.
@@ -246,6 +247,8 @@ private:
 	void StopItemPads();
 	/** Manos vacías y sin lastre para la ronda nueva. */
 	void ResetItemsForRound(APawn* Pawn) const;
+	/** El flotador ha salvado a Turtle del agua y ya no flota: la lanza al punto seco más cercano de la arena. */
+	void RescueFromWater(ATortugaCharacter* Turtle, float WaterZ) const;
 
 	// ── Rondas (TN_TctGameMode_Round.cpp) ──
 	void PrepareRound();

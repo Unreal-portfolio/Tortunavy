@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-05 22:35\n"
-"PO-Revision-Date: 2026-10-05 22:35\n"
+"POT-Creation-Date: 2026-10-05 22:46\n"
+"PO-Revision-Date: 2026-10-05 22:46\n"
 "Language-Team: \n"
 "Language: zh-Hant\n"
 "MIME-Version: 1.0\n"
@@ -882,106 +882,120 @@ msgid "Verde tortuga, el clásico que nunca falla."
 msgstr "龜綠色，永不出錯的經典款。"
 
 #. Key:	ItemKnockoutPistol
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(161)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(161)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(162)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(162)
 msgctxt "TNTct,ItemKnockoutPistol"
 msgid "Pistola de noqueo"
 msgstr "擊暈手槍"
 
 #. Key:	ItemAirBlunderbuss
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(162)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(162)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(163)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(163)
 msgctxt "TNTct,ItemAirBlunderbuss"
 msgid "Trabuco de aire"
 msgstr "空氣火槍"
 
 #. Key:	ItemGrapple
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(163)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(163)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(164)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(164)
 msgctxt "TNTct,ItemGrapple"
 msgid "Garfio"
 msgstr "鉤爪"
 
 #. Key:	ItemShovel
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(164)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(164)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(165)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(165)
 msgctxt "TNTct,ItemShovel"
 msgid "Pala"
 msgstr "小鏟子"
 
 #. Key:	ItemBeachBall
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(165)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(165)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(166)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(166)
 msgctxt "TNTct,ItemBeachBall"
 msgid "Balón de playa"
 msgstr "沙灘球"
 
 #. Key:	ItemAnchor
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(166)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(166)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(167)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(167)
 msgctxt "TNTct,ItemAnchor"
 msgid "Ancla"
 msgstr "船錨"
 
 #. Key:	ItemJellyDart
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(167)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(167)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(168)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(168)
 msgctxt "TNTct,ItemJellyDart"
 msgid "Dardo de medusa"
 msgstr "水母飛鏢"
 
 #. Key:	ItemInkPistol
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(168)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(168)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(169)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(169)
 msgctxt "TNTct,ItemInkPistol"
 msgid "Pistola de tinta"
 msgstr "墨水手槍"
 
 #. Key:	ItemBall
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(169)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(169)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(170)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(170)
 msgctxt "TNTct,ItemBall"
 msgid "Bola"
 msgstr "球"
 
 #. Key:	ItemConchTrap
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(170)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(170)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(171)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(171)
 msgctxt "TNTct,ItemConchTrap"
 msgid "Concha trampa"
 msgstr "貝殼陷阱"
 
 #. Key:	ItemBigHead
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(171)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(171)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(172)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(172)
 msgctxt "TNTct,ItemBigHead"
 msgid "Cabezota"
 msgstr "大頭"
 
 #. Key:	ItemCocobomba
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(174)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(174)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(175)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(175)
 msgctxt "TNTct,ItemCocobomba"
 msgid "Cocobomba"
 msgstr "椰子炸彈"
 
 #. Key:	ItemAlga
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(175)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(175)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(176)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(176)
 msgctxt "TNTct,ItemAlga"
 msgid "Charco de alga"
 msgstr "海藻水窪"
 
 #. Key:	ItemGaviotaLadrona
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(176)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(176)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(177)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(177)
 msgctxt "TNTct,ItemGaviotaLadrona"
 msgid "Gaviota ladrona"
 msgstr "小偷海鷗"
 
+#. Key:	ItemFlotador
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(178)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(178)
+msgctxt "TNTct,ItemFlotador"
+msgid "Flotador"
+msgstr "游泳圈"
+
+#. Key:	ItemMedusaTrampolin
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(179)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(179)
+msgctxt "TNTct,ItemMedusaTrampolin"
+msgid "Medusa trampolín"
+msgstr "水母彈跳床"
+
 #. Key:	ItemUnknown
-#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(177)
-#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(177)
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(180)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(180)
 msgctxt "TNRace,ItemUnknown"
 msgid "Objeto"
 msgstr "道具"
@@ -11382,8 +11396,8 @@ msgid "Equipar cosmético"
 msgstr "裝備外觀"
 
 #. Key:	PickupItemPrompt
-#. SourceLocation:	Source/Tortunabo/Private/World/TN_TctItemPad.cpp(56)
-#: Source/Tortunabo/Private/World/TN_TctItemPad.cpp(56)
+#. SourceLocation:	Source/Tortunabo/Private/World/TN_TctItemPad.cpp(58)
+#: Source/Tortunabo/Private/World/TN_TctItemPad.cpp(58)
 msgctxt "TNTct,PickupItemPrompt"
 msgid "Coger {0}"
 msgstr "拾取{0}"

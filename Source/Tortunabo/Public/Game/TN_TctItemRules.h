@@ -27,6 +27,12 @@
  *  - GaviotaLadrona: una gaviota va a por la tortuga más cercana a menos de 20 m, le quita el objeto de la mano y te lo trae;
  *    si no lleva nada, la marea 2 s. 1 carga.
  *
+ * De movilidad (#777):
+ *  - Flotador: se lleva en el caparazón (no ocupa la mano) y salva una vez del agua: flotas FloatSeconds y después te lanza
+ *    al punto seco más cercano; se gasta. 1 carga.
+ *  - MedusaTrampolin: se planta delante y dura JellyLifeSeconds; cualquier tortuga que la pisa (también quien la puso) bota
+ *    unos 6 m hacia arriba. 1 carga.
+ *
  * Lógica pura, sin mundo ni red (ítems, cargas, reaparición en los puntos de objetos, reparto de los puntos y cuánto empuja
  * cada golpe): la recorren las pruebas Tortunabo.Tct.Items.*.
  */
@@ -49,6 +55,8 @@ enum class ETNTctItem : uint8
 	Cocobomba,
 	Alga,
 	GaviotaLadrona,
+	Flotador,
+	MedusaTrampolin,
 	Count
 };
 
@@ -166,6 +174,28 @@ namespace TNTctItemTuning
 	inline constexpr float ThiefFlyHeight = 220.f;
 	inline constexpr float ThiefDizzySeconds = 2.f;
 	inline constexpr float ThiefMaxSeconds = 10.f;
+
+	/** Flotador: lo que flota, lo que sube mientras (más que el agua), su tope de velocidad y el respiro tras el rescate. */
+	inline constexpr float FloatSeconds = 4.f;
+	inline constexpr float FloatRiseSpeed = 45.f;
+	inline constexpr float FloatSpeedCap = 160.f;
+	inline constexpr float FloatGraceSeconds = 1.2f;
+	/** Un punto seco está al menos esto por encima del agua (uu). */
+	inline constexpr float FloatDryAbove = 100.f;
+	/** Rescate: velocidad en planta con la que se calcula el vuelo y su duración mínima y máxima (s). */
+	inline constexpr float RescueFlatSpeed = 1000.f;
+	inline constexpr float RescueMinSeconds = 0.8f;
+	inline constexpr float RescueMaxSeconds = 2.5f;
+
+	/** Medusa trampolín: vida, radio, altura del bote, distancia delante a la que se planta y espera entre botes. */
+	inline constexpr float JellyLifeSeconds = 15.f;
+	inline constexpr float JellyRadius = 110.f;
+	inline constexpr float JellyBounceHeight = 600.f;
+	inline constexpr float JellyForward = 170.f;
+	inline constexpr float JellyRearmSeconds = 0.5f;
+	/** Pies a esta altura por encima o por debajo de la base de la medusa: la pisan (uu). */
+	inline constexpr float JellyTouchUp = 70.f;
+	inline constexpr float JellyTouchDown = 40.f;
 
 	/**
 	 * Puntos de objetos: reaparición tras cogerlo (#778: 6 s, antes 12 s; más puntos con objeto a la vez, nunca más de uno
@@ -322,4 +352,19 @@ namespace TNTctItemRules
 {
 	/** El agarre dentro del charco de alga a partir del de siempre: casi sin rozamiento ni frenada y con poca aceleración. */
 	TORTUNABO_API FTNTctGrip SlipperyGrip(const FTNTctGrip& Base);
+
+	/** Velocidad vertical para subir Height (uu) con la gravedad GravityZ (negativa, cm/s²). */
+	TORTUNABO_API float BounceSpeed(float Height, float GravityZ);
+
+	/** Pies en Feet pisando la medusa con la base en Base (en su radio, a su altura y sin ir ya hacia arriba). */
+	TORTUNABO_API bool JellyTouches(const FVector& Base, const FVector& Feet, float VelocityZ);
+
+	/**
+	 * El punto seco más cercano a From entre Candidates (suelo pisable de la arena): al menos FloatDryAbove por encima del
+	 * agua en WaterZ. Si ninguno lo está, el más alto. false sin candidatos.
+	 */
+	TORTUNABO_API bool NearestDryPoint(const TArray<FVector>& Candidates, const FVector& From, float WaterZ, FVector& OutPoint);
+
+	/** Velocidad de lanzamiento para ir de From a To en una parábola con la gravedad GravityZ (negativa, cm/s²). */
+	TORTUNABO_API FVector RescueLaunch(const FVector& From, const FVector& To, float GravityZ);
 }

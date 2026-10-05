@@ -13,6 +13,7 @@
 #include "World/TN_InkProjectile.h"
 #include "World/TN_TctAlgaPuddle.h"
 #include "World/TN_TctProjectile.h"
+#include "World/TN_TctJellyPad.h"
 #include "World/TN_TctThiefGull.h"
 
 namespace TNTctItemUseDetail
@@ -282,6 +283,14 @@ void TNTctItems::ServerUse(ATortugaCharacter* Turtle, const FTN_InventoryItem& I
 	case ETNTctItem::Cocobomba:      bUsed = UseProjectile(Turtle, Kind); break;
 	case ETNTctItem::Alga:           bUsed = UseAlga(Turtle); break;
 	case ETNTctItem::GaviotaLadrona: bUsed = ATN_TctThiefGull::ServerLaunch(Turtle); break;
+	case ETNTctItem::MedusaTrampolin: bUsed = ATN_TctJellyPad::ServerPlant(Turtle) != nullptr; break;
+	case ETNTctItem::Flotador:
+	{
+		// Si llega a la mano (no debería: se cuelga del caparazón al cogerlo), usarlo es colgárselo.
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle);
+		bUsed = Effects && Effects->ServerGrantFloat();
+		break;
+	}
 	default: break;
 	}
 	if (!bUsed)

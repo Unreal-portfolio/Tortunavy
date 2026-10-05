@@ -27,6 +27,8 @@ namespace TNTctItemRulesDetail
 		{ ETNTctItem::Cocobomba,      TEXT("Cocobomba"),      ETNTctItemSource::Code,    2, 0.9f },
 		{ ETNTctItem::Alga,           TEXT("Alga"),           ETNTctItemSource::Code,    2, 0.8f },
 		{ ETNTctItem::GaviotaLadrona, TEXT("GaviotaLadrona"), ETNTctItemSource::Code,    1, 0.6f },
+		{ ETNTctItem::Flotador,       TEXT("Flotador"),       ETNTctItemSource::Code,    1, 0.6f },
+		{ ETNTctItem::MedusaTrampolin, TEXT("MedusaTrampolin"), ETNTctItemSource::Code,  1, 0.7f },
 	};
 	static_assert(UE_ARRAY_COUNT(Specs) == static_cast<int32>(ETNTctItem::Count), "Una ficha por objeto, en el orden del enum");
 
@@ -386,4 +388,53 @@ FTNTctGrip TNTctItemRules::SlipperyGrip(const FTNTctGrip& Base)
 	Out.BrakingDeceleration = FMath::Max(0.f, Base.BrakingDeceleration) * AlgaBrakingScale;
 	Out.MaxAcceleration = FMath::Max(0.f, Base.MaxAcceleration) * AlgaAccelerationScale;
 	return Out;
+}
+
+float TNTctItemRules::BounceSpeed(float Height, float GravityZ)
+{
+	return FMath::Sqrt(2.f * FMath::Max(0.f, Height) * FMath::Max(1.f, -GravityZ));
+}
+
+bool TNTctItemRules::JellyTouches(const FVector& Base, const FVector& Feet, float VelocityZ)
+{
+	using namespace TNTctItemTuning;
+	const double Height = Feet.Z - Base.Z;
+	return VelocityZ <= 50.f && Height <= JellyTouchUp && Height >= -JellyTouchDown
+		&& FVector::DistSquared2D(Base, Feet) <= FMath::Square(static_cast<double>(JellyRadius));
+}
+
+bool TNTctItemRules::NearestDryPoint(const TArray<FVector>& Candidates, const FVector& From, float WaterZ, FVector& OutPoint)
+{
+	int32 Nearest = INDEX_NONE;
+	int32 Highest = INDEX_NONE;
+	for (int32 Index = 0; Index < Candidates.Num(); ++Index)
+	{
+		const FVector& Point = Candidates[Index];
+		if (Highest == INDEX_NONE || Point.Z > Candidates[Highest].Z)
+		{
+			Highest = Index;
+		}
+		if (Point.Z >= WaterZ + TNTctItemTuning::FloatDryAbove
+			&& (Nearest == INDEX_NONE || FVector::DistSquared(Point, From) < FVector::DistSquared(Candidates[Nearest], From)))
+		{
+			Nearest = Index;
+		}
+	}
+	const int32 Pick = Nearest != INDEX_NONE ? Nearest : Highest;
+	if (Pick == INDEX_NONE)
+	{
+		return false;
+	}
+	OutPoint = Candidates[Pick];
+	return true;
+}
+
+FVector TNTctItemRules::RescueLaunch(const FVector& From, const FVector& To, float GravityZ)
+{
+	using namespace TNTctItemTuning;
+	const double Seconds = FMath::Clamp(FVector::Dist2D(From, To) / RescueFlatSpeed, static_cast<double>(RescueMinSeconds),
+		static_cast<double>(RescueMaxSeconds));
+	// To = From + V·T + ½·g·T²  →  V = (To − From − ½·g·T²) / T
+	const FVector Gravity(0.0, 0.0, FMath::Min(-1.0, static_cast<double>(GravityZ)));
+	return (To - From - 0.5 * Gravity * Seconds * Seconds) / Seconds;
 }

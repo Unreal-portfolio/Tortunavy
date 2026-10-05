@@ -173,6 +173,45 @@ namespace TNTctItemArtDetail
 			Painter.Fill([](float px, float py) { return Circle(px, py, 108.f, 84.f, 9.f); }, Hex(0xFFCB3D));
 			break;
 		}
+		case ETNTctItem::Flotador:
+		{
+			const auto Ring = [](float px, float py) { return FMath::Abs(Circle(px, py, 64.f, 64.f, 34.f)) - 13.f; };
+			Painter.Sticker(Ring, 6.f);
+			Body(Painter, Ring, 0x5A1010, 0xFF6A52, 0xD9432F, 17.f, 111.f);
+			// Cuatro gajos blancos.
+			for (int32 Band = 0; Band < 4; ++Band)
+			{
+				const float A0 = Rad(20.f + Band * 90.f);
+				const float A1 = Rad(60.f + Band * 90.f);
+				Painter.Fill([A0, A1](float px, float py) { return Arc(px, py, 64.f, 64.f, 34.f, A0, A1, 11.f); }, Hex(0xF5F1E8));
+			}
+			break;
+		}
+		case ETNTctItem::MedusaTrampolin:
+		{
+			const auto Bell = [](float px, float py) { return FMath::Max(Ellipse(px, py, 64.f, 84.f, 46.f, 40.f), py - 84.f); };
+			const auto Arrow = [](float px, float py)
+			{
+				return FMath::Min(Segment(px, py, 64.f, 30.f, 64.f, 8.f, 5.f),
+					FMath::Min(Segment(px, py, 64.f, 8.f, 52.f, 20.f, 5.f), Segment(px, py, 64.f, 8.f, 76.f, 20.f, 5.f)));
+			};
+			const auto Tentacles = [](float px, float py)
+			{
+				float Out = 1.e6f;
+				for (int32 Leg = 0; Leg < 5; ++Leg)
+				{
+					const float X = 34.f + Leg * 15.f;
+					Out = FMath::Min(Out, Segment(px, py, X, 84.f, X + (Leg % 2 == 0 ? 4.f : -4.f), 112.f, 3.5f));
+				}
+				return Out;
+			};
+			const auto All = [&](float px, float py) { return FMath::Min(FMath::Min(Bell(px, py), Arrow(px, py)), Tentacles(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Tentacles, 0x4A1A5A, 0xF0B0FF, 0xB060D0, 84.f, 114.f);
+			Body(Painter, Bell, 0x5A1048, 0xFF9AD8, 0xD04FA4, 44.f, 84.f);
+			Body(Painter, Arrow, 0x0A1C38, 0xFFE36B, 0xFFB020, 4.f, 34.f);
+			break;
+		}
 		default:
 			return false;
 		}
