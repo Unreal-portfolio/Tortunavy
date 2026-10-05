@@ -8,6 +8,7 @@
 #include "Vehicles/TN_RallyAnchor.h"
 #include "Vehicles/TN_RallyFXParticles.h"
 #include "Vehicles/TN_RallyHarpoon.h"
+#include "Vehicles/TN_RallyPufferMine.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -50,6 +51,7 @@ namespace TNRallyFX
 		case ETNRallyAmmo::Ancla: return 26.f;
 		case ETNRallyAmmo::Erizos: return 10.f;
 		case ETNRallyAmmo::Arpon: return 14.f;
+		case ETNRallyAmmo::PezGlobo: return 30.f;
 		default: return 18.f;
 		}
 	}
@@ -126,6 +128,7 @@ namespace TNRallyLook
 		case ETNRallyAmmo::Erizos: return FLinearColor(0.30f, 0.12f, 0.35f);
 		case ETNRallyAmmo::Medusa: return FLinearColor(0.95f, 0.55f, 0.85f);
 		case ETNRallyAmmo::Arpon: return FLinearColor(0.55f, 0.62f, 0.68f);
+		case ETNRallyAmmo::PezGlobo: return FLinearColor(0.95f, 0.78f, 0.30f);
 		default: return FLinearColor(0.35f, 0.20f, 0.08f);
 		}
 	}
@@ -358,6 +361,10 @@ void ATN_RallyProjectile::Impact(ATN_Buggy* HitBuggy, const FVector& Where, bool
 			ATN_RallyBurstFX::Broadcast(HitBuggy, ETNRallyBurstKind::CocoHit, Where, 40.f);
 		}
 		break;
+	case ETNRallyAmmo::PezGlobo:
+		// Pez globo (#773): donde cae (en un buggy, en el suelo de debajo) se queda la mina; no hace daño al caer.
+		ATN_RallyPufferMine::SpawnOnGround(World, Where, Cast<ATN_Buggy>(GetOwner()));
+		break;
 	default:
 		break;
 	}
@@ -426,21 +433,48 @@ void ATN_RallyProjectile::LifeSpanExpired()
 		bImpacted = true;
 		SpawnAlgaPuddle(nullptr, GetActorLocation());
 	}
+	if (HasAuthority() && !bImpacted && Ammo == ETNRallyAmmo::PezGlobo && GetWorld())
+	{
+		// Igual el pez globo (#773): la mina cae al suelo de debajo.
+		bImpacted = true;
+		ATN_RallyPufferMine::SpawnOnGround(GetWorld(), GetActorLocation(), Cast<ATN_Buggy>(GetOwner()));
+	}
 	Super::LifeSpanExpired();
 }
 
 void ATN_RallyProjectile::MortarBlast(ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir, bool bGunnerHit)
 {
-	for (TActorIterator<ATN_Buggy> It(GetWorld()); It; ++It)
+	MortarBlastAt(GetWorld(), Shooter.Get(), HitBuggy, Where, Dir, bGunnerHit, Ammo);
+}
+
+void ATN_RallyProjectile::MortarBlastAt(UWorld* World, ATN_Buggy* Shooter, ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir,
+	bool bGunnerHit, ETNRallyAmmo ReportAmmo)
+{
+	if (!World)
+	{
+		return;
+	}
+	for (TActorIterator<ATN_Buggy> It(World); It; ++It)
 	{
 		ATN_Buggy* Buggy = *It;
-		if (FVector::Dist(Buggy->GetActorLocation(), Where) > TNRallyTurret::MortarRadiusCm)
+		if (!Buggy->HasAuthority() || FVector::Dist(Buggy->GetActorLocation(), Where) > TNRallyTurret::MortarRadiusCm)
 		{
 			continue;
 		}
 		// El alcanzado recibe el golpe en el punto del impacto; el resto, en su centro. La artillera, solo con impacto directo.
 		const FVector Point = Buggy == HitBuggy ? Where : Buggy->GetActorLocation();
-		HitBuggyWith(Buggy, Point, Dir, bGunnerHit && Buggy == HitBuggy);
+		if (UTN_BuggyHealthComponent* Health = Buggy->FindComponentByClass<UTN_BuggyHealthComponent>())
+		{
+			// Tras reaparecer es un fantasma: el impacto no existe y no se avisa a nadie (#332).
+			const bool bGhost = Buggy->IsRespawnProtected();
+			const bool bLanded = Health->ReceiveAmmoHit(ETNRallyAmmo::Mortero, Point, Dir, bGunnerHit && Buggy == HitBuggy);
+			if (!bGhost)
+			{
+				TNRallyHitLog::NotifyServer(Shooter, Buggy, ReportAmmo, Point, !bLanded);
+			}
+			continue;
+		}
+		Buggy->ApplyMortarBlast();
 	}
 }
 

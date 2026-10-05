@@ -46,6 +46,10 @@ namespace TNRallyTurret
 			// Arpón (#772): rápido y con poca caída; una carga por caja.
 			Spec = { HarpoonSpeedCms, HarpoonGravityScale, HarpoonLifeSeconds, HarpoonRecoilCms, 0.6f, 1 };
 			break;
+		case ETNRallyAmmo::PezGlobo:
+			// Pez globo (#773): parábola corta; donde cae se queda la mina. Dos por caja.
+			Spec = { PufferThrowSpeedCms, 1.f, 3.f, 40.f, 0.6f, 2 };
+			break;
 		default:
 			break;
 		}
@@ -517,5 +521,32 @@ namespace TNRallyTurret
 	bool BotHarpoonInRange(float AheadCm)
 	{
 		return AheadCm >= BotHarpoonMinCm && AheadCm <= BotHarpoonMaxCm;
+	}
+}
+
+namespace TNRallyTurret
+{
+	bool IsMineAmmo(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::PezGlobo;
+	}
+
+	bool PufferTriggers(float AgeSeconds, float DistanceCm, bool bIsThrower)
+	{
+		if (AgeSeconds < PufferArmSeconds || DistanceCm > PufferTriggerRadiusCm)
+		{
+			return false;
+		}
+		return !bIsThrower || AgeSeconds >= PufferThrowerImmuneSeconds;
+	}
+
+	float PufferInflate(float SinceTriggerSeconds)
+	{
+		if (SinceTriggerSeconds <= 0.f)
+		{
+			return 1.f;
+		}
+		const float Alpha = FMath::Clamp(SinceTriggerSeconds / PufferInflateSeconds, 0.f, 1.f);
+		return FMath::Lerp(1.f, PufferInflateScale, Alpha);
 	}
 }

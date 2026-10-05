@@ -1,4 +1,4 @@
-// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770), ráfaga de erizos (#715), medusa saltarina (#771) y arpón (#772). Lógica pura (TNRallyTurret) y,
+// Municiones de la torreta del Rally (y objetos de Karts que las reutilizan): alga (#770), ráfaga de erizos (#715), medusa saltarina (#771), arpón (#772) y pez globo (#773). Lógica pura (TNRallyTurret) y,
 // para el charco, un mundo con física sin ventana (TN_RallyPhysicsTestKit.h). Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Turret; Quit" -nullrhi -unattended -NoSteam
 
@@ -7,6 +7,7 @@
 #include "EngineUtils.h"
 #include "Vehicles/TN_RallyHarpoon.h"
 #include "Vehicles/TN_RallyProjectile.h"
+#include "Vehicles/TN_RallyPufferMine.h"
 #include "Rally/TN_RallyLogic.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 
@@ -456,6 +457,92 @@ bool FTNRallyTurretArponTowTest::RunTest(const FString& Parameters)
 			TestTrue(TEXT("el arpón se clava y tira"), bTethered);
 			TestTrue(FString::Printf(TEXT("el que dispara gana velocidad hacia el de delante (%.0f cm/s)"), MaxSpeed), MaxSpeed > 300.f);
 		}
+	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretPezGloboTest, "Tortunabo.Rally.Turret.PezGlobo",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretPezGloboTest::RunTest(const FString& Parameters)
+{
+	using namespace TNRallyTurret;
+	TestTrue(TEXT("el pez globo deja una mina"), IsMineAmmo(ETNRallyAmmo::PezGlobo) && !IsMineAmmo(ETNRallyAmmo::Mortero));
+	TestEqual(TEXT("dos cargas por caja"), TNRally::ChargesFor(ETNRallyAmmo::PezGlobo), 2);
+	TestEqual(TEXT("se queda 15 s"), PufferLifeSeconds, 15.f);
+	TestFalse(TEXT("antes de armarse (0,4 s) no explota"), PufferTriggers(0.4f, 100.f, false));
+	TestTrue(TEXT("armada, un buggy a 3 m la dispara"), PufferTriggers(0.6f, 300.f, false));
+	TestFalse(TEXT("a 5 m, no"), PufferTriggers(5.f, 500.f, false));
+	TestFalse(TEXT("quien la lanza, en su inmunidad (1 s), no"), PufferTriggers(1.f, 100.f, true));
+	TestTrue(TEXT("pasada la inmunidad, también quien la lanza"), PufferTriggers(PufferThrowerImmuneSeconds, 100.f, true));
+	TestEqual(TEXT("sin disparar no se hincha"), PufferInflate(-1.f), 1.f);
+	TestEqual(TEXT("al explotar, hinchada del todo"), PufferInflate(PufferInflateSeconds), PufferInflateScale);
+	using TNRally::EBotSpecialShot;
+	TestEqual(TEXT("bot: con alguien detrás a 30 m, se la deja"),
+		static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::PezGlobo, 0.5f, 2000.f, 3000.f)), static_cast<int32>(EBotSpecialShot::AtBehind));
+	TestEqual(TEXT("bot: sin nadie cerca detrás, se espera"),
+		static_cast<int32>(TNRally::ShouldBotFireSpecial(ETNRallyAmmo::PezGlobo, 0.5f, 2000.f, 6000.f)), static_cast<int32>(EBotSpecialShot::Hold));
+	TestTrue(TEXT("más peces globo delante que detrás"), TNRally::AmmoWeightsForPlace(1, 8).PezGlobo > TNRally::AmmoWeightsForPlace(8, 8).PezGlobo);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyTurretPezGloboMineTest, "Tortunabo.Rally.Turret.PezGloboMine",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyTurretPezGloboMineTest::RunTest(const FString& Parameters)
+{
+	using namespace TNTurretAmmoTest;
+	const auto MineAlive = [](UWorld* World) { return static_cast<bool>(TActorIterator<ATN_RallyPufferMine>(World)); };
+	for (const bool bThrower : { true, false })
+	{
+		// Un buggy parado a 2 m de la mina: si es quien la lanzó, no explota hasta pasada su inmunidad; si es otro, al armarse.
+		FPhysicsWorld Test(bThrower ? TEXT("TNRallyPufferThrowerWorld") : TEXT("TNRallyPufferOtherWorld"));
+		if (!Test.World || !SpawnFlatGround(*Test.World))
+		{
+			AddError(TEXT("No se ha podido montar el suelo"));
+			return false;
+		}
+		ATN_Buggy* Buggy = SpawnBuggy(*Test.World, FTransform(FVector(200.0, 0.0, SpawnLiftCm)));
+		if (!TestNotNull(TEXT("buggy"), Buggy))
+		{
+			return false;
+		}
+		Settle(Test, *Buggy);
+		const ATN_RallyPufferMine* Mine = ATN_RallyPufferMine::SpawnOnGround(Test.World, FVector(0.0, 0.0, 50.0), bThrower ? Buggy : nullptr);
+		if (!TestNotNull(TEXT("la mina se queda en el suelo"), Mine))
+		{
+			return false;
+		}
+		TestTrue(FString::Printf(TEXT("apoyada en él (Z = %.1f)"), Mine->GetActorLocation().Z), FMath::Abs(Mine->GetActorLocation().Z) <= 5.0);
+		Test.Advance(0.4f);
+		TestTrue(TEXT("sin armar no explota"), MineAlive(Test.World));
+		Test.Advance(bThrower ? 0.8f : 0.6f);
+		TestEqual(bThrower ? TEXT("quien la lanza, en su inmunidad, no la dispara") : TEXT("otro buggy la dispara al armarse"), MineAlive(Test.World), bThrower);
+		float MaxUp = 0.f;
+		for (int32 Step = 0; Step < 2 * StepsPerSecond; ++Step)
+		{
+			Test.Step();
+			MaxUp = FMath::Max(MaxUp, static_cast<float>(Buggy->GetVelocity().Z));
+		}
+		TestFalse(TEXT("acaba explotando"), MineAlive(Test.World));
+		if (bThrower)
+		{
+			TestTrue(FString::Printf(TEXT("y la explosión del mortero lo levanta (%.0f cm/s)"), MaxUp), MaxUp > 200.f);
+		}
+	}
+	{
+		// Nadie la pisa: desaparece a los 15 s.
+		FPhysicsWorld Test(TEXT("TNRallyPufferLifeWorld"));
+		if (!Test.World || !SpawnFlatGround(*Test.World))
+		{
+			AddError(TEXT("No se ha podido montar el suelo"));
+			return false;
+		}
+		ATN_RallyPufferMine::SpawnOnGround(Test.World, FVector(0.0, 0.0, 50.0), nullptr);
+		Test.Advance(TNRallyTurret::PufferLifeSeconds - 0.5f);
+		TestTrue(TEXT("a los 14,5 s sigue"), MineAlive(Test.World));
+		Test.Advance(1.f);
+		TestFalse(TEXT("a los 15 s, fuera"), MineAlive(Test.World));
 	}
 	return true;
 }

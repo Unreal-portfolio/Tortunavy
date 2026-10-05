@@ -78,6 +78,7 @@ namespace TNRallyHUD
 		case ETNRallyAmmo::Erizos: return TNRaceItemArt::GetIcon(ETNRaceItem::HomingCrab);
 		case ETNRallyAmmo::Medusa: return TNRaceItemArt::GetIcon(ETNRaceItem::PelicanTaxi);
 		case ETNRallyAmmo::Arpon: return TNHUDArt::RopeRing();
+		case ETNRallyAmmo::PezGlobo: return TNRaceItemArt::GetIcon(ETNRaceItem::SandMine);
 		default: return TNRaceItemArt::GetIcon(ETNRaceItem::Coconut);
 		}
 	}

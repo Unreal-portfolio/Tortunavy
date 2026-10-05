@@ -405,6 +405,8 @@ namespace TNRally
 		Weights.Medusa = FMath::Lerp(0.5f, 2.5f, T);
 		// Arpón (#772): sobre todo para los últimos, que tienen a quién remolcarse.
 		Weights.Arpon = FMath::Lerp(0.4f, 2.f, T);
+		// Pez globo (#773): sobre todo para los primeros, que tienen a quién dejársela.
+		Weights.PezGlobo = FMath::Lerp(2.5f, 0.8f, T);
 		return Weights;
 	}
 
@@ -425,6 +427,7 @@ namespace TNRally
 		if ((Pick -= Weights.Erizos) < 0.f) { return ETNRallyAmmo::Erizos; }
 		if ((Pick -= Weights.Medusa) < 0.f) { return ETNRallyAmmo::Medusa; }
 		if ((Pick -= Weights.Arpon) < 0.f) { return ETNRallyAmmo::Arpon; }
+		if ((Pick -= Weights.PezGlobo) < 0.f) { return ETNRallyAmmo::PezGlobo; }
 		return ETNRallyAmmo::Tinta;
 	}
 
@@ -437,6 +440,7 @@ namespace TNRally
 		case ETNRallyAmmo::Ancla:
 		case ETNRallyAmmo::Concha:
 		case ETNRallyAmmo::Medusa:
+		case ETNRallyAmmo::PezGlobo:
 			return 2;
 		case ETNRallyAmmo::Burbuja:
 		case ETNRallyAmmo::Mortero:
@@ -476,6 +480,10 @@ namespace TNRally
 		case ETNRallyAmmo::Arpon:
 			// Remolque (#772): al de delante, ni pegado ni demasiado lejos.
 			Shot = TNRallyTurret::BotHarpoonInRange(AheadCm) ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold;
+			break;
+		case ETNRallyAmmo::PezGlobo:
+			// Mina (#773): hacia el que viene detrás, cerca.
+			Shot = BehindCm >= 0.f && BehindCm <= TNRallyTurret::BotPufferBehindCm ? EBotSpecialShot::AtBehind : EBotSpecialShot::Hold;
 			break;
 		default:
 			Shot = bAheadInRange ? EBotSpecialShot::AtAhead : EBotSpecialShot::Hold;

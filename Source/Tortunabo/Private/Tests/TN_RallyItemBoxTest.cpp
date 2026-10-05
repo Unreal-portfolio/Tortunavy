@@ -15,7 +15,7 @@ namespace TNItemBoxTest
 {
 	/** Munición especial que puede salir de una caja «?». */
 	const ETNRallyAmmo BoxAmmo[] = { ETNRallyAmmo::Concha, ETNRallyAmmo::ConchaGuiada, ETNRallyAmmo::Alga, ETNRallyAmmo::Tinta,
-		ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Ancla, ETNRallyAmmo::Erizos, ETNRallyAmmo::Medusa, ETNRallyAmmo::Arpon };
+		ETNRallyAmmo::Burbuja, ETNRallyAmmo::Mortero, ETNRallyAmmo::Ancla, ETNRallyAmmo::Erizos, ETNRallyAmmo::Medusa, ETNRallyAmmo::Arpon, ETNRallyAmmo::PezGlobo };
 
 	/** Veces que sale cada munición con Rolls tiradas uniformes (índice = valor de ETNRallyAmmo). */
 	TArray<int32> CountRolls(const TNRally::FAmmoWeights& Weights, int32 Rolls)

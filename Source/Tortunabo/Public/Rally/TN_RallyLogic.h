@@ -242,8 +242,10 @@ namespace TNRally
 		float Medusa = 0.f;
 		/** Arpón (#772): sobre todo los últimos. */
 		float Arpon = 0.f;
+		/** Pez globo (#773): sobre todo los primeros. */
+		float PezGlobo = 0.f;
 
-		float Total() const { return Alga + Burbuja + Mortero + Tinta + Ancla + Concha + ConchaGuiada + Erizos + Medusa + Arpon; }
+		float Total() const { return Alga + Burbuja + Mortero + Tinta + Ancla + Concha + ConchaGuiada + Erizos + Medusa + Arpon + PezGlobo; }
 	};
 
 	/**
@@ -256,7 +258,7 @@ namespace TNRally
 	/** Elige munición con una tirada en [0, 1). Nunca Coco ni None. */
 	TORTUNABO_API ETNRallyAmmo PickAmmo(const FAmmoWeights& Weights, float Roll01);
 
-	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2, Concha 2, Concha teledirigida 1, Erizos 1 (una ráfaga), Medusa 2, Arpón 1. */
+	/** Cargas por caja: Alga 2, Burbuja 1, Mortero 1, Tinta 2, Ancla 2, Concha 2, Concha teledirigida 1, Erizos 1 (una ráfaga), Medusa 2, Arpón 1, Pez globo 2. */
 	TORTUNABO_API int32 ChargesFor(ETNRallyAmmo Ammo);
 
 	/** Hacia dónde dispara un bot su munición especial (ShouldBotFireSpecial). */
@@ -288,7 +290,7 @@ namespace TNRally
 	 * Bot sin artillera humana (#629): qué hace con la especial Ammo que lleva HeldSeconds. AheadCm y BehindCm, distancia
 	 * al buggy de justo delante y de justo detrás (negativa si no hay). Conchas, mortero, tinta y ancla, al de delante a
 	 * menos de BotSpecialRangeCm; el alga, al de detrás a menos de BotAlgaBehindRangeCm (si no, al de delante); la burbuja,
-	 * al rato; el arpón (#772), al de delante a entre 15 y 60 m; la medusa (#771), con bHopThreat (una teledirigida le persigue o tiene un charco delante) o al rato. Pasados
+	 * al rato; el arpón (#772), al de delante a entre 15 y 60 m; el pez globo (#773), con alguien detrás a menos de 40 m; la medusa (#771), con bHopThreat (una teledirigida le persigue o tiene un charco delante) o al rato. Pasados
 	 * BotMaxHoldSeconds, la gasta igual.
 	 */
 	TORTUNABO_API EBotSpecialShot ShouldBotFireSpecial(ETNRallyAmmo Ammo, float HeldSeconds, float AheadCm, float BehindCm,

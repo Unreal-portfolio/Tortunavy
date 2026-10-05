@@ -43,6 +43,14 @@ public:
 
 	ETNRallyAmmo GetAmmo() const { return Ammo; }
 
+	/**
+	 * Solo servidor: la explosión del mortero en Where (radio TNRallyTurret::MortarRadiusCm) a todos los buggies dentro,
+	 * también al de Shooter. HitBuggy, si lo hay, recibe el golpe en Where (y en la artillera con bGunnerHit); el resto, en
+	 * su centro. La confirmación de impactos dice ReportAmmo. La usan el mortero y el pez globo (#773).
+	 */
+	static void MortarBlastAt(UWorld* World, ATN_Buggy* Shooter, ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir,
+		bool bGunnerHit, ETNRallyAmmo ReportAmmo = ETNRallyAmmo::Mortero);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Estela opcional que sigue al proyectil (solo en las máquinas con pantalla). */

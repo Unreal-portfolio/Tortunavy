@@ -391,4 +391,33 @@ namespace TNRallyTurret
 
 	/** Bots: el arpón, al de delante si está a entre BotHarpoonMinCm y BotHarpoonMaxCm. */
 	TORTUNABO_API bool BotHarpoonInRange(float AheadCm);
+
+	// ── Pez globo (#773) ────────────────────────────────────────────────────────
+
+	/** Lanzamiento en parábola corta (cm/s, con la gravedad normal). */
+	constexpr float PufferThrowSpeedCms = 1500.f;
+	/** La mina se queda 15 s; se arma a los 0,5 s y quien la lanza es inmune a ella 1,5 s. */
+	constexpr float PufferLifeSeconds = 15.f;
+	constexpr float PufferArmSeconds = 0.5f;
+	constexpr float PufferThrowerImmuneSeconds = 1.5f;
+	/** Un buggy a menos de esto (cm) la dispara: se hincha PufferInflateSeconds y explota como el mortero. */
+	constexpr float PufferTriggerRadiusCm = 400.f;
+	constexpr float PufferInflateSeconds = 0.3f;
+	/** Radio de la mina (cm) y lo que crece al hincharse. */
+	constexpr float PufferRadiusCm = 35.f;
+	constexpr float PufferInflateScale = 1.8f;
+	/** Bots: la sueltan con alguien detrás a menos de esto (cm). */
+	constexpr float BotPufferBehindCm = 4000.f;
+
+	/** Munición que deja una mina en la pista (el pez globo). */
+	TORTUNABO_API bool IsMineAmmo(ETNRallyAmmo Ammo);
+
+	/**
+	 * Si un buggy a DistanceCm de la mina la dispara a los AgeSeconds de dejarla: pasado el armado, a menos de
+	 * PufferTriggerRadiusCm y, si es quien la lanzó (bIsThrower), pasada su inmunidad.
+	 */
+	TORTUNABO_API bool PufferTriggers(float AgeSeconds, float DistanceCm, bool bIsThrower);
+
+	/** Escala de la mina hinchándose: 1 al dispararse y PufferInflateScale al explotar (SinceTrigger en s; < 0, sin disparar). */
+	TORTUNABO_API float PufferInflate(float SinceTriggerSeconds);
 }

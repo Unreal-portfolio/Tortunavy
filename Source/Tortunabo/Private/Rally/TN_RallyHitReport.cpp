@@ -19,6 +19,7 @@ FText TNRallyHitLog::AmmoName(ETNRallyAmmo Ammo)
 	case ETNRallyAmmo::Erizos: return NSLOCTEXT("Rally", "AmmoErizos", "Ráfaga de erizos");
 	case ETNRallyAmmo::Medusa: return NSLOCTEXT("Rally", "AmmoMedusa", "Medusa saltarina");
 	case ETNRallyAmmo::Arpon: return NSLOCTEXT("Rally", "AmmoArpon", "Arpón");
+	case ETNRallyAmmo::PezGlobo: return NSLOCTEXT("Rally", "AmmoPezGlobo", "Pez globo");
 	default: return FText::GetEmpty();
 	}
 }

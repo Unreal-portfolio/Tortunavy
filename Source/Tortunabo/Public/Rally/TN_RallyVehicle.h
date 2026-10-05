@@ -40,7 +40,9 @@ enum class ETNRallyAmmo : uint8
 	/** Medusa saltarina (#771): sin proyectil, hace botar unos 3 m al buggy propio. */
 	Medusa,
 	/** Arpón (#772): se clava en un buggy y remolca hacia él al propio buggy. */
-	Arpon
+	Arpon,
+	/** Pez globo (#773): mina que se queda en la pista y explota como el mortero. */
+	PezGlobo
 };
 
 UINTERFACE(MinimalAPI, meta = (CannotImplementInterfaceInBlueprint))
