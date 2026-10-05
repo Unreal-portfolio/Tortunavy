@@ -8,11 +8,11 @@ class APawn;
 class UDataTable;
 
 /**
- * Objetos de los rebuscables de Supervivencia (#724): los de siempre de DT_Items salvo el tótem (energía sin fin, bola,
- * cabezota, concha trampa y tinta) y, de la carrera de la playa, los cocos (turbo, triple y dorado), el cangrejo
- * teledirigido, la mina de arena, la nube de tormenta y el disco volador. Cada uno con el peso de la carrera según el
- * puesto (TNRaceItems::RollLoot, con el avance por el camino del nivel), salvo la cabezota, que aquí sí salva de una
- * gaviota y sale como cualquier otro.
+ * Objetos de los rebuscables de Supervivencia (#724): los de siempre de DT_Items salvo el tótem y la cabezota (energía sin
+ * fin, bola, concha trampa y tinta) y, de la carrera de la playa, los cocos (turbo y triple), el cangrejo teledirigido, la
+ * mina de arena, la nube de tormenta y el disco volador. Cada uno con el peso de la carrera según el puesto
+ * (TNRaceItems::RollLoot, con el avance por el camino del nivel). Sin coco dorado ni cabezota (#736): la cabezota solo
+ * salvaba de las gaviotas, que aquí ya no eliminan (#733).
  *
  * Al empezar cada nivel desde el 2, las que llegaron antes a la meta del anterior salen con cocos (StartItemFor).
  *
@@ -30,9 +30,6 @@ namespace TNSurvivalLoot
 	/** Separación entre rebuscables (cm), la de la playa: de centro a centro y de borde a borde. */
 	inline constexpr double MinSpacing = 900.0;
 	inline constexpr double MinRimGap = 300.0;
-
-	/** Peso de la cabezota (en la carrera, 0,3: allí no protege de nada). */
-	inline constexpr float BigHeadWeight = 1.f;
 
 	/** Si un objeto de siempre (por su uso) sale en Supervivencia. */
 	TORTUNABO_API bool AllowsCatalogUse(ETN_ItemUseType Use);
@@ -56,13 +53,13 @@ namespace TNSurvivalLoot
 
 	/** Cocos con los que se empieza el nivel según el puesto de llegada, de la última a la primera premiada. */
 	inline constexpr ETNRaceItem StartItemLadder[] = { ETNRaceItem::Coconut, ETNRaceItem::TripleCoconut2,
-		ETNRaceItem::TripleCoconut3, ETNRaceItem::GoldenCoconut };
+		ETNRaceItem::TripleCoconut3 };
 
 	/**
 	 * Lo que recibe al empezar el nivel quien llegó en el puesto Place (0 = la primera) de Finishers que llegaron a la meta
-	 * del anterior. La última no recibe nada; de las demás, la penúltima un coco, la anterior dos (triple coco de 2 usos),
-	 * la anterior tres (triple coco) y la primera, con 5 o más, el coco dorado. Desde 6, las de detrás de la 4.ª, nada.
-	 * Ej.: con 3, dos cocos, un coco y nada; con 5, dorado, tres, dos, uno y nada.
+	 * del anterior. La última no recibe nada; de las demás, la penúltima un coco, la anterior dos (triple coco de 2 usos)
+	 * y la anterior tres (triple coco); sin coco dorado (#736). Desde 5, las de detrás de la 3.ª, nada.
+	 * Ej.: con 3, dos cocos, un coco y nada; con 5, tres, dos, uno, nada y nada.
 	 */
 	TORTUNABO_API ETNRaceItem StartItemFor(int32 Place, int32 Finishers);
 

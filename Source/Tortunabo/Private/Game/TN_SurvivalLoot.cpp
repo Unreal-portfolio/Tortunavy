@@ -12,11 +12,11 @@ bool TNSurvivalLoot::AllowsCatalogUse(ETN_ItemUseType Use)
 	{
 		case ETN_ItemUseType::SelfStaminaBoost:
 		case ETN_ItemUseType::Throwable:
-		case ETN_ItemUseType::BigHead:
 		case ETN_ItemUseType::Conch:
 		case ETN_ItemUseType::InkThrower:
 			return true;
-		// El tótem no: en Supervivencia morir es definitivo.
+		// El tótem no: en Supervivencia morir es definitivo. La cabezota tampoco: solo salvaba de las gaviotas, que aquí ya
+		// no eliminan (#733, #736).
 		default:
 			return false;
 	}
@@ -28,7 +28,6 @@ bool TNSurvivalLoot::AllowsRaceItem(ETNRaceItem Kind, int32 Place, int32 Racers)
 	{
 		case ETNRaceItem::Coconut:
 		case ETNRaceItem::TripleCoconut3:
-		case ETNRaceItem::GoldenCoconut:
 		case ETNRaceItem::SandMine:
 		case ETNRaceItem::Frisbee:
 			return true;
@@ -53,7 +52,7 @@ float TNSurvivalLoot::Weight(ETN_ItemUseType Use, ETNRaceItem Kind, float RaceWe
 	{
 		return 0.f;
 	}
-	return Use == ETN_ItemUseType::BigHead ? BigHeadWeight : FMath::Max(0.f, RaceWeight);
+	return FMath::Max(0.f, RaceWeight);
 }
 
 double TNSurvivalLoot::SpotChance(int32 Priority)
