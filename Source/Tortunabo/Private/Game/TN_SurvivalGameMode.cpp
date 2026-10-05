@@ -3,6 +3,8 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_GameModeSpawnUtils.h"
+#include "Game/TN_SurvivalLoot.h"
+#include "Player/TortugaCharacter.h"
 #include "World/TN_ChunkManager.h"
 #include "World/TN_StormVolume.h"
 #include "World/ProcMap/TN_PathStorm.h"
@@ -157,6 +159,7 @@ void ATN_SurvivalGameMode::Logout(AController* Exiting)
 	{
 		LeftPlayerIds.Add(ExitingPS->GetPlayerId());
 		FinishedPawns.Remove(ExitingPS->GetPlayerId());
+		ArrivalTimes.Remove(ExitingPS->GetPlayerId());
 	}
 
 	// La base vuelve a evaluar el nivel (UpdateRoundProgressAndMaybeFinish) sin el que se va.
@@ -176,6 +179,7 @@ void ATN_SurvivalGameMode::MarkPlayerFinished(APlayerController* PlayerControlle
 	{
 		// Antes de Super: al llegar pasa a espectador y deja de poseer el pawn, que se reutiliza en el siguiente nivel.
 		FinishedPawns.Add(TNPS->GetPlayerId(), Pawn);
+		ArrivalTimes.Add(TNPS->GetPlayerId(), GetWorld()->GetTimeSeconds());
 	}
 
 	Super::MarkPlayerFinished(PlayerController);
@@ -366,7 +370,9 @@ void ATN_SurvivalGameMode::PollLevelReady()
 
 void ATN_SurvivalGameMode::SendSurvivorsToLevelStart()
 {
-	const ATN_ChunkManager* Manager = FindChunkManager();
+	// Las vivas que siguen en la partida, con su hora de llegada a la meta del nivel anterior (en el nivel 1, ninguna).
+	TArray<APlayerController*> Survivors;
+	TArray<float> Arrivals;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PC = It->Get();
@@ -375,60 +381,107 @@ void ATN_SurvivalGameMode::SendSurvivorsToLevelStart()
 		{
 			continue;
 		}
-
 		TNPS->bHasFinishedRun = false;
 		TNPS->FinishRank = 0;
 		TNPS->DeathZoneTimeRemaining = -1.f;
 		TNPS->ForceNetUpdate();
+		Survivors.Add(PC);
+		const float* Arrived = ArrivalTimes.Find(TNPS->GetPlayerId());
+		Arrivals.Add(Arrived ? *Arrived : -1.f);
+	}
+	ArrivalTimes.Reset();
 
-		// ChoosePlayerStart y no FindPlayerStart: este devuelve el sitio de la vez anterior (el corral en el nivel 1).
-		AActor* Start = ChoosePlayerStart(PC);
-		PC->StartSpot = Start;
-		const FVector FallbackLocation = Manager ? Manager->GetActorLocation() : FVector::ZeroVector;
-		const FVector StartLocation = Start ? Start->GetActorLocation() : FallbackLocation + FVector(0.f, 0.f, 100.f);
-		const FRotator StartRotation(0.f, Start ? Start->GetActorRotation().Yaw : (Manager ? Manager->GetActorRotation().Yaw : 0.f), 0.f);
-
-		APawn* Pawn = FinishedPawns.FindRef(TNPS->GetPlayerId()).Get();
-		APawn* CurrentPawn = PC->GetPawn();
-		if (Pawn)
-		{
-			// Mismo camino que una reanimación: visible, con colisión, poseído y con el input restaurado.
-			RestorePossessionAfterRevive(PC, Pawn, StartLocation, true);
-			Pawn->SetActorRotation(StartRotation);
-			PC->ClientSetRotation(StartRotation);
-		}
-		else if (CurrentPawn && !TNPS->IsOnlyASpectator())
-		{
-			// Sigue en juego (en el nivel 1, desde el corral): se le lleva a la salida tal cual.
-			ACharacter* Character = Cast<ACharacter>(CurrentPawn);
-			UCharacterMovementComponent* Move = Character ? Character->GetCharacterMovement() : nullptr;
-			if (Move)
-			{
-				Move->StopMovementImmediately();
-			}
-			CurrentPawn->SetActorLocationAndRotation(StartLocation, StartRotation, false, nullptr, ETeleportType::TeleportPhysics);
-			PC->ClientSetRotation(StartRotation, true);
-			if (Move)
-			{
-				Move->SetMovementMode(MOVE_Falling);
-			}
-		}
-		else
-		{
-			if (PC->PlayerState)
-			{
-				PC->PlayerState->SetIsOnlyASpectator(false);
-			}
-			RestartPlayer(PC);
-		}
+	for (APlayerController* PC : Survivors)
+	{
+		ReleaseSurvivor(PC);
 	}
 	FinishedPawns.Reset();
+	// Ya con su pawn: cocos según el orden de llegada (#724).
+	GiveStartItems(Survivors, Arrivals);
 	bLevelLoading = false;
-	// La tormenta sale con ellas, por detrás de la salida (#448: cada nivel empieza igual para todas).
+	// La tormenta sale con ellos, por detrás de la salida (#448: cada nivel empieza igual para todos).
 	StartLevelStorm();
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Survival] ═══ Nivel %d ═══"), CurrentLevel);
 	UpdateRoundProgressAndMaybeFinish();
+}
+
+void ATN_SurvivalGameMode::GiveStartItems(const TArray<APlayerController*>& Survivors, const TArray<float>& Arrivals)
+{
+	// Solo cuentan las que llegaron (en el nivel 1 no hay llegadas: nadie recibe nada).
+	TArray<int32> Order;
+	for (int32 i = 0; i < Arrivals.Num(); ++i)
+	{
+		if (Arrivals[i] >= 0.f)
+		{
+			Order.Add(i);
+		}
+	}
+	Order.StableSort([&Arrivals](int32 A, int32 B) { return Arrivals[A] < Arrivals[B]; });
+	for (int32 Place = 0; Place < Order.Num(); ++Place)
+	{
+		const ETNRaceItem Kind = TNSurvivalLoot::StartItemFor(Place, Order.Num());
+		APlayerController* PC = Survivors[Order[Place]];
+		ATortugaCharacter* Turtle = PC ? Cast<ATortugaCharacter>(PC->GetPawn()) : nullptr;
+		if (Kind == ETNRaceItem::None || !Turtle)
+		{
+			continue;
+		}
+		const bool bGiven = TNRaceItems::GiveItem(Turtle, Kind);
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] '%s' llegó %dª de %d: empieza con %s%s."), *GetNameSafe(PC), Place + 1, Order.Num(),
+			*TNRaceItems::CodeName(Kind), bGiven ? TEXT("") : TEXT(" (no se ha podido dar)"));
+	}
+}
+
+void ATN_SurvivalGameMode::ReleaseSurvivor(APlayerController* PC)
+{
+	ATN_CoopPlayerState* TNPS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
+	if (!TNPS)
+	{
+		return;
+	}
+	const ATN_ChunkManager* Manager = FindChunkManager();
+	// ChoosePlayerStart y no FindPlayerStart: este devuelve el sitio de la vez anterior (el corral en el nivel 1).
+	AActor* Start = ChoosePlayerStart(PC);
+	PC->StartSpot = Start;
+	const FVector FallbackLocation = Manager ? Manager->GetActorLocation() : FVector::ZeroVector;
+	const FVector StartLocation = Start ? Start->GetActorLocation() : FallbackLocation + FVector(0.f, 0.f, 100.f);
+	const FRotator StartRotation(0.f, Start ? Start->GetActorRotation().Yaw : (Manager ? Manager->GetActorRotation().Yaw : 0.f), 0.f);
+
+	APawn* Pawn = FinishedPawns.FindRef(TNPS->GetPlayerId()).Get();
+	APawn* CurrentPawn = PC->GetPawn();
+	if (Pawn)
+	{
+		// Mismo camino que una reanimación: visible, con colisión, poseído y con el input restaurado.
+		RestorePossessionAfterRevive(PC, Pawn, StartLocation, true);
+		Pawn->SetActorRotation(StartRotation);
+		PC->ClientSetRotation(StartRotation);
+	}
+	else if (CurrentPawn && !TNPS->IsOnlyASpectator())
+	{
+		// Sigue en juego (en el nivel 1, desde el corral): se le lleva a la salida tal cual.
+		ACharacter* Character = Cast<ACharacter>(CurrentPawn);
+		UCharacterMovementComponent* Move = Character ? Character->GetCharacterMovement() : nullptr;
+		if (Move)
+		{
+			Move->StopMovementImmediately();
+		}
+		CurrentPawn->SetActorLocationAndRotation(StartLocation, StartRotation, false, nullptr, ETeleportType::TeleportPhysics);
+		PC->ClientSetRotation(StartRotation, true);
+		if (Move)
+		{
+			Move->SetMovementMode(MOVE_Falling);
+		}
+	}
+	else
+	{
+		if (PC->PlayerState)
+		{
+			PC->PlayerState->SetIsOnlyASpectator(false);
+		}
+		RestartPlayer(PC);
+	}
+	FinishedPawns.Remove(TNPS->GetPlayerId());
 }
 
 void ATN_SurvivalGameMode::FinishSurvival(int32 WinnerId)

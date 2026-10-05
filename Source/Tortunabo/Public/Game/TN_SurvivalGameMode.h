@@ -101,6 +101,12 @@ private:
 	/** Pawn oculto de quien llegó a la meta: se reutiliza al empezar el siguiente nivel. Key = PlayerId. */
 	TMap<int32, TWeakObjectPtr<APawn>> FinishedPawns;
 
+	/**
+	 * Hora (s del mundo) a la que cada viva llegó a la meta del nivel: el orden de llegada decide los cocos con los que
+	 * empieza el siguiente (#724, TNSurvivalLoot::StartItemFor). Key = PlayerId.
+	 */
+	TMap<int32, float> ArrivalTimes;
+
 	/** Jugadores que se han ido durante la partida (su PlayerState puede seguir un momento en PlayerArray). */
 	TSet<int32> LeftPlayerIds;
 
@@ -114,6 +120,12 @@ private:
 	FTimerHandle LevelReadyPollHandle;
 
 	ATN_ChunkManager* FindChunkManager() const;
+
+	/** Pone a PC en la salida del mapa del nivel: su pawn de la meta, el que tiene o uno nuevo. */
+	void ReleaseSurvivor(APlayerController* PC);
+
+	/** Da a cada una de Survivors los cocos de su puesto de llegada al nivel anterior (Arrivals, mismo orden; <0 = sin hora). */
+	void GiveStartItems(const TArray<APlayerController*>& Survivors, const TArray<float>& Arrivals);
 
 	/** Semilla de ?SurvivalMap= si es un mapa del catálogo (o el de pruebas); 0 si no se pide o no es válida. */
 	uint32 ParseFirstLevelMap() const;

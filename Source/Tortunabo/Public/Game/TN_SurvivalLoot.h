@@ -14,6 +14,8 @@ class UDataTable;
  * puesto (TNRaceItems::RollLoot, con el avance por el camino del nivel), salvo la cabezota, que aquí sí salva de una
  * gaviota y sale como cualquier otro.
  *
+ * Al empezar cada nivel desde el 2, las que llegaron antes a la meta del anterior salen con cocos (StartItemFor).
+ *
  * Cada decorado se rellena RefillSeconds después de cada resultado, para que quien va primera no deje vacíos los de las
  * demás. La densidad de rebuscables es la de la carrera (TNBeachLoot): 70 % de suerte, casi todo el decorado elegible y 9 m de
  * centro a centro y 3 m de borde a borde como mínimo. La reparte ATN_ProcMapGenerator::SpawnSearchSpots.
@@ -58,6 +60,18 @@ namespace TNSurvivalLoot
 	 * las formaciones), siempre; lo mediano (1-2, objetos del camino y agujas), casi siempre; los peñascos (3), a menudo.
 	 */
 	TORTUNABO_API double SpotChance(int32 Priority);
+
+	/** Cocos con los que se empieza el nivel según el puesto de llegada, de la última a la primera premiada. */
+	inline constexpr ETNRaceItem StartItemLadder[] = { ETNRaceItem::Coconut, ETNRaceItem::TripleCoconut2,
+		ETNRaceItem::TripleCoconut3, ETNRaceItem::GoldenCoconut };
+
+	/**
+	 * Lo que recibe al empezar el nivel quien llegó en el puesto Place (0 = la primera) de Finishers que llegaron a la meta
+	 * del anterior. La última no recibe nada; de las demás, la penúltima un coco, la anterior dos (triple coco de 2 usos),
+	 * la anterior tres (triple coco) y la primera, con 5 o más, el coco dorado. Desde 6, las de detrás de la 4.ª, nada.
+	 * Ej.: con 3, dos cocos, un coco y nada; con 5, dorado, tres, dos, uno y nada.
+	 */
+	TORTUNABO_API ETNRaceItem StartItemFor(int32 Place, int32 Finishers);
 
 	/** Servidor: sortea el objeto que le sale a Picker de Catalog (DT_Items) y de los de carrera. false si no sale nada. */
 	TORTUNABO_API bool Roll(const APawn* Picker, const UDataTable* Catalog, FTN_InventoryItem& OutItem);
