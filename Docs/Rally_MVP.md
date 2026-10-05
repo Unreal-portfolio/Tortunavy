@@ -35,7 +35,7 @@ El retroceso es la mecánica central: cada disparo empuja al buggy propio en sen
 | Munición | Origen | Efecto [1.ª pasada] | Retroceso |
 |---|---|---|---|
 | Coco | infinita; 6 disparos seguidos sobrecalientan 2,5 s | impacto: impulso lateral 350 cm/s y bamboleo de dirección 0,4 s | 120 cm/s |
-| Alga | caja, 2 cargas | al tocar buggy o suelo deja un charco de 6 m durante 5 s: agarre ×0,5 y velocidad máx. ×0,6 a **cualquier** buggy dentro, incluido el propio | 60 cm/s |
+| Alga | caja, 2 cargas | sale a 3000 cm/s con el doble de gravedad (#770); al tocar buggy o suelo, o al acabarse en el aire, deja en el suelo de debajo (solo el escenario, con su inclinación) un charco de 6 m durante 5 s: agarre ×0,35, velocidad máx. ×0,5 y, al entrar, un derrape corto de hasta 90 °/s que decide el servidor, a **cualquier** buggy dentro, incluido el propio | 60 cm/s |
 | Burbuja | caja, 1 carga | burbuja lenta que flota 6 s; el primer buggy que la toca (propio o rival) gana un escudo de 4 s que anula un impacto o un charco | 40 cm/s (#629) |
 | Concha | caja, 2 cargas (#629) | corre por el suelo hacia donde apunta la torreta, rebota en las paredes y hace trompear al primero que toca | 250 cm/s |
 | Concha teledirigida | caja, 1 carga (#629) | igual, pero persigue al buggy de justo delante (disparada hacia atrás sale recta) | 250 cm/s |

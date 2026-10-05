@@ -225,6 +225,23 @@ void ATN_Buggy::NotePuddleContact()
 	if (!bInPuddle)
 	{
 		bInPuddle = true;
+		ApplyPuddleEntrySpin();
 		ForceNetUpdate();
+	}
+}
+
+void ATN_Buggy::ApplyPuddleEntrySpin()
+{
+	// Derrape corto al entrar en el charco (#770): un giro de guiñada que decide el servidor (sentido al azar) y que llega a
+	// los clientes con el movimiento replicado del chasis; con el agarre del charco, el buggy se va de lado un instante.
+	USkeletalMeshComponent* Chassis = GetMesh();
+	if (!HasAuthority() || !Chassis || !Chassis->IsSimulatingPhysics())
+	{
+		return;
+	}
+	const float SpinDeg = TNRallyTurret::PuddleEntrySpinDegPerSecond(static_cast<float>(GetVelocity().Size2D()), FMath::RandBool());
+	if (SpinDeg != 0.f)
+	{
+		Chassis->AddAngularImpulseInDegrees(GetActorUpVector() * SpinDeg, NAME_None, true);
 	}
 }

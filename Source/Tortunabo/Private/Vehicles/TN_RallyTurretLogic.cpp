@@ -11,7 +11,8 @@ namespace TNRallyTurret
 			Spec = { 6000.f, 0.3f, 3.f, 120.f, 0.25f, 0 };
 			break;
 		case ETNRallyAmmo::Alga:
-			Spec = { 3500.f, 1.f, 4.f, 60.f, 0.5f, 2 };
+			// Cae antes (#770): con 3500 cm/s y la gravedad normal llegaba a 50 m y se iba por encima del blanco.
+			Spec = { AlgaSpeedCms, AlgaGravityScale, 4.f, 60.f, 0.5f, 2 };
 			break;
 		case ETNRallyAmmo::Burbuja:
 			// Retroceso pequeño (#629): todas las municiones empujan al buggy, pero la burbuja sale lenta para poder cogerla.
@@ -302,5 +303,77 @@ namespace TNRallyTurret
 	float PuddleSpeedCapCms(bool bInPuddle)
 	{
 		return BuggyTopSpeedCms * (bInPuddle ? AlgaSpeedMultiplier : 1.f);
+	}
+}
+
+namespace TNRallyTurret
+{
+	float PuddleEntrySpinDegPerSecond(float SpeedCms, bool bClockwise)
+	{
+		const float Speed = FMath::Abs(SpeedCms);
+		if (Speed < AlgaSpinMinSpeedCms)
+		{
+			return 0.f;
+		}
+		const float Alpha = FMath::Clamp((Speed - AlgaSpinMinSpeedCms) / (AlgaSpinFullSpeedCms - AlgaSpinMinSpeedCms), 0.f, 1.f);
+		return AlgaSpinYawDegPerSecond * Alpha * (bClockwise ? 1.f : -1.f);
+	}
+
+	bool PuddleAffects(bool bIsDropper, float PuddleAgeSeconds)
+	{
+		return !bIsDropper || PuddleAgeSeconds >= AlgaDropperGraceSeconds;
+	}
+
+	bool IsPuddleGround(const FVector& Normal)
+	{
+		return !Normal.ContainsNaN() && Normal.GetSafeNormal().Z >= PuddleMinGroundNormalZ;
+	}
+
+	bool FitGroundPlane(TConstArrayView<FVector> Points, FVector& OutCenter, FVector& OutNormal)
+	{
+		if (Points.Num() == 0)
+		{
+			return false;
+		}
+		OutCenter = Points[0];
+		OutNormal = FVector::UpVector;
+		if (Points.Num() < 3)
+		{
+			return true;
+		}
+		FVector Sum = FVector::ZeroVector;
+		for (const FVector& Point : Points)
+		{
+			Sum += Point;
+		}
+		OutCenter = Sum / Points.Num();
+		// Abanico desde el primero (el centro): cada par de puntos del borde da un triángulo; su normal, siempre hacia arriba.
+		FVector NormalSum = FVector::ZeroVector;
+		for (int32 Index = 1; Index < Points.Num(); ++Index)
+		{
+			const FVector& A = Points[Index];
+			const FVector& B = Points[Index + 1 < Points.Num() ? Index + 1 : 1];
+			FVector Normal = FVector::CrossProduct(A - Points[0], B - Points[0]);
+			if (Normal.Z < 0.0)
+			{
+				Normal = -Normal;
+			}
+			NormalSum += Normal.GetSafeNormal();
+		}
+		const FVector Normal = NormalSum.GetSafeNormal();
+		OutNormal = Normal.IsNearlyZero() ? FVector::UpVector : Normal;
+		return true;
+	}
+
+	FQuat PuddleRotation(const FVector& GroundNormal, const FVector& Forward)
+	{
+		const FVector Up = GroundNormal.IsNearlyZero() || GroundNormal.ContainsNaN() ? FVector::UpVector : GroundNormal.GetSafeNormal();
+		FVector X = Forward - FVector::DotProduct(Forward, Up) * Up;
+		if (X.IsNearlyZero())
+		{
+			// Forward paralelo a la normal: cualquier eje del plano vale.
+			X = FVector::CrossProduct(Up, FMath::Abs(Up.X) < 0.9 ? FVector::ForwardVector : FVector::RightVector);
+		}
+		return FRotationMatrix::MakeFromZX(Up, X.GetSafeNormal()).ToQuat();
 	}
 }

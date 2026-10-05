@@ -13,11 +13,17 @@ namespace TNRallyTurret
 	/** Coco: impulso lateral al buggy alcanzado (cm/s) y bamboleo de la dirección (s). */
 	constexpr float CocoLateralCms = 350.f;
 	constexpr float CocoWobbleSeconds = 0.4f;
-	/** Alga: charco de 6 m durante 5 s; agarre ×0,5 y velocidad máxima ×0,6 a cualquier buggy dentro. */
+	/**
+	 * Alga: charco de 6 m durante 5 s; agarre ×0,35 y velocidad máxima ×0,5 a cualquier buggy dentro (#770: con ×0,5 y ×0,6
+	 * se notaba como barro, no como un resbalón). Al entrar, además, un derrape corto (PuddleEntrySpinDegPerSecond).
+	 */
 	constexpr float AlgaPuddleRadiusCm = 600.f;
 	constexpr float AlgaPuddleSeconds = 5.f;
-	constexpr float AlgaGripMultiplier = 0.5f;
-	constexpr float AlgaSpeedMultiplier = 0.6f;
+	constexpr float AlgaGripMultiplier = 0.35f;
+	constexpr float AlgaSpeedMultiplier = 0.5f;
+	/** Vuelo del alga (#770): sale más despacio y cae con el doble de gravedad, para que el charco quede cerca. */
+	constexpr float AlgaSpeedCms = 3000.f;
+	constexpr float AlgaGravityScale = 2.f;
 	/** Burbuja: flota 6 s; el primer buggy que la toca gana un escudo de 4 s que anula un impacto o un charco. */
 	constexpr float BubbleFloatSeconds = 6.f;
 	constexpr float ShieldSeconds = 4.f;
@@ -227,4 +233,42 @@ namespace TNRallyTurret
 	/** Multiplicador de agarre y velocidad máxima de un buggy según si pisa un charco de alga. */
 	TORTUNABO_API float PuddleGripMultiplier(bool bInPuddle);
 	TORTUNABO_API float PuddleSpeedCapCms(bool bInPuddle);
+
+	// ── Alga: charco apoyado en el suelo y derrape al entrar (#770) ─────────────
+
+	/** Giro de guiñada (grados/s) que el servidor da al buggy que entra en un charco, a partir de AlgaSpinFullSpeedCms. */
+	constexpr float AlgaSpinYawDegPerSecond = 90.f;
+	/** Por debajo de esta velocidad (cm/s) no derrapa; hasta AlgaSpinFullSpeedCms el giro crece en proporción. */
+	constexpr float AlgaSpinMinSpeedCms = 300.f;
+	constexpr float AlgaSpinFullSpeedCms = 1500.f;
+	/** Segundos que quien suelta el charco en Karts no lo pisa (cae detrás, a menos de su radio). */
+	constexpr float AlgaDropperGraceSeconds = 2.f;
+	/** Una normal con menos Z que esto no es suelo (pared, lateral de la barrera): el charco se busca más atrás. */
+	constexpr float PuddleMinGroundNormalZ = 0.5f;
+	/** Bajada máxima (cm) desde el impacto o desde donde acaba el vuelo para buscar el suelo del charco. */
+	constexpr float PuddleGroundProbeCm = 5000.f;
+	/** Muestras del borde del disco (a PuddleRimSampleFraction del radio) con las que se ajusta su plano al suelo. */
+	constexpr int32 PuddleRimSamples = 6;
+	constexpr float PuddleRimSampleFraction = 0.7f;
+
+	/**
+	 * Giro del derrape al entrar en un charco (grados/s, positivo en el sentido de las agujas visto desde arriba si
+	 * bClockwise): 0 por debajo de AlgaSpinMinSpeedCms y AlgaSpinYawDegPerSecond desde AlgaSpinFullSpeedCms.
+	 */
+	TORTUNABO_API float PuddleEntrySpinDegPerSecond(float SpeedCms, bool bClockwise);
+
+	/** Si el charco afecta a un buggy: a quien lo soltó (Karts), no durante sus primeros AlgaDropperGraceSeconds. */
+	TORTUNABO_API bool PuddleAffects(bool bIsDropper, float PuddleAgeSeconds);
+
+	/** Si una normal de impacto es suelo donde puede quedar un charco (no una pared). */
+	TORTUNABO_API bool IsPuddleGround(const FVector& Normal);
+
+	/**
+	 * Plano del suelo bajo el charco a partir de puntos del suelo (el centro y el borde): centro medio y normal media de los
+	 * triángulos centro-borde, hacia arriba. Con menos de 3 puntos, el primero y la vertical. False si no hay puntos.
+	 */
+	TORTUNABO_API bool FitGroundPlane(TConstArrayView<FVector> Points, FVector& OutCenter, FVector& OutNormal);
+
+	/** Giro del disco del charco: su eje Z sobre la normal del suelo y su X lo más cerca posible de Forward. */
+	TORTUNABO_API FQuat PuddleRotation(const FVector& GroundNormal, const FVector& Forward);
 }

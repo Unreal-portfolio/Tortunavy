@@ -18,6 +18,8 @@ namespace TNKartItemDetail
 	constexpr float ShellSpawnUpCm = 60.f;
 	/** Un mismo kart no recibe otro empujón de la estrella en este tiempo (s). */
 	constexpr double StarBumpRepeatSeconds = 1.0;
+	/** Altura sobre el kart desde la que se busca el suelo del charco de detrás (cm): cubre una cuesta que sube detrás. */
+	constexpr float AlgaProbeUpCm = 250.f;
 }
 
 UTN_KartItemComponent::UTN_KartItemComponent()
@@ -202,17 +204,11 @@ void UTN_KartItemComponent::DropAlga()
 {
 	ATN_Buggy* Kart = GetKart();
 	UWorld* World = GetWorld();
-	const FVector Behind = Kart->GetActorLocation() - Kart->GetActorForwardVector().GetSafeNormal2D() * TNKart::AlgaBehindCm;
-	FVector Ground = Behind;
-	FHitResult Down;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNKartAlga), false, Kart);
-	if (World->LineTraceSingleByChannel(Down, Behind + FVector(0.f, 0.f, 200.f), Behind - FVector(0.f, 0.f, 1500.f), ECC_WorldStatic, Params))
-	{
-		Ground = Down.ImpactPoint;
-	}
-	FActorSpawnParameters Spawn;
-	Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	World->SpawnActor<ATN_RallyAlgaPuddle>(ATN_RallyAlgaPuddle::StaticClass(), FTransform(Ground), Spawn);
+	const FVector Forward = Kart->GetActorForwardVector().GetSafeNormal2D();
+	const FVector Behind = Kart->GetActorLocation() - Forward * TNKart::AlgaBehindCm;
+	// Al suelo de detrás con su inclinación (#770), buscando desde arriba por si detrás sube; quien lo suelta no lo pisa
+	// al soltarlo (cae a menos de su radio).
+	ATN_RallyAlgaPuddle::SpawnOnGround(World, Behind + FVector(0.f, 0.f, TNKartItemDetail::AlgaProbeUpCm), Forward, Kart);
 }
 
 void UTN_KartItemComponent::SpillInk()

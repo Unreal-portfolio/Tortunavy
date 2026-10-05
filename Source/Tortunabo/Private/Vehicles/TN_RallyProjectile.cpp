@@ -383,22 +383,22 @@ void ATN_RallyProjectile::HitBuggyWith(ATN_Buggy* HitBuggy, const FVector& Where
 
 void ATN_RallyProjectile::SpawnAlgaPuddle(ATN_Buggy* HitBuggy, const FVector& Where)
 {
-	UWorld* World = GetWorld();
-	// El charco va al suelo bajo el impacto.
-	FVector Ground = Where;
-	FHitResult Down;
-	FCollisionQueryParams Params(FName(TEXT("TNRallyPuddle")), false, this);
-	if (HitBuggy)
+	// El charco va al suelo bajo el impacto (#770): solo el escenario, así que el buggy alcanzado, los de alrededor y sus
+	// tortugas no lo sostienen; si el impacto es en una pared o en la barrera, se busca el suelo hacia donde venía.
+	const FVector Velocity = Movement->Velocity;
+	const FVector BackDir = -FVector(Velocity.X, Velocity.Y, 0.f).GetSafeNormal();
+	ATN_RallyAlgaPuddle::SpawnOnGround(GetWorld(), Where, BackDir);
+}
+
+void ATN_RallyProjectile::LifeSpanExpired()
+{
+	if (HasAuthority() && !bImpacted && Ammo == ETNRallyAmmo::Alga && GetWorld())
 	{
-		Params.AddIgnoredActor(HitBuggy);
+		// Se acaba en el aire (#770): el charco cae al suelo de debajo en vez de desaparecer con el proyectil.
+		bImpacted = true;
+		SpawnAlgaPuddle(nullptr, GetActorLocation());
 	}
-	if (World->LineTraceSingleByChannel(Down, Where + FVector(0.f, 0.f, 50.f), Where - FVector(0.f, 0.f, 1000.f), ECC_WorldStatic, Params))
-	{
-		Ground = Down.ImpactPoint;
-	}
-	FActorSpawnParameters Spawn;
-	Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	World->SpawnActor<ATN_RallyAlgaPuddle>(ATN_RallyAlgaPuddle::StaticClass(), FTransform(Ground), Spawn);
+	Super::LifeSpanExpired();
 }
 
 void ATN_RallyProjectile::MortarBlast(ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir, bool bGunnerHit)
@@ -436,6 +436,86 @@ ATN_RallyAlgaPuddle::ATN_RallyAlgaPuddle()
 	SplashSound = SplashFinder.Object;
 }
 
+namespace TNRallyPuddleGround
+{
+	/** Subida sobre el punto de partida desde la que se busca el suelo (cm): el impacto ya está sobre él o encima. */
+	constexpr float ProbeUpCm = 30.f;
+	/** Pasos hacia atrás si bajo el impacto no hay suelo (pared o barrera) y la subida extra de cada uno (cm). */
+	constexpr float BackStepCm = 150.f;
+	constexpr float BackStepUpCm = 90.f;
+	constexpr int32 BackSteps = 2;
+	/** El disco queda un poco por encima del plano ajustado, para no quedar tapado en las hondonadas (cm). */
+	constexpr float LiftCm = 3.f;
+
+	bool TraceGround(UWorld& World, const FVector& From, float UpCm, FHitResult& OutHit)
+	{
+		// Por tipo de objeto WorldStatic: el terreno, la barrera y el decorado. Los buggies (Vehicle) y las tortugas (Pawn)
+		// no cuentan; con el canal WorldStatic los dos lo bloqueaban y el charco se quedaba encima de ellos.
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(TNRallyPuddleGround), true);
+		return World.LineTraceSingleByObjectType(OutHit, From + FVector(0.f, 0.f, UpCm),
+			From - FVector(0.f, 0.f, TNRallyTurret::PuddleGroundProbeCm), FCollisionObjectQueryParams(ECC_WorldStatic), Params);
+	}
+
+	/** Suelo bajo Where o, si no lo hay (pared, nada), unos pasos hacia BackDir. */
+	bool FindGround(UWorld& World, const FVector& Where, const FVector& BackDir, FHitResult& OutHit)
+	{
+		for (int32 Step = 0; Step <= BackSteps; ++Step)
+		{
+			const FVector From = Where + BackDir * (BackStepCm * Step);
+			if (TraceGround(World, From, ProbeUpCm + BackStepUpCm * Step, OutHit) && TNRallyTurret::IsPuddleGround(OutHit.ImpactNormal))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+ATN_RallyAlgaPuddle* ATN_RallyAlgaPuddle::SpawnOnGround(UWorld* World, const FVector& Where, const FVector& BackDir, ATN_Buggy* Dropper)
+{
+	using namespace TNRallyPuddleGround;
+	FHitResult Center;
+	if (!World || !FindGround(*World, Where, BackDir.GetSafeNormal2D(), Center))
+	{
+		UE_LOG(LogTNBuggy, Verbose, TEXT("Charco de alga sin suelo bajo (%.0f, %.0f, %.0f)"), Where.X, Where.Y, Where.Z);
+		return nullptr;
+	}
+	// Plano del suelo con el centro y unos puntos del borde: en una cuesta, un peralte o una duna el disco sigue el suelo
+	// en vez de quedar horizontal (medio enterrado y medio flotando).
+	TArray<FVector, TInlineAllocator<TNRallyTurret::PuddleRimSamples + 1>> Points;
+	Points.Add(Center.ImpactPoint);
+	const float RimCm = TNRallyTurret::AlgaPuddleRadiusCm * TNRallyTurret::PuddleRimSampleFraction;
+	for (int32 Index = 0; Index < TNRallyTurret::PuddleRimSamples; ++Index)
+	{
+		const float Angle = 2.f * PI * Index / TNRallyTurret::PuddleRimSamples;
+		const FVector Rim = Center.ImpactPoint + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * RimCm;
+		FHitResult RimHit;
+		// Desde arriba del centro y hasta poco por debajo: un borde que cae por un barranco no tumba el disco.
+		if (TraceGround(*World, Rim, RimCm, RimHit) && TNRallyTurret::IsPuddleGround(RimHit.ImpactNormal)
+			&& FMath::Abs(RimHit.ImpactPoint.Z - Center.ImpactPoint.Z) <= RimCm)
+		{
+			Points.Add(RimHit.ImpactPoint);
+		}
+	}
+	FVector PlaneCenter = Center.ImpactPoint;
+	FVector Normal = Center.ImpactNormal;
+	TNRallyTurret::FitGroundPlane(Points, PlaneCenter, Normal);
+	// El centro del disco sobre la vertical del impacto, a la altura del plano ajustado.
+	const FVector Offset = Center.ImpactPoint - PlaneCenter;
+	const double Along = FVector::DotProduct(Offset, Normal);
+	const FVector Location = Center.ImpactPoint - Normal * Along + Normal * LiftCm;
+	const FTransform Where3D(TNRallyTurret::PuddleRotation(Normal, -BackDir), Location);
+
+	ATN_RallyAlgaPuddle* Puddle = World->SpawnActorDeferred<ATN_RallyAlgaPuddle>(ATN_RallyAlgaPuddle::StaticClass(), Where3D,
+		nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (Puddle)
+	{
+		Puddle->Dropper = Dropper;
+		Puddle->FinishSpawning(Where3D);
+	}
+	return Puddle;
+}
+
 void ATN_RallyAlgaPuddle::BeginPlay()
 {
 	Super::BeginPlay();
@@ -463,15 +543,19 @@ void ATN_RallyAlgaPuddle::Tick(float DeltaSeconds)
 	}
 	CheckAccumulator = 0.f;
 	const FVector Center = GetActorLocation();
+	// El disco va inclinado con el suelo (#770): la distancia se mide en su plano y la altura, sobre su normal.
+	const FVector Up = GetActorUpVector();
+	const float Age = GetGameTimeSinceCreation();
 	for (TActorIterator<ATN_Buggy> It(GetWorld()); It; ++It)
 	{
 		ATN_Buggy* Buggy = *It;
 		const FVector Delta = Buggy->GetActorLocation() - Center;
-		if (FVector(Delta.X, Delta.Y, 0.f).Size() > TNRallyTurret::AlgaPuddleRadiusCm || FMath::Abs(Delta.Z) > 300.f)
+		const double Height = FVector::DotProduct(Delta, Up);
+		if ((Delta - Up * Height).Size() > TNRallyTurret::AlgaPuddleRadiusCm || FMath::Abs(Height) > 300.0)
 		{
 			continue;
 		}
-		if (Immune.Contains(Buggy))
+		if (Immune.Contains(Buggy) || !TNRallyTurret::PuddleAffects(Buggy == Dropper.Get(), Age))
 		{
 			continue;
 		}

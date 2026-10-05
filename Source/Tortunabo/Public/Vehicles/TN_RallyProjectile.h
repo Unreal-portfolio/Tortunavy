@@ -52,6 +52,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	/** Fin de la vida sin impacto: el alga deja igualmente su charco en el suelo de debajo (#770). */
+	virtual void LifeSpanExpired() override;
 
 private:
 	UFUNCTION()
@@ -99,7 +101,10 @@ private:
 	FTimerHandle OwnerIgnoreTimer;
 };
 
-/** Charco de alga: 6 m durante 5 s; agarre ×0,5 y velocidad máxima ×0,6 a cualquier buggy dentro (servidor). */
+/**
+ * Charco de alga: 6 m durante 5 s; agarre y velocidad máxima reducidos y un derrape al entrar a cualquier buggy dentro
+ * (servidor). El disco se apoya en el suelo con su inclinación (#770).
+ */
 UCLASS()
 class TORTUNABO_API ATN_RallyAlgaPuddle : public AActor
 {
@@ -107,6 +112,13 @@ class TORTUNABO_API ATN_RallyAlgaPuddle : public AActor
 
 public:
 	ATN_RallyAlgaPuddle();
+
+	/**
+	 * Solo servidor: charco en el suelo bajo Where (#770). Busca solo el escenario (canal de objetos WorldStatic: ni
+	 * buggies ni tortugas) bajo Where y, si ahí no hay suelo (pared, barrera), un poco más atrás en BackDir; ajusta el disco
+	 * al plano del suelo. Dropper (Karts) no lo pisa durante TNRallyTurret::AlgaDropperGraceSeconds. Null sin suelo.
+	 */
+	static ATN_RallyAlgaPuddle* SpawnOnGround(UWorld* World, const FVector& Where, const FVector& BackDir, ATN_Buggy* Dropper = nullptr);
 
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -124,6 +136,9 @@ private:
 	/** Buggies cuyo escudo ya ha anulado este charco. */
 	TSet<TWeakObjectPtr<ATN_Buggy>> Immune;
 	float CheckAccumulator = 0.f;
+
+	/** Quien lo ha soltado en Karts (servidor): no lo pisa al principio. */
+	TWeakObjectPtr<ATN_Buggy> Dropper;
 };
 
 UENUM()

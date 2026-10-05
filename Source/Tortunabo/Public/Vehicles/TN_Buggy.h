@@ -226,6 +226,8 @@ public:
 	bool TryConsumeShield();
 	/** El charco de alga avisa cada vez que comprueba que el buggy está dentro. */
 	void NotePuddleContact();
+	/** Al entrar en un charco: giro corto de guiñada (#770, TNRallyTurret::PuddleEntrySpinDegPerSecond). */
+	void ApplyPuddleEntrySpin();
 	/** Impulso de velocidad (cm/s) al chasis en el servidor, con ForceNetUpdate. */
 	void ApplyVelocityImpulse(const FVector& DeltaVelocity);
 

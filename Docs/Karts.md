@@ -27,7 +27,7 @@ El HUD de los karts hace una ruleta y enseña lo que ha tocado. Con artillera, l
 | Triple coco turbo | Tres acelerones, uno por pulsación. | Solo detrás |
 | Concha | Sale recta (hacia atrás con Q/B o Q/LB), rebota en las paredes y hace trompear al primero que toca. | Delante |
 | Concha teledirigida | Persigue al kart de justo delante. | Sobre todo detrás |
-| Alga resbaladiza | Charco detrás: poco agarre y menos velocidad. | Sobre todo delante |
+| Alga resbaladiza | Charco detrás, apoyado en el suelo: poco agarre, menos velocidad y un derrape al entrar; quien lo suelta no lo pisa los primeros 2 s. | Sobre todo delante |
 | Tinta de calamar | Tinta en la pantalla de todos los que van por delante. | Nunca a la primera |
 | Estrella de mar | 7 s invulnerable y algo más rápida; aparta a los karts que toca. | Nunca a la primera |
 
