@@ -368,7 +368,7 @@ def test_nueva_sigue_con_los_campos_si_el_auto_add_se_adelanta(monkeypatch, tmp_
     gh_falso = _gh_con_auto_add(ediciones)
     monkeypatch.setattr(base, "gh", gh_falso)
     monkeypatch.setattr(tablero, "gh", gh_falso)
-    monkeypatch.setattr(tablero, "cargar_proyecto", _proyecto_vacio)
+    monkeypatch.setattr(tablero, "cargar_campos", _proyecto_vacio)
     monkeypatch.setattr(tablero.auditoria, "problemas_de_formato", lambda *_: [])
     cuerpo = tmp_path / "cuerpo.md"
     cuerpo.write_text("Contexto\n\n- [ ] criterio\n", encoding="utf-8")

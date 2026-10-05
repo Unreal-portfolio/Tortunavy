@@ -61,9 +61,9 @@ import objetos
 import peticiones
 import volcado
 from base import (CONFIG, ESTADOS, INTEGRACION, ORDEN_PRIORIDAD, ORDEN_TAMANO, REPO,
-                  ErrorTablero, cargar_proyecto, comentar, comprobar_campos, elegir_revisor, es_de, esta_fusionada, gh, git, issues_de_pr,
-                  item_de_issue, poner_campo, prs_abiertas, prs_fusionadas, slug, usuario_actual,
-                  vaciar_campo)
+                  ErrorTablero, cargar_campos, cargar_issue, cargar_proyecto, comentar, comprobar_campos, elegir_revisor,
+                  es_de, esta_fusionada, gh, git, issues_de_pr, item_de_issue, poner_campo, prs_abiertas, prs_fusionadas,
+                  slug, usuario_actual, vaciar_campo)
 
 
 def clave_orden(issue: dict) -> tuple:
@@ -175,7 +175,7 @@ def seccion(titulo: str, lineas: list[str]) -> None:
 
 
 def cmd_coger(args: argparse.Namespace) -> None:
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     issue = proyecto["items"].get(args.numero)
     if issue is None:
         raise ErrorTablero(f"La issue #{args.numero} no está en el tablero. Ejecuta `sync --aplicar` o créala con `nueva`.")
@@ -213,7 +213,7 @@ def cmd_coger(args: argparse.Namespace) -> None:
 
 def cmd_soltar(args: argparse.Namespace) -> None:
     """Dejo de trabajar en la issue: sin asignado y de vuelta a Ready. Asignado significa «estoy con ella ahora»."""
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     if args.numero not in proyecto["items"]:
         raise ErrorTablero(f"La issue #{args.numero} no está en el tablero.")
     gh("issue", "edit", str(args.numero), "--repo", REPO, "--remove-assignee", "@me")
@@ -223,7 +223,7 @@ def cmd_soltar(args: argparse.Namespace) -> None:
 
 
 def cmd_estado(args: argparse.Namespace) -> None:
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     issue = proyecto["items"].get(args.numero, {})
     estado = bloqueos.estado_al_aprobar(args.estado, issue)
     poner_campo(proyecto, args.numero, "Status", estado)
@@ -241,7 +241,7 @@ def cmd_revision(args: argparse.Namespace) -> None:
     Si el autor no la ha probado en el editor, va con Editor = Sin probar y lo dice («Sin QA editor»);
     si falla en el editor, no se manda.
     """
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     try:
         editor, aviso = flujo.preparar_revision(proyecto["items"].get(args.numero, {}).get("valores", {}))
     except flujo.EnvioRechazado as exc:
@@ -261,7 +261,7 @@ def cmd_revision(args: argparse.Namespace) -> None:
 
 
 def cmd_campo(args: argparse.Namespace) -> None:
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     poner_campo(proyecto, args.numero, args.campo, args.valor)
     print(f"#{args.numero} {args.campo} → {args.valor}")
 
@@ -274,7 +274,7 @@ def resolver_padre(args: argparse.Namespace) -> int | None:
         return None
     numero, creado = objetos.buscar_o_crear(gh, REPO, args.objeto)
     if creado:
-        item_de_issue(cargar_proyecto(), numero)
+        item_de_issue(cargar_issue(numero), numero)
         print(f"Objeto nuevo #{numero}: {args.objeto}")
     return numero
 
@@ -293,7 +293,7 @@ def cmd_nueva(args: argparse.Namespace) -> None:
     if defectos := auditoria.problemas_de_formato(args.titulo, cuerpo, set(etiquetas)):
         raise ErrorTablero("La issue no se crea: " + "; ".join(defectos) + ".")
     # Los campos se comprueban antes de crear la issue: con un valor que no existe quedaría creada a medias.
-    proyecto = cargar_proyecto()
+    proyecto = cargar_campos()  # la issue aún no existe: solo hacen falta los ids de los campos
     campos = {"Status": args.estado, "Prioridad": args.prioridad, "Tamaño": args.tamano, "Área": args.area, "Fase": args.fase,
               "Editor": "Sin probar" if args.estado == "QA editor" else None}
     comprobar_campos(proyecto, campos)
@@ -313,7 +313,7 @@ def cmd_nueva(args: argparse.Namespace) -> None:
 def cmd_objeto(args: argparse.Namespace) -> None:
     """Busca el objeto abierto con ese título o lo crea; lo deja en el proyecto sin Status."""
     numero, creado = objetos.buscar_o_crear(gh, REPO, args.nombre, args.descripcion, nuevo=args.nuevo)
-    proyecto = cargar_proyecto()
+    proyecto = cargar_issue(numero)
     item_de_issue(proyecto, numero)
     if args.area:
         poner_campo(proyecto, numero, "Área", args.area)
@@ -545,7 +545,7 @@ def aplicar_estado(proyecto: dict, numero: int, valores: dict, fusionada: bool, 
 
 def cmd_ia(args: argparse.Namespace) -> None:
     """Registra la revisión de una IA distinta de la que escribió el cambio."""
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     valor = {"aprobada": "Aprobada", "cambios": "Cambios pedidos", "pendiente": "Pendiente"}[args.veredicto]
     poner_campo(proyecto, args.numero, "Revisión IA", valor)
     if args.veredicto == "cambios":
@@ -585,7 +585,7 @@ def cmd_editor(args: argparse.Namespace) -> None:
     `falla` en In progress solo lo anota (se sigue arreglando ahí); en otro estado la lleva a
     Revisiones y la reabre si estaba cerrada, con `regresion` si ya funcionaba.
     """
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     issue = issue_para_editor(proyecto, args.numero)
     if objetos.es_objeto(issue):
         raise ErrorTablero(f"#{args.numero} es un objeto: registra la prueba en su sub-issue o crea una con `nueva --objeto`.")

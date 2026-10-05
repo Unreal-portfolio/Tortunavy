@@ -25,8 +25,9 @@ import memoria
 import objetos
 import lotes
 import peticiones
-from base import (INTEGRACION, NUMERO, OWNER, REPO, ErrorTablero, cargar_proyecto, comentar, elegir_revisor,
-                  esta_fusionada, gh, issues_de_pr, poner_campo, prs_abiertas, prs_fusionadas, usuario_actual)
+from base import (INTEGRACION, NUMERO, OWNER, REPO, ErrorTablero, borrar_cache_campos, cargar_issue, cargar_proyecto,
+                  comentar, elegir_revisor, esta_fusionada, gh, issues_de_pr, poner_campo, prs_abiertas, prs_fusionadas,
+                  usuario_actual)
 
 
 def cmd_resumen(args: argparse.Namespace) -> None:
@@ -255,7 +256,7 @@ def cmd_bloquear(args: argparse.Namespace) -> None:
         gh("api", "graphql", "-f", f"query={bloqueos.MUTACION}", "-f", f"issue={issue['id']}",
            "-f", f"bloqueante={bloqueante['id']}")
     todas = ", ".join(f"#{m}" for m in sorted({*args.por, *(b["number"] for b in bloqueos.bloqueantes(issue))}))
-    proyecto = cargar_proyecto(args.numero)
+    proyecto = cargar_issue(args.numero)
     item = proyecto["items"].get(args.numero, {})
     if objetos.es_objeto(item) or lotes.es_lote(item):
         print(f"#{args.numero} es un objeto o un lote: depende de {todas}, "
@@ -287,6 +288,7 @@ def cmd_asegurar_estados(args: argparse.Namespace) -> None:
     foto = Path(tempfile.gettempdir()) / f"tablero-status-{datetime.now():%Y%m%d-%H%M%S}.json"
     foto.write_text(json.dumps(antes["foto"], ensure_ascii=False, indent=1), encoding="utf-8")
     opciones = {o["name"]: o["id"] for o in estados.redefinir(gh, antes["campo"], nuevas)}
+    borrar_cache_campos()  # los ids de las opciones de Status han cambiado
     despues = estados.leer(gh, OWNER, NUMERO)
     cambios = estados.pendientes_de_restaurar(antes["foto"], despues["foto"])
     estados.restaurar(gh, despues, opciones, cambios)
