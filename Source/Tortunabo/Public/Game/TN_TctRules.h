@@ -8,9 +8,24 @@
  *
  * Una partida es una serie de rondas de supervivencia de 2 a 8 tortugas: gana la ronda la última en pie (caer al agua, a una
  * zona de muerte o fuera del mapa elimina) y la partida, la primera que llega a WinsToWin rondas ganadas. El agua sube por
- * escalones durante la ronda (FTNTctFloodPlan) para que haya un encuentro cada 15-20 s y, al final, todo el mapa se inunda
- * despacio (muerte súbita: aguanta más quien está más alto).
+ * escalones durante la ronda (FTNTctFloodPlan, un escalón cada 24 s) y, al final, todo el mapa se inunda despacio (muerte
+ * súbita: aguanta más quien está más alto).
  */
+
+/**
+ * Ritmo del agua por defecto (#778, director 05-10: «que el agua suba más despacio»). Con una arena de MaxSteps pisos, la
+ * muerte súbita empieza a los StartDelay + MaxSteps × StepSeconds = 25 + 4 × 24 = 121 s y cubre la cima a los 121 + 40 =
+ * 161 s (antes, 15 + 4 × 17 = 83 s y 108 s). El tiempo máximo de la ronda deja que el agua llegue arriba con margen.
+ */
+namespace TNTctFloodDefaults
+{
+	inline constexpr float StartDelay = 25.f;
+	inline constexpr float StepSeconds = 24.f;
+	inline constexpr float RiseSeconds = 7.f;
+	inline constexpr float SuddenDeathRiseSeconds = 40.f;
+	inline constexpr int32 MaxSteps = 4;
+	inline constexpr float RoundTimeLimitSeconds = 180.f;
+}
 
 /** Lo que el GameMode sabe de cada tortuga para decidir. */
 struct FTNTctFighter
@@ -65,10 +80,10 @@ struct FTNTctFloodPlan
 	float BaseZ = 0.f;
 	TArray<float> Levels;
 	float SuddenDeathZ = 0.f;
-	float StartDelay = 15.f;
-	float StepSeconds = 17.f;
-	float RiseSeconds = 4.f;
-	float SuddenDeathRiseSeconds = 25.f;
+	float StartDelay = TNTctFloodDefaults::StartDelay;
+	float StepSeconds = TNTctFloodDefaults::StepSeconds;
+	float RiseSeconds = TNTctFloodDefaults::RiseSeconds;
+	float SuddenDeathRiseSeconds = TNTctFloodDefaults::SuddenDeathRiseSeconds;
 };
 
 /** Un cuerpo para mirar si sigue dentro de la arena (centro de la cápsula y su media altura). */
@@ -261,6 +276,12 @@ namespace TNTctRules
 	inline float StepStartSeconds(const FTNTctFloodPlan& Plan, int32 Step)
 	{
 		return Plan.StartDelay + static_cast<float>(Step) * Plan.StepSeconds;
+	}
+
+	/** Segundo (desde la salida) en que la muerte súbita termina de cubrir la arena. */
+	inline float FloodTopSeconds(const FTNTctFloodPlan& Plan)
+	{
+		return StepStartSeconds(Plan, Plan.Levels.Num()) + Plan.SuddenDeathRiseSeconds;
 	}
 
 	/** Altura del agua a los Elapsed segundos de la salida (BaseZ antes de empezar a subir). */

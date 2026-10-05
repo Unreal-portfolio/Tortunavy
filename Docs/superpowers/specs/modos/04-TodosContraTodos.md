@@ -101,6 +101,34 @@ Reglas: un contacto nuevo sustituye al anterior (gana el más reciente); un cont
 | Sólo 2 jugadoras | Ronda de 90 s, 5 mesetas activas en P01 (D §1.8) |
 | Servidor anfitrión abandona | Migración no soportada: fin de partida (como el resto de modos) |
 
+### 2.1 Ritmo del agua y de los objetos (implementado, #778, 06-10-2026)
+
+Lo que hace hoy `ATN_TctGameMode` (valores en `TNTctFloodDefaults`, `Public/Game/TN_TctRules.h`, y `TNTctItemTuning`,
+`Public/Game/TN_TctItemRules.h`). El director pidió el 05-10 que el agua subiera más despacio y que salieran objetos más a
+menudo.
+
+| Valor | Antes | Ahora |
+|---|---|---|
+| Primera subida del agua (`FloodStartDelay`) | 15 s | 25 s |
+| Entre escalones (`FloodStepSeconds`) | 17 s | 24 s |
+| Lo que tarda cada escalón (`FloodRiseSeconds`) | 4 s | 7 s |
+| Muerte súbita hasta la cima (`SuddenDeathRiseSeconds`) | 25 s | 40 s |
+| Tiempo máximo de la ronda (`RoundTimeLimitSeconds`) | 120 s | 180 s |
+| Reaparición en un punto de objetos (`PadRespawnSeconds`) | 12 s | 6 s |
+
+**Duración de una ronda con 4 jugadoras** en una arena de cuatro pisos (lo más que usa el GameMode, `FloodMaxSteps` = 4):
+
+- Muerte súbita: `StartDelay + 4 × StepSeconds` = 25 + 4 × 24 = **121 s** (antes, 15 + 4 × 17 = 83 s).
+- Agua en la cima: 121 + `SuddenDeathRiseSeconds` = 121 + 40 = **161 s** (antes, 83 + 25 = 108 s). Es lo más que dura una
+  ronda en la que nadie cae antes; por eso el tiempo máximo sube de 120 s a 180 s: con 120 s la ronda acababa en empate antes
+  de que empezara la muerte súbita.
+- Arena de dos pisos: 25 + 2 × 24 + 40 = 113 s (antes, 15 + 2 × 17 + 25 = 74 s).
+
+**Objetos.** Con 4 jugadoras hay 6 puntos activos (`ActivePadCount`: dos más que tortugas). Con la reaparición a 6 s, un
+punto que se vacía vuelve a tener objeto en la mitad de tiempo: en la prueba `Tortunabo.Tct.Items.PadClock` (seis puntos y un
+objeto cogido cada 2 s) hay de media 3,2 puntos con objeto a la vez, frente a 0,6 con 12 s. Cada punto sigue
+teniendo como mucho un objeto (`FTNTctPadClock`).
+
 ## 3. Mapas y reglas de arena
 
 Regla común: agua de muerte a cota 0 m; una caída es una baja. Los tamaños se validan con el tiempo de cruce (objetivo: encuentro cada 15–20 s), dato **no medido** en el catálogo. Todas las mallas salen del pipeline volumétrico existente; **0 mallas nuevas por mapa**.

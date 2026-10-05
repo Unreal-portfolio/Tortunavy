@@ -203,35 +203,45 @@ bool FTNTctFloodTimelineTest::RunTest(const FString& Parameters)
 {
 	using namespace TNTctRules;
 
+	// Los valores de serie del plan (#778: el agua sube más despacio).
 	FTNTctFloodPlan Plan;
+	TestEqual(TEXT("Empieza a subir a los 25 s"), Plan.StartDelay, 25.f);
+	TestEqual(TEXT("Un escalón cada 24 s"), Plan.StepSeconds, 24.f);
+	TestEqual(TEXT("Cada escalón tarda 7 s"), Plan.RiseSeconds, 7.f);
+	TestEqual(TEXT("La muerte súbita tarda 40 s"), Plan.SuddenDeathRiseSeconds, 40.f);
 	Plan.BaseZ = -400.f;
 	Plan.Levels = { -140.f, 60.f, 260.f };
 	Plan.SuddenDeathZ = 1100.f;
-	Plan.StartDelay = 15.f;
-	Plan.StepSeconds = 17.f;
-	Plan.RiseSeconds = 4.f;
-	Plan.SuddenDeathRiseSeconds = 25.f;
 
-	TestEqual(TEXT("Antes de la primera subida, el mar"), WaterZAt(Plan, 10.f), -400.f);
-	TestEqual(TEXT("A mitad de la primera subida"), WaterZAt(Plan, 17.f), -270.f);
-	TestEqual(TEXT("Primer escalón alcanzado"), WaterZAt(Plan, 25.f), -140.f);
-	TestEqual(TEXT("Segundo escalón a los 32 s"), StepStartSeconds(Plan, 1), 32.f);
-	TestEqual(TEXT("Segundo escalón alcanzado"), WaterZAt(Plan, 40.f), 60.f);
-	TestEqual(TEXT("Tercer escalón alcanzado"), WaterZAt(Plan, 60.f), 260.f);
-	TestEqual(TEXT("Muerte súbita a los 66 s"), StepStartSeconds(Plan, 3), 66.f);
-	TestTrue(TEXT("La muerte súbita sube despacio"), WaterZAt(Plan, 70.f) > 260.f && WaterZAt(Plan, 70.f) < 1100.f);
+	TestEqual(TEXT("Antes de la primera subida, el mar"), WaterZAt(Plan, 20.f), -400.f);
+	TestEqual(TEXT("A mitad de la primera subida"), WaterZAt(Plan, 28.5f), -270.f);
+	TestEqual(TEXT("Primer escalón alcanzado"), WaterZAt(Plan, 33.f), -140.f);
+	TestEqual(TEXT("Segundo escalón a los 49 s"), StepStartSeconds(Plan, 1), 49.f);
+	TestEqual(TEXT("Segundo escalón alcanzado"), WaterZAt(Plan, 60.f), 60.f);
+	TestEqual(TEXT("Tercer escalón alcanzado"), WaterZAt(Plan, 90.f), 260.f);
+	TestEqual(TEXT("Muerte súbita a los 97 s"), StepStartSeconds(Plan, 3), 97.f);
+	TestTrue(TEXT("La muerte súbita sube despacio"), WaterZAt(Plan, 110.f) > 260.f && WaterZAt(Plan, 110.f) < 1100.f);
+	TestEqual(TEXT("Cima cubierta a los 137 s"), FloodTopSeconds(Plan), 137.f);
 	TestEqual(TEXT("Al final, todo cubierto"), WaterZAt(Plan, 200.f), 1100.f);
 
-	// Un encuentro cada 15-20 s: los escalones van separados StepSeconds.
+	// Entre subidas, StepSeconds.
 	for (int32 Step = 1; Step <= Plan.Levels.Num(); ++Step)
 	{
-		const float Gap = StepStartSeconds(Plan, Step) - StepStartSeconds(Plan, Step - 1);
-		TestTrue(TEXT("Entre subidas, de 15 a 20 s"), Gap >= 15.f && Gap <= 20.f);
+		TestEqual(TEXT("Entre subidas, 24 s"), StepStartSeconds(Plan, Step) - StepStartSeconds(Plan, Step - 1), 24.f);
 	}
+
+	// Una arena de cuatro pisos (lo más que hace el GameMode): 25 + 4 × 24 = 121 s y la cima a los 161 s (antes, 108 s).
+	FTNTctFloodPlan Tall = Plan;
+	Tall.Levels = { -140.f, 60.f, 260.f, 460.f };
+	TestEqual(TEXT("Cuatro pisos: muerte súbita a los 121 s"), StepStartSeconds(Tall, Tall.Levels.Num()), 121.f);
+	TestEqual(TEXT("Cuatro pisos: cima cubierta a los 161 s"), FloodTopSeconds(Tall), 161.f);
+	TestTrue(TEXT("El tiempo de la ronda deja llegar el agua a la cima"),
+		TNTctFloodDefaults::RoundTimeLimitSeconds >= FloodTopSeconds(Tall));
+	TestEqual(TEXT("El GameMode usa como mucho cuatro escalones"), TNTctFloodDefaults::MaxSteps, Tall.Levels.Num());
 
 	FTNTctFloodPlan Flat = Plan;
 	Flat.Levels.Reset();
-	TestEqual(TEXT("Sin escalones: la muerte súbita empieza en la primera subida"), StepStartSeconds(Flat, 0), 15.f);
+	TestEqual(TEXT("Sin escalones: la muerte súbita empieza en la primera subida"), StepStartSeconds(Flat, 0), 25.f);
 	TestEqual(TEXT("Sin escalones: acaba todo cubierto"), WaterZAt(Flat, 100.f), 1100.f);
 	return true;
 }

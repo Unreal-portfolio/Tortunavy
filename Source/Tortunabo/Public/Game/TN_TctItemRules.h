@@ -123,8 +123,11 @@ namespace TNTctItemTuning
 
 	inline constexpr float InkPistolSpeed = 1500.f;
 
-	/** Puntos de objetos: reaparición tras cogerlo, primera aparición de la ronda y escalonado entre puntos. */
-	inline constexpr float PadRespawnSeconds = 12.f;
+	/**
+	 * Puntos de objetos: reaparición tras cogerlo (#778: 6 s, antes 12 s; más puntos con objeto a la vez, nunca más de uno
+	 * por punto), primera aparición de la ronda y escalonado entre puntos.
+	 */
+	inline constexpr float PadRespawnSeconds = 6.f;
 	inline constexpr float PadFirstSpawnSeconds = 0.75f;
 	inline constexpr float PadStaggerSeconds = 0.35f;
 	/** Un punto con el agua a menos de esto por debajo ya no saca objetos. */
