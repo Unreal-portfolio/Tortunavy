@@ -1,4 +1,6 @@
 #include "Kart/TN_KartItems.h"
+#include "Rally/TN_RallyLogic.h"
+#include "Vehicles/TN_RallyTurretLogic.h"
 
 namespace TNKart
 {
@@ -20,6 +22,13 @@ namespace TNKart
 			{ ETNKartItem::Alga, 38.f, 4.f },
 			{ ETNKartItem::Tinta, 0.f, 12.f },
 			{ ETNKartItem::Estrella, 0.f, 18.f },
+			// #774: el mortero, el arpón y la medusa, más para los de atrás; el pez globo y los erizos, para los de delante. La
+			// suma de las cinco no cambia con el puesto (44): el reparto de los demás sigue igual de equilibrado.
+			{ ETNKartItem::Mortero, 0.f, 12.f },
+			{ ETNKartItem::Erizos, 18.f, 6.f },
+			{ ETNKartItem::Medusa, 4.f, 14.f },
+			{ ETNKartItem::PezGlobo, 22.f, 4.f },
+			{ ETNKartItem::Arpon, 0.f, 8.f },
 		};
 
 		/** Pasado esto con el objeto en la mano, el bot lo usa aunque no venga a cuento (s). */
@@ -54,6 +63,8 @@ namespace TNKart
 		{
 			Out.Weights[static_cast<int32>(ETNKartItem::Tinta)] = 0.f;
 			Out.Weights[static_cast<int32>(ETNKartItem::Estrella)] = 0.f;
+			// Ni a quién clavarle el arpón (#774).
+			Out.Weights[static_cast<int32>(ETNKartItem::Arpon)] = 0.f;
 		}
 		return Out;
 	}
@@ -109,12 +120,17 @@ namespace TNKart
 		case ETNKartItem::Alga: return NSLOCTEXT("Karts", "ItemAlga", "Alga resbaladiza");
 		case ETNKartItem::Tinta: return NSLOCTEXT("Karts", "ItemTinta", "Tinta de calamar");
 		case ETNKartItem::Estrella: return NSLOCTEXT("Karts", "ItemEstrella", "Estrella de mar");
+		case ETNKartItem::Mortero: return NSLOCTEXT("Karts", "ItemMortero", "Mortero");
+		case ETNKartItem::Erizos: return NSLOCTEXT("Karts", "ItemErizos", "Ráfaga de erizos");
+		case ETNKartItem::Medusa: return NSLOCTEXT("Karts", "ItemMedusa", "Medusa saltarina");
+		case ETNKartItem::PezGlobo: return NSLOCTEXT("Karts", "ItemPezGlobo", "Pez globo");
+		case ETNKartItem::Arpon: return NSLOCTEXT("Karts", "ItemArpon", "Arpón");
 		default: return FText::GetEmpty();
 		}
 	}
 
 
-	bool ShouldBotUseItem(ETNKartItem Item, float HeldSeconds, float AheadCm, float BehindCm)
+	bool ShouldBotUseItem(ETNKartItem Item, float HeldSeconds, float AheadCm, float BehindCm, bool bHopThreat)
 	{
 		if (Item == ETNKartItem::None || Item == ETNKartItem::Count)
 		{
@@ -133,8 +149,33 @@ namespace TNKart
 			return BehindCm >= 0.f && BehindCm <= BotAlgaRangeCm;
 		case ETNKartItem::Tinta:
 			return AheadCm >= 0.f;
+		// #774, como los bots de la torreta del Rally.
+		case ETNKartItem::Mortero:
+			return AheadCm >= 0.f;
+		case ETNKartItem::Erizos:
+			return AheadCm >= 0.f && AheadCm <= TNRally::BotErizosRangeCm;
+		case ETNKartItem::Arpon:
+			return TNRallyTurret::BotHarpoonInRange(AheadCm);
+		case ETNKartItem::PezGlobo:
+			return BehindCm >= 0.f && BehindCm <= TNRallyTurret::BotPufferBehindCm;
+		case ETNKartItem::Medusa:
+			return bHopThreat || HeldSeconds >= TNRally::BotJellyfishDelaySeconds;
 		default:
 			return HeldSeconds >= BotBoostDelaySeconds;
 		}
+	}
+}
+
+namespace TNKart
+{
+	float MortarFlightSeconds(float DistanceCm)
+	{
+		return FMath::Clamp(FMath::Max(DistanceCm, 0.f) / MortarRangeCmPerSecond, MortarMinFlightSeconds, MortarMaxFlightSeconds);
+	}
+
+	FVector MortarLaunchVelocity(const FVector& Start, const FVector& Target, float GravityZ, float FlightSeconds)
+	{
+		const float T = FMath::Max(FlightSeconds, KINDA_SMALL_NUMBER);
+		return (Target - Start) / T - FVector(0.f, 0.f, 0.5f * GravityZ * T);
 	}
 }

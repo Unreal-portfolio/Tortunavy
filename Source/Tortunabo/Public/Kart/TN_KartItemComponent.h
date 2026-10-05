@@ -8,6 +8,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Kart/TN_KartItems.h"
+#include "Vehicles/TN_RallyTurretLogic.h"
 #include "TN_KartItemComponent.generated.h"
 
 class ATN_Buggy;
@@ -94,4 +95,25 @@ private:
 	float BotHeldSeconds = 0.f;
 	/** Karts que ya ha apartado la estrella (y cuándo), para no empujarlos en cada fotograma. */
 	TMap<TWeakObjectPtr<ATN_Buggy>, double> StarBumped;
+
+	// ── Objetos que reutilizan la munición de la torreta del Rally (#774) ──
+
+	/** Servidor: el kart que va en Place (o null). */
+	ATN_Buggy* FindKartAtPlace(int32 Place) const;
+	/** El de delante (Place - 1), si sigue en carrera. */
+	ATN_Buggy* FindKartAhead() const;
+	/** Mortero: parábola por encima de los karts que cae delante del de delante. */
+	void FireMortar();
+	/** Ráfaga de erizos: empieza los 3 s de púas hacia delante. */
+	void StartErizos();
+	/** Servidor: la púa que toque de la ráfaga, hacia donde mira el kart. */
+	void TickErizos();
+	/** Medusa: bote propio. False en el aire (no se gasta). */
+	bool Hop();
+	/** Pez globo: mina detrás. */
+	void DropPuffer();
+	/** Arpón: al kart de delante (si está a tiro) o recto. */
+	void FireHarpoon();
+
+	TNRallyTurret::FBurst ErizosBurst;
 };

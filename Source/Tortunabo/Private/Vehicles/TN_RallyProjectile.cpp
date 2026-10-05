@@ -750,3 +750,26 @@ bool TNRallyHazards::HopThreatNear(const ATN_Buggy& Buggy)
 	}
 	return false;
 }
+
+// ── Lanzamiento sin torreta (objetos de Karts, #774) ──────────────────────────
+
+ATN_RallyProjectile* ATN_RallyProjectile::Launch(UWorld* World, ETNRallyAmmo InAmmo, const FVector& Where, const FVector& Velocity,
+	ATN_Buggy* FiredBy)
+{
+	if (!World || Velocity.IsNearlyZero() || Velocity.ContainsNaN())
+	{
+		return nullptr;
+	}
+	const FTransform Spawn(Velocity.Rotation(), Where);
+	ATN_RallyProjectile* Projectile = World->SpawnActorDeferred<ATN_RallyProjectile>(ATN_RallyProjectile::StaticClass(), Spawn, FiredBy,
+		FiredBy, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (!Projectile)
+	{
+		return nullptr;
+	}
+	Projectile->Init(InAmmo, Velocity, FiredBy);
+	Projectile->FinishSpawning(Spawn);
+	// Como los de la torreta: los clientes simulan el vuelo desde su posición y velocidad de salida.
+	Projectile->ForceNetUpdate();
+	return Projectile;
+}

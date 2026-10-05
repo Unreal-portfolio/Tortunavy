@@ -51,6 +51,12 @@ public:
 	static void MortarBlastAt(UWorld* World, ATN_Buggy* Shooter, ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir,
 		bool bGunnerHit, ETNRallyAmmo ReportAmmo = ETNRallyAmmo::Mortero);
 
+	/**
+	 * Solo servidor: proyectil de InAmmo en Where con Velocity (en mundo, ya con la del buggy si la hereda), con FiredBy de
+	 * dueño (no lo toca al salir). Lo usan los objetos de Karts que reutilizan la munición de la torreta (#774).
+	 */
+	static ATN_RallyProjectile* Launch(UWorld* World, ETNRallyAmmo InAmmo, const FVector& Where, const FVector& Velocity, ATN_Buggy* FiredBy);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Estela opcional que sigue al proyectil (solo en las máquinas con pantalla). */

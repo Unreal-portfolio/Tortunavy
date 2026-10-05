@@ -30,8 +30,13 @@ El HUD de los karts hace una ruleta y enseña lo que ha tocado. Con artillera, l
 | Alga resbaladiza | Charco detrás, apoyado en el suelo: poco agarre, menos velocidad y un derrape al entrar; quien lo suelta no lo pisa los primeros 2 s. | Sobre todo delante |
 | Tinta de calamar | Tinta en la pantalla de todos los que van por delante. | Nunca a la primera |
 | Estrella de mar | 7 s invulnerable y algo más rápida; aparta a los karts que toca. | Nunca a la primera |
+| Mortero (#774) | Parábola por encima de los karts que cae delante del kart de delante (donde estará al caer); la explosión del mortero levanta a los que pilla. Sin nadie delante, 40 m por delante. | Sobre todo detrás |
+| Ráfaga de erizos (#774) | 3 s disparando púas hacia delante (24, la cadencia de la torreta); se apunta con el propio kart. Cada púa: empujón lateral y bamboleo. | Sobre todo delante |
+| Medusa saltarina (#774) | Bote propio de unos 3 m al pulsar (no en el aire); en el aire las conchas pasan por debajo y los charcos no le tocan. | Sobre todo detrás |
+| Pez globo (#774) | Mina detrás, 15 s: se arma a los 0,5 s, quien la suelta es inmune 1,5 s y explota como el mortero con un kart a menos de 4 m. | Sobre todo delante |
+| Arpón (#774) | Se clava en el kart de delante (a menos de 80 m; si no, sale recto) y remolca hacia él 2 s, hasta el 115 % de la punta. El escudo lo anula. | Solo detrás (nunca a la primera) |
 
-Reparto: `TNKart::ItemWeightsForPlace` (cuanto más atrás, más objetos buenos). Los bots los usan solos
+Reparto: `TNKart::ItemWeightsForPlace` (cuanto más atrás, más objetos buenos). Los cinco de #774 reutilizan la munición de la torreta del Rally (`ATN_RallyProjectile::Launch`, `ATN_RallyPufferMine`, `ATN_RallyHarpoonTether`). Los bots los usan solos
 (`TNKart::ShouldBotUseItem`).
 
 ## Artillera (#295)

@@ -21,7 +21,8 @@ namespace TNKartHUD
 	/** Caras de la ruleta por segundo y objetos que pasan por ella. */
 	constexpr double RouletteFacesPerSecond = 12.0;
 	constexpr ETNKartItem RouletteFaces[] = { ETNKartItem::Coco, ETNKartItem::Concha, ETNKartItem::Alga, ETNKartItem::ConchaGuiada,
-		ETNKartItem::Tinta, ETNKartItem::Estrella, ETNKartItem::TripleCoco };
+		ETNKartItem::Tinta, ETNKartItem::Estrella, ETNKartItem::TripleCoco, ETNKartItem::Mortero, ETNKartItem::Erizos, ETNKartItem::Medusa,
+		ETNKartItem::PezGlobo, ETNKartItem::Arpon };
 	constexpr float DistanceRefreshSeconds = 0.25f;
 	constexpr float IconSize = 76.f;
 
@@ -138,6 +139,12 @@ UTexture2D* UTN_KartHUDWidget::ItemIcon(ETNKartItem Item, int32 Charges)
 	case ETNKartItem::Alga: return TNHUDArt::SeaIcon();
 	case ETNKartItem::Tinta: return TNHUDArt::StormIcon();
 	case ETNKartItem::Estrella: return TNHUDArt::BubbleIcon();
+	// #774: los mismos iconos que la munición de la torreta en el HUD del Rally.
+	case ETNKartItem::Mortero: return TNRaceItemArt::GetIcon(ETNRaceItem::GoldenCoconut);
+	case ETNKartItem::Erizos: return TNRaceItemArt::GetIcon(ETNRaceItem::HomingCrab);
+	case ETNKartItem::Medusa: return TNRaceItemArt::GetIcon(ETNRaceItem::PelicanTaxi);
+	case ETNKartItem::PezGlobo: return TNRaceItemArt::GetIcon(ETNRaceItem::SandMine);
+	case ETNKartItem::Arpon: return TNHUDArt::RopeRing();
 	default: return nullptr;
 	}
 }
