@@ -13,8 +13,7 @@ class UDataTable;
  * mina de arena, la nube de tormenta y el disco volador. Cada uno con el peso de la carrera según el puesto
  * (TNRaceItems::RollLoot, con el avance por el camino del nivel). Sin coco dorado ni cabezota (#736): la cabezota solo
  * salvaba de las gaviotas, que aquí ya no eliminan (#733).
- *
- * Al empezar cada nivel desde el 2, las que llegaron antes a la meta del anterior salen con cocos (StartItemFor).
+ * Ningún nivel empieza con objetos: sin cocos por orden de llegada (#724).
  *
  * Cada tortuga puede rebuscar cada decorado una vez (ATN_SurvivalSearchSpot): quien va primera no deja vacíos los de las
  * demás. La densidad de rebuscables es la de la carrera (TNBeachLoot): 70 % de suerte, casi todo el decorado elegible y 9 m de
@@ -50,18 +49,6 @@ namespace TNSurvivalLoot
 	 * las formaciones), siempre; lo mediano (1-2, objetos del camino y agujas), casi siempre; los peñascos (3), a menudo.
 	 */
 	TORTUNABO_API double SpotChance(int32 Priority);
-
-	/** Cocos con los que se empieza el nivel según el puesto de llegada, de la última a la primera premiada. */
-	inline constexpr ETNRaceItem StartItemLadder[] = { ETNRaceItem::Coconut, ETNRaceItem::TripleCoconut2,
-		ETNRaceItem::TripleCoconut3 };
-
-	/**
-	 * Lo que recibe al empezar el nivel quien llegó en el puesto Place (0 = la primera) de Finishers que llegaron a la meta
-	 * del anterior. La última no recibe nada; de las demás, la penúltima un coco, la anterior dos (triple coco de 2 usos)
-	 * y la anterior tres (triple coco); sin coco dorado (#736). Desde 5, las de detrás de la 3.ª, nada.
-	 * Ej.: con 3, dos cocos, un coco y nada; con 5, tres, dos, uno, nada y nada.
-	 */
-	TORTUNABO_API ETNRaceItem StartItemFor(int32 Place, int32 Finishers);
 
 	/** Servidor: sortea el objeto que le sale a Picker de Catalog (DT_Items) y de los de carrera. false si no sale nada. */
 	TORTUNABO_API bool Roll(const APawn* Picker, const UDataTable* Catalog, FTN_InventoryItem& OutItem);

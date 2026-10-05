@@ -65,17 +65,6 @@ double TNSurvivalLoot::SpotChance(int32 Priority)
 	return Priority <= 2 ? 0.85 : 0.6;
 }
 
-ETNRaceItem TNSurvivalLoot::StartItemFor(int32 Place, int32 Finishers)
-{
-	// Premiadas: todas menos la última, como mucho tantas como peldaños. La primera lleva el peldaño más alto que le toca.
-	const int32 Rewarded = FMath::Min(Finishers - 1, static_cast<int32>(UE_ARRAY_COUNT(StartItemLadder)));
-	if (Place < 0 || Place >= Rewarded)
-	{
-		return ETNRaceItem::None;
-	}
-	return StartItemLadder[Rewarded - 1 - Place];
-}
-
 bool TNSurvivalLoot::Roll(const APawn* Picker, const UDataTable* Catalog, FTN_InventoryItem& OutItem)
 {
 	return TNRaceItems::RollLoot(Picker, ETNRaceLootSource::Search, Catalog,

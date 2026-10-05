@@ -96,39 +96,4 @@ bool FTNSurvivalLootDensityTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Cocos al empezar el nivel según el puesto de llegada
-// ─────────────────────────────────────────────────────────────────────────────
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalLootStartItemsTest,
-	"Tortunabo.Survival.Loot.StartItems",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNSurvivalLootStartItemsTest::RunTest(const FString& Parameters)
-{
-	using namespace TNSurvivalLoot;
-
-	const auto Expect = [this](int32 Finishers, std::initializer_list<ETNRaceItem> Items)
-	{
-		int32 Place = 0;
-		for (const ETNRaceItem Item : Items)
-		{
-			TestTrue(FString::Printf(TEXT("%d tortugas, %dª: %s"), Finishers, Place + 1, *TNRaceItems::CodeName(Item)),
-				StartItemFor(Place, Finishers) == Item);
-			++Place;
-		}
-	};
-	using enum ETNRaceItem;
-	Expect(1, { None });
-	Expect(2, { Coconut, None });
-	Expect(3, { TripleCoconut2, Coconut, None });
-	Expect(4, { TripleCoconut3, TripleCoconut2, Coconut, None });
-	// Sin coco dorado (#736): desde 5, solo las tres primeras.
-	Expect(5, { TripleCoconut3, TripleCoconut2, Coconut, None, None });
-	Expect(8, { TripleCoconut3, TripleCoconut2, Coconut, None, None, None, None, None });
-	TestTrue(TEXT("Puesto no válido: nada"), StartItemFor(-1, 4) == None && StartItemFor(9, 4) == None);
-	TestTrue(TEXT("Sin llegadas (nivel 1): nada"), StartItemFor(0, 0) == None);
-	return true;
-}
-
 #endif
