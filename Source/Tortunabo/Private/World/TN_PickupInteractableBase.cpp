@@ -31,7 +31,8 @@ void ATN_PickupInteractableBase::BeginPlay()
 
 	// Objetos de carrera y de Todos contra Todos definidos en código (la caja de objetos lleva su fila en el valor por
 	// defecto de la clase, que no se replica): malla y tamaño en cada máquina a partir del ItemId.
-	if (PickupItem.UseType == ETN_ItemUseType::RaceItem || PickupItem.UseType == ETN_ItemUseType::TctItem)
+	if (PickupItem.UseType == ETN_ItemUseType::RaceItem || PickupItem.UseType == ETN_ItemUseType::TctItem
+		|| PickupItem.UseType == ETN_ItemUseType::CoopItem)
 	{
 		TNRaceItems::ResolveVisuals(PickupItem);
 		if (Mesh && PickupItem.EquippedMesh)

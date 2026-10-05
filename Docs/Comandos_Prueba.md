@@ -334,6 +334,18 @@ generador pasa esos tests en las dos configuraciones antes de actualizar una hue
 | `TN.Lobby.Castle 0` / `TN.Lobby.Valley 0` | Esconde el castillo o el valle del lobby (al recargarlo). |
 | `TN.Storm.Cough 1` / `TN.Storm.Cough 2` | Carraspeos sueltos (`1`) o tos fuerte (`2`) de la tormenta sin tormenta; `0` la apaga. |
 
+### Objetos del coop y charco de pesca
+
+Objetos del GDD definidos en código (`Game/TN_CoopItems.h`, ItemId `Coop_<objeto>_<cuenta>`). Salen de los rebuscables del
+coop y del charco de pesca (tabla del coop: filas de `DT_Items` con peso 15 y los objetos del coop con su peso del Excel). Los
+que se apilan suman en el mismo hueco hasta su límite; el icono lleva la cuenta (o los usos que quedan) cuando pasa de uno.
+Pruebas: `Tortunabo.Coop.Items`.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Coop.Item <objeto\|list> [jugador=0]` | Da ese objeto del coop a la tortuga (a la mano; si la mochila está llena, sustituye). `list` enseña objetos, apilado, usos y peso. |
+| `TN.Coop.FishingPool [jugador=0]` / `TN.Coop.FishingPool clear` | Un charco de pesca 4 m delante de esa tortuga / quita los de prueba. Mantener E 2 s pesca un objeto; 12 s de respiro por charco. |
+
 ## Karts en el mapa del cooperativo
 
 Se elige como los demás modos: «Karts» en el menú al crear sala, en la sala o con el General Galápago (pestaña

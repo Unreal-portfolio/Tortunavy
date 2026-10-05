@@ -286,6 +286,13 @@ private:
 	/** @brief Consume y devuelve el equipado (server-side internal). */
 	bool ConsumeEquippedInternal(FTN_InventoryItem& OutItem);
 
+	/**
+	 * Objetos del coop que se apilan (Game/TN_CoopItems.h): qué pasa si llega NewItem con lo que ya hay en los huecos. Separate
+	 * = va a otro hueco como siempre; Merge = se suma al hueco que ya lo tiene (OutSlot: 0 la mano, 1 el caparazón; OutMerged:
+	 * la fila con la cuenta nueva); Full = ya tiene el máximo y no se coge. Devuelve un ETNCoopStack.
+	 */
+	uint8 DecideCoopStack(const FTN_InventoryItem& NewItem, int32& OutSlot, FTN_InventoryItem& OutMerged) const;
+
 	/** @brief Intercambia equipado ↔ guardado (server-side internal). */
 	void SwapSlotsInternal();
 

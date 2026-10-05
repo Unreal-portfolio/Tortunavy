@@ -360,7 +360,8 @@ protected:
 	virtual float GetLootWeight(FName RowName, const FTN_InventoryItem& Row) const;
 
 	/**
-	 * Servidor: sortea el objeto que sale al completarse la búsqueda de Searcher (por defecto, del catálogo con GetLootWeight).
+	 * Servidor: sortea el objeto que sale al completarse la búsqueda de Searcher (por defecto, de la tabla del coop:
+	 * TNCoopItems::RollLoot, con las filas del catálogo con GetLootWeight y los objetos del coop definidos en código).
 	 * La playa lo sobrescribe: allí los pesos dependen del puesto de quien rebusca (TNRaceItems::RollLoot).
 	 */
 	virtual bool PickLoot(FTN_InventoryItem& OutItem, const APawn* Searcher) const;

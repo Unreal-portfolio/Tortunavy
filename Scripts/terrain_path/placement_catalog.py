@@ -122,6 +122,7 @@ LOOT_CLASSES = {
     "ItemBox": "ATN_RaceItemBox",
     "TreasureChest": "ETNBeachElement::TreasureChest",
     "SearchSpot": "ATN_BeachSearchSpot",
+    "FishingPool": "ATN_FishingPool",
     "ScoreShell": "BP_ScorePickup",
 }
 NEST_CLASS = "ATN_ProcEggNest"

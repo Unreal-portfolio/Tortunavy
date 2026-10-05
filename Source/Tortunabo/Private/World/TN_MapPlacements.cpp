@@ -150,6 +150,7 @@ namespace TNMapPlacementsDetail
 		if (Kind == TEXT("ItemBox")) { return ESpawn::ItemBox; }
 		if (Kind == TEXT("SearchSpot")) { return ESpawn::SearchSpot; }
 		if (Kind == TEXT("ScoreShell")) { return ESpawn::ScoreShell; }
+		if (Kind == TEXT("FishingPool")) { return ESpawn::FishingPool; }
 		if (TNMapPlacements::ElementFromName(Kind, OutElement) && TNBeach::CategoryOf(OutElement) != ETNBeachCategory::Decor)
 		{
 			return ESpawn::BeachElement;
@@ -218,6 +219,7 @@ const TCHAR* TNMapPlacements::SpawnName(ESpawn Spawn)
 	case ESpawn::ItemBox:        return TEXT("ItemBox");
 	case ESpawn::SearchSpot:     return TEXT("SearchSpot");
 	case ESpawn::ScoreShell:     return TEXT("ScoreShell");
+	case ESpawn::FishingPool:    return TEXT("FishingPool");
 	case ESpawn::ThrowWall:      return TEXT("ThrowWall");
 	case ESpawn::PlateBalance:   return TEXT("PlateBalance");
 	case ESpawn::BreakableChain: return TEXT("BreakableChain");

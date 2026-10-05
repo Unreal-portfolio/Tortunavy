@@ -1,5 +1,6 @@
 #include "World/ProcMap/TN_ProcSearchSpot.h"
 #include "Audio/TN_AudioVoices.h"
+#include "Game/TN_CoopItems.h"
 #include "Multiplayer/TN_LocalViews.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "TN_ProcMapAmbientFX.h"
@@ -1075,7 +1076,9 @@ bool ATN_ProcSearchSpot::PickLoot(FTN_InventoryItem& OutItem, const APawn* /*Sea
 		UE_LOG(LogTortunabo, Warning, TEXT("[Search] Sin catálogo de objetos (%s): no sale nada."), *LootTable.ToString());
 		return false;
 	}
-	return PickCatalogItem(Table, [this](FName RowName, const FTN_InventoryItem& Row) { return GetLootWeight(RowName, Row); }, OutItem);
+	// La tabla del coop: las filas de DT_Items con su peso de aquí y los objetos del coop definidos en código (TN_CoopItems.h).
+	return TNCoopItems::RollLoot(Table, [this](FName RowName, const FTN_InventoryItem& Row) { return GetLootWeight(RowName, Row); },
+		FMath::FRand(), OutItem);
 }
 
 bool ATN_ProcSearchSpot::PickCatalogItem(const UDataTable* Table, TFunctionRef<float(FName, const FTN_InventoryItem&)> WeightOf,
