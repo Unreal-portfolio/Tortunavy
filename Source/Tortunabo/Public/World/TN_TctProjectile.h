@@ -122,6 +122,8 @@ private:
 	bool bFinished = false;
 	FVector PrevLocation = FVector::ZeroVector;
 	float Age = 0.f;
+	/** Servidor: hora del mundo del último reenvío tras un rebote (#708). */
+	double LastBounceSyncTime = -1.0;
 	/** Servidor: hasta cuándo (Age) no vuelve a golpear a cada tortuga. */
 	TMap<TWeakObjectPtr<AActor>, float> RehitUntil;
 };

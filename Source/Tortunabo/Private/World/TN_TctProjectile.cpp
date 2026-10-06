@@ -113,6 +113,10 @@ ATN_TctProjectile::ATN_TctProjectile()
 	Movement->bAutoActivate = false;
 	Movement->InitialSpeed = 0.f;
 	Movement->MaxSpeed = 0.f;
+	// #708: pasos fijos de 1/60 s: el rebote contra una rampa no depende del fotograma de cada máquina.
+	Movement->bForceSubStepping = true;
+	Movement->MaxSimulationTimeStep = 1.f / 60.f;
+	Movement->MaxSimulationIterations = 12;
 }
 
 void ATN_TctProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -401,6 +405,15 @@ void ATN_TctProjectile::ServerFinish(const FVector& Location)
 
 void ATN_TctProjectile::OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
+	// El balón y la cocobomba rebotan en cada máquina: tras cada rebote (como mucho cada 0,1 s) el servidor devuelve a todas a
+	// su trayectoria (#708); contra una rampa, los rebotes seguidos separaban al cliente del anfitrión.
+	const ETNTctItem Bouncer = static_cast<ETNTctItem>(Shot.Kind);
+	if (HasAuthority() && !bFinished && (Bouncer == ETNTctItem::BeachBall || Bouncer == ETNTctItem::Cocobomba) && GetWorld()
+		&& GetWorld()->GetTimeSeconds() - LastBounceSyncTime >= 0.1)
+	{
+		LastBounceSyncTime = GetWorld()->GetTimeSeconds();
+		MulticastResync(GetActorLocation(), Movement->Velocity);
+	}
 	// El ancla no rebota: si el suelo la para de lado (sin OnStop), cae igual.
 	if (HasAuthority() && static_cast<ETNTctItem>(Shot.Kind) == ETNTctItem::Anchor && ImpactResult.ImpactNormal.Z > 0.4)
 	{
