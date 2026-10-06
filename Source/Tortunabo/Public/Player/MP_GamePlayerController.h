@@ -203,11 +203,14 @@ public:
 
 	/**
 	 * @brief El cliente avisa de que ya construyó el mapa procedural de esa generación.
-	 * @note Lo llama ATN_ProcMapGenerator en el cliente; el servidor lo reenvía a
-	 *       ATN_ProcMapGameMode para arrancar la ronda cuando todos lo tienen.
+	 * @note Lo llama ATN_ProcMapGenerator en el cliente; el servidor lo apunta (GetReportedProcMapGeneration) y lo
+	 *       reenvía a ATN_ProcMapGameMode para arrancar la ronda cuando todos lo tienen.
 	 */
 	UFUNCTION(Server, Reliable)
 	void ServerReportProcMapReady(int32 Generation);
+
+	/** Servidor: la generación del mapa procedural más alta que este cliente ha dicho tener construida (0 = ninguna). */
+	int32 GetReportedProcMapGeneration() const { return ReportedProcMapGeneration; }
 
 	/**
 	 * @brief Recibe audio de voz filtrado por proximidad desde el servidor.
@@ -324,6 +327,9 @@ protected:
 	TSoftObjectPtr<UInputAction> ReturnToMenuAction;
 
 private:
+	/** Servidor: lo último de ServerReportProcMapReady (Supervivencia espera a que todos tengan el nivel, #828). */
+	int32 ReportedProcMapGeneration = 0;
+
 	UPROPERTY()
 	TObjectPtr<UUserWidget> VoiceIndicatorWidget;
 

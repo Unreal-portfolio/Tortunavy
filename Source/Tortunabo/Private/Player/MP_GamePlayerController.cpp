@@ -307,6 +307,7 @@ void AMP_GamePlayerController::ForceRestoreInput()
 
 void AMP_GamePlayerController::ServerReportProcMapReady_Implementation(int32 Generation)
 {
+	ReportedProcMapGeneration = FMath::Max(ReportedProcMapGeneration, Generation);
 	if (ATN_ProcMapGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<ATN_ProcMapGameMode>() : nullptr)
 	{
 		GM->NotifyClientMapReady(this, Generation);

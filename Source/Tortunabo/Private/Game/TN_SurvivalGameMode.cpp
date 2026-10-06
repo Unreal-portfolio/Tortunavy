@@ -3,6 +3,7 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_GameModeSpawnUtils.h"
+#include "Player/MP_GamePlayerController.h"
 #include "World/TN_ChunkManager.h"
 #include "World/TN_StormVolume.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
@@ -345,9 +346,37 @@ void ATN_SurvivalGameMode::PollLevelReady()
 	{
 		UE_LOG(LogTortunabo, Warning, TEXT("[Survival] El suelo del nivel %d no tiene colisión tras %.1f s: salen igualmente."), CurrentLevel, Waited);
 	}
+	// Y cada cliente con el mismo mapa montado en su máquina (#828): sin él, su tortuga pisaría otro suelo que la del servidor.
+	FString Waiting;
+	if (Generator && CountClientsWithoutMap(Generator->GetRequestedGeneration(), Waiting) > 0)
+	{
+		if (Waited < ClientLevelReadyTimeoutSeconds)
+		{
+			return;
+		}
+		UE_LOG(LogTortunabo, Warning, TEXT("[Survival] Nivel %d: %s no ha dicho que tenga el mapa tras %.1f s: salen igualmente (quietos en su máquina hasta tenerlo)."),
+			CurrentLevel, *Waiting, Waited);
+	}
 
 	GetWorldTimerManager().ClearTimer(LevelReadyPollHandle);
 	SendSurvivorsToLevelStart();
+}
+
+int32 ATN_SurvivalGameMode::CountClientsWithoutMap(int32 Generation, FString& OutWaiting) const
+{
+	int32 Missing = 0;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const AMP_GamePlayerController* PC = Cast<AMP_GamePlayerController>(It->Get());
+		// El anfitrión usa el mapa del servidor.
+		if (!PC || PC->IsLocalController() || PC->GetReportedProcMapGeneration() >= Generation)
+		{
+			continue;
+		}
+		++Missing;
+		OutWaiting += (OutWaiting.IsEmpty() ? TEXT("") : TEXT(", ")) + GetNameSafe(PC);
+	}
+	return Missing;
 }
 
 void ATN_SurvivalGameMode::SendSurvivorsToLevelStart()
