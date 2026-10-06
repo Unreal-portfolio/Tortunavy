@@ -479,7 +479,10 @@ namespace TNTurtleAnim
 		Turn(P, B.RLeg, AxisX, -20.f);
 	}
 
-	/** Lleva a otra tortuga en alto. */
+	/**
+	 * Lleva a otra tortuga en alto: solo las aletas arriba (capa de brazos, como lo que lleva en las aletas). Las piernas y
+	 * el resto siguen con la locomoción (parada, andar, correr) y la tortuga anda con la carga encima (#833).
+	 */
 	void PoseCarry(FCompactPose& P, const FBones& B)
 	{
 		Turn(P, B.LArm, AxisY, -80.f);
@@ -488,11 +491,6 @@ namespace TNTurtleAnim
 		Turn(P, B.RArm, AxisZ, -10.f);
 		Turn(P, B.LFore, AxisY, -25.f);
 		Turn(P, B.RFore, AxisY, 25.f);
-		Turn(P, B.Spine, AxisX, 4.f);
-		Turn(P, B.LUp, AxisX, 10.f);
-		Turn(P, B.RUp, AxisX, 10.f);
-		Turn(P, B.LLeg, AxisX, -15.f);
-		Turn(P, B.RLeg, AxisX, -15.f);
 	}
 
 	/** La llevan en alto y patalea. */
@@ -1003,7 +1001,6 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		Layer(FirstW, [&](FCompactPose& P) { PoseDive(P, B, F); });
 		Layer(SlideMix, [&](FCompactPose& P) { PoseBellySlide(P, B, F); });
 	}
-	Layer(F.CarryW, [&](FCompactPose& P) { PoseCarry(P, B); });
 	Layer(F.CarriedW, [&](FCompactPose& P) { PoseCarried(P, B, F); });
 	Layer(F.DownW, [&](FCompactPose& P) { PoseDown(P, B); });
 	if (F.PrevEmote >= 0 && F.PrevEmote != 9)
@@ -1052,6 +1049,12 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		if (bLeftArm) { BlendChainInto(Output.Pose, Target.Pose, LChain, Weight); }
 		if (bRightArm) { BlendChainInto(Output.Pose, Target.Pose, RChain, Weight); }
 	};
+	// Llevar a otra tortuga en alto: las aletas arriba y el tronco algo atrás, andando o corriendo con la carga (#833).
+	if (F.CarryW >= 0.01f)
+	{
+		ArmLayer(F.CarryW, true, true, [&](FCompactPose& P) { PoseCarry(P, B); });
+		Turn(Output.Pose, B.Spine, AxisX, 4.f * F.CarryW);
+	}
 	if (F.HoldStyle != 0 && F.HoldW >= 0.01f)
 	{
 		const bool bHug = F.HoldStyle == 2;
