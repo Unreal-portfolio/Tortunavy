@@ -195,7 +195,7 @@ void UTN_FlipperSlapComponent::ResolveOnServer(double Now)
 		const FVector At = Victim->GetActorLocation();
 		ImpactPoint = At + (Origin - At).GetSafeNormal2D() * ImpactInset + Chest;
 		// Mareo de siempre (lento un momento), un empujoncito y la sacudida mínima de cámara; sin derribo.
-		Victim->MulticastApplyMareoEffect(TNFlipperSlap::DizzySeconds);
+		Victim->ApplyMareoEffect(TNFlipperSlap::DizzySeconds);
 		UTN_TurtleMovementComponent::LaunchFromServer(Victim, TNFlipperSlap::PushVelocity(Origin, Forward, At));
 		Victim->NotifyHitFeedback(TNHitFeedback::MinStrength);
 		UE_LOG(LogTortunabo, Log, TEXT("[Guantazo] %s da un guantazo a %s."), *GetNameSafe(Turtle), *GetNameSafe(Victim));

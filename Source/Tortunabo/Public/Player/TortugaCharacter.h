@@ -92,7 +92,8 @@ public:
 	 * Servidor: marea a la tortuga Duration segundos (tope de velocidad MareoSpeedCap). Lo llaman RemoveBigHeadEffect, el
 	 * dardo de medusa y las trampas de la playa (#2). El estado va replicado (bMareo) y el tope, predicho en el movimiento
 	 * (TNMovementLimits::PredictedCapMareoBit): empieza y acaba en el mismo movimiento en el dueño y en el servidor (#574).
-	 * Otra vez mareada mientras dura: la cuenta vuelve a empezar.
+	 * Otra vez mareada mientras dura: la cuenta vuelve a empezar si así acaba más tarde (un mareo corto, como el guantazo de
+	 * la aleta, no acorta uno más largo, #832).
 	 */
 	void ApplyMareoEffect(float Duration);
 
@@ -1230,7 +1231,7 @@ protected:
 
 	FTimerHandle BigHeadTimerHandle;
 	FTimerHandle MareoTimerHandle;
-	/** Hora del mundo en que acaba el mareo en marcha (MulticastApplyMareoEffect: uno más corto no lo acorta). */
+	/** Hora del mundo en que acaba el mareo en marcha (ApplyMareoEffect: uno más corto no lo acorta). */
 	double MareoEndTime = 0.0;
 	FTimerHandle InkEffectTimerHandle;
 
