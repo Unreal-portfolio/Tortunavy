@@ -33,6 +33,21 @@
  *  - MedusaTrampolin: se planta delante y dura JellyLifeSeconds; cualquier tortuga que la pisa (también quien la puso) bota
  *    unos 6 m hacia arriba. 1 carga.
  *
+ * Más objetos con ventaja y coste (#830), por componer lo que ya hay (efectos con hora de fin en UTN_TctItemComponent, empujones,
+ * proyectiles, plantados y el plan del agua):
+ *  - Cohete: te lanza hacia donde miras (alcance y altura) pero te quema: 2 s casi sin poder andar.
+ *  - BotasMuelle: 12 s de salto doble para subir de piso, pero a paso de tortuga cargada.
+ *  - Aletas: 12 s con el veneno del agua casi sin efecto (30 %), pero en tierra firme vas torpe.
+ *  - Cambiazo: cambia tu sitio con la tortuga más cercana (a menos de 12 m) y a las dos las marea 1,2 s: te saca de un
+ *    apuro o te mete en otro.
+ *  - Burbuja: 10 s sin que nada te empuje, derribe ni maree, pero flotas lenta y sin apenas gravedad.
+ *  - Puas: 8 s de púas que lanzan a quien se te acerca, pero pesas más: poco salto y poca velocidad.
+ *  - Red: lanzada, deja clavada 2,5 s a quien toca; poco alcance y un proyectil lento que se ve venir. 2 cargas.
+ *  - Remolino: un torbellino de arena plantado 6 s que lanza al aire a cuantas pasan, también a ti.
+ *  - TaponMarea: retrasa 10 s el agua para todas (también para quien va ganando).
+ *  - Paraguas: 7 s planeando (caída muy lenta), pero casi sin velocidad ni salto.
+ * Cada objeto tiene una rareza (ETNTctRarity) y los puntos de objetos también (más arriba o más expuestos, mejor).
+ *
  * Lógica pura, sin mundo ni red (ítems, cargas, reaparición en los puntos de objetos, reparto de los puntos y cuánto empuja
  * cada golpe): la recorren las pruebas Tortunabo.Tct.Items.*.
  */
@@ -57,6 +72,41 @@ enum class ETNTctItem : uint8
 	GaviotaLadrona,
 	Flotador,
 	MedusaTrampolin,
+	/** #830 */
+	Cohete,
+	BotasMuelle,
+	Aletas,
+	Cambiazo,
+	Burbuja,
+	Puas,
+	Red,
+	Remolino,
+	TaponMarea,
+	Paraguas,
+	Count
+};
+
+/** Rareza de un objeto y de un punto de objetos (#830): los puntos altos o expuestos dan lo más raro. */
+enum class ETNTctRarity : uint8
+{
+	Common,
+	Rare,
+	Epic
+};
+
+/**
+ * Efectos con hora de fin que un objeto deja en una tortuga (UTN_TctItemComponent::GrantFx). Cada uno limita lo que puede
+ * hacer mientras dura (FTNTctFxLimits): su coste.
+ */
+enum class ETNTctFx : uint8
+{
+	Spring,
+	Fins,
+	Bubble,
+	Spikes,
+	Glide,
+	Net,
+	Scorch,
 	Count
 };
 
@@ -82,6 +132,20 @@ struct FTNTctItemSpec
 	int32 Charges = 1;
 	/** Peso en el sorteo de los puntos de objetos. */
 	float PadWeight = 1.f;
+	/** Rareza: en qué puntos de objetos sale más (#830). */
+	ETNTctRarity Rarity = ETNTctRarity::Common;
+};
+
+/** Lo que un efecto limita en la tortuga mientras dura (el máximo de float / 1 = sin límite). */
+struct FTNTctFxLimits
+{
+	/** Tope de velocidad al andar (cm/s). */
+	float SpeedCap = TNumericLimits<float>::Max();
+	/** Multiplicador del salto y su tope (cm/s). */
+	float JumpMultiplier = 1.f;
+	float JumpCap = TNumericLimits<float>::Max();
+	/** Escala de gravedad (el máximo de float = la de siempre). */
+	float Gravity = TNumericLimits<float>::Max();
 };
 
 /** Valores de los efectos (cm, cm/s y s). */
@@ -206,7 +270,72 @@ namespace TNTctItemTuning
 	inline constexpr float PadStaggerSeconds = 0.35f;
 	/** Un punto con el agua a menos de esto por debajo ya no saca objetos. */
 	inline constexpr float PadWaterClearance = 40.f;
+
+	// ── Objetos nuevos (#830) ──
+	/** Cohete: velocidad en planta y hacia arriba del lanzamiento, y lo que dura la quemadura (casi sin andar). */
+	inline constexpr float CoheteSpeed = 1500.f;
+	inline constexpr float CoheteUp = 850.f;
+	inline constexpr float CoheteScorchSeconds = 2.f;
+	inline constexpr float CoheteScorchSpeedCap = 200.f;
+	/** Botas de muelle: segundos, multiplicador de la velocidad del salto (1,5 = más del doble de altura) y tope de velocidad. */
+	inline constexpr float SpringSeconds = 12.f;
+	inline constexpr float SpringJumpMultiplier = 1.5f;
+	inline constexpr float SpringSpeedCap = 330.f;
+	/** Aletas: segundos, lo que queda del veneno del agua y tope de velocidad en tierra. */
+	inline constexpr float FinsSeconds = 12.f;
+	inline constexpr float FinsPoisonScale = 0.3f;
+	inline constexpr float FinsSpeedCap = 420.f;
+	/** Cambiazo: a qué distancia busca con quién cambiar y cuánto marea a las dos. */
+	inline constexpr float SwapRange = 1200.f;
+	inline constexpr float SwapDizzySeconds = 1.2f;
+	/** Burbuja: segundos, tope de velocidad y gravedad de quien va dentro. */
+	inline constexpr float BubbleSeconds = 10.f;
+	inline constexpr float BubbleSpeedCap = 360.f;
+	inline constexpr float BubbleGravity = 0.55f;
+	/** Púas: segundos, radio, empujón (a lo lejos y a lo alto), espera entre empujones a la misma tortuga y lo que pesan. */
+	inline constexpr float SpikesSeconds = 8.f;
+	inline constexpr float SpikesRadius = 190.f;
+	inline constexpr float SpikesPushSpeed = 950.f;
+	inline constexpr float SpikesUpSpeed = 380.f;
+	inline constexpr float SpikesRehitSeconds = 0.7f;
+	inline constexpr float SpikesSpeedCap = 380.f;
+	inline constexpr float SpikesJumpMultiplier = 0.6f;
+	/** Red: velocidad y ángulo del lanzamiento, vida, lo que dura clavada la víctima y su tope de velocidad. */
+	inline constexpr float NetSpeed = 1900.f;
+	inline constexpr float NetPitchDeg = 8.f;
+	inline constexpr float NetLifeSeconds = 2.5f;
+	inline constexpr float NetRootSeconds = 2.5f;
+	inline constexpr float NetSpeedCap = 30.f;
+	/** Remolino: vida, radio, espera entre lanzamientos, hacia arriba y hacia fuera, y distancia delante a la que se planta. */
+	inline constexpr float WhirlLifeSeconds = 6.f;
+	inline constexpr float WhirlRadius = 260.f;
+	inline constexpr float WhirlKickSeconds = 1.1f;
+	inline constexpr float WhirlUp = 800.f;
+	inline constexpr float WhirlOut = 450.f;
+	inline constexpr float WhirlForward = 220.f;
+	/** Tapón de marea: segundos que retrasa el agua. */
+	inline constexpr float PlugDelaySeconds = 10.f;
+	/** Paraguas: segundos, gravedad, tope de velocidad y multiplicador del salto. */
+	inline constexpr float GlideSeconds = 7.f;
+	inline constexpr float GlideGravity = 0.18f;
+	inline constexpr float GlideSpeedCap = 420.f;
+	inline constexpr float GlideJumpMultiplier = 0.5f;
 }
+
+/** Un sitio posible para un punto de objetos: su altura sobre el agua (0-1, 1 = lo más alto de la arena) y lo cerca que está del vacío (0-1). */
+struct FTNTctPadSpot
+{
+	FVector Pos = FVector::ZeroVector;
+	float HeightFrac = 0.f;
+	float Exposure = 0.f;
+};
+
+/** Un punto de objetos elegido: el sitio (índice de FTNTctPadSpot) y su rareza. */
+struct FTNTctPadPick
+{
+	int32 Index = INDEX_NONE;
+	ETNTctRarity Rarity = ETNTctRarity::Common;
+};
 
 /**
  * Reloj de un punto de objetos (ATN_TctItemPad). Solo el servidor. Entre rondas está parado; al empezar una, saca su primer
@@ -284,6 +413,40 @@ namespace TNTctItemRules
 	 */
 	TORTUNABO_API ETNTctItem PickPadItem(const TArray<ETNTctItem>& Available, ETNTctItem Last, float Roll);
 
+	/**
+	 * Peso de Kind en un punto de rareza PadRarity cuando la ronda va por RoundProgress (0-1, la parte del agua ya subida):
+	 * su PadWeight por lo bien que casa su rareza con la del punto (un punto común da sobre todo objetos comunes, uno épico
+	 * da lo épico) y, según avanza la ronda, más peso a lo raro y a lo épico (#830).
+	 */
+	TORTUNABO_API float PadItemWeight(ETNTctItem Kind, ETNTctRarity PadRarity, float RoundProgress);
+
+	/** Como PickPadItem, con la rareza del punto y cómo va la ronda (#830). */
+	TORTUNABO_API ETNTctItem PickPadItem(const TArray<ETNTctItem>& Available, ETNTctItem Last, float Roll, ETNTctRarity PadRarity, float RoundProgress);
+
+	/** Rareza de un punto por su altura y su exposición: más arriba y más cerca del borde, mejor objeto (#830). */
+	TORTUNABO_API ETNTctRarity PadRarityFor(float HeightFrac, float Exposure);
+
+	/**
+	 * Elige Count puntos de objetos entre Spots (#830): una quinta parte épicos (por lo alto y expuesto), un tercio raros y el
+	 * resto comunes, cada clase repartida con el más lejano a los ya elegidos, a MinSpacing unos de otros si caben y a
+	 * MinFromAvoid de las salidas (Avoid) si caben. Si una clase no tiene sitios, los pide a la de abajo. Determinista.
+	 */
+	TORTUNABO_API TArray<FTNTctPadPick> PlanPads(const TArray<FTNTctPadSpot>& Spots, int32 Count, const TArray<FVector>& Avoid,
+		float MinFromAvoid, float MinSpacing);
+
+	/** Lo que limita el efecto Fx mientras dura (su coste) y cuánto dura. */
+	TORTUNABO_API FTNTctFxLimits FxLimits(ETNTctFx Fx);
+	TORTUNABO_API float FxSeconds(ETNTctFx Fx);
+
+	/** Cohete: la velocidad del lanzamiento hacia donde se mira. */
+	TORTUNABO_API FVector CoheteLaunch(const FVector& AimDirection);
+
+	/** Púas de quien está en Center: si Victim está en el radio, true y el empujón (hacia fuera y algo hacia arriba). */
+	TORTUNABO_API bool SpikesPush(const FVector& Center, const FVector& Victim, FVector& OutVelocity);
+
+	/** Remolino de base en Center: si los pies en Feet están dentro, true y el lanzamiento (arriba y hacia fuera). */
+	TORTUNABO_API bool WhirlKick(const FVector& Center, const FVector& Feet, FVector& OutVelocity);
+
 	/** Un punto en PadZ con el agua en WaterZ ya no saca objetos. */
 	TORTUNABO_API bool IsPadSubmerged(float PadZ, float WaterZ, float Clearance = TNTctItemTuning::PadWaterClearance);
 
@@ -302,6 +465,19 @@ namespace TNTctItemRules
 		const TArray<FVector>& Avoid, float MinFromAvoid);
 
 	// ── Golpes (servidor; velocidades que se dan con UTN_TurtleMovementComponent::LaunchFromServer) ──────────────────────
+
+	/**
+	 * true si el objeto se apunta (se dispara, se lanza o se golpea hacia donde se mira): mientras se lleva equipado, el HUD
+	 * enseña la mira (#707). Los que se plantan o se usan sin apuntar (flotador, medusa...) no la llevan.
+	 */
+	TORTUNABO_API bool UsesAim(ETNTctItem Kind);
+
+	/**
+	 * Dirección del disparo desde Muzzle hacia el punto de mira Target (el que se ve en el centro de la pantalla). Con el
+	 * objetivo pegado a la boca, o detrás de donde mira la tortuga (Fallback, la de la cámara), se usa Fallback. La inclinación
+	 * se recorta a MaxPitchDeg: no se dispara al propio suelo ni a las nubes (#707).
+	 */
+	TORTUNABO_API FVector AimToward(const FVector& Muzzle, const FVector& Target, const FVector& Fallback, float MaxPitchDeg = 40.f);
 
 	/** Pistola de noqueo: el empujón del derribo hacia donde iba el tiro. */
 	TORTUNABO_API FVector KnockoutImpulse(const FVector& ShotDirection);

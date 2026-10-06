@@ -58,6 +58,10 @@ namespace TNTctProjectileDetail
 		case ETNTctItem::Alga:
 			Out.Radius = 12.f; Out.Gravity = 1.f; Out.Life = 4.f;
 			break;
+		case ETNTctItem::Red:
+			// Lenta de ver y de poco alcance: baja pronto.
+			Out.Radius = 30.f; Out.Gravity = 0.6f; Out.Life = NetLifeSeconds;
+			break;
 		default:
 			break;
 		}
@@ -73,6 +77,7 @@ namespace TNTctProjectileDetail
 		case ETNTctItem::JellyDart: return TNTctItemTuning::DartSpeed;
 		case ETNTctItem::Cocobomba: return TNTctItemTuning::CocoSpeed;
 		case ETNTctItem::Alga:      return TNTctItemTuning::AlgaSpeed;
+		case ETNTctItem::Red:       return TNTctItemTuning::NetSpeed;
 		default:                    return 0.f;
 		}
 	}
@@ -113,6 +118,10 @@ ATN_TctProjectile::ATN_TctProjectile()
 	Movement->bAutoActivate = false;
 	Movement->InitialSpeed = 0.f;
 	Movement->MaxSpeed = 0.f;
+	// #708: pasos fijos de 1/60 s: el rebote contra una rampa no depende del fotograma de cada máquina.
+	Movement->bForceSubStepping = true;
+	Movement->MaxSimulationTimeStep = 1.f / 60.f;
+	Movement->MaxSimulationIterations = 12;
 }
 
 void ATN_TctProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -130,9 +139,24 @@ bool ATN_TctProjectile::ServerLaunch(ATortugaCharacter* Thrower, uint8 Kind, con
 	{
 		return false;
 	}
-	const FVector Dir = Direction.GetSafeNormal();
+	FVector Dir = Direction.GetSafeNormal();
 	const FVector Flat = FVector(Dir.X, Dir.Y, 0.0).GetSafeNormal();
 	const FVector Origin = Thrower->GetActorLocation() + FVector(0.0, 0.0, 50.0) + Flat * 70.0;
+	// Hacia la mira (#707): los que caen en parábola, con el arco justo para llegar al punto del centro de la pantalla; el
+	// dardo, casi recto, directo a él.
+	if (Thrower->UsesCameraThrowAim())
+	{
+		const float Gravity = TNTctProjectileDetail::FlightOf(Item).Gravity;
+		FVector Target;
+		if (Gravity >= 0.5f)
+		{
+			Dir = Thrower->GetThrowDirectionToCrosshair(Origin, Thrower->GetTurtleAimRotation(), Speed, Gravity * FMath::Max(1.f, -World->GetGravityZ()));
+		}
+		else if (Thrower->GetCrosshairPoint(Target))
+		{
+			Dir = TNTctItemRules::AimToward(Origin, Target, Dir);
+		}
+	}
 	// Lo que ya corría la tortuga se suma a medias (como al lanzar la bola corriendo).
 	const FVector Carry = FVector(Thrower->GetVelocity().X, Thrower->GetVelocity().Y, 0.0) * 0.5;
 
@@ -286,6 +310,19 @@ void ATN_TctProjectile::ServerHitTurtle(ATortugaCharacter* Victim)
 	case ETNTctItem::Anchor:
 		ServerAnchorSplash(GetActorLocation());
 		break;
+	case ETNTctItem::Red:
+		// La red clava a quien toca (no la empuja): 2,5 s sin poder andar ni saltar.
+		if (TNTctItems::CanAffect(Victim, false))
+		{
+			if (UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Victim))
+			{
+				Effects->GrantFx(ETNTctFx::Net, NetRootSeconds);
+			}
+			TNTctItems::PlayCue(Victim, ETNRaceSound::Catch, 0.8f);
+			UE_LOG(LogTortunabo, Log, TEXT("[TcT] La red clava a %s."), *GetNameSafe(Victim));
+		}
+		ServerFinish(GetActorLocation());
+		break;
 	case ETNTctItem::JellyDart:
 		if (TNTctItems::CanAffect(Victim, false))
 		{
@@ -386,6 +423,15 @@ void ATN_TctProjectile::ServerFinish(const FVector& Location)
 
 void ATN_TctProjectile::OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
+	// El balón y la cocobomba rebotan en cada máquina: tras cada rebote (como mucho cada 0,1 s) el servidor devuelve a todas a
+	// su trayectoria (#708); contra una rampa, los rebotes seguidos separaban al cliente del anfitrión.
+	const ETNTctItem Bouncer = static_cast<ETNTctItem>(Shot.Kind);
+	if (HasAuthority() && !bFinished && (Bouncer == ETNTctItem::BeachBall || Bouncer == ETNTctItem::Cocobomba) && GetWorld()
+		&& GetWorld()->GetTimeSeconds() - LastBounceSyncTime >= 0.1)
+	{
+		LastBounceSyncTime = GetWorld()->GetTimeSeconds();
+		MulticastResync(GetActorLocation(), Movement->Velocity);
+	}
 	// El ancla no rebota: si el suelo la para de lado (sin OnStop), cae igual.
 	if (HasAuthority() && static_cast<ETNTctItem>(Shot.Kind) == ETNTctItem::Anchor && ImpactResult.ImpactNormal.Z > 0.4)
 	{
@@ -405,6 +451,7 @@ void ATN_TctProjectile::OnStop(const FHitResult& ImpactResult)
 		ServerAnchorSplash(GetActorLocation());
 		break;
 	case ETNTctItem::JellyDart:
+	case ETNTctItem::Red:
 		// Clavado en el escenario un momento.
 		ServerFinish(GetActorLocation());
 		break;

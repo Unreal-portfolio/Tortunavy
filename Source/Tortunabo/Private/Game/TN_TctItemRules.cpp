@@ -10,25 +10,37 @@ namespace TNTctItemRulesDetail
 	 */
 	const FTNTctItemSpec Specs[] =
 	{
-		{ ETNTctItem::None,           TEXT("None"),           ETNTctItemSource::Code,    0, 0.f },
-		{ ETNTctItem::KnockoutPistol, TEXT("KnockoutPistol"), ETNTctItemSource::Code,    3, 0.8f },
-		{ ETNTctItem::AirBlunderbuss, TEXT("AirBlunderbuss"), ETNTctItemSource::Code,    3, 1.f },
-		{ ETNTctItem::Grapple,        TEXT("Grapple"),        ETNTctItemSource::Code,    3, 0.9f },
-		{ ETNTctItem::Shovel,         TEXT("Shovel"),         ETNTctItemSource::Code,    4, 1.f },
-		{ ETNTctItem::BeachBall,      TEXT("BeachBall"),      ETNTctItemSource::Code,    1, 1.f },
-		{ ETNTctItem::Anchor,         TEXT("Anchor"),         ETNTctItemSource::Code,    1, 0.6f },
-		{ ETNTctItem::JellyDart,      TEXT("JellyDart"),      ETNTctItemSource::Code,    3, 0.8f },
-		{ ETNTctItem::InkPistol,      TEXT("InkPistol"),      ETNTctItemSource::Code,    3, 0.6f },
-		{ ETNTctItem::Ball,           TEXT("Ball"),           ETNTctItemSource::Catalog, 1, 0.8f },
-		{ ETNTctItem::ConchTrap,      TEXT("ConchTrap"),      ETNTctItemSource::Catalog, 1, 0.6f },
-		{ ETNTctItem::BigHead,        TEXT("BigHead"),        ETNTctItemSource::Catalog, 1, 0.4f },
-		{ ETNTctItem::SandMine,       TEXT("SandMine"),       ETNTctItemSource::Race,    1, 0.7f },
-		{ ETNTctItem::Frisbee,        TEXT("Frisbee"),        ETNTctItemSource::Race,    1, 0.7f },
-		{ ETNTctItem::Cocobomba,      TEXT("Cocobomba"),      ETNTctItemSource::Code,    2, 0.9f },
-		{ ETNTctItem::Alga,           TEXT("Alga"),           ETNTctItemSource::Code,    2, 0.8f },
-		{ ETNTctItem::GaviotaLadrona, TEXT("GaviotaLadrona"), ETNTctItemSource::Code,    1, 0.6f },
-		{ ETNTctItem::Flotador,       TEXT("Flotador"),       ETNTctItemSource::Code,    1, 0.6f },
-		{ ETNTctItem::MedusaTrampolin, TEXT("MedusaTrampolin"), ETNTctItemSource::Code,  1, 0.7f },
+		{ ETNTctItem::None,           TEXT("None"),           ETNTctItemSource::Code,    0, 0.f,  ETNTctRarity::Common },
+		{ ETNTctItem::KnockoutPistol, TEXT("KnockoutPistol"), ETNTctItemSource::Code,    3, 0.8f, ETNTctRarity::Epic },
+		{ ETNTctItem::AirBlunderbuss, TEXT("AirBlunderbuss"), ETNTctItemSource::Code,    3, 1.f,  ETNTctRarity::Common },
+		{ ETNTctItem::Grapple,        TEXT("Grapple"),        ETNTctItemSource::Code,    3, 0.9f, ETNTctRarity::Rare },
+		{ ETNTctItem::Shovel,         TEXT("Shovel"),         ETNTctItemSource::Code,    4, 1.f,  ETNTctRarity::Common },
+		{ ETNTctItem::BeachBall,      TEXT("BeachBall"),      ETNTctItemSource::Code,    1, 1.f,  ETNTctRarity::Common },
+		{ ETNTctItem::Anchor,         TEXT("Anchor"),         ETNTctItemSource::Code,    1, 0.6f, ETNTctRarity::Epic },
+		{ ETNTctItem::JellyDart,      TEXT("JellyDart"),      ETNTctItemSource::Code,    3, 0.8f, ETNTctRarity::Common },
+		{ ETNTctItem::InkPistol,      TEXT("InkPistol"),      ETNTctItemSource::Code,    3, 0.6f, ETNTctRarity::Common },
+		{ ETNTctItem::Ball,           TEXT("Ball"),           ETNTctItemSource::Catalog, 1, 0.8f, ETNTctRarity::Common },
+		{ ETNTctItem::ConchTrap,      TEXT("ConchTrap"),      ETNTctItemSource::Catalog, 1, 0.6f, ETNTctRarity::Common },
+		{ ETNTctItem::BigHead,        TEXT("BigHead"),        ETNTctItemSource::Catalog, 1, 0.4f, ETNTctRarity::Common },
+		{ ETNTctItem::SandMine,       TEXT("SandMine"),       ETNTctItemSource::Race,    1, 0.7f, ETNTctRarity::Rare },
+		{ ETNTctItem::Frisbee,        TEXT("Frisbee"),        ETNTctItemSource::Race,    1, 0.7f, ETNTctRarity::Rare },
+		{ ETNTctItem::Cocobomba,      TEXT("Cocobomba"),      ETNTctItemSource::Code,    2, 0.9f, ETNTctRarity::Common },
+		{ ETNTctItem::Alga,           TEXT("Alga"),           ETNTctItemSource::Code,    2, 0.8f, ETNTctRarity::Common },
+		{ ETNTctItem::GaviotaLadrona, TEXT("GaviotaLadrona"), ETNTctItemSource::Code,    1, 0.6f, ETNTctRarity::Rare },
+		{ ETNTctItem::Flotador,       TEXT("Flotador"),       ETNTctItemSource::Code,    1, 0.6f, ETNTctRarity::Rare },
+		{ ETNTctItem::MedusaTrampolin, TEXT("MedusaTrampolin"), ETNTctItemSource::Code,  1, 0.7f, ETNTctRarity::Rare },
+		// #830: las ventajas con coste. Las comunes son las que se entienden al momento; las raras cambian una jugada; las épicas
+		// deciden una ronda (la burbuja y el cambiazo te salvan, el tapón da tiempo a todas).
+		{ ETNTctItem::Cohete,         TEXT("Cohete"),         ETNTctItemSource::Code,    1, 0.8f, ETNTctRarity::Rare },
+		{ ETNTctItem::BotasMuelle,    TEXT("BotasMuelle"),    ETNTctItemSource::Code,    1, 1.f,  ETNTctRarity::Common },
+		{ ETNTctItem::Aletas,         TEXT("Aletas"),         ETNTctItemSource::Code,    1, 0.8f, ETNTctRarity::Rare },
+		{ ETNTctItem::Cambiazo,       TEXT("Cambiazo"),       ETNTctItemSource::Code,    1, 0.7f, ETNTctRarity::Epic },
+		{ ETNTctItem::Burbuja,        TEXT("Burbuja"),        ETNTctItemSource::Code,    1, 0.8f, ETNTctRarity::Epic },
+		{ ETNTctItem::Puas,           TEXT("Puas"),           ETNTctItemSource::Code,    1, 0.7f, ETNTctRarity::Rare },
+		{ ETNTctItem::Red,            TEXT("Red"),            ETNTctItemSource::Code,    2, 1.f,  ETNTctRarity::Common },
+		{ ETNTctItem::Remolino,       TEXT("Remolino"),       ETNTctItemSource::Code,    1, 0.9f, ETNTctRarity::Common },
+		{ ETNTctItem::TaponMarea,     TEXT("TaponMarea"),     ETNTctItemSource::Code,    1, 0.6f, ETNTctRarity::Epic },
+		{ ETNTctItem::Paraguas,       TEXT("Paraguas"),       ETNTctItemSource::Code,    1, 0.9f, ETNTctRarity::Common },
 	};
 	static_assert(UE_ARRAY_COUNT(Specs) == static_cast<int32>(ETNTctItem::Count), "Una ficha por objeto, en el orden del enum");
 
@@ -157,6 +169,258 @@ ETNTctItem TNTctItemRules::PickPadItem(const TArray<ETNTctItem>& Available, ETNT
 	return Index == INDEX_NONE ? ETNTctItem::None : Available[Index];
 }
 
+float TNTctItemRules::PadItemWeight(ETNTctItem Kind, ETNTctRarity PadRarity, float RoundProgress)
+{
+	// Lo bien que casa la rareza del objeto con la del punto (filas: punto común, raro, épico; columnas: objeto común, raro, épico).
+	static const float Affinity[3][3] = { { 1.f, 0.35f, 0.05f }, { 0.45f, 1.f, 0.45f }, { 0.1f, 0.5f, 1.f } };
+	const FTNTctItemSpec& Item = Spec(Kind);
+	const float Progress = FMath::Clamp(RoundProgress, 0.f, 1.f);
+	// Según avanza la ronda (el agua sube y quedan menos), sale más de lo raro y de lo épico.
+	const float Boost = Item.Rarity == ETNTctRarity::Epic ? 1.f + 1.6f * Progress : (Item.Rarity == ETNTctRarity::Rare ? 1.f + 0.6f * Progress : 1.f);
+	return Item.PadWeight * Affinity[static_cast<int32>(PadRarity)][static_cast<int32>(Item.Rarity)] * Boost;
+}
+
+ETNTctItem TNTctItemRules::PickPadItem(const TArray<ETNTctItem>& Available, ETNTctItem Last, float Roll, ETNTctRarity PadRarity, float RoundProgress)
+{
+	bool bHasOther = false;
+	for (const ETNTctItem Kind : Available)
+	{
+		bHasOther |= (Kind != Last && PadItemWeight(Kind, PadRarity, RoundProgress) > 0.f);
+	}
+	TArray<float> Weights;
+	for (const ETNTctItem Kind : Available)
+	{
+		Weights.Add((bHasOther && Kind == Last) ? 0.f : PadItemWeight(Kind, PadRarity, RoundProgress));
+	}
+	const int32 Index = PickWeighted(Weights, Roll);
+	return Index == INDEX_NONE ? ETNTctItem::None : Available[Index];
+}
+
+ETNTctRarity TNTctItemRules::PadRarityFor(float HeightFrac, float Exposure)
+{
+	// Lo alto pesa más que lo expuesto: un punto en la cima es épico aunque esté en el centro; uno en un piso bajo, solo con
+	// mucha exposición pasa de común.
+	const float Score = 0.65f * FMath::Clamp(HeightFrac, 0.f, 1.f) + 0.35f * FMath::Clamp(Exposure, 0.f, 1.f);
+	return Score >= 0.6f ? ETNTctRarity::Epic : (Score >= 0.35f ? ETNTctRarity::Rare : ETNTctRarity::Common);
+}
+
+TArray<FTNTctPadPick> TNTctItemRules::PlanPads(const TArray<FTNTctPadSpot>& Spots, int32 Count, const TArray<FVector>& Avoid,
+	float MinFromAvoid, float MinSpacing)
+{
+	TArray<FTNTctPadPick> Picks;
+	const int32 Wanted = FMath::Min(FMath::Max(0, Count), Spots.Num());
+	if (Wanted <= 0)
+	{
+		return Picks;
+	}
+	// Lejos de las salidas; si así no caben todos, cualquiera.
+	TArray<int32> Pool;
+	const double AvoidSq = FMath::Square(static_cast<double>(MinFromAvoid));
+	for (int32 Index = 0; Index < Spots.Num(); ++Index)
+	{
+		bool bNear = false;
+		for (const FVector& Spot : Avoid)
+		{
+			bNear |= FVector::DistSquared2D(Spots[Index].Pos, Spot) < AvoidSq;
+		}
+		if (!bNear)
+		{
+			Pool.Add(Index);
+		}
+	}
+	if (Pool.Num() < Wanted)
+	{
+		Pool.Reset();
+		for (int32 Index = 0; Index < Spots.Num(); ++Index) { Pool.Add(Index); }
+	}
+
+	// Cuántos de cada rareza: una quinta parte épicos (al menos uno), un tercio raros, el resto comunes.
+	const int32 WantEpic = FMath::Max(1, FMath::RoundToInt(Wanted * 0.2f));
+	const int32 WantRare = FMath::Min(Wanted - WantEpic, FMath::RoundToInt(Wanted * 0.3f));
+	const int32 Want[3] = { Wanted - WantEpic - FMath::Max(0, WantRare), FMath::Max(0, WantRare), WantEpic };
+
+	TArray<bool> Taken;
+	Taken.Init(false, Spots.Num());
+	const double SpacingSq = FMath::Square(static_cast<double>(MinSpacing));
+	auto NearestPicked = [&](int32 Index)
+	{
+		double Nearest = TNumericLimits<double>::Max();
+		for (const FTNTctPadPick& Pick : Picks)
+		{
+			Nearest = FMath::Min(Nearest, FVector::DistSquared2D(Spots[Index].Pos, Spots[Pick.Index].Pos));
+		}
+		return Nearest;
+	};
+	// Lo mejor (y más lejos de lo ya elegido) de las clases dadas; INDEX_NONE si no queda.
+	auto PickFrom = [&](ETNTctRarity Class, bool bRequireClass, bool bRequireSpacing)
+	{
+		int32 Best = INDEX_NONE;
+		double BestScore = -1.0;
+		for (const int32 Index : Pool)
+		{
+			if (Taken[Index] || (bRequireClass && PadRarityFor(Spots[Index].HeightFrac, Spots[Index].Exposure) != Class))
+			{
+				continue;
+			}
+			const double Nearest = Picks.Num() == 0 ? TNumericLimits<double>::Max() : NearestPicked(Index);
+			if (bRequireSpacing && Nearest < SpacingSq)
+			{
+				continue;
+			}
+			// El primero (sin nada elegido): el de mayor altura y exposición; los demás, el más lejos de los elegidos.
+			const double Score = Picks.Num() == 0
+				? 0.65 * Spots[Index].HeightFrac + 0.35 * Spots[Index].Exposure
+				: Nearest;
+			if (Score > BestScore)
+			{
+				BestScore = Score;
+				Best = Index;
+			}
+		}
+		return Best;
+	};
+
+	int32 Shortfall = 0;
+	for (int32 Class = 2; Class >= 0; --Class)
+	{
+		const ETNTctRarity Rarity = static_cast<ETNTctRarity>(Class);
+		const int32 Need = Want[Class] + Shortfall;
+		int32 Got = 0;
+		while (Got < Need && Picks.Num() < Wanted)
+		{
+			// Sin sitios de esta clase a la distancia pedida, lo que falta lo pide la de abajo (la separación manda).
+			const int32 Index = PickFrom(Rarity, true, true);
+			if (Index == INDEX_NONE) { break; }
+			Taken[Index] = true;
+			FTNTctPadPick Pick;
+			Pick.Index = Index;
+			Pick.Rarity = Rarity;
+			Picks.Add(Pick);
+			++Got;
+		}
+		Shortfall = Need - Got;
+	}
+	// Lo que falte (menos sitios de los que se pedían en las clases bajas): cualquier sitio libre, el más lejano, comunes.
+	while (Picks.Num() < Wanted)
+	{
+		int32 Index = PickFrom(ETNTctRarity::Common, false, true);
+		if (Index == INDEX_NONE) { Index = PickFrom(ETNTctRarity::Common, false, false); }
+		if (Index == INDEX_NONE) { break; }
+		Taken[Index] = true;
+		FTNTctPadPick Pick;
+		Pick.Index = Index;
+		Pick.Rarity = PadRarityFor(Spots[Index].HeightFrac, Spots[Index].Exposure);
+		Picks.Add(Pick);
+	}
+	// Entrelazadas por clase (el primero de cada una, luego el segundo...): con pocas jugadoras solo se usan los primeros puntos
+	// y ya son una mezcla de épicos, raros y comunes (ActivePadCount).
+	int32 Total[3] = { 0, 0, 0 };
+	for (const FTNTctPadPick& Pick : Picks) { ++Total[static_cast<int32>(Pick.Rarity)]; }
+	int32 Seen[3] = { 0, 0, 0 };
+	TArray<TPair<float, FTNTctPadPick>> Keyed;
+	for (const FTNTctPadPick& Pick : Picks)
+	{
+		const int32 Class = static_cast<int32>(Pick.Rarity);
+		const float Key = static_cast<float>(Seen[Class]++) / static_cast<float>(Total[Class]) + 0.001f * (2 - Class);
+		Keyed.Add(TPair<float, FTNTctPadPick>(Key, Pick));
+	}
+	Keyed.StableSort([](const TPair<float, FTNTctPadPick>& A, const TPair<float, FTNTctPadPick>& B) { return A.Key < B.Key; });
+	Picks.Reset();
+	for (const TPair<float, FTNTctPadPick>& Entry : Keyed) { Picks.Add(Entry.Value); }
+	return Picks;
+}
+
+FTNTctFxLimits TNTctItemRules::FxLimits(ETNTctFx Fx)
+{
+	using namespace TNTctItemTuning;
+	FTNTctFxLimits Limits;
+	switch (Fx)
+	{
+	case ETNTctFx::Spring:
+		Limits.JumpMultiplier = SpringJumpMultiplier;
+		Limits.SpeedCap = SpringSpeedCap;
+		break;
+	case ETNTctFx::Fins:
+		Limits.SpeedCap = FinsSpeedCap;
+		break;
+	case ETNTctFx::Bubble:
+		Limits.SpeedCap = BubbleSpeedCap;
+		Limits.Gravity = BubbleGravity;
+		break;
+	case ETNTctFx::Spikes:
+		Limits.SpeedCap = SpikesSpeedCap;
+		Limits.JumpMultiplier = SpikesJumpMultiplier;
+		break;
+	case ETNTctFx::Glide:
+		Limits.SpeedCap = GlideSpeedCap;
+		Limits.JumpMultiplier = GlideJumpMultiplier;
+		Limits.Gravity = GlideGravity;
+		break;
+	case ETNTctFx::Net:
+		Limits.SpeedCap = NetSpeedCap;
+		Limits.JumpCap = 0.f;
+		break;
+	case ETNTctFx::Scorch:
+		Limits.SpeedCap = CoheteScorchSpeedCap;
+		break;
+	default:
+		break;
+	}
+	return Limits;
+}
+
+float TNTctItemRules::FxSeconds(ETNTctFx Fx)
+{
+	using namespace TNTctItemTuning;
+	switch (Fx)
+	{
+	case ETNTctFx::Spring:  return SpringSeconds;
+	case ETNTctFx::Fins:    return FinsSeconds;
+	case ETNTctFx::Bubble:  return BubbleSeconds;
+	case ETNTctFx::Spikes:  return SpikesSeconds;
+	case ETNTctFx::Glide:   return GlideSeconds;
+	case ETNTctFx::Net:     return NetRootSeconds;
+	case ETNTctFx::Scorch:  return CoheteScorchSeconds;
+	default:                return 0.f;
+	}
+}
+
+FVector TNTctItemRules::CoheteLaunch(const FVector& AimDirection)
+{
+	return TNTctItemRulesDetail::Flat(AimDirection) * TNTctItemTuning::CoheteSpeed + FVector::UpVector * TNTctItemTuning::CoheteUp;
+}
+
+bool TNTctItemRules::SpikesPush(const FVector& Center, const FVector& Victim, FVector& OutVelocity)
+{
+	using namespace TNTctItemTuning;
+	OutVelocity = FVector::ZeroVector;
+	const FVector Rel(Victim.X - Center.X, Victim.Y - Center.Y, 0.0);
+	if (Rel.Size() > SpikesRadius || FMath::Abs(Victim.Z - Center.Z) > SpikesRadius)
+	{
+		return false;
+	}
+	const FVector Away = Rel.Size() < 1.0 ? FVector::ForwardVector : Rel.GetSafeNormal();
+	OutVelocity = Away * SpikesPushSpeed + FVector::UpVector * SpikesUpSpeed;
+	return true;
+}
+
+bool TNTctItemRules::WhirlKick(const FVector& Center, const FVector& Feet, FVector& OutVelocity)
+{
+	using namespace TNTctItemTuning;
+	OutVelocity = FVector::ZeroVector;
+	const FVector Rel(Feet.X - Center.X, Feet.Y - Center.Y, 0.0);
+	const double Height = Feet.Z - Center.Z;
+	if (Rel.Size() > WhirlRadius || Height > 200.0 || Height < -80.0)
+	{
+		return false;
+	}
+	// Hacia fuera y de lado (gira con el torbellino), no a quien está en el centro hacia ningún sitio.
+	const FVector Out = Rel.Size() < 1.0 ? FVector::ForwardVector : Rel.GetSafeNormal();
+	const FVector Swirl(-Out.Y, Out.X, 0.0);
+	OutVelocity = (Out * 0.7 + Swirl * 0.7).GetSafeNormal() * WhirlOut + FVector::UpVector * WhirlUp;
+	return true;
+}
+
 bool TNTctItemRules::IsPadSubmerged(float PadZ, float WaterZ, float Clearance)
 {
 	return WaterZ > PadZ - Clearance;
@@ -235,6 +499,49 @@ TArray<int32> TNTctItemRules::PickPadPoints(const TArray<FVector>& Candidates, i
 		Next = Best;
 	}
 	return Picked;
+}
+
+bool TNTctItemRules::UsesAim(ETNTctItem Kind)
+{
+	switch (Kind)
+	{
+	case ETNTctItem::Cohete:
+	case ETNTctItem::Red:
+	case ETNTctItem::KnockoutPistol:
+	case ETNTctItem::AirBlunderbuss:
+	case ETNTctItem::Grapple:
+	case ETNTctItem::Shovel:
+	case ETNTctItem::BeachBall:
+	case ETNTctItem::Anchor:
+	case ETNTctItem::JellyDart:
+	case ETNTctItem::InkPistol:
+	case ETNTctItem::Cocobomba:
+	case ETNTctItem::Alga:
+		return true;
+	default:
+		return false;
+	}
+}
+
+FVector TNTctItemRules::AimToward(const FVector& Muzzle, const FVector& Target, const FVector& Fallback, float MaxPitchDeg)
+{
+	constexpr double MinDistance = 120.0;
+	const FVector Base = Fallback.GetSafeNormal();
+	const FVector Delta = Target - Muzzle;
+	if (Delta.SizeSquared() < MinDistance * MinDistance)
+	{
+		return Base;
+	}
+	const FVector Flat(Delta.X, Delta.Y, 0.0);
+	const FVector BaseFlat(Base.X, Base.Y, 0.0);
+	// Un objetivo de lado o detrás de donde mira la tortuga (la cámara va por detrás de ella): no se gira el tiro hacia ahí.
+	if (Flat.IsNearlyZero() || BaseFlat.IsNearlyZero() || FVector::DotProduct(Flat.GetSafeNormal(), BaseFlat.GetSafeNormal()) < 0.5)
+	{
+		return Base;
+	}
+	const double MaxTan = FMath::Tan(FMath::DegreesToRadians(static_cast<double>(FMath::Clamp(MaxPitchDeg, 1.f, 85.f))));
+	const double Rise = FMath::Clamp(Delta.Z / Flat.Size(), -MaxTan, MaxTan);
+	return (Flat.GetSafeNormal() + FVector::UpVector * Rise).GetSafeNormal();
 }
 
 FVector TNTctItemRules::KnockoutImpulse(const FVector& ShotDirection)

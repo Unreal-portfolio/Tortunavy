@@ -35,16 +35,16 @@ struct FTNTctFloodState
 	float SuddenDeathZ = 0.f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Tct")
-	float StartDelay = 15.f;
+	float StartDelay = TNTctFloodDefaults::StartDelay;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Tct")
-	float StepSeconds = 17.f;
+	float StepSeconds = TNTctFloodDefaults::StepSeconds;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Tct")
-	float RiseSeconds = 4.f;
+	float RiseSeconds = TNTctFloodDefaults::RiseSeconds;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Tct")
-	float SuddenDeathRiseSeconds = 25.f;
+	float SuddenDeathRiseSeconds = TNTctFloodDefaults::SuddenDeathRiseSeconds;
 
 	/** El plan para TNTctRules. */
 	FTNTctFloodPlan ToPlan() const;
@@ -78,4 +78,13 @@ public:
 	/** Segundos hasta que el agua empiece a subir otra vez (escalón o muerte súbita); -1 si ya no sube más o no hay ronda. */
 	UFUNCTION(BlueprintPure, Category = "Tct")
 	float GetSecondsToNextRise() const;
+
+	/**
+	 * Cualquier máquina (#831): la próxima subida del agua, con su cuenta atrás, el tramo y la altura a la que llegará, y si
+	 * el agua sube ahora. false (y el resto vacío) entre rondas o sin plan.
+	 */
+	bool GetNextRise(FTNTctNextRise& OutNext) const;
+
+	/** Segundos de la ronda en curso desde la salida (-1 si el agua no está subiendo: preparación, recuento o podio). */
+	float GetFloodElapsed() const;
 };

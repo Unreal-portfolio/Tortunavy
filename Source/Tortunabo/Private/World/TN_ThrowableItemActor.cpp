@@ -51,6 +51,11 @@ ATN_ThrowableItemActor::ATN_ThrowableItemActor()
 	// Cuando la velocidad baja de este umbral (cm/s) tras un rebote,
 	// ProjectileMovement llama StopSimulating → OnProjectileStop → spawn pickup.
 	ProjectileMovement->BounceVelocityStopSimulatingThreshold = 50.f;
+	// #708: el vuelo en pasos fijos de 1/60 s, no del fotograma de cada máquina: contra una rampa, un fotograma largo y uno corto
+	// daban rebotes distintos y el cliente se separaba de la trayectoria del anfitrión.
+	ProjectileMovement->bForceSubStepping = true;
+	ProjectileMovement->MaxSimulationTimeStep = 1.f / 60.f;
+	ProjectileMovement->MaxSimulationIterations = 12;
 }
 
 void ATN_ThrowableItemActor::BeginPlay()
@@ -83,6 +88,7 @@ void ATN_ThrowableItemActor::BeginPlay()
 	{
 		Mesh->OnComponentHit.AddDynamic(this, &ATN_ThrowableItemActor::OnMeshHit);
 		ProjectileMovement->OnProjectileStop.AddDynamic(this, &ATN_ThrowableItemActor::OnProjectileStopped);
+		ProjectileMovement->OnProjectileBounce.AddDynamic(this, &ATN_ThrowableItemActor::OnProjectileBounced);
 	}
 
 	// ApplyLaunchDataIfReady en BeginPlay: solo aplica mesh/escala en clientes.
@@ -207,6 +213,31 @@ void ATN_ThrowableItemActor::Multicast_BallStopped_Implementation(FVector FinalL
 		ProjectileMovement->Velocity = FVector::ZeroVector;
 	}
 	SetActorLocation(FinalLocation);
+}
+
+void ATN_ThrowableItemActor::OnProjectileBounced(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
+{
+	// El servidor manda su estado tras el rebote (con la velocidad ya rebotada), como mucho cada 0,1 s: una rampa da rebotes
+	// seguidos y bastan los primeros para que los clientes sigan el mismo camino.
+	constexpr double MinSyncSeconds = 0.1;
+	const UWorld* World = GetWorld();
+	const double Now = World ? World->GetTimeSeconds() : 0.0;
+	if (!HasAuthority() || !ProjectileMovement || bPickupSpawned || (LastBounceSyncTime >= 0.0 && Now - LastBounceSyncTime < MinSyncSeconds))
+	{
+		return;
+	}
+	LastBounceSyncTime = Now;
+	Multicast_BounceSync(GetActorLocation(), ProjectileMovement->Velocity);
+}
+
+void ATN_ThrowableItemActor::Multicast_BounceSync_Implementation(FVector_NetQuantize Location, FVector_NetQuantize Velocity)
+{
+	if (HasAuthority() || !ProjectileMovement || !bLaunchApplied || !ProjectileMovement->IsActive())
+	{
+		return;
+	}
+	SetActorLocation(Location, false, nullptr, ETeleportType::TeleportPhysics);
+	ProjectileMovement->Velocity = Velocity;
 }
 
 void ATN_ThrowableItemActor::IgnoreInstigatorCollision()

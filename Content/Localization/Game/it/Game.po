@@ -993,9 +993,79 @@ msgctxt "TNTct,ItemMedusaTrampolin"
 msgid "Medusa trampolín"
 msgstr "Medusa trampolino"
 
-#. Key:	ItemUnknown
+#. Key:	ItemCohete
 #. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(180)
 #: Source/Tortunabo/Private/Game/TN_TctItems.cpp(180)
+msgctxt "TNTct,ItemCohete"
+msgid "Cohete de feria"
+msgstr "Razzo da luna park"
+
+#. Key:	ItemBotasMuelle
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(181)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(181)
+msgctxt "TNTct,ItemBotasMuelle"
+msgid "Botas de muelle"
+msgstr "Stivali a molla"
+
+#. Key:	ItemAletas
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(182)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(182)
+msgctxt "TNTct,ItemAletas"
+msgid "Aletas"
+msgstr "Pinne"
+
+#. Key:	ItemCambiazo
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(183)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(183)
+msgctxt "TNTct,ItemCambiazo"
+msgid "Cambiazo del pulpo"
+msgstr "Scambio del polpo"
+
+#. Key:	ItemBurbuja
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(184)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(184)
+msgctxt "TNTct,ItemBurbuja"
+msgid "Burbuja"
+msgstr "Bolla"
+
+#. Key:	ItemPuas
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(185)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(185)
+msgctxt "TNTct,ItemPuas"
+msgid "Púas de erizo"
+msgstr "Aculei di riccio"
+
+#. Key:	ItemRed
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(186)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(186)
+msgctxt "TNTct,ItemRed"
+msgid "Red de pesca"
+msgstr "Rete da pesca"
+
+#. Key:	ItemRemolino
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(187)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(187)
+msgctxt "TNTct,ItemRemolino"
+msgid "Remolino de arena"
+msgstr "Mulinello di sabbia"
+
+#. Key:	ItemTaponMarea
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(188)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(188)
+msgctxt "TNTct,ItemTaponMarea"
+msgid "Tapón de marea"
+msgstr "Tappo della marea"
+
+#. Key:	ItemParaguas
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(189)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(189)
+msgctxt "TNTct,ItemParaguas"
+msgid "Paraguas"
+msgstr "Ombrello"
+
+#. Key:	ItemUnknown
+#. SourceLocation:	Source/Tortunabo/Private/Game/TN_TctItems.cpp(190)
+#: Source/Tortunabo/Private/Game/TN_TctItems.cpp(190)
 msgctxt "TNRace,ItemUnknown"
 msgid "Objeto"
 msgstr "Oggetto"
@@ -6524,92 +6594,92 @@ msgid "Dejando la partida… suelta B para quedarte"
 msgstr "Stai lasciando la partita… rilascia B per restare"
 
 #. Key:	ShellGain
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1059)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1059)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
 msgctxt "TNHUD,ShellGain"
 msgid "+{0}"
 msgstr "+{0}"
 
 #. Key:	Storm
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1252)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1252)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1250)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1250)
 msgctxt "TNHUD,Storm"
 msgid "¡La tormenta te alcanza! ¡Al agua!   {0}"
 msgstr "La tempesta ti raggiunge! In acqua!   {0}"
 
 #. Key:	Seagull
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1266)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1266)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1264)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1264)
 msgctxt "TNHUD,Seagull"
 msgid "¡Una gaviota te ha marcado! Sal del círculo o métete bajo techo   {0}"
 msgstr "Un gabbiano ti ha marcato! Esci dal cerchio o mettiti al riparo   {0}"
 
 #. Key:	Down
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1279)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1279)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1277)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1277)
 msgctxt "TNHUD,Down"
 msgid "¡Panza arriba!\nUn compañero puede darte la vuelta:  {0} s"
 msgstr "A pancia in su!\nUna compagna può rigirarti:  {0} s"
 
 #. Key:	OutTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1338)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1338)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1336)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1336)
 msgctxt "TNHUD,OutTitle"
 msgid "¡Fuera de carrera!"
 msgstr "Fuori dalla corsa!"
 
 #. Key:	OutHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1339)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1339)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1337)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1337)
 msgctxt "TNHUD,OutHint"
 msgid "Anima a los demás hasta que lleguen al agua."
 msgstr "Fai il tifo per le altre finché non arrivano in acqua."
 
 #. Key:	PreviewSay
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1538)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1538)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
 msgctxt "TNHUD,PreviewSay"
 msgid "¡Por aquí, que hay conchas!"
 msgstr "Di qua, ci sono conchiglie!"
 
 #. Key:	WheelHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
 msgctxt "TNHUD,WheelHint"
 msgid "Apunta con el ratón"
 msgstr "Punta con il mouse"
 
 #. Key:	WheelHintPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
 msgctxt "TNHUD,WheelHintPad"
 msgid "Apunta con el stick"
 msgstr "Punta con la levetta"
 
 #. Key:	Exhausted
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(404)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(404)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(403)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(403)
 msgctxt "TNHUD,Exhausted"
 msgid "¡SIN ALIENTO!"
 msgstr "SENZA FIATO!"
 
 #. Key:	InHand
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
 msgctxt "TNHUD,InHand"
 msgid "EN LA ALETA"
 msgstr "IN PINNA"
 
 #. Key:	Stored
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(453)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(453)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
 msgctxt "TNHUD,Stored"
 msgid "EN EL CAPARAZÓN"
 msgstr "NEL GUSCIO"
 
 #. Key:	Reviving
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(549)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(549)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(548)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(548)
 msgctxt "TNHUD,Reviving"
 msgid "Dando la vuelta a tu compañero..."
 msgstr "Stai rigirando la tua compagna..."
@@ -10527,6 +10597,76 @@ msgctxt "TNRace,ToSprint"
 msgid "¡Sprint final en {0}!"
 msgstr "Sprint finale tra {0}!"
 
+#. Key:	FloodRisingLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(134)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(134)
+msgctxt "TNTct,FloodRisingLabel"
+msgid "EL AGUA SUBE"
+msgstr "L'ACQUA SALE"
+
+#. Key:	FloodFinalLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(135)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(135)
+msgctxt "TNTct,FloodFinalLabel"
+msgid "MAREA FINAL EN"
+msgstr "MAREA FINALE TRA"
+
+#. Key:	FloodTier
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(140)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(140)
+msgctxt "TNTct,FloodTier"
+msgid "TRAMO {0} DE {1}"
+msgstr "LIVELLO {0} DI {1}"
+
+#. Key:	FloodTierDone
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(141)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(141)
+msgctxt "TNTct,FloodTierDone"
+msgid "Ya no sube más"
+msgstr "Non sale più"
+
+#. Key:	FloodWarnFinal
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(157)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(157)
+msgctxt "TNTct,FloodWarnFinal"
+msgid "¡La marea final llega en {0}!"
+msgstr "La marea finale arriva tra {0}!"
+
+#. Key:	FloodWarn
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(158)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(158)
+msgctxt "TNTct,FloodWarn"
+msgid "¡El agua sube en {0}!"
+msgstr "L'acqua sale tra {0}!"
+
+#. Key:	FloodWarnFinalSub
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(163)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(163)
+msgctxt "TNTct,FloodWarnFinalSub"
+msgid "Cubrirá todo el mapa: sube a lo más alto"
+msgstr "Coprirà tutta la mappa: sali il più in alto possibile"
+
+#. Key:	FloodWarnSub
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(164)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(164)
+msgctxt "TNTct,FloodWarnSub"
+msgid "Llegará hasta la marca verde: el agua es veneno"
+msgstr "Arriverà fino al segno verde: l'acqua è veleno"
+
+#. Key:	FloodNextLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(55)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(55)
+msgctxt "TNTct,FloodNextLabel"
+msgid "PRÓXIMA SUBIDA"
+msgstr "PROSSIMA SALITA"
+
+#. Key:	PoisonLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(91)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(91)
+msgctxt "TNTct,PoisonLabel"
+msgid "VENENO"
+msgstr "VELENO"
+
 #. Key:	BoothCount
 #. SourceLocation:	Source/Tortunabo/Private/UI/Shop/TN_ShopWidgets.cpp(1082)
 #: Source/Tortunabo/Private/UI/Shop/TN_ShopWidgets.cpp(1082)
@@ -11480,99 +11620,99 @@ msgid "Coger caja"
 msgstr "Prendi la scatola"
 
 #. Key:	ItemBox
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(207)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(207)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
 msgctxt "TNRace,ItemBox"
 msgid "Caja de objetos"
 msgstr "Scatola oggetti"
 
 #. Key:	ItemCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(208)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
 msgctxt "TNRace,ItemCoconut"
 msgid "Coco turbo"
 msgstr "Cocco turbo"
 
 #. Key:	ItemTripleCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
 msgctxt "TNRace,ItemTripleCoconut"
 msgid "Triple coco"
 msgstr "Triplo cocco"
 
 #. Key:	ItemTripleCoconut2
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
 msgctxt "TNRace,ItemTripleCoconut2"
 msgid "Triple coco (2)"
 msgstr "Triplo cocco (2)"
 
 #. Key:	ItemTripleCoconut1
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
 msgctxt "TNRace,ItemTripleCoconut1"
 msgid "Triple coco (1)"
 msgstr "Triplo cocco (1)"
 
 #. Key:	ItemGoldenCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
 msgctxt "TNRace,ItemGoldenCoconut"
 msgid "Coco dorado"
 msgstr "Cocco d’oro"
 
 #. Key:	ItemPelicanTaxi
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
 msgctxt "TNRace,ItemPelicanTaxi"
 msgid "Pelícano taxi"
 msgstr "Pellicano taxi"
 
 #. Key:	ItemSunscreen
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
 msgctxt "TNRace,ItemSunscreen"
 msgid "Protector solar"
 msgstr "Crema solare"
 
 #. Key:	ItemHomingCrab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
 msgctxt "TNRace,ItemHomingCrab"
 msgid "Cangrejo teledirigido"
 msgstr "Granchio telecomandato"
 
 #. Key:	ItemGullStrike
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
 msgctxt "TNRace,ItemGullStrike"
 msgid "Gaviota justiciera"
 msgstr "Gabbiano giustiziere"
 
 #. Key:	ItemSandMine
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
 msgctxt "TNRace,ItemSandMine"
 msgid "Mina de arena"
 msgstr "Mina di sabbia"
 
 #. Key:	ItemStormCloud
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
 msgctxt "TNRace,ItemStormCloud"
 msgid "Nube de tormenta"
 msgstr "Nuvola temporalesca"
 
 #. Key:	ItemFrisbee
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
 msgctxt "TNRace,ItemFrisbee"
 msgid "Disco volador"
 msgstr "Frisbee"
 
 #. Key:	ItemWhistle
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
 msgctxt "TNRace,ItemWhistle"
 msgid "Silbato del sargento"
 msgstr "Fischietto del sergente"

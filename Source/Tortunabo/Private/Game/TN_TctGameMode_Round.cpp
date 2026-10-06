@@ -219,12 +219,18 @@ void ATN_TctGameMode::WatchFighters()
 		ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
 		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOn(Turtle);
 		const ETNTctFall Cause = TNTctRules::FallCause(Body, ArenaBounds, WaterZ);
-		// El flotador salva una vez del agua (#777); el resto de caídas eliminan como siempre.
-		const bool bEliminated = Effects ? Effects->ServerResolveFall(Cause) : Cause != ETNTctFall::None;
+		// El agua es veneno (#831): tocarla no mata, intoxica mientras se está dentro (el flotador salva, #777) y se elimina al
+		// llegar al máximo. Caer fuera de la arena elimina como siempre.
+		bool bEliminated = Cause == ETNTctFall::OutOfArena;
+		if (!bEliminated)
+		{
+			bEliminated = Effects ? Effects->ServerTickWater(Cause == ETNTctFall::Water) : Cause == ETNTctFall::Water;
+		}
 		if (bEliminated)
 		{
-			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' cae (pies a %.0f, agua a %.0f): eliminada."),
-				*PS->GetPlayerName(), Body.Location.Z - Body.HalfHeight, WaterZ);
+			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' %s (pies a %.0f, agua a %.0f): eliminada."),
+				*PS->GetPlayerName(), Cause == ETNTctFall::OutOfArena ? TEXT("cae fuera de la arena") : TEXT("muere envenenada"),
+				Body.Location.Z - Body.HalfHeight, WaterZ);
 			MarkPlayerDead(PC);
 			continue;
 		}

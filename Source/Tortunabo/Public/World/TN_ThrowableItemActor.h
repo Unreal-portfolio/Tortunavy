@@ -164,6 +164,20 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_BallStopped(FVector FinalLocation);
 
+	/**
+	 * Servidor: tras cada rebote (los de una rampa, seguidos), posición y velocidad de ahora para los clientes (#708). Cada
+	 * máquina simula el vuelo, pero un rebote contra una pendiente amplifica cualquier diferencia: aquí vuelven a la
+	 * trayectoria del servidor, igual que en el anfitrión.
+	 */
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_BounceSync(FVector_NetQuantize Location, FVector_NetQuantize Velocity);
+
+	UFUNCTION()
+	void OnProjectileBounced(const FHitResult& ImpactResult, const FVector& ImpactVelocity);
+
+	/** Servidor: hora del mundo del último Multicast_BounceSync. */
+	double LastBounceSyncTime = -1.0;
+
 	/** Golpe contra jugador → knockdown + spawn pickup. Superficie → rebota, no destruir. */
 	UFUNCTION()
 	void OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,

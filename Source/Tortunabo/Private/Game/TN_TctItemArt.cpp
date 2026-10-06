@@ -212,6 +212,160 @@ namespace TNTctItemArtDetail
 			Body(Painter, Arrow, 0x0A1C38, 0xFFE36B, 0xFFB020, 4.f, 34.f);
 			break;
 		}
+		case ETNTctItem::Cohete:
+		{
+			const auto BodyShape = [](float px, float py) { return Box(px, py, 64.f, 66.f, 15.f, 34.f, 9.f); };
+			const TArray<FVector2f> NosePoly = { { 48.f, 36.f }, { 80.f, 36.f }, { 64.f, 8.f } };
+			const auto Nose = [&NosePoly](float px, float py) { return Polygon(px, py, NosePoly); };
+			const TArray<FVector2f> FinL = { { 49.f, 80.f }, { 49.f, 104.f }, { 30.f, 108.f } };
+			const TArray<FVector2f> FinR = { { 79.f, 80.f }, { 79.f, 104.f }, { 98.f, 108.f } };
+			const auto Fins = [&FinL, &FinR](float px, float py) { return FMath::Min(Polygon(px, py, FinL), Polygon(px, py, FinR)); };
+			const auto All = [&](float px, float py) { return FMath::Min(FMath::Min(BodyShape(px, py), Nose(px, py)), Fins(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Fins, 0x101830, 0xF5F1E8, 0xB8C0CC, 80.f, 108.f);
+			Body(Painter, BodyShape, 0x5A1010, 0xFF6A52, 0xD9432F, 32.f, 100.f);
+			Body(Painter, Nose, 0x5A1010, 0xFFC0B0, 0xFF6A52, 8.f, 36.f);
+			Painter.Fill([](float px, float py) { return Circle(px, py, 64.f, 56.f, 7.f); }, Hex(0x9FDCFF));
+			Painter.Fill([](float px, float py) { return Circle(px, py, 64.f, 112.f, 7.f); }, Hex(0xFFCB3D));
+			break;
+		}
+		case ETNTctItem::BotasMuelle:
+		{
+			const auto Boot = [](float px, float py) { return Ellipse(px, py, 64.f, 52.f, 34.f, 24.f); };
+			const auto Coil = [](float px, float py)
+			{
+				return FMath::Min(FMath::Min(Segment(px, py, 40.f, 84.f, 88.f, 92.f, 4.f), Segment(px, py, 88.f, 92.f, 40.f, 100.f, 4.f)),
+					FMath::Min(Segment(px, py, 40.f, 100.f, 88.f, 108.f, 4.f), Segment(px, py, 88.f, 108.f, 40.f, 116.f, 4.f)));
+			};
+			const auto All = [&](float px, float py) { return FMath::Min(Boot(px, py), Coil(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Boot, 0x2A1608, 0xC88A4E, 0x7A4A24, 28.f, 76.f);
+			Body(Painter, Coil, 0x202428, 0xE8EEF4, 0x7A8490, 80.f, 118.f);
+			break;
+		}
+		case ETNTctItem::Aletas:
+		{
+			const TArray<FVector2f> Flipper = { { 40.f, 14.f }, { 88.f, 14.f }, { 108.f, 104.f }, { 20.f, 104.f } };
+			const auto Fin = [&Flipper](float px, float py) { return Polygon(px, py, Flipper); };
+			Painter.Sticker(Fin, 6.f);
+			Body(Painter, Fin, 0x08302C, 0x5FE0D0, 0x1FB5A8, 14.f, 104.f);
+			for (int32 Rib = 0; Rib < 3; ++Rib)
+			{
+				const float X = 48.f + Rib * 16.f;
+				Painter.Fill([X](float px, float py) { return Segment(px, py, X, 30.f, X + (X - 64.f) * 0.3f, 96.f, 2.5f); }, Hex(0xF5F1E8));
+			}
+			break;
+		}
+		case ETNTctItem::Cambiazo:
+		{
+			const auto Head = [](float px, float py) { return Ellipse(px, py, 64.f, 50.f, 32.f, 30.f); };
+			const auto Arms = [](float px, float py)
+			{
+				float Out = 1.e6f;
+				for (int32 Arm = 0; Arm < 5; ++Arm)
+				{
+					const float X = 36.f + Arm * 14.f;
+					Out = FMath::Min(Out, Segment(px, py, X, 66.f, X + (Arm % 2 == 0 ? 8.f : -8.f), 112.f, 4.5f));
+				}
+				return Out;
+			};
+			const auto All = [&](float px, float py) { return FMath::Min(Head(px, py), Arms(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Arms, 0x3A1048, 0xC58AE6, 0x7D3C98, 66.f, 114.f);
+			Body(Painter, Head, 0x3A1048, 0xD9A8F2, 0x9B59C6, 20.f, 80.f);
+			Painter.Fill([](float px, float py) { return Circle(px, py, 52.f, 48.f, 7.f); }, Hex(0xFFFFFF));
+			Painter.Fill([](float px, float py) { return Circle(px, py, 76.f, 48.f, 7.f); }, Hex(0xFFFFFF));
+			Painter.Fill([](float px, float py) { return Circle(px, py, 54.f, 50.f, 3.f); }, Hex(0x101418));
+			Painter.Fill([](float px, float py) { return Circle(px, py, 78.f, 50.f, 3.f); }, Hex(0x101418));
+			break;
+		}
+		case ETNTctItem::Burbuja:
+		{
+			const auto Ring = [](float px, float py) { return FMath::Abs(Circle(px, py, 64.f, 64.f, 44.f)) - 5.f; };
+			Painter.Sticker([](float px, float py) { return Circle(px, py, 64.f, 64.f, 49.f); }, 6.f);
+			Painter.Fill([](float px, float py) { return Circle(px, py, 64.f, 64.f, 44.f); }, Hex(0xBFE8FF));
+			Body(Painter, Ring, 0x10305A, 0xFFFFFF, 0x62D2EA, 18.f, 110.f);
+			Painter.Fill([](float px, float py) { return Ellipse(px, py, 46.f, 44.f, 10.f, 6.f); }, Hex(0xFFFFFF));
+			break;
+		}
+		case ETNTctItem::Puas:
+		{
+			const auto Ball = [](float px, float py) { return Circle(px, py, 64.f, 64.f, 24.f); };
+			const auto Spikes = [](float px, float py)
+			{
+				float Out = 1.e6f;
+				for (int32 Spike = 0; Spike < 10; ++Spike)
+				{
+					const float A = Rad(36.f * Spike);
+					Out = FMath::Min(Out, Segment(px, py, 64.f + FMath::Cos(A) * 20.f, 64.f + FMath::Sin(A) * 20.f,
+						64.f + FMath::Cos(A) * 52.f, 64.f + FMath::Sin(A) * 52.f, 4.f));
+				}
+				return Out;
+			};
+			const auto All = [&](float px, float py) { return FMath::Min(Ball(px, py), Spikes(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Spikes, 0x3A3020, 0xF5E8C0, 0xC8B070, 12.f, 116.f);
+			Body(Painter, Ball, 0x2A1608, 0xA66A36, 0x5A3618, 40.f, 88.f);
+			break;
+		}
+		case ETNTctItem::Red:
+		{
+			const auto Mesh = [](float px, float py) { return Circle(px, py, 64.f, 64.f, 44.f); };
+			Painter.Sticker(Mesh, 6.f);
+			Body(Painter, Mesh, 0x2A1E10, 0xE8DCB8, 0xB8A070, 20.f, 108.f);
+			for (int32 Line = -3; Line <= 3; ++Line)
+			{
+				const float C = 64.f + Line * 13.f;
+				Painter.Fill([&](float px, float py) { return FMath::Max(Mesh(px, py) + 1.f, Segment(px, py, C - 20.f, 10.f, C + 20.f, 118.f, 1.8f)); }, Hex(0x6B4423));
+				Painter.Fill([&](float px, float py) { return FMath::Max(Mesh(px, py) + 1.f, Segment(px, py, C + 20.f, 10.f, C - 20.f, 118.f, 1.8f)); }, Hex(0x6B4423));
+			}
+			break;
+		}
+		case ETNTctItem::Remolino:
+		{
+			const auto Funnel = [](float px, float py)
+			{
+				float Out = 1.e6f;
+				for (int32 Row = 0; Row < 6; ++Row)
+				{
+					Out = FMath::Min(Out, Ellipse(px, py, 64.f + (Row % 2 == 0 ? 3.f : -3.f), 24.f + Row * 17.f, 14.f + Row * 8.f, 7.f));
+				}
+				return Out;
+			};
+			Painter.Sticker(Funnel, 6.f);
+			Body(Painter, Funnel, 0x4A3010, 0xF0D896, 0xC8A050, 16.f, 110.f);
+			break;
+		}
+		case ETNTctItem::TaponMarea:
+		{
+			const TArray<FVector2f> PlugPoly = { { 38.f, 50.f }, { 90.f, 50.f }, { 78.f, 100.f }, { 50.f, 100.f } };
+			const auto Plug = [&PlugPoly](float px, float py) { return Polygon(px, py, PlugPoly); };
+			const auto Chain = [](float px, float py) { return FMath::Abs(Circle(px, py, 64.f, 28.f, 14.f)) - 4.f; };
+			const auto All = [&](float px, float py) { return FMath::Min(Plug(px, py), Chain(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Chain, 0x202428, 0xE8EEF4, 0x7A8490, 10.f, 46.f);
+			Body(Painter, Plug, 0x101418, 0x7A8A9A, 0x3A4550, 50.f, 100.f);
+			Painter.Fill([](float px, float py) { return Segment(px, py, 98.f, 90.f, 116.f, 112.f, 4.f); }, Hex(0x62D2EA));
+			break;
+		}
+		case ETNTctItem::Paraguas:
+		{
+			const auto Dome = [](float px, float py) { return FMath::Max(Ellipse(px, py, 64.f, 62.f, 48.f, 40.f), py - 62.f); };
+			const auto Handle = [](float px, float py)
+			{
+				return FMath::Min(Segment(px, py, 64.f, 62.f, 64.f, 108.f, 3.5f), Arc(px, py, 74.f, 108.f, 10.f, Rad(0.f), Rad(180.f), 3.5f));
+			};
+			const auto All = [&](float px, float py) { return FMath::Min(Dome(px, py), Handle(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Handle, 0x2A1608, 0xB87A44, 0x7A4A24, 62.f, 120.f);
+			Body(Painter, Dome, 0x5A1010, 0xFF6A52, 0xD9432F, 22.f, 62.f);
+			for (int32 Panel = 0; Panel < 2; ++Panel)
+			{
+				const float X = 44.f + Panel * 40.f;
+				Painter.Fill([&, X](float px, float py) { return FMath::Max(Dome(px, py) + 1.f, Segment(px, py, 64.f, 22.f, X, 62.f, 4.f)); }, Hex(0xF5F1E8));
+			}
+			break;
+		}
 		default:
 			return false;
 		}

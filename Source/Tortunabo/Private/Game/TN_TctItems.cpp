@@ -177,6 +177,16 @@ FText TNTctItems::DisplayName(ETNTctItem Kind)
 	case ETNTctItem::GaviotaLadrona: return NSLOCTEXT("TNTct", "ItemGaviotaLadrona", "Gaviota ladrona");
 	case ETNTctItem::Flotador:       return NSLOCTEXT("TNTct", "ItemFlotador", "Flotador");
 	case ETNTctItem::MedusaTrampolin: return NSLOCTEXT("TNTct", "ItemMedusaTrampolin", "Medusa trampolín");
+	case ETNTctItem::Cohete:         return NSLOCTEXT("TNTct", "ItemCohete", "Cohete de feria");
+	case ETNTctItem::BotasMuelle:    return NSLOCTEXT("TNTct", "ItemBotasMuelle", "Botas de muelle");
+	case ETNTctItem::Aletas:         return NSLOCTEXT("TNTct", "ItemAletas", "Aletas");
+	case ETNTctItem::Cambiazo:       return NSLOCTEXT("TNTct", "ItemCambiazo", "Cambiazo del pulpo");
+	case ETNTctItem::Burbuja:        return NSLOCTEXT("TNTct", "ItemBurbuja", "Burbuja");
+	case ETNTctItem::Puas:           return NSLOCTEXT("TNTct", "ItemPuas", "Púas de erizo");
+	case ETNTctItem::Red:            return NSLOCTEXT("TNTct", "ItemRed", "Red de pesca");
+	case ETNTctItem::Remolino:       return NSLOCTEXT("TNTct", "ItemRemolino", "Remolino de arena");
+	case ETNTctItem::TaponMarea:     return NSLOCTEXT("TNTct", "ItemTaponMarea", "Tapón de marea");
+	case ETNTctItem::Paraguas:       return NSLOCTEXT("TNTct", "ItemParaguas", "Paraguas");
 	default:                         return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
 	}
 }
@@ -220,6 +230,16 @@ FVector TNTctItems::MeshScale(ETNTctItem Kind, bool bProjectile, bool bFallback)
 	case ETNTctItem::GaviotaLadrona: return FVector(1.f);
 	case ETNTctItem::Flotador:       return FVector(0.45f);
 	case ETNTctItem::MedusaTrampolin: return FVector(0.25f);
+	case ETNTctItem::Red:            return bProjectile ? FVector(1.4f) : FVector(1.f);
+	case ETNTctItem::Remolino:       return FVector(0.12f);
+	case ETNTctItem::Cohete:
+	case ETNTctItem::BotasMuelle:
+	case ETNTctItem::Aletas:
+	case ETNTctItem::Cambiazo:
+	case ETNTctItem::Burbuja:
+	case ETNTctItem::Puas:
+	case ETNTctItem::TaponMarea:
+	case ETNTctItem::Paraguas:       return FVector(1.f);
 	default: break;
 	}
 	if (bFallback)

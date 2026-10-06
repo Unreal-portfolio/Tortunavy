@@ -1,4 +1,5 @@
 #include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctItems.h"
 #include "Core/TN_GameplayPreload.h"
 #include "TN_RaceItemArt.h"
@@ -511,7 +512,13 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 bool TNRaceItems::IsInvulnerable(const AActor* Turtle)
 {
 	const UTN_RaceItemComponent* Comp = UTN_RaceItemComponent::FindOn(Turtle);
-	return Comp && Comp->IsInvulnerable();
+	if (Comp && Comp->IsInvulnerable())
+	{
+		return true;
+	}
+	// La burbuja de Todos contra Todos (#830): nada la empuja, derriba ni marea mientras dura.
+	const UTN_TctItemComponent* Tct = UTN_TctItemComponent::FindOn(Turtle);
+	return Tct && Tct->IsFxActive(ETNTctFx::Bubble);
 }
 
 bool TNRaceItems::IsRiding(const AActor* Turtle)
