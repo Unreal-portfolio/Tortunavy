@@ -6,6 +6,10 @@ Juego cooperativo de 1 a 4 tortugas en Unreal Engine 5.6 con C++ (módulo `Sourc
 
 El tablero es solo de desarrollo: código, pulido, bugs y revisión de assets. El diseño ya está decidido (plan maestro y decisiones); se pueden hacer prototipos, pero no tareas de «diseñar X».
 
+**Línea principal y líneas de modo (decisión del 06-10):** el juego que se publica tiene un solo modo, el cooperativo, sobre el terreno Camino (C01 y el mapa D01 de diseño), con los enemigos, obstáculos y objetos del Excel de diseño: es la línea principal (`dev` → `main`). El martes 13-10 el loop completo del cooperativo entra en `main`. Además, el equipo sigue desarrollando otros modos en sus propias ramas (`dev-<modo>`), aunque diseño no los haya aprobado: Todos contra Todos (el siguiente), Carrera y Rally (con los Karts fusionados en él). Sus issues llevan la etiqueta `modo:tct`, `modo:carrera` o `modo:rally`; la VR está aprobada para el futuro (`modo:vr`, sin rama todavía). Lo descartado del todo (Supervivencia, primera persona, mapas procedurales, tutorial, fantasma actual, cofres, lo que no está en el Excel ni en un modo vivo) lleva la etiqueta `chamber` y está cerrado: no se coge, no se revisa y no se reabre sin una decisión de SkiTemplar o Mokius.
+
+**Calidad antes que volumen (decisión del 06-10):** lotes pequeños (máximo 3 issues) y uno abierto por persona; PR pequeñas y de calidad. Las sesiones nocturnas desatendidas (Claude trabajando solo durante la noche) son solo para bugs y pulido, nunca para mecánicas ni contenido nuevo. Trabajar de noche con alguien delante no está limitado. La excepción son las sesiones de refactorización del director (etiqueta `refactor`), que quitan código en vez de meterlo (ver «Refactorización»).
+
 ## Equipo
 
 | GitHub | Persona | Rol | Revisa su trabajo |
@@ -18,11 +22,31 @@ Las decisiones que no estén escritas las toman SkiTemplar o Mokius. Si te falta
 
 ## Ramas
 
-- `dev`: la rama de desarrollo hasta el final del juego. Todas las ramas salen de `origin/dev` y todas las PR van hacia `dev`. **Nunca se trabaja sobre `dev`**: toda issue o lote va en su rama y entra por PR, que puede fusionar cualquiera de los tres. Un ruleset de GitHub rechaza el push directo y el forzado.
-- `main`: versión estable. Solo SkiTemplar y Mokius, por PR con la aprobación del otro (o su bypass). Aparte de eso, solo le llegan las copias de `.github/` que necesitan los cron.
-- **Ramas por lote, no por tarjeta** (decisión en #282): las tarjetas de un lote se hacen y se prueban en la misma rama, `feat|fix/<primera issue>-<slug>`. La crea `tablero.py coger` con la primera tarjeta; las demás entran en ella con `coger <n> --rama <rama del lote>`. Una issue suelta es un lote de uno: su propia rama.
-- **A `dev` solo entra lo que está en Done**: cada tarjeta se revisa (IA) y se prueba en el editor **en la rama de su lote**; con las dos validaciones pasa a Validada; con todo el lote en Validada, a Done; y solo entonces se pide y se fusiona la PR. Nada se fusiona para probarlo después en `dev`.
-- Antes de abrir o actualizar una PR: `git fetch origin && git rebase origin/dev`. Ramas cortas: si una rama vive más de 2-3 días, rebase diario.
+| Rama | Qué es | Cómo se entra |
+|---|---|---|
+| `main` | Versión estable: solo lo validado. El 13-10 recibe el cooperativo completo desde `dev`. | PR de `dev` → `main`, solo SkiTemplar o Mokius (con la aprobación del otro o su bypass), y las copias de organización. |
+| `dev` | Línea principal: el cooperativo y lo del GDD. Limpia, casi un clon de `main`. | PR desde `feat|fix/<n>-<slug>`, con el ciclo del tablero. |
+| `dev-<modo>` | Línea de un modo: `dev-tct`, `dev-carrera`, `dev-rally`. Nacieron de `chamber`. | PR desde `dev-<modo>-<n>-<slug>`, con el mismo ciclo. |
+| `dev-<modo>-<n>-<slug>` | Trabajo de una issue de un modo: mecánica, variante, asset o actualización. | Sale de `origin/dev-<modo>` y va a `dev-<modo>`. |
+| `chamber` | Archivo congelado de `dev` antes del recorte (`61cd791c7`). | Nadie: solo se abre para consultar o probar. |
+
+- **Nunca se trabaja sobre `dev`, `main`, `chamber` ni una `dev-<modo>`**: toda issue o lote va en su rama y entra por PR, que puede fusionar cualquiera de los tres (salvo `main`). Un ruleset de GitHub rechaza el push directo y el forzado en `dev`, `chamber` y las `dev-<modo>`; una línea de modo nueva se añade a ese ruleset al crearla.
+- El separador es el guion (`dev-tct`, no `dev/tct`): git no admite `dev/tct` mientras exista la rama `dev`.
+- La rama base sale de la issue: con `modo:<modo>`, `dev-<modo>`; sin ella, `dev`. `tablero.py coger` crea la rama desde la base correcta, y la PR va a esa base (`gh pr create --base <base>`).
+- Un modo vuelve a la línea principal solo con una decisión de SkiTemplar o Mokius, y entra en `dev` por PR de port, no fusionando `dev-<modo>` entera: `dev` ya no tiene el código que esos modos compartían antes del recorte.
+- **Ramas por lote, no por tarjeta** (decisión en #282): las tarjetas de un lote se hacen y se prueban en la misma rama, `feat|fix/<primera issue>-<slug>` (o `dev-<modo>-<primera issue>-<slug>`). La crea `tablero.py coger` con la primera tarjeta; las demás entran en ella con `coger <n> --rama <rama del lote>`. Una issue suelta es un lote de uno: su propia rama.
+- **Lotes pequeños**: un lote tiene como mucho 3 issues y cada persona tiene como mucho un lote abierto (mientras, puede hacer issues sueltas). Saltarse los topes solo se puede por excepción o emergencia, con permiso de SkiTemplar o Mokius: `lote crear … --excepcion "<motivo>" [--autoriza <aprobador>]`, que deja la etiqueta `excepcion`. `auditar` marca el lote que los incumple sin permiso.
+- **A su rama base solo entra lo que está en Done**: cada tarjeta se revisa (IA) y se prueba en el editor **en la rama de su lote**; con las dos validaciones pasa a Validada; con todo el lote en Validada, a Done; y solo entonces se pide y se fusiona la PR. Nada se fusiona para probarlo después.
+- Antes de abrir o actualizar una PR: `git fetch origin && git rebase origin/<base>`. Ramas cortas: si una rama vive más de 2-3 días, rebase diario.
+
+### Sesiones de noche y refactorización
+
+- **Sesión nocturna desatendida: solo bugs y pulido.** Cuando a Claude se le deja trabajando solo durante la noche («quédate hasta las 7»), no mete mecánicas, sistemas ni contenido nuevo: arregla fallos y pule lo que hay. No depende de la hora: a las 3 de la mañana con alguien delante se trabaja con normalidad. En esas sesiones se coge con `coger <n> --nocturna` (o con `TN_SESION_NOCTURNA=1` en el entorno), que rechaza lo que no sea `⚠️bug⚠️`, `pulido` o `refactor`; `--forzar` lo salta y queda comentado.
+- **Refactorización** (etiqueta `refactor`: el recorte a modo único y la limpieza de código que venga, en las sesiones del director): se salta In review y QA editor. La PR se fusiona en su rama base cuando compila en DebugGame y pasan `Automation RunTests Tortunabo` y `uv run pytest`; al fusionar, la issue va a Done con su **Resumen**. Puede hacerse en sesiones nocturnas desatendidas y en varios lotes a la vez, porque quita código en vez de meterlo. `sync`, `auditar` y `avisos` no la tratan como incidencia.
+
+### Organización igual en todas las ramas
+
+Las skills y esta guía se leen de la rama en la que trabaja cada uno, y los cron y la rutina leen `main`. Por eso las rutas de organización (`rutas_organizacion_propagar` en `Scripts/tablero/equipo.json`: `Scripts/tablero/`, sus tests, `.claude/`, `.github/` y `CLAUDE.md`) son iguales en `dev`, `main` y cada `dev-<modo>`. Un cambio de organización entra primero en `dev` y después se propaga: `tablero.py organizacion propagar --aplicar` abre una PR por rama destino (la de `main` la fusiona un aprobador). `sync` avisa cuando una rama se ha quedado atrás.
 
 ## Tablero: la única lista de tareas
 
@@ -38,22 +62,22 @@ GitHub Project «Tortunabo · Desarrollo» en vista Kanban: https://github.com/o
 | Revisiones | La revisión o la prueba encontraron un fallo, comentado en la propia issue |
 | QA editor | Revisión IA aprobada: falta probarla en el editor (en su rama; lo fusionado antes de #282, en dev) |
 | Validada | Aprobada y probada en el editor en su rama, sin fusionar: espera al resto de su lote (o a la fusión) |
-| Done | Fusionada en dev, aprobada y probada en el editor; cerrada |
+| Done | Fusionada en su rama base (`dev` o `dev-<modo>`), aprobada y probada en el editor; cerrada |
 
 Dos validaciones por issue: **Revisión IA** (`Pendiente` / `Aprobada` / `Cambios pedidos`), que hace el Claude del revisor cruzado y nunca quien escribió el código, y **Editor** (`Sin probar` / `Funciona` / `Falla`), prueba real en el editor de Unreal.
 
 Ciclo paso a paso:
 
-1. **Coger** (`coger <n>`): In progress, asignada y rama desde `origin/dev`. `coger` rechaza las issues con bloqueantes abiertas y exige el árbol de trabajo sin cambios en ficheros versionados. Asignado significa «estoy con ella ahora»: si la dejas sin terminar, `soltar <n> --motivo "..."` la devuelve a Ready sin asignado.
+1. **Coger** (`coger <n>`): In progress, asignada y rama desde su rama base (`origin/dev` u `origin/dev-<modo>`). `coger` rechaza las issues con bloqueantes abiertas y exige el árbol de trabajo sin cambios en ficheros versionados. Asignado significa «estoy con ella ahora»: si la dejas sin terminar, `soltar <n> --motivo "..."` la devuelve a Ready sin asignado.
 2. **Probar mientras se trabaja** (`editor <n> funciona|falla`), en la rama del lote: si funciona, Editor = Funciona; si falla, se queda en In progress con el fallo comentado: no se manda algo que no funciona.
 3. **Entregar** (`revision <n>`): In review con revisor cruzado. Si el autor no la ha probado, va con Editor = Sin probar y el comentario «Sin QA editor»: la prueba se hace igualmente en la rama, antes de fusionar. Con Editor = Falla, `revision` la rechaza.
 4. **Revisar** (`ia <n> aprobada|cambios --revisor "<login> (Claude)"`): el campo Revisor pasa a ser quien ha revisado de verdad. Aprobada y sin probar pasa a QA editor; si ya se probó antes de la aprobación, se salta ese paso y va directa a Validada. Con cambios pasa a Revisiones con el fallo comentado. Lo normal es que el propio revisor lo arregle: la coge con `coger <n> --forzar` (In progress a su nombre) y la vuelve a entregar; la nueva revisión la hace otro.
-5. **Validar y fusionar** (cualquiera de los tres): en QA editor, `editor <n> funciona` probado en la rama → Validada. Con todas las issues de la PR en Validada (`lote estado <lote>` en verde), pásalas a Done (`estado <n> Done`), fusiona la PR en `dev` (`gh pr merge --merge --delete-branch`) y `sync --aplicar`. Nunca se fusiona una PR con alguna issue sin probar; lo que se salte el ciclo lo detecta «Avisos del tablero».
+5. **Validar y fusionar** (cualquiera de los tres): en QA editor, `editor <n> funciona` probado en la rama → Validada. Con todas las issues de la PR en Validada (`lote estado <lote>` en verde), pásalas a Done (`estado <n> Done`), fusiona la PR en su rama base (`gh pr merge --merge --delete-branch`) y `sync --aplicar`. Nunca se fusiona una PR con alguna issue sin probar; lo que se salte el ciclo lo detecta «Avisos del tablero».
 6. **Cerrar** (`resumen <n>`): cada issue que llega a Done lleva su comentario **Resumen**.
 
-Una prueba que falla en In review, QA editor o con la issue cerrada la lleva a Revisiones (la reabre si hace falta, con `regresion` si ya funcionaba). Regla única que aplican `ia`, `editor` y `sync`: Done solo con la PR en dev, Revisión IA = Aprobada y Editor = Funciona.
+Una prueba que falla en In review, QA editor o con la issue cerrada la lleva a Revisiones (la reabre si hace falta, con `regresion` si ya funcionaba). Regla única que aplican `ia`, `editor` y `sync`: Done solo con la PR fusionada en su rama base, Revisión IA = Aprobada y Editor = Funciona (una issue `refactor` solo necesita la PR fusionada).
 
-**Una rama y una PR por lote.** Las tarjetas que van juntas (un sistema, una tanda de bugs del mismo objeto) se agrupan en un lote desde el principio: una rama, una PR con `Closes` de todas, y `lote crear --titulo "…" <n> <n> …`, que crea la issue temporal `lote` («Lote: …»), depende de cada miembro y la enlaza a la PR con «Refs» (una issue citada con «Refs» no avanza ni cuenta como fusionada: solo `Closes` mueve las issues). Una issue que se suma después entra con `lote añadir <lote> <n>` (y su `Closes` en la PR), no con `bloquear`. Cada miembro se revisa y se prueba por separado en esa rama y, con las dos validaciones, espera en Validada. La PR del lote no se fusiona hasta que `lote estado <lote>` confirma que todos están en Validada y que ninguno tiene una `decision` pendiente; entonces pasan a Done, se fusiona y el lote se cierra con un **Resumen** del conjunto.
+**Una rama y una PR por lote.** Las tarjetas que van juntas (un sistema, una tanda de bugs del mismo objeto; como mucho 3) se agrupan en un lote desde el principio: una rama, una PR con `Closes` de todas, y `lote crear --titulo "…" <n> <n> …`, que crea la issue temporal `lote` («Lote: …»), depende de cada miembro y la enlaza a la PR con «Refs» (una issue citada con «Refs» no avanza ni cuenta como fusionada: solo `Closes` mueve las issues). Una issue que se suma después entra con `lote añadir <lote> <n>` (y su `Closes` en la PR), no con `bloquear`. Cada miembro se revisa y se prueba por separado en esa rama y, con las dos validaciones, espera en Validada. La PR del lote no se fusiona hasta que `lote estado <lote>` confirma que todos están en Validada y que ninguno tiene una `decision` pendiente; entonces pasan a Done, se fusiona y el lote se cierra con un **Resumen** del conjunto.
 
 **Dependencias**: si una issue no puede empezar hasta que se cierren otras, `bloquear <n> --por <m>` la deja en Bloqueada; `sync --aplicar` la pasa a Ready cuando se cierran todas. En Backlog la dependencia se registra y la issue sigue en Backlog (bloquear no aprueba); al aprobarla con `estado <n> Ready`, si sus bloqueantes siguen abiertas va a Bloqueada.
 
@@ -66,7 +90,7 @@ Toda issue de trabajo cumple esto; `nueva` no crea una que no lo cumpla y `audit
 - **Título** de 80 caracteres como mucho: el síntoma o la tarea, sin el detalle. Dentro de un objeto con varias tareas, «Objeto: tarea».
 - **Cuerpo** con el contexto (en un fallo: pasos, esperado y obtenido, mapa y jugadores) y los **criterios de aceptación** como casillas `- [ ]` verificables en el editor o con tests.
 - **Etiqueta de tipo**: `tarea` o `⚠️bug⚠️`.
-- **Objeto** del que cuelga y los campos **Prioridad, Tamaño, Área y Fase** (F0–F8 del plan maestro; «Sin fase» si no es de ninguna).
+- **Objeto** del que cuelga y los campos **Prioridad, Tamaño, Área y Fase** (F0–F8 del plan maestro del modo único; «Sin fase» si no es de ninguna).
 - Un **P0** está en Ready o más allá, nunca en Backlog. Tamaño L solo si no se puede partir en tareas de 1-2 días.
 - Un criterio que cambia mientras se trabaja se corrige en el cuerpo, no en un comentario suelto; si es una decisión de diseño, la registra un aprobador con `decidir`.
 
@@ -85,7 +109,7 @@ Los comentarios automáticos del tablero son de una línea: dicen qué ha pasado
 
 ### Objetos y sub-issues
 
-Las tareas y los fallos se agrupan por **objeto**: un sistema o una pieza del juego (el Rally, el puente tambaleante, el HUD, las catapultas…). Un objeto es una issue padre con la etiqueta `objeto`, sin Status, que se ve en la vista «Objetos»; sus tareas y fallos cuelgan de él como sub-issues. Los sistemas grandes no se desglosan en épicas por fase: la fase va en el campo Fase. Las PR enlazan la sub-issue concreta, nunca el objeto.
+Las tareas y los fallos se agrupan por **objeto**: un sistema o una pieza del juego (el puente tambaleante, el HUD, los vitales…). Un objeto es una issue padre con la etiqueta `objeto`, sin Status, que se ve en la vista «Objetos»; sus tareas y fallos cuelgan de él como sub-issues. Los sistemas grandes no se desglosan en épicas por fase: la fase va en el campo Fase. Las PR enlazan la sub-issue concreta, nunca el objeto.
 
 Cuando el usuario dice «esto no funciona», Claude decide y registra sin preguntar (solo pregunta si duda de verdad a qué objeto pertenece), después de mirar los resúmenes del objeto (`resumenes <n>`):
 
@@ -97,7 +121,7 @@ Cuando el usuario dice «esto no funciona», Claude decide y registra sin pregun
 
 ```bash
 uv run python Scripts/tablero/tablero.py pendiente             # qué hay para mí (colisiones y organización primero)
-uv run python Scripts/tablero/tablero.py coger <n> [--forzar]  # asignarme, In progress y rama
+uv run python Scripts/tablero/tablero.py coger <n> [--forzar] [--nocturna]  # asignarme, In progress y rama desde su base (dev o dev-<modo>)
 uv run python Scripts/tablero/tablero.py soltar <n> --motivo "..." # la dejo: sin asignado y de vuelta a Ready
 uv run python Scripts/tablero/tablero.py editor <n> funciona|falla --como "PIE 4P" --nota "..."
 uv run python Scripts/tablero/tablero.py revision <n>          # terminada: In review con revisor cruzado
@@ -106,13 +130,15 @@ uv run python Scripts/tablero/tablero.py resumen <n> --que "<qué fallaba>" [--p
 uv run python Scripts/tablero/tablero.py resumenes <n>         # resúmenes de las demás sub-issues de su objeto
 uv run python Scripts/tablero/tablero.py decidir <n> --texto "<decisión>"
 uv run python Scripts/tablero/tablero.py pedir <n> --texto "<qué pido>" | atendida <n> --nota "<qué he hecho>"
-uv run python Scripts/tablero/tablero.py lote crear --titulo "..." <n> <n> ... | lote estado <lote>
+uv run python Scripts/tablero/tablero.py lote crear --titulo "..." <n> <n> ... [--excepcion "..." --autoriza <aprobador>] | lote estado <lote>
 uv run python Scripts/tablero/tablero.py lote añadir <lote> <n> [<n> ...]   # meter miembros en un lote ya creado
 uv run python Scripts/tablero/tablero.py bloquear <n> --por <m> [--por <k>]   # en Backlog se queda en Backlog
 uv run python Scripts/tablero/tablero.py nueva --titulo "..." --tipo bug|tarea --cuerpo f.md --objeto "<objeto>" --prioridad P1 --tamano S --area Red [--fase F4 --estado Ready]
 uv run python Scripts/tablero/tablero.py objeto "<nombre>" [--area X --descripcion "..." --nuevo] | colgar <hijo> <objeto>
 uv run python Scripts/tablero/tablero.py estado <n> <estado> | campo <n> <campo> <valor>
+uv run python Scripts/tablero/tablero.py chamber <n> [<n> ...] --motivo "..."   # descartada: etiqueta chamber, sin asignado y cerrada como not planned
 uv run python Scripts/tablero/tablero.py sync|auditar|colisiones [--aplicar]
+uv run python Scripts/tablero/tablero.py organizacion propagar [--aplicar]   # copia la organización de dev a main y a cada dev-<modo> por PR
 uv run python Scripts/tablero/tablero.py volcado [--publicar <issue>]   # tablero completo en Markdown
 uv run python Scripts/tablero/tablero.py avisos [--aplicar] [--publicar 196 --parte 127]   # lo que entró en dev sin revisión y el parte, al director
 ```
@@ -125,7 +151,7 @@ Tres automatismos mantienen el tablero cada mañana. Ninguno toca ni revisa cód
 
 - **Puente del tablero** (`.github/workflows/tablero-puente.yml`, 7:15): ejecuta `sync`, `auditar` y `colisiones` con `--aplicar` y publica el volcado del tablero en la issue #131. Lanzado a mano con un comando (`estado 123 Ready`), lo ejecuta si está en la lista cerrada de `Scripts/tablero/volcado.py`; los comentarios que deja acaban en «Lanzado por <quién> a través del puente», porque todos salen con la cuenta del dueño del token. El volcado lleva una sección «Sin movimiento desde hace más de 3 días» con lo que espera a alguien (In progress, In review, Revisiones, QA editor y Validada). Está también en `main`, porque el cron solo se ejecuta desde la rama por defecto.
 - **Rutina de Claude** (7:30): hace de responsable de calidad de las issues. Lee el volcado, corrige por el puente lo que es evidente, avisa de lo que no lo es y deja el parte del día en la issue #127. Su entorno solo llega a las rutas REST del repositorio: por eso lee y mueve el tablero a través del puente.
-- **Avisos del tablero** (`.github/workflows/tablero-avisos.yml`, 8:30): el correo del director con el resultado del día. Ejecuta `avisos --aplicar`: cada push directo a `dev` con commits de código que no son de ninguna PR fusionada abre una issue `sin-revision` (In review, P0, revisor cruzado), sea quien sea el autor, y la issue se cierra sola cuando tiene las dos validaciones; cada PR fusionada en `dev` con una issue sin revisión aprobada (en un lote, también sin probar), o sin issue y con código, sale como incidencia. A `dev` solo se llega por PR y fusionarla puede cualquiera de los tres: lo que se controla es que el trabajo que lleva revisión y prueba las tenga (un push directo que se cuele, p. ej. uno anterior al ruleset, también se detecta). Lo que solo toca rutas de organización (`avisos.rutas_organizacion` en `Scripts/tablero/equipo.json`: tablero, skills, workflows, guía y documentación) va sin ellas a propósito. Después comenta en la issue #196 el aviso de cada destinatario (`avisos.destinatarios`, hoy SkiTemplar) con una mención: incidencias, PR nuevas, comentarios que le mencionan, lo que espera por él y el parte de la rutina; GitHub se lo manda por correo. Lo escribe github-actions, porque GitHub no avisa a nadie de lo que hace su propia cuenta. También está en `main`.
+- **Avisos del tablero** (`.github/workflows/tablero-avisos.yml`, 8:30): el correo del director con el resultado del día. Ejecuta `avisos --aplicar`: cada push directo a `dev` con commits de código que no son de ninguna PR fusionada abre una issue `sin-revision` (In review, P0, revisor cruzado), sea quien sea el autor, y la issue se cierra sola cuando tiene las dos validaciones; cada PR fusionada en `dev` con una issue sin revisión aprobada (en un lote, también sin probar), o sin issue y con código, sale como incidencia (las issues `refactor` no: entran sin revisión a propósito). A `dev` solo se llega por PR y fusionarla puede cualquiera de los tres: lo que se controla es que el trabajo que lleva revisión y prueba las tenga (un push directo que se cuele, p. ej. uno anterior al ruleset, también se detecta). Lo que solo toca rutas de organización (`avisos.rutas_organizacion` en `Scripts/tablero/equipo.json`: tablero, skills, workflows, guía y documentación) va sin ellas a propósito. Después comenta en la issue #196 el aviso de cada destinatario (`avisos.destinatarios`, hoy SkiTemplar) con una mención: incidencias, PR nuevas, comentarios que le mencionan, lo que espera por él y el parte de la rutina; GitHub se lo manda por correo. Lo escribe github-actions, porque GitHub no avisa a nadie de lo que hace su propia cuenta. También está en `main`.
 
 Un aviso nunca vive solo en el parte. Siempre queda como estado en el tablero, y `pendiente` lo enseña arriba hasta que se resuelve: etiqueta `revisar-organizacion` con su comentario (la pone `auditar` y la quita sola cuando deja de ver el problema), etiqueta `revisar-qa` con su comentario (la pone y la quita la rutina, para lo que un script no ve), etiqueta `peticion` (conversación sin contestar), Revisiones con P0, o etiqueta `decision` con la pregunta. El parte solo resume. Al abrir sesión, lee el último (`gh api repos/Unreal-portfolio/Tortunavy/issues/127/comments --jq '.[-1].body'`) y ejecuta los comandos que haya dejado pendientes.
 
@@ -133,14 +159,14 @@ Las issues #127, #131 y #196 no van al tablero. El puente actúa con el token de
 
 ## Memoria del equipo: las issues
 
-La memoria del equipo son las issues: su cuerpo y sus comentarios **Resumen** («Qué fallaba / Por qué / Cómo se arregló», con `resumen`) y **Decisión** («**Decisión** (fecha, quién): …», con `decidir`, en la issue u objeto afectado). Siempre resumidos: el comando rechaza más de 400 caracteres por campo. No hay otro registro. No hace falta leer todas las issues, sí las relacionadas: las del mismo objeto (`resumenes <n>`) y las abiertas en Revisiones o con `colision` o `revisar-organizacion`. Las decisiones de diseño de fondo están en el plan maestro (§1 y §7).
+La memoria del equipo son las issues: su cuerpo y sus comentarios **Resumen** («Qué fallaba / Por qué / Cómo se arregló», con `resumen`) y **Decisión** («**Decisión** (fecha, quién): …», con `decidir`, en la issue u objeto afectado). Siempre resumidos: el comando rechaza más de 400 caracteres por campo. No hay otro registro. No hace falta leer todas las issues, sí las relacionadas: las del mismo objeto (`resumenes <n>`) y las abiertas en Revisiones o con `colision` o `revisar-organizacion`. Las decisiones de diseño de fondo están en el plan maestro (§1).
 
 ## Skills del proyecto
 
 - `tortu-que-hacer`: «¿qué hago?», «¿qué hay pendiente?». Lee el tablero y propone (colisiones y organización primero).
 - `tortu-coger`: empezar, retomar o arreglar una issue (también las `colision`).
-- `tortu-entregar`: PR hacia dev, lote si hay varias issues y paso a revisión cruzada.
-- `tortu-revisar`: revisión IA cruzada y fusión en `dev`; los aprobadores, además, deciden, auditan y desglosan objetos.
+- `tortu-entregar`: PR hacia su rama base (`dev` o `dev-<modo>`), lote si hay varias issues y paso a revisión cruzada (o fusión directa si es `refactor`).
+- `tortu-revisar`: revisión IA cruzada y fusión en su rama base; los aprobadores, además, deciden, auditan y desglosan objetos.
 - `tortu-editor`: registrar lo que se prueba en el editor («esto no funciona», «esto ya va»).
 
 ## Reglas
@@ -151,12 +177,12 @@ La memoria del equipo son las issues: su cuerpo y sus comentarios **Resumen** (�
 - Todo texto que se vea en el juego se puede traducir: `NSLOCTEXT`, recogido y traducido a los 13 idiomas antes de entregar (`Docs/Localizacion.md`). Nunca `FText::FromString` con un literal: lo que de verdad no se traduce va con `INVTEXT`. La pipeline rechaza la PR que lo incumple.
 - Commits en español técnico con ortografía completa y conventional commits (`feat|fix|refactor|docs|test|chore|perf`), sin líneas `Co-Authored-By`.
 - Todo texto nuevo o cambiado que se vea en pantalla es un `NSLOCTEXT`/`LOCTEXT` en español y **se traduce en la misma PR** a los 12 idiomas restantes: recoger (`Scripts\localization_gather_export.bat`), traducir las entradas nuevas de los `Game.po`, compilar (`Scripts\localization_import_compile.bat`) y commitear `Game.manifest`, `.archive`, `.po` y `.locres`. Claude lo hace sin que se lo pidan, con el glosario y las reglas de `Docs/Localizacion.md`. Un texto sin traducir sale en español.
-- La PR enlaza su issue con `Closes #<n>` en el cuerpo.
-- Nunca hagas push a `main` ni a `dev`, ni `--force` sobre ramas ajenas.
+- Nunca hagas push a `main`, `dev`, `chamber` ni a una `dev-<modo>`, ni `--force` sobre ramas ajenas.
+- La PR enlaza su issue con `Closes #<n>`, explica qué cambia y trae el plan de pruebas con la evidencia (compilación, tests). Una PR, un tema: lo que no tiene que ver va en otra.
 
 ## Compilar y probar
 
-- Editor: `Build.bat TortunaboEditor Win64 DebugGame "<ruta>\Tortunabo.uproject" -WaitMutex -NoHotReload`. Cierra el editor antes de compilar.
+- Editor: `Build.bat TortunaboEditor Win64 DebugGame "<ruta>\Tortunabo.uproject" -WaitMutex -NoHotReload`. Cierra el editor antes de compilar (o, con un editor abierto en otro worktree, añade `-NoHotReloadFromIDE`).
 - Tests de C++: `Automation RunTests Tortunabo` (consola del editor o Session Frontend). Lista de comandos en `Docs/Comandos_Prueba.md`.
 - Tests de Python (terreno y tablero): `uv run pytest` desde la raíz.
-- Plan vigente: `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md`. Desglose de tareas: `Docs/ROADMAP-macro-update.md`. Historial: `Docs/Bitacora.md`.
+- Plan vigente: `Docs/2026-10-06-Plan-Maestro-Modo-Unico.md` (modo único, Excel de diseño y fases F0-F8). Historial: `Docs/Bitacora.md`.

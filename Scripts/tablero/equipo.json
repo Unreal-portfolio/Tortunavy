@@ -38,6 +38,13 @@
       "Docs/"
     ]
   },
+  "rutas_organizacion_propagar": [
+    "Scripts/tablero/",
+    "Scripts/tests/test_tablero*",
+    ".claude/",
+    ".github/",
+    "CLAUDE.md"
+  ],
   "revisores": {
     "Ruben-Besteiro": [
       "Mokius",
