@@ -16,7 +16,7 @@ class UWidget;
  * - De fantasma (abajo a la derecha): tu icono de tortuga fantasma que flota, con tu nombre en una cinta, y un cartel
  *   con a quién miras, la cámara que llevas (libre o fija), los controles («← → cambiar · C cámara · rueda zoom», o los
  *   del mando si es lo último que has tocado) y quién más está mirando a esa tortuga. La interfaz de la tortuga que
- *   sigues (energía, objetos, cara, puntos) la enseña el HUD de siempre (UTN_RunHUDWidget), y en la tripulación sales
+ *   sigues (objetos, cara, puntos) la enseña el HUD de siempre (UTN_RunHUDWidget), y en la tripulación sales
  *   tú con la cara de fantasma.
  * - Con tortuga (abajo a la izquierda, encima del distintivo): los fantasmas que te están mirando («Te mira Ana»).
  *

@@ -31,7 +31,6 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/DrawElements.h"
 #include "Player/TN_ShellComponent.h"
-#include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Player/TN_SpectatorGhost.h"
@@ -57,9 +56,8 @@ namespace TNRunHUDDetail
 	using namespace TNHUDStyle;
 
 	/** Vista previa de los estados del distintivo (para probar y para el equipo de arte). */
-	TAutoConsoleVariable<float> CVarHUDEnergy(TEXT("tn.HUD.Energy"), -1.f, TEXT("HUD: fuerza la energía del salvavidas (0-1); -1 = la real."));
 	TAutoConsoleVariable<int32> CVarHUDFace(TEXT("tn.HUD.Face"), -1,
-		TEXT("HUD: fuerza la cara (0 feliz, 1 cansada, 2 jadeando, 3 caparazón, 4 mareada, 5 victoria); -1 = la real."));
+		TEXT("HUD: fuerza la cara (0 feliz, 1 caparazón, 2 mareada, 3 victoria); -1 = la real."));
 	TAutoConsoleVariable<int32> CVarHUDTalk(TEXT("tn.HUD.Talk"), -1, TEXT("HUD: 1 fuerza el bocadillo de voz, 0 lo apaga; -1 = el real."));
 	TAutoConsoleVariable<int32> CVarHUDCrew(TEXT("tn.HUD.CrewPreview"), 0,
 		TEXT("HUD: rellena N filas de la tripulación con tu propia tortuga (la 1.ª dice una frase y la 2.ª habla) para ver el diseño sin más jugadores."));
@@ -300,30 +298,14 @@ namespace TNRunHUDDetail
 		return nullptr;
 	}
 
-	/** Energía (0-1) y agotamiento de una tortuga por su componente de estamina (replicado a todos). */
-	void EnergyOf(const APawn* Pawn, float& OutEnergy, bool& bOutExhausted)
-	{
-		OutEnergy = 1.f;
-		bOutExhausted = false;
-		if (const UTN_StaminaComponent* St = Pawn ? Pawn->FindComponentByClass<UTN_StaminaComponent>() : nullptr)
-		{
-			OutEnergy = FMath::Clamp(St->GetCurrentStamina() / FMath::Max(1.f, St->GetMaxStamina()), 0.f, 1.f);
-			bOutExhausted = St->IsExhausted();
-		}
-	}
-
-	/** Cara de una tortuga según su estado, con margen en los umbrales de energía para que no parpadee. */
-	ETNTurtleFace FaceFor(const APlayerState* PS, const APawn* Pawn, float Energy, bool bExhausted, ETNTurtleFace Prev)
+	/** Cara de una tortuga según su estado: llegada, eliminada, en el caparazón o feliz. */
+	ETNTurtleFace FaceFor(const APlayerState* PS, const APawn* Pawn)
 	{
 		const ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(PS);
 		if (TNPS && TNPS->bHasFinishedRun && !TNPS->bIsEliminated) { return ETNTurtleFace::Win; }
 		if (TNPS && (TNPS->bIsDBNO || TNPS->bIsEliminated)) { return ETNTurtleFace::Down; }
 		const UTN_ShellComponent* ShellComp = Pawn ? Pawn->FindComponentByClass<UTN_ShellComponent>() : nullptr;
 		if (ShellComp && ShellComp->IsInShell()) { return ETNTurtleFace::Shell; }
-		const bool bWasPanting = Prev == ETNTurtleFace::Panting;
-		const bool bWasTired = Prev == ETNTurtleFace::Tired || bWasPanting;
-		if (bExhausted || Energy < (bWasPanting ? 0.3f : 0.22f)) { return ETNTurtleFace::Panting; }
-		if (Energy < (bWasTired ? 0.6f : 0.5f)) { return ETNTurtleFace::Tired; }
 		return ETNTurtleFace::Happy;
 	}
 }
@@ -350,23 +332,17 @@ void UTN_RunHUDWidget::BuildTree()
 	// Todas las caras se dibujan ahora (al entrar en el mapa) para que cambiar de estado no dé tirones.
 	for (int32 f = 0; f <= static_cast<int32>(ETNTurtleFace::Win); ++f) { TNHUDFaces::TurtleFace(static_cast<ETNTurtleFace>(f)); }
 
-	// La clase base rellena estos widgets (estamina, peso, número e iconos del inventario): existen pero no se ven; el
-	// Tick los lee para pintar el salvavidas y las burbujas.
+	// La clase base rellena estos widgets (número e iconos del inventario): existen pero no se ven; el Tick los lee para
+	// pintar las burbujas.
 	{
 		UVerticalBox* Feed = Make<UVerticalBox>(Tree);
-		StaminaBar = Make<UProgressBar>(Tree, TEXT("StaminaBar"));
-		StaminaBar->SetPercent(1.f);
-		WeightPenaltyBar = Make<UProgressBar>(Tree, TEXT("WeightPenaltyBar"));
-		WeightPenaltyBar->SetPercent(0.f);
-		StaminaText = MakeText(Tree, TEXT("StaminaText"), FText::GetEmpty(), TEXT("Regular"), 10, Text);
 		SlotEquippedImage = Make<UImage>(Tree, TEXT("SlotEquippedImage"));
 		SlotEquippedImage->SetColorAndOpacity(FLinearColor::Transparent);
 		SlotStoredImage = Make<UImage>(Tree, TEXT("SlotStoredImage"));
 		SlotStoredImage->SetColorAndOpacity(FLinearColor::Transparent);
 		// La puntuación real la escribe la clase base aquí; el contador que se ve (CountText) va sumando lo que llega.
 		ScoreText = MakeText(Tree, TEXT("ScoreText"), FText::AsNumber(0), TEXT("Regular"), 10, Text);
-		for (UWidget* W : { static_cast<UWidget*>(StaminaBar), static_cast<UWidget*>(WeightPenaltyBar), static_cast<UWidget*>(StaminaText),
-			static_cast<UWidget*>(SlotEquippedImage), static_cast<UWidget*>(SlotStoredImage), static_cast<UWidget*>(ScoreText) })
+		for (UWidget* W : { static_cast<UWidget*>(SlotEquippedImage), static_cast<UWidget*>(SlotStoredImage), static_cast<UWidget*>(ScoreText) })
 		{
 			Feed->AddChildToVerticalBox(W);
 		}
@@ -374,13 +350,15 @@ void UTN_RunHUDWidget::BuildTree()
 		Place(Canvas, Feed, FVector2D(0.f, 0.f), FVector2D(0.f, 0.f));
 	}
 
-	// ── Distintivo (abajo a la izquierda): la cara en el salvavidas de energía y, debajo, la cinta con el nombre ──
+	// ── Distintivo (abajo a la izquierda): la cara en el disco con su salvavidas y, debajo, la cinta con el nombre ──
 	{
 		UVerticalBox* Col = Make<UVerticalBox>(Tree);
 		UOverlay* Ring = Make<UOverlay>(Tree);
 		Badge = Make<UImage>(Tree, TEXT("TurtleBadge"));
-		BadgeMID = MakeUIMID(this, TEXT("/Game/UI/HUD/M_UI_TurtleBadge.M_UI_TurtleBadge"));
-		if (BadgeMID) { Badge->SetBrushFromMaterial(BadgeMID); }
+		if (UMaterialInterface* BadgeMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/UI/HUD/M_UI_TurtleBadge.M_UI_TurtleBadge")))
+		{
+			Badge->SetBrushFromMaterial(BadgeMaterial);
+		}
 		AddAt(Ring, MakeSize(Tree, Badge, BadgeRingSize, BadgeRingSize), HAlign_Center, VAlign_Center);
 		FaceImage = MakeImage(Tree, TNHUDFaces::TurtleFace(ETNTurtleFace::Happy), FVector2D(104.f, 104.f));
 		FaceImage->SetRenderTransformPivot(FVector2D(0.5f, 0.85f));
@@ -390,12 +368,6 @@ void UTN_RunHUDWidget::BuildTree()
 		TalkBubble->SetRenderTransformPivot(FVector2D(0.1f, 0.95f));
 		TalkBubble->SetVisibility(ESlateVisibility::Collapsed);
 		AddAt(Ring, TalkBubble, HAlign_Right, VAlign_Top, FMargin(0.f, -18.f, -44.f, 0.f));
-		// Sin aliento: etiqueta coral que late junto al salvavidas.
-		UTextBlock* Tired = MakeText(Tree, nullptr, NSLOCTEXT("TNHUD", "Exhausted", "¡SIN ALIENTO!"), TEXT("Bold"), 13, FLinearColor::White);
-		ExhaustedRoot = MakeCard(Tree, TNHUDArt::RibbonTexture(), RibbonMargin, Tired, FMargin(28.f, 16.f, 28.f, 18.f));
-		ExhaustedRoot->SetVisibility(ESlateVisibility::Hidden);
-		ExhaustedRoot->SetRenderTransformAngle(-8.f);
-		AddAt(Ring, ExhaustedRoot, HAlign_Right, VAlign_Bottom, FMargin(0.f, 0.f, -86.f, 34.f));
 		if (UVerticalBoxSlot* S = Col->AddChildToVerticalBox(Ring)) { S->SetHorizontalAlignment(HAlign_Center); }
 
 		NameText = MakeText(Tree, nullptr, FText::GetEmpty(), TEXT("Bold"), 16, FLinearColor::White);
@@ -710,23 +682,6 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 	const APawn* Pawn = SubjectPawn;
 	const APlayerState* PS = SubjectState;
 
-	// Energía del salvavidas (suavizada), zona bloqueada por el peso y latido al quedarse sin aliento. Sale del componente de
-	// estamina, como los retratos de los compañeros, y no de la barra oculta de la clase base (al empezar la partida enseñaba
-	// la mitad hasta que se esprintaba).
-	float Energy = 1.f;
-	[[maybe_unused]] bool bDrained = false;
-	EnergyOf(Pawn, Energy, bDrained);
-	if (CVarHUDEnergy.GetValueOnGameThread() >= 0.f) { Energy = FMath::Clamp(CVarHUDEnergy.GetValueOnGameThread(), 0.f, 1.f); }
-	ShownEnergy = FMath::FInterpTo(ShownEnergy, Energy, DeltaTime, 7.f);
-	const bool bTired = ExhaustedRoot && ExhaustedRoot->IsVisible();
-	if (BadgeMID)
-	{
-		BadgeMID->SetScalarParameterValue(TEXT("Energy"), ShownEnergy);
-		BadgeMID->SetScalarParameterValue(TEXT("Weight"), WeightPenaltyBar && WeightPenaltyBar->IsVisible() ? WeightPenaltyBar->GetPercent() : 0.f);
-		BadgeMID->SetScalarParameterValue(TEXT("Exhausted"), bTired ? 1.f : 0.f);
-	}
-	if (bTired) { ExhaustedRoot->SetRenderScale(FVector2D(1.f + 0.07f * FMath::Abs(FMath::Sin(Time * 7.f)))); }
-
 	if (NameText)
 	{
 		const FText Shown = TNLocText::PlayerName(PS ? PS->GetPlayerName() : FString());
@@ -735,7 +690,7 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 
 	// Cara según cómo va la tortuga (un fantasma que aún no sigue a nadie, con su cara de fantasma).
 	const ETNTurtleFace Prev = static_cast<ETNTurtleFace>(ShownFace);
-	ETNTurtleFace Face = FaceFor(PS, Pawn, ShownEnergy, bTired, Prev);
+	ETNTurtleFace Face = FaceFor(PS, Pawn);
 	if (CVarHUDFace.GetValueOnGameThread() >= 0) { Face = static_cast<ETNTurtleFace>(FMath::Clamp(CVarHUDFace.GetValueOnGameThread(), 0, static_cast<int32>(ETNTurtleFace::Win))); }
 	if (!Pawn && TNGhost::IsGhostPlayer(PS))
 	{
@@ -760,7 +715,6 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 	const bool bTalking = ForceTalk >= 0 ? ForceTalk > 0 : (Voice && Voice->IsHeardSpeaking());
 	float Scale = 1.f + 0.22f * FMath::Sin(FacePop * PI);
 	if (bTalking) { Scale *= 1.f + 0.07f * FMath::Abs(FMath::Sin(Time * 17.f)); }
-	if (Face == ETNTurtleFace::Panting) { Scale *= 1.f + 0.035f * FMath::Sin(Time * 9.f); }
 	if (FaceImage) { FaceImage->SetRenderScale(FVector2D(Scale, Scale)); }
 	if (TalkBubble)
 	{
@@ -1456,12 +1410,9 @@ void UTN_RunFlowHUDWidget::TickCrew(float DeltaTime)
 		CrewPlayerIds[i] = PS ? PS->GetPlayerId() : INDEX_NONE;
 		if (!PS) { continue; }
 		const APawn* Pawn = TurtleOf(GetWorld(), PS);
-		float Energy = 1.f;
-		bool bExhausted = false;
-		EnergyOf(Pawn, Energy, bExhausted);
 		// Un fantasma sale con su cara de fantasma, flotando.
 		const bool bGhostRow = TNGhost::IsGhostPlayer(PS);
-		const ETNTurtleFace Face = FaceFor(PS, Pawn, Energy, bExhausted, static_cast<ETNTurtleFace>(CrewFaceShown[i]));
+		const ETNTurtleFace Face = FaceFor(PS, Pawn);
 		const uint8 WantedFace = bGhostRow ? GhostFaceShown : static_cast<uint8>(Face);
 		if (WantedFace != CrewFaceShown[i])
 		{
