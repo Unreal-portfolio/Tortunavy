@@ -419,6 +419,11 @@ namespace TNKartDebug
 			return;
 		}
 		Kart->RallyTeleport(FTransform(FRotator(0.0, Facing.Rotation().Yaw, 0.0), Where + FVector(0.0, 0.0, 50.0)), 0.f, 0.f);
+		// Que la carrera sepa dónde está: si no, lo ve lejos de su arco y lo devuelve a la última puerta por fuera de pista.
+		if (ATN_RallyGameMode* RallyMode = World->GetAuthGameMode<ATN_RallyGameMode>())
+		{
+			RallyMode->NotifyVehicleRelocated(Kart);
+		}
 		if (USkeletalMeshComponent* Chassis = Kart->GetMesh(); Chassis && Speed > 0.f)
 		{
 			Chassis->SetPhysicsLinearVelocity(Facing * Speed);

@@ -161,9 +161,10 @@ void ATN_RallyPlayerController::PlayerTick(float DeltaTime)
 	if (DashboardCheckAccumulator >= TNRallyPC::DashboardCheckSeconds)
 	{
 		DashboardCheckAccumulator = 0.f;
-		// Solo para la conductora: a la artillera, sentada detrás, los paneles le taparían la vista (y ella tiene su HUD).
+		// Solo para la conductora sola: a la artillera, sentada detrás, los paneles le taparían la vista (y ella tiene su HUD);
+		// con artillera, la conductora va sin interfaz y toda la información la lleva la artillera (#718).
 		ATN_Buggy* Driven = Cast<ATN_Buggy>(GetPawn());
-		if (Driven)
+		if (Driven && !Driven->HasGunner())
 		{
 			UTN_RallyDashboardComponent::AttachTo(Driven, this);
 		}

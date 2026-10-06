@@ -374,10 +374,13 @@ void UTN_RallyHUDWidget::Refresh(const ATN_RallyGameState& RallyState)
 
 	// La conductora no tiene interfaz de pantalla salvo los avisos (semáforo, contramano, reaparición, meta y resultados):
 	// velocidad, turbo y vida van en el salpicadero, y puesto y vuelta en el cartel del arco (UTN_RallyDashboardComponent);
-	// el mapa, las notas y su munición si va sola, en la tableta compacta. La artillera conserva su HUD.
+	// el mapa, las notas y su munición si va sola, en la tableta compacta. La artillera conserva su HUD. Con artillera (#718),
+	// la conductora tampoco ve el contramano: toda la información la lleva la artillera.
 	const bool bSeatedView = Vehicle != nullptr && RallyState.Phase != ETNRallyPhase::Results && !Mine->bFinished;
 	const bool bGunner = Me && Me->IsGunner();
 	const bool bGunnerView = bSeatedView && bGunner;
+	const ATN_Buggy* Buggy = Mine ? Cast<ATN_Buggy>(Mine->Vehicle) : nullptr;
+	const bool bDriverWithGunner = !bGunner && Buggy && Buggy->HasGunner();
 	RefreshPlace(RallyState, Mine, bGunnerView);
 
 	Show(SpeedText, bGunnerView);
@@ -397,7 +400,7 @@ void UTN_RallyHUDWidget::Refresh(const ATN_RallyGameState& RallyState)
 	Show(HeatBar ? HeatBar->GetParent() : nullptr, bShowWeapon);
 	Show(HeatLabel, bShowWeapon);
 
-	Show(WrongWayText, bRacing && Mine && Mine->bWrongWay && !Mine->bFinished);
+	Show(WrongWayText, bRacing && Mine && Mine->bWrongWay && !Mine->bFinished && !bDriverWithGunner);
 	const double RespawnLeft = Mine ? Mine->RespawnEndServerTime - ServerTime : 0.0;
 	Show(RespawnText, Mine && Mine->RespawnEndServerTime > 0.f && RespawnLeft > 0.0);
 	if (RespawnLeft > 0.0)

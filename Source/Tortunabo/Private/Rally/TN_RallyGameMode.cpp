@@ -527,6 +527,22 @@ const ATN_RallyGameMode::FTeamRuntime* ATN_RallyGameMode::FindTeamByVehicle(cons
 	return Vehicle ? Teams.FindByPredicate([Vehicle](const FTeamRuntime& Team) { return Team.Vehicle.Get() == Vehicle; }) : nullptr;
 }
 
+void ATN_RallyGameMode::NotifyVehicleRelocated(const APawn* Vehicle)
+{
+	FTeamRuntime* Team = FindTeamByVehicle(Vehicle);
+	if (!Team || !Track)
+	{
+		return;
+	}
+	Team->PrevLocation = Vehicle->GetActorLocation();
+	Team->Arc = Track->FindArcGlobal(Team->PrevLocation);
+	Team->SegmentProgressCm = 0.0;
+	Team->bWrongWay = false;
+	Team->WrongWay = TNRally::FWrongWayState();
+	Team->Stuck = TNRally::FStuckState();
+	Team->OffTrack = TNRally::FOffTrackState();
+}
+
 void ATN_RallyGameMode::Spectate(APlayerController* Player)
 {
 	if (!Player)

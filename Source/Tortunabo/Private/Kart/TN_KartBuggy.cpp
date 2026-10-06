@@ -472,6 +472,17 @@ void ATN_KartBuggy::MeasureRideHeight()
 	}
 }
 
+bool ATN_KartBuggy::FindWaterSurfaceZ(const FVector& Location, double& OutZ) const
+{
+	float SurfaceZ = 0.f;
+	if (Traversal && Traversal->FindWaterSurfaceAt(Location, 0.f, SurfaceZ))
+	{
+		OutZ = SurfaceZ;
+		return true;
+	}
+	return Super::FindWaterSurfaceZ(Location, OutZ);
+}
+
 void ATN_KartBuggy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -516,10 +527,11 @@ void ATN_KartBuggy::ApplyLeanSteering()
 		return;
 	}
 	// La dirección se cierra con la velocidad (#742), pero solo la de la conductora humana: la IA acota su giro por aceleración
-	// lateral (ITN_RallyVehicle::GetMaxSteerAngleDeg) y con menos ángulo del que cuenta no sujetaría la pista.
+	// lateral (ITN_RallyVehicle::GetMaxSteerAngleDeg) y con menos ángulo del que cuenta no sujetaría la pista. La dirección es
+	// la que aplica Chaos: en el servidor, la de la conductora cliente (la cruda ahí es 0, #710).
 	const bool bAIDriven = Controller && !Controller->IsPlayerController();
 	const float SpeedFactor = bKartTuned && !bAIDriven ? TNKart::SpeedSteerMultiplier(Move->GetForwardSpeed()) : 1.f;
-	const float Wanted = TNKart::LeanSteerMultiplier(GetGunnerLean(), Move->GetSteeringInput()) * SpeedFactor;
+	const float Wanted = TNKart::LeanSteerMultiplier(GetGunnerLean(), GetAppliedSteering()) * SpeedFactor;
 	const bool bNeutral = FMath::Abs(Wanted - 1.f) < TNKartBuggyDetail::LeanSteerEpsilon;
 	// ATN_Buggy::ApplyWheelFriction vuelve a poner el ángulo del ajuste cada vez que cambia la fricción (freno de mano,
 	// charco): con la inclinación se reaplica cada fotograma; sin ella basta con devolverlo una vez.

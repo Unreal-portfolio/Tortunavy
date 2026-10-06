@@ -158,6 +158,28 @@ namespace TNBuggy
 	 */
 	TORTUNABO_API float SpeedCapDecel(float Speed, float Cap, float Gain);
 
+	/** Lo que limita la velocidad del buggy en un fotograma: charco, agua (#719) y vida perdida (#720). */
+	struct FSpeedCapInput
+	{
+		/** Punta sin turbo y con el turbo a tope (cm/s), y fuerza del turbo en [0, 1]. */
+		float TopSpeedCms = 0.f;
+		float BoostTopSpeedCms = 0.f;
+		float BoostStrength01 = 0.f;
+		/** Tope del charco (cm/s); 0 = fuera del charco. */
+		float PuddleCapCms = 0.f;
+		/** Con las ruedas metidas en el agua, la punta sin turbo por WaterSpeedMultiplier. */
+		bool bWading = false;
+		float WaterSpeedMultiplier = 1.f;
+		/** Fracción de la punta que deja la vida perdida (1 = sin daño): se aplica a la punta del turbo que lleve y al agua. */
+		float DamageScale = 1.f;
+	};
+
+	/** Velocidad máxima (cm/s) que imponen el charco, el agua y el daño (la menor); 0 si nada la limita y manda el motor. */
+	TORTUNABO_API float SpeedCapCms(const FSpeedCapInput& In);
+
+	/** Fracción de una estadística (par, punta o giro) con la vida Health01 (#720): 1 con la vida llena y MinScale a 0. */
+	TORTUNABO_API float DamageStatScale(float Health01, float MinScale);
+
 	/** Dirección extra del bamboleo del coco: seno de Frequency Hz que se apaga linealmente hasta TimeLeft = 0. */
 	TORTUNABO_API float SteerWobble(float TimeLeft, float Duration, float Amplitude, float Frequency);
 

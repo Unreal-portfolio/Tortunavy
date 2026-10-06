@@ -246,7 +246,39 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Impactos")
 	float WobbleFrequency = 5.f;
 
-	/** Ganancia del frenado en el charco: deceleración (cm/s²) por cada cm/s de más sobre la velocidad tope. */
+	/**
+	 * Ganancia del frenado al pasar de la velocidad tope del charco, del agua o de la vida perdida: deceleración (cm/s²) por
+	 * cada cm/s de más.
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Impactos")
 	float PuddleBrakeGain = 3.f;
+
+	/**
+	 * En el agua (#719): con las ruedas metidas (vados del Rally, mar y pozas de los mapas generados), la punta sin turbo por
+	 * esto, y también flotando como balsa en Karts (UTN_KartTraversalComponent::GetMaxFloatSpeedCms). Con daño, además, por la
+	 * fracción de DamagedTopSpeedScale.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agua", meta = (ClampMin = "0.1", ClampMax = "1"))
+	float WaterSpeedMultiplier = 0.5f;
+
+	/** Cuánto se hunde en el agua el borde de abajo de una rueda para contar como metida (cm). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agua", meta = (ClampMin = "0"))
+	float WadeDepthCm = 10.f;
+
+	/** Ruedas metidas en el agua a partir de las que el buggy va por el agua. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agua", meta = (ClampMin = "1", ClampMax = "4"))
+	int32 WadeMinWheels = 2;
+
+	/**
+	 * Daño (#720): el par, la punta y el giro bajan en línea con la vida perdida hasta estas fracciones con la vida a 0, y
+	 * vuelven al reaparecer o al curarse (salen de la vida replicada en cada máquina).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Daño", meta = (ClampMin = "0.1", ClampMax = "1"))
+	float DamagedTorqueScale = 0.7f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Daño", meta = (ClampMin = "0.1", ClampMax = "1"))
+	float DamagedTopSpeedScale = 0.775f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Daño", meta = (ClampMin = "0.1", ClampMax = "1"))
+	float DamagedSteerScale = 0.825f;
 };

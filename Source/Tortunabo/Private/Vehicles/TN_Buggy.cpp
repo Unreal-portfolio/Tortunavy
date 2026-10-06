@@ -1,4 +1,4 @@
-// ATN_Buggy: construcción, física de conducción (fricción, derrape, golpe de rueda, charco, motor cortado),
+// ATN_Buggy: construcción, física de conducción (fricción, derrape, golpe de rueda, charco, agua, daño, motor cortado),
 // enderezado, tinte y contrato con la carrera. Asientos y tortugas en TN_Buggy_Seats.cpp; input en TN_Buggy_Input.cpp;
 // impactos en TN_Buggy_Effects.cpp; estabilidad y turbo en TN_Buggy_Drive.cpp; cámara en TN_Buggy_Camera.cpp; modelo, skins y
 // neumáticos en TN_Buggy_Visuals.cpp; carrocerías tortuga y pinturas de la tienda en TN_Buggy_Look.cpp.
@@ -14,6 +14,8 @@
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_BuggyWheel.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
+#include "Rally/TN_RallyGameState.h"
+#include "Rally/TN_RallyTrack.h"
 #include "VR/TN_VRSeatComponent.h"
 #include "Camera/CameraComponent.h"
 #include "ChaosVehicleWheel.h"
@@ -34,6 +36,9 @@ const FName ATN_Buggy::TintParameterName(TEXT("PaintColor"));
 const FName ATN_Buggy::DriverSeatSocket(TEXT("Seat_Driver"));
 const FName ATN_Buggy::GunnerSeatSocket(TEXT("Seat_Gunner"));
 const FName ATN_Buggy::MuzzleSocket(TEXT("Muzzle_Gunner"));
+const FName ATN_Buggy::AppliedSteeringProperty(TEXT("SteeringInput"));
+const FName ATN_Buggy::AppliedThrottleProperty(TEXT("ThrottleInput"));
+const FName ATN_Buggy::AppliedBrakeProperty(TEXT("BrakeInput"));
 // Art/Source/Vehicles/Buggy/manifest.json (sockets_cm).
 const FVector ATN_Buggy::GunnerSeatLocal(-80.f, 0.f, 127.38f);
 const FVector ATN_Buggy::DriverSeatLocal(22.f, 0.f, 92.38f);
@@ -388,6 +393,7 @@ void ATN_Buggy::Tick(float DeltaSeconds)
 
 	FlippedSeconds = TNBuggy::AdvanceFlipped(FlippedSeconds, GetActorUpVector().Z, DeltaSeconds);
 	UpdateAirborne();
+	UpdateWading();
 	if (HasAuthority())
 	{
 		UpdateServerTimers();
@@ -446,7 +452,9 @@ void ATN_Buggy::TickDrivePhysics()
 	// El par sigue a la fuerza del turbo (#630): se vuelve a poner a saltos de 0,02 y siempre al llegar a 0 o a 1.
 	const bool bBoostTorqueStale = FMath::Abs(BoostStrength01 - AppliedBoostStrength) > 0.02f
 		|| ((BoostStrength01 <= 0.f || BoostStrength01 >= 1.f) && BoostStrength01 != AppliedBoostStrength);
-	if (IsEngineLocked() != bEngineTorqueLockedApplied || bBoostTorqueStale)
+	// Y a la vida (#720): a saltos de 0,01 del par.
+	const bool bDamageTorqueStale = !FMath::IsNearlyEqual(GetDamageStatScale(GetData()->DamagedTorqueScale), AppliedDamageTorqueScale, 0.01f);
+	if (IsEngineLocked() != bEngineTorqueLockedApplied || bBoostTorqueStale || bDamageTorqueStale)
 	{
 		ApplyEngineTorque();
 	}
@@ -460,7 +468,7 @@ void ATN_Buggy::TickDrivePhysics()
 		HoldOnGrid();
 	}
 	ApplyBumpKicks();
-	ApplyPuddleSpeedCap();
+	ApplySpeedCaps();
 	ApplyAntiRoll();
 	ApplyStability();
 	ApplyBoostPush();
@@ -532,10 +540,13 @@ void ATN_Buggy::ApplyEngineTorque()
 	const UTN_BuggyData* Tuning = GetData();
 	// El par es parte de la simulación (no de la entrada): así el corte y el turbo valen también en el servidor. Con el
 	// turbo, crece con su fuerza (#630).
-	const float Torque = Tuning->MaxTorque * TNBuggy::BoostTorqueScale(BoostStrength01, Tuning->BoostTorqueMultiplier);
+	// Con la vida perdida, menos par (#720).
+	const float DamageScale = GetDamageStatScale(Tuning->DamagedTorqueScale);
+	const float Torque = Tuning->MaxTorque * TNBuggy::BoostTorqueScale(BoostStrength01, Tuning->BoostTorqueMultiplier) * DamageScale;
 	Move->SetMaxEngineTorque(bLocked ? 0.f : Torque);
 	bEngineTorqueLockedApplied = bLocked;
 	AppliedBoostStrength = BoostStrength01;
+	AppliedDamageTorqueScale = DamageScale;
 }
 
 void ATN_Buggy::HoldLockedInPlace()
@@ -564,9 +575,10 @@ void ATN_Buggy::ApplySteeringAssist()
 	const float Slip = TNBuggy::SlipAngleDeg(GetActorForwardVector(), GetVelocity());
 	const float WobbleLeft = WobbleEndServerTime - static_cast<float>(GetServerNow());
 	const float Wobble = TNBuggy::SteerWobble(WobbleLeft, TNRallyTurret::CocoWobbleSeconds, Tuning->WobbleAmplitude, Tuning->WobbleFrequency);
+	// Con la vida perdida gira menos (#720): la entrada se recorta antes de llegar a Chaos, que la replica al servidor.
 	Move->SetSteeringInput(FMath::Clamp(
 		TNBuggy::AssistSteer(SteerRequest, Slip, Tuning->CounterSteerAssist, Tuning->MaxAssistAngleDeg, Tuning->CounterSteerStartSlipDeg)
-		+ Wobble, -1.f, 1.f));
+		+ Wobble, -1.f, 1.f) * GetDamageStatScale(Tuning->DamagedSteerScale));
 }
 
 void ATN_Buggy::ApplyBumpKicks()
@@ -611,20 +623,104 @@ void ATN_Buggy::ApplyBumpKicks()
 	}
 }
 
-void ATN_Buggy::ApplyPuddleSpeedCap()
+namespace TNBuggyDetail
 {
-	if (!bInPuddle)
+	/** Una entrada procesada de Chaos (protegida pero reflejada) por su nombre; 0 si no hay movimiento o el motor la renombra. */
+	float ReadAppliedInput(const UChaosWheeledVehicleMovementComponent* Move, const FFloatProperty* Property)
 	{
+		return Move && Property ? Property->GetPropertyValue_InContainer(Move) : 0.f;
+	}
+
+	const FFloatProperty* FindAppliedInput(FName Name)
+	{
+		return CastField<FFloatProperty>(UChaosVehicleMovementComponent::StaticClass()->FindPropertyByName(Name));
+	}
+}
+
+float ATN_Buggy::GetAppliedSteering() const
+{
+	static const FFloatProperty* Property = TNBuggyDetail::FindAppliedInput(AppliedSteeringProperty);
+	return TNBuggyDetail::ReadAppliedInput(GetWheeledMovement(), Property);
+}
+
+float ATN_Buggy::GetAppliedThrottle() const
+{
+	static const FFloatProperty* Property = TNBuggyDetail::FindAppliedInput(AppliedThrottleProperty);
+	return TNBuggyDetail::ReadAppliedInput(GetWheeledMovement(), Property);
+}
+
+float ATN_Buggy::GetAppliedBrake() const
+{
+	static const FFloatProperty* Property = TNBuggyDetail::FindAppliedInput(AppliedBrakeProperty);
+	return TNBuggyDetail::ReadAppliedInput(GetWheeledMovement(), Property);
+}
+
+float ATN_Buggy::GetDamageStatScale(float MinScale) const
+{
+	return HealthComponent ? TNBuggy::DamageStatScale(HealthComponent->GetHealth01(), MinScale) : 1.f;
+}
+
+bool ATN_Buggy::FindWaterSurfaceZ(const FVector& Location, double& OutZ) const
+{
+	const UWorld* World = GetWorld();
+	const ATN_RallyGameState* RallyState = World ? World->GetGameState<ATN_RallyGameState>() : nullptr;
+	const ATN_RallyTrack* Track = RallyState ? RallyState->GetTrack() : nullptr;
+	if (!Track || !Track->HasWaterZ())
+	{
+		return false;
+	}
+	OutZ = Track->GetWaterZ();
+	return true;
+}
+
+void ATN_Buggy::UpdateWading()
+{
+	const UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement();
+	double WaterZ = 0.0;
+	if (!Move || !FindWaterSurfaceZ(GetActorLocation(), WaterZ))
+	{
+		bWading = false;
 		return;
 	}
+	// Borde de abajo de cada rueda (su hueso menos el radio) por debajo del agua: la misma cuenta que las salpicaduras.
+	const UTN_BuggyData* Tuning = GetData();
+	const USkeletalMeshComponent* Chassis = GetMesh();
+	int32 Under = 0;
+	const int32 Wheels = FMath::Min(TNBuggyDetail::WheelCount, Move->Wheels.Num());
+	for (int32 Index = 0; Index < Wheels; ++Index)
+	{
+		const UChaosVehicleWheel* Wheel = Move->Wheels[Index];
+		const float Radius = Wheel ? Wheel->GetWheelRadius() : 0.f;
+		const double Bottom = Chassis->GetBoneLocation(WheelBoneNames[Index]).Z - Radius;
+		Under += Bottom < WaterZ - Tuning->WadeDepthCm ? 1 : 0;
+	}
+	bWading = Under >= Tuning->WadeMinWheels;
+}
+
+void ATN_Buggy::ApplySpeedCaps()
+{
 	USkeletalMeshComponent* Chassis = GetMesh();
 	if (!Chassis->IsSimulatingPhysics())
 	{
 		return;
 	}
+	const UTN_BuggyData* Tuning = GetData();
+	TNBuggy::FSpeedCapInput In;
+	In.TopSpeedCms = TNRallyTurret::BuggyTopSpeedCms;
+	In.BoostTopSpeedCms = TNRallyTurret::BuggyTopSpeedCms * Tuning->BoostTopSpeedMultiplier;
+	In.BoostStrength01 = BoostStrength01;
+	In.PuddleCapCms = bInPuddle ? TNRallyTurret::PuddleSpeedCapCms(true) : 0.f;
+	In.bWading = bWading;
+	In.WaterSpeedMultiplier = Tuning->WaterSpeedMultiplier;
+	In.DamageScale = GetDamageStatScale(Tuning->DamagedTopSpeedScale);
+	const float Cap = TNBuggy::SpeedCapCms(In);
+	if (Cap <= 0.f)
+	{
+		return;
+	}
 	const FVector Velocity = GetVelocity();
 	const FVector Flat(Velocity.X, Velocity.Y, 0.f);
-	const float Decel = TNBuggy::SpeedCapDecel(Flat.Size(), TNRallyTurret::PuddleSpeedCapCms(true), GetData()->PuddleBrakeGain);
+	const float Decel = TNBuggy::SpeedCapDecel(Flat.Size(), Cap, Tuning->PuddleBrakeGain);
 	if (Decel > 0.f)
 	{
 		// Como aceleración (bAccelChange) en el centro de masas, en todas las máquinas que simulan el chasis.
