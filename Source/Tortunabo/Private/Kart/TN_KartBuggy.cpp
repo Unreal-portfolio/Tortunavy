@@ -169,6 +169,8 @@ void ATN_KartBuggy::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
+const FName ATN_KartBuggy::AppliedSteeringProperty = TEXT("SteeringInput");
+
 void ATN_KartBuggy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -491,8 +493,13 @@ void ATN_KartBuggy::Tick(float DeltaSeconds)
 		{
 			ApplyKartHandbrake();
 			ApplyDriftStability();
-			UpdateDrift(DeltaSeconds);
 		}
+	}
+	if (HasAuthority() && bKartTuned)
+	{
+		// El mini-turbo lo decide solo el servidor (#742): la conductora cliente no lo predice, porque una decisión suya que
+		// el servidor no tomara se quedaría como un turbo que solo ella tiene. El servidor lo replica (TimedBoostEndServerTime).
+		UpdateDrift(DeltaSeconds);
 	}
 	if (IsLocallyControlled() && IsPlayerControlled())
 	{
@@ -526,6 +533,16 @@ void ATN_KartBuggy::ApplyLeanSteering()
 	{
 		Move->SetWheelMaxSteerAngle(Wheel, Angle);
 	}
+}
+
+float ATN_KartBuggy::GetAppliedDriftSteering() const
+{
+	// SteeringInput de Chaos (protegida y reflejada): la dirección que mueve las ruedas en esta máquina. La que da
+	// GetSteeringInput es la entrada cruda, que solo existe donde se conduce: en el servidor, con una conductora cliente, es 0.
+	static const FFloatProperty* Property = CastField<FFloatProperty>(
+		UChaosVehicleMovementComponent::StaticClass()->FindPropertyByName(AppliedSteeringProperty));
+	const UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement();
+	return Move && Property ? FMath::Clamp(Property->GetPropertyValue_InContainer(Move), -1.f, 1.f) : 0.f;
 }
 
 void ATN_KartBuggy::ApplyKartHandbrake()
@@ -584,12 +601,14 @@ void ATN_KartBuggy::UpdateDrift(float DeltaSeconds)
 		return;
 	}
 	const float Slip = TNBuggy::SlipAngleDeg(GetActorForwardVector(), GetVelocity());
+	// Con el giro que aplica Chaos, no con la entrada cruda: en el servidor, con una conductora cliente, esa es 0 y el derrape
+	// y el mini-turbo saldrían distintos en cada máquina.
 	const TNKart::FDriftStep Step = TNKart::AdvanceDrift(DriftSeconds, IsHandbrakeHeld(), !IsAirborne(), Move->GetForwardSpeed(),
-		Move->GetSteeringInput(), Slip, DeltaSeconds);
+		GetAppliedDriftSteering(), Slip, DeltaSeconds);
 	DriftSeconds = Step.DriftSeconds;
 	if (Step.BoostSeconds > 0.f)
 	{
-		// El servidor y la conductora local lo piden a la vez; la hora de fin se replica al resto.
+		// Solo el servidor lo pide (Tick); la hora de fin se replica a todas las máquinas, la conductora incluida.
 		GrantTimedBoost(Step.BoostSeconds);
 		UE_LOG(LogTNRally, Verbose, TEXT("[Karts] %s: mini-turbo de %.1f s tras el derrape."), *GetName(), Step.BoostSeconds);
 	}

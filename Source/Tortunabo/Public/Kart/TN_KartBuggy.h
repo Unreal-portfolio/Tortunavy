@@ -135,6 +135,16 @@ public:
 	UTN_KartItemComponent* GetItems() const { return Items; }
 	UTN_KartTraversalComponent* GetTraversal() const { return Traversal; }
 
+	/**
+	 * Dirección (-1..1) que aplica Chaos en esta máquina: la de la conductora local o, en el servidor y en las demás máquinas,
+	 * la que ella manda (ServerUpdateState). GetSteeringInput de Chaos da la entrada cruda, que solo existe donde se conduce:
+	 * en el servidor, la de una conductora cliente es siempre 0. El derrape y el mini-turbo (#742) usan esta.
+	 */
+	float GetAppliedDriftSteering() const;
+
+	/** Nombre en UChaosVehicleMovementComponent de la dirección procesada (protegida); el test Tortunabo.Kart.Measure.DriftServerDriver lo comprueba. */
+	static const FName AppliedSteeringProperty;
+
 	/** Inclinación de la artillera en [-1, 1] (replicada). */
 	UFUNCTION(BlueprintPure, Category = "Karts")
 	float GetGunnerLean() const { return static_cast<float>(GunnerLeanQ) / 100.f; }
@@ -218,7 +228,7 @@ private:
 	void UpdateLook(float DeltaSeconds);
 	/** Servidor y conductora local: giro máximo de las ruedas delanteras según la inclinación de la artillera. */
 	void ApplyLeanSteering();
-	/** Servidor y conductora local: suma el derrape con el freno de mano y da el mini-turbo al soltarlo (#742). */
+	/** Servidor: suma el derrape con el freno de mano y da el mini-turbo al soltarlo (#742), con el giro que aplica Chaos. */
 	void UpdateDrift(float DeltaSeconds);
 	/** Servidor y conductora local: con el freno de mano, devuelve el morro hacia la velocidad pasada la deriva del derrape (#742). */
 	void ApplyDriftStability();

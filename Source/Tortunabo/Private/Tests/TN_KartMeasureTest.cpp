@@ -3,6 +3,7 @@
 //  - SpeedAndAcceleration: 0-60 km/h, 0-100 km/h y punta a fondo en línea recta.
 //  - DriftBoost: derrape con el freno de mano a 80 km/h; sin trompo ni vuelco y mini-turbo al soltarlo (solo en Karts).
 //  - HighSpeedTurn: volante a tope a 100 y a 130 km/h; la dirección se cierra con la velocidad y el kart no vuelca.
+//  - DriftServerDriver: derrape como lo ve el servidor con una conductora cliente (entrada cruda a 0, solo el estado replicado).
 // Headless:
 //   UnrealEditor-Win64-DebugGame-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Kart.Measure; Quit" -nullrhi -unattended -NoSteam -nosound
 
@@ -10,6 +11,7 @@
 #include "TN_RallyPhysicsTestKit.h"
 #include "Kart/TN_KartBuggy.h"
 #include "Rally/TN_RallyKartBuggy.h"
+#include "ChaosWheeledVehicleMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Vehicles/TN_BuggyMath.h"
 
@@ -254,6 +256,41 @@ namespace TNKartMeasureTest
 		return Out;
 	}
 
+	/** Parámetros de UChaosVehicleMovementComponent::ServerUpdateState (protegida), en el orden de su declaración. */
+	struct FServerUpdateStateParams
+	{
+		float Steering = 0.f;
+		float Throttle = 0.f;
+		float Brake = 0.f;
+		float Handbrake = 0.f;
+		int32 Gear = 0;
+		float Roll = 0.f;
+		float Pitch = 0.f;
+		float Yaw = 0.f;
+	};
+
+	/**
+	 * Un fotograma de lo que le llega al servidor de una conductora cliente: el estado de sus entradas (ServerUpdateState) y su
+	 * freno de mano (ServerSetHandbrake). El mundo no tiene red, así que el RPC se ejecuta en local, y sin controlador local
+	 * Chaos solo procesa el estado replicado: el servidor no tiene la entrada cruda de la conductora.
+	 */
+	void SendRemoteDriverInput(ATN_KartBuggy& Kart, float Steer, bool bHandbrake)
+	{
+		UChaosWheeledVehicleMovementComponent* Move = Kart.GetWheeledMovement();
+		Move->SetRequiresControllerForInputs(true);
+		Move->SetSteeringInput(0.f);
+		Move->SetThrottleInput(0.f);
+		Move->SetBrakeInput(0.f);
+		FServerUpdateStateParams Params;
+		Params.Steering = Steer;
+		Params.Throttle = 1.f;
+		Params.Handbrake = bHandbrake ? 1.f : 0.f;
+		Params.Gear = 1;
+		Move->ProcessEvent(Move->FindFunctionChecked(TEXT("ServerUpdateState")), &Params);
+		bool bHeld = bHandbrake;
+		Kart.ProcessEvent(Kart.FindFunctionChecked(TEXT("ServerSetHandbrake")), &bHeld);
+	}
+
 	FString Describe(const TCHAR* Label, const FTurn& Run)
 	{
 		return FString::Printf(TEXT("%s: radio %.1f m a %.1f km/h, inclinación máxima %.0f°, %s%s"), Label, Run.RadiusM, Run.MeanKmh,
@@ -317,6 +354,46 @@ bool FTNKartMeasureDriftTest::RunTest(const FString& Parameters)
 	TestTrue(*FString::Printf(TEXT("Karts: al soltar el freno de mano da mini-turbo (%.2f s)"), Karts.BoostSeconds), Karts.BoostSeconds >= TNKart::DriftBoost1Seconds - 0.1f);
 	TestTrue(*FString::Printf(TEXT("Karts: el turbo llega a empujar (fuerza %.2f)"), Karts.PeakBoostStrength), Karts.PeakBoostStrength >= 0.5f);
 	TestEqual(TEXT("Rally: sin mini-turbo"), Rally.BoostSeconds, 0.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNKartMeasureDriftServerTest, "Tortunabo.Kart.Measure.DriftServerDriver",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FTNKartMeasureDriftServerTest::RunTest(const FString& Parameters)
+{
+	using namespace TNKartMeasureTest;
+	// La dirección procesada por Chaos tiene que seguir llamándose así (la lee GetAppliedDriftSteering por reflexión).
+	TestNotNull(TEXT("Chaos tiene la propiedad de la dirección procesada"),
+		CastField<FFloatProperty>(UChaosVehicleMovementComponent::StaticClass()->FindPropertyByName(ATN_KartBuggy::AppliedSteeringProperty)));
+	FPhysicsWorld Test(TEXT("TNKartDriftServerWorld"));
+	ATN_KartBuggy* Kart = nullptr;
+	if (!TestTrue(TEXT("mundo y kart"), Prepare(Test, ATN_KartBuggy::StaticClass(), Kart)) || !TestTrue(TEXT("llega a 80 km/h"), ReachSpeed(Test, *Kart, 80.f)))
+	{
+		return false;
+	}
+	constexpr float Steer = 0.8f;
+	float MaxApplied = 0.f;
+	// 2 s de derrape a la derecha como los manda una conductora cliente.
+	for (int32 Step = 0; Step < 2 * StepsPerSecond; ++Step)
+	{
+		SendRemoteDriverInput(*Kart, Steer, true);
+		Test.Step();
+		MaxApplied = FMath::Max(MaxApplied, Kart->GetAppliedDriftSteering());
+	}
+	TestTrue(*FString::Printf(TEXT("el servidor tiene el giro que manda la conductora (%.2f de %.2f)"), MaxApplied, Steer),
+		FMath::IsNearlyEqual(MaxApplied, Steer, 0.01f));
+	TestTrue(TEXT("el servidor ve el freno de mano de la conductora"), Kart->IsHandbrakeHeld());
+	float BoostSeconds = 0.f;
+	for (int32 Step = 0; Step < StepsPerSecond / 5; ++Step)
+	{
+		SendRemoteDriverInput(*Kart, 0.f, false);
+		Test.Step();
+		BoostSeconds = FMath::Max(BoostSeconds, Kart->GetTimedBoostSecondsLeft());
+	}
+	AddInfo(FString::Printf(TEXT("derrape de 2 s con la entrada replicada: mini-turbo de %.2f s"), BoostSeconds));
+	TestTrue(*FString::Printf(TEXT("el servidor da el mini-turbo al soltar el freno de mano (%.2f s)"), BoostSeconds),
+		BoostSeconds >= TNKart::DriftBoost1Seconds - 0.1f);
 	return true;
 }
 

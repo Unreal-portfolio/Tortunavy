@@ -73,7 +73,9 @@ Medido con `Tortunabo.Kart.Measure.*` (llano, sin turbo; Rally → Karts):
   velocidad pasados 22° de deriva: el derrape se sostiene a unos 20-35° con el volante a tope. Un derrape de más de 0,7 s (con el
   freno puesto, en el suelo, a más de 22 km/h y girando o deslizando) da **mini-turbo al soltar el freno de mano**: 0,6 s a los
   0,7 s de derrape, 1 s a los 1,4 s y 1,5 s a los 2,2 s (`TNKart::AdvanceDrift`, `ATN_Buggy::GrantTimedBoost`). Llama, sonido y
-  cámara son los del turbo, y la barra del turbo no se gasta.
+  cámara son los del turbo, y la barra del turbo no se gasta. Lo decide solo el servidor, con el giro que aplica Chaos
+  (`ATN_KartBuggy::GetAppliedDriftSteering`; la entrada cruda vale 0 en el servidor si conduce una cliente) y lo replica
+  (`TimedBoostEndServerTime`): la conductora cliente recibe el turbo con la latencia, sin predecirlo.
 - **Para comparar**: `TN.Kart.Tuning 0` (antes de la partida) deja el kart como el buggy del Rally. `TN.Kart.SpeedScale` (1,3) y
   `TN.Kart.TopEndTorque` (1,7) mueven la punta sin recompilar. Los bots no cambian de velocidad (74/84/94 km/h por dificultad).
 

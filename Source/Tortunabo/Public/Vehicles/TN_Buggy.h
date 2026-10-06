@@ -177,8 +177,8 @@ public:
 
 	/**
 	 * Turbo regalado durante Seconds (#742, el mini-turbo del derrape de los karts): cuenta como IsBoosting sin pisar el botón
-	 * ni gastar la barra, con la misma rampa, el mismo empuje, la llama y el sonido. Lo piden el servidor y la conductora
-	 * local (que lo predice); la hora de fin se replica al resto. Un turbo ya regalado no se acorta.
+	 * ni gastar la barra, con la misma rampa, el mismo empuje, la llama y el sonido. Lo pide el servidor (los karts no lo
+	 * predicen en el cliente); la hora de fin se replica a todas las máquinas. Un turbo ya regalado no se acorta.
 	 */
 	void GrantTimedBoost(float Seconds);
 
