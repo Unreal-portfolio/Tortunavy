@@ -135,8 +135,7 @@ void UMP_GameInstance::Init()
 		GEngine->OnNetworkFailure().AddUObject(this, &UMP_GameInstance::OnNetworkFailure);
 	}
 
-	FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &UMP_GameInstance::HandlePreLoadMap);
-	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UMP_GameInstance::HandlePostLoadMap);
+	BindTravelDelegates();
 
 	// Salas: el cierre, las plazas y los expulsados se aplican al entrar, en cualquier GameMode (sin tocar ninguno).
 	PreLoginHandle = FGameModeEvents::GameModePreLoginEvent.AddUObject(this, &UMP_GameInstance::HandleGameModePreLogin);
@@ -191,8 +190,7 @@ void UMP_GameInstance::EnsureSteamAppIdFile()
 
 void UMP_GameInstance::Shutdown()
 {
-	FCoreUObjectDelegates::PreLoadMap.RemoveAll(this);
-	FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
+	UnbindTravelDelegates();
 	if (GEngine)
 	{
 		GEngine->OnNetworkFailure().RemoveAll(this);
@@ -1208,6 +1206,39 @@ void UMP_GameInstance::HandlePreLoadMap(const FString& MapName)
 	ShowLoadingScreen(UTN_LoadingScreenSubsystem::FriendlyStatusForMap(MapName));
 }
 
+void UMP_GameInstance::BindTravelDelegates()
+{
+	// LoadMap emite PreLoadMap; el viaje sin cortes (HQ y Run) solo emite OnSeamlessTravelStart (#560).
+	FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &UMP_GameInstance::HandlePreLoadMap);
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UMP_GameInstance::HandlePostLoadMap);
+	FWorldDelegates::OnSeamlessTravelStart.AddUObject(this, &UMP_GameInstance::HandleSeamlessTravelStart);
+}
+
+void UMP_GameInstance::UnbindTravelDelegates()
+{
+	FCoreUObjectDelegates::PreLoadMap.RemoveAll(this);
+	FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
+	FWorldDelegates::OnSeamlessTravelStart.RemoveAll(this);
+}
+
+void UMP_GameInstance::HandleSeamlessTravelStart(UWorld* CurrentWorld, const FString& MapName)
+{
+	// OnSeamlessTravelStart salta para todas las GameInstance del proceso (PIE con varias ventanas): solo cuenta el mundo propio.
+	if (!CurrentWorld || CurrentWorld->GetGameInstance() != this)
+	{
+		return;
+	}
+
+	// Como HandlePreLoadMap: un corte durante el viaje es un viaje que reconectar, no un anfitrión que se ha ido.
+	// HandlePostLoadMap lo pone a false al llegar al mapa de destino (no al de transición).
+	bIsPendingTravel = true;
+
+	// Red de seguridad de la captura de voz antes del cambio de mapa, como en LoadMap.
+	UProximityVoiceComponent::ShutdownAllCapture(CurrentWorld);
+
+	UE_LOG(LogTortunabo, Log, TEXT("[MP] SeamlessTravelStart a '%s': bIsPendingTravel=true."), *MapName);
+}
+
 void UMP_GameInstance::HandlePostLoadMap(UWorld* LoadedWorld)
 {
 	bIsPendingTravel = false;
@@ -1871,7 +1902,7 @@ void UMP_GameInstance::HandleConnectionLost(const FString& FailureTypeStr)
 
 	// Solo intentar auto-rejoin si el cliente sabía que el servidor iba a viajar.
 	// bIsPendingTravel=true significa que ClientNotifyServerTravel llegó antes
-	// de la desconexión (o que PreLoadMap empezó el travel).
+	// de la desconexión (o que PreLoadMap u OnSeamlessTravelStart empezaron el viaje).
 	// Si bIsPendingTravel=false, el host se fue de verdad (crasheó, salió del juego)
 	// y NO debemos quedarnos en "Reconectando" indefinidamente.
 	if (bIsPendingTravel)
