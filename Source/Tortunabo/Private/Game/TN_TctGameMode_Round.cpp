@@ -208,7 +208,7 @@ void ATN_TctGameMode::WatchFighters()
 		{
 			// El motor la ha destruido (por debajo del KillZ del nivel): ha caído.
 			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' sin tortuga en plena ronda: eliminada."), *PS->GetPlayerName());
-			MarkPlayerDead(PC);
+			MarkPlayerDeadBy(PC, ETNDeathCause::Void);
 			continue;
 		}
 		FTNTctBody Body;
@@ -232,7 +232,7 @@ void ATN_TctGameMode::WatchFighters()
 			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' %s (pies a %.0f, agua a %.0f): eliminada."),
 				*PS->GetPlayerName(), Cause == ETNTctFall::OutOfArena ? TEXT("cae fuera de la arena") : TEXT("muere envenenada"),
 				Body.Location.Z - Body.HalfHeight, WaterZ);
-			MarkPlayerDead(PC);
+			MarkPlayerDeadBy(PC, Cause == ETNTctFall::OutOfArena ? ETNDeathCause::Void : ETNDeathCause::Water);
 			continue;
 		}
 		if (Effects && Effects->ServerTakeRescue())

@@ -15,18 +15,22 @@
  *     libre más cercano, antes hacia delante).
  *   - Ninguna zona lenta en los 30 m anteriores a un hueco: con menos velocidad un salto puede quedar imposible
  *     (se pasa a después del hueco).
- *   - Los obstáculos (cáscaras, medusas y sombrillas) dejan siempre al menos 3 m de paso libre: van tan al centro
- *     como lo permite el ancho del camino, alternando de lado.
+ *   - Los obstáculos (cáscaras, medusas, sombrillas, minas, conchas y alambres) dejan siempre al menos 3 m de paso
+ *     libre: van tan al centro como lo permite el ancho del camino, alternando de lado.
+ *   - Las algas y las conchas que atrapan, como las zonas lentas: nunca en los 30 m anteriores a un hueco.
+ *   - El cangrejo ermitaño va en un tramo recto del camino; el cangrejo gigante, donde el camino es más ancho y nunca a
+ *     menos de 60 m de otro.
  */
 
 namespace TNSurvivalCatalog
 {
-	/** Trampas que coloca #516 (PlaceLooseTraps). Los quads, el puente que se rompe y las placas son de #517 (PlaceTerrainTraps). */
+	/**
+	 * Trampas que coloca #516 (PlaceLooseTraps). Los quads, el puente que se rompe y los atajos de las ramas (placas o puerta
+	 * de conchas) son de #517 (PlaceTerrainTraps).
+	 */
 	inline bool IsLooseTrap(ETrap T)
 	{
-		return T == ETrap::BananaPeel || T == ETrap::SlowZone || T == ETrap::Jellyfish || T == ETrap::Crab || T == ETrap::Seagull
-			|| T == ETrap::Quicksand || T == ETrap::DragCrab || T == ETrap::BurrowCrab || T == ETrap::UrchinSpikes || T == ETrap::TankTrap
-			|| T == ETrap::TrashPile || T == ETrap::Trench;
+		return T != ETrap::Quad && T != ETrap::BreakableBridge && T != ETrap::PressurePlate && T != ETrap::ShellGate;
 	}
 
 	/** Paso libre mínimo (cm) que dejan los obstáculos en cualquier sección del camino. */
@@ -46,23 +50,52 @@ namespace TNSurvivalCatalog
 	constexpr double UrchinSpikesRadius = 110.0;
 	constexpr double TankTrapRadius = 130.0;
 	constexpr double TrashPileRadius = 120.0;
+	/**
+	 * Piezas de la carrera de la playa (#731, #732): la tapa y el montón de la mina, y la valva con su montículo de la concha
+	 * que atrapa (SurvivalSizeScale en el generador). El alambre ocupa su medio largo (FTrapPlacement::Extent.X).
+	 */
+	constexpr double MineRadius = 120.0;
+	constexpr double ClamTrapRadius = 170.0;
+	/** El alambre deja al menos este largo (cm) sin poner si no cabe: un alambre más corto no merece la pena. */
+	constexpr double MinWireLength = 150.0;
+	/** Cangrejo ermitaño: tramo recto (cm) de su calle, como mucho y como poco. */
+	constexpr double HermitMaxLane = 3000.0;
+	constexpr double HermitMinLane = 1500.0;
+	/** Lo que se aparta (cm) como mucho un ermitaño o un cangrejo gigante de su punto del catálogo buscando sitio. */
+	constexpr double StraightSearchReach = 8000.0;
+	constexpr double GiantCrabSearchReach = 2000.0;
+	/** Un cangrejo gigante cada tanto de un tramo (cm), sin pasar de los que diga el catálogo. */
+	constexpr double GiantCrabSpacing = 2000.0;
+	/**
+	 * Dos cangrejos gigantes nunca a menos de esto (cm, a lo largo del camino): eliminan y no van en grupo (#734). Su correa
+	 * es de ~30 m, así que nunca persiguen dos a la vez. El que quedaría más cerca se cambia por un cangrejo subterráneo:
+	 * no se mueve, avisa (su montículo tiembla) y se rodea.
+	 */
+	constexpr double GiantCrabMinGap = 6000.0;
+	/** Zonas de gaviotas de un tramo: una cada tanto (cm) del camino. */
+	constexpr double GullZoneSpacing = 3000.0;
 	/** Radio (cm) del charco de arenas movedizas como mucho (y no más que el camino). */
 	constexpr double QuicksandMaxRadius = 380.0;
 	/** Separación (cm) a lo largo del camino entre las cáscaras de un grupo. */
 	constexpr double BananaSpacing = 250.0;
-	/** Medio largo (cm) de una zona lenta a lo largo del camino. */
-	constexpr double SlowZoneHalfLength = 500.0;
-	/** Medio largo (cm) de cada zona de cangrejos: un tramo largo se parte en varias, que en una curva no se salen del camino. */
-	constexpr double CrabZoneHalfLength = 800.0;
-	/** Lo que se acorta como mucho (cm) una zona de cangrejos en una curva y el semiancho que se le busca. */
-	constexpr double CrabZoneMinHalfLength = 200.0;
-	constexpr double CrabZoneMinHalfWidth = 150.0;
-
-	/** Zonas en que se parte un grupo de Count cangrejos del tramo [From, To] (cm): una por cada 16 m, sin pasar de Count. */
-	inline int32 CrabZoneCount(double From, double To, int32 Count)
+	/** Medio largo (cm) de una zona lenta a lo largo del camino: 8 m de zona, un 20 % menos que los 10 m de antes (#724). */
+	constexpr double SlowZoneHalfLength = 400.0;
+	/**
+	 * Ancho de una zona lenta respecto al de antes (el camino entero más 1 m por lado): un 20 % menos (#724). En los tramos
+	 * anchos deja un poco de paso por los bordes.
+	 */
+	constexpr double SlowZoneWidthScale = 0.8;
+	/** Cangrejos gigantes de un grupo de Count del tramo [From, To] (cm): uno cada GiantCrabSpacing, sin pasar de Count. */
+	inline int32 GiantCrabCount(double From, double To, int32 Count)
 	{
-		const int32 BySpan = FMath::CeilToInt32(FMath::Max(0.0, To - From) / (2.0 * CrabZoneHalfLength));
+		const int32 BySpan = FMath::CeilToInt32(FMath::Max(0.0, To - From) / GiantCrabSpacing);
 		return FMath::Clamp(BySpan, 1, FMath::Max(1, Count));
+	}
+
+	/** Zonas de gaviotas del tramo [From, To] (cm): una cada GullZoneSpacing, al menos una. */
+	inline int32 GullZoneCount(double From, double To)
+	{
+		return FMath::Max(1, FMath::CeilToInt32(FMath::Max(0.0, To - From) / GullZoneSpacing));
 	}
 	/** Sombrillas por tramo de gaviotas si el catálogo no lo dice. */
 	constexpr int32 DefaultUmbrellas = 2;
@@ -76,6 +109,8 @@ namespace TNSurvivalCatalog
 		ETrap Trap = ETrap::BananaPeel;
 		/** Sombrilla de un tramo de gaviotas (Trap = Seagull): un obstáculo en el borde, no la zona. */
 		bool bUmbrella = false;
+		/** Otra zona de gaviotas del mismo tramo: no cuenta como trampa aparte (CountTraps). */
+		bool bPart = false;
 		/** Muestra del camino principal donde va y su distancia (cm) a lo largo del camino. */
 		int32 Sample = INDEX_NONE;
 		double Along = 0.0;
@@ -83,11 +118,13 @@ namespace TNSurvivalCatalog
 		double Lateral = 0.0;
 		/** Punto en espacio del mapa; Z = cota del suelo caminable de la muestra. */
 		FVector Location = FVector::ZeroVector;
-		/** Dirección del camino (grados, en el plano del mapa). Las zonas de gaviotas van en los ejes del mapa (0). */
+		/** Dirección del camino (grados, en el plano del mapa); el alambre, de lado y el ermitaño, hacia la salida. */
 		double YawDeg = 0.0;
-		/** Semiejes (cm) de la caja de las zonas: X a lo largo del camino (o del mapa), Y a lo ancho. */
+		/**
+		 * Semiejes (cm) de la caja de las zonas: X a lo largo del camino (o de YawDeg), Y a lo ancho. Algas: Y, el medio ancho
+		 * del camino. Alambre: X, su medio largo (YawDeg va de lado). Ermitaño: X, el medio tramo recto.
+		 */
 		FVector Extent = FVector::ZeroVector;
-		/** Cangrejos de la zona. */
 		int32 Count = 1;
 	};
 
@@ -103,9 +140,31 @@ namespace TNSurvivalCatalog
 			case ETrap::UrchinSpikes: return UrchinSpikesRadius;
 			case ETrap::TankTrap: return TankTrapRadius;
 			case ETrap::TrashPile: return TrashPileRadius;
+			case ETrap::Mine: return MineRadius;
+			case ETrap::ClamTrap: return ClamTrapRadius;
+			case ETrap::BarbedWire: return P.Extent.X;
 			default: return 0.0;
 		}
 	}
+	/**
+	 * Si la trampa ocupa su sitio del camino. No lo ocupan las zonas de gaviotas (están en el aire; sus sombrillas sí) ni los
+	 * enemigos que se mueven: nacen ahí, pero van y vienen. Los rebuscables se apartan solo de las que lo ocupan.
+	 */
+	inline bool HoldsPlace(const FTrapPlacement& P)
+	{
+		switch (P.Trap)
+		{
+			case ETrap::Seagull: return P.bUmbrella;
+			case ETrap::Crab:
+			case ETrap::DragCrab:
+			case ETrap::SeaUrchin:
+			case ETrap::HermitCrab:
+				return false;
+			default:
+				return true;
+		}
+	}
+
 	/** Distancia (cm) a lo largo del camino dentro de la que dos obstáculos comparten sección. */
 	constexpr double SharedSection = 150.0;
 
@@ -244,6 +303,75 @@ namespace TNSurvivalCatalog
 			return false;
 		}
 
+		/**
+		 * Medio largo (cm) del tramo recto centrado en la muestra i, hasta MaxHalf: lo que se puede alargar una caja recta a lo
+		 * largo del camino con al menos MinHalfWidth de semiancho dentro de él (como BoxHalfWidthInPath, mirando solo las
+		 * muestras cercanas). 0 si ni lo más corto cabe.
+		 */
+		inline double StraightHalfLength(const TArray<TNProcMap::FPathSample>& M, int32 i, double MaxHalf, double MinHalfWidth)
+		{
+			for (double Half = MaxHalf; Half >= 100.0; Half *= 0.8)
+			{
+				double HalfWidth = M[i].Width * 0.5;
+				bool bBlocked = false;
+				for (const int32 Step : { 1, -1 })
+				{
+					for (int32 j = i; M.IsValidIndex(j) && FMath::Abs(M[j].S - M[i].S) <= Half; j += Step)
+					{
+						bBlocked |= !IsFree(M, j);
+						const FVector2D D = M[j].P - M[i].P;
+						HalfWidth = FMath::Min(HalfWidth, M[j].Width * 0.5 - FMath::Abs(FVector2D::CrossProduct(M[i].Dir, D)));
+					}
+				}
+				if (!bBlocked && HalfWidth >= MinHalfWidth)
+				{
+					return Half;
+				}
+			}
+			return 0.0;
+		}
+
+		/**
+		 * La muestra libre más cercana a Start (hasta Reach cm en cada sentido, antes hacia delante) con un tramo recto de al
+		 * menos MinHalf de medio largo (OutHalf, hasta MaxHalf). INDEX_NONE si no hay.
+		 */
+		inline int32 FindStraight(const TArray<TNProcMap::FPathSample>& M, int32 Start, double MinHalf, double MaxHalf,
+			double MinHalfWidth, double Reach, double& OutHalf)
+		{
+			if (!M.IsValidIndex(Start)) { return INDEX_NONE; }
+			for (int32 d = 0; d < M.Num(); ++d)
+			{
+				bool bAny = false;
+				for (const int32 i : { Start + d, Start - d })
+				{
+					if (!M.IsValidIndex(i) || FMath::Abs(M[i].S - M[Start].S) > Reach) { continue; }
+					bAny = true;
+					if (!IsFree(M, i)) { continue; }
+					const double Half = StraightHalfLength(M, i, MaxHalf, MinHalfWidth);
+					if (Half >= MinHalf)
+					{
+						OutHalf = Half;
+						return i;
+					}
+				}
+				if (!bAny) { break; }
+			}
+			return INDEX_NONE;
+		}
+
+		/** La muestra libre más ancha a menos de Reach cm de Start (la primera si empatan). INDEX_NONE si no hay. */
+		inline int32 WidestNear(const TArray<TNProcMap::FPathSample>& M, int32 Start, double Reach)
+		{
+			int32 Best = INDEX_NONE;
+			if (!M.IsValidIndex(Start)) { return Best; }
+			for (int32 i = 0; i < M.Num(); ++i)
+			{
+				if (FMath::Abs(M[i].S - M[Start].S) > Reach || !IsFree(M, i)) { continue; }
+				if (Best == INDEX_NONE || M[i].Width > M[Best].Width) { Best = i; }
+			}
+			return Best;
+		}
+
 		/** ¿Hay un hueco de salto entre FromS y ToS (cm)? Devuelve el final del primero o -1. */
 		inline double GapEndBetween(const TArray<TNProcMap::FPathSample>& M, double FromS, double ToS)
 		{
@@ -257,10 +385,25 @@ namespace TNSurvivalCatalog
 			}
 			return -1.0;
 		}
+
+		/** S movida a después de los huecos que tenga en los Clearance cm siguientes (más su radio R), como las zonas lentas. */
+		inline double AfterGaps(const TArray<TNProcMap::FPathSample>& M, double S, double R, double Clearance)
+		{
+			for (int32 Guard = 0; Guard < 8; ++Guard)
+			{
+				const double GapEnd = GapEndBetween(M, S - R, S + R + Clearance);
+				if (GapEnd < 0.0) { break; }
+				S = GapEnd + R + 200.0;
+			}
+			return S;
+		}
 	}
 
-	/** Las trampas de #516 de un mapa del catálogo sobre su layout. Vacío si la semilla no está en el catálogo. */
-	inline TArray<FTrapPlacement> PlaceLooseTraps(const TNProcMap::FLayout& L, uint32 Seed)
+	/**
+	 * Las trampas de #516 de un mapa del catálogo sobre su layout, con DensityPct % de densidad (TrapsOf, #730). Vacío si la
+	 * semilla no está en el catálogo.
+	 */
+	inline TArray<FTrapPlacement> PlaceLooseTraps(const TNProcMap::FLayout& L, uint32 Seed, int32 DensityPct = 100)
 	{
 		using namespace Placement;
 		TArray<FTrapPlacement> Out;
@@ -268,8 +411,10 @@ namespace TNSurvivalCatalog
 		if (M.Num() < 2 || !FindMap(Seed)) { return Out; }
 		const double Total = M.Last().S;
 		int32 Side = 1;
+		// Dónde van ya los cangrejos gigantes (GiantCrabMinGap).
+		TArray<double> GiantCrabAlong;
 
-		for (const FTrapSpot& Spot : TrapsOf(Seed))
+		for (const FTrapSpot& Spot : TrapsOf(Seed, DensityPct))
 		{
 			if (!IsLooseTrap(Spot.Trap)) { continue; }
 			const double From = Total * Spot.FromPct / 100.0;
@@ -304,65 +449,150 @@ namespace TNSurvivalCatalog
 						const int32 i = NearestFree(M, SampleAtDistance(M, S));
 						if (i == INDEX_NONE) { continue; }
 						FTrapPlacement P = At(M, ETrap::SlowZone, i, 0.0);
-						P.Extent = FVector(SlowZoneHalfLength, M[i].Width * 0.5 + 100.0, 300.0);
+						P.Extent = FVector(SlowZoneHalfLength, (M[i].Width * 0.5 + 100.0) * SlowZoneWidthScale, 300.0);
 						Out.Add(P);
 					}
 					break;
 				}
 				case ETrap::Crab:
 				{
-					// Zonas cortas repartidas por el tramo, con los cangrejos repartidos entre ellas: la zona los hace nacer en
-					// cualquier punto de su caja recta, y una caja larga se sale del camino en las curvas (paredes, terreno).
-					const int32 Zones = CrabZoneCount(From, To, Spot.Count);
-					int32 k = 0;
-					for (const double S : Spread(From, To, Zones, 0.0))
+					// Cangrejos gigantes (#734): uno cada 20 m del tramo, cada uno donde el camino es más ancho cerca de su punto
+					// (patrulla dentro del camino: ATN_BeachEnemy::SetRoamCorridor).
+					for (const double S : Spread(From, To, GiantCrabCount(From, To, Spot.Count), 0.0))
 					{
-						const int32 Crabs = Spot.Count / Zones + (k++ < Spot.Count % Zones ? 1 : 0);
-						const int32 i = NearestFree(M, SampleAtDistance(M, S));
+						const int32 i = WidestNear(M, NearestFree(M, SampleAtDistance(M, S)), GiantCrabSearchReach);
 						if (i == INDEX_NONE) { continue; }
-						FTrapPlacement P = At(M, ETrap::Crab, i, 0.0);
-						// Solo dentro del camino (fuera caerían en las paredes): la caja se acorta en una curva cerrada o un
-						// estrechamiento hasta que le queda un ancho razonable.
-						double HalfLength = CrabZoneHalfLength;
-						double HalfWidth = BoxHalfWidthInPath(M, i, HalfLength);
-						while (HalfWidth < CrabZoneMinHalfWidth && HalfLength > CrabZoneMinHalfLength)
+						// Nunca dos juntos: si ya hay uno cerca, un cangrejo subterráneo en su lugar (con su paso libre).
+						const bool bCrowded = GiantCrabAlong.ContainsByPredicate([&M, i](double A) { return FMath::Abs(A - M[i].S) < GiantCrabMinGap; });
+						if (bCrowded)
 						{
-							HalfLength = FMath::Max(CrabZoneMinHalfLength, HalfLength * 0.5);
-							HalfWidth = BoxHalfWidthInPath(M, i, HalfLength);
+							PlaceObstacle(M, Out, ETrap::BurrowCrab, false, i, BurrowCrabRadius, Side,
+								[](double Width) { return CentralOffset(Width, BurrowCrabRadius); });
+							continue;
 						}
-						P.Extent = FVector(HalfLength, FMath::Max(CrabZoneMinHalfWidth * 0.5, HalfWidth), 300.0);
-						P.Count = FMath::Max(1, Crabs);
-						Out.Add(P);
+						GiantCrabAlong.Add(M[i].S);
+						Out.Add(At(M, ETrap::Crab, i, 0.0));
 					}
 					break;
 				}
 				case ETrap::Seagull:
 				{
-					// La zona cubre el tramo entero: la caja de sus muestras en los ejes del mapa, con margen.
-					FBox2D Box(ForceInit);
-					double Z = 0.0;
-					int32 N = 0;
-					for (const TNProcMap::FPathSample& S : M)
+					// Zonas de gaviotas de la playa (#733) repartidas por el tramo: la primera cuenta como la trampa y las demás son
+					// parte de ella (bPart). Las gaviotas atacan en un círculo alrededor de cada una.
+					const int32 Zones = GullZoneCount(From, To);
+					int32 k = 0;
+					for (const double S : Spread(From, To, Zones, 0.0))
 					{
-						if (S.S < From || S.S > To) { continue; }
-						const FVector2D Margin(S.Width * 0.5 + 500.0);
-						Box += FBox2D(S.P - Margin, S.P + Margin);
-						Z += S.Z;
-						++N;
+						const int32 i = SampleAtDistance(M, S);
+						FTrapPlacement Zone = At(M, ETrap::Seagull, i, 0.0);
+						Zone.bPart = k++ > 0;
+						Out.Add(Zone);
 					}
-					if (N == 0) { break; }
-					const int32 Mid = SampleAtDistance(M, (From + To) * 0.5);
-					FTrapPlacement Zone = At(M, ETrap::Seagull, Mid, 0.0);
-					Zone.Location = FVector(Box.GetCenter().X, Box.GetCenter().Y, Z / N);
-					Zone.YawDeg = 0.0;
-					Zone.Extent = FVector(Box.GetExtent().X, Box.GetExtent().Y, 1500.0);
-					Out.Add(Zone);
 					// Sombrillas repartidas por el tramo, en el borde.
 					const int32 Umbrellas = Spot.Umbrellas > 0 ? Spot.Umbrellas : DefaultUmbrellas;
 					for (const double S : Spread(From, To, Umbrellas, 0.0))
 					{
 						PlaceObstacle(M, Out, ETrap::Seagull, true, NearestFree(M, SampleAtDistance(M, S)), UmbrellaRadius, Side,
 							[](double Width) { return Width * 0.5 - UmbrellaRadius - 20.0; });
+					}
+					break;
+				}
+				case ETrap::Mine:
+				case ETrap::ClamTrap:
+				{
+					// Tan al centro como deja el paso libre: se ven y se rodean. La concha atrapa: nunca justo antes de un hueco.
+					FTrapPlacement Probe;
+					Probe.Trap = Spot.Trap;
+					const double R = ObstacleRadius(Probe);
+					const bool bClam = Spot.Trap == ETrap::ClamTrap;
+					for (double S : Spread(From, To, Spot.Count, 2.0 * R + 300.0))
+					{
+						// La concha: si al buscar el paso libre acaba delante de un hueco, se prueba después de él.
+						for (int32 Guard = 0; Guard < 4; ++Guard)
+						{
+							if (bClam) { S = AfterGaps(M, S, R, SlowZoneGapClearance); }
+							if (!PlaceObstacle(M, Out, Spot.Trap, false, NearestFree(M, SampleAtDistance(M, S)), R, Side,
+								[R](double Width) { return CentralOffset(Width, R); }))
+							{
+								break;
+							}
+							const double GapEnd = bClam ? GapEndBetween(M, Out.Last().Along - R, Out.Last().Along + R + SlowZoneGapClearance) : -1.0;
+							if (GapEnd < 0.0)
+							{
+								break;
+							}
+							Out.Pop();
+							S = GapEnd + R + 200.0;
+						}
+					}
+					break;
+				}
+				case ETrap::Seaweed:
+				{
+					// De lado a lado (se vadea; no hay colisión) y nunca justo antes de un hueco: enganchada, el salto no llega.
+					for (double S : Spread(From, To, Spot.Count, 1500.0))
+					{
+						S = AfterGaps(M, S, 500.0, SlowZoneGapClearance);
+						const int32 i = NearestFree(M, SampleAtDistance(M, S));
+						if (i == INDEX_NONE) { continue; }
+						FTrapPlacement P = At(M, ETrap::Seaweed, i, 0.0);
+						P.Extent = FVector(0.0, M[i].Width * 0.5, 0.0);
+						Out.Add(P);
+					}
+					break;
+				}
+				case ETrap::BarbedWire:
+				{
+					// Atravesado (YawDeg de lado) donde el camino es más ancho cerca; deja MinFreePassage por un lado, alternando:
+					// se salta o se rodea. Si ni así cabe un alambre que merezca la pena, no se pone.
+					for (const double S : Spread(From, To, Spot.Count, 1500.0))
+					{
+						const int32 i = WidestNear(M, NearestFree(M, SampleAtDistance(M, S)), 1000.0);
+						if (i == INDEX_NONE) { continue; }
+						const double Length = M[i].Width - MinFreePassage;
+						if (Length < MinWireLength) { continue; }
+						for (const int32 Try : { Side, -Side })
+						{
+							const double Lateral = Try * (M[i].Width - Length) * 0.5;
+							if (FreePassageWith(M, Out, i, M[i].S, Lateral, Length * 0.5) >= MinFreePassage)
+							{
+								FTrapPlacement P = At(M, ETrap::BarbedWire, i, Lateral);
+								P.YawDeg += 90.0;
+								P.Extent = FVector(Length * 0.5, 0.0, 0.0);
+								Out.Add(P);
+								Side = -Try;
+								break;
+							}
+						}
+					}
+					break;
+				}
+				case ETrap::HermitCrab:
+				{
+					// Rueda en línea recta: en un tramo recto del camino cerca del punto. Espera en el lado de la meta y rueda hacia
+					// quien llega (YawDeg hacia la salida).
+					const double MinHalf = 0.5 * HermitMinLane;
+					const double MaxHalf = 0.5 * HermitMaxLane;
+					for (const double S : Spread(From, To, Spot.Count, 2.0 * MaxHalf + 500.0))
+					{
+						double Half = 0.0;
+						const int32 i = FindStraight(M, NearestFree(M, SampleAtDistance(M, S)), MinHalf, MaxHalf, 150.0,
+							StraightSearchReach, Half);
+						if (i == INDEX_NONE) { continue; }
+						FTrapPlacement P = At(M, Spot.Trap, i, 0.0);
+						P.YawDeg += 180.0;
+						P.Extent = FVector(Half, 0.0, 0.0);
+						Out.Add(P);
+					}
+					break;
+				}
+				case ETrap::SeaUrchin:
+				{
+					// En el centro: se mueven por su zona, dentro del camino (ATN_BeachEnemy::SetRoamCorridor).
+					for (const double S : Spread(From, To, Spot.Count, 1500.0))
+					{
+						const int32 i = NearestFree(M, SampleAtDistance(M, S));
+						if (i != INDEX_NONE) { Out.Add(At(M, Spot.Trap, i, 0.0)); }
 					}
 					break;
 				}
@@ -463,10 +693,15 @@ namespace TNSurvivalCatalog
 		double Length = 0.0;
 	};
 
-	/** Atajo de una rama: una compuerta la corta y la abren las placas de su entrada (Latched: basta un jugador). */
+	/**
+	 * Atajo de una rama: una compuerta la corta y la abren las placas de su entrada (Latched: basta un jugador). Con
+	 * bShellGate, en su lugar una puerta de conchas de la playa en una pared (#731), sin placas: se abre empujándola o con
+	 * su interruptor.
+	 */
 	struct FPlateShortcut
 	{
 		int32 Branch = INDEX_NONE;
+		bool bShellGate = false;
 		TArray<FVector> Plates;
 		FVector Gate = FVector::ZeroVector;
 		double GateYawDeg = 0.0;
@@ -482,8 +717,11 @@ namespace TNSurvivalCatalog
 
 	inline double YawOf(const FVector2D& Dir) { return FMath::RadiansToDegrees(FMath::Atan2(Dir.Y, Dir.X)); }
 
-	/** Los quads, puentes y placas de un mapa del catálogo sobre su layout. Vacío si la semilla no está en el catálogo. */
-	inline FTerrainTrapPlan PlaceTerrainTraps(const TNProcMap::FLayout& L, uint32 Seed)
+	/**
+	 * Los quads, puentes y placas de un mapa del catálogo sobre su layout, con DensityPct % de densidad (más quads; los
+	 * puentes y las placas no cambian). Vacío si la semilla no está en el catálogo.
+	 */
+	inline FTerrainTrapPlan PlaceTerrainTraps(const TNProcMap::FLayout& L, uint32 Seed, int32 DensityPct = 100)
 	{
 		using namespace Placement;
 		FTerrainTrapPlan Out;
@@ -492,7 +730,7 @@ namespace TNSurvivalCatalog
 		const double Total = M.Last().S;
 		auto PctOf = [&M, Total](int32 i) { return M.IsValidIndex(i) ? 100.0 * M[i].S / Total : -1000.0; };
 
-		for (const FTrapSpot& Spot : TrapsOf(Seed))
+		for (const FTrapSpot& Spot : TrapsOf(Seed, DensityPct))
 		{
 			const double From = Total * Spot.FromPct / 100.0;
 			const double To = Total * Spot.ToPct / 100.0;
@@ -539,6 +777,7 @@ namespace TNSurvivalCatalog
 					break;
 				}
 				case ETrap::PressurePlate:
+				case ETrap::ShellGate:
 				{
 					// La rama que sale más cerca del %.
 					int32 Best = INDEX_NONE;
@@ -559,12 +798,13 @@ namespace TNSurvivalCatalog
 					};
 					FPlateShortcut Sc;
 					Sc.Branch = Best;
+					Sc.bShellGate = Spot.Trap == ETrap::ShellGate;
 					const TNProcMap::FPathSample& G = B[AlongBranch(ShortcutGateAlong)];
 					Sc.Gate = FVector(G.P, G.Z);
 					Sc.GateYawDeg = YawOf(G.Dir);
 					Sc.GateWidth = G.Width + ShortcutGateMargin;
 					const TNProcMap::FPathSample& P = B[AlongBranch(ShortcutPlateAlong)];
-					const int32 N = FMath::Max(1, static_cast<int32>(Spot.Count));
+					const int32 N = Sc.bShellGate ? 0 : FMath::Max(1, static_cast<int32>(Spot.Count));
 					for (int32 k = 0; k < N; ++k)
 					{
 						const double Lateral = (k - (N - 1) * 0.5) * ShortcutPlateSpacing;
@@ -578,5 +818,54 @@ namespace TNSurvivalCatalog
 			}
 		}
 		return Out;
+	}
+
+	/**
+	 * Trampas de un plan, como las cuenta el registro: las sueltas sin las sombrillas ni las zonas de gaviotas que son parte
+	 * de otra, los cruces de quads y los puentes.
+	 */
+	inline int32 CountTraps(const TArray<FTrapPlacement>& Loose, const FTerrainTrapPlan& Terrain)
+	{
+		int32 Count = Terrain.Quads.Num() + Terrain.Bridges.Num();
+		for (const FTrapPlacement& P : Loose)
+		{
+			Count += (P.bUmbrella || P.bPart) ? 0 : 1;
+		}
+		return Count;
+	}
+
+	/** Tope del % de puntos que se prueba para llegar a una densidad (×15 los del catálogo). */
+	inline constexpr int32 MaxDensityPct = 1500;
+
+	/**
+	 * El % de puntos (ScaleTrapSpots) con el que el mapa de Seed sobre L llega a TrapsPer100m trampas cada 100 m de camino
+	 * (#730): el más bajo que llega, o MaxDensityPct si ni con ese caben. 100 si el catálogo ya trae bastantes (no se quitan).
+	 * Determinista: cada máquina saca el mismo con la misma densidad.
+	 */
+	inline int32 DensityPctForTarget(const TNProcMap::FLayout& L, uint32 Seed, double TrapsPer100m)
+	{
+		if (L.Main.Num() < 2 || TrapsPer100m <= 0.0)
+		{
+			return 100;
+		}
+		const int32 Target = FMath::RoundToInt32(TrapsPer100m * L.Main.Last().S / 10000.0);
+		auto CountAt = [&L, Seed](int32 Pct) { return CountTraps(PlaceLooseTraps(L, Seed, Pct), PlaceTerrainTraps(L, Seed, Pct)); };
+		if (CountAt(100) >= Target)
+		{
+			return 100;
+		}
+		if (CountAt(MaxDensityPct) < Target)
+		{
+			return MaxDensityPct;
+		}
+		// Búsqueda binaria del más bajo que llega (de 5 en 5 %: no hace falta más fino).
+		int32 Low = 100;
+		int32 High = MaxDensityPct;
+		while (High - Low > 5)
+		{
+			const int32 Mid = (Low + High) / 2;
+			if (CountAt(Mid) >= Target) { High = Mid; } else { Low = Mid; }
+		}
+		return High;
 	}
 }

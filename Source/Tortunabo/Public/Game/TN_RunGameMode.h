@@ -4,6 +4,7 @@
 #include "GameFramework/GameMode.h"
 #include "Core/TN_MatchFlowTypes.h"
 #include "Game/TN_LateJoinRules.h"
+#include "Core/TN_DeathCause.h"
 #include "TN_RunGameMode.generated.h"
 
 class APlayerController;
@@ -93,6 +94,14 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Run")
 	virtual void MarkPlayerDead(APlayerController* PlayerController);
+
+	/**
+	 * @brief MarkPlayerDead apuntando qué la ha eliminado (#728, ATN_CoopPlayerState::DeathCause), solo en los modos con
+	 *        bRecordDeathCause. Sin causa (MarkPlayerDead a secas) o en los demás modos queda Unknown: «Eliminado». Si no
+	 *        muere (tótem, ya en meta...), no se apunta nada.
+	 * @note Server-only.
+	 */
+	void MarkPlayerDeadBy(APlayerController* PlayerController, ETNDeathCause Cause);
 
 	/**
 	 * @brief Callback server-side cuando una CollectionZone alcanza su RequiredCount.
@@ -312,6 +321,15 @@ protected:
 	 * @return true si se consumió un tótem (la muerte queda cancelada y MarkPlayerDead debe retornar).
 	 */
 	bool TryTotemAutoRevive(APlayerController* PlayerController);
+
+	/**
+	 * El panel de resultados dice qué la ha eliminado (#728). Solo Supervivencia lo activa: el Coop y los demás modos siguen
+	 * con «Eliminado».
+	 */
+	bool bRecordDeathCause = false;
+
+	/** Causa de la muerte que está en curso (MarkPlayerDeadBy); MarkPlayerDead la apunta al eliminar. */
+	ETNDeathCause PendingDeathCause = ETNDeathCause::Unknown;
 
 	/** @brief Aplica el ragdoll/ocultación de muerte sobre el pawn (RecoverFromKnockdown → StopMovementImmediately → DisableInput → bAlwaysRelevant/DORM_Awake → SetDeadVisual). */
 	void ApplyDeathVisuals(APawn* Pawn, APlayerController* PlayerController);

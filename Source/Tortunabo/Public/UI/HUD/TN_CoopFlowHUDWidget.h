@@ -54,7 +54,7 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> ResultsTitle;
 
-	// "Puesto: #1" / "Eliminado"
+	// "Puesto: #1" / qué la ha eliminado ("Te ha alcanzado la tormenta"...; sin causa, "Eliminado")
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> ResultsRankText;
 

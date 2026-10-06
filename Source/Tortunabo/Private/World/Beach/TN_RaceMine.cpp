@@ -1,4 +1,5 @@
 #include "World/Beach/TN_RaceMine.h"
+#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachMineSynth.h"
@@ -458,6 +459,13 @@ void ATN_RaceMine::Explode()
 		{
 			// Justo encima: hacia atrás.
 			Away = Back;
+		}
+		// En Supervivencia, la explosión elimina (#735). A quien la lanzó solo si la ha pisado ella (pasado OwnerGraceSeconds);
+		// si solo la pilla la onda, la lanza como siempre.
+		if ((Victim != Thrower || Victim == Culprit) && TNSurvivalHits::KillInSurvival(Victim, this))
+		{
+			++Stunned;
+			continue;
 		}
 		const FVector Launch = Away * LaunchOut + Back * LaunchBackBias + FVector(0.0, 0.0, LaunchUp);
 		TNBeach::StunTurtle(Victim, UTN_CombatTuning::Get().MineStunSeconds, Launch);

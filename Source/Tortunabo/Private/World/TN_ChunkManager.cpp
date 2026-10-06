@@ -562,16 +562,20 @@ bool ATN_ChunkManager::BuildLevel(int32 Level)
 	// fijado con ?SurvivalMap=. En el servidor la construcción es síncrona: al volver ya se sabe si hubo mapa.
 	const FTNSurvivalMapPick Forced = Level <= 1 && FirstLevelMap != 0u
 		? TNSurvivalMapSelection::PickForcedMap(FirstLevelMap) : FTNSurvivalMapPick();
-	const FTNSurvivalMapPick Pick = Forced.IsValid() ? Forced : TNSurvivalMapSelection::PickLevelMap(LevelSeed, Level, PlayedLevelMaps);
+	const FTNSurvivalMapPick Pick = Forced.IsValid() ? Forced : TNSurvivalMapSelection::PickLevelMap(LevelSeed, Level, PlayedLevelMaps, LevelStartDifficulty);
 	if (Pick.IsValid())
 	{
-		Generator->ServerGenerateSurvival(static_cast<int32>(Pick.Seed), Pick.Difficulty);
+		Generator->ServerGenerateSurvival(static_cast<int32>(Pick.Seed), Pick.Difficulty, LevelTrapsPer100mTenths,
+			LevelSearchPer100mTenths);
 		if (Generator->IsMapReady())
 		{
 			PlayedLevelMaps = TNSurvivalMapSelection::RecordPlayed(PlayedLevelMaps, Pick);
 			const TNSurvivalCatalog::FMapEntry* Entry = TNSurvivalCatalog::FindMap(Pick.Seed);
-			UE_LOG(LogTortunabo, Log, TEXT("[ChunkManager] Nivel %d: mapa del catálogo «%s» (semilla %u, dificultad %d, camino de %.0f m)%s."),
-				Level, Entry ? Entry->Name : TEXT("?"), Pick.Seed, Pick.Difficulty, Generator->GetMainPathLength() / 100.f,
+			FString Breakdown;
+			const int32 TrapCount = Generator->GetSurvivalTrapCount(&Breakdown);
+			UE_LOG(LogTortunabo, Log, TEXT("[ChunkManager] Nivel %d: mapa del catálogo «%s» (semilla %u, dificultad %d; la partida empezó en la %d; camino de %.0f m) con %d trampas (objetivo %.1f cada 100 m: %s)%s."),
+				Level, Entry ? Entry->Name : TEXT("?"), Pick.Seed, Pick.Difficulty, LevelStartDifficulty, Generator->GetMainPathLength() / 100.f,
+				TrapCount, LevelTrapsPer100mTenths / 10.0, *Breakdown,
 				Pick.bForgotPlayed ? TEXT("; ya habían salido todos los de su dificultad: se olvidan los jugados") : TEXT(""));
 			return true;
 		}
@@ -580,7 +584,7 @@ bool ATN_ChunkManager::BuildLevel(int32 Level)
 	}
 
 	// Respaldo fuera del catálogo (sin trampas): semillas deterministas a partir de la de la partida.
-	const int32 Difficulty = TNSurvivalLogic::LevelMapDifficulty(Level);
+	const int32 Difficulty = TNSurvivalLogic::LevelMapDifficulty(Level, LevelStartDifficulty);
 	const int32 BaseSeed = LevelSeed + FMath::Max(1, Level) - 1;
 	for (int32 Attempt = 0; Attempt < 3; ++Attempt)
 	{

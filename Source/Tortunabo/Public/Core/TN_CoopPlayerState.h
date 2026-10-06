@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Core/TN_CosmeticsTypes.h"
 #include "Core/TN_CoopScore.h"
+#include "Core/TN_DeathCause.h"
 #include "TN_CoopPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRaceScoreChanged, int32, NewScore);
@@ -194,6 +195,10 @@ public:
 	 */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop")
 	bool bIsEliminated = false;
+
+	/** Qué la ha eliminado (#728): lo enseña el panel de resultados. Solo vale con bIsEliminated. */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop")
+	ETNDeathCause DeathCause = ETNDeathCause::Unknown;
 
 	/** @brief Predicado "vivo y jugable": true si el jugador puede participar activamente (no muerto, no eliminado). */
 	UFUNCTION(BlueprintPure, Category = "Coop|Estado")

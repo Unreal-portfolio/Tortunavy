@@ -881,6 +881,125 @@ msgctxt "Tortunabo,SerieBodyDesc"
 msgid "Verde tortuga, el clásico que nunca falla."
 msgstr "龜綠色，永不出錯的經典款。"
 
+#. Key:	DeathCauseStorm
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(21)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(21)
+msgctxt "TNHUD,DeathCauseStorm"
+msgid "Te ha alcanzado la tormenta"
+msgstr "被暴風追上了"
+
+#. Key:	DeathCauseFall
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(22)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(22)
+msgctxt "TNHUD,DeathCauseFall"
+msgid "Caída desde demasiado alto"
+msgstr "從太高的地方摔下"
+
+#. Key:	DeathCauseKillVolume
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(23)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(23)
+msgctxt "TNHUD,DeathCauseKillVolume"
+msgid "Has caído a un foso mortal"
+msgstr "掉進了致命深坑"
+
+#. Key:	DeathCauseVoid
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(24)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(24)
+msgctxt "TNHUD,DeathCauseVoid"
+msgid "Has caído al vacío"
+msgstr "掉進了虛空"
+
+#. Key:	DeathCauseDeathZone
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(25)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(25)
+msgctxt "TNHUD,DeathCauseDeathZone"
+msgid "Demasiado tiempo en zona mortal"
+msgstr "在致命區域停留太久"
+
+#. Key:	DeathCauseWater
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(26)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(26)
+msgctxt "TNHUD,DeathCauseWater"
+msgid "Has caído al agua"
+msgstr "掉進了水裡"
+
+#. Key:	DeathCauseCrab
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(27)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(27)
+msgctxt "TNHUD,DeathCauseCrab"
+msgid "Te ha atrapado un cangrejo"
+msgstr "被螃蟹抓住了"
+
+#. Key:	DeathCauseSeagull
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(28)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(28)
+msgctxt "TNHUD,DeathCauseSeagull"
+msgid "Te ha cazado una gaviota"
+msgstr "被海鷗叼走了"
+
+#. Key:	DeathCauseSeagullDropping
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(29)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(29)
+msgctxt "TNHUD,DeathCauseSeagullDropping"
+msgid "Te ha caído una caca de gaviota"
+msgstr "被海鷗屎砸中了"
+
+#. Key:	DeathCauseQuad
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(30)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(30)
+msgctxt "TNHUD,DeathCauseQuad"
+msgid "Te ha atropellado un quad"
+msgstr "被沙灘車撞了"
+
+#. Key:	DeathCauseWhirlpool
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(31)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(31)
+msgctxt "TNHUD,DeathCauseWhirlpool"
+msgid "Te ha tragado un remolino"
+msgstr "被漩渦吞沒了"
+
+#. Key:	DeathCausePredator
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(32)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(32)
+msgctxt "TNHUD,DeathCausePredator"
+msgid "Te ha comido un depredador marino"
+msgstr "被海洋掠食者吃掉了"
+
+#. Key:	DeathCauseBleedout
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(33)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(33)
+msgctxt "TNHUD,DeathCauseBleedout"
+msgid "Nadie llegó a reanimarte"
+msgstr "沒人及時救你"
+
+#. Key:	DeathCauseMine
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(34)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(34)
+msgctxt "TNHUD,DeathCauseMine"
+msgid "Te ha volado una mina"
+msgstr "被地雷炸飛了"
+
+#. Key:	DeathCauseSeaUrchin
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(35)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(35)
+msgctxt "TNHUD,DeathCauseSeaUrchin"
+msgid "Te has pinchado con un erizo de mar"
+msgstr "被海膽扎到了"
+
+#. Key:	DeathCauseHermitCrab
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(36)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(36)
+msgctxt "TNHUD,DeathCauseHermitCrab"
+msgid "Te ha arrollado un cangrejo ermitaño"
+msgstr "被寄居蟹撞飛了"
+
+#. Key:	DeathCauseThrownItem
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(37)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(37)
+msgctxt "TNHUD,DeathCauseThrownItem"
+msgid "Te ha dado un objeto lanzado"
+msgstr "被丟來的道具砸中了"
+
 #. Key:	ItemPufferFish
 #. SourceLocation:	Source/Tortunabo/Private/Game/TN_CoopItems.cpp(221)
 #: Source/Tortunabo/Private/Game/TN_CoopItems.cpp(221)
@@ -4739,78 +4858,78 @@ msgid "{0} m"
 msgstr "{0} 公尺"
 
 #. Key:	TabletFinish
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(283)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(283)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(255)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(255)
 msgctxt "Rally,TabletFinish"
 msgid "Meta"
 msgstr "終點"
 
 #. Key:	TabletHint
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(364)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(364)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(336)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(336)
 msgctxt "Rally,TabletHint"
 msgid "Tab · M · Vista: guardar la tableta"
 msgstr "Tab · M · 視角：收起平板"
 
 #. Key:	TabletTitle
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(371)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(371)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(343)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(343)
 msgctxt "Rally,TabletTitle"
 msgid "Copiloto"
 msgstr "領航員"
 
 #. Key:	PlaceOfTotal
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(376)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(376)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(348)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(348)
 msgctxt "Rally,PlaceOfTotal"
 msgid "{0}.º / {1}"
 msgstr "第{0}名 / {1}"
 
 #. Key:	TabletNextBox
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(426)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(426)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(398)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(398)
 msgctxt "Rally,TabletNextBox"
 msgid "Caja a {0}"
 msgstr "{0} 後有道具箱"
 
 #. Key:	TabletCharges
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(439)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(439)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(411)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(411)
 msgctxt "Rally,TabletCharges"
 msgid "{0} ×{1}"
 msgstr "{0} ×{1}"
 
 #. Key:	TabletNoNotes
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(584)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(584)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(556)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(556)
 msgctxt "Rally,TabletNoNotes"
 msgid "Todo recto"
 msgstr "一路直行"
 
 #. Key:	TabletThen
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(606)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(606)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(578)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(578)
 msgctxt "Rally,TabletThen"
 msgid "luego {0} a {1}"
 msgstr "然後 {1} 後 {0}"
 
 #. Key:	TabletAmmo
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(619)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(619)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(591)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(591)
 msgctxt "Rally,TabletAmmo"
 msgid "Munición"
 msgstr "彈藥"
 
 #. Key:	TabletOverheated
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(649)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(649)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(621)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(621)
 msgctxt "Rally,TabletOverheated"
 msgid "¡Caliente!"
 msgstr "過熱！"
 
 #. Key:	TabletNoSpecial
-#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(655)
-#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(655)
+#. SourceLocation:	Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(627)
+#: Source/Tortunabo/Private/Rally/UI/TN_RallyCopilotTabletPaint.cpp(627)
 msgctxt "Rally,TabletNoSpecial"
 msgid "Sin carga especial"
 msgstr "沒有特殊彈藥"
@@ -6307,162 +6426,162 @@ msgid "No se han podido cargar los créditos."
 msgstr "無法載入製作名單。"
 
 #. Key:	QuickChatFallback
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(315)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(315)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(290)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(290)
 msgctxt "TNHUD,QuickChatFallback"
 msgid "Mensaje #{0}"
 msgstr "訊息 #{0}"
 
 #. Key:	ResultsRankEliminated
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
+#. SourceLocation:	Source/Tortunabo/Private/Core/TN_DeathCause.cpp(38)
+#: Source/Tortunabo/Private/Core/TN_DeathCause.cpp(38)
 msgctxt "TNHUD,ResultsRankEliminated"
 msgid "Eliminado"
 msgstr "被淘汰"
 
 #. Key:	ResultsRankPlace
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(374)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(374)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(350)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(350)
 msgctxt "TNHUD,ResultsRankPlace"
 msgid "Puesto: #{0}"
 msgstr "名次：#{0}"
 
 #. Key:	ResultsTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(386)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(386)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(362)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(362)
 msgctxt "TNHUD,ResultsTime"
 msgid "Tiempo: {0}s"
 msgstr "用時：{0} 秒"
 
 #. Key:	ResultsSpectatorHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(394)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(394)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
 msgctxt "TNHUD,ResultsSpectatorHint"
 msgid "Scroll para cambiar de jugador"
 msgstr "滾動滾輪切換玩家"
 
 #. Key:	ScoreboardRank
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(520)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(520)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(495)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(495)
 msgctxt "TNHUD,ScoreboardRank"
 msgid "{0}º"
 msgstr "第{0}名"
 
 #. Key:	ScoreboardTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(527)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(527)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(502)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(502)
 msgctxt "TNHUD,ScoreboardTime"
 msgid "{0}s"
 msgstr "{0} 秒"
 
 #. Key:	ReturningToLobby
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(550)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(550)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(525)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(525)
 msgctxt "TNHUD,ReturningToLobby"
 msgid "Volviendo al lobby en: {0}"
 msgstr "{0} 秒後返回大廳"
 
 #. Key:	ResultsTitleEliminated
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(557)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(557)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(532)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(532)
 msgctxt "TNHUD,ResultsTitleEliminated"
 msgid "¡Eliminado!"
 msgstr "被淘汰啦！"
 
 #. Key:	ResultsTitleFirst
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(537)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(537)
 msgctxt "TNHUD,ResultsTitleFirst"
 msgid "¡Primero!"
 msgstr "第一名！"
 
 #. Key:	ResultsTitleSecond
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(563)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(563)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(538)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(538)
 msgctxt "TNHUD,ResultsTitleSecond"
 msgid "Segundo"
 msgstr "第二名"
 
 #. Key:	ResultsTitleThird
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(539)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(539)
 msgctxt "TNHUD,ResultsTitleThird"
 msgid "Tercero"
 msgstr "第三名"
 
 #. Key:	ResultsTitlePlace
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(567)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(567)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(542)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(542)
 msgctxt "TNHUD,ResultsTitlePlace"
 msgid "Puesto #{0}"
 msgstr "第{0}名"
 
 #. Key:	FlowWaiting
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(581)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(581)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(556)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(556)
 msgctxt "TNHUD,FlowWaiting"
 msgid "Sala: {0}/{1} | Zona: {2}/{3}"
 msgstr "房間：{0}/{1} | 區域：{2}/{3}"
 
 #. Key:	FlowCountdown
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(585)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(585)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(560)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(560)
 msgctxt "TNHUD,FlowCountdown"
 msgid "¡Todos listos! Empieza en: {0}"
 msgstr "全員就緒！{0} 秒後開始"
 
 #. Key:	FlowPreparing
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(587)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(587)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
 msgctxt "TNHUD,FlowPreparing"
 msgid "Preparando..."
 msgstr "準備中……"
 
 #. Key:	FlowInProgress
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(589)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(589)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
 msgctxt "TNHUD,FlowInProgress"
 msgid "Carrera en curso. Meta: {0}/{1}"
 msgstr "比賽進行中。已抵達終點：{0}/{1}"
 
 #. Key:	FlowWaitingHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(603)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(603)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(578)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(578)
 msgctxt "TNHUD,FlowWaitingHint"
 msgid "El contador arranca cuando todos los jugadores conectados estén en la zona."
 msgstr "所有連線玩家都進入區域後才會開始倒數。"
 
 #. Key:	FlowCountdownDetail
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(605)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(605)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(580)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(580)
 msgctxt "TNHUD,FlowCountdownDetail"
 msgid "Conectados: {0}/{1} | Zona: {2}/{3}"
 msgstr "已連線：{0}/{1} | 區域：{2}/{3}"
 
 #. Key:	FlowCinematicHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(609)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(609)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(584)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(584)
 msgctxt "TNHUD,FlowCinematicHint"
 msgid "Mantente preparado para el viaje al mapa de carrera."
 msgstr "做好前往競速地圖的準備。"
 
 #. Key:	FlowDeathZone
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(617)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(617)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(592)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(592)
 msgctxt "TNHUD,FlowDeathZone"
 msgid "Peligro: sal de la zona de muerte ({0}s)"
 msgstr "危險：快離開死亡區域（{0} 秒）"
 
 #. Key:	FlowFinishHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(622)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(622)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(597)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(597)
 msgctxt "TNHUD,FlowFinishHint"
 msgid "Cruza la meta para pasar a espectador."
 msgstr "衝過終點線，就能轉為觀戰。"
 
 #. Key:	ChatLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(660)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(660)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(635)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(635)
 msgctxt "TNHUD,ChatLine"
 msgid "{0}: {1}"
 msgstr "{0}：{1}"
@@ -6678,92 +6797,92 @@ msgid "Saltarín: {0} ({1} {1}|plural(one=salto,other=saltos))"
 msgstr "跳跳達人：{0}（{1}次）"
 
 #. Key:	ShellGain
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1103)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1103)
 msgctxt "TNHUD,ShellGain"
 msgid "+{0}"
 msgstr "+{0}"
 
 #. Key:	Storm
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1250)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1250)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1296)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1296)
 msgctxt "TNHUD,Storm"
 msgid "¡La tormenta te alcanza! ¡Al agua!   {0}"
 msgstr "風暴追上你了！快跳進水裡！   {0}"
 
 #. Key:	Seagull
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1264)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1264)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1310)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1310)
 msgctxt "TNHUD,Seagull"
 msgid "¡Una gaviota te ha marcado! Sal del círculo o métete bajo techo   {0}"
 msgstr "海鷗盯上你了！快離開圓圈，或者躲到遮蔽處   {0}"
 
 #. Key:	Down
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1277)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1277)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1323)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1323)
 msgctxt "TNHUD,Down"
 msgid "¡Panza arriba!\nUn compañero puede darte la vuelta:  {0} s"
 msgstr "四腳朝天啦！\n隊友可以把你翻過來：{0} 秒"
 
 #. Key:	OutTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1336)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1336)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1382)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1382)
 msgctxt "TNHUD,OutTitle"
 msgid "¡Fuera de carrera!"
 msgstr "出局啦！"
 
 #. Key:	OutHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1337)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1337)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1383)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1383)
 msgctxt "TNHUD,OutHint"
 msgid "Anima a los demás hasta que lleguen al agua."
 msgstr "為其他小龜加油，直到他們衝進水裡。"
 
 #. Key:	PreviewSay
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1582)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1582)
 msgctxt "TNHUD,PreviewSay"
 msgid "¡Por aquí, que hay conchas!"
 msgstr "這邊這邊，有貝殼！"
 
 #. Key:	WheelHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1810)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1810)
 msgctxt "TNHUD,WheelHint"
 msgid "Apunta con el ratón"
 msgstr "用滑鼠指向選項"
 
 #. Key:	WheelHintPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1810)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1810)
 msgctxt "TNHUD,WheelHintPad"
 msgid "Apunta con el stick"
 msgstr "用搖桿指向選項"
 
 #. Key:	Exhausted
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(403)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(403)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(409)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(409)
 msgctxt "TNHUD,Exhausted"
 msgid "¡SIN ALIENTO!"
 msgstr "喘不過氣！"
 
 #. Key:	InHand
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(457)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(457)
 msgctxt "TNHUD,InHand"
 msgid "EN LA ALETA"
 msgstr "鰭上"
 
 #. Key:	Stored
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(458)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(458)
 msgctxt "TNHUD,Stored"
 msgid "EN EL CAPARAZÓN"
 msgstr "殼裡"
 
 #. Key:	Reviving
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(548)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(548)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(560)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(560)
 msgctxt "TNHUD,Reviving"
 msgid "Dando la vuelta a tu compañero..."
 msgstr "正在把隊友翻過來……"
@@ -11529,57 +11648,57 @@ msgid "¡ZAS!"
 msgstr "咔嚓！"
 
 #. Key:	EnemyBonk
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1203)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1203)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1261)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachEnemy.cpp(1261)
 msgctxt "TNBeach,EnemyBonk"
 msgid "¡TOING!"
 msgstr "蹦！"
 
 #. Key:	CrabRam
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1275)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1275)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1285)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1285)
 msgctxt "TNBeach,CrabRam"
 msgid "¡EMBESTIDA!"
 msgstr "衝撞！"
 
 #. Key:	CrabCrash
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1293)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1293)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1303)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGiantCrab.cpp(1303)
 msgctxt "TNBeach,CrabCrash"
 msgid "¡CATAPLÁN!"
 msgstr "匡噹！"
 
 #. Key:	GullGrab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1518)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1518)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1548)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1548)
 msgctxt "TNBeach,GullGrab"
 msgid "¡ÑAC!"
 msgstr "叼！"
 
 #. Key:	GullSplat
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1553)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1553)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1583)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1583)
 msgctxt "TNBeach,GullSplat"
 msgid "¡PLOF!"
 msgstr "啪嘰！"
 
 #. Key:	GullPeck
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1994)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(1994)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(2024)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachGullZone.cpp(2024)
 msgctxt "TNBeach,GullPeck"
 msgid "¡PIC!"
 msgstr "啄！"
 
 #. Key:	HermitPin
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
 msgctxt "TNBeach,HermitPin"
 msgid "¡BOLO!"
 msgstr "撞倒！"
 
 #. Key:	HermitStrike
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(701)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachHermitCrab.cpp(706)
 msgctxt "TNBeach,HermitStrike"
 msgid "¡STRIKE!"
 msgstr "全倒！"
@@ -11599,15 +11718,15 @@ msgid "¡UN REGALO!"
 msgstr "有禮物！"
 
 #. Key:	MineClick
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(642)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(642)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(647)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(647)
 msgctxt "TNBeach,MineClick"
 msgid "¡clic!"
 msgstr "喀噠！"
 
 #. Key:	MineBoom
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(657)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(657)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(662)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachMine.cpp(662)
 msgctxt "TNBeach,MineBoom"
 msgid "¡BUM!"
 msgstr "轟！"
@@ -11655,8 +11774,8 @@ msgid "¡ÑAM!"
 msgstr "啊嗚！"
 
 #. Key:	UrchinPrick
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(288)
-#: Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(288)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(293)
+#: Source/Tortunabo/Private/World/Beach/TN_BeachSeaUrchin.cpp(293)
 msgctxt "TNBeach,UrchinPrick"
 msgid "¡PINCHAZO!"
 msgstr "扎到啦！"
@@ -11704,8 +11823,8 @@ msgid "¡CRAC!"
 msgstr "喀嚓！"
 
 #. Key:	FrisbeeBonk
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(552)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(552)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(557)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceFrisbee.cpp(557)
 msgctxt "TNRace,FrisbeeBonk"
 msgid "¡BONK!"
 msgstr "咚！"
@@ -11718,99 +11837,99 @@ msgid "Coger caja"
 msgstr "拿起道具箱"
 
 #. Key:	ItemBox
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
 msgctxt "TNRace,ItemBox"
 msgid "Caja de objetos"
 msgstr "道具箱"
 
 #. Key:	ItemCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
 msgctxt "TNRace,ItemCoconut"
 msgid "Coco turbo"
 msgstr "渦輪椰子"
 
 #. Key:	ItemTripleCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
 msgctxt "TNRace,ItemTripleCoconut"
 msgid "Triple coco"
 msgstr "三連椰子"
 
 #. Key:	ItemTripleCoconut2
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
 msgctxt "TNRace,ItemTripleCoconut2"
 msgid "Triple coco (2)"
 msgstr "三連椰子（2）"
 
 #. Key:	ItemTripleCoconut1
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
 msgctxt "TNRace,ItemTripleCoconut1"
 msgid "Triple coco (1)"
 msgstr "三連椰子（1）"
 
 #. Key:	ItemGoldenCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
 msgctxt "TNRace,ItemGoldenCoconut"
 msgid "Coco dorado"
 msgstr "黃金椰子"
 
 #. Key:	ItemPelicanTaxi
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
 msgctxt "TNRace,ItemPelicanTaxi"
 msgid "Pelícano taxi"
 msgstr "鵜鶘計程車"
 
 #. Key:	ItemSunscreen
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(223)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(223)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
 msgctxt "TNRace,ItemSunscreen"
 msgid "Protector solar"
 msgstr "防曬乳"
 
 #. Key:	ItemHomingCrab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(224)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(224)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
 msgctxt "TNRace,ItemHomingCrab"
 msgid "Cangrejo teledirigido"
 msgstr "遙控螃蟹"
 
 #. Key:	ItemGullStrike
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(225)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(225)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
 msgctxt "TNRace,ItemGullStrike"
 msgid "Gaviota justiciera"
 msgstr "正義海鷗"
 
 #. Key:	ItemSandMine
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(226)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(226)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
 msgctxt "TNRace,ItemSandMine"
 msgid "Mina de arena"
 msgstr "沙地地雷"
 
 #. Key:	ItemStormCloud
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(227)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(227)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
 msgctxt "TNRace,ItemStormCloud"
 msgid "Nube de tormenta"
 msgstr "風暴雲"
 
 #. Key:	ItemFrisbee
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(228)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(228)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
 msgctxt "TNRace,ItemFrisbee"
 msgid "Disco volador"
 msgstr "飛盤"
 
 #. Key:	ItemWhistle
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(229)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(229)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
 msgctxt "TNRace,ItemWhistle"
 msgid "Silbato del sargento"
 msgstr "軍士長的哨子"
@@ -11844,8 +11963,8 @@ msgid "Cohete de feria"
 msgstr "遊樂場火箭"
 
 #. Key:	MineBoom
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(907)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(907)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(914)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(914)
 msgctxt "TNRace,MineBoom"
 msgid "¡BUM!"
 msgstr "轟！"

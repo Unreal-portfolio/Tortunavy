@@ -13,11 +13,15 @@
 #include "World/ProcMap/TN_ProcStartStructure.h"
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
 #include "World/ProcMap/TN_ProcSearchSpot.h"
+#include "World/ProcMap/TN_SurvivalSearchSpot.h"
+#include "Game/TN_SurvivalLoot.h"
 #include "World/ProcMap/TN_ProcMapShells.h"
 #include "World/ProcMap/TN_ProcMapDolls.h"
 #include "World/ProcMap/TN_TurtleDoll.h"
+#include "World/TN_CrabSpawnZone.h"
 #include "World/TN_ScorePickup.h"
 #include "World/TN_ScoreShells.h"
+#include "World/TN_SeagullSpawnZone.h"
 #include "TN_ProcMapKeepOut.h"
 #include "Core/TN_Log.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -516,6 +520,7 @@ void ATN_ProcMapGenerator::SpawnHazards()
 		return;
 	}
 	const bool bServer = World->GetNetMode() != NM_Client;
+	const bool bSurvival = NetConfig.Mode == ETNProcGameMode::Survival;
 	const double Yaw0 = GetActorRotation().Yaw;
 
 	struct FRuleSource
@@ -547,6 +552,12 @@ void ATN_ProcMapGenerator::SpawnHazards()
 		for (const FTNProcHazardEntry& E : Entries)
 		{
 			if (!E.ActorClass) { continue; }
+			// Supervivencia: sin los cangrejos pequeños ni las gaviotas de antes; sus trampas son el cangrejo gigante y las
+			// gaviotas de la playa del catálogo (#733, #734).
+			if (bSurvival && (E.ActorClass->IsChildOf(ATN_CrabSpawnZone::StaticClass()) || E.ActorClass->IsChildOf(ATN_SeagullSpawnZone::StaticClass())))
+			{
+				continue;
+			}
 			FRuleSource Src;
 			Src.Entry = E;
 			Src.Biome = Biome;
@@ -922,6 +933,9 @@ void ATN_ProcMapGenerator::SpawnSearchSpots()
 		return;
 	}
 	const double Yaw0 = GetActorRotation().Yaw;
+	// Supervivencia (#724): la densidad de la playa (casi todo el decorado, a 9 m) y su propia lista de objetos.
+	const bool bSurvival = NetConfig.Mode == ETNProcGameMode::Survival;
+	UClass* SpotClass = bSurvival ? ATN_SurvivalSearchSpot::StaticClass() : ATN_ProcSearchSpot::StaticClass();
 
 	// Candidatos por orden de preferencia: las formaciones (grandes y raras) se quedan su sitio antes que los objetos
 	// del camino, las agujas y los peñascos.
@@ -936,6 +950,13 @@ void ATN_ProcMapGenerator::SpawnSearchSpots()
 		FSpotCandidate Candidate;
 		if (TNSearchSpotPlan::SearchableOf(Layout.Features[f], Candidate.Spec))
 		{
+			if (bSurvival)
+			{
+				// Los objetos del camino añadidos para rebuscar (PlanSurvivalSearchProps) lo son siempre y van primero.
+				const bool bAdded = SurvivalSearchProps.Contains(f);
+				Candidate.Spec.Chance = bAdded ? 1.0 : TNSurvivalLoot::SpotChance(Candidate.Spec.Priority);
+				Candidate.Spec.Priority = bAdded ? -1 : Candidate.Spec.Priority;
+			}
 			Candidate.Feature = f;
 			Candidates.Add(Candidate);
 		}
@@ -943,7 +964,9 @@ void ATN_ProcMapGenerator::SpawnSearchSpots()
 	Candidates.StableSort([](const FSpotCandidate& A, const FSpotCandidate& B) { return A.Spec.Priority < B.Spec.Priority; });
 
 	TNProcMap::FRng SpotRng(static_cast<uint64>(Layout.Params.Seed) * 2654435761ull + 0x5EA7C4ull);
+	// Centro y alcance (radio más semilargo) de los ya elegidos.
 	TArray<FVector2D> Taken;
+	TArray<double> TakenReach;
 	int32 NumSpots = 0;
 	for (const FSpotCandidate& Candidate : Candidates)
 	{
@@ -953,10 +976,14 @@ void ATN_ProcMapGenerator::SpawnSearchSpots()
 			continue;
 		}
 		const FVector2D C(F.Location.X, F.Location.Y);
+		const double Reach = Candidate.Spec.Radius + Candidate.Spec.HalfLength;
 		bool bCrowded = false;
-		for (const FVector2D& Other : Taken)
+		for (int32 t = 0; t < Taken.Num(); ++t)
 		{
-			if (FVector2D::DistSquared(C, Other) < FMath::Square(TNSearchSpotPlan::MinSpacing))
+			// En Supervivencia, como en la playa: de centro a centro y de borde a borde; si no, uno por tramo.
+			const double Need = bSurvival ? FMath::Max(TNSurvivalLoot::MinSpacing, Reach + TakenReach[t] + TNSurvivalLoot::MinRimGap)
+				: TNSearchSpotPlan::MinSpacing;
+			if (FVector2D::DistSquared(C, Taken[t]) < FMath::Square(Need))
 			{
 				bCrowded = true;
 				break;
@@ -972,7 +999,7 @@ void ATN_ProcMapGenerator::SpawnSearchSpots()
 		const double BaseZ = F.Type == TNProcMap::EFeature::Formation ? F.Location.Z : TerrainHeightMap(C);
 		const FVector2D Axis = F.Dir.GetSafeNormal().IsNearlyZero() ? FVector2D(1.0, 0.0) : F.Dir.GetSafeNormal();
 		const double Yaw = FMath::RadiansToDegrees(TNProcMap::AngleOf(Axis)) + Yaw0;
-		ATN_ProcSearchSpot* Spot = Cast<ATN_ProcSearchSpot>(SpawnMapActor(ATN_ProcSearchSpot::StaticClass(),
+		ATN_ProcSearchSpot* Spot = Cast<ATN_ProcSearchSpot>(SpawnMapActor(SpotClass,
 			FTransform(FRotator(0.0, Yaw, 0.0), MapToWorld(FVector(C, BaseZ))), true));
 		if (!Spot)
 		{
@@ -988,8 +1015,9 @@ void ATN_ProcMapGenerator::SpawnSearchSpots()
 		Spot->SetupSpot(static_cast<float>(Candidate.Spec.Radius), static_cast<float>(Candidate.Spec.HalfLength),
 			static_cast<float>(Candidate.Spec.Height), DustC);
 		Taken.Add(C);
+		TakenReach.Add(Reach);
 		++NumSpots;
 	}
 	UE_LOG(LogTortunabo, Log, TEXT("[ProcMap] Decorados para rebuscar: %d de %d candidatos (a %.0f m como mínimo entre sí)."),
-		NumSpots, Candidates.Num(), TNSearchSpotPlan::MinSpacing / 100.0);
+		NumSpots, Candidates.Num(), (bSurvival ? TNSurvivalLoot::MinSpacing : TNSearchSpotPlan::MinSpacing) / 100.0);
 }

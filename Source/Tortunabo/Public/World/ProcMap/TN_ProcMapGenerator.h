@@ -71,6 +71,17 @@ struct TORTUNABO_API FTNProcMapNetConfig
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
 	int32 SurvivalDifficulty = 0;
 
+	/**
+	 * Supervivencia: trampas que se buscan cada 100 m de camino, en décimas (0 = las del catálogo; fácil 65, normal 100,
+	 * difícil 150, #730). Cada máquina saca de aquí cuántas copias de los puntos del catálogo hacen falta.
+	 */
+	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
+	int32 SurvivalTrapsPer100mTenths = 0;
+
+	/** Supervivencia: rebuscables que se buscan cada 100 m de camino, en décimas (0 = los del decorado; #724). */
+	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
+	int32 SurvivalSearchPer100mTenths = 0;
+
 	/** Se incrementa en cada (re)generación, p. ej. entre rondas. 0 = sin mapa. */
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
 	int32 Generation = 0;
@@ -119,7 +130,7 @@ public:
 	void ServerGenerate(int32 InSeed, ETNProcGameMode InMode, ETNProcDifficulty InDifficulty);
 
 	/** Servidor: genera el mapa de Supervivencia con esta semilla y dificultad 1–5 (un nivel de la partida, #274). */
-	void ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty);
+	void ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty, int32 InTrapsPer100mTenths = 0, int32 InSearchPer100mTenths = 0);
 
 	/**
 	 * Servidor: ronda del coop (desde 1) para la tabla de intensidad (#788). La pone el GameMode antes de ServerGenerate;
@@ -140,6 +151,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "ProcMap")
 	bool IsMapReady() const { return bMapReady; }
+
+	/**
+	 * Supervivencia: trampas del mapa (las sueltas sin las sombrillas, los cruces de quads y los puentes que se rompen) y, en
+	 * OutBreakdown, cuántas de cada tipo («12 cáscaras, 3 medusas...», más las placas del atajo, que no cuentan).
+	 */
+	int32 GetSurvivalTrapCount(FString* OutBreakdown = nullptr) const;
 
 	/** Generación que ya está construida en ESTA máquina. */
 	UFUNCTION(BlueprintPure, Category = "ProcMap")
@@ -307,6 +324,12 @@ private:
 	 * editor). Antes de las mallas: el hueco con puente que se rompe se construye sin su viga.
 	 */
 	void PlanSurvivalTraps();
+	/**
+	 * Supervivencia (#724): añade al layout los objetos del camino que hacen falta para la densidad de rebuscables del mapa
+	 * (TNSurvivalCatalog::PlaceSearchProps), en todas las máquinas. Después del terreno (se apoyan en su suelo) y antes de las
+	 * mallas del decorado (BuildStructures los dibuja); SpawnSearchSpots los hace rebuscables siempre.
+	 */
+	void PlanSurvivalSearchProps();
 	/** ¿El hueco Feature lleva puente que se rompe en lugar de viga? */
 	bool IsSurvivalBreakableGap(int32 Feature) const;
 	/** Crea las trampas del plan: las replicadas y las de lógica de servidor en el servidor; las zonas lentas en cada máquina. */
@@ -437,6 +460,9 @@ private:
 	TArray<TNSurvivalCatalog::FTrapPlacement> SurvivalTrapPlan;
 	/** Quads, puentes que se rompen y placas del mapa del catálogo (#517). */
 	TNSurvivalCatalog::FTerrainTrapPlan SurvivalTerrainPlan;
+
+	/** Índices en Layout.Features de los objetos del camino añadidos para rebuscar (#724, PlanSurvivalSearchProps). */
+	TSet<int32> SurvivalSearchProps;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UPrimitiveComponent>> BoundaryWalls;

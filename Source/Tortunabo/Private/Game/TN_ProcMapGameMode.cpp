@@ -667,17 +667,7 @@ void ATN_ProcMapGameMode::StartStormIfNeeded()
 
 	if (!Storm)
 	{
-		UClass* StormClass = PathStormClass ? PathStormClass.Get() : ATN_PathStorm::StaticClass();
-		if (const UTN_ProcMapSettings* Settings = Generator->GetSettings())
-		{
-			if (Settings->PathStormClass && Settings->PathStormClass->IsChildOf(ATN_PathStorm::StaticClass()))
-			{
-				StormClass = Settings->PathStormClass.Get();
-			}
-		}
-		FActorSpawnParameters Params;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		Storm = GetWorld()->SpawnActor<ATN_PathStorm>(StormClass, FTransform::Identity, Params);
+		Storm = ATN_PathStorm::SpawnFor(GetWorld(), Generator, PathStormClass);
 	}
 	if (Storm)
 	{

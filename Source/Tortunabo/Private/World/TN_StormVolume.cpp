@@ -360,7 +360,7 @@ void ATN_StormVolume::HandlePlayerDeath(APlayerController* PC)
 
 	if (ATN_RunGameMode* RunGameMode = ResolveRunGameMode())
 	{
-		RunGameMode->MarkPlayerDead(PC);
+		RunGameMode->MarkPlayerDeadBy(PC, ETNDeathCause::Storm);
 	}
 
 	PendingDeathRemaining.Remove(PC);

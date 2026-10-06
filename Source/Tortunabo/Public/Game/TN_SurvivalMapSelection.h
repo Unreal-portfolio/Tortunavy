@@ -57,13 +57,14 @@ namespace TNSurvivalMapSelection
 
 	/**
 	 * Mapa del nivel Level en la partida de semilla MatchSeed.
-	 * @param Played  Mapas que ya han salido en la partida, en orden (el último es el del nivel anterior).
+	 * @param Played           Mapas que ya han salido en la partida, en orden (el último es el del nivel anterior).
+	 * @param StartDifficulty  Dificultad del mapa del nivel 1 (TNSurvivalLogic::StartMapDifficulty, #730).
 	 * @return El mapa elegido; inválido solo si el catálogo no tiene mapas de esa dificultad.
 	 */
-	inline FTNSurvivalMapPick PickLevelMap(int32 MatchSeed, int32 Level, const TArray<uint32>& Played)
+	inline FTNSurvivalMapPick PickLevelMap(int32 MatchSeed, int32 Level, const TArray<uint32>& Played, int32 StartDifficulty = 1)
 	{
 		FTNSurvivalMapPick Pick;
-		const int32 Difficulty = TNSurvivalLogic::LevelMapDifficulty(Level);
+		const int32 Difficulty = TNSurvivalLogic::LevelMapDifficulty(Level, StartDifficulty);
 		const TArray<uint32> All = MapsOfDifficulty(Difficulty);
 		if (All.Num() == 0)
 		{

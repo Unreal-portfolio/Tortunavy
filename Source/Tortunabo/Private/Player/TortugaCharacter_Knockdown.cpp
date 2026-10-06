@@ -620,7 +620,7 @@ void ATortugaCharacter::RequestKill(AActor* KillInstigator)
 	UE_LOG(LogTortunabo, Log, TEXT("[Character] RequestKill on '%s' by '%s'"),
 		*GetNameSafe(this), *GetNameSafe(KillInstigator));
 
-	GM->MarkPlayerDead(PC);
+	GM->MarkPlayerDeadBy(PC, TNDeathCause::FromInstigator(KillInstigator, this));
 }
 
 // DEATH VISUAL SYSTEM

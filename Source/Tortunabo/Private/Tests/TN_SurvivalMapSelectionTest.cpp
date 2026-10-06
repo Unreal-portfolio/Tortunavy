@@ -13,7 +13,7 @@ namespace
 	constexpr int32 MatchSeeds[] = { 1, 7, 42, 1337, 99991, 1 << 29, 1 << 30, -5 };
 
 	/** Los mapas de los niveles 1..LastLevel de una partida, como los juega ATN_ChunkManager::BuildLevel. */
-	TArray<FTNSurvivalMapPick> PlayMatch(int32 MatchSeed, int32 LastLevel, uint32 FirstMap = 0u)
+	TArray<FTNSurvivalMapPick> PlayMatch(int32 MatchSeed, int32 LastLevel, uint32 FirstMap = 0u, int32 StartDifficulty = 1)
 	{
 		TArray<FTNSurvivalMapPick> Picks;
 		TArray<uint32> Played;
@@ -21,7 +21,7 @@ namespace
 		{
 			const FTNSurvivalMapPick Forced = Level == 1 && FirstMap != 0u
 				? TNSurvivalMapSelection::PickForcedMap(FirstMap) : FTNSurvivalMapPick();
-			const FTNSurvivalMapPick Pick = Forced.IsValid() ? Forced : TNSurvivalMapSelection::PickLevelMap(MatchSeed, Level, Played);
+			const FTNSurvivalMapPick Pick = Forced.IsValid() ? Forced : TNSurvivalMapSelection::PickLevelMap(MatchSeed, Level, Played, StartDifficulty);
 			Played = TNSurvivalMapSelection::RecordPlayed(Played, Pick);
 			Picks.Add(Pick);
 		}
@@ -177,6 +177,39 @@ bool FTNSurvivalMapSelectionForcedTest::RunTest(const FString& Parameters)
 		}
 		TestTrue(*FString::Printf(TEXT("Partida %d: el nivel 18 ya ha agotado la dificultad 5"), MatchSeed), Picks[17].bForgotPlayed);
 		TestNotEqual(*FString::Printf(TEXT("Partida %d: el nivel 18 no repite el 17"), MatchSeed), Picks[17].Seed, Picks[16].Seed);
+	}
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dificultad elegida: normal empieza en la 3 y difícil juega siempre la 5 (#730)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalMapSelectionStartTest,
+	"Tortunabo.Survival.Catalogo.Eleccion.DificultadElegida",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNSurvivalMapSelectionStartTest::RunTest(const FString& Parameters)
+{
+	for (const int32 MatchSeed : MatchSeeds)
+	{
+		const TArray<FTNSurvivalMapPick> Normal = PlayMatch(MatchSeed, 6, 0u, 3);
+		TestEqual(FString::Printf(TEXT("Normal (%d): nivel 1 de dificultad 3"), MatchSeed), Normal[0].Difficulty, 3);
+		TestEqual(FString::Printf(TEXT("Normal (%d): nivel 2 de dificultad 4"), MatchSeed), Normal[1].Difficulty, 4);
+		TestEqual(FString::Printf(TEXT("Normal (%d): nivel 6 de dificultad 5"), MatchSeed), Normal[5].Difficulty, 5);
+
+		// Difícil: más niveles que mapas de la 5, así que se olvidan los jugados, pero nunca se repite el anterior.
+		const int32 Levels = TNSurvivalMapSelection::MapsOfDifficulty(5).Num() + 4;
+		const TArray<FTNSurvivalMapPick> Hard = PlayMatch(MatchSeed, Levels, 0u, 5);
+		for (int32 i = 0; i < Hard.Num(); ++i)
+		{
+			TestTrue(FString::Printf(TEXT("Difícil (%d): nivel %d con mapa"), MatchSeed, i + 1), Hard[i].IsValid());
+			TestEqual(FString::Printf(TEXT("Difícil (%d): nivel %d de dificultad 5"), MatchSeed, i + 1), Hard[i].Difficulty, 5);
+			if (i > 0)
+			{
+				TestNotEqual(FString::Printf(TEXT("Difícil (%d): nivel %d distinto del anterior"), MatchSeed, i + 1), Hard[i].Seed, Hard[i - 1].Seed);
+			}
+		}
 	}
 	return true;
 }

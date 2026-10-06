@@ -152,6 +152,17 @@ bool FTNSurvivalDifficultyTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Nivel 5 = dificultad 5"), LevelMapDifficulty(5), 5);
 	TestEqual(TEXT("Del 5 en adelante, 5"), LevelMapDifficulty(9), 5);
 	TestEqual(TEXT("Un nivel no válido cuenta como el 1"), LevelMapDifficulty(0), 1);
+
+	// La dificultad elegida con el general decide dónde se empieza (#730).
+	TestEqual(TEXT("Fácil: empieza en la 1"), StartMapDifficulty(ETNProcDifficulty::Easy), 1);
+	TestEqual(TEXT("Normal: empieza en la 3"), StartMapDifficulty(ETNProcDifficulty::Normal), 3);
+	TestEqual(TEXT("Difícil: empieza en la 5"), StartMapDifficulty(ETNProcDifficulty::Hard), 5);
+	TestEqual(TEXT("Normal, nivel 1"), LevelMapDifficulty(1, 3), 3);
+	TestEqual(TEXT("Normal, nivel 2"), LevelMapDifficulty(2, 3), 4);
+	TestEqual(TEXT("Normal, del nivel 3 en adelante, 5"), LevelMapDifficulty(7, 3), 5);
+	TestEqual(TEXT("Difícil: siempre 5"), LevelMapDifficulty(1, 5), 5);
+	TestEqual(TEXT("Difícil, nivel 9: 5"), LevelMapDifficulty(9, 5), 5);
+	TestEqual(TEXT("Un inicio fuera de rango se acota"), LevelMapDifficulty(1, 9), 5);
 	return true;
 }
 

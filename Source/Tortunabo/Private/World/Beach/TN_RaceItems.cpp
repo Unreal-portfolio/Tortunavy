@@ -20,6 +20,8 @@
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
+#include "World/ProcMap/TN_ProcMapGenerator.h"
+#include "World/TN_ChunkManager.h"
 #include "World/TN_PickupInteractableBase.h"
 #include "World/TN_CatalogItemVisuals.h"
 #include "Core/TN_Log.h"
@@ -364,13 +366,40 @@ void TNRaceItems::GatherRacers(const UObject* WorldContext, TArray<ATortugaChara
 	ATN_BeachEnemy::GatherTurtles(WorldContext, Out);
 }
 
+namespace
+{
+	/** El mapa del nivel de Supervivencia (el del ChunkManager por niveles), si está listo; null en los demás modos. */
+	const ATN_ProcMapGenerator* FindSurvivalLevelMap(const UObject* WorldContext)
+	{
+		UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		if (!World)
+		{
+			return nullptr;
+		}
+		for (TActorIterator<ATN_ChunkManager> It(World); It; ++It)
+		{
+			const ATN_ProcMapGenerator* LevelMap = It->IsLevelMode() ? It->GetLevelGenerator() : nullptr;
+			if (LevelMap && LevelMap->IsMapReady())
+			{
+				return LevelMap;
+			}
+		}
+		return nullptr;
+	}
+}
+
 float TNRaceItems::CourseProgress(const UObject* WorldContext, const FVector& Where)
 {
 	if (const ATN_BeachRaceGenerator* Generator = ATN_BeachRaceGenerator::Find(WorldContext))
 	{
 		return Generator->GetCourseProgress(Where);
 	}
-	// Sin playa (pruebas en otro mapa): a lo largo del eje X.
+	// Supervivencia: lo recorrido del camino del mapa del nivel hacia su meta (lo mismo que mide lo que falta para desempatar).
+	if (const ATN_ProcMapGenerator* LevelMap = FindSurvivalLevelMap(WorldContext))
+	{
+		return LevelMap->GetPathProgress(Where) * 1.0e-5f;
+	}
+	// Sin playa ni nivel (pruebas en otro mapa): a lo largo del eje X.
 	return static_cast<float>(Where.X * 1.0e-5);
 }
 
@@ -466,6 +495,13 @@ float TNRaceItems::PositionWeightForUse(ETN_ItemUseType Use, float Norm, ETNRace
 
 bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog, FTN_InventoryItem& OutItem)
 {
+	return RollLoot(Picker, Source, Catalog,
+		[](ETN_ItemUseType /*Use*/, ETNRaceItem /*Kind*/, float RaceWeight, const FTNRaceRank& /*Rank*/) { return RaceWeight; }, OutItem);
+}
+
+bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog,
+	TFunctionRef<float(ETN_ItemUseType, ETNRaceItem, float, const FTNRaceRank&)> WeightOf, FTN_InventoryItem& OutItem)
+{
 	const FTNRaceRank Rank = GetRank(Picker);
 
 	struct FOption
@@ -480,13 +516,13 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 	// Los objetos de siempre de DT_Items (los que se pueden recoger y usar), con el peso de su uso según el puesto.
 	if (Catalog && Catalog->GetRowStruct() && Catalog->GetRowStruct()->IsChildOf(FTN_InventoryItem::StaticStruct()))
 	{
-		Catalog->ForeachRow<FTN_InventoryItem>(TEXT("TNRaceItems::RollLoot"), [&Options, &Total, &Rank, Source](const FName& /*RowName*/, const FTN_InventoryItem& Row)
+		Catalog->ForeachRow<FTN_InventoryItem>(TEXT("TNRaceItems::RollLoot"), [&Options, &Total, &Rank, &WeightOf, Source](const FName& /*RowName*/, const FTN_InventoryItem& Row)
 		{
 			if (!Row.IsValid() || !Row.PickupActorClass || Row.UseType == ETN_ItemUseType::None || Row.UseType == ETN_ItemUseType::RaceItem)
 			{
 				return;
 			}
-			const float Weight = PositionWeightForUse(Row.UseType, Rank.Norm, Source);
+			const float Weight = WeightOf(Row.UseType, ETNRaceItem::None, PositionWeightForUse(Row.UseType, Rank.Norm, Source), Rank);
 			if (Weight <= 0.f)
 			{
 				return;
@@ -503,7 +539,7 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 	for (int32 Index = static_cast<int32>(ETNRaceItem::Coconut); Index < static_cast<int32>(ETNRaceItem::Count); ++Index)
 	{
 		const ETNRaceItem Kind = static_cast<ETNRaceItem>(Index);
-		const float Weight = PositionWeight(Kind, Rank.Norm, Rank.Count, Source);
+		const float Weight = WeightOf(ETN_ItemUseType::RaceItem, Kind, PositionWeight(Kind, Rank.Norm, Rank.Count, Source), Rank);
 		if (Weight <= 0.f)
 		{
 			continue;
