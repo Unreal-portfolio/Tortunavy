@@ -130,9 +130,24 @@ bool ATN_TctProjectile::ServerLaunch(ATortugaCharacter* Thrower, uint8 Kind, con
 	{
 		return false;
 	}
-	const FVector Dir = Direction.GetSafeNormal();
+	FVector Dir = Direction.GetSafeNormal();
 	const FVector Flat = FVector(Dir.X, Dir.Y, 0.0).GetSafeNormal();
 	const FVector Origin = Thrower->GetActorLocation() + FVector(0.0, 0.0, 50.0) + Flat * 70.0;
+	// Hacia la mira (#707): los que caen en parábola, con el arco justo para llegar al punto del centro de la pantalla; el
+	// dardo, casi recto, directo a él.
+	if (Thrower->UsesCameraThrowAim())
+	{
+		const float Gravity = TNTctProjectileDetail::FlightOf(Item).Gravity;
+		FVector Target;
+		if (Gravity >= 0.5f)
+		{
+			Dir = Thrower->GetThrowDirectionToCrosshair(Origin, Thrower->GetTurtleAimRotation(), Speed, Gravity * FMath::Max(1.f, -World->GetGravityZ()));
+		}
+		else if (Thrower->GetCrosshairPoint(Target))
+		{
+			Dir = TNTctItemRules::AimToward(Origin, Target, Dir);
+		}
+	}
 	// Lo que ya corría la tortuga se suma a medias (como al lanzar la bola corriendo).
 	const FVector Carry = FVector(Thrower->GetVelocity().X, Thrower->GetVelocity().Y, 0.0) * 0.5;
 

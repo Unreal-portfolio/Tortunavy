@@ -303,6 +303,19 @@ namespace TNTctItemRules
 
 	// ── Golpes (servidor; velocidades que se dan con UTN_TurtleMovementComponent::LaunchFromServer) ──────────────────────
 
+	/**
+	 * true si el objeto se apunta (se dispara, se lanza o se golpea hacia donde se mira): mientras se lleva equipado, el HUD
+	 * enseña la mira (#707). Los que se plantan o se usan sin apuntar (flotador, medusa...) no la llevan.
+	 */
+	TORTUNABO_API bool UsesAim(ETNTctItem Kind);
+
+	/**
+	 * Dirección del disparo desde Muzzle hacia el punto de mira Target (el que se ve en el centro de la pantalla). Con el
+	 * objetivo pegado a la boca, o detrás de donde mira la tortuga (Fallback, la de la cámara), se usa Fallback. La inclinación
+	 * se recorta a MaxPitchDeg: no se dispara al propio suelo ni a las nubes (#707).
+	 */
+	TORTUNABO_API FVector AimToward(const FVector& Muzzle, const FVector& Target, const FVector& Fallback, float MaxPitchDeg = 40.f);
+
 	/** Pistola de noqueo: el empujón del derribo hacia donde iba el tiro. */
 	TORTUNABO_API FVector KnockoutImpulse(const FVector& ShotDirection);
 

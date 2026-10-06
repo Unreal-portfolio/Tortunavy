@@ -23,6 +23,7 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_LocText.h"
+#include "Game/TN_TctItems.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
@@ -650,6 +651,11 @@ bool UTN_RunHUDWidget::ShouldShowAimDot() const
 		// De la carrera, los que se lanzan a mano (el cangrejo va solo hacia su rival y el resto no se lanza).
 		const ETNRaceItem Kind = TNRaceItems::KindOf(Equipped);
 		return Kind == ETNRaceItem::SandMine || Kind == ETNRaceItem::Frisbee;
+	}
+	if (Use == ETN_ItemUseType::TctItem)
+	{
+		// Las armas y lanzables de Todos contra Todos (#707).
+		return TNTctItemRules::UsesAim(TNTctItems::KindOf(Equipped));
 	}
 	return Use == ETN_ItemUseType::Throwable || Use == ETN_ItemUseType::InkThrower;
 }

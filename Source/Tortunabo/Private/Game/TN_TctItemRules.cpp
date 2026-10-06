@@ -237,6 +237,47 @@ TArray<int32> TNTctItemRules::PickPadPoints(const TArray<FVector>& Candidates, i
 	return Picked;
 }
 
+bool TNTctItemRules::UsesAim(ETNTctItem Kind)
+{
+	switch (Kind)
+	{
+	case ETNTctItem::KnockoutPistol:
+	case ETNTctItem::AirBlunderbuss:
+	case ETNTctItem::Grapple:
+	case ETNTctItem::Shovel:
+	case ETNTctItem::BeachBall:
+	case ETNTctItem::Anchor:
+	case ETNTctItem::JellyDart:
+	case ETNTctItem::InkPistol:
+	case ETNTctItem::Cocobomba:
+	case ETNTctItem::Alga:
+		return true;
+	default:
+		return false;
+	}
+}
+
+FVector TNTctItemRules::AimToward(const FVector& Muzzle, const FVector& Target, const FVector& Fallback, float MaxPitchDeg)
+{
+	constexpr double MinDistance = 120.0;
+	const FVector Base = Fallback.GetSafeNormal();
+	const FVector Delta = Target - Muzzle;
+	if (Delta.SizeSquared() < MinDistance * MinDistance)
+	{
+		return Base;
+	}
+	const FVector Flat(Delta.X, Delta.Y, 0.0);
+	const FVector BaseFlat(Base.X, Base.Y, 0.0);
+	// Un objetivo de lado o detrás de donde mira la tortuga (la cámara va por detrás de ella): no se gira el tiro hacia ahí.
+	if (Flat.IsNearlyZero() || BaseFlat.IsNearlyZero() || FVector::DotProduct(Flat.GetSafeNormal(), BaseFlat.GetSafeNormal()) < 0.5)
+	{
+		return Base;
+	}
+	const double MaxTan = FMath::Tan(FMath::DegreesToRadians(static_cast<double>(FMath::Clamp(MaxPitchDeg, 1.f, 85.f))));
+	const double Rise = FMath::Clamp(Delta.Z / Flat.Size(), -MaxTan, MaxTan);
+	return (Flat.GetSafeNormal() + FVector::UpVector * Rise).GetSafeNormal();
+}
+
 FVector TNTctItemRules::KnockoutImpulse(const FVector& ShotDirection)
 {
 	return TNTctItemRulesDetail::Flat(ShotDirection) * TNTctItemTuning::KnockoutPush + FVector::UpVector * TNTctItemTuning::KnockoutUp;

@@ -29,8 +29,8 @@ namespace TNTctItemUseDetail
 		bool bHitWorld = false;
 	};
 
-	/** Hacia dónde apunta la tortuga: la cámara, con la inclinación recortada (no se dispara a los pies ni al cielo). */
-	FVector AimDirection(const ATortugaCharacter* Turtle)
+	/** Hacia dónde mira la tortuga: la cámara, con la inclinación recortada (no se dispara a los pies ni al cielo). */
+	FVector CameraDirection(const ATortugaCharacter* Turtle)
 	{
 		FRotator Aim = Turtle->GetTurtleAimRotation();
 		Aim.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Aim.Pitch), -15.f, 20.f);
@@ -41,6 +41,21 @@ namespace TNTctItemUseDetail
 	FVector MuzzleOf(const ATortugaCharacter* Turtle, const FVector& Direction)
 	{
 		return Turtle->GetActorLocation() + FVector(0.0, 0.0, 35.0) + FVector(Direction.X, Direction.Y, 0.0).GetSafeNormal() * 45.0;
+	}
+
+	/**
+	 * Hacia dónde va el disparo (#707): de la boca al punto que se ve en el centro de la pantalla (la mira), no en paralelo a la
+	 * cámara, que va por detrás y por encima de la tortuga. Sin mira (VR), la dirección de la cámara.
+	 */
+	FVector AimDirection(const ATortugaCharacter* Turtle)
+	{
+		const FVector Camera = CameraDirection(Turtle);
+		FVector Target;
+		if (!Turtle->GetCrosshairPoint(Target))
+		{
+			return Camera;
+		}
+		return TNTctItemRules::AimToward(MuzzleOf(Turtle, Camera), Target, Camera);
 	}
 
 	/** Disparo en línea de Range con un grosor Radius: la primera tortuga que se puede golpear antes del escenario. */
@@ -207,8 +222,11 @@ namespace TNTctItemUseDetail
 		{
 			return false;
 		}
-		const FVector Direction = Turtle->GetThrowDirection(Turtle->GetTurtleAimRotation());
-		ATN_InkProjectile::Spawn(Turtle, Ink->InkData.ProjectileClass, MuzzleOf(Turtle, Direction), Direction, TNTctItemTuning::InkPistolSpeed);
+		// Hacia la mira (#707), con el arco justo para llegar al punto del centro de la pantalla.
+		const FVector Fallback = Turtle->GetThrowDirection(Turtle->GetTurtleAimRotation());
+		const FVector Muzzle = MuzzleOf(Turtle, Fallback);
+		const FVector Direction = Turtle->GetThrowDirectionToCrosshair(Muzzle, Turtle->GetTurtleAimRotation(), TNTctItemTuning::InkPistolSpeed);
+		ATN_InkProjectile::Spawn(Turtle, Ink->InkData.ProjectileClass, Muzzle, Direction, TNTctItemTuning::InkPistolSpeed);
 		TNTctItems::PlayCue(Turtle, ETNRaceSound::Splat, 1.3f);
 		return true;
 	}
