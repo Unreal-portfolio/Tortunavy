@@ -25,8 +25,11 @@ void ATN_CoopGameState::SeamlessTravelTransitionCheckpoint(bool bToTransitionMap
 void ATN_CoopGameState::OnRep_MatchFlowState()
 {
 	// Fires on remote clients when the replicated value arrives. Como en el servidor (BroadcastFlowStateChange): fuera de
-	// Results la partida siguiente empieza sin nada guardado (#567).
-	PersistedScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedScoreThisRace, MatchFlowState == ETNMatchFlowState::Results);
+	// Results la partida siguiente empieza sin nada guardado (#567): conchas, muñecos y puntuación del Coop.
+	const bool bResults = MatchFlowState == ETNMatchFlowState::Results;
+	PersistedScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedScoreThisRace, bResults);
+	PersistedDollsThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedDollsThisRace, bResults);
+	PersistedCoopScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedCoopScoreThisRace, bResults);
 	PersistLocalPlayerScoreIfResults();
 	OnMatchFlowStateChanged.Broadcast(MatchFlowState);
 }
