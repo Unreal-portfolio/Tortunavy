@@ -1,5 +1,5 @@
 """Rango vertical configurable del voxelizado (terrain_vol.layout.ZRange): por defecto 128 niveles y sin
-cambiar la malla de los mapas vigentes (P01, E01 y C01_camino; Mapa01 esta obsoleto).
+cambiar la malla del mapa vigente (C01_camino; Mapa01 esta obsoleto).
 
     uv run --with pytest --with numpy --with scipy --with pillow --with scikit-image \
         python -m pytest Scripts/tests/test_terrain_zrange.py
@@ -55,27 +55,6 @@ def _same_mesh(model, col: int, row: int) -> None:
     assert np.allclose(old.top, new.top)
     assert new.standable.shape[2] == 128 and old.standable.shape[2] == 89
     assert np.array_equal(old.standable, new.standable[:, :, :89])
-
-
-def _same_as_stored(model, col: int, row: int, stored: Path, tmp_path: Path) -> None:
-    out = tmp_path / stored.name
-    write_chunk(out, build_chunk(model, col, row))
-    assert out.read_bytes() == stored.read_bytes(), f"{stored} ha cambiado"
-
-
-def test_spain_mesh_does_not_change(tmp_path):
-    from terrain_geo.model import SpainModel
-    model = SpainModel()
-    _same_mesh(model, 2, 3)
-    _same_as_stored(model, 2, 3, VARIANTS / "E01_espana" / "Chunks" / "r3c2.bin", tmp_path)
-
-
-def test_platforms_mesh_does_not_change(tmp_path):
-    from terrain_platforms.layout import LAYOUT_FILE, load_layout
-    from terrain_platforms.model import PlatformModel
-    model = PlatformModel(20260929, load_layout(LAYOUT_FILE))
-    _same_mesh(model, 1, 1)                          # la meseta +30 m llega a 26 m
-    _same_as_stored(model, 1, 1, VARIANTS / "P01_plataformas" / "Chunks" / "r1c1.bin", tmp_path)
 
 
 def test_path_map_mesh_does_not_change(tmp_path):

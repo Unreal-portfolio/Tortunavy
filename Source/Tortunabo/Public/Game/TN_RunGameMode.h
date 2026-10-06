@@ -15,10 +15,10 @@ class ATN_CoopPlayerState;
 class UTN_UnderTerrainGuardComponent;
 
 /**
- * @brief GameMode de la fase Run (carrera). Orquesta el ciclo Countdown -> Race -> Results -> retorno al lobby.
+ * @brief GameMode del modo único (fase Run). Orquesta el ciclo Countdown -> Race -> Results -> retorno al lobby.
  *
  * Responsabilidades:
- *  - Spawnea jugadores en LVL_Run tras Seamless Travel desde LVL_HQ.
+ *  - Spawnea jugadores en LVL_Demo01 tras Seamless Travel desde LVL_HQ.
  *  - Gestiona la línea de meta (MarkPlayerFinished) y las muertes (MarkPlayerDead).
  *  - Sistema DBNO (Down But Not Out) con bleedout timer e inmunidad post-revive.
  *  - Reloj de carrera replicado y countdown del pantalla de Resultados.
@@ -176,8 +176,7 @@ protected:
 
 	/**
 	 * Red de seguridad bajo el terreno (#633): 10 veces por segundo en el servidor, una tortuga hundida bajo el terreno vuelve
-	 * a la superficie sin morir (no en el agua ni en las zonas de muerte). Coop (ATN_ProcMapGameMode) y Clásico; la carrera
-	 * de la playa la apaga porque tiene la suya (ATN_BeachRaceGameMode::GuardUnderSand).
+	 * a la superficie sin morir (no en el agua ni en las zonas de muerte).
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Run|Safety")
 	TObjectPtr<UTN_UnderTerrainGuardComponent> UnderTerrainGuard;
@@ -192,7 +191,6 @@ protected:
 
 	/**
 	 * false = morir es definitivo: EnterDBNO mata directamente y no se deja RescuePickup. El tótem sigue salvando.
-	 * Lo apaga ATN_SurvivalGameMode.
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Run|Death")
 	bool bAllowRevive = true;
@@ -210,8 +208,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Run|Scoring", meta = (ClampMin = "0.0"))
 	float TimeBonusPointsPerSecond = 5.f;
 
-	// Protegido (no privado) para que los modos derivados (ATN_ProcMapGameMode)
-	// reutilicen el flujo de muerte, rescate, resultados y vuelta al lobby.
+	// Protegido (no privado) para que un GameMode hijo reutilice el flujo de muerte, rescate, resultados y vuelta al lobby.
 	FTimerHandle ResultsTimerHandle;
 	FTimerHandle ResultsCountdownTimerHandle;
 	FTimerHandle WaitingTimeoutTimerHandle;
@@ -252,7 +249,7 @@ protected:
 
 	// ── Entrada tardía y reconexión (#345, TN_LateJoinRules.h) ─────────────
 
-	/** @brief Cómo trata el modo a quien entra con la partida en marcha. Clásico y Carrera: como siempre. */
+	/** @brief Cómo trata el modo a quien entra con la partida en marcha (por defecto, como siempre: desde la salida). */
 	virtual ETNLateJoinPolicy GetLateJoinPolicy() const { return ETNLateJoinPolicy::FreshStart; }
 
 	/** @brief La partida (o la ronda) ya está en juego para quien entra ahora. */
@@ -293,8 +290,8 @@ protected:
 
 	/**
 	 * @brief Opciones que se añaden a la URL de vuelta al lobby (con su «?» delante). Vacío por defecto.
-	 * @note Las opciones de la URL del viaje anterior (p. ej. ?game=Survival) se heredan en el siguiente: un modo que
-	 *       viaja con «game» debe limpiarlo aquí, o el lobby carga con el GameMode de la partida y nadie arranca la cuenta atrás.
+	 * @note Las opciones de la URL del viaje anterior se heredan en el siguiente: un modo que viaja con «game» debe
+	 *       limpiarlo aquí, o el lobby carga con el GameMode de la partida y nadie arranca la cuenta atrás.
 	 */
 	virtual FString GetLobbyTravelOptions() const { return FString(); }
 
@@ -323,8 +320,7 @@ protected:
 	bool TryTotemAutoRevive(APlayerController* PlayerController);
 
 	/**
-	 * El panel de resultados dice qué la ha eliminado (#728). Solo Supervivencia lo activa: el Coop y los demás modos siguen
-	 * con «Eliminado».
+	 * El panel de resultados dice qué la ha eliminado (#728). Apagado, sale «Eliminado».
 	 */
 	bool bRecordDeathCause = false;
 

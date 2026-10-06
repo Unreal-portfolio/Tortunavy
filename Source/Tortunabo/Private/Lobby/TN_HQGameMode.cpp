@@ -1,5 +1,4 @@
 #include "Lobby/TN_HQGameMode.h"
-#include "Game/TN_TctGameMode.h"
 #include "Art/TN_TurtleArt.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopGameState.h"
@@ -22,8 +21,6 @@
 #include "GameFramework/Pawn.h"
 #include "TimerManager.h"
 #include "Lobby/TN_ChangingBooth.h"
-#include "Lobby/TN_GeneralBriefing.h"
-#include "Lobby/TN_LobbyMission.h"
 #include "Lobby/TN_LobbyReadyZone.h"
 #include "Lobby/TN_LobbyValley.h"
 #include "Lobby/TN_SandCastleLobby.h"
@@ -50,9 +47,6 @@ void ATN_HQGameMode::BeginPlay()
 	{
 		TNGI->LobbyReturnMapPath = UWorld::RemovePIEPrefix(GetWorld()->GetOutermost()->GetName());
 		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] Lobby de vuelta: %s"), *TNGI->LobbyReturnMapPath);
-		// El modo lo elige el anfitrión en el menú principal (o «Cambiar de modo» al acabar la carrera) y vive en su
-		// GameInstance: el castillo no tiene selector.
-		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] Modo de la próxima partida: %s"), *UEnum::GetValueAsString(TNGI->SelectedProcMode));
 	}
 	EnsureFallbackPlayerStart();
 	SpawnLobbyShops();
@@ -375,61 +369,8 @@ void ATN_HQGameMode::BeginMatchTravel()
 		GI->PendingTravelPlayerCount = ConnectedCount;
 		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] Saved PendingTravelPlayerCount = %d"), ConnectedCount);
 
-		// ── Modo (menú principal o selector del lobby viejo): Carrera → playa; Clásico y Supervivencia → LVL_Run; el resto → mapa procedural ──
-		bool bProcMapRace = false;
-		if (GI->SelectedProcMode == ETNProcGameMode::TwoVsTwo && ConnectedCount != 4)
-		{
-			// El selector ya lo impide, pero alguien pudo salir durante la cuenta atrás. Sigue en el mapa procedural.
-			UE_LOG(LogTortunabo, Warning, TEXT("[HQGameMode] 2vs2 exige 4 jugadores (hay %d) → Carrera."), ConnectedCount);
-			GI->SelectedProcMode = ETNProcGameMode::Race;
-			bProcMapRace = true;
-		}
-		// ── Cómo se pusieron listos (sala de la puerta doble o huevos): así se sale en el mapa procedural ──
-		// Antes de destruir los peones; sin castillo (maqueta vieja), la puerta doble.
-		GI->PendingStartStyle = ETNMatchStartStyle::Gate;
-		for (TActorIterator<ATN_SandCastleLobby> It(World); It; ++It)
-		{
-			GI->PendingStartStyle = It->GetStartStyle();
-			break;
-		}
-		const bool bBeachRace = GI->SelectedProcMode == ETNProcGameMode::Race && !bProcMapRace;
-		if (bBeachRace && FPackageName::DoesPackageExist(BeachRaceMapPath))
-		{
-			// Carrera: todos contra todos en la playa (ATN_BeachRaceGameMode, Docs/Modo_Carrera.md).
-			TravelURL = BeachRaceMapPath;
-		}
-		else if (GI->SelectedProcMode == ETNProcGameMode::Survival)
-		{
-			// Supervivencia: los niveles del Clásico (LVL_Run) con su propio GameMode (alias «Survival», DefaultEngine.ini).
-			TravelURL = MatchMapPath + TEXT("?game=Survival");
-		}
-		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath)
-			&& !TNLobbyMission::ResolveTctArena(GI->SelectedTctArena, TNLobbyMission::TctArenaOptions()).IsNone())
-		{
-			// Todos contra Todos: rondas de supervivencia en la arena inventada que eligió el anfitrión (ATN_TctGameMode,
-			// alias «Tct», la lee de ?Arena=).
-			TravelURL = TNLobbyMission::TctTravelURL(
-				TNLobbyMission::ResolveTctArena(GI->SelectedTctArena, TNLobbyMission::TctArenaOptions()), TctMapPath);
-		}
-		else if (GI->SelectedProcMode != ETNProcGameMode::Classic)
-		{
-			if (bBeachRace)
-			{
-				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_beach_race.py): la carrera se juega en el mapa procedural."),
-					*BeachRaceMapPath);
-			}
-			if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll)
-			{
-				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] Sin %s (Scripts/build_tct_level.py) o sin su arena en Scripts/terrain_volumes/Variants (build cocinada): se juega el cooperativo."),
-					*TctMapPath);
-				GI->SelectedProcMode = ETNProcGameMode::Coop;
-			}
-			// También en la URL: la lee ATN_ProcMapGameMode y sustituye a la del viaje anterior.
-			TravelURL = ProcMapPath + (GI->PendingStartStyle == ETNMatchStartStyle::Eggs ? TEXT("?ProcStart=Eggs") : TEXT("?ProcStart=Gate"));
-		}
-		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] Modo %s · dificultad %s · salida %s"),
-			*UEnum::GetValueAsString(GI->SelectedProcMode), *UEnum::GetValueAsString(GI->SelectedProcDifficulty),
-			GI->PendingStartStyle == ETNMatchStartStyle::Eggs ? TEXT("huevos") : TEXT("puerta doble"));
+		// Modo único: siempre LVL_Demo01, con BP_RunGameMode como GameMode Override del nivel.
+		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] Partida en %s."), *MatchMapPath);
 	}
 
 	// ── Destroy all pawns BEFORE travel for WASAPI cleanup ──────────────
@@ -616,17 +557,11 @@ void ATN_HQGameMode::SpawnLobbyShops()
 	if (!World) { return; }
 	static const FName ShopTag(TEXT("TN_ShopAnchor"));
 	static const FName BoothTag(TEXT("TN_BoothAnchor"));
-	static const FName GeneralTag(TEXT("TN_GeneralAnchor"));
-	/** Donde está el general de la maqueta de LVL_Lobby (TotugaDemo_Rig2). */
-	const FVector BlockoutGeneralSpot(-892.0, 1479.0, 0.0);
 
 	bool bHasShop = false;
 	bool bHasBooth = false;
-	bool bHasGeneral = false;
 	TArray<AActor*> ShopAnchors;
 	TArray<AActor*> BoothAnchors;
-	TArray<AActor*> GeneralAnchors;
-	AActor* BlockoutGeneral = nullptr;
 	TArray<AActor*> BlockoutKeepers;
 	TArray<AActor*> BlockoutBottles;
 	TArray<AActor*> BlockoutDoors;
@@ -637,10 +572,8 @@ void ATN_HQGameMode::SpawnLobbyShops()
 		if (!Actor) { continue; }
 		bHasShop |= Actor->IsA<ATN_ShopKeeper>();
 		bHasBooth |= Actor->IsA<ATN_ChangingBooth>();
-		bHasGeneral |= Actor->IsA<ATN_GeneralBriefing>();
 		if (Actor->ActorHasTag(ShopTag)) { ShopAnchors.Add(Actor); }
 		if (Actor->ActorHasTag(BoothTag)) { BoothAnchors.Add(Actor); }
-		if (Actor->ActorHasTag(GeneralTag)) { GeneralAnchors.Add(Actor); }
 		const FString ClassName = Actor->GetClass()->GetName();
 		if (ClassName.Contains(TEXT("VestidorBotella"))) { BlockoutBottles.Add(Actor); }
 		else if (ClassName.Contains(TEXT("ShellDoor"))) { BlockoutDoors.Add(Actor); }
@@ -651,12 +584,6 @@ void ATN_HQGameMode::SpawnLobbyShops()
 			// Tortugas de la maqueta (la malla del personaje, otra con su esqueleto o la de demo; TNTurtleArt::IsTurtleMesh).
 			const bool bTurtle = TNTurtleArt::IsTurtleMesh(Asset);
 			if (bTurtle && Actor->GetActorScale3D().Z >= 3.2f) { BlockoutKeepers.Add(Actor); }
-			// El general de la maqueta: la tortuga suelta más cerca de su sitio (sea cual sea su escala).
-			if (bTurtle && FVector::Dist2D(Actor->GetActorLocation(), BlockoutGeneralSpot) < 500.0
-				&& (!BlockoutGeneral || FVector::Dist2D(Actor->GetActorLocation(), BlockoutGeneralSpot) < FVector::Dist2D(BlockoutGeneral->GetActorLocation(), BlockoutGeneralSpot)))
-			{
-				BlockoutGeneral = Actor;
-			}
 		}
 	}
 
@@ -711,7 +638,7 @@ void ATN_HQGameMode::SpawnLobbyShops()
 	}
 
 	// Suelo bajo el ancla: traza hacia abajo sin las piezas de la maqueta; si no hay, el fondo de su caja.
-	auto GroundOf = [World, &BlockoutKeepers, &BlockoutBottles, &BlockoutDoors, BlockoutGeneral](const AActor* Actor) -> FVector
+	auto GroundOf = [World, &BlockoutKeepers, &BlockoutBottles, &BlockoutDoors](const AActor* Actor) -> FVector
 	{
 		FVector Origin, Extent;
 		Actor->GetActorBounds(false, Origin, Extent);
@@ -720,7 +647,6 @@ void ATN_HQGameMode::SpawnLobbyShops()
 		Query.AddIgnoredActors(BlockoutKeepers);
 		Query.AddIgnoredActors(BlockoutBottles);
 		Query.AddIgnoredActors(BlockoutDoors);
-		if (BlockoutGeneral) { Query.AddIgnoredActor(BlockoutGeneral); }
 		FHitResult Hit;
 		if (World->LineTraceSingleByChannel(Hit, Top, Top - FVector(0.0, 0.0, Extent.Z * 2.0 + 2000.0), ECC_WorldStatic, Query))
 		{
@@ -776,25 +702,5 @@ void ATN_HQGameMode::SpawnLobbyShops()
 			World->SpawnActor<ATN_ChangingBooth>(ATN_ChangingBooth::StaticClass(), Where, FRotator(0.f, Yaw, 0.f), Params);
 		}
 		if (Spots.Num() > 0) { UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] %d probadores colocados."), Spots.Num()); }
-	}
-
-	if (!bHasGeneral)
-	{
-		// Con ancla, donde diga; si no, sobre el general de la maqueta (que se esconde) mirando al centro del lobby, con
-		// la mesa delante.
-		AActor* Anchor = GeneralAnchors.Num() > 0 ? GeneralAnchors[0] : BlockoutGeneral;
-		if (Anchor)
-		{
-			const bool bTagged = GeneralAnchors.Contains(Anchor);
-			const FVector Where = bTagged ? Anchor->GetActorLocation() : GroundOf(Anchor);
-			FVector Center = FVector::ZeroVector;
-			for (TActorIterator<APlayerStart> It(World); It; ++It)
-			{
-				if ((*It)->PlayerStartTag != TutorialStartTag) { Center = (*It)->GetActorLocation(); break; }
-			}
-			const float Yaw = bTagged ? Anchor->GetActorRotation().Yaw : FMath::RadiansToDegrees(FMath::Atan2(Center.Y - Where.Y, Center.X - Where.X));
-			World->SpawnActor<ATN_GeneralBriefing>(ATN_GeneralBriefing::StaticClass(), Where, FRotator(0.f, Yaw, 0.f), Params);
-			UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] General colocado en %s (sobre %s)."), *Where.ToString(), *Anchor->GetName());
-		}
 	}
 }

@@ -27,8 +27,7 @@ ORDEN_TAMANO = {"XS": 0, "S": 1, "M": 2, "L": 3}
 # «Closes #n» cierra la issue al fusionar; «Refs #n» solo la menciona (así se enlaza la PR con su lote).
 REF_CIERRE = re.compile(r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|cierra|resuelve)\s+#(\d+)", re.I)
 REF_MENCION = re.compile(r"\brefs?\s+#(\d+)", re.I)
-# Número de la issue en la rama: `feat|fix/<n>-<slug>` o, en una línea de modo, `dev-<modo>-<n>-<slug>`.
-REF_RAMA = re.compile(rf"(?:/|^{re.escape(INTEGRACION)}-(?:{'|'.join(flujo.MODOS)})-)(\d+)-")
+REF_RAMA = re.compile(r"/(\d+)-")
 # Respuesta de `gh project item-add` cuando la issue ya es un item del Project (auto-add de GitHub).
 YA_EN_PROYECTO = "Content already exists"
 
@@ -42,7 +41,7 @@ query($org: String!, $num: Int!, $cursor: String) {
       nodes {
         id
         content { __typename
-          ... on Issue { number title state url updatedAt author { login }
+          ... on Issue { number title state url updatedAt
             assignees(first: 5) { nodes { login } } labels(first: 15) { nodes { name } }
             blockedBy(first: 50) { nodes { number state } }
             blocking(first: 10) { nodes { number state labels(first: 10) { nodes { name } } } } }
@@ -60,7 +59,7 @@ query($org: String!, $num: Int!, $cursor: String) {
 
 # Campos de una issue con su item del Project: los mismos que trae CONSULTA_ITEMS para cada item.
 CAMPOS_ISSUE = """
-    number title state url updatedAt author { login }
+    number title state url updatedAt
     assignees(first: 5) { nodes { login } } labels(first: 15) { nodes { name } }
     blockedBy(first: 50) { nodes { number state } }
     blocking(first: 10) { nodes { number state labels(first: 10) { nodes { name } } } }
@@ -353,35 +352,17 @@ def prs_abiertas() -> list[dict]:
     return json.loads(gh("pr", "list", "--repo", REPO, "--state", "open", "--limit", "100", "--json", campos))
 
 
-def cierres_de_pr(pr: dict) -> set[int]:
-    """Issues que la PR cierra con «Closes #n» (o equivalente) en el cuerpo; sin las que solo lee de la rama."""
-    return {int(n) for n in REF_CIERRE.findall(pr.get("body") or "")}
-
-
 def issues_de_pr(pr: dict, menciones: bool = False) -> set[int]:
     """Issues que cierra la PR (cuerpo y rama); con `menciones`, también las citadas con «Refs #n».
 
     Las menciones solo sirven para enlazar la PR con su lote: una issue citada no avanza ni cuenta como fusionada.
     """
     cuerpo = pr.get("body") or ""
-    refs = cierres_de_pr(pr)
+    refs = {int(n) for n in REF_CIERRE.findall(cuerpo)}
     refs |= {int(n) for n in REF_RAMA.findall(pr.get("headRefName") or "")}
     if menciones:
         refs |= {int(n) for n in REF_MENCION.findall(cuerpo)}
     return refs
-
-
-def solo_descartadas(pr: dict, chamber: set[int]) -> bool:
-    """True si la PR enlaza issues y todas están descartadas (`chamber`): no hay trabajo vivo que la justifique."""
-    refs = issues_de_pr(pr)
-    return bool(refs) and refs <= chamber
-
-
-def numeros_chamber() -> set[int]:
-    """Issues descartadas (`chamber`), abiertas o cerradas, sin leer el Project."""
-    salida = gh("issue", "list", "--repo", REPO, "--state", "all", "--label", flujo.ETIQUETA_CHAMBER,
-                "--limit", "1000", "--json", "number")
-    return {i["number"] for i in json.loads(salida)}
 
 
 def es_de(issue: dict, login: str) -> bool:
@@ -397,63 +378,20 @@ def comentar(numero: int, texto: str) -> None:
     gh("issue", "comment", str(numero), "--repo", REPO, "--body", texto + flujo.firma_de_puente(os.environ))
 
 
-def rechazar_descartada(numero: int, issue: dict, retomar: bool = False) -> None:
-    """Corta un comando del ciclo sobre una issue descartada (`chamber`): ninguna rutina la vería después.
-
-    Con `retomar` (solo `coger` y `estado`) la deja pasar si lo lanza un aprobador y hay una **Decisión** de un
-    aprobador posterior al descarte. `--forzar` no basta: es el que las skills usan a diario.
-    """
-    if not flujo.es_chamber(issue):
-        return
-    if not retomar:
-        raise ErrorTablero(flujo.motivo_chamber(numero, issue))
-    datos = json.loads(gh("issue", "view", str(numero), "--repo", REPO, "--json", "comments"))
-    comentarios = [c.get("body") or "" for c in datos.get("comments") or []]
-    if motivo := flujo.motivo_para_no_retomar(numero, quien_lanza(), CONFIG["aprobadores"], comentarios):
-        raise ErrorTablero(motivo)
-
-
-def quien_lanza() -> str:
-    """Quién lanza el comando: quien disparó el puente a mano o, en local, el dueño del `gh`."""
-    return flujo.actor_de_puente(os.environ) or usuario_actual()
-
-
-def retomar_descartada(numero: int, issue: dict) -> None:
-    """Devuelve una issue descartada al ciclo: sin la etiqueta `chamber` y abierta, para que las rutinas la vean."""
-    pasos = flujo.pasos_retomar(issue)
-    if not pasos["quitar_etiqueta"]:
-        return
-    gh("issue", "edit", str(numero), "--repo", REPO, "--remove-label", flujo.ETIQUETA_CHAMBER)
-    if pasos["reabrir"]:
-        gh("issue", "reopen", str(numero), "--repo", REPO)
-    comentar(numero, f"**Retomada**: deja de estar descartada (sin `{flujo.ETIQUETA_CHAMBER}`).")
-
-
 def prs_fusionadas() -> list[dict]:
     """Últimas PR fusionadas del repo, de la más reciente a la más antigua, con su rama destino."""
     campos = "number,headRefName,baseRefName,body,mergedAt"
     return json.loads(gh("pr", "list", "--repo", REPO, "--state", "merged", "--limit", "100", "--json", campos))
 
 
-def esta_fusionada(numero: int, fusionadas: list[dict], abiertas: list[dict], rama: str = INTEGRACION) -> bool:
-    """True si una PR fusionada en `rama` (la rama base de la issue) la enlaza y no tiene ninguna PR abierta.
+def esta_fusionada(numero: int, fusionadas: list[dict], abiertas: list[dict]) -> bool:
+    """True si una PR fusionada en dev enlaza la issue y no tiene ninguna PR abierta.
 
-    Una PR abierta significa que hay un cambio nuevo sin fusionar: la fusión anterior ya no vale. Una issue
-    `modo:tct` solo está fusionada si su PR entró en `dev-tct` (`flujo.rama_base`).
+    Una PR abierta significa que hay un cambio nuevo sin fusionar: la fusión anterior ya no vale.
     """
     if any(numero in issues_de_pr(pr) for pr in abiertas):
         return False
-    return any(pr["baseRefName"] == rama and numero in issues_de_pr(pr) for pr in fusionadas)
-
-
-def rama_base(issue: dict) -> str:
-    """Rama base de la issue con la rama de integración de equipo.json (`flujo.rama_base`)."""
-    return flujo.rama_base(issue, INTEGRACION)
-
-
-def existe_rama_remota(rama: str) -> bool:
-    """True si origin tiene la rama (`git ls-remote`: red de git, sin gastar API de GitHub)."""
-    return bool(git("ls-remote", "--heads", "origin", f"refs/heads/{rama}"))
+    return any(pr["baseRefName"] == INTEGRACION and numero in issues_de_pr(pr) for pr in fusionadas)
 
 
 def revisiones_del_proyecto() -> dict:
@@ -486,7 +424,7 @@ def elegir_revisor(proyecto: dict, autor: str) -> str:
         return candidatos[0]
     items = revisiones_del_proyecto() if proyecto.get("parcial") else proyecto["items"]
     carga = {c: 0 for c in candidatos}
-    for issue in flujo.sin_chamber(items).values():  # una descartada no es trabajo de nadie
+    for issue in items.values():
         r = issue["valores"].get("Revisor")
         if issue["valores"].get("Status") == "In review" and r in carga:
             carga[r] += 1

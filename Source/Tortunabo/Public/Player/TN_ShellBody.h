@@ -24,9 +24,6 @@ class UPrimitiveComponent;
  *   la transformación de la caja (Tick en TG_PostPhysics, a través de UTN_ShellComponent::FollowBody).
  * - En el servidor: si tiene que salir al pararse (lanzamiento, caída larga, escape), cuando se queda quieta saca a la
  *   tortuga del caparazón; si cae al agua, sale y nada; si la destruye el mundo (caída fuera), avisa al componente.
- * - Terreno de la playa (malla fina): nace con su parte de abajo encima de la arena (UTN_ShellComponent::FindFreeBodySpot);
- *   si aun así se mete dentro, el servidor no deja que el contacto la escupa a más de 3 m/s además de parar la caída
- *   (LimitTerrainPushOut; el tope del motor solo vale al nacer) y, si se queda hundida, la recoloca encima.
  *
  * La crean y la destruyen UTN_ShellComponent::StartBody / StopBody.
  */
@@ -77,13 +74,6 @@ public:
 	/** true si el centro del componente está dentro de un volumen de agua (APhysicsVolume con bWaterVolume). */
 	static bool IsInWater(const UPrimitiveComponent& Component);
 
-	/**
-	 * cm que queda Bottom bajo el terreno de verdad de la playa (TNBeach::DepthUnderTerrain; negativo si está encima). -1000
-	 * sin generador de la playa o junto al filo del acantilado: la pared está socavada y bajar de la arena ahí es caer al
-	 * agua de meta, no atravesar nada.
-	 */
-	static float TerrainDepthUnder(const UObject* WorldContext, const FVector& Bottom);
-
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Shell")
 	TObjectPtr<UBoxComponent> Box;
@@ -107,32 +97,8 @@ private:
 	void ApplyPassThrough();
 
 	/** Servidor: parada (si toca salir al pararse), agua y límite de tiempo. */
-	void ServerChecks(float DeltaSeconds, bool bFreshDepth);
+	void ServerChecks(float DeltaSeconds);
 
-	/**
-	 * Cada 0,1 s (en el servidor siempre; en los clientes solo con TN.Shell.Debug): cuánto queda la parte de abajo de la
-	 * caja bajo el terreno de la playa (TerrainDepth; -1000 sin terreno o junto al acantilado). true si hay muestra nueva.
-	 */
-	bool SampleTerrainDepth(float DeltaSeconds);
-
-	/**
-	 * Servidor: la caja ha cruzado la malla fina del terreno (TNShellLogic::ShouldRescueSunkenBody). La pone encima de la
-	 * superficie de su vertical, sin velocidad hacia abajo y con el giro limitado. Sin suelo cerca, no la mueve (la red de
-	 * seguridad de la carrera se encarga).
-	 */
-	void RescueFromUnderTerrain();
-
-	/**
-	 * Servidor, cada fotograma tras la física: si la caja estaba metida en el terreno y el contacto la escupe, deja la
-	 * velocidad en lo que permite TNShellLogic::LimitTerrainPushOut (#54). true si la ha limitado en este paso.
-	 */
-	bool LimitTerrainPushOut();
-
-	/** Servidor, al final de cada fotograma: velocidad y hondura de la caja con las que se compara el paso siguiente. */
-	void RememberPushOutState();
-
-	/** La parte de abajo de la caja (el centro de la cara de abajo de sus límites). */
-	FVector BoxBottom() const;
 
 	/**
 	 * Instrumento TN.Shell.Debug (todas las máquinas): torbellino, caja bajo el terreno y saltos de velocidad, con los
@@ -162,20 +128,8 @@ private:
 	TArray<FDebugContact> DebugContacts;
 	FVector DebugPrevVelocity = FVector::ZeroVector;
 	float DebugSpinSeconds = 0.f;
-	float TerrainDepth = -1000.f;
-	float DepthTimer = 0.f;
-	int32 SunkStrikes = 0;
 	float DebugNextLogTime = 0.f;
 	bool bDebugBound = false;
-
-	/**
-	 * Tope a la depenetración (servidor): velocidad y cm que la caja estaba dentro del terreno al acabar el fotograma
-	 * anterior (su centro menos su semieje más corto, contra el terreno de su vertical), y si se ha limitado en este.
-	 */
-	FVector PushOutPrevVelocity = FVector::ZeroVector;
-	float PushOutPrevDepth = -1000.f;
-	bool bPushOutPrimed = false;
-	bool bPushOutLimited = false;
 
 	bool bExitOnRest = false;
 	bool bReleased = false;

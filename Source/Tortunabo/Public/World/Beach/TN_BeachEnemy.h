@@ -8,7 +8,6 @@
 #include "TN_BeachEnemy.generated.h"
 
 class ACharacter;
-class ATN_BeachRaceGenerator;
 class ATortugaCharacter;
 class UBoxComponent;
 class USceneComponent;
@@ -117,7 +116,7 @@ struct FTNBeachMoverRep
  *    reconstruiría sus mallas al alejarse más de 150 m por la playa.
  *  - Visual (VisualTick) solo en máquinas con pantalla; la raíz animada (Rig) se coloca en todas (su colisión cuenta
  *    también en un servidor dedicado).
- *  - Utilidades: tortugas vivas, suelo bajo un punto, reloj del servidor, carrera en marcha, aturdir en bola
+ *  - Utilidades: tortugas vivas, suelo bajo un punto, reloj del servidor, aturdir en bola
  *    (TNBeach::StunTurtle) o derribar con ragdoll y empujón (TNBeach::KnockDownTurtle), temblor de cámara y una voz
  *    sintetizada (UTN_BeachEnemySynthComponent).
  *  - Muchos a la vez: los que andan se apartan entre sí (GetBodyRadius) y rodean lo grande del reparto; los numerosos
@@ -147,11 +146,8 @@ public:
 	/** Reloj del servidor en esta máquina (s): el replicado del GameState o, sin él, el del mundo. */
 	static double ServerNow(const UObject* WorldContext);
 
-	/** Tortugas de jugadores vivas, en juego y sin haber acabado la carrera (en cualquier máquina). */
+	/** Tortugas de jugadores vivas, en juego y sin haber llegado a la meta (en cualquier máquina). */
 	static void GatherTurtles(const UObject* WorldContext, TArray<ATortugaCharacter*>& Out);
-
-	/** true si la carrera está en marcha (con el GameState de la playa en otra fase no se ataca). Sin él, true. */
-	static bool IsRaceLive(const UObject* WorldContext);
 
 	/** Suelo (geometría estática) bajo Where: traza de Where + Up a Where - Down. */
 	static bool TraceGround(const UObject* WorldContext, const FVector& Where, float& OutZ, FVector* OutNormal = nullptr,
@@ -189,7 +185,7 @@ public:
 
 	/**
 	 * Servidor: quien sujete a esta tortuga la suelta ya, como el seguro de tiempo (no la vuelve a coger en 2 s). La usa la
-	 * red de seguridad de ATN_BeachRaceGameMode antes de devolverla encima de la arena. true si alguien la sujetaba.
+	 * recolocación de TNBeach::RelocateTurtle antes de moverla. true si alguien la sujetaba.
 	 */
 	static bool ServerReleaseHeldTurtle(ATortugaCharacter* Turtle, const TCHAR* Reason);
 
@@ -266,20 +262,6 @@ public:
 	static ATN_BeachEnemy* ServerHitWithProjectile(AActor* Projectile, const FVector& From, const FVector& To, float Radius,
 		float Seconds = TNBeachHitStun::ThrownSeconds);
 
-	/**
-	 * Servidor: pasillo del que no sale al andar (ResolveStep). Supervivencia le da el tramo del camino alrededor de su sitio
-	 * (#731-#734): fuera hay paredes o vacío. Puntos del eje en el mundo (la Z no cuenta) y el semiancho de cada uno. Vacío
-	 * (la playa): sin pasillo.
-	 */
-	void SetRoamCorridor(const TArray<FVector>& Points, const TArray<float>& HalfWidths);
-
-	bool HasRoamCorridor() const { return CorridorPoints.Num() >= 2; }
-
-	/** El punto más cercano a P dentro del pasillo con SelfRadius de margen al borde (P si no hay pasillo o ya está dentro). */
-	FVector ClampToCorridor(const FVector& P, float SelfRadius) const;
-
-	/** Dirección (unitaria, plana) del tramo del pasillo más cercano a P; cero sin pasillo. */
-	FVector CorridorDirectionAt(const FVector& P) const;
 
 	virtual void PostInitializeComponents() override;
 
@@ -388,28 +370,15 @@ protected:
 
 	/**
 	 * Servidor: Next corregido para no meterse en otro enemigo que anda (medio solape por fotograma: cada uno se aparta
-	 * su mitad) ni, con bAvoidObstacles, en lo grande del reparto (se desliza por su borde).
+	 * su mitad).
 	 */
-	FVector ResolveStep(const FVector& Next, float SelfRadius, bool bAvoidObstacles);
+	FVector ResolveStep(const FVector& Next, float SelfRadius);
 
-	/** Servidor: true si Point cae dentro de un obstáculo del reparto más Margin (para no elegir metas imposibles). */
-	bool IsInsideObstacle(const FVector& Point, float Margin);
-
-	/** Suelo bajo Where: el del generador de la playa (sin trazas, con los asientos de la ronda) o, sin él, una traza. */
+	/** Suelo bajo Where (traza contra la geometría estática). */
 	bool GroundHeightAt(const FVector& Where, float& OutZ) const;
-
-	/** El generador de la playa (se busca una vez); null fuera de la carrera. */
-	ATN_BeachRaceGenerator* FindGenerator() const;
 
 	/** Texto emergente de dibujos («¡PLOF!») en WorldAt; solo con pantalla y con la cámara a menos de 60 m. */
 	void ShowPop(const FText& Text, const FColor& Color, const FVector& WorldAt, float Size = 140.f);
-
-	/**
-	 * Servidor: dirección (unitaria, plana) para ir hacia Dir sin darse con lo grande del reparto: si a LookAhead por
-	 * delante hay un obstáculo, se abre hacia el lado de su borde que más se parece a Dir y lo rodea en vez de empujar
-	 * contra él (el lado se mantiene un momento para no dudar). Con miles de piezas en la ronda, evita los atascos.
-	 */
-	FVector SteerAroundObstacles(const FVector& From, const FVector& Dir, float SelfRadius, float LookAhead, float DeltaSeconds);
 
 	// ── Mareo por lo que se le lanza ─────────────────────────────────────
 
@@ -434,7 +403,7 @@ protected:
 	 */
 	void BeginHoldTurtle(ATortugaCharacter* Turtle);
 
-	/** Segundos que puede durar una sujeción antes de que el seguro de tiempo la suelte (6; el pelícano taxi de la carrera lleva más). */
+	/** Segundos que puede durar una sujeción antes de que el seguro de tiempo la suelte (6). */
 	virtual double GetMaxHoldSeconds() const;
 
 	/**
@@ -499,28 +468,6 @@ private:
 	bool bHasRep = false;
 	bool bVoiceTried = false;
 
-	/** Obstáculo del reparto en planta: cápsula de A a B (mundo) con su radio. */
-	struct FObstacle
-	{
-		FVector2D A = FVector2D::ZeroVector;
-		FVector2D B = FVector2D::ZeroVector;
-		float Radius = 0.f;
-	};
-
-	/** Lo grande del reparto alrededor de su sitio (se coge una vez, cuando el reparto ya está). */
-	TArray<FObstacle> Obstacles;
-
-	/**
-	 * Lo grande de todo el reparto del generador, en el mundo: se calcula una vez por ronda y lo comparten todos los
-	 * enemigos (cada uno pasaba las ~2900 piezas del reparto a coordenadas del mundo al aparecer: 0,5 ms por enemigo).
-	 */
-	static const TArray<FObstacle>& SharedObstacles(const ATN_BeachRaceGenerator& Gen);
-	bool bObstaclesCached = false;
-
-	/** Generador de la playa (para el suelo sin trazas y el reparto); se busca una vez. */
-	mutable TWeakObjectPtr<ATN_BeachRaceGenerator> Generator;
-	mutable bool bGeneratorLooked = false;
-
 	/** Nivel de detalle: cada cuánto se revisa y si ahora va despacio (TN_BeachEnemyLod.h). */
 	float LodTimer = 0.f;
 	bool bThrottled = false;
@@ -548,14 +495,6 @@ private:
 	TWeakObjectPtr<AActor> LastHitInstigator;
 	double LastHitTime = -10.0;
 
-	/** Pasillo de SetRoamCorridor (eje en planta y semiancho de cada punto); vacío sin pasillo. */
-	TArray<FVector2D> CorridorPoints;
-	TArray<float> CorridorHalfWidths;
-
-	/** Rodear obstáculos: lado elegido (+1/-1, 0 = ninguno) y cuánto se mantiene. */
-	float AvoidSide = 0.f;
-	float AvoidTimer = 0.f;
-
 	/** Tortuga sujeta en esta máquina, el suavizado de red que tenía y desde cuándo (reloj del mundo). */
 	TWeakObjectPtr<ATortugaCharacter> HeldTurtle;
 	uint8 HeldSavedSmoothing = 0;
@@ -582,6 +521,5 @@ private:
 
 	void UpdateShown(float DeltaSeconds);
 	void UpdateLod();
-	void CacheObstacles();
 	void UpdateHitStunVisual();
 };

@@ -4,7 +4,6 @@
 
 #include "Audio/TN_AudioCensus.h"
 #include "Audio/TN_AudioVoices.h"
-#include "Audio/TN_RaceMusicComponent.h"
 #include "Components/AudioComponent.h"
 #include "Misc/AutomationTest.h"
 #include "Player/TN_DizzyBirdsComponent.h"

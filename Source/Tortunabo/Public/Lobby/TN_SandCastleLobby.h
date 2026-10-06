@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Core/TN_MatchStartTypes.h"
 #include "GameFramework/Actor.h"
 #include "TN_SandCastleLobby.generated.h"
 
@@ -77,12 +76,6 @@ public:
 	 * cuatro de siempre en una fila y otros cuatro en una segunda fila detrás, hacia la puerta (NumEggs en total).
 	 */
 	static void GetSpawnSpots(TArray<FTransform>& OutLocalSpots);
-
-	/**
-	 * Servidor: cómo empezará la partida según dónde están los que se han puesto listos (más en la sala de la puerta
-	 * doble o más en los huevos; empate, la puerta).
-	 */
-	ETNMatchStartStyle GetStartStyle() const { return StartStyle; }
 
 	/**
 	 * Pinta o no el mar de fuera y la orilla que baja a él (la playa de fuera sigue). El valle del lobby (ATN_LobbyValley)
@@ -192,7 +185,6 @@ private:
 	bool bBuilt = false;
 	/** Si la última construcción pintó el mar (la propiedad puede cambiar sin reconstruir, p. ej. desde Python). */
 	bool bSeaBuilt = true;
-	ETNMatchStartStyle StartStyle = ETNMatchStartStyle::Gate;
 
 	/** Servidor: el último estado de listo enviado por jugador. */
 	TMap<TWeakObjectPtr<APlayerController>, bool> ReadySent;

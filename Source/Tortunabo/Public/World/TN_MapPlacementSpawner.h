@@ -41,7 +41,7 @@ struct FTNMapPlacementStats
  * Coloca al cargar el mapa el bloque "placements" del manifest de una variante de terreno fijo (#652): lo crea
  * ATN_MapVariantLoader en BeginPlay en cada máquina, con el terreno ya construido para ajustar la cota con una traza.
  *
- * Red: lo que tiene estado (trampas, enemigos, lanzadores, cofres, nidos, puzles, botín) lo crea solo el servidor y se
+ * Red: lo que tiene estado (trampas, enemigos, lanzadores, puzles, botín) lo crea solo el servidor y se
  * replica; lo que cada clase quiere local (el decorado de ATN_BeachDecorField, la vegetación instanciada y el géiser) lo
  * monta cada máquina igual a partir del mismo manifest, sin red. La vegetación no se monta en un servidor dedicado.
  *

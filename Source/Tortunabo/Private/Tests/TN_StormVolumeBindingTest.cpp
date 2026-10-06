@@ -1,4 +1,4 @@
-// La tormenta enlaza sus overlaps una sola vez (#362). BP_StormVolume y su instancia de LVL_Run traen serializado el
+// La tormenta enlaza sus overlaps una sola vez (#362). BP_StormVolume y sus instancias en los niveles traen serializado el
 // enlace de cuando se hacía en el constructor; si BeginPlay lo vuelve a añadir con AddDynamic, salta el ensure de
 // ScriptDelegates.h (InvocationList != InDelegate) y cada overlap se cuenta dos veces. Se comprueba con la clase nativa
 // (enlace serializado simulado antes del BeginPlay: es lo que carga la instancia del nivel) y con BP_StormVolume creado en

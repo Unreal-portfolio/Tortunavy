@@ -131,7 +131,7 @@ void ATN_BeachBurrowCrab::ServerTick(float DeltaSeconds)
 	In.bHolding = IsValid(Victim) && !Victim->IsDead() && !Victim->IsInShell() && !Victim->IsKnockedDown() && !TNBeach::IsTurtleRelocating(Victim);
 	const UTN_BeachTrapStatusComponent* Status = Victim ? UTN_BeachTrapStatusComponent::FindOn(Victim) : nullptr;
 	In.bEscaped = Status && Status->HasEscaped();
-	if (State == EState::Buried && IsRaceLive(this))
+	if (State == EState::Buried)
 	{
 		ATortugaCharacter* Near = FindTarget(SimLoc, TellRadius, Home, 0.f);
 		In.bTargetNear = Near != nullptr;

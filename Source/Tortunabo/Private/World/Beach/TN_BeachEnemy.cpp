@@ -1,9 +1,7 @@
 #include "World/Beach/TN_BeachEnemy.h"
-#include "Game/TN_BeachRaceDecisions.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
 #include "World/Beach/TN_BeachEnemyLod.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/BoxComponent.h"
@@ -15,7 +13,6 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
-#include "Game/TN_BeachRaceGameState.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameStateBase.h"
@@ -31,7 +28,7 @@
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachSandWorm.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "World/Beach/TN_BeachShelterVolume.h"
 
 namespace TNBeachEnemyDebug
@@ -105,34 +102,6 @@ namespace TNBeachEnemyShared
 	/** Revisión del nivel de detalle (s); los ritmos de cada nivel y el tope están en TN_BeachEnemyLod.h. */
 	constexpr float LodPeriod = 0.5f;
 
-	/** Elementos del reparto que un enemigo que anda rodea (lo que no se pisa sin más). */
-	bool IsObstacle(const TNBeachLayout::FItem& Item)
-	{
-		if (Item.bOverlay)
-		{
-			return false;
-		}
-		switch (Item.Element)
-		{
-		case ETNBeachElement::Seaweed:
-		case ETNBeachElement::Boardwalk:
-		case ETNBeachElement::WoodenPostPath:
-			return false;
-		default:
-			break;
-		}
-		switch (TNBeach::CategoryOf(Item.Element))
-		{
-		case ETNBeachCategory::Enemy:
-			return false;
-		case ETNBeachCategory::Trap:
-			return true;
-		case ETNBeachCategory::Decor:
-		default:
-			// Lo pequeño (latas, conchas, vasos) se pisa: el cangrejo mide 5 m.
-			return Item.bBlocking && Item.Radius >= 380.0;
-		}
-	}
 
 	/**
 	 * Distancia al cuadrado entre los segmentos P0-P1 y Q0-Q1 (Ericson, «Real-Time Collision Detection»). OutS es el
@@ -452,10 +421,9 @@ void ATN_BeachEnemy::OnHeldTurtleSlips(ATortugaCharacter* Turtle)
 
 bool ATN_BeachEnemy::CanBeHit(const ATortugaCharacter* Turtle)
 {
-	// Tampoco mientras la patada de la tormenta o la red de seguridad la recolocan (TNBeach::IsTurtleRelocating), ni con el
-	// protector solar puesto (objeto de carrera: los enemigos no la miran).
+	// Tampoco mientras la patada de la tormenta la recoloca (TNBeach::IsTurtleRelocating), ni protegida por el pez globo.
 	return IsValid(Turtle) && !Turtle->IsDead() && !Turtle->IsKnockedDown() && !TNBeach::IsTurtleStunned(Turtle) && !IsTurtleHeld(Turtle)
-		&& !TNBeach::IsTurtleRelocating(Turtle) && !TNRaceItems::IsInvulnerable(Turtle)
+		&& !TNBeach::IsTurtleRelocating(Turtle) && !UTN_CoopItemComponent::IsTurtleProtected(Turtle)
 		// Dentro de un búnker (#689): zona segura, ningún enemigo la marca ni la agarra.
 		&& !ATN_BeachShelterVolume::IsSheltered(Turtle);
 }
@@ -538,14 +506,6 @@ void ATN_BeachEnemy::GatherTurtles(const UObject* WorldContext, TArray<ATortugaC
 	}
 }
 
-bool ATN_BeachEnemy::IsRaceLive(const UObject* WorldContext)
-{
-	const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
-	const ATN_BeachRaceGameState* GS = World ? World->GetGameState<ATN_BeachRaceGameState>() : nullptr;
-	// Solo se para al acabar la cuenta de meta (gusanos y «¡TODAS AL AGUA!»), en el recuento, en el título del sprint final
-	// y en el podio: si la fase se quedara en Waiting por lo que sea, se sigue atacando.
-	return !GS || TNBeachRaceRules::IsRaceLive(GS->RacePhase, GS->FinishCountdown);
-}
 
 bool ATN_BeachEnemy::TraceGround(const UObject* WorldContext, const FVector& Where, float& OutZ, FVector* OutNormal, float Up, float Down)
 {
@@ -819,116 +779,16 @@ ATortugaCharacter* ATN_BeachEnemy::FindTarget(const FVector& From, float MaxDist
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Muchos enemigos: apartarse, rodear el reparto, suelo sin trazas y nivel de detalle
+// Muchos enemigos: apartarse, suelo y nivel de detalle
 // ─────────────────────────────────────────────────────────────────────────────
 
-ATN_BeachRaceGenerator* ATN_BeachEnemy::FindGenerator() const
-{
-	if (!Generator.IsValid() && !bGeneratorLooked)
-	{
-		bGeneratorLooked = true;
-		Generator = ATN_BeachRaceGenerator::Find(this);
-	}
-	return Generator.Get();
-}
 
 bool ATN_BeachEnemy::GroundHeightAt(const FVector& Where, float& OutZ) const
 {
-	if (const ATN_BeachRaceGenerator* Gen = FindGenerator())
-	{
-		OutZ = Gen->GetGroundHeightAt(Where);
-		return true;
-	}
 	return TraceGround(this, Where, OutZ);
 }
 
-const TArray<ATN_BeachEnemy::FObstacle>& ATN_BeachEnemy::SharedObstacles(const ATN_BeachRaceGenerator& Gen)
-{
-	// Una entrada: el reparto de la ronda en curso (en el PIE, el de cada mundo se recalcula al cambiar de generador).
-	static TWeakObjectPtr<const ATN_BeachRaceGenerator> CachedGen;
-	static const void* CachedItems = nullptr;
-	static int32 CachedNum = -1;
-	static int32 CachedSeed = 0;
-	static TArray<FObstacle> List;
-	const TNBeachLayout::FRoundLayout& Layout = Gen.GetRoundLayout();
-	if (CachedGen.Get() == &Gen && CachedItems == Layout.Items.GetData() && CachedNum == Layout.Items.Num() && CachedSeed == Gen.GetRoundSeed())
-	{
-		return List;
-	}
-	TRACE_CPUPROFILER_EVENT_SCOPE(TN_BeachEnemy_SharedObstacles);
-	CachedGen = &Gen;
-	CachedItems = Layout.Items.GetData();
-	CachedNum = Layout.Items.Num();
-	CachedSeed = Gen.GetRoundSeed();
-	List.Reset();
-	const FTransform GenXf = Gen.GetActorTransform();
-	for (const TNBeachLayout::FItem& Item : Layout.Items)
-	{
-		if (!TNBeachEnemyShared::IsObstacle(Item))
-		{
-			continue;
-		}
-		const FVector2D EndA = Item.EndA();
-		const FVector2D EndB = Item.EndB();
-		const FVector A3 = GenXf.TransformPosition(FVector(EndA.X, EndA.Y, 0.0));
-		const FVector B3 = GenXf.TransformPosition(FVector(EndB.X, EndB.Y, 0.0));
-		FObstacle Ob;
-		Ob.A = FVector2D(A3.X, A3.Y);
-		Ob.B = FVector2D(B3.X, B3.Y);
-		// Un poco menos que la huella: la huella tiene aire alrededor de la pieza.
-		Ob.Radius = static_cast<float>(Item.Radius * 0.85);
-		List.Add(Ob);
-	}
-	return List;
-}
-
-void ATN_BeachEnemy::CacheObstacles()
-{
-	if (bObstaclesCached)
-	{
-		return;
-	}
-	TRACE_CPUPROFILER_EVENT_SCOPE(TN_BeachEnemy_CacheObstacles);
-	const ATN_BeachRaceGenerator* Gen = FindGenerator();
-	if (!Gen)
-	{
-		bObstaclesCached = true;
-		return;
-	}
-	if (Gen->GetRoundLayout().Items.Num() == 0)
-	{
-		// Aún no hay reparto (o se ha creado a mano antes de la primera ronda): se vuelve a mirar en el siguiente paso.
-		return;
-	}
-	bObstaclesCached = true;
-	const FVector2D Home2D(Home.X, Home.Y);
-	const double Area = GetFootprintRadius() * 1.6 + 6000.0;
-	for (const FObstacle& Ob : SharedObstacles(*Gen))
-	{
-		double T = 0.0;
-		if (TNProcMap::DistPointSegment(Home2D, Ob.A, Ob.B, T) - Ob.Radius <= Area)
-		{
-			Obstacles.Add(Ob);
-		}
-	}
-}
-
-bool ATN_BeachEnemy::IsInsideObstacle(const FVector& Point, float Margin)
-{
-	CacheObstacles();
-	const FVector2D P(Point.X, Point.Y);
-	for (const FObstacle& Ob : Obstacles)
-	{
-		double T = 0.0;
-		if (TNProcMap::DistPointSegment(P, Ob.A, Ob.B, T) < Ob.Radius + Margin)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-FVector ATN_BeachEnemy::ResolveStep(const FVector& Next, float SelfRadius, bool bAvoidObstacles)
+FVector ATN_BeachEnemy::ResolveStep(const FVector& Next, float SelfRadius)
 {
 	FVector2D P(Next.X, Next.Y);
 	// Otros enemigos que andan: cada uno se aparta la mitad del solape (el otro hace lo mismo en su paso).
@@ -960,106 +820,7 @@ FVector ATN_BeachEnemy::ResolveStep(const FVector& Next, float SelfRadius, bool 
 			P += Dir * ((MinDist - Dist) * 0.5);
 		}
 	}
-	// Lo grande del reparto: se desliza por su borde (dos pasadas por si queda entre dos).
-	if (bAvoidObstacles)
-	{
-		CacheObstacles();
-		for (int32 Pass = 0; Pass < 2; ++Pass)
-		{
-			for (const FObstacle& Ob : Obstacles)
-			{
-				double T = 0.0;
-				const double Dist = TNProcMap::DistPointSegment(P, Ob.A, Ob.B, T);
-				const double MinDist = static_cast<double>(Ob.Radius + SelfRadius);
-				if (Dist >= MinDist)
-				{
-					continue;
-				}
-				const FVector2D Closest = Ob.A + (Ob.B - Ob.A) * T;
-				FVector2D Dir = P - Closest;
-				if (Dir.SizeSquared() < 1.0)
-				{
-					Dir = FVector2D(SimLoc.X, SimLoc.Y) - Closest;
-				}
-				Dir = Dir.GetSafeNormal();
-				if (Dir.IsNearlyZero())
-				{
-					Dir = FVector2D(1.0, 0.0);
-				}
-				P = Closest + Dir * MinDist;
-			}
-		}
-	}
-	// Supervivencia: sin salirse del camino.
-	const FVector Kept = ClampToCorridor(FVector(P.X, P.Y, Next.Z), SelfRadius);
-	return FVector(Kept.X, Kept.Y, Next.Z);
-}
-
-void ATN_BeachEnemy::SetRoamCorridor(const TArray<FVector>& Points, const TArray<float>& HalfWidths)
-{
-	CorridorPoints.Reset();
-	CorridorHalfWidths.Reset();
-	if (Points.Num() < 2 || Points.Num() != HalfWidths.Num())
-	{
-		return;
-	}
-	for (int32 i = 0; i < Points.Num(); ++i)
-	{
-		CorridorPoints.Add(FVector2D(Points[i].X, Points[i].Y));
-		CorridorHalfWidths.Add(FMath::Max(0.f, HalfWidths[i]));
-	}
-}
-
-FVector ATN_BeachEnemy::ClampToCorridor(const FVector& P, float SelfRadius) const
-{
-	if (!HasRoamCorridor())
-	{
-		return P;
-	}
-	// El pasillo es la unión de los tramos del eje con su semiancho (menos el cuerpo): dentro de uno, vale; si no, al borde
-	// del que menos se sale.
-	const FVector2D Q(P.X, P.Y);
-	double BestOut = TNumericLimits<double>::Max();
-	FVector2D Best = Q;
-	for (int32 i = 0; i + 1 < CorridorPoints.Num(); ++i)
-	{
-		double T = 0.0;
-		const double Dist = TNProcMap::DistPointSegment(Q, CorridorPoints[i], CorridorPoints[i + 1], T);
-		const double Allowed = FMath::Max(0.0, static_cast<double>(FMath::Lerp(CorridorHalfWidths[i], CorridorHalfWidths[i + 1], static_cast<float>(T)) - SelfRadius));
-		if (Dist <= Allowed)
-		{
-			return P;
-		}
-		if (Dist - Allowed < BestOut)
-		{
-			BestOut = Dist - Allowed;
-			const FVector2D Axis = CorridorPoints[i] + (CorridorPoints[i + 1] - CorridorPoints[i]) * T;
-			Best = Axis + (Q - Axis).GetSafeNormal() * Allowed;
-		}
-	}
-	return FVector(Best.X, Best.Y, P.Z);
-}
-
-FVector ATN_BeachEnemy::CorridorDirectionAt(const FVector& P) const
-{
-	if (!HasRoamCorridor())
-	{
-		return FVector::ZeroVector;
-	}
-	const FVector2D Q(P.X, P.Y);
-	double BestDist = TNumericLimits<double>::Max();
-	FVector2D Dir = FVector2D::ZeroVector;
-	for (int32 i = 0; i + 1 < CorridorPoints.Num(); ++i)
-	{
-		double T = 0.0;
-		const double Dist = TNProcMap::DistPointSegment(Q, CorridorPoints[i], CorridorPoints[i + 1], T);
-		if (Dist < BestDist)
-		{
-			BestDist = Dist;
-			Dir = (CorridorPoints[i + 1] - CorridorPoints[i]).GetSafeNormal();
-		}
-	}
-	return FVector(Dir.X, Dir.Y, 0.0);
+	return FVector(P.X, P.Y, Next.Z);
 }
 
 void ATN_BeachEnemy::ShowPop(const FText& Text, const FColor& Color, const FVector& WorldAt, float Size)
@@ -1071,65 +832,6 @@ void ATN_BeachEnemy::ShowPop(const FText& Text, const FColor& Color, const FVect
 	Pops[NextPop].Show(this, Text, Color, WorldAt, Size);
 	NextPop = (NextPop + 1) % UE_ARRAY_COUNT(Pops);
 	bPopsLive = true;
-}
-
-FVector ATN_BeachEnemy::SteerAroundObstacles(const FVector& From, const FVector& Dir, float SelfRadius, float LookAhead, float DeltaSeconds)
-{
-	FVector Flat(Dir.X, Dir.Y, 0.0);
-	if (!Flat.Normalize())
-	{
-		return FVector::ZeroVector;
-	}
-	AvoidTimer = FMath::Max(0.f, AvoidTimer - DeltaSeconds);
-	if (AvoidTimer <= 0.f)
-	{
-		AvoidSide = 0.f;
-	}
-	CacheObstacles();
-	if (Obstacles.Num() == 0 || LookAhead <= 1.f)
-	{
-		return Flat;
-	}
-	// El primer obstáculo que corta la sonda (de aquí a LookAhead por delante), contando el cuerpo.
-	const FVector P0(From.X, From.Y, 0.0);
-	const FVector P1 = P0 + Flat * LookAhead;
-	double BestS = 2.0;
-	FVector BestOnAxis = FVector::ZeroVector;
-	for (const FObstacle& Ob : Obstacles)
-	{
-		double S = 0.0;
-		FVector OnAxis;
-		const double DistSq = TNBeachEnemyShared::SegmentDistSq(P0, P1, FVector(Ob.A.X, Ob.A.Y, 0.0), FVector(Ob.B.X, Ob.B.Y, 0.0), S, OnAxis);
-		const double Reach = static_cast<double>(Ob.Radius + SelfRadius);
-		if (DistSq < Reach * Reach && S < BestS)
-		{
-			BestS = S;
-			BestOnAxis = OnAxis;
-		}
-	}
-	if (BestS > 1.5)
-	{
-		return Flat;
-	}
-	// Hacia fuera del obstáculo desde donde está y sus dos tangentes: la que más se parece a donde quiere ir (y la
-	// misma un rato, para no dudar a cada paso delante de una roca).
-	FVector Out = P0 - BestOnAxis;
-	Out.Z = 0.0;
-	if (!Out.Normalize())
-	{
-		Out = -Flat;
-	}
-	const FVector Tangent(-Out.Y, Out.X, 0.0);
-	if (AvoidSide == 0.f)
-	{
-		AvoidSide = FVector::DotProduct(Tangent, Flat) >= 0.0 ? 1.f : -1.f;
-	}
-	AvoidTimer = 0.8f;
-	// Cuanto más cerca, más de lado y algo hacia fuera; lejos, apenas se abre.
-	const double Urgency = 1.0 - FMath::Clamp(BestS, 0.0, 1.0);
-	FVector Steer = Flat * (1.0 - Urgency) + Tangent * (AvoidSide * (0.55 + Urgency)) + Out * (0.3 * Urgency);
-	Steer.Z = 0.0;
-	return Steer.Normalize() ? Steer : Flat;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

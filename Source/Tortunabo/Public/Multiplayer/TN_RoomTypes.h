@@ -1,14 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "World/ProcMap/TN_ProcMapEnums.h"
 
 /**
  * @brief Salas públicas y privadas (Docs/Salas.md): claves de la sesión, códigos, configuración y lo que se lee de una sala.
  *
  * Una sala es la sesión de Steam (o del subsistema NULL en el editor) que crea el anfitrión. Anuncia unos ajustes propios
  * para que la lista y el código funcionen sin conectarse: el índice del nombre (TNRoomNames), el código, si es privada, si
- * está cerrada, el modo y cuánta gente hay. Con Steam, la búsqueda filtra en el servidor por esas claves (PRIVATE = 0 para
+ * está cerrada, la versión de las salas y cuánta gente hay. Con Steam, la búsqueda filtra en el servidor por esas claves (PRIVATE = 0 para
  * la lista; ROOMCODE = código para entrar con código); con el NULL se filtra aquí, al leer los resultados.
  */
 namespace TNRoomKeys
@@ -25,28 +24,19 @@ namespace TNRoomKeys
 	inline FName Private() { static const FName Key(TEXT("PRIVATE")); return Key; }
 	/** 1: cerrada por el anfitrión (no entra nadie más). */
 	inline FName Locked() { static const FName Key(TEXT("LOCKED")); return Key; }
-	/** Modo elegido (ETNProcGameMode como número). */
-	inline FName Mode() { static const FName Key(TEXT("MODE")); return Key; }
-	/** Versión de la numeración de MODE con la que anuncia la sala (ModeSchemaVersion). */
-	inline FName ModeSchema() { static const FName Key(TEXT("MODESCHEMA")); return Key; }
 	/**
-	 * Numeración vigente de ETNProcGameMode en las salas. 1 (sin clave): las compilaciones anteriores, en las que solo
-	 * Coop..Survival (0-4) significaban lo mismo que ahora; 2: la numeración fija de TN_ProcMapEnums.h (Karts 5,
-	 * FreeForAll 6, Rally 7).
+	 * Versión de las salas con la que anuncia el anfitrión (la clave es la del antiguo esquema de modos, MODESCHEMA). 3:
+	 * el modo único, sin modo en la sala. La búsqueda solo trae las de esta versión (en el servidor de Steam y aquí, al leer
+	 * los resultados): una sala de una compilación anterior (versión 2 o sin clave) ni sale en la lista ni se encuentra por
+	 * su código.
 	 */
-	constexpr int32 ModeSchemaVersion = 2;
-	/** Último modo cuya numeración comparten todas las versiones del esquema. */
-	constexpr int32 LegacySharedModeMax = static_cast<int32>(ETNProcGameMode::Survival);
+	inline FName Schema() { static const FName Key(TEXT("MODESCHEMA")); return Key; }
+	constexpr int32 SchemaVersion = 3;
 
-	/**
-	 * Modo que se lee de una sala: el número con su esquema. Uno fuera de rango, o de otro esquema fuera de la parte común
-	 * (p. ej., un 5 que en otra rama era Todos contra Todos), no se interpreta: sale como cooperativo, el modo por defecto.
-	 */
-	inline ETNProcGameMode DecodeMode(bool bHasMode, int32 Value, int32 Schema)
+	/** true si una sala anuncia la versión de las salas de esta compilación. */
+	inline bool IsCurrentSchema(bool bHasSchema, int32 Schema)
 	{
-		const bool bInRange = bHasMode && Value >= 0 && Value < static_cast<int32>(ETNProcGameMode::Count);
-		const bool bSameMeaning = Schema == ModeSchemaVersion || Value <= LegacySharedModeMax;
-		return bInRange && bSameMeaning ? static_cast<ETNProcGameMode>(Value) : ETNProcGameMode::Coop;
+		return bHasSchema && Schema == SchemaVersion;
 	}
 	/** Tortugas dentro (el anfitrión incluido). */
 	inline FName Players() { static const FName Key(TEXT("PLAYERS")); return Key; }
@@ -94,7 +84,6 @@ namespace TNRoomCode
 /** Lo que elige el anfitrión al crear la sala (y lo que la sala es mientras dura). */
 struct TORTUNABO_API FTNRoomConfig
 {
-	ETNProcGameMode Mode = ETNProcGameMode::Coop;
 	bool bPrivate = false;
 	/** Plazas, el anfitrión incluido: 4, 6 u 8 (TNRoomLimits). */
 	int32 MaxPlayers = 8;
@@ -103,15 +92,13 @@ struct TORTUNABO_API FTNRoomConfig
 	FString Code;
 	/** Cerrada: no entra nadie nuevo (los que ya estaban sí pueden volver). */
 	bool bLocked = false;
-	/** Todos contra Todos: arena (una de TNLobbyMission::TctArenaOptions). */
-	FName TctArena = FName(TEXT("A01_diana"));
 };
 
 /** Plazas que se pueden elegir al crear la sala. */
 namespace TNRoomLimits
 {
 	inline constexpr int32 Options[] = { 4, 6, 8 };
-	/** Tope absoluto (la carrera y el lobby están preparados para ocho). */
+	/** Tope absoluto (la partida y el lobby están preparados para ocho). */
 	inline constexpr int32 Max = 8;
 }
 
@@ -123,7 +110,6 @@ struct TORTUNABO_API FTNRoomListing
 	int32 NameId = INDEX_NONE;
 	FString Code;
 	FString HostName;
-	ETNProcGameMode Mode = ETNProcGameMode::Coop;
 	bool bPrivate = false;
 	bool bLocked = false;
 	int32 Players = 0;

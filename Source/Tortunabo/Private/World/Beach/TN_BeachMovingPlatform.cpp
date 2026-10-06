@@ -234,7 +234,6 @@ void ATN_BeachMovingPlatform::ApplySpec()
 	const double Fit = TNBeachTrapKit::FitRadius(Spec.Element, Spec.SizeScale);
 	const uint32 Seed = TNBeachTrapKit::SeedOf(Spec.Seed, 97u);
 	bElevator = (static_cast<uint32>(Spec.Seed) & 1u) != 0u;
-	Frame->SetRelativeRotation(FRotator(0.0, TNBeachRideKit::LaunchYawInActor(this), 0.0));
 	if (bElevator)
 	{
 		BuildElevator(Fit, Seed);

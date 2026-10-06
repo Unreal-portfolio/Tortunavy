@@ -448,7 +448,7 @@ void UMP_MainMenuWidget::OpenRooms(ETNRoomMenuPage Page)
 	{
 		if (Page == ETNRoomMenuPage::Create)
 		{
-			GI->HostSessionWithMode(GI->SelectedProcMode);
+			GI->HostRoom(GI->MakeRoomDraft());
 		}
 		else
 		{

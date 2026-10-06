@@ -6,10 +6,7 @@
 #include "../Menu/TN_RoomArt.h"
 #include "../Shop/TN_ShopArt.h"
 #include "Audio/TN_ScoreShellSynthComponent.h"
-#include "Game/TN_ProcMapGameState.h"
 #include "Game/TN_RunGameMode.h"
-#include "Game/TN_SurvivalGameMode.h"
-#include "Game/TN_TerrainViewGameMode.h"
 #include "Lobby/TN_HQGameMode.h"
 #include "Lobby/TN_TutorialPlayerComponent.h"
 #include "Multiplayer/MP_GameInstance.h"
@@ -19,8 +16,6 @@
 #include "Player/TortugaCharacter.h"
 #include "UI/Credits/TN_CreditsWidget.h"
 #include "Core/TN_GameModeSpawnUtils.h"
-#include "Lobby/TN_LobbyMission.h"
-#include "World/TN_TctArena.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
@@ -1810,57 +1805,11 @@ void UTN_PauseMenuWidget::RefreshHeader()
 	const UClass* ModeClass = State ? State->GameModeClass.Get() : nullptr;
 	const FString Map = UWorld::RemovePIEPrefix(World->GetMapName());
 
-	// Mapa o modo.
-	FText Mode = FText::FromString(Map);
+	// Lobby o partida (modo único). El nombre crudo del mapa no se enseña.
+	FText Mode = NSLOCTEXT("TNPause", "ModePlaying", "Jugando");
 	if (ModeClass && ModeClass->IsChildOf(ATN_HQGameMode::StaticClass()))
 	{
 		Mode = Map.Contains(TEXT("HQ")) ? NSLOCTEXT("TNPause", "ModeHQ", "Lobby · el cuartel") : NSLOCTEXT("TNPause", "ModeLobby", "Lobby · el castillo de arena");
-	}
-	else if (ModeClass && ModeClass->IsChildOf(ATN_TerrainViewGameMode::StaticClass()))
-	{
-		Mode = NSLOCTEXT("TNPause", "ModeTerrain", "Solo terreno · paseo por el mapa procedural");
-	}
-	else if (const ATN_ProcMapGameState* Proc = Cast<ATN_ProcMapGameState>(State))
-	{
-		const FText Round = FText::AsNumber(FMath::Max(1, Proc->CurrentRound));
-		const FText Target = FText::AsNumber(Proc->RoundTarget);
-		const bool bBeach = Map.Contains(TEXT("BeachRace"));
-		switch (Proc->ProcMode)
-		{
-		case ETNProcGameMode::Race:
-			Mode = FText::Format(bBeach ? NSLOCTEXT("TNPause", "ModeBeach", "Carrera en la playa · ronda {0} · gana quien llegue a {1} conchas")
-				: NSLOCTEXT("TNPause", "ModeRace", "Carrera · ronda {0} · gana quien llegue a {1} victorias"), Round, Target);
-			break;
-		case ETNProcGameMode::TwoVsTwo:
-			Mode = FText::Format(NSLOCTEXT("TNPause", "Mode2v2", "2 contra 2 · ronda {0} · gana la pareja que llegue a {1}"), Round, Target);
-			break;
-		case ETNProcGameMode::FreeForAll:
-		{
-			// La arena (replicada en ATN_TctArena); hasta que llega, sin ella.
-			const ATN_TctArena* Arena = ATN_TctArena::Find(World);
-			const FName ArenaVariant = Arena ? Arena->GetArenaVariant() : NAME_None;
-			Mode = ArenaVariant.IsNone()
-				? FText::Format(NSLOCTEXT("TNPause", "ModeFreeForAll", "Todos contra Todos · ronda {0} · gana quien llegue a {1} rondas"), Round, Target)
-				: FText::Format(NSLOCTEXT("TNPause", "ModeFreeForAllArena", "Todos contra Todos · {2} · ronda {0} · gana quien llegue a {1} rondas"),
-					Round, Target, TNLobbyMission::TctArenaName(ArenaVariant));
-			break;
-		}
-		default:
-		{
-			static const FText Difficulties[] = { NSLOCTEXT("TNPause", "DiffEasy", "fácil"), NSLOCTEXT("TNPause", "DiffNormal", "normal"),
-				NSLOCTEXT("TNPause", "DiffHard", "difícil") };
-			const int32 Difficulty = FMath::Clamp(static_cast<int32>(Proc->ProcDifficulty), 0, 2);
-			Mode = FText::Format(NSLOCTEXT("TNPause", "ModeCoop", "Cooperativo · ronda {0} de {1} · {2} · semilla {3}"), Round, Target,
-				Difficulties[Difficulty], FText::AsNumber(Proc->MapSeed, &FNumberFormattingOptions::DefaultNoGrouping()));
-			break;
-		}
-		}
-	}
-	else if (Map.Contains(TEXT("LVL_Run")))
-	{
-		Mode = ModeClass && ModeClass->IsChildOf(ATN_SurvivalGameMode::StaticClass())
-			? NSLOCTEXT("TNPause", "ModeSurvival", "Supervivencia · nivel tras nivel hasta que quede una")
-			: NSLOCTEXT("TNPause", "ModeClassic", "Carrera clásica");
 	}
 	ModeText->SetText(Mode);
 

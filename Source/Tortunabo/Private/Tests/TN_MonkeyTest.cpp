@@ -1,7 +1,7 @@
 // Monkey test y estrés (Source/Tortunabo/Private/Testing): plan reproducible por semilla, detector de atasco, clasificación del
-// registro, escenarios de estrés y, de punta a punta, 30 s de monkey en headless sobre el mapa de carrera. Correr con:
+// registro, escenarios de estrés y, de punta a punta, 30 s de monkey en headless sobre el mapa de la partida. Correr con:
 //   UnrealEditor-Win64-DebugGame-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Monkey; Quit" -nullrhi -unattended -nosplash
-// El test de punta a punta lanza un proceso hijo (-game -nullrhi, LVL_BeachRace, -TNMonkey=30:11) y lee su informe JSON:
+// El test de punta a punta lanza un proceso hijo (-game -nullrhi, LVL_Demo01, -TNMonkey=30:11) y lee su informe JSON:
 // falla si hay asserts o ensures, caídas sin rescatar, el proceso cae o no hay informe. Docs/Estres-Monkey-2026-09-29.md.
 
 #include "Misc/AutomationTest.h"
@@ -203,15 +203,15 @@ bool FTNStressScenarioTest::RunTest(const FString& Parameters)
 {
 	TNStress::FScenario Light;
 	TNStress::FScenario Heavy;
-	TNStress::FScenario Race8;
+	TNStress::FScenario Tortugas8;
 	TNStress::FScenario Nope;
 	TestTrue(TEXT("light existe"), TNStress::Parse(TEXT("light"), Light));
 	TestTrue(TEXT("heavy existe"), TNStress::Parse(TEXT("HEAVY"), Heavy));
-	TestTrue(TEXT("race8 existe"), TNStress::Parse(TEXT("race8"), Race8));
+	TestTrue(TEXT("tortugas8 existe"), TNStress::Parse(TEXT("tortugas8"), Tortugas8));
 	TestFalse(TEXT("otro nombre no existe"), TNStress::Parse(TEXT("extreme"), Nope));
-	TestTrue(TEXT("light = 50/100/20"), Light.Enemies == 50 && Light.Throwables == 100 && Light.Items == 20);
-	TestTrue(TEXT("heavy = 200/500/100"), Heavy.Enemies == 200 && Heavy.Throwables == 500 && Heavy.Items == 100);
-	TestEqual(TEXT("race8 son ocho tortugas"), Race8.Turtles, 8);
+	TestEqual(TEXT("light = 50 enemigos"), Light.Enemies, 50);
+	TestEqual(TEXT("heavy = 200 enemigos"), Heavy.Enemies, 200);
+	TestEqual(TEXT("tortugas8 son ocho tortugas"), Tortugas8.Turtles, 8);
 
 	for (const int32 Enemies : { 0, 1, 3, 50, 200 })
 	{
@@ -219,14 +219,14 @@ bool FTNStressScenarioTest::RunTest(const FString& Parameters)
 		TestEqual(FString::Printf(TEXT("El reparto de %d suma %d"), Enemies, Enemies), Split.Total(), Enemies);
 	}
 	const TArray<TNStress::FPhase> Timeline = TNStress::BuildTimeline(Heavy, 60.f);
-	TestEqual(TEXT("heavy: referencia + 3 de enemigos + lanzables + cajas"), Timeline.Num(), 6);
-	if (Timeline.Num() == 6)
+	TestEqual(TEXT("heavy: referencia + 3 de enemigos"), Timeline.Num(), 4);
+	if (Timeline.Num() == 4)
 	{
 		TestTrue(TEXT("La primera fase es la de referencia"), Timeline[0].Group == TNStress::EGroup::Baseline);
 		TestEqual(TEXT("La última acaba a los 60 s"), Timeline.Last().End, 60.f, 0.001f);
-		TestEqual(TEXT("Cada fase dura 10 s"), Timeline[3].End - Timeline[3].Start, 10.f, 0.001f);
+		TestEqual(TEXT("Cada fase dura 15 s"), Timeline[3].End - Timeline[3].Start, 15.f, 0.001f);
 	}
-	TestEqual(TEXT("race8 solo tiene la fase de referencia"), TNStress::BuildTimeline(Race8, 60.f).Num(), 1);
+	TestEqual(TEXT("tortugas8 solo tiene la fase de referencia"), TNStress::BuildTimeline(Tortugas8, 60.f).Num(), 1);
 	TNStress::FScenario Control;
 	TestTrue(TEXT("control existe"), TNStress::Parse(TEXT("control"), Control));
 	TestEqual(TEXT("control son seis fases de referencia"), TNStress::BuildTimeline(Control, 60.f).Num(), 6);
@@ -234,7 +234,7 @@ bool FTNStressScenarioTest::RunTest(const FString& Parameters)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// De punta a punta: 30 s de monkey en headless sobre LVL_BeachRace (proceso hijo)
+// De punta a punta: 30 s de monkey en headless sobre LVL_Demo01 (proceso hijo)
 // ─────────────────────────────────────────────────────────────────────────────
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNMonkeyHeadlessTest, "Tortunabo.Monkey.Headless30s",
@@ -250,7 +250,7 @@ bool FTNMonkeyHeadlessTest::RunTest(const FString& Parameters)
 
 	// Con -nullrhi el mapa carga y corre entero (probado): no hace falta un mapa alternativo.
 	const FString Args = FString::Printf(
-		TEXT("\"%s\" /Game/Maps/Run/LVL_BeachRace -game -nullrhi -unattended -nosplash -nosound -NoVerifyGC -log -abslog=\"%s\" -TNMonkey=30:11 -TNMonkeyWarmup=10 -TNMonkeyOut=\"%s\" -TNQuitWhenDone"),
+		TEXT("\"%s\" /Game/Maps/Run/LVL_Demo01 -game -nullrhi -unattended -nosplash -nosound -NoVerifyGC -log -abslog=\"%s\" -TNMonkey=30:11 -TNMonkeyWarmup=10 -TNMonkeyOut=\"%s\" -TNQuitWhenDone"),
 		*Project, *ChildLog, *Report);
 	uint32 ProcessId = 0;
 	FProcHandle Handle = FPlatformProcess::CreateProc(*Exe, *Args, true, true, true, &ProcessId, 0, nullptr, nullptr);

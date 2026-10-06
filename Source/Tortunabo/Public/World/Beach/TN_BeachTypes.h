@@ -172,15 +172,9 @@ namespace TNBeach
 	constexpr uint8 FlagBoosted = 1 << 0;
 
 	/**
-	 * Pieza de Supervivencia (la pone ATN_ProcMapGenerator, #733): la que lo mire cambia lo que allí no encaja. Hoy, las
-	 * gaviotas sueltan al segundo y a poca altura a la que cogen.
-	 */
-	constexpr uint8 FlagSurvival = 1 << 1;
-
-	/**
 	 * Cofre de la cima de un castillo (fortaleza, castillo enorme o castillo con salas): da lo mejor de la carrera, con la
 	 * tabla de las últimas para cualquier puesto (ETNRaceLootSource::Summit): subir hasta allí tiene que compensar.
-	 * Va en el bit 2: el 1 es de FlagSurvival (#729) y el 0, de FlagBoosted; cada marca nueva toma el siguiente libre.
+	 * Va en el bit 2: el 1 quedó libre y el 0 es de FlagBoosted; cada marca nueva toma el siguiente libre.
 	 */
 	constexpr uint8 FlagSummitPrize = 1 << 2;
 

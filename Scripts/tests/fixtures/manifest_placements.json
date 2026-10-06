@@ -129,22 +129,6 @@
     ]
    },
    {
-    "id": "t-loot-ItemBox-6",
-    "category": "loot",
-    "kind": "ItemBox",
-    "location_uu": [
-     18000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 0.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {},
-    "source": "auto"
-   },
-   {
     "id": "t-loot-ScoreShell-7",
     "category": "loot",
     "kind": "ScoreShell",
@@ -191,58 +175,6 @@
     "size_scale": 1.0,
     "params": {},
     "source": "auto"
-   },
-   {
-    "id": "t-loot-TreasureChest-10",
-    "category": "loot",
-    "kind": "TreasureChest",
-    "location_uu": [
-     30000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 0.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {},
-    "source": "auto"
-   },
-   {
-    "id": "t-nido-lejos",
-    "category": "nest",
-    "kind": "EggNest",
-    "location_uu": [
-     33000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 0.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {},
-    "source": "auto",
-    "line": 0,
-    "s_m": 300.0
-   },
-   {
-    "id": "t-nido-cerca",
-    "category": "nest",
-    "kind": "EggNest",
-    "location_uu": [
-     36000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 0.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {},
-    "source": "auto",
-    "line": 0,
-    "s_m": 100.0
    },
    {
     "id": "t-puzzle-throw_chain-13",
@@ -553,7 +485,7 @@
   "manual": [
    {
     "category": "enemy",
-    "kind": "Lizard",
+    "kind": "DragCrab",
     "location_uu": [
      87000.0,
      0.0,

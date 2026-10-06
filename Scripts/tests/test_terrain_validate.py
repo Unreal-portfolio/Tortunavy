@@ -96,7 +96,7 @@ def test_budgets_follow_the_plan_and_the_catalogue():
     assert MeshBudget.for_mode(None, 6) == MeshBudget.for_grid(6)
 
 
-@pytest.mark.parametrize("name", ["E01_espana", "P01_plataformas", "C01_camino"])
+@pytest.mark.parametrize("name", ["C01_camino"])
 def test_existing_maps_are_within_budget_and_without_cracks(name):
     budget = check_budget(VARIANTS / name)
     assert budget["ok"], budget
@@ -105,15 +105,15 @@ def test_existing_maps_are_within_budget_and_without_cracks(name):
 
 
 def test_a_shifted_chunk_is_a_crack(tmp_path):
-    src = VARIANTS / "P01_plataformas"
-    dst = tmp_path / "P01"
+    src = VARIANTS / "C01_camino"
+    dst = tmp_path / "C01"
     shutil.copytree(src, dst)
-    data = read_chunk(dst / "Chunks" / "r1c1.bin")
+    data = read_chunk(dst / "Chunks" / "r0c2.bin")
     moved = SimpleNamespace(**data)
     moved.vertices = data["vertices"] + np.array([0.0, 0.0, 30.0], dtype=np.float32)
-    write_chunk(dst / "Chunks" / "r1c1.bin", moved)
+    write_chunk(dst / "Chunks" / "r0c2.bin", moved)
     seams = check_seams(dst)
-    assert not seams["ok"] and ((1, 1), (2, 1)) in seams["cracks"]
+    assert not seams["ok"] and any((2, 0) in pair for pair in seams["cracks"])
     tight = check_budget(dst, MeshBudget(100_000, 50.0))
     assert not tight["ok"]
 

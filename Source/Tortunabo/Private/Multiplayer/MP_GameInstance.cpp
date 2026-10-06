@@ -29,7 +29,6 @@
 #include "Multiplayer/TN_LocalPlayRules.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Multiplayer/TN_LocalPlayerProfile.h"
-#include "Lobby/TN_LobbyMission.h"
 #include "Engine/NetDriver.h"
 #include "Multiplayer/TN_NetworkFailureDecisions.h"
 #include "Multiplayer/TN_RoomInfo.h"
@@ -64,7 +63,7 @@ namespace
 	constexpr float MPGameInstance_KickGraceSeconds = 2.5f;
 
 #if !UE_BUILD_SHIPPING
-	// Comando de prueba: fuera de la build de Steam, como TNStorm y TNBooth.
+	// Comando de prueba: fuera de la build de Steam, como TNBooth.
 	void MPGameInstance_HandleFakeRoomError(const TArray<FString>& Args, UWorld* World)
 	{
 		UMP_GameInstance* GI = World ? Cast<UMP_GameInstance>(World->GetGameInstance()) : nullptr;
@@ -705,7 +704,6 @@ void UMP_GameInstance::HostSession()
 	Settings.bAllowJoinViaPresenceFriendsOnly = false;
 	ApplyRoomSettings(Settings, 1);
 	AdvertisedPlayers = 1;
-	AdvertisedMode = static_cast<int32>(SelectedProcMode);
 	AdvertisedLocked = ActiveRoom.bLocked ? 1 : 0;
 
 	UpdateStatus(FString::Printf(TEXT("Creating Steam lobby (%s, %d plazas, código %s)..."), ActiveRoom.bPrivate ? TEXT("privada") : TEXT("pública"),
@@ -717,15 +715,6 @@ void UMP_GameInstance::HostSession()
 		// No ha arrancado y no ha avisado: se da por fallida ya (si ha avisado, OnCreateSessionComplete ya la cerró).
 		OnCreateSessionComplete(NAME_GameSession, false);
 	}
-}
-
-void UMP_GameInstance::HostSessionWithMode(ETNProcGameMode Mode)
-{
-	// Desde el menú solo se ofrecen los modos de TNLobbyMission::GetMenuModes; el lobby lo lee de aquí al viajar (ATN_HQGameMode::BeginMatchTravel).
-	FTNRoomConfig Config = MakeRoomDraft();
-	Config.Mode = TNLobbyMission::NormalizeMenuMode(Mode);
-	UE_LOG(LogTortunabo, Log, TEXT("[MP] Crear partida en modo %s."), *UEnum::GetValueAsString(Config.Mode));
-	HostRoom(Config);
 }
 
 void UMP_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
@@ -1943,7 +1932,6 @@ void UMP_GameInstance::HostRoom(const FTNRoomConfig& Config)
 	}
 	const TArray<int32> Sizes = GetRoomSizeOptions();
 	ActiveRoom = Config;
-	ActiveRoom.Mode = TNLobbyMission::NormalizeMenuMode(Config.Mode);
 	ActiveRoom.MaxPlayers = FMath::Clamp(Config.MaxPlayers, 2, Sizes.Num() > 0 ? Sizes.Last() : TNRoomLimits::Max);
 	if (Config.NameId < 0 || Config.NameId >= TNRoomNames::Num())
 	{
@@ -1961,14 +1949,11 @@ void UMP_GameInstance::HostRoom(const FTNRoomConfig& Config)
 	RoomMemberIds.Reset();
 	KickedRoomIds.Reset();
 	AdvertisedPlayers = INDEX_NONE;
-	AdvertisedMode = INDEX_NONE;
 	AdvertisedLocked = INDEX_NONE;
 	bKickedFromRoom = false;
-	SelectedProcMode = ActiveRoom.Mode;
-	SelectedTctArena = ActiveRoom.TctArena;
 
-	UE_LOG(LogTortunabo, Log, TEXT("[Salas] Crear sala «%s» (%s, %s, %d plazas, código %s)."), *TNRoomNames::GetIn(ActiveRoom.NameId, true),
-		*UEnum::GetValueAsString(ActiveRoom.Mode), ActiveRoom.bPrivate ? TEXT("privada") : TEXT("pública"), ActiveRoom.MaxPlayers, *ActiveRoom.Code);
+	UE_LOG(LogTortunabo, Log, TEXT("[Salas] Crear sala «%s» (%s, %d plazas, código %s)."), *TNRoomNames::GetIn(ActiveRoom.NameId, true),
+		ActiveRoom.bPrivate ? TEXT("privada") : TEXT("pública"), ActiveRoom.MaxPlayers, *ActiveRoom.Code);
 	HostSession();
 }
 
@@ -1982,15 +1967,12 @@ FTNRoomConfig UMP_GameInstance::MakeRoomDraft() const
 	}
 	else
 	{
-		Draft.Mode = TNLobbyMission::NormalizeMenuMode(SelectedProcMode);
 		Draft.MaxPlayers = Sizes.Num() > 0 ? Sizes.Last() : TNRoomLimits::Max;
-		Draft.TctArena = SelectedTctArena;
 	}
 	if (!Sizes.Contains(Draft.MaxPlayers) && Sizes.Num() > 0)
 	{
 		Draft.MaxPlayers = Sizes.Last();
 	}
-	Draft.TctArena = TNLobbyMission::ResolveTctArena(Draft.TctArena, TNLobbyMission::TctArenaOptions());
 	// Nombre y código nuevos cada vez que se abre la pantalla (el nombre, distinto del de la última vez).
 	Draft.NameId = TNRoomNames::Random(bHasRoomDraft ? RoomDraft.NameId : INDEX_NONE);
 	Draft.Code = TNRoomCode::Generate();
@@ -2146,9 +2128,10 @@ void UMP_GameInstance::StartRoomSearch(ETNRoomSearch Purpose, const FString& Cod
 	SessionSearch->MaxSearchResults = Purpose == ETNRoomSearch::Code ? 50 : 200;
 	SessionSearch->QuerySettings.Set(TNRoomKeys::PresenceSearch(), true, EOnlineComparisonOp::Equals);
 	// Filtros en el servidor de Steam (el NULL los ignora y se filtra al leer los resultados, en ReadRoomListing y
-	// OnFindSessionsComplete): solo salas de Tortunavy (el AppId 480 lo comparten muchos proyectos), y además la del código
-	// o solo las públicas.
+	// OnFindSessionsComplete): solo salas de Tortunavy (el AppId 480 lo comparten muchos proyectos) de esta versión de las
+	// salas, y además la del código o solo las públicas.
 	SessionSearch->QuerySettings.Set(TNRoomKeys::Keywords(), FString(TNRoomKeys::KeywordsValue()), EOnlineComparisonOp::Equals);
+	SessionSearch->QuerySettings.Set(TNRoomKeys::Schema(), TNRoomKeys::SchemaVersion, EOnlineComparisonOp::Equals);
 	if (Purpose == ETNRoomSearch::Code)
 	{
 		SessionSearch->QuerySettings.Set(TNRoomKeys::Code(), Code, EOnlineComparisonOp::Equals);
@@ -2178,6 +2161,13 @@ bool UMP_GameInstance::ReadRoomListing(const FOnlineSession& Session, int32 Inde
 	{
 		return false;
 	}
+	// Una sala de otra compilación (otra versión de las salas) no se lista ni se puede entrar en ella.
+	int32 Schema = 0;
+	const bool bHasSchema = Settings.Get(TNRoomKeys::Schema(), Schema);
+	if (!TNRoomKeys::IsCurrentSchema(bHasSchema, Schema))
+	{
+		return false;
+	}
 	Out = FTNRoomListing();
 	Out.SearchIndex = Index;
 	int32 Value = 0;
@@ -2189,11 +2179,6 @@ bool UMP_GameInstance::ReadRoomListing(const FOnlineSession& Session, int32 Inde
 	Out.bPrivate = Settings.Get(TNRoomKeys::Private(), Value) && Value != 0;
 	Value = 0;
 	Out.bLocked = Settings.Get(TNRoomKeys::Locked(), Value) && Value != 0;
-	Value = 0;
-	const bool bHasMode = Settings.Get(TNRoomKeys::Mode(), Value);
-	int32 Schema = 1;
-	Settings.Get(TNRoomKeys::ModeSchema(), Schema);
-	Out.Mode = TNRoomKeys::DecodeMode(bHasMode, Value, Schema);
 	Out.MaxPlayers = Settings.NumPublicConnections;
 	Value = 0;
 	Out.Players = Settings.Get(TNRoomKeys::Players(), Value) ? Value
@@ -2470,10 +2455,9 @@ void UMP_GameInstance::RoomTick()
 		return;
 	}
 	EnsureActiveRoom();
-	ActiveRoom.Mode = SelectedProcMode;
 	EnsureRoomInfo(World);
 	const int32 Players = CountRoomPlayers(World);
-	if (Players != AdvertisedPlayers || static_cast<int32>(SelectedProcMode) != AdvertisedMode || (ActiveRoom.bLocked ? 1 : 0) != AdvertisedLocked)
+	if (Players != AdvertisedPlayers || (ActiveRoom.bLocked ? 1 : 0) != AdvertisedLocked)
 	{
 		UpdateRoomAdvertisement();
 	}
@@ -2537,7 +2521,6 @@ void UMP_GameInstance::EnsureActiveRoom()
 	}
 	const TArray<int32> Sizes = GetRoomSizeOptions();
 	ActiveRoom = FTNRoomConfig();
-	ActiveRoom.Mode = SelectedProcMode;
 	ActiveRoom.MaxPlayers = Sizes.Num() > 0 ? Sizes.Last() : TNRoomLimits::Max;
 	ActiveRoom.NameId = TNRoomNames::Random();
 	ActiveRoom.Code = TNRoomCode::Generate();
@@ -2577,7 +2560,6 @@ void UMP_GameInstance::UpdateRoomAdvertisement()
 {
 	const int32 Players = CountRoomPlayers(GetWorld());
 	AdvertisedPlayers = Players;
-	AdvertisedMode = static_cast<int32>(SelectedProcMode);
 	AdvertisedLocked = ActiveRoom.bLocked ? 1 : 0;
 
 	IOnlineSessionPtr Sessions = GetSessionInterface();
@@ -2589,8 +2571,8 @@ void UMP_GameInstance::UpdateRoomAdvertisement()
 	FOnlineSessionSettings Settings = Named->SessionSettings;
 	ApplyRoomSettings(Settings, Players);
 	Sessions->UpdateSession(NAME_GameSession, Settings, true);
-	UE_LOG(LogTortunabo, Log, TEXT("[Salas] Anuncio actualizado: %d/%d, %s, modo %d."), Players, ActiveRoom.MaxPlayers,
-		ActiveRoom.bLocked ? TEXT("cerrada") : TEXT("abierta"), AdvertisedMode);
+	UE_LOG(LogTortunabo, Log, TEXT("[Salas] Anuncio actualizado: %d/%d, %s."), Players, ActiveRoom.MaxPlayers,
+		ActiveRoom.bLocked ? TEXT("cerrada") : TEXT("abierta"));
 }
 
 void UMP_GameInstance::ApplyRoomSettings(FOnlineSessionSettings& Settings, int32 Players) const
@@ -2601,8 +2583,7 @@ void UMP_GameInstance::ApplyRoomSettings(FOnlineSessionSettings& Settings, int32
 	Settings.Set(TNRoomKeys::Code(), ActiveRoom.Code, Advertise);
 	Settings.Set(TNRoomKeys::Private(), ActiveRoom.bPrivate ? 1 : 0, Advertise);
 	Settings.Set(TNRoomKeys::Locked(), ActiveRoom.bLocked ? 1 : 0, Advertise);
-	Settings.Set(TNRoomKeys::Mode(), static_cast<int32>(SelectedProcMode), Advertise);
-	Settings.Set(TNRoomKeys::ModeSchema(), TNRoomKeys::ModeSchemaVersion, Advertise);
+	Settings.Set(TNRoomKeys::Schema(), TNRoomKeys::SchemaVersion, Advertise);
 	Settings.Set(TNRoomKeys::Players(), FMath::Max(1, Players), Advertise);
 }
 
@@ -2613,7 +2594,6 @@ void UMP_GameInstance::ResetRoomState()
 	RoomMemberIds.Reset();
 	KickedRoomIds.Reset();
 	AdvertisedPlayers = INDEX_NONE;
-	AdvertisedMode = INDEX_NONE;
 	AdvertisedLocked = INDEX_NONE;
 	RoomInfoActor.Reset();
 	bKickedFromRoom = false;

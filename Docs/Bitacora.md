@@ -70,18 +70,3 @@ ser el layout oficial del Run; `ATN_ChunkManager` queda para puzzles en plazas.
 3. F3: monolitos, cuevas/overhangs, zonas hundidas, acantilados.
 4. F4: biomas por semilla con blend y regenerar la librería borrando la de 400 m.
 5. Pendiente: GDD de Rodrigo para cruzar con la auditoría de sistemas; fix de ragdoll en red.
-
-## 2026-10-06 — Recorte a modo único (decisión del director)
-
-- **Plan nuevo**: un solo modo sobre el terreno Camino. Enemigos y objetos, solo los del Excel de diseño. El plan está en `Docs/2026-10-06-Plan-Maestro-Modo-Unico.md`. Lo descartado queda en la rama `chamber` (`61cd791c7`).
-- **Archivos rescatados**:
-  - etiqueta `archivo/mapas-paises-28`, con los mapas aparcados, que solo estaban en el reflog;
-  - etiqueta `archivo/arte-2026-09-29`, que solo estaba en local.
-- **Recorte por etapas** en la PR #876 (lote #852). La etapa 1, Rally, Karts y vehículos, está compilada, con 487/487 tests de C++ y 617 de pytest en verde.
-- **Tablero**: etiqueta `chamber` y comando `tablero.py chamber` (#853). 15 tareas nuevas del plan en Backlog (#855-#874). Mapa D01 del primer dibujo de diseño en #875.
-
-### Siguiente sesión
-
-1. Terminar las etapas 2-7 del recorte en la PR #876 y probarla en el editor.
-2. Cerrar con `tablero.py chamber` las issues descartadas que queden abiertas.
-3. Revisar la lámina del mapa D01 (#875).

@@ -89,12 +89,6 @@ namespace TNBeach
 	 */
 	TORTUNABO_API bool IsDodgingByBellyDive(const ACharacter* Turtle);
 
-	/**
-	 * true si en este mundo no se muere (modo carrera en la playa): las zonas de muerte, caídas, tormenta y enemigos
-	 * aturden en vez de matar. Lo decide el GameMode del servidor y se replica en el GameState.
-	 */
-	TORTUNABO_API bool IsNoDeathWorld(const UObject* WorldContext);
-
 	// ── Quién mueve a la tortuga (servidor) ──
 
 	/** Lo que se ve de la tortuga para decidir quién la mueve (ResolveMover). */
@@ -180,18 +174,11 @@ namespace TNBeach
 
 	/**
 	 * Servidor: sitio de arena abierta donde poner de pie a la tortuga, en Desired o alrededor (anillos cada 2,5 m hasta
-	 * SearchRadius; 0 = solo ese punto): la primera superficie desde arriba es el terreno de verdad (no algo encima), llana,
-	 * con la cápsula de pie cabiendo, fuera del agua, de las pozas, de las trincheras, del filo del acantilado y de detrás
-	 * del muro de la salida, y a más de AvoidRadius de cada punto de Avoid. OutTransform: la cápsula de pie encima del
+	 * SearchRadius; 0 = solo ese punto): la primera superficie desde arriba, llana, con la cápsula de pie cabiendo, fuera del
+	 * agua y a más de AvoidRadius de cada punto de Avoid. OutTransform: la cápsula de pie encima del
 	 * suelo, con el giro de la tortuga.
 	 */
 	TORTUNABO_API bool FindOpenSandSpot(const ACharacter* Turtle, const FVector& Desired, float SearchRadius, FTransform& OutTransform,
 		const TArray<FVector>* Avoid = nullptr, float AvoidRadius = 0.f);
 
-	/**
-	 * Cuánto (cm) queda Probe por debajo de la superficie de verdad del terreno en su vertical (una traza contra las
-	 * teselas con colisión del generador, ATN_BeachRaceGenerator::TraceTerrainAt); negativo si está encima. Sin teselas ahí
-	 * (o sin generador), contra la arena del generador (GetGroundHeightAt).
-	 */
-	TORTUNABO_API float DepthUnderTerrain(const UObject* WorldContext, const FVector& Probe);
 }

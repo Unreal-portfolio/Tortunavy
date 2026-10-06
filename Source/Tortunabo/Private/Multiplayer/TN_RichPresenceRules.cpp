@@ -1,9 +1,5 @@
 #include "Multiplayer/TN_RichPresenceRules.h"
 #include "Core/TN_LocText.h"
-#include "Game/TN_BeachRaceGameMode.h"
-#include "Game/TN_ProcMapGameMode.h"
-#include "Game/TN_RunGameMode.h"
-#include "Game/TN_SurvivalGameMode.h"
 #include "Lobby/TN_HQGameMode.h"
 #include "Menu/MP_MenuGameMode.h"
 
@@ -17,18 +13,6 @@ namespace TNRichPresenceDetail
 		FTNPresenceInfo Info;
 		Info.Token = Token;
 		Info.Status = Status;
-		return Info;
-	}
-
-	/** Un estado con un número ({Level} o {Round}): su parámetro va a Steam con el nombre en minúsculas. */
-	FTNPresenceInfo WithNumber(const TCHAR* Token, const FText& Pattern, const TCHAR* ArgName, int32 Value)
-	{
-		FFormatNamedArguments Args;
-		Args.Add(ArgName, TNLocText::Int(Value));
-		FTNPresenceInfo Info;
-		Info.Token = Token;
-		Info.Status = FText::Format(Pattern, Args);
-		Info.Params.Emplace(FString(ArgName).ToLower(), FString::FromInt(Value));
 		return Info;
 	}
 
@@ -63,7 +47,7 @@ FString FTNPresenceInfo::Signature() const
 
 namespace TNRichPresence
 {
-	ETNPresenceMode ModeFor(const UClass* GameModeClass, ETNProcGameMode ProcMode)
+	ETNPresenceMode ModeFor(const UClass* GameModeClass)
 	{
 		if (!GameModeClass)
 		{
@@ -77,33 +61,6 @@ namespace TNRichPresence
 		{
 			return ETNPresenceMode::Lobby;
 		}
-		// Los dos derivan de ATN_RunGameMode: antes que él.
-		if (GameModeClass->IsChildOf(ATN_SurvivalGameMode::StaticClass()))
-		{
-			return ETNPresenceMode::Survival;
-		}
-		if (GameModeClass->IsChildOf(ATN_BeachRaceGameMode::StaticClass()))
-		{
-			return ETNPresenceMode::Race;
-		}
-		if (GameModeClass->IsChildOf(ATN_ProcMapGameMode::StaticClass()))
-		{
-			switch (ProcMode)
-			{
-			case ETNProcGameMode::Race:
-				return ETNPresenceMode::Race;
-			case ETNProcGameMode::TwoVsTwo:
-				return ETNPresenceMode::TwoVsTwo;
-			case ETNProcGameMode::Survival:
-				return ETNPresenceMode::Survival;
-			default:
-				return ETNPresenceMode::Coop;
-			}
-		}
-		if (GameModeClass->IsChildOf(ATN_RunGameMode::StaticClass()))
-		{
-			return ETNPresenceMode::Coop;
-		}
 		return ETNPresenceMode::Playing;
 	}
 
@@ -116,26 +73,8 @@ namespace TNRichPresence
 			return Plain(TEXT("TN_Menu"), NSLOCTEXT("TNPresence", "Menu", "En el menú"));
 		case ETNPresenceMode::Lobby:
 			return Lobby(State);
-		case ETNPresenceMode::Coop:
-			return State.Level > 0
-				? WithNumber(TEXT("TN_CoopLevel"), NSLOCTEXT("TNPresence", "CoopLevel", "Coop, nivel {Level}"), TEXT("Level"), State.Level)
-				: Plain(TEXT("TN_Coop"), NSLOCTEXT("TNPresence", "Coop", "Coop"));
-		case ETNPresenceMode::Race:
-			return State.Round > 0
-				? WithNumber(TEXT("TN_RaceRound"), NSLOCTEXT("TNPresence", "RaceRound", "Carrera, ronda {Round}"), TEXT("Round"), State.Round)
-				: Plain(TEXT("TN_Race"), NSLOCTEXT("TNPresence", "Race", "Carrera"));
-		case ETNPresenceMode::TwoVsTwo:
-			return State.Round > 0
-				? WithNumber(TEXT("TN_TwoVsTwoRound"), NSLOCTEXT("TNPresence", "TwoVsTwoRound", "2 contra 2, ronda {Round}"), TEXT("Round"),
-					State.Round)
-				: Plain(TEXT("TN_TwoVsTwo"), NSLOCTEXT("TNPresence", "TwoVsTwo", "2 contra 2"));
-		case ETNPresenceMode::Survival:
-			return State.Level > 0
-				? WithNumber(TEXT("TN_SurvivalLevel"), NSLOCTEXT("TNPresence", "SurvivalLevel", "Supervivencia, nivel {Level}"), TEXT("Level"),
-					State.Level)
-				: Plain(TEXT("TN_Survival"), NSLOCTEXT("TNPresence", "Survival", "Supervivencia"));
 		default:
-			return Plain(TEXT("TN_Playing"), NSLOCTEXT("TNPresence", "Playing", "En partida"));
+			return Plain(TEXT("TN_Playing"), NSLOCTEXT("TNPresence", "Playing", "Jugando"));
 		}
 	}
 }

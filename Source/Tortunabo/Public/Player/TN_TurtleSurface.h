@@ -4,7 +4,6 @@
 #include "UObject/ObjectKey.h"
 
 class AActor;
-class ATN_ProcMapGenerator;
 class UPrimitiveComponent;
 class UWorld;
 struct FHitResult;
@@ -15,15 +14,9 @@ struct FHitResult;
  * (UTN_TurtleFoleyComponent), el rozamiento del arrastre del panzazo (UTN_TurtleMovementComponent) y su polvo
  * (UTN_TurtleDustComponent).
  *
- * - Mapa procedural, terreno: la mezcla de biomas del sitio (FLayout::BiomeWeightsAt); en las pendientes (normal por
- *   debajo de 0,9, del todo a 0,7), hasta un 80 % de roca, como se pinta el talud; pisando terreno por debajo del nivel
- *   del agua del mapa (TNProcMap::SeaLevel), agua poco profunda desde 2 cm de profundidad.
- * - Estructuras del mapa (a más de 35 cm del terreno): la sección 1 de la malla son los tablones (madera) y el resto,
- *   piedra o hierro pintado (roca). Hace falta el índice de cara de una traza compleja; sin él (el suelo del movimiento
- *   es un barrido de la cápsula), mitad y mitad.
- * - Decorado con malla estática del mapa y todo lo de fuera del mapa (el lobby): por palabras en los nombres del
- *   componente, la clase y el nombre del actor, la malla y el material (agua, arena, madera, tierra y roca, por ese
- *   orden); sin palabras conocidas, roca. Encima de otra tortuga, su caparazón cuenta como madera.
+ * Por palabras en los nombres del componente, la clase y el nombre del actor, la malla y el material (agua, arena,
+ * madera, tierra y roca, por ese orden); sin palabras conocidas, roca. Encima de otra tortuga, su caparazón cuenta como
+ * madera.
  *
  * Funciones puras del hilo de juego: sin estado propio (las cachés las pasa quien llama).
  */
@@ -43,41 +36,25 @@ namespace TNTurtleSurface
 	/** Superficie por nombres de cada componente ya visto (índice de preajuste). */
 	using FNameCache = TMap<TObjectKey<UPrimitiveComponent>, uint8>;
 
-	/** Qué se ha tocado, además de los pesos (el polvo se tiñe con el bioma del terreno). */
-	struct FContact
-	{
-		/** Terreno del mapa procedural (ni estructura ni decorado). */
-		bool bProcTerrain = false;
-		/** Bioma dominante en el sitio (índice de ETNProcBiome); -1 fuera del terreno del mapa. */
-		int32 Biome = -1;
-	};
-
 	/** Pesos de un preajuste: uno a 1 y el resto a 0 (el desconocido, roca). */
 	TORTUNABO_API void PresetWeights(uint8 Preset, float OutWeights[Num]);
 
 	/** Superficie por los nombres del componente, su malla, su material y su actor (con la caché, si se pasa). */
 	TORTUNABO_API uint8 ClassifyByNames(const UPrimitiveComponent* Comp, FNameCache* Cache);
 
-	/** Generador del mapa procedural del mundo (null fuera del mapa). Recorre los actores: quien llama guarda el resultado. */
-	TORTUNABO_API ATN_ProcMapGenerator* FindGenerator(UWorld* World);
-
 	/**
 	 * Pesos normalizados de la superficie en un contacto.
 	 * @param Hit          Impacto de una traza hacia abajo o suelo del movimiento; null si no se ha tocado nada.
-	 * @param FootLocation Punto de apoyo (base de la cápsula): la profundidad del agua se mide ahí.
-	 * @param Generator    Mapa procedural (o null fuera de él).
 	 * @param Cache        Caché de superficie por nombres (o null).
-	 * @param OutContact   Si no es null, qué se ha tocado (terreno del mapa y su bioma).
 	 */
-	TORTUNABO_API void Resolve(const FHitResult* Hit, const FVector& FootLocation, const ATN_ProcMapGenerator* Generator,
-		FNameCache* Cache, float OutWeights[Num], FContact* OutContact = nullptr);
+	TORTUNABO_API void Resolve(const FHitResult* Hit, FNameCache* Cache, float OutWeights[Num]);
 
 	/**
 	 * Traza de línea compleja (con el índice de cara) desde From hasta 60 cm por debajo de FootLocation y Resolve con lo
 	 * que toque. Devuelve si ha tocado algo.
 	 */
 	TORTUNABO_API bool Probe(UWorld* World, const AActor* Ignore, const FVector& From, const FVector& FootLocation,
-		const ATN_ProcMapGenerator* Generator, FNameCache* Cache, float OutWeights[Num], FContact* OutContact = nullptr);
+		FNameCache* Cache, float OutWeights[Num]);
 
 	/** Índice del peso más alto. */
 	inline int32 Dominant(const float Weights[Num])

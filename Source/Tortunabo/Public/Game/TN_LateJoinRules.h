@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 
 /**
- * Entrada tardía y reconexión (#345) como funciones PURAS, igual que TN_SurvivalRules.h: sin mundo ni actores, para que
- * los tests (Tortunabo.Survival.LateJoin y Tortunabo.Net.Reconnect) prueben exactamente lo que decide ATN_RunGameMode.
+ * Entrada tardía y reconexión (#345) como funciones PURAS: sin mundo ni actores, para que los tests
+ * (Tortunabo.Net.Reconnect) prueben exactamente lo que decide ATN_RunGameMode.
  *
  * Quien vuelve a la misma sala recupera su PlayerState inactivo (AGameMode::FindInactivePlayer): puntos, vivo o muerto
  * y meta. Lo que cada modo hace con él y con quien llega nuevo lo marca su ETNLateJoinPolicy.
@@ -13,13 +13,13 @@
 /** Cómo trata un modo a quien entra con la partida en marcha. */
 enum class ETNLateJoinPolicy : uint8
 {
-	/** Clásico y Carrera: entra jugando desde la salida y con la carrera a cero (lo de siempre). */
+	/** Entra jugando desde la salida y con la partida a cero (lo de siempre; la del modo único). */
 	FreshStart,
-	/** Supervivencia: quien no estaba al empezar, o se fue, no puede ganarla: espera como espectador. */
+	/** Quien no estaba al empezar, o se fue, no puede ganarla: espera como espectador. */
 	SpectateUntilMatchEnds,
-	/** Coop: quien vuelve recupera su estado; vivo (o nuevo), aparece en un punto seguro del camino. */
+	/** Quien vuelve recupera su estado; vivo (o nuevo), aparece en un punto seguro del camino. */
 	ResumeOnPath,
-	/** Carrera y 2vs2 del mapa procedural: recupera su estado y espera como espectador a la ronda siguiente. */
+	/** Por rondas: recupera su estado y espera como espectador a la ronda siguiente. */
 	SpectateUntilNextRound,
 };
 

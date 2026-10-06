@@ -2,13 +2,10 @@
 
 - `resumen` y `decidir`: la memoria del equipo vive en las issues (memoria.py).
 - `auditar`: problemas de organización de las issues de trabajo (auditoria.py).
-- `colisiones`: PR abiertas contra la misma rama base (dev o dev-<modo>) que chocan al mezclarse (colisiones.py).
-- `auditar` también marca los lotes abiertos que incumplen los topes (lotes.py) sin la etiqueta `excepcion`.
+- `colisiones`: PR abiertas contra dev que chocan al mezclarse (colisiones.py).
 - `bloquear`: dependencias nativas de GitHub y estado Bloqueada (bloqueos.py).
 - `lote` y `resumenes`: en control_lotes.py.
 - `asegurar-estados`: añade Bloqueada y Validada al campo Status sin perder valores (estados.py).
-- `chamber`: descarta issues del juego (etiqueta `chamber`, sin asignados ni avisos, en Backlog y cerradas como
-  not planned) y avisa de las PR abiertas que las enlazan.
 """
 
 from __future__ import annotations
@@ -24,14 +21,12 @@ import auditoria
 import bloqueos
 import colisiones
 import estados
-import flujo
 import memoria
 import objetos
 import lotes
 import peticiones
-from base import (CONFIG, INTEGRACION, NUMERO, OWNER, REPO, ErrorTablero, borrar_cache_campos, cargar_issue,
-                  cargar_proyecto, comentar, elegir_revisor, esta_fusionada, gh, issues_de_pr, numeros_chamber,
-                  poner_campo, prs_abiertas, prs_fusionadas, quien_lanza, rama_base, solo_descartadas,
+from base import (INTEGRACION, NUMERO, OWNER, REPO, ErrorTablero, borrar_cache_campos, cargar_issue, cargar_proyecto,
+                  comentar, elegir_revisor, esta_fusionada, gh, issues_de_pr, poner_campo, prs_abiertas, prs_fusionadas,
                   usuario_actual)
 
 
@@ -50,20 +45,19 @@ def cmd_decidir(args: argparse.Namespace) -> None:
 def contexto_prs(nodos: list[dict], proyecto: dict, abiertas: list[dict], fusionadas: list[dict]) -> dict[int, dict]:
     """Por issue: si tiene PR, si está fusionada, lote fusionado, PR sin lote y revisor sugerido."""
     lotes_abiertos = {n["number"] for n in nodos if lotes.ETIQUETA in objetos.nombres_etiquetas(n)}
-    chamber = {n["number"] for n in nodos if flujo.es_chamber(n)} | flujo.descartadas(proyecto["items"])
-    no_trabajo = lotes_abiertos | chamber | {n["number"] for n in nodos if objetos.es_objeto(n)}
+    no_trabajo = lotes_abiertos | {n["number"] for n in nodos if objetos.es_objeto(n)}
     con_pr = {n for pr in abiertas + fusionadas for n in issues_de_pr(pr)}
     contexto: dict[int, dict] = {}
     for nodo in nodos:
         n = nodo["number"]
         asignados = [a["login"] for a in nodo["assignees"]["nodes"]]
-        contexto[n] = {"con_pr": n in con_pr, "fusionada": esta_fusionada(n, fusionadas, abiertas, rama_base(nodo)),
+        contexto[n] = {"con_pr": n in con_pr, "fusionada": esta_fusionada(n, fusionadas, abiertas),
                        "revisor_sugerido": elegir_revisor(proyecto, asignados[0]) if asignados else None,
                        "prs_sin_lote": [], "lote_fusionado": None, "fuera_de_lote": []}
     for nodo in nodos:
         if nodo["number"] not in lotes_abiertos:
             continue
-        pr = next((p["number"] for p in fusionadas if flujo.es_rama_de_linea(p["baseRefName"], INTEGRACION)
+        pr = next((p["number"] for p in fusionadas if p["baseRefName"] == INTEGRACION
                    and nodo["number"] in issues_de_pr(p, menciones=True)), None)
         for miembro in bloqueos.bloqueantes(nodo):
             if pr and miembro["number"] in contexto:
@@ -88,30 +82,19 @@ def marcar_prs_abiertas(contexto: dict[int, dict], abiertas: list[dict], miembro
                 contexto[n]["fuera_de_lote"] += [(pr["number"], lote) for lote in lotes_pr]
 
 
-def issues_auditables(proyecto: dict, ahora: datetime) -> tuple[list[dict], list[tuple[dict, list[dict]]]]:
-    """Issues de trabajo abiertas y cerradas en los últimos días, con el contexto de sus PR, y los lotes abiertos con
-    sus problemas de topes (lista vacía si cumplen, para quitarles la etiqueta si la tenían)."""
+def issues_auditables(proyecto: dict, ahora: datetime) -> list[dict]:
+    """Issues de trabajo abiertas y cerradas en los últimos días, con el contexto de sus PR."""
     desde = ahora - timedelta(days=auditoria.DIAS_RESUMEN)
     nodos = auditoria.leer_issues(gh, REPO, "OPEN") + auditoria.leer_issues(gh, REPO, "CLOSED", desde)
     contexto = contexto_prs(nodos, proyecto, prs_abiertas(), prs_fusionadas())
     issues = [auditoria.normalizar(n, proyecto["items"].get(n["number"], {}).get("valores", {}), contexto[n["number"]])
               for n in nodos]
-    return [i for i in issues if auditoria.es_de_trabajo(i)], lotes_auditables(nodos)
-
-
-def lotes_auditables(nodos: list[dict]) -> list[tuple[dict, list[dict]]]:
-    """Lotes abiertos (no descartados) con un problema de organización por cada tope que incumplen sin `excepcion`."""
-    por_numero = {n["number"]: n for n in nodos}
-    abiertos = lotes.lotes_abiertos(por_numero)
-    malos = lotes.incumplimientos(abiertos)
-    return [(auditoria.normalizar(por_numero[n], {}), auditoria.problemas_de_lote(malos.get(n, [])))
-            for n in sorted(abiertos) if not flujo.es_chamber(por_numero[n])]
+    return [i for i in issues if auditoria.es_de_trabajo(i)]
 
 
 def cmd_auditar(args: argparse.Namespace) -> None:
     proyecto, ahora = cargar_proyecto(), datetime.now(timezone.utc)
-    trabajo, de_lotes = issues_auditables(proyecto, ahora)
-    informe = [(i, auditoria.problemas(i, ahora)) for i in trabajo] + de_lotes
+    informe = [(i, auditoria.problemas(i, ahora)) for i in issues_auditables(proyecto, ahora)]
     con_problemas = sorted([(i, lista) for i, lista in informe if lista], key=lambda x: x[0]["numero"])
     tipos = Counter(p["tipo"] for _, lista in con_problemas for p in lista)
     print(f"## Auditoría de organización · {len(informe)} issues revisadas, {len(con_problemas)} con problemas "
@@ -119,8 +102,7 @@ def cmd_auditar(args: argparse.Namespace) -> None:
           + ("" if args.aplicar else " (simulación: usa --aplicar)") + "\n")
     for issue, lista in con_problemas:
         print(f"- #{issue['numero']} {issue['titulo']}: " + "; ".join(f"[{p['tipo']}] {p['texto']}" for p in lista))
-    conversaciones = {i["numero"]: a for i, _ in informe
-                      if auditoria.es_de_trabajo(i) and (a := auditoria.accion_peticion(i))}
+    conversaciones = {i["numero"]: a for i, _ in informe if (a := auditoria.accion_peticion(i))}
     if conversaciones:
         print("\n### Conversación en las issues (etiqueta `peticion`)")
         print("\n".join(f"- #{n}: {'alguien espera respuesta del asignado' if a == 'poner' else 'ya contestada'}"
@@ -142,8 +124,8 @@ def cmd_conversacion(args: argparse.Namespace) -> None:
     if nodo is None:
         raise ErrorTablero(f"La issue #{args.numero} no existe.")
     etiquetas = objetos.nombres_etiquetas(nodo)
-    if objetos.ETIQUETA in etiquetas or lotes.ETIQUETA in etiquetas or flujo.ETIQUETA_CHAMBER in etiquetas:
-        print(f"#{args.numero} es un objeto, un lote o una issue descartada: no lleva `peticion`")
+    if objetos.ETIQUETA in etiquetas or lotes.ETIQUETA in etiquetas:
+        print(f"#{args.numero} es un objeto o un lote: no lleva `peticion`")
         return
     accion = auditoria.accion_peticion(auditoria.conversacion_de(nodo))
     print(f"#{args.numero}: " + {"poner": "conversación sin contestar por el asignado → `peticion`",
@@ -184,25 +166,19 @@ def aplicar_auditoria(proyecto: dict, informe: list[tuple[dict, list[dict]]]) ->
 # --- colisiones -----------------------------------------------------------------------------------
 
 def cmd_colisiones(args: argparse.Namespace) -> None:
-    chamber = numeros_chamber()
-    # Solo PR hacia una rama de línea (dev o dev-<modo>); cada una se compara con las de su misma base.
-    en_linea = [p for p in prs_abiertas() if flujo.es_rama_de_linea(p["baseRefName"], INTEGRACION)]
-    descartadas = {p["number"] for p in en_linea if solo_descartadas(p, chamber)}  # solo issues `chamber`: no cuentan
-    prs = {p["number"]: p for p in en_linea if p["number"] not in descartadas}
+    prs = {p["number"]: p for p in prs_abiertas() if p["baseRefName"] == INTEGRACION}
     con_git = colisiones.traer_cabezas(prs)
     if not con_git:
         print("Aviso: no se pudieron descargar las cabezas de las PR; cuento los ficheros en común.\n")
-    pares = colisiones.pares_por_base({n: colisiones.ficheros_de_pr(gh, REPO, n) for n in prs},
-                                      {n: p["baseRefName"] for n, p in prs.items()},
-                                      colisiones.conflicto_git if con_git else None)
+    pares = colisiones.pares({n: colisiones.ficheros_de_pr(gh, REPO, n) for n in prs},
+                             colisiones.conflicto_git if con_git else None)
     pares, localizacion = colisiones.separar(pares)  # solo localización: se regenera, sin issue
     abiertas = colisiones.colisiones_abiertas(gh, REPO)
     existentes = {i["title"].strip() for i in abiertas}
     nuevos = [par for par in pares if colisiones.titulo(par[0], par[1]) not in existentes]
     resueltas = colisiones.resueltas(abiertas, set(prs), {(a, b) for a, b, _ in pares},
-                                     {(a, b) for a, b, _ in localizacion}, descartadas) if con_git else []
-    print(f"## Colisiones entre PR abiertas contra su misma rama base · {len(prs)} PR, "
-          f"{len(pares)} pares en conflicto, "
+                                     {(a, b) for a, b, _ in localizacion}) if con_git else []
+    print(f"## Colisiones entre PR abiertas contra {INTEGRACION} · {len(prs)} PR, {len(pares)} pares en conflicto, "
           f"{len(nuevos)} sin issue, {len(resueltas)} issues resueltas"
           + ("" if args.aplicar else " (simulación: usa --aplicar)") + "\n")
     for a, b, ficheros in pares:
@@ -249,7 +225,7 @@ def crear_issue_colision(proyecto: dict, pr_a: dict, pr_b: dict, ficheros: list[
     antigua, reciente = sorted((pr_a, pr_b), key=lambda p: (p.get("createdAt") or "", p["number"]))
     titulo = colisiones.titulo(pr_a["number"], pr_b["number"])
     crear = ["issue", "create", "--repo", REPO, "--title", titulo,
-             "--body", colisiones.cuerpo(antigua, reciente, ficheros, pr_a.get("baseRefName") or INTEGRACION)]
+             "--body", colisiones.cuerpo(antigua, reciente, ficheros, INTEGRACION)]
     for etiqueta in colisiones.etiquetas(ficheros):
         crear += ["--label", etiqueta]
     numero = int(gh(*crear).strip().splitlines()[-1].rstrip("/").rsplit("/", 1)[-1])
@@ -296,72 +272,6 @@ def cmd_bloquear(args: argparse.Namespace) -> None:
     print(f"#{args.numero} → Bloqueada; depende de {todas}. `sync` la pasa a Ready cuando se cierren.")
 
 
-# --- descartes ------------------------------------------------------------------------------------
-
-# Etiquetas que piden algo a una persona: en una issue descartada nadie va a atenderlas.
-ETIQUETAS_DE_PERSONAS = (peticiones.ETIQUETA, flujo.ETIQUETA_DECISION, auditoria.ETIQUETA, auditoria.ETIQUETA_QA,
-                         bloqueos.ETIQUETA)
-PASOS_DESCARTE = ("etiquetar", "quitar", "desasignar", "comentar", "backlog", "cerrar")
-
-
-def cmd_chamber(args: argparse.Namespace) -> None:
-    """Descarta issues: etiqueta `chamber`, motivo, sin asignados ni avisos, en Backlog y cerradas como not planned.
-
-    Idempotente: lo que ya está hecho no se repite. Una issue ya cerrada (p. ej. completada) no se reabre. Un objeto o
-    un lote se cierra sin tocar su Status (no lleva). Nada se propaga solo: se avisa de las PR abiertas que las enlazan
-    (`sync` lo repite), de los lotes de los que son miembro, de las issues que dependían de ellas y de sus
-    sub-issues vivas. Solo lo lanza un aprobador: el dueño del `gh` en local o quien dispara el puente a mano.
-    """
-    if motivo := flujo.motivo_para_no_descartar(quien_lanza(), CONFIG["aprobadores"]):
-        raise ErrorTablero(motivo)
-    try:
-        texto = flujo.texto_chamber(args.motivo)
-    except ValueError as exc:
-        raise ErrorTablero(str(exc)) from exc
-    objetos.crear_etiqueta_si_falta(gh, REPO, flujo.ETIQUETA_CHAMBER, flujo.COLOR_CHAMBER, flujo.DESCRIPCION_CHAMBER)
-    numeros = list(dict.fromkeys(args.numeros))
-    for numero in numeros:
-        descartar(numero, texto)
-    for linea in prs_con_descartadas(prs_abiertas(), set(numeros), numeros_chamber()):
-        print(linea)
-
-
-def descartar(numero: int, texto: str) -> None:
-    datos = json.loads(gh("issue", "view", str(numero), "--repo", REPO, "--json", "state,labels,assignees,comments"))
-    proyecto = cargar_issue(numero)
-    pasos = flujo.pasos_chamber(datos, texto, proyecto["items"].get(numero), ETIQUETAS_DE_PERSONAS)
-    # La etiqueta va primero: el comentario dispara «Conversación en las issues», que así ya la ve descartada.
-    if pasos["etiquetar"]:
-        gh("issue", "edit", str(numero), "--repo", REPO, "--add-label", flujo.ETIQUETA_CHAMBER)
-    if pasos["quitar"]:
-        gh("issue", "edit", str(numero), "--repo", REPO, "--remove-label", ",".join(pasos["quitar"]))
-    if pasos["desasignar"]:
-        gh("issue", "edit", str(numero), "--repo", REPO, "--remove-assignee", ",".join(pasos["desasignar"]))
-    if pasos["comentar"]:
-        comentar(numero, texto)
-    if pasos["backlog"]:
-        poner_campo(proyecto, numero, "Status", "Backlog")  # fuera de las columnas de trabajo del Kanban
-    if pasos["cerrar"]:
-        gh("issue", "close", str(numero), "--repo", REPO, "--reason", "not planned")
-    hecho = [nombre for nombre in PASOS_DESCARTE if pasos[nombre]]
-    print(f"#{numero} descartada ({', '.join(hecho)})" if hecho else f"#{numero} ya estaba descartada")
-    for aviso in flujo.avisos_de_descarte(numero, objetos.leer_issue(gh, REPO, numero)):
-        print(aviso)
-
-
-def prs_con_descartadas(prs: list[dict], numeros: set[int], chamber: set[int]) -> list[str]:
-    """Un aviso por PR abierta que enlaza alguna de `numeros`: sin issue viva, su código no debe entrar en dev."""
-    lineas = []
-    for pr in prs:
-        enlazadas = sorted(issues_de_pr(pr) & numeros)
-        if not enlazadas:
-            continue
-        cuales = ", ".join(f"#{n}" for n in enlazadas)
-        accion = "ciérrala" if solo_descartadas(pr, chamber | numeros) else f"quítale el «Closes» de {cuales}"
-        lineas.append(f"Aviso: la PR #{pr['number']} ({pr['author']['login']}) enlaza {cuales}, descartada: {accion}")
-    return lineas
-
-
 # --- opciones de Status ---------------------------------------------------------------------------
 
 def cmd_asegurar_estados(args: argparse.Namespace) -> None:
@@ -402,9 +312,7 @@ def anadir_comandos(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--quien", help="quién decide (por defecto, tu login)")
     p.set_defaults(fn=cmd_decidir)
     for nombre, ayuda, fn in (("auditar", "problemas de organización de las issues de trabajo", cmd_auditar),
-                              ("colisiones", "PR abiertas contra la misma rama base que chocan al mezclarse",
-                               cmd_colisiones),
-
+                              ("colisiones", "PR abiertas contra dev que chocan al mezclarse", cmd_colisiones),
                               ("asegurar-estados", "añadir Bloqueada y Validada a Status sin perder valores",
                                cmd_asegurar_estados)):
         p = sub.add_parser(nombre, help=ayuda)
@@ -414,11 +322,6 @@ def anadir_comandos(sub: argparse._SubParsersAction) -> None:
     p.add_argument("numero", type=int)
     p.add_argument("--aplicar", action="store_true")
     p.set_defaults(fn=cmd_conversacion)
-    p = sub.add_parser("chamber", help="descartar issues: etiqueta `chamber`, motivo, sin asignados ni avisos, en "
-                                       "Backlog y cerradas como not planned (idempotente)")
-    p.add_argument("numeros", type=int, nargs="+", metavar="numero")
-    p.add_argument("--motivo", required=True, help="por qué se descarta (una línea)")
-    p.set_defaults(fn=cmd_chamber)
     p = sub.add_parser("bloquear", help="registrar de qué issues depende una y pasarla a Bloqueada (en Backlog se queda)")
     p.add_argument("numero", type=int)
     p.add_argument("--por", type=int, action="append", required=True, help="issue de la que depende (repetible)")

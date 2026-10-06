@@ -3,11 +3,10 @@
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStormKick.h"
 #include "World/Beach/TN_BeachStun.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "World/ProcMap/TN_PathStormFX.h"
 #include "World/ProcMap/TN_StormCough.h"
 #include "TN_BeachEnemyKit.h"
@@ -74,9 +73,6 @@ namespace TNBeachStormTuning
 	constexpr float KickClaimPad = 2.5f;
 	constexpr float KickStuckSpeed = 120.f;
 	constexpr float KickStuckSeconds = 0.35f;
-	/** Hundida más de esto (cm) bajo el terreno de verdad: a su sitio. Cada cuánto se mira (s). */
-	constexpr float KickSunkDepth = 90.f;
-	constexpr float KickDepthInterval = 0.1f;
 	/** Sin sitio por delante: segundos hasta volver a buscar. */
 	constexpr float KickRetrySeconds = 1.f;
 	/** Detrás del frente con algo que acaba solo (derribo, bola de aturdida, lanzamiento) más de esto (s): se patea igual. */
@@ -228,27 +224,11 @@ ATN_BeachStorm* ATN_BeachStorm::FindStorm(const UObject* WorldContext)
 	return It ? *It : nullptr;
 }
 
-ATN_BeachRaceGenerator* ATN_BeachStorm::FindGenerator()
-{
-	if (!Generator.IsValid() && !bGeneratorLooked)
-	{
-		bGeneratorLooked = true;
-		Generator = ATN_BeachRaceGenerator::Find(this);
-	}
-	return Generator.Get();
-}
-
 float ATN_BeachStorm::GroundAt(const FVector& Where)
 {
-	// Con el generador, la arena de verdad sin trazas. Antes se trazaba contra lo estático desde 60 m por encima del
-	// último suelo encontrado: el muro invisible de detrás de la salida (de -200 a +1200 m de alto) devolvía el punto de
-	// partida y la cota subía 60 m en cada traza, así que la tormenta acababa «arriba del todo».
-	if (const ATN_BeachRaceGenerator* Gen = FindGenerator())
-	{
-		return Gen->GetGroundHeightAt(Where);
-	}
-	// Sin generador (pruebas en otro mapa): traza por el canal de visibilidad (los muros invisibles no lo bloquean),
-	// desde poco por encima de la tormenta, sin contar lo que empieza dentro.
+	// Traza por el canal de visibilidad (los muros invisibles no lo bloquean), desde poco por encima de la tormenta, sin
+	// contar lo que empieza dentro. Trazar contra lo estático desde 60 m por encima del último suelo encontrado subía la
+	// cota en cada traza al dar con un muro invisible, y la tormenta acababa «arriba del todo».
 	const UWorld* World = GetWorld();
 	const double Base = GetActorLocation().Z;
 	FHitResult Hit;
@@ -458,15 +438,12 @@ void ATN_BeachStorm::ServerUpdateSpeed()
 		const float Front = GetFrontDistance();
 		float Lead = 0.f;
 		float Rear = 1.0e9f;
-		const ATN_BeachRaceGenerator* Gen = FindGenerator();
 		for (const ATortugaCharacter* Turtle : Turtles)
 		{
-			const FVector At = Turtle->GetActorLocation();
-			Rear = FMath::Min(Rear, static_cast<float>(Xf.InverseTransformPositionNoScale(At).X));
-			if (Gen)
-			{
-				Lead = FMath::Max(Lead, Gen->GetCourseProgress(At));
-			}
+			const float LocalX = static_cast<float>(Xf.InverseTransformPositionNoScale(Turtle->GetActorLocation()).X);
+			Rear = FMath::Min(Rear, LocalX);
+			// Lo recorrido a lo largo de la X del actor, en partes de CourseLength.
+			Lead = FMath::Max(Lead, LocalX / FMath::Max(1.f, CourseLength));
 		}
 		// Final de la ronda: la primera está cerca del mar.
 		if (Lead >= EndRushProgress)
@@ -552,7 +529,6 @@ void ATN_BeachStorm::ServerCheck()
 	const FTransform Xf = GetActorTransform();
 	const float Front = GetFrontDistance();
 	const float Speed = GetFrontSpeed();
-	const bool bLive = ATN_BeachEnemy::IsRaceLive(this);
 	for (ATortugaCharacter* Turtle : Turtles)
 	{
 		float& Behind = BehindFor.FindOrAdd(Turtle);
@@ -564,8 +540,8 @@ void ATN_BeachStorm::ServerCheck()
 			continue;
 		}
 		Behind += TNBeachStormTuning::CheckInterval;
-		// Ni con la ronda parada, ni en plena patada (la lleva la tormenta hasta su sitio), ni en la gracia de después.
-		if (!bLive || Behind < KickDelay || Flights.Contains(Turtle) || TNBeach::HasStormGrace(Turtle))
+		// Ni en plena patada (la lleva la tormenta hasta su sitio), ni en la gracia de después.
+		if (Behind < KickDelay || Flights.Contains(Turtle) || TNBeach::HasStormGrace(Turtle))
 		{
 			continue;
 		}
@@ -623,18 +599,7 @@ FVector ATN_BeachStorm::PointAhead(const FVector& From, float Ahead)
 	const FTransform Xf = GetActorTransform();
 	FVector Local = Xf.InverseTransformPositionNoScale(From);
 	Local.X = GetFrontDistance() + Ahead;
-	FVector Point = Xf.TransformPositionNoScale(Local);
-	// Dentro de la playa jugable (a 6 m de la selva) y lejos del filo del acantilado.
-	if (const ATN_BeachRaceGenerator* Gen = FindGenerator())
-	{
-		const FTransform GenXf = Gen->GetActorTransform();
-		FVector GenLocal = GenXf.InverseTransformPosition(Point);
-		GenLocal.Y = FMath::Clamp(GenLocal.Y, -(TNBeachLayout::HalfWidth - 600.0), TNBeachLayout::HalfWidth - 600.0);
-		GenLocal.X = FMath::Min(GenLocal.X, TNBeachLayout::EdgeX(GenLocal.Y) - 3000.0);
-		Point = GenXf.TransformPosition(GenLocal);
-		Point.Z = Gen->GetGroundHeightAt(Point);
-	}
-	return Point;
+	return Xf.TransformPositionNoScale(Local);
 }
 
 bool ATN_BeachStorm::IsKickArcClear(const ATortugaCharacter* Turtle, const FVector& From, const FVector& Launch, float Flight, float Damping) const
@@ -676,11 +641,11 @@ bool ATN_BeachStorm::KickTurtle(ATortugaCharacter* Turtle, float Front, float Sp
 	{
 		return false;
 	}
-	// Invulnerable por un objeto de la carrera (la estrella): no se la puede meter en su bola. Se vuelve a mirar en
-	// KickRetrySeconds; nunca se la mueve sin vuelo.
-	if (TNRaceItems::IsInvulnerable(Turtle))
+	// Protegida por el pez globo: no se la puede meter en su bola. Se vuelve a mirar en KickRetrySeconds; nunca se la mueve
+	// sin vuelo.
+	if (UTN_CoopItemComponent::IsTurtleProtected(Turtle))
 	{
-		UE_LOG(LogTortunabo, Verbose, TEXT("[Playa] Tormenta: %s es invulnerable; se la patea cuando se le pase."), *GetNameSafe(Turtle));
+		UE_LOG(LogTortunabo, Verbose, TEXT("[Playa] Tormenta: %s está protegida; se la patea cuando se le pase."), *GetNameSafe(Turtle));
 		return false;
 	}
 	const FTransform Xf = GetActorTransform();
@@ -966,24 +931,11 @@ void ATN_BeachStorm::ServerTickFlights(float DeltaSeconds)
 				TNBeachStormTuning::EndPassThrough(Turtle);
 				Kick.bPassThrough = false;
 				Kick.StuckTime = 0.f;
-				Kick.DepthTimer = 0.f;
 			}
 			continue;
 		}
 		Kick.StuckTime = Velocity.SizeSquared() < FMath::Square(TNBeachStormTuning::KickStuckSpeed) ? Kick.StuckTime + DeltaSeconds : 0.f;
 		const TCHAR* Why = nullptr;
-		// Hundida bajo el terreno de verdad (la caja atravesó la malla fina): otra patada en seguida.
-		Kick.DepthTimer -= DeltaSeconds;
-		if (Kick.DepthTimer <= 0.f)
-		{
-			Kick.DepthTimer = TNBeachStormTuning::KickDepthInterval;
-			const UCapsuleComponent* Capsule = Turtle->GetCapsuleComponent();
-			const double Below = bInShell ? ATN_ShellBody::BoxHalfExtent().Z : (Capsule ? Capsule->GetScaledCapsuleHalfHeight() : 88.0);
-			if (TNBeach::DepthUnderTerrain(this, Body - FVector(0.0, 0.0, Below)) > TNBeachStormTuning::KickSunkDepth)
-			{
-				Why = TEXT("hundida bajo la arena");
-			}
-		}
 		if (!Why && !bInShell && Dist2D > KickLandTolerance)
 		{
 			Why = TEXT("fuera de la bola antes de llegar (agua)");

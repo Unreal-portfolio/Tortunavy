@@ -1,12 +1,10 @@
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_BeachStunComponent.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachGullTuning.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStorm.h"
-#include "Game/TN_BeachRaceGameState.h"
 #include "Core/TN_Log.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
@@ -61,12 +59,8 @@ namespace TNBeachStunDetail
 	/** Sitio de arena abierta: anillos cada tanto (cm) alrededor del punto pedido y la holgura de la cápsula. */
 	constexpr float SpotRingStep = 250.f;
 	constexpr float SpotCapsulePad = 15.f;
-	/** La primera superficie desde arriba tiene que ser el terreno (a menos de esto, cm) y el suelo, así de llano (normal Z). */
-	constexpr float SpotTerrainTolerance = 40.f;
+	/** El suelo, así de llano (normal Z). */
 	constexpr float SpotMinNormalZ = 0.75f;
-	/** Lejos del filo del acantilado (cm) y del muro de detrás de la salida. */
-	constexpr double SpotCliffMargin = 2500.0;
-	constexpr double SpotBackWallMargin = 600.0;
 
 	/** Cerca del frente de la tormenta (a menos de esto por delante, cm, o detrás), nada lanza a la tortuga hacia atrás. */
 	constexpr float StormNoBackReach = 2500.f;
@@ -134,8 +128,8 @@ void TNBeach::StunTurtle(ACharacter* Turtle, float Seconds, const FVector& Launc
 			return;
 		}
 	}
-	// Protector solar puesto o volando en el pelícano taxi (objetos de la carrera): nada la aturde.
-	if (TNRaceItems::IsInvulnerable(Turtle))
+	// Protegida por el pez globo: nada la aturde.
+	if (UTN_CoopItemComponent::IsTurtleProtected(Turtle))
 	{
 		return;
 	}
@@ -161,7 +155,7 @@ void TNBeach::KnockDownTurtle(ACharacter* Turtle, float Seconds, const FVector& 
 		return;
 	}
 	ATortugaCharacter* TurtleCharacter = Cast<ATortugaCharacter>(Turtle);
-	if (!TurtleCharacter || TurtleCharacter->IsDead() || !CanStunOver(GetTurtleMover(Turtle)) || TNRaceItems::IsInvulnerable(Turtle))
+	if (!TurtleCharacter || TurtleCharacter->IsDead() || !CanStunOver(GetTurtleMover(Turtle)) || UTN_CoopItemComponent::IsTurtleProtected(Turtle))
 	{
 		return;
 	}
@@ -191,15 +185,6 @@ bool TNBeach::IsDodgingByBellyDive(const ACharacter* Turtle)
 	const UCharacterMovementComponent* Move = TurtleCharacter->GetCharacterMovement();
 	const bool bAirborne = Move && Move->IsFalling();
 	return TNBeachGullTuning::DodgesByBellyDive(true, bAirborne, static_cast<float>(TurtleCharacter->GetVelocity().Size2D()));
-}
-
-bool TNBeach::IsNoDeathWorld(const UObject* WorldContext)
-{
-	const UWorld* World = WorldContext && GEngine
-		? GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull)
-		: nullptr;
-	// El GameState de la carrera en la playa solo lo pone ATN_BeachRaceGameMode y viaja a todas las máquinas.
-	return World && Cast<ATN_BeachRaceGameState>(World->GetGameState()) != nullptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -371,8 +356,7 @@ bool TNBeach::FindOpenSandSpot(const ACharacter* Turtle, const FVector& Desired,
 {
 	using namespace TNBeachStunDetail;
 	UWorld* World = Turtle ? Turtle->GetWorld() : nullptr;
-	const ATN_BeachRaceGenerator* Gen = ATN_BeachRaceGenerator::Find(Turtle);
-	if (!World || !Gen)
+	if (!World)
 	{
 		return false;
 	}
@@ -391,7 +375,6 @@ bool TNBeach::FindOpenSandSpot(const ACharacter* Turtle, const FVector& Desired,
 			Query.AddIgnoredActor(Shell->GetBody());
 		}
 	}
-	const FTransform GenXf = Gen->GetActorTransform();
 	const double AvoidSq = FMath::Square(static_cast<double>(AvoidRadius));
 	const int32 Rings = SearchRadius > 0.f ? FMath::Max(1, FMath::CeilToInt32(SearchRadius / SpotRingStep)) : 0;
 	for (int32 Ring = 0; Ring <= Rings; ++Ring)
@@ -405,24 +388,15 @@ bool TNBeach::FindOpenSandSpot(const ACharacter* Turtle, const FVector& Desired,
 			{
 				continue;
 			}
-			// Dentro de la playa jugable, lejos del filo, del muro de detrás de la salida, del agua y de las trincheras.
-			const FVector Local = GenXf.InverseTransformPosition(Point);
-			if (FMath::Abs(Local.Y) > TNBeachLayout::HalfWidth - 300.0 || Local.X < TNBeachLayout::BackWallX + SpotBackWallMargin
-				|| Local.X > TNBeachLayout::EdgeX(Local.Y) - SpotCliffMargin
-				|| TNBeachLayout::PoolAt(FVector2D(Local.X, Local.Y), 1.3) != INDEX_NONE || TNBeachLayout::TrenchCarve(Local.X, Local.Y) > 0.0)
+			// Lo primero que para a una tortuga desde arriba, llano (nada encima).
+			float Ground = 0.f;
+			if (!ATN_BeachEnemy::TraceGround(Turtle, Point, Ground))
 			{
 				continue;
 			}
-			// Lo primero que para a una tortuga desde arriba tiene que ser el terreno mismo, llano (nada encima).
-			const float Ground = Gen->GetGroundHeightAt(Point);
 			FHitResult Hit;
 			if (!World->LineTraceSingleByChannel(Hit, FVector(Point.X, Point.Y, Ground + 400.0), FVector(Point.X, Point.Y, Ground - 250.0), ECC_Pawn, Query)
 				|| Hit.bStartPenetrating || Hit.ImpactNormal.Z < SpotMinNormalZ)
-			{
-				continue;
-			}
-			float TerrainZ = 0.f;
-			if (Gen->TraceTerrainAt(Hit.ImpactPoint, TerrainZ) && FMath::Abs(TerrainZ - Hit.ImpactPoint.Z) > SpotTerrainTolerance)
 			{
 				continue;
 			}
@@ -438,21 +412,6 @@ bool TNBeach::FindOpenSandSpot(const ACharacter* Turtle, const FVector& Desired,
 		}
 	}
 	return false;
-}
-
-float TNBeach::DepthUnderTerrain(const UObject* WorldContext, const FVector& Probe)
-{
-	const ATN_BeachRaceGenerator* Gen = ATN_BeachRaceGenerator::Find(WorldContext);
-	if (!Gen)
-	{
-		return 0.f;
-	}
-	float TerrainZ = 0.f;
-	if (!Gen->TraceTerrainAt(Probe, TerrainZ))
-	{
-		TerrainZ = Gen->GetGroundHeightAt(Probe);
-	}
-	return TerrainZ - static_cast<float>(Probe.Z);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
-// Red de seguridad bajo el terreno de Coop y Clásico (#633, TN_UnderTerrainGuard.h): la regla de las miradas que comparte con
-// la carrera de la playa y, con un mundo de juego, una tortuga de verdad hundida bajo una losa que hace de terreno: vuelve a
+// Red de seguridad bajo el terreno del modo único (#633, TN_UnderTerrainGuard.h): la regla de las miradas y, con un mundo
+// de juego, una tortuga de verdad hundida bajo una losa que hace de terreno: vuelve a
 // la superficie sin morir; no se la toca encima del terreno, en una cueva (suelo debajo), nadando, en una zona de muerte ni
-// cayendo al vacío sin nada encima. Además, que la llevan el Coop y el Clásico y que la playa la apaga (tiene la suya).
+// cayendo al vacío sin nada encima. Además, que la lleva ATN_RunGameMode.
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.SafetyNet.UnderTerrain; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
@@ -10,8 +10,6 @@
 #include "Engine/CollisionProfile.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
-#include "Game/TN_BeachRaceGameMode.h"
-#include "Game/TN_ProcMapGameMode.h"
 #include "Game/TN_RunGameMode.h"
 #include "Game/TN_UnderTerrainGuard.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -123,13 +121,9 @@ bool FTNUnderTerrainRulesTest::RunTest(const FString& Parameters)
 	Strikes = 0;
 	TestTrue(TEXT("Muy honda: rescate a la primera"), RegisterLook(Strikes, DeepDepth + 1.0, Margin));
 
-	// Quién la lleva: el Coop y el Clásico, encendida; la playa, apagada (tiene la suya).
+	// La lleva el modo único (ATN_RunGameMode), encendida.
 	const UTN_UnderTerrainGuardComponent* RunGuard = TNUnderTerrainGuardTest::GuardOf(ATN_RunGameMode::StaticClass());
-	const UTN_UnderTerrainGuardComponent* ProcGuard = TNUnderTerrainGuardTest::GuardOf(ATN_ProcMapGameMode::StaticClass());
-	const UTN_UnderTerrainGuardComponent* BeachGuard = TNUnderTerrainGuardTest::GuardOf(ATN_BeachRaceGameMode::StaticClass());
-	TestTrue(TEXT("Clásico (ATN_RunGameMode): con red de seguridad encendida"), RunGuard && RunGuard->IsGuardEnabled());
-	TestTrue(TEXT("Coop (ATN_ProcMapGameMode): con red de seguridad encendida"), ProcGuard && ProcGuard->IsGuardEnabled());
-	TestTrue(TEXT("Playa: la red común, apagada (usa GuardUnderSand)"), BeachGuard && !BeachGuard->IsGuardEnabled());
+	TestTrue(TEXT("Modo único (ATN_RunGameMode): con red de seguridad encendida"), RunGuard && RunGuard->IsGuardEnabled());
 	return true;
 }
 

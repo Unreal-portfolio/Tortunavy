@@ -14,7 +14,6 @@ from .placement_catalog import (
     ENEMY,
     LOOT,
     MECHANIC,
-    NEST,
     OBSTACLE,
     PEAK_MIN,
     PUZZLE,
@@ -29,9 +28,9 @@ SCALE = 3                      # píxeles por metro de la planta
 PANEL_W = 470
 CURVE_H = 230
 COLORS = {PUZZLE: (225, 40, 200), MECHANIC: (40, 150, 255), ENEMY: (230, 30, 30), OBSTACLE: (255, 140, 0),
-          NEST: (255, 255, 255), LOOT: (255, 215, 0), DECOR: (90, 70, 50), VEGETATION: (40, 130, 40)}
+          LOOT: (255, 215, 0), DECOR: (90, 70, 50), VEGETATION: (40, 130, 40)}
 LABELS = {PUZZLE: "Puzle (huella)", MECHANIC: "Mecánica", ENEMY: "Enemigo", OBSTACLE: "Obstáculo",
-          NEST: "Nido de reaparición", LOOT: "Botín (caja, cofre, rebusca, conchas)", DECOR: "Decorado",
+          LOOT: "Botín (rebusca, charco y conchas)", DECOR: "Decorado",
           VEGETATION: "Vegetación"}
 LINE_COLORS = ((200, 30, 30), (255, 150, 30), (150, 80, 220))     # principal, rodeo, atajo
 
@@ -80,10 +79,10 @@ def _draw_routes(draw, site: Site) -> None:
 
 def _draw_placements(draw, site: Site, placements, show_discs: bool) -> None:
     if show_discs:
-        for why, c, r, _nid in exclusion_discs(site, placements):
+        for _why, c, r in exclusion_discs(site):
             x, y = _px(c)
             draw.ellipse([x - r * SCALE, y - r * SCALE, x + r * SCALE, y + r * SCALE], outline=(120, 120, 120))
-    order = (VEGETATION, DECOR, LOOT, NEST, MECHANIC, OBSTACLE, ENEMY, PUZZLE)
+    order = (VEGETATION, DECOR, LOOT, MECHANIC, OBSTACLE, ENEMY, PUZZLE)
     font = _font(13)
     for cat in order:
         for p in (p for p in placements if p.category == cat):
@@ -96,10 +95,8 @@ def _draw_placements(draw, site: Site, placements, show_discs: bool) -> None:
                           stroke_fill=(255, 255, 255))
                 continue
             x, y = _px(pts[len(pts) // 2])
-            r = {DECOR: 1.5, VEGETATION: 1.5, LOOT: 2.5, NEST: 6, MECHANIC: 6, OBSTACLE: 5, ENEMY: 5}.get(cat, 4)
-            if cat == NEST:
-                draw.ellipse([x - r, y - r * 1.3, x + r, y + r * 1.3], fill=color, outline=(0, 0, 0), width=2)
-            elif cat in (ENEMY, OBSTACLE):
+            r = {DECOR: 1.5, VEGETATION: 1.5, LOOT: 2.5, MECHANIC: 6, OBSTACLE: 5, ENEMY: 5}.get(cat, 4)
+            if cat in (ENEMY, OBSTACLE):
                 draw.polygon([(x, y - r - 1), (x + r, y + r), (x - r, y + r)], fill=color, outline=(0, 0, 0))
             elif cat == MECHANIC:
                 draw.rectangle([x - r, y - r, x + r, y + r], fill=color, outline=(0, 0, 0))

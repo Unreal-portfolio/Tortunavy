@@ -40,7 +40,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNMatchStartOnceTest,
 
 bool FTNMatchStartOnceTest::RunTest(const FString& Parameters)
 {
-	// Orden de UEngine::LoadMap al abrir LVL_Run directamente (#362): PostLogin del host y luego BeginPlay.
+	// Orden de UEngine::LoadMap al abrir LVL_Demo01 directamente (#362): PostLogin del host y luego BeginPlay.
 	FTNMatchStartSim Host;
 	Host.TryStart(1, 1);
 	TestEqual(TEXT("El PostLogin anterior al BeginPlay no arranca"), Host.Starts, 0);

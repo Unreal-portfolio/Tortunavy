@@ -4,7 +4,6 @@
 #include "../HUD/TN_HUDStyle.h"
 #include "Audio/TN_ScoreShellSynthComponent.h"
 #include "Core/TN_LocText.h"
-#include "Lobby/TN_LobbyMission.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Multiplayer/TN_RoomNames.h"
 #include "Multiplayer/TN_SteamGamepadInput.h"
@@ -762,36 +761,6 @@ UWidget* UTN_RoomMenuWidget::BuildCreatePage()
 		return Row;
 	};
 
-	ModeRow = AddRow();
-	if (ModeRow)
-	{
-		TArray<FText> Modes;
-		for (const ETNProcGameMode Mode : TNLobbyMission::GetMenuModes()) { Modes.Add(TNLobbyMission::ModeName(Mode)); }
-		ModeRow->SetupChoice(NSLOCTEXT("TNRooms", "ModeRow", "Modo"), Modes, 0, [WeakThis](int32 Choice)
-		{
-			UTN_RoomMenuWidget* Menu = WeakThis.Get();
-			if (!Menu) { return; }
-			const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
-			Menu->Draft.Mode = MenuModes[FMath::Clamp(Choice, 0, MenuModes.Num() - 1)];
-			Menu->RefreshCreateRows();
-		});
-	}
-	TctArenaRow = AddRow();
-	if (TctArenaRow)
-	{
-		TArray<FText> Arenas;
-		for (const FName Arena : TNLobbyMission::TctArenaOptions()) { Arenas.Add(TNLobbyMission::TctArenaName(Arena)); }
-		TctArenaRow->SetupChoice(NSLOCTEXT("TNRooms", "TctArenaRow", "Arena"), Arenas, 0, [WeakThis](int32 Choice)
-		{
-			UTN_RoomMenuWidget* Menu = WeakThis.Get();
-			const TArray<FName>& Options = TNLobbyMission::TctArenaOptions();
-			if (!Menu || !Options.IsValidIndex(Choice)) { return; }
-			Menu->Draft.TctArena = Options[Choice];
-			Menu->RefreshCreateRows();
-		});
-		TctArenaRow->SetDescription(NSLOCTEXT("TNRooms", "TctArenaDesc",
-			"La arena de Todos contra Todos: se inunda ronda a ronda y caer al agua es la muerte."));
-	}
 	VisibilityRow = AddRow();
 	if (VisibilityRow)
 	{
@@ -1069,27 +1038,6 @@ UMP_GameInstance* UTN_RoomMenuWidget::GetRoomGameInstance() const
 void UTN_RoomMenuWidget::RefreshCreateRows()
 {
 	TWeakObjectPtr<UTN_RoomMenuWidget> WeakThis(this);
-	int32 ModeIndex = 0;
-	const TArray<ETNProcGameMode> MenuModes = TNLobbyMission::GetMenuModes();
-	for (int32 i = 0; i < MenuModes.Num(); ++i)
-	{
-		if (MenuModes[i] == Draft.Mode) { ModeIndex = i; }
-	}
-	if (ModeRow)
-	{
-		ModeRow->SetChoiceIndex(ModeIndex);
-		ModeRow->SetDescription(Draft.Mode == ETNProcGameMode::TwoVsTwo
-			? FText::Format(NSLOCTEXT("TNRooms", "Mode2v2Desc", "{0} Si al salir del lobby no sois cuatro, se juega Carrera."),
-				TNLobbyMission::ModeBlurb(Draft.Mode))
-			: TNLobbyMission::ModeBlurb(Draft.Mode));
-	}
-	const TArray<FName>& TctArenas = TNLobbyMission::TctArenaOptions();
-	Draft.TctArena = TNLobbyMission::ResolveTctArena(Draft.TctArena, TctArenas);
-	if (TctArenaRow)
-	{
-		TctArenaRow->SetChoiceIndex(FMath::Max(0, TctArenas.IndexOfByKey(Draft.TctArena)));
-		TctArenaRow->SetVisibility(Draft.Mode == ETNProcGameMode::FreeForAll ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	}
 	if (VisibilityRow) { VisibilityRow->SetChoiceIndex(Draft.bPrivate ? 1 : 0); }
 	if (SizeRow)
 	{
@@ -1126,14 +1074,11 @@ void UTN_RoomMenuWidget::RefreshCreateRows()
 	}
 	if (CreateSummary)
 	{
-		// El mapa de la misión: la arena en Todos contra Todos.
-		const FText MissionTitle = TNLobbyMission::MissionTitle(Draft.Mode,
-			Draft.Mode == ETNProcGameMode::FreeForAll ? Draft.TctArena : FName(NAME_None));
 		CreateSummary->SetText(Draft.bPrivate
-			? FText::Format(NSLOCTEXT("TNRooms", "SummaryPrivate", "Sala privada de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): no sale en la lista y tus amigos entran con el código {2} (o por invitación de Steam)."),
-				MissionTitle, Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
-			: FText::Format(NSLOCTEXT("TNRooms", "SummaryPublic", "Sala pública de {0}, para {1} {1}|plural(one=tortuga,other=tortugas): sale en la lista de «Unirse» y entra quien quiera (puedes cerrarla desde el menú de pausa)."),
-				MissionTitle, Draft.MaxPlayers));
+			? FText::Format(NSLOCTEXT("TNRooms", "SummaryPrivate", "Sala privada para {0} {0}|plural(one=tortuga,other=tortugas): no sale en la lista y tus amigos entran con el código {1} (o por invitación de Steam)."),
+				Draft.MaxPlayers, TNLocText::Literal(Draft.Code))
+			: FText::Format(NSLOCTEXT("TNRooms", "SummaryPublic", "Sala pública para {0} {0}|plural(one=tortuga,other=tortugas): sale en la lista de «Unirse» y entra quien quiera (puedes cerrarla desde el menú de pausa)."),
+				Draft.MaxPlayers));
 	}
 }
 
@@ -1214,13 +1159,13 @@ void UTN_RoomMenuWidget::RebuildRoomRows()
 			RowSlot->SetHorizontalAlignment(HAlign_Fill);
 		}
 		const FText RoomName = TNRoomNames::Get(Listing.NameId);
-		const FText ModeLine = Listing.HostName.IsEmpty() ? TNLobbyMission::ModeName(Listing.Mode)
-			: FText::Format(NSLOCTEXT("TNRooms", "ModeHost", "{0} · de {1}"), TNLobbyMission::ModeName(Listing.Mode), TNLocText::Literal(Listing.HostName));
+		const FText HostLine = Listing.HostName.IsEmpty() ? FText::GetEmpty()
+			: FText::Format(NSLOCTEXT("TNRooms", "RoomHost", "de {0}"), TNLocText::Literal(Listing.HostName));
 		const FText Count = FText::Format(NSLOCTEXT("TNRooms", "CountFmt", "{0}/{1}"), FText::AsNumber(Listing.Players), FText::AsNumber(Listing.MaxPlayers));
 		FText State = Count;
 		if (Listing.bLocked) { State = FText::Format(NSLOCTEXT("TNRooms", "CountLocked", "{0} · cerrada"), Count); }
 		else if (Listing.IsFull()) { State = FText::Format(NSLOCTEXT("TNRooms", "CountFull", "{0} · llena"), Count); }
-		Row->SetupEntry(RoomName, ModeLine, State, [WeakThis, i]()
+		Row->SetupEntry(RoomName, HostLine, State, [WeakThis, i]()
 		{
 			UTN_RoomMenuWidget* Menu = WeakThis.Get();
 			if (UMP_GameInstance* Owner = Menu ? Menu->GetRoomGameInstance() : nullptr) { Owner->JoinListedRoom(i); }
@@ -1313,7 +1258,7 @@ void UTN_RoomMenuWidget::FocusFirst()
 {
 	if (Page == ETNRoomMenuPage::Create)
 	{
-		UWidget* First = ModeRow ? ModeRow.Get() : CreateButton.Get();
+		UWidget* First = VisibilityRow ? VisibilityRow.Get() : CreateButton.Get();
 		FocusWidget(First);
 	}
 	else if (Page == ETNRoomMenuPage::Join)

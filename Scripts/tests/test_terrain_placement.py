@@ -68,10 +68,6 @@ def P(pid, category, kind, line, s, q=0.0, length=0.0, **params):
     return Placement(pid, category, kind, line, float(s), q, length, params=params)
 
 
-def _nests(site):
-    return [P(f"n{k}", "nest", "EggNest", 0, s) for k, s in enumerate((150.0, 290.0, 470.0, 600.0))]
-
-
 def _rules(site, placements):
     return {v.rule for v in validate(site, placements)}
 
@@ -100,7 +96,7 @@ def test_el_generador_cumple_todas_las_reglas(site, seed):
     result = generate(site, seed)
     assert result.violations == []
     cats = {p.category for p in result.auto}
-    assert {"puzzle", "nest", "loot", "decor"} <= cats and cats & HOSTILE
+    assert {"puzzle", "loot", "decor"} <= cats and cats & HOSTILE
 
 
 def test_el_generador_es_determinista(site):
@@ -132,25 +128,25 @@ def test_el_atajo_lleva_mas_peligro_por_metro_que_la_ruta_larga(site):
 
 # -- casos negativos: cada regla salta ---------------------------------------------------------------------
 def test_puzles_demasiado_juntos(site):
-    items = _nests(site) + [P("a", "puzzle", "throw_chain", 0, 260.0, length=24.0),
-                            P("b", "puzzle", "shell_gauntlet", 0, 260.0 + PUZZLE_GAP_M - 30.0, length=34.0)]
+    items = [P("a", "puzzle", "throw_chain", 0, 260.0, length=24.0),
+             P("b", "puzzle", "shell_gauntlet", 0, 260.0 + PUZZLE_GAP_M - 30.0, length=34.0)]
     assert "separacion_puzles" in _rules(site, items)
 
 
 def test_enemigo_en_la_calma_de_un_puzle(site):
-    items = _nests(site) + [P("a", "puzzle", "throw_chain", 0, 260.0, length=24.0),
-                            P("e", "enemy", "Lizard", 0, 280.0)]
+    items = [P("a", "puzzle", "throw_chain", 0, 260.0, length=24.0),
+             P("e", "enemy", "Lizard", 0, 280.0)]
     assert "calma_puzle" in _rules(site, items)
 
 
-@pytest.mark.parametrize("s, line", [(10.0, 0), (101.0, 0), (152.0, 0), (5.0, 1)])
-def test_nada_en_la_salida_uniones_ni_nidos(site, s, line):
-    assert "exclusion" in _rules(site, _nests(site) + [P("e", "enemy", "Lizard", line, s)])
+@pytest.mark.parametrize("s, line", [(10.0, 0), (101.0, 0), (5.0, 1)])
+def test_nada_en_la_salida_ni_en_las_uniones(site, s, line):
+    assert "exclusion" in _rules(site, [P("e", "enemy", "Lizard", line, s)])
 
 
 def test_nada_junto_a_la_meta(site):
     main = site.main
-    assert "exclusion" in _rules(site, _nests(site) + [P("e", "obstacle", "Mine", 0, main.length - 10.0)])
+    assert "exclusion" in _rules(site, [P("e", "obstacle", "Mine", 0, main.length - 10.0)])
 
 
 @pytest.mark.parametrize("item", [
@@ -166,54 +162,42 @@ def test_posiciones_imposibles(site, item):
     if item.id == "x":
         narrow = replace(site.line(2), half_width=np.full(len(site.line(2).arc), 4.0))
         site = Site(site.name, (site.lines[0], site.lines[1], narrow), site.start, site.end, site.junctions, ())
-    assert "posicion" in _rules(site, _nests(site) + [item])
+    assert "posicion" in _rules(site, [item])
 
 
 def test_puzle_en_un_camino_que_no_conecta():
     floating = _line(9, 42, [(100, 300), (200, 300)], 0.0, 10.0)
     site = _site((floating,))
-    assert "alcanzable" in _rules(site, _nests(site) + [P("p", "puzzle", "wobbly_run", 9, 50.0, length=28.0)])
+    assert "alcanzable" in _rules(site, [P("p", "puzzle", "wobbly_run", 9, 50.0, length=28.0)])
 
 
 def test_densidad_al_reves(site):
-    items = _nests(site) + [P(f"e{k}", "enemy", "Lizard", 1, s) for k, s in enumerate((40.0, 70.0, 100.0, 130.0))]
+    items = [P(f"e{k}", "enemy", "Lizard", 1, s) for k, s in enumerate((40.0, 70.0, 100.0, 130.0))]
     assert "densidad" in _rules(site, items)
 
 
 def test_atajo_sin_peligro_con_sitio_libre(site):
-    assert "densidad" in _rules(site, _nests(site))
+    assert "densidad" in _rules(site, [])
 
 
 def test_pico_sin_calma_despues(site):
     s0 = 5 * TRAMO_M                    # pico: un puzle de intensidad 4 en el tramo 5
-    items = _nests(site) + [P("a", "puzzle", "throw_chain", 0, s0 + 10.0, length=24.0),
-                            P("e1", "enemy", "GiantCrab", 0, s0 + TRAMO_M + 45.0),
-                            P("e2", "enemy", "SandFleas", 0, s0 + TRAMO_M + 25.0)]
+    items = [P("a", "puzzle", "throw_chain", 0, s0 + 10.0, length=24.0),
+             P("e1", "enemy", "GiantCrab", 0, s0 + TRAMO_M + 45.0),
+             P("e2", "enemy", "SandFleas", 0, s0 + TRAMO_M + 25.0)]
     assert "curva" in _rules(site, items)
     calm = [p for p in items if p.id != "e1"]          # 1,5 en el tramo siguiente: sí hay calma
     assert "curva" not in _rules(site, calm)
 
 
 def test_enemigos_amontonados(site):
-    items = _nests(site) + [P("a", "enemy", "Lizard", 0, 400.0), P("b", "enemy", "SeaUrchin", 0, 405.0)]
+    items = [P("a", "enemy", "Lizard", 0, 400.0), P("b", "enemy", "SeaUrchin", 0, 405.0)]
     assert "hostiles_separados" in _rules(site, items)
 
 
-def test_sin_nidos_hay_tramos_sin_reaparicion(site):
-    assert "nidos" in _rules(site, [])
-
-
-def test_puzle_de_grupo_sin_nido_antes(site):
-    items = [P("n0", "nest", "EggNest", 0, 150.0), P("n1", "nest", "EggNest", 0, 330.0),
-             P("n2", "nest", "EggNest", 0, 500.0), P("n3", "nest", "EggNest", 0, 650.0),
-             P("a", "puzzle", "throw_chain", 0, 440.0, length=24.0)]
-    assert "nidos" in _rules(site, items)
-    assert "nidos" not in _rules(site, items[:-1])
-
-
 def test_dos_puzles_seguidos_del_mismo_tipo(site):
-    items = _nests(site) + [P("a", "puzzle", "throw_chain", 0, 330.0, length=24.0),
-                            P("b", "puzzle", "throw_chain", 0, 520.0, length=24.0)]
+    items = [P("a", "puzzle", "throw_chain", 0, 330.0, length=24.0),
+             P("b", "puzzle", "throw_chain", 0, 520.0, length=24.0)]
     assert "secuencia" in _rules(site, items)
 
 
@@ -246,7 +230,7 @@ def test_los_tramos_llevan_su_polilinea_y_el_geiser_su_destino(site):
 
 
 def test_el_avance_ordena_los_lazos_entre_los_puntos_del_principal(site):
-    """progress_m (orden de los nidos al cargar): un punto de un lazo cae entre sus extremos en el
+    """progress_m (avance por el recorrido): un punto de un lazo cae entre sus extremos en el
     principal y no detrás de todo el principal."""
     progress = progress_field(site)
 
@@ -260,7 +244,7 @@ def test_el_avance_ordena_los_lazos_entre_los_puntos_del_principal(site):
     detour, short = site.line(1), site.line(2)
     assert at(0, 90.0) < at(1, detour.length / 2.0) < at(0, 240.0)
     assert at(0, 290.0) < at(2, short.length / 2.0) < at(0, 560.0)
-    entry = to_json(site, P("n", "nest", "EggNest", 1, detour.length / 2.0), progress)
+    entry = to_json(site, P("n", "loot", "SearchSpot", 1, detour.length / 2.0), progress)
     assert entry["progress_m"] == pytest.approx(at(1, detour.length / 2.0), abs=0.1)
 
 
@@ -283,8 +267,8 @@ def test_c01_se_coloca_sin_violaciones(c01):
     site, _manifest, _path = c01
     result = generate(site, 652)
     assert result.violations == []
-    count = {c: sum(p.category == c for p in result.auto) for c in ("puzzle", "nest", "mechanic")}
-    assert count["puzzle"] >= 3 and count["nest"] >= 3 and count["mechanic"] >= 2
+    count = {c: sum(p.category == c for p in result.auto) for c in ("puzzle", "mechanic")}
+    assert count["puzzle"] >= 3 and count["mechanic"] >= 2
     assert sum(p.category in HOSTILE for p in result.auto) >= 10
     assert any(p.kind == "catapult_gap" for p in result.auto)
 

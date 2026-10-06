@@ -13,15 +13,15 @@ class UPostProcessComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 class UTN_BeachEnemySynthComponent;
-class ATN_BeachRaceGenerator;
 class ATortugaCharacter;
 
 /**
- * Tormenta de bañistas de la carrera en la playa: la tormenta del camino del cooperativo (ATN_PathStorm) llevada a la
- * playa. No es un elemento del reparto: la crea y la arranca el GameMode de la carrera en cada ronda.
+ * Tormenta de bañistas: la base de la tormenta del modo único (Docs/2026-10-06-Plan-Maestro-Modo-Unico.md). No es un
+ * elemento del reparto: se pone en el mapa (o la crea quien la use) y se arranca con StartStorm.
  *
- * Un frente recto a lo ancho de la playa que sale de detrás de la salida y avanza hacia el mar, pegado a la arena (la
- * altura sale del terreno del generador, sin trazas). Son los bañistas que llegan: una cortina de arena y polvo (el velo
+ * Un frente recto a lo ancho de la playa que sale de detrás de la salida y avanza en la dirección del actor, pegado a la
+ * arena (la altura sale de una traza). La dirección es la del actor y la velocidad, DefaultSpeed (editables). Son los
+ * bañistas que llegan: una cortina de arena y polvo (el velo
  * de ATN_PathStorm, color arena) con piernas gigantes que pisan justo en su borde, y sombrillas, cubos, sillas de playa,
  * toallas, flotadores, palas, chanclas y pelotas volando a escala por el borde de verdad del frente (ni por delante ni
  * por detrás). Nada aparece ni desaparece de golpe: el velo, los trastos y los bañistas se funden (opacidad y escala).
@@ -43,13 +43,13 @@ class ATortugaCharacter;
  * se la pone en su sitio sin vuelo. Mientras vuela la tormenta se la reserva (TNBeach::ClaimTurtle: ni la red de
  * seguridad, ni los enemigos, ni las trampas la tocan) y al aterrizar tiene KickGraceSeconds sin patadas. No se patea a
  * quien mueve otra cosa (enemigo, gusano, brazos, derribo, bola de aturdida, lanzamiento, red de seguridad) ni a quien
- * es invulnerable por un objeto de la carrera (se la vuelve a mirar en un segundo). Dentro, la imagen se cierra (niebla
+ * está protegida por el pez globo (se la vuelve a mirar en un segundo). Dentro, la imagen se cierra (niebla
  * y tinte de arena) y la tortuga tose (UTN_StormCoughComponent).
  *
- * Marco: el del propio actor. Su X local es la dirección de la carrera (hacia el mar), su Y local el ancho (centro en
+ * Marco: el del propio actor. Su X local es la dirección del recorrido (hacia donde avanza), su Y local el ancho (centro en
  * Y = 0) y su Z, el suelo de referencia. El frente es la recta X local = GetFrontDistance().
  *
- * Interfaz para el GameMode (servidor):
+ * Interfaz (servidor):
  *  - Crearla detrás de la salida, en el centro de la playa, girada hacia el mar, y llamar a StartStorm() (sin
  *    parámetros, por nombre: el frente sale del propio actor a DefaultSpeed tras DefaultGrace) o, desde C++, a
  *    StartStormAt(Desplazamiento, Velocidad, Gracia).
@@ -162,7 +162,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Storm", meta = (ClampMin = "0.0"))
 	float MaxSpeed = 300.f;
 
-	/** Final de la ronda: con la primera tortuga pasado este tanto del recorrido, al menos EndRushSpeed. */
+	/**
+	 * Longitud del recorrido (cm) a lo largo de la X del actor, desde el propio actor: lo que mide cuánto ha avanzado la
+	 * primera tortuga (EndRushProgress).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Storm", meta = (ClampMin = "1000.0"))
+	float CourseLength = 80000.f;
+
+	/** Final de la ronda: con la primera tortuga pasado este tanto de CourseLength, al menos EndRushSpeed. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Storm", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float EndRushProgress = 0.8f;
 
@@ -285,9 +292,8 @@ private:
 		FVector Target = FVector::ZeroVector;
 		double StartTime = 0.0;
 		float Flight = 1.f;
-		/** Desde cuándo apenas se mueve (s) y cada cuánto se mira si se ha hundido en el terreno. */
+		/** Desde cuándo apenas se mueve (s). */
 		float StuckTime = 0.f;
-		float DepthTimer = 0.f;
 		/** La bola atraviesa lo que haya hasta bajar sobre su sitio (sin arco libre). */
 		bool bPassThrough = false;
 		/** Patadas de más que lleva (desde donde se quedó la bola que no llegó). */
@@ -307,10 +313,6 @@ private:
 	double MarchStartTime = 0.0;
 	bool bCatchingUp = false;
 	FRandomStream Rng;
-
-	/** Generador de la playa (suelo sin trazas y progreso); se busca una vez. */
-	TWeakObjectPtr<ATN_BeachRaceGenerator> Generator;
-	bool bGeneratorLooked = false;
 
 	// ── Efectos (solo con pantalla) ──
 
@@ -490,8 +492,7 @@ private:
 	 * tortugas, ni el último tramo, que baja a la arena ya comprobada).
 	 */
 	bool IsKickArcClear(const ATortugaCharacter* Turtle, const FVector& From, const FVector& Launch, float Flight, float Damping) const;
-	ATN_BeachRaceGenerator* FindGenerator();
-	/** Arena bajo Where: la del generador (sin trazas) o una traza que no se deja engañar por los muros invisibles. */
+	/** Arena bajo Where: una traza que no se deja engañar por los muros invisibles. */
 	float GroundAt(const FVector& Where);
 	void SetupFX();
 	void TickFX(float DeltaSeconds);

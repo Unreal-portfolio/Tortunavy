@@ -8,8 +8,6 @@
 class UTN_AmbienceDataAsset;
 class UAudioComponent;
 class USoundClass;
-class ATN_ProcMapGenerator;
-class ATN_PathStorm;
 class ATN_BeachStorm;
 class APlayerController;
 
@@ -32,21 +30,16 @@ struct FTNAmbienceOverrideVoice
 };
 
 /**
- * Paisaje sonoro del jugador local según el bioma del mapa procedural. Va en el PlayerController (o en el pawn): cada
- * UpdateInterval mira dónde está la cámara y fija los volúmenes de un UTN_AmbientSynthComponent 2D que crea él mismo:
- *   - Biomas: el punto de la cámara y un anillo de BlendRadius alrededor sobre el campo de pesos de bioma del layout
- *     (el mismo que usa la tormenta): el módulo en el que se está manda, pero los vecinos se oyen al acercarse a ellos
- *     y el cambio de bioma es un degradado.
- *   - Agua: terreno bajo el nivel del mar en tres anillos (15, 40 y 80 m) y la costa norte (mar abierto: rompientes
- *     grandes); cerca del río, agua corriente.
- *   - Altura: sobre el mar y sobre el suelo (cimas, puentes y acantilados: más viento, más ráfaga y silbido).
- *   - Tormenta del camino: dentro, mucho más viento, truenos y casi sin fauna; al acercarse el frente, algo de eso. La
- *     tormenta de bañistas de la playa (ATN_BeachStorm, sin generador) suena igual: es su único ruido continuo.
+ * Paisaje sonoro del jugador local. Va en el PlayerController (o en el pawn): cada UpdateInterval mira dónde está la
+ * cámara y fija los volúmenes de un UTN_AmbientSynthComponent 2D que crea él mismo, con el preajuste genérico suave
+ * (bPlayWithoutGenerator) mezclado con lo que se sabe del sitio:
+ *   - Tormenta de bañistas (ATN_BeachStorm): dentro, mucho más viento, truenos y casi sin fauna; al acercarse el frente,
+ *     algo de eso.
  *   - Cierre: con techo encima (cueva, torre) o bajo el agua, paso bajo general y menos fauna.
  *   - Noche (NightAmount): menos aves y cigarras, más grillos y ranas.
- * Sin generador (lobby, mapa clásico) suena un ambiente genérico suave (bPlayWithoutGenerator). En servidor dedicado y
- * para controladores que no son locales no hace nada. Las capas con sonido en AmbienceData suenan con ese sonido en
- * bucle en vez de sintetizarse.
+ * Los huecos por bioma (ETNProcBiome) y el agua y la altura del sitio se quedan para cuando el mapa del modo único los dé.
+ * En servidor dedicado y para controladores que no son locales no hace nada. Las capas con sonido en AmbienceData suenan
+ * con ese sonido en bucle en vez de sintetizarse.
  *
  * Depuración: TN.Ambience.Debug 1 enseña la mezcla en pantalla; TN.Ambience.Volume escala el volumen (0 = apagado).
  */
@@ -107,7 +100,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ambience", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float NightAmount = 0.f;
 
-	/** Sin mapa procedural (lobby, mapa clásico): ambiente genérico suave. Si no, silencio. */
+	/** Ambiente genérico suave. Si no, silencio (salvo la tormenta). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ambience")
 	bool bPlayWithoutGenerator = true;
 
@@ -136,9 +129,7 @@ private:
 	/** Por hueco de bioma (8 biomas y el genérico), un bit por capa con sonido de sustitución. */
 	uint16 OverrideMask[9] = {};
 
-	TWeakObjectPtr<ATN_ProcMapGenerator> Generator;
-	TWeakObjectPtr<ATN_PathStorm> Storm;
-	/** La tormenta de bañistas de la carrera en la playa (sin generador): mismo viento, silbido y truenos que la del camino. */
+	/** La tormenta de bañistas (ATN_BeachStorm): viento, silbido y truenos. */
 	TWeakObjectPtr<ATN_BeachStorm> BeachStorm;
 	float LookupTimer = 0.f;
 
@@ -151,5 +142,4 @@ private:
 	float LastHeight = 0.f;
 	float LastStorm = 0.f;
 	float LastEnclosure = 0.f;
-	bool bLastHasMap = false;
 };

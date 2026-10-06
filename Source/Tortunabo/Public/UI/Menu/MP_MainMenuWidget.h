@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "UI/Menu/TN_RoomMenuWidget.h"
-#include "World/ProcMap/TN_ProcMapEnums.h"
 #include "MP_MainMenuWidget.generated.h"
 
 class UButton;
@@ -20,9 +19,8 @@ class UTextBlock;
  * Los tres botones del Blueprint (mismo estilo visual; aquí solo cambian sus textos): «Crear partida», «Unirse» y «Salir».
  * Crear y Unirse abren las pantallas de salas (UTN_RoomMenuWidget, montadas en código encima de este widget, que se
  * esconde mientras tanto; Docs/Salas.md):
- *  - Crear partida: modo (Cooperativo o Carrera), pública o privada, 4, 6 u 8 plazas, nombre al azar y, en la privada,
- *    su código. El modo va a UMP_GameInstance::SelectedProcMode (HostRoom) y sobrevive al viaje.
- *  - Unirse: con un código o de la lista de salas públicas. Unirse no toca el modo (lo decide el anfitrión).
+ *  - Crear partida: pública o privada, 4, 6 u 8 plazas, nombre al azar y, en la privada, su código (HostRoom).
+ *  - Unirse: con un código o de la lista de salas públicas.
  *
  * Un cuarto botón, «Ajustes», se monta en código entre «Unirse» y «Salir» (copia el aspecto y la colocación de «Unirse»; el
  * Blueprint no cambia) y abre los mismos ajustes que el menú de pausa (UTN_GameSettingsSubsystem::OpenMainMenuSettings): idioma,

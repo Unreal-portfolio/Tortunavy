@@ -8,7 +8,6 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
 #include "Materials/MaterialInterface.h"
-#include "World/Beach/TN_RaceItems.h"
 #include "World/TN_CatalogItemVisuals.h"
 #include "../World/TN_CatalogItemArt.h"
 #include "../Player/TN_InkScreen.h"
@@ -30,7 +29,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCatalogVisualsRowsTest,
 
 bool FTNCatalogVisualsRowsTest::RunTest(const FString& Parameters)
 {
-	const UDataTable* Catalog = LoadObject<UDataTable>(nullptr, TNRaceItems::CatalogPath());
+	const UDataTable* Catalog = LoadObject<UDataTable>(nullptr, TEXT("/Game/Blueprints/Gameplay/Items/DT_Items.DT_Items"));
 	if (!TestNotNull(TEXT("DT_Items se carga"), Catalog))
 	{
 		return false;
@@ -82,9 +81,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCatalogVisualsRulesTest,
 
 bool FTNCatalogVisualsRulesTest::RunTest(const FString& Parameters)
 {
-	// Los de carrera y de Todos contra Todos no son de DT_Items: no los toca.
-	const FTN_InventoryItem Race = TNRaceItems::MakeItem(ETNRaceItem::Coconut);
-	TestEqual(TEXT("Coco turbo: no es de DT_Items"), TNCatalogItemVisuals::LookOf(Race), ETNCatalogLook::None);
 	FTN_InventoryItem Unknown;
 	Unknown.ItemId = TEXT("SinUso");
 	TestEqual(TEXT("Fila sin uso desconocida: sin aspecto"), TNCatalogItemVisuals::LookOf(Unknown), ETNCatalogLook::None);

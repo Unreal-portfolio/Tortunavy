@@ -7,9 +7,6 @@
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TN_TurtleSurface.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
-#include "World/ProcMap/TN_ProcMapLayout.h"
-#include "World/ProcMap/TN_ProcMapTerrain.h"
 #include "World/ProcMap/TN_StormCough.h"
 #include "AudioDevice.h"
 #include "CollisionQueryParams.h"
@@ -719,15 +716,13 @@ void UTN_TurtleFoleyComponent::ResolveSurface(const FVector& FootLocation, doubl
 	LastProbeLocation = FootLocation;
 
 	// Traza compleja desde el centro de la tortuga hasta algo por debajo del pie y la superficie de lo que toque
-	// (biomas del mapa, estructuras, nombres, agua poco profunda): TNTurtleSurface, la misma que usan el arrastre del
-	// panzazo y su polvo.
+	// (por los nombres de lo que se pisa): TNTurtleSurface, la misma que usan el arrastre del panzazo y su polvo.
 	float W[NumSurfaces];
 	UWorld* CompWorld = GetWorld();
 	const AActor* OwnerActor = GetOwner();
 	if (CompWorld && OwnerActor)
 	{
-		TNTurtleSurface::Probe(CompWorld, OwnerActor, OwnerActor->GetActorLocation(), FootLocation, FindGenerator(Now),
-			&NameSurfaceCache, W);
+		TNTurtleSurface::Probe(CompWorld, OwnerActor, OwnerActor->GetActorLocation(), FootLocation, &NameSurfaceCache, W);
 	}
 	else
 	{
@@ -738,16 +733,6 @@ void UTN_TurtleFoleyComponent::ResolveSurface(const FVector& FootLocation, doubl
 		OutWeights[s] = W[s];
 		LastSurface[s] = W[s];
 	}
-}
-
-ATN_ProcMapGenerator* UTN_TurtleFoleyComponent::FindGenerator(double Now)
-{
-	if (!Generator.IsValid() && Now >= NextGeneratorLookup)
-	{
-		NextGeneratorLookup = Now + 2.0;
-		Generator = TNTurtleSurface::FindGenerator(GetWorld());
-	}
-	return Generator.Get();
 }
 
 bool UTN_TurtleFoleyComponent::ResolveFootBones()

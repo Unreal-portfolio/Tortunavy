@@ -1,8 +1,6 @@
 #include "World/Beach/TN_BeachGiantCrab.h"
-#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/TN_EnemyDecisions.h"
 #include "TN_BeachEnemyKit.h"
@@ -279,80 +277,11 @@ void ATN_BeachGiantCrab::BuildRoute()
 	bRouteBuilt = true;
 	Route.Reset();
 	RouteStops.Reset();
-	const float BodyR = GetBodyRadius();
-	// En Supervivencia, a lo largo del camino (#734); en la playa, hacia cualquier lado.
-	const FVector Along = CorridorDirectionAt(Home);
-	const float Yaw0 = Along.IsNearlyZero() ? ServerRng.FRandRange(0.f, 360.f) : static_cast<float>(Along.Rotation().Yaw);
+	const float Yaw0 = ServerRng.FRandRange(0.f, 360.f);
 	const FVector Axis = FRotator(0.f, Yaw0, 0.f).Vector();
 	const FVector Side = FRotator(0.f, Yaw0 + 90.f, 0.f).Vector();
 	const float Kind = ServerRng.FRand();
 
-	// Entre dos rocas (o troncos, maderas, castillos pequeños) que tenga cerca y a lados distintos: se para junto a cada una.
-	if (Kind < 0.35f)
-	{
-		if (const ATN_BeachRaceGenerator* Gen = FindGenerator())
-		{
-			const FTransform GenXf = Gen->GetActorTransform();
-			struct FRockSpot
-			{
-				FVector Pos;
-				float Radius;
-			};
-			TArray<FRockSpot> Rocks;
-			for (const TNBeachLayout::FItem& Item : Gen->GetRoundLayout().Items)
-			{
-				switch (Item.Element)
-				{
-				case ETNBeachElement::Rock:
-				case ETNBeachElement::RockCluster:
-				case ETNBeachElement::MossyLog:
-				case ETNBeachElement::Driftwood:
-				case ETNBeachElement::OldPlanks:
-				case ETNBeachElement::SandCastleSmall:
-				case ETNBeachElement::Sandbags:
-				case ETNBeachElement::TankTrap:
-					break;
-				default:
-					continue;
-				}
-				const FVector Pos = GenXf.TransformPosition(FVector(Item.Pos.X, Item.Pos.Y, 0.0));
-				if (FVector::Dist2D(Pos, Home) < LeashRadius * 0.9f)
-				{
-					Rocks.Add({ Pos, static_cast<float>(Item.Radius) });
-				}
-			}
-			// La pareja más separada en ángulo (vistas desde su sitio), si lo está de verdad.
-			int32 BestA = INDEX_NONE;
-			int32 BestB = INDEX_NONE;
-			double BestDot = -0.2;
-			for (int32 a = 0; a < Rocks.Num(); ++a)
-			{
-				const FVector DirA = (Rocks[a].Pos - Home).GetSafeNormal2D();
-				for (int32 b = a + 1; b < Rocks.Num(); ++b)
-				{
-					const double Dot = FVector::DotProduct(DirA, (Rocks[b].Pos - Home).GetSafeNormal2D());
-					if (Dot < BestDot)
-					{
-						BestDot = Dot;
-						BestA = a;
-						BestB = b;
-					}
-				}
-			}
-			if (BestA != INDEX_NONE)
-			{
-				for (const int32 Ri : { BestA, BestB })
-				{
-					const FVector ToHome = (Home - Rocks[Ri].Pos).GetSafeNormal2D();
-					Route.Add(Rocks[Ri].Pos + ToHome * (Rocks[Ri].Radius * 0.85f + BodyR + 250.f));
-					RouteStops.Add(1);
-				}
-				Route.Insert(Home, 1);
-				RouteStops.Insert(static_cast<uint8>(0), 1);
-				bRouteLoops = false;
-			}
-		}
-	}
 	// Un óvalo alrededor de su sitio (dos paradas por vuelta).
 	if (Route.Num() == 0 && Kind < 0.7f)
 	{
@@ -379,15 +308,8 @@ void ATN_BeachGiantCrab::BuildRoute()
 		RouteStops.Add(1);
 		bRouteLoops = false;
 	}
-	// Ningún punto dentro de lo grande del reparto: se acerca a su sitio hasta que quede libre.
 	for (FVector& P : Route)
 	{
-		for (int32 k = 0; k < 5 && IsInsideObstacle(P, BodyR); ++k)
-		{
-			P = FMath::Lerp(P, Home, 0.3);
-		}
-		// En Supervivencia, dentro del camino: el óvalo o la recta se aplastan contra sus bordes.
-		P = ClampToCorridor(P, BodyR);
 		P.Z = Home.Z;
 	}
 	RouteIndex = ServerRng.RandRange(0, Route.Num() - 1);
@@ -488,8 +410,8 @@ ATortugaCharacter* ATN_BeachGiantCrab::Perceive() const
 FVector ATN_BeachGiantCrab::Integrate(float DeltaSeconds, bool* bOutBlocked)
 {
 	const FVector Free = SimLoc + FVector(MoveVel.X, MoveVel.Y, 0.0) * DeltaSeconds;
-	// Sin meterse en otro enemigo ni en lo grande del reparto (se desliza por su borde).
-	FVector Next = ResolveStep(Free, GetBodyRadius(), true);
+	// Sin meterse en otro enemigo.
+	FVector Next = ResolveStep(Free, GetBodyRadius());
 	if (bOutBlocked)
 	{
 		const double Step = FVector::Dist2D(Free, SimLoc);
@@ -502,8 +424,6 @@ FVector ATN_BeachGiantCrab::Integrate(float DeltaSeconds, bool* bOutBlocked)
 	{
 		Next = Home + FromHome.GetSafeNormal() * LeashRadius;
 	}
-	// Ni fuera del camino en Supervivencia (la correa no lo sabe).
-	Next = ClampToCorridor(Next, GetBodyRadius());
 	GroundTimer -= DeltaSeconds;
 	if (GroundTimer <= 0.f)
 	{
@@ -545,17 +465,6 @@ FVector ATN_BeachGiantCrab::Drive(const FVector& Goal, float MaxSpeed, float Del
 		EscapeLeft -= DeltaSeconds;
 		Dir = FVector(EscapeDir.X, EscapeDir.Y, 0.0);
 		WantSpeed = MaxSpeed * 0.8f;
-	}
-	else if (!Dir.IsNearlyZero())
-	{
-		// Mira por delante y rodea lo grande del reparto antes de chocar con ello.
-		const float Speed = static_cast<float>(MoveVel.Size());
-		const float Look = FMath::Min(Dist, GetBodyRadius() + TNBeachCrab::LookAheadExtra * SizeK + Speed * 0.6f);
-		const FVector Steered = SteerAroundObstacles(SimLoc, Dir, GetBodyRadius(), Look, DeltaSeconds);
-		if (!Steered.IsNearlyZero())
-		{
-			Dir = Steered;
-		}
 	}
 	// Acelera o frena hacia la velocidad que quiere; un cambio de rumbo también cuenta como frenada (gira sin patinar).
 	const FVector2D Want = FVector2D(Dir.X, Dir.Y) * WantSpeed;
@@ -708,45 +617,39 @@ void ATN_BeachGiantCrab::ResolveSlam()
 		Impact = FVector(Tip.X, Tip.Y, Impact.Z);
 	}
 	bool bHit = false;
-	if (IsRaceLive(this))
+	TArray<ATortugaCharacter*> Turtles;
+	GatherTurtles(this, Turtles);
+	const float Radius = TNBeachCrab::HitRadius * SizeK + 40.f;
+	for (ATortugaCharacter* Turtle : Turtles)
 	{
-		TArray<ATortugaCharacter*> Turtles;
-		GatherTurtles(this, Turtles);
-		const float Radius = TNBeachCrab::HitRadius * SizeK + 40.f;
-		for (ATortugaCharacter* Turtle : Turtles)
+		if (!CanBeHit(Turtle))
 		{
-			if (!CanBeHit(Turtle))
-			{
-				continue;
-			}
-			const FVector At = Turtle->GetActorLocation();
-			if (FVector::Dist2D(At, Impact) > Radius || FMath::Abs(At.Z - Impact.Z) > TNBeachCrab::SlamHeight)
-			{
-				continue;
-			}
-			// Saltando por encima de la pinza: por el aire, con los pies bien despegados de su suelo al caer la pinza.
-			const UCapsuleComponent* Capsule = Turtle->GetCapsuleComponent();
-			const UCharacterMovementComponent* Move = Turtle->GetCharacterMovement();
-			const float HalfHeight = Capsule ? Capsule->GetScaledCapsuleHalfHeight() : 88.f;
-			float TurtleGroundZ = static_cast<float>(At.Z) - HalfHeight;
-			GroundHeightAt(At, TurtleGroundZ);
-			const float FeetAboveGround = static_cast<float>(At.Z) - HalfHeight - TurtleGroundZ;
-			if (TNBeachCrabTuning::ClearsSlamByJump(Move && Move->IsFalling(), FeetAboveGround))
-			{
-				UE_LOG(LogTortunabo, Log, TEXT("[Playa] %s salta por encima del mazazo de %s (%.0f cm)."), *GetNameSafe(Turtle), *GetName(), FeetAboveGround);
-				continue;
-			}
-			FVector Away = At - Impact;
-			Away.Z = 0.0;
-			Away = Away.GetSafeNormal();
-			// Despachurrada: casi en el sitio, un empujoncito hacia fuera. En Supervivencia, el mazazo elimina (#734).
-			if (!TNSurvivalHits::KillInSurvival(Turtle, this))
-			{
-				StunTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabStunSeconds, Away * 320.0 + FVector(0.0, 0.0, 160.0));
-			}
-			IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabIgnoreSeconds);
-			bHit = true;
+			continue;
 		}
+		const FVector At = Turtle->GetActorLocation();
+		if (FVector::Dist2D(At, Impact) > Radius || FMath::Abs(At.Z - Impact.Z) > TNBeachCrab::SlamHeight)
+		{
+			continue;
+		}
+		// Saltando por encima de la pinza: por el aire, con los pies bien despegados de su suelo al caer la pinza.
+		const UCapsuleComponent* Capsule = Turtle->GetCapsuleComponent();
+		const UCharacterMovementComponent* Move = Turtle->GetCharacterMovement();
+		const float HalfHeight = Capsule ? Capsule->GetScaledCapsuleHalfHeight() : 88.f;
+		float TurtleGroundZ = static_cast<float>(At.Z) - HalfHeight;
+		GroundHeightAt(At, TurtleGroundZ);
+		const float FeetAboveGround = static_cast<float>(At.Z) - HalfHeight - TurtleGroundZ;
+		if (TNBeachCrabTuning::ClearsSlamByJump(Move && Move->IsFalling(), FeetAboveGround))
+		{
+			UE_LOG(LogTortunabo, Log, TEXT("[Playa] %s salta por encima del mazazo de %s (%.0f cm)."), *GetNameSafe(Turtle), *GetName(), FeetAboveGround);
+			continue;
+		}
+		FVector Away = At - Impact;
+		Away.Z = 0.0;
+		Away = Away.GetSafeNormal();
+		// Despachurrada: casi en el sitio, un empujoncito hacia fuera.
+		StunTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabStunSeconds, Away * 320.0 + FVector(0.0, 0.0, 160.0));
+		IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GiantCrabIgnoreSeconds);
+		bHit = true;
 	}
 	MulticastSlam(Impact, bHit);
 }
@@ -766,7 +669,7 @@ bool ATN_BeachGiantCrab::IsChargeLaneClear(const FVector& To)
 	for (double D = 250.0; D <= End; D += 250.0)
 	{
 		const FVector P = SimLoc + Dir * D;
-		if (IsInsideObstacle(P, GetBodyRadius() * 0.8f) || FVector::Dist2D(P, Home) > LeashRadius)
+		if (FVector::Dist2D(P, Home) > LeashRadius)
 		{
 			return false;
 		}
@@ -799,10 +702,6 @@ void ATN_BeachGiantCrab::StartChargePrep(ATortugaCharacter* Victim)
 
 void ATN_BeachGiantCrab::ChargeHits()
 {
-	if (!IsRaceLive(this))
-	{
-		return;
-	}
 	const float Speed = static_cast<float>(MoveVel.Size());
 	if (Speed < 450.f * SizeK)
 	{
@@ -844,7 +743,7 @@ void ATN_BeachGiantCrab::EndCharge()
 	AttackCooldown = 0.8f;
 	ChargeCooldownLeft = TNBeachCrab::ChargeCooldown;
 	ATortugaCharacter* Next = Target.Get();
-	const bool bCanSee = IsRaceLive(this) && !IsBlinded();
+	const bool bCanSee = !IsBlinded();
 	if (!bCanSee || !IsTargetable(Next) || FVector::Dist2D(Next->GetActorLocation(), Home) > LeashRadius)
 	{
 		Next = bCanSee ? Perceive() : nullptr;
@@ -877,8 +776,7 @@ void ATN_BeachGiantCrab::ServerTick(float DeltaSeconds)
 		ServerBrake(DeltaSeconds, TNBeachCrab::SkidDecel * SizeK, SimYaw, 0.f);
 		return;
 	}
-	const bool bLive = IsRaceLive(this);
-	const bool bCanSee = bLive && !IsBlinded();
+	const bool bCanSee = !IsBlinded();
 	if (!bRouteBuilt)
 	{
 		BuildRoute();

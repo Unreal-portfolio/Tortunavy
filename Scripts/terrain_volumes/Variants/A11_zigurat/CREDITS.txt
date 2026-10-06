@@ -1,1 +1,0 @@
-Mapa paramétrico de Tortunabo, sin datos geográficos externos: lo genera el script a partir de los parámetros y la semilla del manifest (clave generator).

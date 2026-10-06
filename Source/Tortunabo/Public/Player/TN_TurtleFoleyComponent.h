@@ -5,7 +5,6 @@
 #include "UObject/ObjectKey.h"
 #include "TN_TurtleFoleyComponent.generated.h"
 
-class ATN_ProcMapGenerator;
 class UPrimitiveComponent;
 class UTN_StormCoughComponent;
 
@@ -185,9 +184,6 @@ private:
 	 */
 	void ResolveSurface(const FVector& FootLocation, double Now, float OutWeights[NumSurfaces]);
 
-	/** Generador del mapa procedural (se busca cada 2 s mientras falte; null fuera del mapa). */
-	ATN_ProcMapGenerator* FindGenerator(double Now);
-
 	/** Índices de los huesos de los pies en la malla actual; false si no los tiene. */
 	bool ResolveFootBones();
 
@@ -205,9 +201,6 @@ private:
 
 	/** Parámetros compartidos con el generador del hilo de audio (los dos los mantienen vivos). */
 	TSharedPtr<TNTurtleFoley::FSharedParams, ESPMode::ThreadSafe> SharedParams;
-
-	TWeakObjectPtr<ATN_ProcMapGenerator> Generator;
-	double NextGeneratorLookup = 0.0;
 
 	/** Tos de la tormenta de esta tortuga (la pone ATN_PathStorm; se busca cada medio segundo mientras falte). */
 	TWeakObjectPtr<UTN_StormCoughComponent> Cough;

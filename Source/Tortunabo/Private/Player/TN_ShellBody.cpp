@@ -13,7 +13,6 @@
 #include "Player/TN_ShellComponent.h"
 #include "Player/TN_ShellDecisions.h"
 #include "Player/TortugaCharacter.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachStun.h"
 
 namespace TNShellBodyDetail
@@ -39,12 +38,9 @@ namespace TNShellBodyDetail
 	 */
 	constexpr float MaxInitialDepenetration = 300.f;
 
-	/** Instrumento TN.Shell.Debug: cada cuánto mira si la caja está bajo el terreno (s), entre avisos de una caja (s) y choques guardados. */
-	constexpr float DepthInterval = 0.1f;
+	/** Instrumento TN.Shell.Debug: entre avisos de una caja (s) y choques guardados. */
 	constexpr float DebugLogInterval = 0.5f;
 	constexpr int32 DebugMaxContacts = 6;
-	/** A menos de esto (cm) del filo del acantilado no se mira la hondura: la pared está socavada y ahí se cae al agua de meta. */
-	constexpr float CliffSkip = 1000.f;
 
 	TAutoConsoleVariable<int32> CVarShellDebug(TEXT("TN.Shell.Debug"), UE_BUILD_SHIPPING ? 0 : 1,
 		TEXT("Instrumento de la bola del caparazón (todas las máquinas): 1 = avisa en el registro («[Caparazón] TN.Shell.Debug») cuando la caja gira cerca de su tope durante 0,4 s (torbellino), cuando su parte de abajo queda más de 25 cm bajo el terreno de la playa o cuando sale empujada a más de 9 m/s en un paso (lo que no es frenar un choque) fuera de un lanzamiento, con sus últimos choques (quién la empuja) y, en los clientes, el desfase con el servidor; 0 = apagado (por defecto en Shipping)."));
@@ -150,9 +146,6 @@ void ATN_ShellBody::ApplyPassThrough()
 	{
 		TNShellBodyDetail::SetDefaultCollision(*Box);
 	}
-	// Sin el tope del motor a la depenetración no hay nada que limitar mientras cruza; al volver a chocar empieza de cero.
-	bPushOutPrimed = false;
-	SunkStrikes = 0;
 }
 
 void ATN_ShellBody::InitBody(ATortugaCharacter* InTurtle, bool bInExitOnRest)
@@ -219,124 +212,15 @@ void ATN_ShellBody::Tick(float DeltaSeconds)
 	}
 	// Todas las máquinas: la tortuga sigue a la caja (solo si es su caja y la tiene enganchada en esta máquina).
 	Shell->FollowBody(this);
-	const bool bFreshDepth = SampleTerrainDepth(DeltaSeconds);
-	// Antes del instrumento: mide la velocidad que queda. En los clientes no: allí la réplica acerca la caja al servidor.
-	// Atravesando no choca con el terreno: no hay nada que la escupa.
-	bPushOutLimited = HasAuthority() && !bPassThrough && LimitTerrainPushOut();
 	TickDebugWatch(DeltaSeconds);
 
 	if (HasAuthority())
 	{
-		ServerChecks(DeltaSeconds, bFreshDepth);
-		RememberPushOutState();
+		ServerChecks(DeltaSeconds);
 	}
 }
 
-FVector ATN_ShellBody::BoxBottom() const
-{
-	return FVector(Box->Bounds.Origin.X, Box->Bounds.Origin.Y, Box->Bounds.Origin.Z - Box->Bounds.BoxExtent.Z);
-}
-
-float ATN_ShellBody::TerrainDepthUnder(const UObject* WorldContext, const FVector& Bottom)
-{
-	using namespace TNShellBodyDetail;
-	const ATN_BeachRaceGenerator* Gen = ATN_BeachRaceGenerator::Find(WorldContext);
-	return (Gen && Gen->GetCliffEdgeDistance(Bottom) < -CliffSkip) ? TNBeach::DepthUnderTerrain(WorldContext, Bottom) : -1000.f;
-}
-
-bool ATN_ShellBody::LimitTerrainPushOut()
-{
-	using namespace TNShellBodyDetail;
-	// Recién lanzada (InitBody): el salto de velocidad es el propio lanzamiento, como en el instrumento.
-	if (!Box || !Box->IsSimulatingPhysics() || !bPushOutPrimed || Age < TNShellLogic::FShellMotionThresholds().LaunchGraceSeconds)
-	{
-		return false;
-	}
-	const FVector Before = Box->GetPhysicsLinearVelocity();
-	FVector Velocity = Before;
-	TNShellLogic::FTerrainPushOutRules Rules;
-	Rules.MaxPushOutSpeed = MaxInitialDepenetration;
-	if (!TNShellLogic::LimitTerrainPushOut(PushOutPrevVelocity, PushOutPrevDepth, Velocity, Rules))
-	{
-		return false;
-	}
-	Box->SetPhysicsLinearVelocity(Velocity);
-	UE_LOG(LogTortunabo, Log, TEXT("[Caparazón] %s de %s: estaba %.0f cm dentro del terreno y la escupía a %.0f cm/s; sale a %.0f cm/s."),
-		*GetName(), *GetNameSafe(Turtle.Get()), PushOutPrevDepth, Before.Size(), Velocity.Size());
-	return true;
-}
-
-void ATN_ShellBody::RememberPushOutState()
-{
-	if (!Box || !Box->IsSimulatingPhysics())
-	{
-		bPushOutPrimed = false;
-		return;
-	}
-	PushOutPrevVelocity = Box->GetPhysicsLinearVelocity();
-	// Desde el centro y con el semieje más corto (tumbada en su vertical), no con la parte de abajo de sus límites: en una
-	// cuesta, la esquina más baja de una caja que rueda queda cuesta abajo del centro y la daría por metida sin estarlo.
-	PushOutPrevDepth = TerrainDepthUnder(this, Box->GetComponentLocation() - FVector(0.0, 0.0, BoxHalfExtent().GetMin()));
-	bPushOutPrimed = true;
-}
-
-bool ATN_ShellBody::SampleTerrainDepth(float DeltaSeconds)
-{
-	using namespace TNShellBodyDetail;
-	if (!Box || !Box->IsSimulatingPhysics() || (!HasAuthority() && CVarShellDebug.GetValueOnGameThread() <= 0))
-	{
-		return false;
-	}
-	DepthTimer -= DeltaSeconds;
-	if (DepthTimer > 0.f)
-	{
-		return false;
-	}
-	DepthTimer = DepthInterval;
-	TerrainDepth = TerrainDepthUnder(this, BoxBottom());
-	return true;
-}
-
-void ATN_ShellBody::RescueFromUnderTerrain()
-{
-	UWorld* World = GetWorld();
-	if (!Box || !World)
-	{
-		return;
-	}
-	const float Depth = TerrainDepth;
-	const FVector Center = Box->GetComponentLocation();
-	const double BottomOffset = Center.Z - (Box->Bounds.Origin.Z - Box->Bounds.BoxExtent.Z);
-	const double SurfaceGuess = Center.Z - BottomOffset + Depth;
-	// Desde encima de la superficie de su vertical hacia abajo: lo primero firme que para a la caja (el terreno o lo que haya
-	// encima de él), sin la propia bola ni su tortuga.
-	FCollisionQueryParams Query(SCENE_QUERY_STAT(TNShellSunkRescue), false, this);
-	Query.AddIgnoredActor(Turtle.Get());
-	FHitResult Hit;
-	const FVector Start(Center.X, Center.Y, SurfaceGuess + 250.0);
-	const FVector End(Center.X, Center.Y, SurfaceGuess - 50.0);
-	const bool bGround = World->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic, Query) && !Hit.bStartPenetrating && Hit.ImpactNormal.Z > 0.5;
-	const float Lift = bGround ? static_cast<float>(Hit.ImpactPoint.Z + BottomOffset + 2.0 - Center.Z) : 0.f;
-	if (!bGround || !TNShellLogic::IsSunkLiftAllowed(Lift))
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[Caparazón] %s de %s %.0f cm bajo el terreno sin suelo firme cerca (subida %.0f cm): la deja a la red de seguridad de la carrera."),
-			*GetName(), *GetNameSafe(Turtle.Get()), Depth, Lift);
-		return;
-	}
-	FVector Linear = Box->GetPhysicsLinearVelocity();
-	FVector Angular = Box->GetPhysicsAngularVelocityInRadians();
-	TNShellLogic::SettleRescuedVelocity(Linear, Angular);
-	Box->SetWorldLocation(FVector(Center.X, Center.Y, Center.Z + Lift), false, nullptr, ETeleportType::TeleportPhysics);
-	Box->SetPhysicsLinearVelocity(Linear);
-	Box->SetPhysicsAngularVelocityInRadians(Angular);
-	// Encima de la arena (hasta la muestra siguiente): el instrumento no la vuelve a contar como hundida.
-	TerrainDepth = -2.f;
-	ForceNetUpdate();
-	UE_LOG(LogTortunabo, Warning, TEXT("[Caparazón] %s de %s había cruzado el terreno (%.0f cm bajo la arena): recolocada %.0f cm más arriba."),
-		*GetName(), *GetNameSafe(Turtle.Get()), Depth, Lift);
-}
-
-void ATN_ShellBody::ServerChecks(float DeltaSeconds, bool bFreshDepth)
+void ATN_ShellBody::ServerChecks(float DeltaSeconds)
 {
 	using namespace TNShellBodyDetail;
 	ATortugaCharacter* OwnerTurtle = Turtle;
@@ -363,13 +247,6 @@ void ATN_ShellBody::ServerChecks(float DeltaSeconds, bool bFreshDepth)
 			Shell->NotifyBodyInWater();
 			return;
 		}
-	}
-
-	// Ha cruzado la malla fina del terreno (dos muestras seguidas): encima de la arena en el acto, sin esperar a la red de
-	// seguridad de la carrera (1,6 m y un rescate con aturdimiento).
-	if (bFreshDepth && TNShellLogic::ShouldRescueSunkenBody(TerrainDepth, SunkStrikes))
-	{
-		RescueFromUnderTerrain();
 	}
 
 	if (!bExitOnRest)
@@ -414,9 +291,8 @@ void ATN_ShellBody::TickDebugWatch(float DeltaSeconds)
 	TNShellLogic::FShellMotionSample Sample;
 	Sample.DeltaSeconds = DeltaSeconds;
 	Sample.AngularSpeed = static_cast<float>(Spin.Size());
-	// Solo cuenta la velocidad con la que sale empujada: frenar (aterrizar, chocar) o el tope a la depenetración (ya lo registra) no.
-	Sample.VelocityChange = bPushOutLimited ? 0.f : TNShellLogic::UnexplainedVelocityChange(DebugPrevVelocity, Velocity);
-	Sample.BottomDepthUnderTerrain = TerrainDepth;
+	// Solo cuenta la velocidad con la que sale empujada: frenar (aterrizar, chocar) no.
+	Sample.VelocityChange = TNShellLogic::UnexplainedVelocityChange(DebugPrevVelocity, Velocity);
 	Sample.AgeSeconds = Age;
 	const FVector PrevVelocity = DebugPrevVelocity;
 	DebugPrevVelocity = Velocity;
@@ -432,9 +308,9 @@ void ATN_ShellBody::TickDebugWatch(float DeltaSeconds)
 	const double ServerGap = HasAuthority() ? 0.0 : FVector::Dist(Box->GetComponentLocation(), GetReplicatedMovement().Location);
 	const FVector At = Box->GetComponentLocation();
 	UE_LOG(LogTortunabo, Warning,
-		TEXT("[Caparazón] TN.Shell.Debug %s de %s en %s: %s · caja en (%.1f, %.1f, %.1f) m, su parte de abajo %.0f cm bajo el terreno · v %.0f cm/s (cambio de %.0f en el paso; antes %s, después %s) · giro %.1f rad/s (vertical %.1f) desde hace %.2f s · desfase con el servidor %.0f cm · edad %.2f s · choques: %s"),
+		TEXT("[Caparazón] TN.Shell.Debug %s de %s en %s: %s · caja en (%.1f, %.1f, %.1f) m · v %.0f cm/s (cambio de %.0f en el paso; antes %s, después %s) · giro %.1f rad/s (vertical %.1f) desde hace %.2f s · desfase con el servidor %.0f cm · edad %.2f s · choques: %s"),
 		*GetName(), *GetNameSafe(Turtle.Get()), HasAuthority() ? TEXT("el servidor") : TEXT("un cliente"), AnomalyName(Anomaly),
-		At.X / 100.0, At.Y / 100.0, At.Z / 100.0, TerrainDepth, Velocity.Size(), Sample.VelocityChange, *PrevVelocity.ToCompactString(),
+		At.X / 100.0, At.Y / 100.0, At.Z / 100.0, Velocity.Size(), Sample.VelocityChange, *PrevVelocity.ToCompactString(),
 		*Velocity.ToCompactString(), Sample.AngularSpeed, Spin.Z,
 		DebugSpinSeconds, ServerGap, Age, *DescribeDebugContacts(Now));
 }

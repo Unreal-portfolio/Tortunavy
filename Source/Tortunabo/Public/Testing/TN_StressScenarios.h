@@ -15,14 +15,12 @@ namespace TNStress
 		Crabs,
 		Gulls,
 		Tanks,
-		Items,
-		Throwables,
 		Count
 	};
 
 	inline const TCHAR* GroupName(EGroup Group)
 	{
-		static const TCHAR* const Names[] = { TEXT("baseline"), TEXT("crabs"), TEXT("gulls"), TEXT("tanks"), TEXT("race_items"), TEXT("throwables") };
+		static const TCHAR* const Names[] = { TEXT("baseline"), TEXT("crabs"), TEXT("gulls"), TEXT("tanks") };
 		static_assert(UE_ARRAY_COUNT(Names) == static_cast<int32>(EGroup::Count), "GroupName: falta un nombre");
 		const int32 Index = static_cast<int32>(Group);
 		return Index >= 0 && Index < UE_ARRAY_COUNT(Names) ? Names[Index] : TEXT("?");
@@ -31,17 +29,15 @@ namespace TNStress
 	struct FScenario
 	{
 		FString Name;
-		/** Enemigos de playa (cangrejos, gaviotas y tanques), lanzables y cajas de objetos de carrera. */
+		/** Enemigos de playa (cangrejos, gaviotas y tanques). */
 		int32 Enemies = 0;
-		int32 Throwables = 0;
-		int32 Items = 0;
 		/** Tortugas jugando (locales; las que faltan se crean como jugadores extra). */
 		int32 Turtles = 1;
 		/** Fases de referencia (sin crear nada); el control usa varias para medir cuánto deriva el juego solo con el tiempo. */
 		int32 BaselinePhases = 1;
 	};
 
-	/** light (50/100/20), heavy (200/500/100), race8 (8 tortugas, sin extras) y control (una tortuga, nada que crear, 6 fases). false si no existe. */
+	/** light (50 enemigos), heavy (200), tortugas8 (8 tortugas, sin extras) y control (una tortuga, nada que crear, 6 fases). false si no existe. */
 	inline bool Parse(const FString& Name, FScenario& Out)
 	{
 		Out = FScenario();
@@ -49,15 +45,11 @@ namespace TNStress
 		if (Out.Name == TEXT("light"))
 		{
 			Out.Enemies = 50;
-			Out.Throwables = 100;
-			Out.Items = 20;
 			return true;
 		}
 		if (Out.Name == TEXT("heavy"))
 		{
 			Out.Enemies = 200;
-			Out.Throwables = 500;
-			Out.Items = 100;
 			return true;
 		}
 		if (Out.Name == TEXT("control"))
@@ -65,7 +57,7 @@ namespace TNStress
 			Out.BaselinePhases = 6;
 			return true;
 		}
-		if (Out.Name == TEXT("race8"))
+		if (Out.Name == TEXT("tortugas8"))
 		{
 			Out.Turtles = 8;
 			return true;
@@ -93,15 +85,15 @@ namespace TNStress
 	}
 
 	/**
-	 * Presupuesto (ms) para crear enemigos y cajas en un fotograma: el mismo que usa el generador de la playa al montar una
-	 * ronda (TN.Beach.BuildBudgetMs). Crearlos todos de golpe daba tirones de 30-96 ms que en el juego no existen (#79).
+	 * Presupuesto (ms) para crear enemigos en un fotograma. Crearlos todos de golpe daba tirones de 30-96 ms que en el juego
+	 * no existen (#79).
 	 */
 	constexpr double SPAWN_BUDGET_MS = 6.0;
 
-	/** Grupos que se crean repartidos en varios fotogramas (los lanzables ya se reponen de 25 en 25 cada 0,5 s). */
+	/** Grupos que se crean repartidos en varios fotogramas: todos los que crean algo. */
 	inline bool IsSpreadGroup(EGroup Group)
 	{
-		return Group == EGroup::Crabs || Group == EGroup::Gulls || Group == EGroup::Tanks || Group == EGroup::Items;
+		return Group == EGroup::Crabs || Group == EGroup::Gulls || Group == EGroup::Tanks;
 	}
 
 	/** Se crea uno más en este fotograma: quedan por crear y es el primero del fotograma o aún queda presupuesto. */
@@ -133,9 +125,6 @@ namespace TNStress
 		if (Split.Crabs > 0) { Phases.Add({ EGroup::Crabs, Split.Crabs, 0.f, 0.f }); }
 		if (Split.Gulls > 0) { Phases.Add({ EGroup::Gulls, Split.Gulls, 0.f, 0.f }); }
 		if (Split.Tanks > 0) { Phases.Add({ EGroup::Tanks, Split.Tanks, 0.f, 0.f }); }
-		if (Scenario.Items > 0) { Phases.Add({ EGroup::Items, Scenario.Items, 0.f, 0.f }); }
-		// Los lanzables caducan solos, así que van los últimos: no falsean el coste de lo que se crea después.
-		if (Scenario.Throwables > 0) { Phases.Add({ EGroup::Throwables, Scenario.Throwables, 0.f, 0.f }); }
 		const float Each = TotalSeconds / static_cast<float>(Phases.Num());
 		for (int32 Index = 0; Index < Phases.Num(); ++Index)
 		{

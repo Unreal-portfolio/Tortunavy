@@ -48,7 +48,7 @@ ETNCatalogLook TNCatalogItemVisuals::LookOf(const FTN_InventoryItem& Item)
 	case ETN_ItemUseType::None:
 		return Item.ItemId == TNCatalogItemVisualsDetail::ScoreItemId ? ETNCatalogLook::Score : ETNCatalogLook::None;
 	default:
-		// RaceItem y TctItem: los resuelven TNRaceItems y TNTctItems.
+		// CoopItem: lo resuelve TNCoopItems.
 		return ETNCatalogLook::None;
 	}
 }

@@ -20,7 +20,7 @@ editarlos. Por eso, si el mapa ya existe:
       crean los actores que falten. Nada de lo colocado a mano en el nivel se borra.
 
 Variables de entorno (opcionales):
-    TN_VOLUME_DIR   carpeta con manifest.json (por defecto Scripts/terrain_volumes/Mapa01)
+    TN_VOLUME_DIR   carpeta con manifest.json (por defecto Scripts/terrain_volumes/Variants/C01_camino)
     TN_REGENERATE   1 = sobrescribir la malla de un mapa ya importado
 """
 
@@ -170,7 +170,7 @@ def build_level(manifest, meshes, level_path):
 
 
 def main():
-    volume_dir = os.environ.get("TN_VOLUME_DIR", f"{project_dir()}/Scripts/terrain_volumes/Mapa01")
+    volume_dir = os.environ.get("TN_VOLUME_DIR", f"{project_dir()}/Scripts/terrain_volumes/Variants/C01_camino")
     with open(f"{volume_dir}/manifest.json", encoding="utf-8") as handle:
         manifest = json.load(handle)
     name = manifest["name"]

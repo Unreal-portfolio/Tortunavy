@@ -13,7 +13,6 @@ from .placement_catalog import (
     DECOR_AXIS_MIN_M,
     DECOR_BY_BIOME,
     DECOR_STEP_M,
-    DENSITY_TOL,
     LOOT,
     MECHANIC,
     PUZZLE,
@@ -174,36 +173,8 @@ def _loot(pl, kind: str, line: int, s: float, q: float = 0.0, margin: float = 4.
     return pl.add(p, refresh=False)
 
 
-def _first(pl, kind, line, targets, **kw) -> Placement | None:
-    for s in targets:
-        got = _loot(pl, kind, line, float(s), **kw)
-        if got is not None:
-            return got
-    return None
-
-
 def place_loot(pl) -> None:
     site = pl.site
-    main = site.main
-    # Caja de objetos cada ~100 m del principal y una en cada atajo.
-    for target in np.arange(60.0, main.length - 40.0, 100.0):
-        grid = np.arange(max(target - 25.0, 0.0), min(target + 25.0, main.length), 2.0)
-        _first(pl, "ItemBox", 0, grid[np.argsort(np.abs(grid - target))])
-    detours = []
-    for loop, _parent, a, b in site.bifurcations():
-        grid = np.arange(0.0, loop.length, 2.0)
-        if loop.length < (b - a) * (1.0 - DENSITY_TOL):
-            _first(pl, "ItemBox", loop.id, grid[np.argsort(np.abs(grid - loop.length / 2.0))])
-        elif loop.length > (b - a) * (1.0 + DENSITY_TOL):
-            detours.append((loop.length / max(b - a, 1.0), loop))
-    # Cofres: en lo más lejano de los dos rodeos más largos (el premio de ir por el camino largo).
-    for _ratio, loop in sorted(detours, key=lambda d: d[0], reverse=True)[:2]:
-        parent_pts = site.line(loop.parent).points
-        far = cKDTree(parent_pts).query(loop.points)[0]
-        for k in np.argsort(-far):
-            q = float(pl.rng.choice([-1.0, 1.0])) * max(0.0, float(loop.half_width[k]) - 1.5)
-            if _loot(pl, "TreasureChest", loop.id, float(loop.arc[k]), q=q) is not None:
-                break
     # Rebuscas al pie de las paredes, repartidas por longitud.
     total = sum(ln.length for ln in site.lines)
     for k in range(SEARCH_SPOTS):

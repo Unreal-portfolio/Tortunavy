@@ -2,7 +2,6 @@
 #include "Audio/TN_AudioVoices.h"
 #include "Game/TN_CoopItems.h"
 #include "Multiplayer/TN_LocalViews.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "TN_ProcMapAmbientFX.h"
 #include "../TN_LootGlowKit.h"
 #include "Core/TN_InventoryTypes.h"
@@ -1190,10 +1189,6 @@ FVector ATN_ProcSearchSpot::FindLanding(const APawn* Pawn, const FVector& From) 
 		FCollisionObjectQueryParams(ECC_WorldStatic), Query))
 	{
 		return Hit.ImpactPoint + FVector(0.f, 0.f, 5.f);
-	}
-	if (const ATN_ProcMapGenerator* Generator = Cast<ATN_ProcMapGenerator>(GetOwner()))
-	{
-		return FVector(Target.X, Target.Y, Generator->GetTerrainHeightAt(Target) + 5.0);
 	}
 	return FVector(Target.X, Target.Y, GetActorLocation().Z + 5.0);
 }

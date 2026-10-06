@@ -3,7 +3,6 @@
 
 #include "World/Beach/TN_RaceBurstFX.h"
 #include "TN_BeachEnemyKit.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
@@ -109,7 +108,7 @@ namespace TNRaceBurstFXDetail
 	}
 
 	/**
-	 * Cota del suelo bajo Where: la del generador de la playa (sin trazas) o, sin él, una traza. Si no cuadra con una tortuga
+	 * Cota del suelo bajo Where: una traza. Si no cuadra con una tortuga
 	 * encima (plataforma, hueco sin cubrir), los pies de una tortuga que estuviera en Where.
 	 */
 	inline float WhistleGroundZ(UWorld* World, const FVector& Where)
@@ -119,20 +118,12 @@ namespace TNRaceBurstFXDetail
 		bool bFound = false;
 		if (World)
 		{
-			if (const ATN_BeachRaceGenerator* Generator = ATN_BeachRaceGenerator::Find(World))
+			FHitResult Hit;
+			FCollisionQueryParams Params(FName(TEXT("TNRaceBurstGround")), false);
+			if (World->LineTraceSingleByChannel(Hit, Where + FVector(0.0, 0.0, 200.0), Where - FVector(0.0, 0.0, 1500.0), ECC_WorldStatic, Params))
 			{
-				Found = Generator->GetGroundHeightAt(Where);
+				Found = static_cast<float>(Hit.ImpactPoint.Z);
 				bFound = true;
-			}
-			else
-			{
-				FHitResult Hit;
-				FCollisionQueryParams Params(FName(TEXT("TNRaceBurstGround")), false);
-				if (World->LineTraceSingleByChannel(Hit, Where + FVector(0.0, 0.0, 200.0), Where - FVector(0.0, 0.0, 1500.0), ECC_WorldStatic, Params))
-				{
-					Found = static_cast<float>(Hit.ImpactPoint.Z);
-					bFound = true;
-				}
 			}
 		}
 		if (!bFound || Found > static_cast<float>(Where.Z) + 30.f || Found < static_cast<float>(Where.Z) - 600.f)

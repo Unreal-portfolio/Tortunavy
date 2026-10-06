@@ -464,7 +464,8 @@ MSYS2_ARG_CONV_EXCL="*" UnrealEditor-Win64-DebugGame.exe Tortunabo.uproject /Gam
 | `tn.Face.Mood 0-3` | Fuerza la cara: 0 feliz, 1 cansada, 2 jadeando, 3 tumbada. `-1` = la real. |
 | `tn.Face.Tongue 0-3` | Fuerza la lengua: 0 dentro, 1 al viento, 2 colgando, 3 la punta. `-1` = la real. |
 | `tn.Face.Talk 1` | Todas mueven la boca como si hablaran. |
-| `tn.HUD.Face 0-3` | Fuerza la cara del HUD: 0 feliz, 1 caparazón, 2 mareada, 3 victoria. `-1` = la real. |
+| `tn.HUD.Face 0-5` | Fuerza la cara del HUD: 0 feliz, 1 cansada, 2 jadeando, 3 caparazón, 4 mareada, 5 victoria. `-1` = la real. |
+| `tn.HUD.Energy 0.3` | Fuerza la energía del salvavidas (0-1). `-1` = la real. |
 | `tn.HUD.Talk 1` | Fuerza el bocadillo de voz; `0` lo apaga. `-1` = el real. |
 | `tn.HUD.CrewPreview 3` | Rellena 3 filas de tripulación contigo para ver el diseño. |
 | `TN.Voice.Steps 1` / `TN.Voice.Steps 2` | Pasos de prueba en el sitio: `1` andando, `2` corriendo; `0` los apaga. |

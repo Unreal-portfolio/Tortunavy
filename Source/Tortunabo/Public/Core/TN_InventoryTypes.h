@@ -40,17 +40,7 @@ enum class ETN_ItemUseType : uint8
 	 *  Si se usa manualmente → revive a un jugador eliminado. */
 	Totem            UMETA(DisplayName = "Totem"),
 	/**
-	 * Objeto de la carrera de la playa definido solo desde código (TNRaceItems, World/Beach/TN_RaceItems.h): el objeto
-	 * concreto sale del ItemId («Race_Coconut», «Race_PelicanTaxi»...). No tiene fila en DT_Items.
-	 */
-	RaceItem         UMETA(DisplayName = "Race Item"),
-	/**
-	 * Objeto de combate de Todos contra Todos definido solo desde código (TNTctItems, Game/TN_TctItems.h): el objeto y las
-	 * cargas que le quedan salen del ItemId («Tct_Shovel_4», «Tct_Grapple_2»...). No tiene fila en DT_Items.
-	 */
-	TctItem          UMETA(DisplayName = "Tct Item"),
-	/**
-	 * Objeto del cooperativo y de los modos de a pie definido solo desde código (TNCoopItems, Game/TN_CoopItems.h): el objeto
+	 * Objeto del cooperativo definido solo desde código (TNCoopItems, Game/TN_CoopItems.h): el objeto
 	 * y su cuenta (apilados o usos) salen del ItemId («Coop_Harpoon_15»...). No tiene fila en DT_Items.
 	 */
 	CoopItem         UMETA(DisplayName = "Coop Item"),

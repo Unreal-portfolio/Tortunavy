@@ -29,7 +29,7 @@ bool FTNCookDecisionsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("La barra final de la carpeta no importa"), IsCooked(TEXT("/Game/Blueprints/BP.BP_C"), Always, Maps, Never));
 	TestFalse(TEXT("Un prefijo no es una carpeta"), IsCooked(TEXT("/Game/UIX/M.M"), Always, Maps, Never));
 	TestTrue(TEXT("Un mapa de MapsToCook"), IsCooked(TEXT("/Game/Maps/Lobby/LVL_Menu"), Always, Maps, Never));
-	TestFalse(TEXT("Un mapa fuera de MapsToCook"), IsCooked(TEXT("/Game/Maps/LVL_TestMap"), Always, Maps, Never));
+	TestFalse(TEXT("Un mapa fuera de MapsToCook"), IsCooked(TEXT("/Game/Maps/Dev/LVL_GaleriaAssets"), Always, Maps, Never));
 	TestFalse(TEXT("DirectoriesToNeverCook manda"), IsCooked(TEXT("/Game/Blueprints/_Viejo/BP.BP_C"), Always, Maps, Never));
 	TestFalse(TEXT("Una carpeta sin cocinar"), IsCooked(TEXT("/Game/Cosmetics/Materials/M.M"), Always, Maps, Never));
 	return true;

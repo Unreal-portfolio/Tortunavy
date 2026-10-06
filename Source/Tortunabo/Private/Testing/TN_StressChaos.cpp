@@ -26,11 +26,9 @@
 #include "Testing/TN_TestReport.h"
 #include "World/Beach/TN_BeachCatapult.h"
 #include "World/Beach/TN_BeachElement.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachTypes.h"
 #include "World/TN_InkProjectile.h"
 #include "World/TN_ThrowableItemActor.h"
-#include "World/ProcMap/TN_PathStorm.h"
 
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
@@ -212,7 +210,6 @@ bool UTN_StressChaosSubsystem::StartChaos(float PhaseSeconds, float InWarmup, fl
 	Spawned.Reset();
 	Catapults.Reset();
 	Totals = FActions();
-	StoppedStorms.Reset();
 	CurrentPhase = INDEX_NONE;
 	bMeasuring = false;
 	bActive = true;
@@ -346,23 +343,10 @@ void UTN_StressChaosSubsystem::RestoreWorld()
 		}
 		bSplitscreenForcedOff = false;
 	}
-	// La tormenta del cooperativo sigue desde donde estaba al pararla, con su tiempo de muerte normal.
-	for (const TPair<TWeakObjectPtr<ATN_PathStorm>, float>& Stopped : StoppedStorms)
-	{
-		if (ATN_PathStorm* Storm = Stopped.Key.Get())
-		{
-			Storm->DebugPlaceFront(Stopped.Value, false);
-		}
-	}
-	StoppedStorms.Reset();
 }
 
 double UTN_StressChaosSubsystem::GroundAt(const FVector& At, double Fallback) const
 {
-	if (const ATN_BeachRaceGenerator* Generator = ATN_BeachRaceGenerator::Find(this))
-	{
-		return static_cast<double>(Generator->GetGroundHeightAt(At));
-	}
 	FHitResult Hit;
 	const UWorld* World = GetWorld();
 	if (World && World->LineTraceSingleByChannel(Hit, At + FVector(0.0, 0.0, 3000.0), At - FVector(0.0, 0.0, 6000.0), ECC_WorldStatic))
@@ -510,22 +494,6 @@ void UTN_StressChaosSubsystem::SampleFrame(FPhaseData& Phase)
 
 void UTN_StressChaosSubsystem::SampleSlow(FPhaseData& Phase)
 {
-	if (!bClientOnly)
-	{
-		// La tormenta del cooperativo avanza y mata a quien se queda atrás: con las tortugas jugando en el sitio acabaría la
-		// partida a los ~2 min (viaje al lobby). Se mantiene parada; la de bañistas de la carrera sigue (patea, no acaba la ronda).
-		for (TActorIterator<ATN_PathStorm> It(GetWorld()); It; ++It)
-		{
-			if (It->IsStormActive())
-			{
-				if (!StoppedStorms.ContainsByPredicate([&It](const TPair<TWeakObjectPtr<ATN_PathStorm>, float>& S) { return S.Key.Get() == *It; }))
-				{
-					StoppedStorms.Emplace(*It, It->GetFrontProgress());
-				}
-				It->StopStorm();
-			}
-		}
-	}
 	const double Memory = TNTestReport::UsedPhysicalMB();
 	Phase.CommitMaxMB = FMath::Max(Phase.CommitMaxMB, TNChaosDetail::ToMB(FPlatformMemory::GetStats().UsedVirtual));
 	Phase.MemorySumMB += Memory;

@@ -205,7 +205,6 @@ void ATN_BeachSandFleas::ServerTick(float DeltaSeconds)
 	const EState State = static_cast<EState>(GetMoverState());
 	const float Age = GetStateAge();
 	const bool bStunned = IsHitStunned();
-	const bool bLive = IsRaceLive(this);
 	switch (State)
 	{
 	case EState::Wander:
@@ -221,7 +220,7 @@ void ATN_BeachSandFleas::ServerTick(float DeltaSeconds)
 		if (ScanTimer <= 0.f)
 		{
 			ScanTimer = TNBeachFleas::ScanPeriod;
-			ATortugaCharacter* Seen = bLive ? FindTarget(SimLoc, DetectRadius, Home, LeashRadius) : nullptr;
+			ATortugaCharacter* Seen = FindTarget(SimLoc, DetectRadius, Home, LeashRadius);
 			if (Seen && State == EState::Wander)
 			{
 				Target = Seen;

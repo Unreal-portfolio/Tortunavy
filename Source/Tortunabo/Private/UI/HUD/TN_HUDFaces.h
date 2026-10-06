@@ -7,6 +7,8 @@
 enum class ETNTurtleFace : uint8
 {
 	Happy,
+	Tired,
+	Panting,
 	Shell,
 	Down,
 	Win,
@@ -14,9 +16,9 @@ enum class ETNTurtleFace : uint8
 
 /**
  * Caras de tortuga en estilo cartoon para el HUD Tortunavy: pegatinas vectoriales (formas con distancia con signo y
- * antialias, como las de TN_HUDArt) de 256x256, una por estado. Feliz; caparazón cerrado cuando se mete dentro;
- * mareada (ojos en cruz y estrellitas) al quedar eliminada; y con ojos de estrella al ganar. La estamina no se ve en
- * la interfaz: no hay caras de cansancio.
+ * antialias, como las de TN_HUDArt) de 256x256, una por estado. Feliz con energía de sobra; cansada (párpados a media
+ * asta y una gota de sudor); jadeando con la lengua fuera cuando se agota; caparazón cerrado cuando se mete dentro;
+ * mareada (ojos en cruz y estrellitas) al quedar panza arriba o eliminada; y con ojos de estrella al ganar.
  * Es un boceto para el equipo de arte: la geometría está pensada para pasarse tal cual a SVG.
  */
 namespace TNHUDFaces
@@ -45,6 +47,9 @@ namespace TNHUDFaces
 		inline const FLinearColor Pupil = Hex(0x16202A);
 		inline const FLinearColor Mouth = Hex(0x6B1B26);
 		inline const FLinearColor Tongue = Hex(0xFF6F8E);
+		inline const FLinearColor TongueLine = Hex(0xD94A6A);
+		inline const FLinearColor Sweat = Hex(0x8FD8FF);
+		inline const FLinearColor SweatLine = Hex(0x3A8FC4);
 		inline const FLinearColor StarFill = Hex(0xFFD23F);
 		inline const FLinearColor StarLine = Hex(0xB8741A);
 	}
@@ -77,8 +82,11 @@ namespace TNHUDFaces
 		P.NoClip();
 	}
 
-	/** Ojos abiertos con pupila y brillos. */
-	inline void DrawEyes(FPainter& P)
+	/**
+	 * Ojos abiertos con pupila y brillos. LidY: altura del párpado (por encima del ojo = abierto); lo que queda por
+	 * encima se pinta del color de la cabeza con una línea de párpado. PupilDy baja la mirada.
+	 */
+	inline void DrawEyes(FPainter& P, float LidY, float PupilDy)
 	{
 		for (const float Side : { -1.f, 1.f })
 		{
@@ -87,9 +95,24 @@ namespace TNHUDFaces
 			P.Clip(Ex - EyeRx - 6.f, EyeY - EyeRy - 6.f, Ex + EyeRx + 6.f, EyeY + EyeRy + 6.f);
 			P.Fill([&](float x, float y) { return Eye(x, y) - 3.5f; }, FaceColors::EyeLine);
 			P.Fill(Eye, FLinearColor::White);
-			P.Fill([&](float x, float y) { return FMath::Max(Circle(x, y, Ex + 4.f, EyeY + 6.f, 13.f), Eye(x, y)); }, FaceColors::Pupil);
-			P.Fill([&](float x, float y) { return FMath::Min(Circle(x, y, Ex + 10.f, EyeY - 3.f, 5.f), Circle(x, y, Ex + 13.f, EyeY + 11.f, 2.4f)); }, FLinearColor::White);
+			P.Fill([&](float x, float y) { return FMath::Max(Circle(x, y, Ex + 4.f, EyeY + 6.f + PupilDy, 13.f), Eye(x, y)); }, FaceColors::Pupil);
+			P.Fill([&](float x, float y) { return FMath::Min(Circle(x, y, Ex + 10.f, EyeY - 3.f + PupilDy, 5.f), Circle(x, y, Ex + 13.f, EyeY + 11.f + PupilDy, 2.4f)); }, FLinearColor::White);
+			if (LidY > EyeY - EyeRy)
+			{
+				P.Layer([&](float x, float y) { return FMath::Max(Eye(x, y) - 1.f, y - LidY); }, [](float, float y) { return HeadColor(y); });
+				P.Fill([&](float x, float y) { return FMath::Max(FMath::Abs(y - LidY) - 2.2f, Eye(x, y) - 2.f); }, FaceColors::EyeLine);
+			}
 		}
+		P.NoClip();
+	}
+
+	/** Gota de sudor con filo y brillo. */
+	inline void DrawSweat(FPainter& P, float X, float Y, float R)
+	{
+		P.Clip(X - R - 6.f, Y - 2.6f * R - 6.f, X + R + 6.f, Y + R + 6.f);
+		P.Fill([=](float x, float y) { return Drop(x, y, X, Y, R) - 2.5f; }, FaceColors::SweatLine);
+		P.Fill([=](float x, float y) { return Drop(x, y, X, Y, R); }, FaceColors::Sweat);
+		P.Fill([=](float x, float y) { return Circle(x, y, X - R * 0.35f, Y - R * 0.2f, R * 0.28f); }, Hex(0xFFFFFF, 0.85f));
 		P.NoClip();
 	}
 
@@ -151,13 +174,15 @@ namespace TNHUDFaces
 			return;
 		}
 
-		// Silueta de la pegatina: la cabeza y, mareada, las estrellas.
+		// Silueta de la pegatina: la cabeza y, según el estado, la lengua o las estrellas.
 		const TArray<FVector2f> StarA = StarPoints(78.f, 40.f, 15.f, 0.47f);
 		const TArray<FVector2f> StarB = StarPoints(128.f, 26.f, 17.f, 0.47f);
 		const TArray<FVector2f> StarC = StarPoints(178.f, 40.f, 15.f, 0.47f);
+		auto TongueOut = [](float x, float y) { return Box(x, y, Cx, 202.f, 16.f, 28.f, 15.f); };
 		auto Silhouette = [&](float x, float y)
 		{
 			float D = Head(x, y);
+			if (Face == ETNTurtleFace::Panting) { D = FMath::Min(D, TongueOut(x, y)); }
 			if (Face == ETNTurtleFace::Down) { D = FMath::Min(D, FMath::Min(FMath::Min(Polygon(x, y, StarA), Polygon(x, y, StarB)), Polygon(x, y, StarC))); }
 			return D;
 		};
@@ -169,8 +194,36 @@ namespace TNHUDFaces
 			case ETNTurtleFace::Happy:
 			{
 				DrawBlush(P, 0.45f);
-				DrawEyes(P);
+				DrawEyes(P, 0.f, 0.f);
 				DrawOpenSmile(P, 158.f, 29.f);
+				break;
+			}
+			case ETNTurtleFace::Tired:
+			{
+				DrawBlush(P, 0.3f);
+				DrawEyes(P, EyeY - 6.f, 6.f);
+				// Boca pequeña entreabierta.
+				P.Clip(100.f, 155.f, 156.f, 190.f);
+				P.Fill([](float x, float y) { return Ellipse(x, y, Cx, 172.f, 11.f, 7.f) - 3.f; }, Outline);
+				P.Fill([](float x, float y) { return Ellipse(x, y, Cx, 172.f, 11.f, 7.f); }, Mouth);
+				P.NoClip();
+				DrawSweat(P, 214.f, 96.f, 9.f);
+				break;
+			}
+			case ETNTurtleFace::Panting:
+			{
+				DrawBlush(P, 0.8f, 1.2f);
+				DrawEyes(P, EyeY + 2.f, 9.f);
+				// Boca muy abierta y la lengua colgando por debajo de la barbilla.
+				P.Clip(80.f, 140.f, 176.f, 240.f);
+				P.Fill([](float x, float y) { return Ellipse(x, y, Cx, 168.f, 31.f, 21.f) - 3.f; }, Outline);
+				P.Fill([](float x, float y) { return Ellipse(x, y, Cx, 168.f, 31.f, 21.f); }, Mouth);
+				P.Fill([&](float x, float y) { return FMath::Max(TongueOut(x, y) - 3.f, 172.f - y); }, Outline);
+				P.Fill([&](float x, float y) { return FMath::Max(TongueOut(x, y), 174.f - y); }, Tongue);
+				P.Fill([](float x, float y) { return Segment(x, y, Cx, 186.f, Cx, 214.f, 1.6f); }, TongueLine);
+				P.NoClip();
+				DrawSweat(P, 216.f, 92.f, 10.f);
+				DrawSweat(P, 40.f, 104.f, 8.f);
 				break;
 			}
 			case ETNTurtleFace::Down:
@@ -225,9 +278,8 @@ namespace TNHUDFaces
 	/** Textura de la cara (en caché: se dibuja una vez por ejecución). */
 	inline UTexture2D* TurtleFace(ETNTurtleFace Face)
 	{
-		static const TCHAR* Names[] = { TEXT("Face_Happy"), TEXT("Face_Shell"), TEXT("Face_Down"), TEXT("Face_Win") };
-		static_assert(UE_ARRAY_COUNT(Names) == static_cast<int32>(ETNTurtleFace::Win) + 1, "Un nombre por cara");
-		const int32 Index = FMath::Clamp(static_cast<int32>(Face), 0, static_cast<int32>(ETNTurtleFace::Win));
+		static const TCHAR* Names[] = { TEXT("Face_Happy"), TEXT("Face_Tired"), TEXT("Face_Panting"), TEXT("Face_Shell"), TEXT("Face_Down"), TEXT("Face_Win") };
+		const int32 Index = FMath::Clamp(static_cast<int32>(Face), 0, 5);
 		return Cached(Names[Index], [Face, Index]
 		{
 			FPainter P(Size, Size);

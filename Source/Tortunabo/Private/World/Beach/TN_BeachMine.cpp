@@ -1,10 +1,8 @@
 #include "World/Beach/TN_BeachMine.h"
-#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachMineSynth.h"
 #include "World/Beach/TN_BeachNearby.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "Core/TN_Log.h"
@@ -461,10 +459,8 @@ void ATN_BeachMine::Tick(float DeltaSeconds)
 				Explode(ServerTime);
 			}
 		}
-		else if (IsArmedAt(ServerTime) && ATN_BeachEnemy::IsRaceLive(this))
+		else if (IsArmedAt(ServerTime))
 		{
-			// Con la carrera parada («¡TIEMPO!», recuento, podio) no se pisa: una tortuga quieta encima la hacía estallar cada
-			// vez que se rearmaba y la bola la soltaba de la congelación.
 			CheckStep(ServerTime);
 		}
 	}
@@ -560,11 +556,7 @@ void ATN_BeachMine::Explode(double Now)
 			// En bola hacia atrás y arriba, con algo de lado según dónde estuviera (si la pisan dos, no caen juntas).
 			const double SideOff = FMath::Clamp(FVector::DotProduct(Rel, Across) / FMath::Max(1.0, Blast), -1.0, 1.0);
 			const FVector Launch = Back * LaunchBack + Across * (SideOff * 160.0) + FVector::UpVector * LaunchUp;
-			// En Supervivencia, la explosión elimina (#732); el empujón de alrededor no.
-			if (!TNSurvivalHits::KillInSurvival(Turtle, this))
-			{
-				TNBeach::StunTurtle(Turtle, StunSeconds, Launch);
-			}
+			TNBeach::StunTurtle(Turtle, StunSeconds, Launch);
 			++Launched;
 		}
 		else if (TNBeachTrapKit::IsFreeTurtle(Turtle))
@@ -590,11 +582,6 @@ void ATN_BeachMine::Explode(double Now)
 FVector ATN_BeachMine::GetBackDirection() const
 {
 	FVector Sea = FVector::ZeroVector;
-	if (const ATN_BeachRaceGenerator* Generator = ATN_BeachRaceGenerator::Find(this))
-	{
-		Sea = Generator->GetSeaDirection();
-	}
-	Sea.Z = 0.0;
 	if (Sea.IsNearlyZero())
 	{
 		Sea = GetActorForwardVector();

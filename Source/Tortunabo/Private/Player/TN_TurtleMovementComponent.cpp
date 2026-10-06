@@ -7,9 +7,8 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_WadingComponent.h"
 #include "World/Beach/TN_BeachTrampoline.h"
-#include "World/Beach/TN_RaceItemComponent.h"
-#include "World/Beach/TN_RaceItemRules.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
+#include "Game/TN_ItemRuntime.h"
+#include "GameFramework/PlayerState.h"
 #include "CollisionQueryParams.h"
 #include "Components/CapsuleComponent.h"
 #include "DrawDebugHelpers.h"
@@ -702,7 +701,6 @@ void UTN_TurtleMovementComponent::CalcVelocity(float DeltaTime, float Friction, 
 	if (BellyPhase != ETNBellyPhase::Slide || !IsMovingOnGround() || !SimulatesBelly() || HasAnimRootMotion()
 		|| CurrentRootMotion.HasOverrideVelocity())
 	{
-		ApplyRaceMoveStyle(DeltaTime);
 		Super::CalcVelocity(DeltaTime, Friction, bFluid, BrakingDeceleration);
 		return;
 	}
@@ -711,23 +709,9 @@ void UTN_TurtleMovementComponent::CalcVelocity(float DeltaTime, float Friction, 
 
 void UTN_TurtleMovementComponent::UpdateSlideSurface()
 {
-	// El suelo del movimiento es un barrido de la cápsula: sin índice de cara, las estructuras cuentan mitad madera y
-	// mitad piedra (TNTurtleSurface::Resolve). El mapa se busca cada 2 s mientras falte.
-	if (!Generator.IsValid())
-	{
-		const UWorld* MoveWorld = GetWorld();
-		const double Now = MoveWorld ? MoveWorld->GetTimeSeconds() : 0.0;
-		if (Now >= NextGeneratorLookup)
-		{
-			NextGeneratorLookup = Now + 2.0;
-			Generator = TNTurtleSurface::FindGenerator(GetWorld());
-		}
-	}
-	const FVector Foot = UpdatedComponent ? UpdatedComponent->GetComponentLocation()
-		- FVector(0.0, 0.0, static_cast<double>(CharacterOwner ? CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 0.f))
-		: FVector::ZeroVector;
+	// El suelo del movimiento es un barrido de la cápsula (TNTurtleSurface::Resolve).
 	const FHitResult* FloorHit = CurrentFloor.bBlockingHit ? &CurrentFloor.HitResult : nullptr;
-	TNTurtleSurface::Resolve(FloorHit, Foot, Generator.Get(), &SurfaceNameCache, SlideSurface);
+	TNTurtleSurface::Resolve(FloorHit, &SurfaceNameCache, SlideSurface);
 }
 
 float UTN_TurtleMovementComponent::SlideFrictionNow() const
@@ -1092,9 +1076,8 @@ void UTN_TurtleMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 	// con que los hizo (PrepMoveFor). Un movimiento sin marca va sin turbo aunque aquí ya lo tenga (el dueño aún no lo sabía).
 	if (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority)
 	{
-		const UTN_RaceItemComponent* Items = RaceItems.Get();
 		const bool bClaimsBoost = (Flags & TNBellySlide::RaceBoostFlag) != 0;
-		RaceBoostMultiplier = (bClaimsBoost && Items) ? FMath::Max(1.f, Items->ResolveOwnerBoostMultiplier()) : 1.f;
+		RaceBoostMultiplier = bClaimsBoost ? FMath::Max(1.f, ResolveOwnerBoostMultiplier()) : 1.f;
 	}
 
 	// Panzazo pedido (#24). Servidor: el giro viene en los datos del movimiento del cliente; al repetir en el dueño, ya lo
@@ -1120,51 +1103,39 @@ void UTN_TurtleMovementComponent::UpdateMoveWadingMultiplier()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Turbo de los objetos de carrera en la predicción (issue #22)
+// Turbo en la predicción (issue #22)
 // ─────────────────────────────────────────────────────────────────────────────
 
-void UTN_TurtleMovementComponent::SetRaceItems(UTN_RaceItemComponent* InRaceItems)
+void UTN_TurtleMovementComponent::SetBoostMultiplier(float InMultiplier)
 {
-	RaceItems = InRaceItems;
+	BoostMultiplier = FMath::Max(1.f, InMultiplier);
+	// El servidor apunta el último turbo y cuándo: acepta los movimientos marcados del dueño un poco después de acabarse.
+	const UWorld* World = GetWorld();
+	if (BoostMultiplier > 1.f && CharacterOwner && CharacterOwner->HasAuthority() && World)
+	{
+		RecentBoostMultiplier = BoostMultiplier;
+		RecentBoostTime = TNItemRuntime::ServerNow(World);
+	}
+}
+
+float UTN_TurtleMovementComponent::ResolveOwnerBoostMultiplier() const
+{
+	const APlayerState* PlayerState = CharacterOwner ? CharacterOwner->GetPlayerState() : nullptr;
+	const float RoundTrip = PlayerState ? PlayerState->GetPingInMilliseconds() * 0.001f : 0.f;
+	const double SinceRecent = RecentBoostTime >= 0.0 ? TNItemRuntime::ServerNow(GetWorld()) - RecentBoostTime : -1.0;
+	return TNItemRuntime::ResolveClaimedBoost(BoostMultiplier, RecentBoostMultiplier, SinceRecent, TNItemRuntime::BoostGraceSeconds(RoundTrip));
 }
 
 void UTN_TurtleMovementComponent::ControlledCharacterMove(const FVector& InputVector, float DeltaSeconds)
 {
 	// El dueño (o el anfitrión con la suya) decide el turbo de este movimiento con lo que sabe ahora: lo guarda el movimiento
 	// (FTNSavedMove_Turtle::SetMoveFor) antes de simularlo y el servidor lo valida al recibirlo.
-	const UTN_RaceItemComponent* Items = RaceItems.Get();
-	RaceBoostMultiplier = Items ? FMath::Max(1.f, Items->GetSpeedMultiplier()) : 1.f;
+	RaceBoostMultiplier = BoostMultiplier;
 	// Igual con los topes predichos (#575, #574): los que conoce ahora.
 	const ATortugaCharacter* Turtle = GetTurtle();
 	const UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
 	MovePredictedCaps = Stamina ? Stamina->GetPredictedCapMask() : 0;
 	Super::ControlledCharacterMove(InputVector, DeltaSeconds);
-}
-
-void UTN_TurtleMovementComponent::ApplyRaceMoveStyle(float DeltaTime)
-{
-	// La tabla de surf y el cohete de feria (#786) cambian el rumbo, no solo la velocidad: la ola empuja siempre hacia el mar
-	// (con algo de giro a los lados) y el cohete tira hacia delante girando muy poco. Sale del multiplicador del movimiento
-	// (el que guarda el dueño y reconoce el servidor), así que el dueño, el servidor y la repetición hacen lo mismo.
-	using namespace TNRaceItemRules;
-	const EMoveStyle Style = MoveStyleOf(RaceBoostMultiplier);
-	if (Style == EMoveStyle::Normal || HasAnimRootMotion() || CurrentRootMotion.HasOverrideVelocity() || !(IsMovingOnGround() || IsFalling()))
-	{
-		return;
-	}
-	const UTN_RaceItemComponent* Items = RaceItems.Get();
-	FVector Heading = FVector::ZeroVector;
-	if (Style == EMoveStyle::Surf)
-	{
-		Heading = SurfHeading(Items ? Items->GetCourseForward() : FVector::ForwardVector, Acceleration, SurfSteerShare);
-	}
-	else
-	{
-		const FVector Current = Velocity.SizeSquared2D() > FMath::Square(50.0) ? Velocity
-			: (UpdatedComponent ? UpdatedComponent->GetForwardVector() : FVector::ForwardVector);
-		Heading = RocketHeading(Current, Acceleration, FMath::DegreesToRadians(RocketTurnRateDeg) * DeltaTime);
-	}
-	Acceleration = Heading * GetMaxAcceleration();
 }
 
 float UTN_TurtleMovementComponent::GetMaxAcceleration() const

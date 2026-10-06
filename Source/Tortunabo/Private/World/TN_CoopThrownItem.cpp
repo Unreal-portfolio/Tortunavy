@@ -10,12 +10,11 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Game/TN_CoopItemRules.h"
-#include "Game/TN_TctItems.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachEnemy.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_ItemRuntime.h"
 
 namespace TNCoopThrownItemDetail
 {
@@ -111,7 +110,7 @@ void ATN_CoopThrownItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 double ATN_CoopThrownItem::Now() const
 {
-	return TNRaceItems::ServerNow(GetWorld());
+	return TNItemRuntime::ServerNow(GetWorld());
 }
 
 float ATN_CoopThrownItem::FlightAlpha() const
@@ -240,7 +239,7 @@ ATN_CoopThrownItem* ATN_CoopThrownItem::SpawnThrow(ATortugaCharacter* Thrower, u
 	Item->Throw.Kind = Kind;
 	Item->Throw.Origin = Origin;
 	Item->Throw.Target = Target;
-	Item->Throw.StartTime = static_cast<float>(TNRaceItems::ServerNow(World));
+	Item->Throw.StartTime = static_cast<float>(TNItemRuntime::ServerNow(World));
 	Item->Throw.FlightSeconds = TNCoopItemRules::ThrowFlightSeconds(Distance);
 	Item->Throw.ArcHeight = TNCoopItemRules::ThrowArcHeight(Distance);
 	Item->FinishSpawning(Start);
@@ -357,7 +356,7 @@ void ATN_CoopThrownItem::ServerShellImpact()
 	{
 		if (ATortugaCharacter* Thrower = Cast<ATortugaCharacter>(GetOwner()))
 		{
-			TNTctItems::PlayCue(Thrower, ETNRaceSound::Bonk, 1.2f);
+			TNItemRuntime::PlayCue(Thrower, ETNRaceSound::Bonk, 1.2f);
 		}
 		UE_LOG(LogTortunabo, Log, TEXT("[Coop] Una concha aturde a %s %.1f s."), *GetNameSafe(Enemy), TNCoopItemTuning::ShellStunSeconds);
 		MulticastSpent(Throw.Target);
@@ -377,12 +376,12 @@ void ATN_CoopThrownItem::ServerTickPeel()
 	{
 		ATortugaCharacter* Turtle = *It;
 		const FVector Feet = Turtle ? Turtle->GetActorLocation() - FVector(0.0, 0.0, Turtle->GetSimpleCollisionHalfHeight()) : FVector::ZeroVector;
-		if (!Turtle || !TNCoopItemRules::IsOnPatch(Patch, Feet) || !TNTctItems::CanAffect(Turtle, true))
+		if (!Turtle || !TNCoopItemRules::IsOnPatch(Patch, Feet) || !TNItemRuntime::CanAffect(Turtle, true))
 		{
 			continue;
 		}
 		UTN_TurtleMovementComponent::LaunchFromServer(Turtle, TNCoopItemRules::SlipVelocity(Turtle->GetVelocity(), Turtle->GetActorForwardVector()));
-		TNTctItems::PlayCue(Turtle, ETNRaceSound::Splat, 1.4f);
+		TNItemRuntime::PlayCue(Turtle, ETNRaceSound::Splat, 1.4f);
 		UE_LOG(LogTortunabo, Log, TEXT("[Coop] %s resbala en una cáscara."), *GetNameSafe(Turtle));
 		MulticastSpent(Patch);
 		return;

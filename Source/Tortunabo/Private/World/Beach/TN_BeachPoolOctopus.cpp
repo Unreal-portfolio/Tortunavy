@@ -2,7 +2,6 @@
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachCritterSynth.h"
 #include "World/Beach/TN_BeachLayout.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "TN_BeachCritterKit.h"
 #include "TN_BeachCritterMeshes.h"
@@ -132,34 +131,6 @@ void ATN_BeachPoolOctopus::ResolvePool()
 	bPoolResolved = true;
 	const FVector Here = GetActorLocation();
 	FVector Back = -GetActorForwardVector();
-	if (const ATN_BeachRaceGenerator* Gen = FindGenerator())
-	{
-		GenXf = Gen->GetActorTransform();
-		Back = -Gen->GetSeaDirection();
-		const FVector Local = GenXf.InverseTransformPosition(Here);
-		const FVector2D Local2D(Local.X, Local.Y);
-		const TArray<TNBeachLayout::FPool>& All = TNBeachLayout::Pools();
-		double BestU = 1.35;
-		for (int32 i = 0; i < All.Num(); ++i)
-		{
-			const double U = TNBeachLayout::PoolU(All[i], Local2D);
-			if (U < BestU)
-			{
-				BestU = U;
-				PoolIndex = i;
-			}
-		}
-		if (PoolIndex != INDEX_NONE)
-		{
-			const TNBeachLayout::FPool& Pool = All[PoolIndex];
-			bHasPool = true;
-			// El reparto lo pone en el centro; si lo han puesto a mano dentro de la poza, se queda donde está.
-			const FVector2D At = BestU < 0.7 ? Local2D : Pool.Center;
-			PoolHome = GenXf.TransformPosition(FVector(At.X, At.Y, Pool.Water));
-			WaterZ = static_cast<float>(PoolHome.Z);
-			PoolRadius = static_cast<float>(FMath::Min(Pool.Rx, Pool.Ry) * GenXf.GetScale3D().X);
-		}
-	}
 	if (!bHasPool)
 	{
 		// Sin poza (otro mapa o puesto a mano en la arena): su propio charco alrededor.
@@ -355,7 +326,6 @@ void ATN_BeachPoolOctopus::ServerTick(float DeltaSeconds)
 	const EState State = static_cast<EState>(GetMoverState());
 	const float Age = GetStateAge();
 	const bool bStunned = IsHitStunned();
-	const bool bLive = IsRaceLive(this);
 	switch (State)
 	{
 	case EState::Lurk:
@@ -384,7 +354,7 @@ void ATN_BeachPoolOctopus::ServerTick(float DeltaSeconds)
 		}
 		SwimToward(DriftGoal, TNBeachOctopus::LurkSpeed * SizeK, DeltaSeconds);
 		ScanTimer -= DeltaSeconds;
-		if (bLive && ScanTimer <= 0.f)
+		if (ScanTimer <= 0.f)
 		{
 			ScanTimer = TNBeachOctopus::ScanPeriod;
 			if (ATortugaCharacter* Swimmer = FindSwimmer())
@@ -404,9 +374,9 @@ void ATN_BeachPoolOctopus::ServerTick(float DeltaSeconds)
 			break;
 		}
 		ATortugaCharacter* Victim = Target.Get();
-		if (!bLive || !IsSwimmer(Victim))
+		if (!IsSwimmer(Victim))
 		{
-			Victim = bLive ? FindSwimmer() : nullptr;
+			Victim = FindSwimmer();
 			Target = Victim;
 			if (!Victim)
 			{

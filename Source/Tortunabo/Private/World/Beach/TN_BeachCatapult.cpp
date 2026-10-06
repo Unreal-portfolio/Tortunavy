@@ -461,7 +461,7 @@ void ATN_BeachCatapult::ApplySpec()
 	DangleDeg = 72.0 - FiredDeg;
 
 	// Hacia su X si ya mira al mar (el reparto le deja libre el arco de salto por ahí); si no, hacia el mar.
-	FrameYawDeg = TNBeachRideKit::LaunchYawInActor(this);
+	FrameYawDeg = 0.0;
 	Frame->SetRelativeRotation(FRotator(0.0, FrameYawDeg, 0.0));
 	ArmPivot->SetRelativeLocationAndRotation(FVector(PivotX, 0.0, PivotZ), FRotator(RestDeg, 0.0, 0.0));
 	BowlHinge->SetRelativeLocationAndRotation(FVector(CrackX, 0.0, 0.0), FRotator::ZeroRotator);
@@ -902,7 +902,7 @@ void ATN_BeachCatapult::ServerTick(double Now)
 		}
 	}
 
-	if (!IsLoaded(Now) || !TNBeachRideKit::IsRaceLive(this))
+	if (!IsLoaded(Now))
 	{
 		if (ArmedAt >= 0.f)
 		{

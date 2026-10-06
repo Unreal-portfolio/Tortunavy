@@ -9,7 +9,7 @@
 class AActor;
 
 /**
- * Pruebas de estrés (TN.Stress <light|heavy|race8|stop>, o -TNStress=<escenario> en la línea de órdenes; no Shipping).
+ * Pruebas de estrés (TN.Stress <light|heavy|tortugas8|stop>, o -TNStress=<escenario> en la línea de órdenes; no Shipping).
  * Crea en el mapa actual cangrejos, gaviotas y tanques de playa, lanzables de carrera y cajas de objetos, en fases de la misma
  * duración (una de referencia y una por grupo, 60 s en total), con las tortugas jugando (monkey). Mide por fase los ms de
  * fotograma (medio, p95, p99 y máximo), memoria, actores con Tick y KB/s de red por conexión, y escribe Saved/Stress/<fecha>.json.
@@ -40,8 +40,6 @@ private:
 	{
 		TNStress::FPhase Plan;
 		int32 Spawned = 0;
-		/** Lanzables vivos a la vez como máximo (tienen tope por clase en el mundo: se reponen cada 0,5 s hasta el pedido). */
-		int32 PeakAlive = 0;
 		TArray<float> FrameMs;
 		/** Instante (ms desde el inicio de la fase) en que acaba cada fotograma de FrameMs, para hallar el periodo de los picos. */
 		TArray<float> FrameStampMs;
@@ -73,10 +71,7 @@ private:
 	void EndPhase(int32 Index);
 	void SampleFrame(FPhaseData& Phase);
 	void SampleNet(FPhaseData& Phase);
-	int32 SpawnGroup(TNStress::EGroup Group, int32 Count);
 	bool SpawnEnemy(TNStress::EGroup Group, int32 Index);
-	int32 SpawnThrowables(int32 Count);
-	bool SpawnItemBox();
 	/** Crea los pendientes de un grupo repartido sin pasar de TNStress::SPAWN_BUDGET_MS en este fotograma. */
 	void SpawnPending(FPhaseData& Phase);
 	FVector PickSpot(float MinRadius, float MaxRadius);
@@ -98,7 +93,6 @@ private:
 	double PhaseStart = 0.0;
 	double LastFrame = 0.0;
 	double LastNetSample = 0.0;
-	double LastRefill = 0.0;
 	double MemoryStartMB = 0.0;
 	FString MonkeyReportPath;
 	FRandomStream Stream;

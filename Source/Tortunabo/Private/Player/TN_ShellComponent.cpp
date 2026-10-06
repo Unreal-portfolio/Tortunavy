@@ -17,7 +17,6 @@
 #include "Player/TN_TurtleFoleyComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachStun.h"
-#include "World/Beach/TN_RaceItemComponent.h"
 
 namespace TNShellComponentDetail
 {
@@ -120,14 +119,6 @@ void UTN_ShellComponent::ServerToggleShell_Implementation()
 			Context.bIsDiving ? TEXT(" en pleno panzazo") : TEXT(""), Context.bIsKnockedDown ? TEXT(" derribada") : TEXT(""),
 			Context.bIsDead ? TEXT(" muerta") : TEXT(""));
 		return;
-	}
-	// En el pico del pelícano taxi (objeto de carrera) no: la bola caería desde la altura del vuelo.
-	if (const UTN_RaceItemComponent* RaceItems = UTN_RaceItemComponent::FindOn(Turtle))
-	{
-		if (RaceItems->IsRiding())
-		{
-			return;
-		}
 	}
 	// En la boca de un gusano de arena (se acabó su ronda) no: el gusano la sigue colocando en su boca y la bola la arrastraría
 	// a la vez.
@@ -279,18 +270,10 @@ FVector UTN_ShellComponent::FindFreeBodySpot(const FVector& Center, const FRotat
 	}
 	const FQuat Rot = Rotation.Quaternion();
 	const FCollisionShape Shape = FCollisionShape::MakeBox(ATN_ShellBody::BoxHalfExtent() - FVector(3.0));
-	// De su centro a su parte de abajo con este giro (de pie mide más de alto que tumbada).
-	const double HalfHeight = TNShellLogic::BoxHalfHeight(Rot, ATN_ShellBody::BoxHalfExtent());
-	auto BottomDepth = [Turtle, HalfHeight](const FVector& At)
+	// Libre: nada que la pare solapándola.
+	auto IsFree = [World, &Rot, &Shape, &Query](const FVector& At)
 	{
-		return ATN_ShellBody::TerrainDepthUnder(Turtle, At - FVector(0.0, 0.0, HalfHeight));
-	};
-	// Libre: nada que la pare solapándola y su parte de abajo encima del terreno de verdad. La malla del terreno de la playa
-	// es fina: una caja entera por debajo de ella ni la solapa, y con la parte de abajo dentro el terreno la escupía (#54).
-	auto IsFree = [World, &Rot, &Shape, &Query, &BottomDepth](const FVector& At)
-	{
-		return !World->OverlapBlockingTestByChannel(At, Rot, ECC_PhysicsBody, Shape, Query)
-			&& TNShellLogic::IsBottomAboveTerrain(BottomDepth(At));
+		return !World->OverlapBlockingTestByChannel(At, Rot, ECC_PhysicsBody, Shape, Query);
 	};
 	// Con la cápsula de pie libre, la caja (de pie o tumbada) cabe dentro de ella: esto solo busca cuando a la tortuga la han
 	// dejado metida en algo sin barrer (un enemigo que la arrastra en el pico o en la boca por el decorado, un teletransporte).
@@ -298,18 +281,8 @@ FVector UTN_ShellComponent::FindFreeBodySpot(const FVector& Center, const FRotat
 	{
 		return Center;
 	}
-	// Hundida en la arena: primero justo encima de la arena de su vertical, y desde ahí se busca lo demás.
-	FVector Base = Center;
-	const float Lift = TNShellLogic::SpawnLiftAboveTerrain(BottomDepth(Center));
-	if (Lift > 0.f)
-	{
-		Base.Z += Lift;
-		if (IsFree(Base))
-		{
-			return Base;
-		}
-	}
-	// Después hacia arriba (lo normal: la han dejado hundida en la arena o en algo bajo) y alrededor, cada vez más lejos y
+	const FVector Base = Center;
+	// Hacia arriba (lo normal: la han dejado hundida en la arena o en algo bajo) y alrededor, cada vez más lejos y
 	// más alto.
 	static const float Ups[] = { 25.f, 50.f, 90.f, 140.f, 200.f };
 	for (const float Up : Ups)
@@ -549,14 +522,6 @@ void UTN_ShellComponent::PlaceStandingFromBox(const FTransform& BoxWorld, bool b
 			&& Hit.ImpactNormal.Z > 0.5)
 		{
 			Stand = Hit.ImpactPoint + FVector(0.0, 0.0, HalfHeight + 2.0);
-		}
-		// Carrera en la playa: si la caja atravesó la malla fina del terreno, la traza de arriba puede haber dado con algo de
-		// debajo (lo enterrado de una pieza del decorado). De pie encima de la superficie de verdad del terreno, nunca debajo.
-		// Sin el terreno de la playa (cooperativo), DepthUnderTerrain no dice nada.
-		const float Sunk = TNBeach::DepthUnderTerrain(Turtle, Stand - FVector(0.0, 0.0, HalfHeight));
-		if (Sunk > 30.f)
-		{
-			Stand.Z += Sunk + 2.0;
 		}
 	}
 	Turtle->SetActorLocationAndRotation(Stand, FRotator(0.f, Yaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);

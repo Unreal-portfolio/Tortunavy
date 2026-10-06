@@ -23,7 +23,6 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_LocText.h"
-#include "Game/TN_TctItems.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
@@ -32,6 +31,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/DrawElements.h"
 #include "Player/TN_ShellComponent.h"
+#include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Player/TN_SpectatorGhost.h"
@@ -43,13 +43,10 @@
 #include "Engine/LocalPlayer.h"
 #include "Core/TN_InventoryTypes.h"
 #include "Player/TN_CarryComponent.h"
-#include "World/Beach/TN_RaceItems.h"
 #include "Game/TN_CoopItems.h"
 #include "Player/TN_InventoryComponent.h"
 #include "InputAction.h"
 #include "Voice/ProximityVoiceComponent.h"
-#include "World/ProcMap/TN_PathStorm.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
 #include "UI/HUD/TN_ButtonGlyphWidget.h"
 
@@ -60,19 +57,14 @@ namespace TNRunHUDDetail
 	using namespace TNHUDStyle;
 
 	/** Vista previa de los estados del distintivo (para probar y para el equipo de arte). */
+	TAutoConsoleVariable<float> CVarHUDEnergy(TEXT("tn.HUD.Energy"), -1.f, TEXT("HUD: fuerza la energía del salvavidas (0-1); -1 = la real."));
 	TAutoConsoleVariable<int32> CVarHUDFace(TEXT("tn.HUD.Face"), -1,
-		TEXT("HUD: fuerza la cara (0 feliz, 1 caparazón, 2 mareada, 3 victoria); -1 = la real."));
+		TEXT("HUD: fuerza la cara (0 feliz, 1 cansada, 2 jadeando, 3 caparazón, 4 mareada, 5 victoria); -1 = la real."));
 	TAutoConsoleVariable<int32> CVarHUDTalk(TEXT("tn.HUD.Talk"), -1, TEXT("HUD: 1 fuerza el bocadillo de voz, 0 lo apaga; -1 = el real."));
 	TAutoConsoleVariable<int32> CVarHUDCrew(TEXT("tn.HUD.CrewPreview"), 0,
 		TEXT("HUD: rellena N filas de la tripulación con tu propia tortuga (la 1.ª dice una frase y la 2.ª habla) para ver el diseño sin más jugadores."));
 	TAutoConsoleVariable<int32> CVarHUDPrompt(TEXT("tn.HUD.Prompt"), 0,
 		TEXT("HUD: 1 enseña el aviso de interacción sin nada al alcance (con la tecla o el botón del aparato de ahora)."));
-
-	/** Pista de la playa al mar: tamaño y tramo útil (del nido a la orilla), en fracción de su ancho. */
-	constexpr float TrackW = 520.f;
-	constexpr float TrackH = 66.f;
-	constexpr float TrackFrom = 0.1f;
-	constexpr float TrackTo = 0.84f;
 
 	/** Inventario: burbujas iguales en columnas de ancho fijo (el aro de cuerda rueda de una a otra). */
 	constexpr float BubbleSize = 90.f;
@@ -308,14 +300,30 @@ namespace TNRunHUDDetail
 		return nullptr;
 	}
 
-	/** Cara de una tortuga según su estado: llegada, eliminada, en el caparazón o feliz. */
-	ETNTurtleFace FaceFor(const APlayerState* PS, const APawn* Pawn)
+	/** Energía (0-1) y agotamiento de una tortuga por su componente de estamina (replicado a todos). */
+	void EnergyOf(const APawn* Pawn, float& OutEnergy, bool& bOutExhausted)
+	{
+		OutEnergy = 1.f;
+		bOutExhausted = false;
+		if (const UTN_StaminaComponent* St = Pawn ? Pawn->FindComponentByClass<UTN_StaminaComponent>() : nullptr)
+		{
+			OutEnergy = FMath::Clamp(St->GetCurrentStamina() / FMath::Max(1.f, St->GetMaxStamina()), 0.f, 1.f);
+			bOutExhausted = St->IsExhausted();
+		}
+	}
+
+	/** Cara de una tortuga según su estado, con margen en los umbrales de energía para que no parpadee. */
+	ETNTurtleFace FaceFor(const APlayerState* PS, const APawn* Pawn, float Energy, bool bExhausted, ETNTurtleFace Prev)
 	{
 		const ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(PS);
 		if (TNPS && TNPS->bHasFinishedRun && !TNPS->bIsEliminated) { return ETNTurtleFace::Win; }
 		if (TNPS && (TNPS->bIsDBNO || TNPS->bIsEliminated)) { return ETNTurtleFace::Down; }
 		const UTN_ShellComponent* ShellComp = Pawn ? Pawn->FindComponentByClass<UTN_ShellComponent>() : nullptr;
 		if (ShellComp && ShellComp->IsInShell()) { return ETNTurtleFace::Shell; }
+		const bool bWasPanting = Prev == ETNTurtleFace::Panting;
+		const bool bWasTired = Prev == ETNTurtleFace::Tired || bWasPanting;
+		if (bExhausted || Energy < (bWasPanting ? 0.3f : 0.22f)) { return ETNTurtleFace::Panting; }
+		if (Energy < (bWasTired ? 0.6f : 0.5f)) { return ETNTurtleFace::Tired; }
 		return ETNTurtleFace::Happy;
 	}
 }
@@ -342,17 +350,23 @@ void UTN_RunHUDWidget::BuildTree()
 	// Todas las caras se dibujan ahora (al entrar en el mapa) para que cambiar de estado no dé tirones.
 	for (int32 f = 0; f <= static_cast<int32>(ETNTurtleFace::Win); ++f) { TNHUDFaces::TurtleFace(static_cast<ETNTurtleFace>(f)); }
 
-	// La clase base rellena estos widgets (número e iconos del inventario): existen pero no se ven; el Tick los lee para
-	// pintar las burbujas.
+	// La clase base rellena estos widgets (estamina, peso, número e iconos del inventario): existen pero no se ven; el
+	// Tick los lee para pintar el salvavidas y las burbujas.
 	{
 		UVerticalBox* Feed = Make<UVerticalBox>(Tree);
+		StaminaBar = Make<UProgressBar>(Tree, TEXT("StaminaBar"));
+		StaminaBar->SetPercent(1.f);
+		WeightPenaltyBar = Make<UProgressBar>(Tree, TEXT("WeightPenaltyBar"));
+		WeightPenaltyBar->SetPercent(0.f);
+		StaminaText = MakeText(Tree, TEXT("StaminaText"), FText::GetEmpty(), TEXT("Regular"), 10, Text);
 		SlotEquippedImage = Make<UImage>(Tree, TEXT("SlotEquippedImage"));
 		SlotEquippedImage->SetColorAndOpacity(FLinearColor::Transparent);
 		SlotStoredImage = Make<UImage>(Tree, TEXT("SlotStoredImage"));
 		SlotStoredImage->SetColorAndOpacity(FLinearColor::Transparent);
 		// La puntuación real la escribe la clase base aquí; el contador que se ve (CountText) va sumando lo que llega.
 		ScoreText = MakeText(Tree, TEXT("ScoreText"), FText::AsNumber(0), TEXT("Regular"), 10, Text);
-		for (UWidget* W : { static_cast<UWidget*>(SlotEquippedImage), static_cast<UWidget*>(SlotStoredImage), static_cast<UWidget*>(ScoreText) })
+		for (UWidget* W : { static_cast<UWidget*>(StaminaBar), static_cast<UWidget*>(WeightPenaltyBar), static_cast<UWidget*>(StaminaText),
+			static_cast<UWidget*>(SlotEquippedImage), static_cast<UWidget*>(SlotStoredImage), static_cast<UWidget*>(ScoreText) })
 		{
 			Feed->AddChildToVerticalBox(W);
 		}
@@ -360,15 +374,13 @@ void UTN_RunHUDWidget::BuildTree()
 		Place(Canvas, Feed, FVector2D(0.f, 0.f), FVector2D(0.f, 0.f));
 	}
 
-	// ── Distintivo (abajo a la izquierda): la cara en el disco con su salvavidas y, debajo, la cinta con el nombre ──
+	// ── Distintivo (abajo a la izquierda): la cara en el salvavidas de energía y, debajo, la cinta con el nombre ──
 	{
 		UVerticalBox* Col = Make<UVerticalBox>(Tree);
 		UOverlay* Ring = Make<UOverlay>(Tree);
 		Badge = Make<UImage>(Tree, TEXT("TurtleBadge"));
-		if (UMaterialInterface* BadgeMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/UI/HUD/M_UI_TurtleBadge.M_UI_TurtleBadge")))
-		{
-			Badge->SetBrushFromMaterial(BadgeMaterial);
-		}
+		BadgeMID = MakeUIMID(this, TEXT("/Game/UI/HUD/M_UI_TurtleBadge.M_UI_TurtleBadge"));
+		if (BadgeMID) { Badge->SetBrushFromMaterial(BadgeMID); }
 		AddAt(Ring, MakeSize(Tree, Badge, BadgeRingSize, BadgeRingSize), HAlign_Center, VAlign_Center);
 		FaceImage = MakeImage(Tree, TNHUDFaces::TurtleFace(ETNTurtleFace::Happy), FVector2D(104.f, 104.f));
 		FaceImage->SetRenderTransformPivot(FVector2D(0.5f, 0.85f));
@@ -378,6 +390,12 @@ void UTN_RunHUDWidget::BuildTree()
 		TalkBubble->SetRenderTransformPivot(FVector2D(0.1f, 0.95f));
 		TalkBubble->SetVisibility(ESlateVisibility::Collapsed);
 		AddAt(Ring, TalkBubble, HAlign_Right, VAlign_Top, FMargin(0.f, -18.f, -44.f, 0.f));
+		// Sin aliento: etiqueta coral que late junto al salvavidas.
+		UTextBlock* Tired = MakeText(Tree, nullptr, NSLOCTEXT("TNHUD", "Exhausted", "¡SIN ALIENTO!"), TEXT("Bold"), 13, FLinearColor::White);
+		ExhaustedRoot = MakeCard(Tree, TNHUDArt::RibbonTexture(), RibbonMargin, Tired, FMargin(28.f, 16.f, 28.f, 18.f));
+		ExhaustedRoot->SetVisibility(ESlateVisibility::Hidden);
+		ExhaustedRoot->SetRenderTransformAngle(-8.f);
+		AddAt(Ring, ExhaustedRoot, HAlign_Right, VAlign_Bottom, FMargin(0.f, 0.f, -86.f, 34.f));
 		if (UVerticalBoxSlot* S = Col->AddChildToVerticalBox(Ring)) { S->SetHorizontalAlignment(HAlign_Center); }
 
 		NameText = MakeText(Tree, nullptr, FText::GetEmpty(), TEXT("Bold"), 16, FLinearColor::White);
@@ -468,33 +486,6 @@ void UTN_RunHUDWidget::BuildTree()
 		}
 	}
 
-	// ── Pista de la playa al mar (arriba en el centro) ──
-	{
-		TrackRoot = Make<UOverlay>(Tree, TEXT("SeaTrack"));
-		AddAt(TrackRoot, MakeImage(Tree, TNHUDArt::TrackTexture(), FVector2D(TrackW, TrackH)), HAlign_Fill, VAlign_Fill);
-		// Arena que ya se ha tragado la tormenta (crece desde el nido).
-		StormShade = Make<UImage>(Tree);
-		StormShade->SetBrush(Rounded(TNHUDArt::Hex(0x0B1020, 0.6f), 18.f));
-		AddAt(TrackRoot, MakeSize(Tree, StormShade, 1.f, TrackH - 24.f), HAlign_Left, VAlign_Center, FMargin(8.f, 0.f, 0.f, 0.f));
-		AddAt(TrackRoot, MakeImage(Tree, TNHUDArt::NestIcon(), FVector2D(78.f, 72.f)), HAlign_Left, VAlign_Center, FMargin(-50.f, -10.f, 0.f, 0.f));
-		AddAt(TrackRoot, MakeImage(Tree, TNHUDArt::SeaIcon(), FVector2D(92.f, 75.f)), HAlign_Right, VAlign_Center, FMargin(0.f, -12.f, -52.f, 0.f));
-		for (const FLinearColor& Tint : MateColors)
-		{
-			UImage* Mate = MakeImage(Tree, TNHUDArt::ShellDotIcon(), FVector2D(30.f, 30.f));
-			Mate->SetColorAndOpacity(Tint);
-			Mate->SetVisibility(ESlateVisibility::Collapsed);
-			AddAt(TrackRoot, Mate, HAlign_Left, VAlign_Center);
-			MateMarkers.Add(Mate);
-		}
-		StormMarker = MakeImage(Tree, TNHUDArt::StormIcon(), FVector2D(66.f, 54.f));
-		StormMarker->SetVisibility(ESlateVisibility::Collapsed);
-		AddAt(TrackRoot, StormMarker, HAlign_Left, VAlign_Center);
-		MiniFace = MakeImage(Tree, TNHUDFaces::TurtleFace(ETNTurtleFace::Happy), FVector2D(54.f, 54.f));
-		AddAt(TrackRoot, MiniFace, HAlign_Left, VAlign_Center);
-		TrackRoot->SetVisibility(ESlateVisibility::Collapsed);
-		Place(Canvas, MakeSize(Tree, TrackRoot, TrackW, TrackH), FVector2D(0.5f, 0.f), FVector2D(0.f, 34.f));
-	}
-
 	// ── Avisos: carteles azul marino con ola ──
 	{
 		UHorizontalBox* StormRow = Make<UHorizontalBox>(Tree);
@@ -579,7 +570,6 @@ void UTN_RunHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 	Time += InDeltaTime;
 	TickBadge(InDeltaTime);
 	TickInventory(InDeltaTime);
-	TickTrack(InDeltaTime);
 	BindShellEvents();
 	TickShellFlights(InDeltaTime, MyGeometry);
 	TickScore(InDeltaTime);
@@ -619,17 +609,6 @@ bool UTN_RunHUDWidget::ShouldShowAimDot() const
 	}
 	const FTN_InventoryItem& Equipped = Inv->GetEquippedItem();
 	const ETN_ItemUseType Use = Equipped.UseType;
-	if (Use == ETN_ItemUseType::RaceItem)
-	{
-		// De la carrera, los que se lanzan a mano (el cangrejo va solo hacia su rival y el resto no se lanza).
-		const ETNRaceItem Kind = TNRaceItems::KindOf(Equipped);
-		return Kind == ETNRaceItem::SandMine || Kind == ETNRaceItem::Frisbee;
-	}
-	if (Use == ETN_ItemUseType::TctItem)
-	{
-		// Las armas y lanzables de Todos contra Todos (#707).
-		return TNTctItemRules::UsesAim(TNTctItems::KindOf(Equipped));
-	}
 	if (Use == ETN_ItemUseType::CoopItem)
 	{
 		// Del coop, los que se apuntan: se lanzan o disparan hacia la mira.
@@ -731,6 +710,23 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 	const APawn* Pawn = SubjectPawn;
 	const APlayerState* PS = SubjectState;
 
+	// Energía del salvavidas (suavizada), zona bloqueada por el peso y latido al quedarse sin aliento. Sale del componente de
+	// estamina, como los retratos de los compañeros, y no de la barra oculta de la clase base (al empezar la partida enseñaba
+	// la mitad hasta que se esprintaba).
+	float Energy = 1.f;
+	[[maybe_unused]] bool bDrained = false;
+	EnergyOf(Pawn, Energy, bDrained);
+	if (CVarHUDEnergy.GetValueOnGameThread() >= 0.f) { Energy = FMath::Clamp(CVarHUDEnergy.GetValueOnGameThread(), 0.f, 1.f); }
+	ShownEnergy = FMath::FInterpTo(ShownEnergy, Energy, DeltaTime, 7.f);
+	const bool bTired = ExhaustedRoot && ExhaustedRoot->IsVisible();
+	if (BadgeMID)
+	{
+		BadgeMID->SetScalarParameterValue(TEXT("Energy"), ShownEnergy);
+		BadgeMID->SetScalarParameterValue(TEXT("Weight"), WeightPenaltyBar && WeightPenaltyBar->IsVisible() ? WeightPenaltyBar->GetPercent() : 0.f);
+		BadgeMID->SetScalarParameterValue(TEXT("Exhausted"), bTired ? 1.f : 0.f);
+	}
+	if (bTired) { ExhaustedRoot->SetRenderScale(FVector2D(1.f + 0.07f * FMath::Abs(FMath::Sin(Time * 7.f)))); }
+
 	if (NameText)
 	{
 		const FText Shown = TNLocText::PlayerName(PS ? PS->GetPlayerName() : FString());
@@ -739,7 +735,7 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 
 	// Cara según cómo va la tortuga (un fantasma que aún no sigue a nadie, con su cara de fantasma).
 	const ETNTurtleFace Prev = static_cast<ETNTurtleFace>(ShownFace);
-	ETNTurtleFace Face = FaceFor(PS, Pawn);
+	ETNTurtleFace Face = FaceFor(PS, Pawn, ShownEnergy, bTired, Prev);
 	if (CVarHUDFace.GetValueOnGameThread() >= 0) { Face = static_cast<ETNTurtleFace>(FMath::Clamp(CVarHUDFace.GetValueOnGameThread(), 0, static_cast<int32>(ETNTurtleFace::Win))); }
 	if (!Pawn && TNGhost::IsGhostPlayer(PS))
 	{
@@ -747,7 +743,6 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 		{
 			ShownFace = GhostFaceShown;
 			SetImageTexture(FaceImage, TNHUDGhostFace::Texture());
-			SetImageTexture(MiniFace, TNHUDGhostFace::Texture());
 			FacePop = 1.f;
 		}
 	}
@@ -755,7 +750,6 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 	{
 		ShownFace = static_cast<uint8>(Face);
 		SetImageTexture(FaceImage, TNHUDFaces::TurtleFace(Face));
-		SetImageTexture(MiniFace, TNHUDFaces::TurtleFace(Face));
 		FacePop = 1.f;
 	}
 	FacePop = FMath::Max(0.f, FacePop - DeltaTime * 4.f);
@@ -766,6 +760,7 @@ void UTN_RunHUDWidget::TickBadge(float DeltaTime)
 	const bool bTalking = ForceTalk >= 0 ? ForceTalk > 0 : (Voice && Voice->IsHeardSpeaking());
 	float Scale = 1.f + 0.22f * FMath::Sin(FacePop * PI);
 	if (bTalking) { Scale *= 1.f + 0.07f * FMath::Abs(FMath::Sin(Time * 17.f)); }
+	if (Face == ETNTurtleFace::Panting) { Scale *= 1.f + 0.035f * FMath::Sin(Time * 9.f); }
 	if (FaceImage) { FaceImage->SetRenderScale(FVector2D(Scale, Scale)); }
 	if (TalkBubble)
 	{
@@ -815,57 +810,6 @@ void UTN_RunHUDWidget::TickInventory(float DeltaTime)
 	{
 		RopeImage->SetRenderTranslation(FVector2D(RopeX, 0.f));
 		RopeImage->SetRenderTransformAngle(RopeX / Pitch * 180.f);
-	}
-}
-
-void UTN_RunHUDWidget::TickTrack(float DeltaTime)
-{
-	using namespace TNRunHUDDetail;
-	UWorld* World = GetWorld();
-	if (!World || !TrackRoot) { return; }
-	LookupTimer -= DeltaTime;
-	if ((!Generator.IsValid() || !Storm.IsValid()) && LookupTimer <= 0.f)
-	{
-		LookupTimer = 1.f;
-		if (!Generator.IsValid()) { for (TActorIterator<ATN_ProcMapGenerator> It(World); It; ++It) { Generator = *It; break; } }
-		if (!Storm.IsValid()) { for (TActorIterator<ATN_PathStorm> It(World); It; ++It) { Storm = *It; break; } }
-	}
-	const ATN_ProcMapGenerator* Gen = Generator.Get();
-	const float Length = Gen && Gen->IsMapReady() ? Gen->GetMainPathLength() : 0.f;
-	TrackRoot->SetVisibility(Length > 0.f ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
-	if (Length <= 0.f) { return; }
-
-	const float Usable = (TrackTo - TrackFrom) * TrackW;
-	auto ToX = [&](float Progress) { return TrackFrom * TrackW + Usable * FMath::Clamp(Progress / Length, 0.f, 1.f); };
-
-	// Tu cara (o, de fantasma, la de la tortuga que sigues) avanza del nido al mar.
-	APawn* SubjectPawn = nullptr;
-	APlayerState* SubjectState = nullptr;
-	TNGhost::GetHUDSubject(GetOwningPlayer(), SubjectPawn, SubjectState);
-	const APawn* Own = SubjectPawn;
-	if (Own) { ShownProgress = FMath::FInterpTo(ShownProgress, Gen->GetPathProgress(Own->GetActorLocation()), DeltaTime, 4.f); }
-	if (MiniFace) { MiniFace->SetRenderTranslation(FVector2D(ToX(ShownProgress) - 27.f, -14.f + 2.f * FMath::Sin(Time * 5.f))); }
-
-	// Compañeros: caparazones de su color (el mismo orden y color que en la tripulación de la izquierda).
-	const TArray<const APlayerState*> Crew = CrewOf(World, SubjectState);
-	for (int32 m = 0; m < MateMarkers.Num(); ++m)
-	{
-		const APawn* P = Crew.IsValidIndex(m) ? TurtleOf(World, Crew[m]) : nullptr;
-		MateMarkers[m]->SetVisibility(P ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
-		if (P) { MateMarkers[m]->SetRenderTranslation(FVector2D(ToX(Gen->GetPathProgress(P->GetActorLocation())) - 15.f, 17.f)); }
-	}
-
-	// La tormenta: su nube detrás de todos y la arena que ya se ha tragado.
-	const ATN_PathStorm* S = Storm.Get();
-	const bool bStorm = S && S->IsStormActive();
-	StormMarker->SetVisibility(bStorm ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
-	StormShade->SetVisibility(bStorm ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
-	if (bStorm)
-	{
-		ShownStorm = FMath::FInterpTo(ShownStorm, FMath::Max(0.f, S->GetFrontProgress()), DeltaTime, 3.f);
-		const float X = ToX(ShownStorm);
-		StormMarker->SetRenderTranslation(FVector2D(X - 44.f, -14.f + 2.5f * FMath::Sin(Time * 3.f)));
-		if (USizeBox* Box = Cast<USizeBox>(StormShade->GetParent())) { Box->SetWidthOverride(FMath::Max(1.f, X - 8.f)); }
 	}
 }
 
@@ -1512,9 +1456,12 @@ void UTN_RunFlowHUDWidget::TickCrew(float DeltaTime)
 		CrewPlayerIds[i] = PS ? PS->GetPlayerId() : INDEX_NONE;
 		if (!PS) { continue; }
 		const APawn* Pawn = TurtleOf(GetWorld(), PS);
+		float Energy = 1.f;
+		bool bExhausted = false;
+		EnergyOf(Pawn, Energy, bExhausted);
 		// Un fantasma sale con su cara de fantasma, flotando.
 		const bool bGhostRow = TNGhost::IsGhostPlayer(PS);
-		const ETNTurtleFace Face = FaceFor(PS, Pawn);
+		const ETNTurtleFace Face = FaceFor(PS, Pawn, Energy, bExhausted, static_cast<ETNTurtleFace>(CrewFaceShown[i]));
 		const uint8 WantedFace = bGhostRow ? GhostFaceShown : static_cast<uint8>(Face);
 		if (WantedFace != CrewFaceShown[i])
 		{

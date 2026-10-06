@@ -33,7 +33,6 @@
 #include "Testing/TN_TestReport.h"
 #include "UnrealClient.h"
 #include "Widgets/SViewport.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 
 namespace TNBugReportSubsystemDetail
 {
@@ -402,11 +401,6 @@ FString UTN_BugReportSubsystem::CreateReport(const FString& Trigger)
 	// Semillas: las del GameState y el GameMode (este solo en el servidor) y la del monkey si está en marcha.
 	CollectSeeds(World->GetGameState(), Context.Seeds);
 	CollectSeeds(World->GetAuthGameMode(), Context.Seeds);
-	// La carrera reparte cada ronda con una semilla nueva que guarda (y replica) su generador, no el modo.
-	for (TActorIterator<ATN_BeachRaceGenerator> It(World); It; ++It)
-	{
-		Context.Seeds.Add(FString::Printf(TEXT("TN_BeachRaceGenerator.RoundSeed=%d (ronda %d)"), It->GetRoundSeed(), It->GetRoundNumber()));
-	}
 	if (const UTN_MonkeySubsystem* Monkey = World->GetSubsystem<UTN_MonkeySubsystem>(); Monkey && Monkey->IsRunning())
 	{
 		Context.Seeds.Add(FString::Printf(TEXT("TN.Monkey=%d"), Monkey->GetSeed()));

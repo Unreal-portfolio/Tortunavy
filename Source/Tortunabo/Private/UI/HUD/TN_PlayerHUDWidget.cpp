@@ -1,9 +1,11 @@
 ﻿#include "UI/HUD/TN_PlayerHUDWidget.h"
+#include "Player/TN_StaminaComponent.h"
 #include "Core/TN_Log.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Core/TN_InventoryTypes.h"
 #include "Core/TN_CoopPlayerState.h"
+#include "Components/ProgressBar.h"
 #include "Components/Widget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
@@ -15,6 +17,7 @@ void UTN_PlayerHUDWidget::NativeConstruct()
 
 	if (const APawn* Pawn = GetOwningPlayerPawn())
 	{
+		CachedStamina    = Pawn->FindComponentByClass<UTN_StaminaComponent>();
 		CachedInventory  = Pawn->FindComponentByClass<UTN_InventoryComponent>();
 	}
 
@@ -24,6 +27,7 @@ void UTN_PlayerHUDWidget::NativeConstruct()
 		SlotEquippedSelector->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 
+	RefreshStaminaWidgets();
 	RefreshInventoryWidgets();
 	BindToPlayerStateScore();
 }
@@ -44,7 +48,39 @@ void UTN_PlayerHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 		BindToPlayerStateScore();
 	}
 
-	// ── Inventario: el del ViewTarget (de espectador, la tortuga seguida; Docs/Fantasma_Espectador.md)
+	// ── Stamina source: seguir el ViewTarget para que al espectear se muestre
+	// la stamina del jugador observado, no la del pawn propio (muerto/nulo). ──────
+	{
+		UTN_StaminaComponent* DesiredStamina = nullptr;
+		if (const APlayerController* PC = GetOwningPlayer())
+		{
+			// ViewTarget puede ser el pawn propio o el pawn espectado
+			if (const APawn* ViewPawn = Cast<APawn>(PC->GetViewTarget()))
+			{
+				DesiredStamina = ViewPawn->FindComponentByClass<UTN_StaminaComponent>();
+			}
+		}
+		// Fallback al pawn propio si el ViewTarget no tiene stamina
+		if (!DesiredStamina)
+		{
+			if (const APawn* OwnPawn = GetOwningPlayerPawn())
+			{
+				DesiredStamina = OwnPawn->FindComponentByClass<UTN_StaminaComponent>();
+			}
+		}
+		// Detectar cambio de fuente (propio → espectado o viceversa)
+		if (DesiredStamina != CachedStamina.Get())
+		{
+			CachedStamina = DesiredStamina;
+			LastStamina       = -1.f;
+			LastWeightPenalty = -1.f;
+			bLastExhausted    = false;
+			UE_LOG(LogTortunabo, Verbose, TEXT("[PlayerHUD] Stamina source → %s"),
+				*GetNameSafe(DesiredStamina ? DesiredStamina->GetOwner() : nullptr));
+		}
+	}
+
+	// ── Inventario: como la estamina, el del ViewTarget (de espectador, la tortuga seguida; Docs/Fantasma_Espectador.md)
 	// y, si no lleva, el del pawn propio (que cambia tras un viaje o una posesión). ──
 	{
 		UTN_InventoryComponent* DesiredInventory = nullptr;
@@ -81,6 +117,25 @@ void UTN_PlayerHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 		return;
 	}
 	RefreshAccumulator = 0.f;
+
+	// ── Stamina ──────────────────────────────────────────────────────────────
+	if (CachedStamina.IsValid())
+	{
+		const float Current     = CachedStamina->GetCurrentStamina();
+		const float WeightPen   = CachedStamina->GetWeightPenalty();
+		const bool  bExhausted  = CachedStamina->IsExhausted();
+
+		const bool bStaminaChanged = !FMath::IsNearlyEqual(Current, LastStamina, 0.5f) || bExhausted != bLastExhausted;
+		const bool bWeightChanged  = !FMath::IsNearlyEqual(WeightPen, LastWeightPenalty, 0.5f);
+
+		if (bStaminaChanged || bWeightChanged)
+		{
+			LastStamina       = Current;
+			bLastExhausted    = bExhausted;
+			LastWeightPenalty = WeightPen;
+			RefreshStaminaWidgets();
+		}
+	}
 
 	// ── Inventario ────────────────────────────────────────────────────────────
 	if (CachedInventory.IsValid())
@@ -133,6 +188,63 @@ void UTN_PlayerHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 			}
 		}
 	}
+}
+
+// ── Stamina ───────────────────────────────────────────────────────────────────
+
+void UTN_PlayerHUDWidget::RefreshStaminaWidgets()
+{
+	if (!CachedStamina.IsValid())
+	{
+		if (StaminaBar)      { StaminaBar->SetVisibility(ESlateVisibility::Hidden); }
+		if (WeightPenaltyBar){ WeightPenaltyBar->SetVisibility(ESlateVisibility::Hidden); }
+		if (ExhaustedRoot)   { ExhaustedRoot->SetVisibility(ESlateVisibility::Hidden); }
+		if (StaminaText)     { StaminaText->SetVisibility(ESlateVisibility::Hidden); }
+		return;
+	}
+
+	const float Current    = CachedStamina->GetCurrentStamina();
+	const float MaxStam    = CachedStamina->GetMaxStamina();
+	const float EffMax     = CachedStamina->GetEffectiveMaxStamina();
+	const float WeightPen  = CachedStamina->GetWeightPenalty();
+	const bool  bExhaust   = CachedStamina->IsExhausted();
+
+	// Ratio de stamina actual vs el máximo BASE (para que la barra de stamina
+	// y la de peso compartan la misma escala visual).
+	const float StaminaRatio = (MaxStam > 0.f) ? FMath::Clamp(Current / MaxStam, 0.f, 1.f) : 0.f;
+	// Ratio que ocupa la penalización de peso (zona oscura a la derecha).
+	const float WeightRatio  = (MaxStam > 0.f) ? FMath::Clamp(WeightPen / MaxStam, 0.f, 1.f) : 0.f;
+
+	if (StaminaBar)
+	{
+		StaminaBar->SetVisibility(ESlateVisibility::HitTestInvisible);
+		StaminaBar->SetPercent(StaminaRatio);
+	}
+
+	// WeightPenaltyBar: superponer sobre StaminaBar, alineada a la derecha.
+	// En el Widget Designer: mismo tamaño que StaminaBar, mismo anchor,
+	// Fill Direction = Right to Left, color distinto (ej. marrón oscuro #5C3317).
+	if (WeightPenaltyBar)
+	{
+		WeightPenaltyBar->SetVisibility(ESlateVisibility::HitTestInvisible);
+		WeightPenaltyBar->SetPercent(WeightRatio);
+	}
+
+	if (ExhaustedRoot)
+	{
+		ExhaustedRoot->SetVisibility(bExhaust
+			? ESlateVisibility::HitTestInvisible
+			: ESlateVisibility::Hidden);
+	}
+
+	// La barra no lleva número: basta con ver cuánto queda.
+	if (StaminaText)
+	{
+		StaminaText->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	OnStaminaUpdated(Current, MaxStam, bExhaust);
+	OnWeightUpdated(WeightPen, MaxStam, EffMax);
 }
 
 // ── Inventory ─────────────────────────────────────────────────────────────────

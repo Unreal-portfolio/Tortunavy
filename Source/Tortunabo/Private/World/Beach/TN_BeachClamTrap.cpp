@@ -509,7 +509,7 @@ void ATN_BeachClamTrap::ApplySpec()
 
 	// Hacia el mar, con un poco de giro.
 	const double Jitter = (TNBeachTrapKit::Hash01(3, 9, Seed) - 0.5) * 50.0;
-	Frame->SetRelativeRotation(FRotator(0.0, TNBeachRideKit::SeaYawInActor(this) + Jitter, 0.0));
+	Frame->SetRelativeRotation(FRotator(0.0, Jitter, 0.0));
 
 	const FClamPalette Pal = MakePalette(Variant);
 	TNBeachTrapKit::FBuffers Mound;
@@ -775,7 +775,7 @@ void ATN_BeachClamTrap::ServerTick(double Now)
 	}
 
 	// Cerrada o recargando.
-	if (Now < ReadyAt() || !TNBeachRideKit::IsRaceLive(this))
+	if (Now < ReadyAt())
 	{
 		return;
 	}
@@ -822,23 +822,20 @@ void ATN_BeachClamTrap::Slam(double Now)
 	ACharacter* Best = nullptr;
 	double BestRho = 10.0;
 	TArray<ACharacter*> InValve;
-	if (TNBeachRideKit::IsRaceLive(this))
+	TArray<ACharacter*> Near;
+	GatherNearValve(Near);
+	for (ACharacter* Walker : Near)
 	{
-		TArray<ACharacter*> Near;
-		GatherNearValve(Near);
-		for (ACharacter* Walker : Near)
+		double Rho = 0.0;
+		if (!TNBeachRideKit::IsFreeRider(Walker) || !IsInBowl(Walker, 1.05, Rho))
 		{
-			double Rho = 0.0;
-			if (!TNBeachRideKit::IsFreeRider(Walker) || !IsInBowl(Walker, 1.05, Rho))
-			{
-				continue;
-			}
-			InValve.Add(Walker);
-			if (Rho < 0.86 && Rho < BestRho && !ImmuneUntil.Contains(Walker))
-			{
-				Best = Walker;
-				BestRho = Rho;
-			}
+			continue;
+		}
+		InValve.Add(Walker);
+		if (Rho < 0.86 && Rho < BestRho && !ImmuneUntil.Contains(Walker))
+		{
+			Best = Walker;
+			BestRho = Rho;
 		}
 	}
 
@@ -1014,7 +1011,7 @@ void ATN_BeachClamTrap::ReleaseLocal(bool bSpit)
 		const bool bStill = Move && Move->MovementMode == MOVE_None && !(Shell && (Shell->IsInShell() || Shell->HasLocalBody()))
 			&& !(Turtle && (Turtle->IsDead() || Turtle->IsKnockedDown()));
 		// En el recuento o el podio la deja quieta: el GameMode la tiene congelada.
-		if (bStill && TNBeachRideKit::IsRaceLive(this))
+		if (bStill)
 		{
 			Move->SetMovementMode(MOVE_Falling);
 			if (bSpit)

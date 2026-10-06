@@ -1,4 +1,4 @@
-"""Coloca puzles, mecánicas, enemigos, nidos, botín y decorado en un mapa «camino primero» (#652)
+"""Coloca puzles, mecánicas, enemigos, botín y decorado en un mapa «camino primero» (#652)
 y lo escribe en el bloque "placements" de su manifest, sin tocar lo colocado a mano.
 
     uv run python Scripts/place_terrain_path.py                      # C01_camino, semilla 652

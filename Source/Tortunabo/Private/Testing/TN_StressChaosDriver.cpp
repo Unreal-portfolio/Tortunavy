@@ -19,7 +19,6 @@
 #include "World/Beach/TN_BeachCatapult.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachStun.h"
-#include "World/Beach/TN_RaceItems.h"
 
 namespace TNChaosDriverDetail
 {
@@ -37,9 +36,6 @@ namespace TNChaosDriverDetail
 	constexpr double GrabDistance = 220.0;
 	/** El cebo se mete en su bola cuando su portadora está a menos de esto. */
 	constexpr double BaitShellDistance = 600.0;
-
-	const ETNRaceItem BurstRaceItems[] = { ETNRaceItem::SandMine, ETNRaceItem::Frisbee, ETNRaceItem::HomingCrab, ETNRaceItem::StormCloud,
-		ETNRaceItem::GullStrike, ETNRaceItem::Coconut };
 
 	UPrimitiveComponent* FindPrimitive(const AActor* Actor, const TCHAR* Name)
 	{
@@ -202,23 +198,15 @@ void UTN_StressChaosSubsystem::TrackTransitions(FDriver& Driver, ATortugaCharact
 bool UTN_StressChaosSubsystem::GiveBurstItem(ATortugaCharacter* Turtle)
 {
 	UTN_InventoryComponent* Inventory = Turtle ? Turtle->GetInventoryComponent() : nullptr;
-	if (bClientOnly || !Inventory)
+	if (bClientOnly || !Inventory || !Catalog || CatalogThrowables.Num() == 0)
 	{
 		return false;
 	}
-	const int32 RaceCount = UE_ARRAY_COUNT(TNChaosDriverDetail::BurstRaceItems);
-	const int32 Pick = Stream.RandRange(0, RaceCount + CatalogThrowables.Num() - 1);
+	const int32 Pick = Stream.RandRange(0, CatalogThrowables.Num() - 1);
 	bool bGiven = false;
-	if (Pick < RaceCount)
+	if (const FTN_InventoryItem* Row = Catalog->FindRow<FTN_InventoryItem>(CatalogThrowables[Pick], TEXT("TN.Stress caos"), false))
 	{
-		bGiven = TNRaceItems::GiveItem(Turtle, TNChaosDriverDetail::BurstRaceItems[Pick]);
-	}
-	else if (Catalog)
-	{
-		if (const FTN_InventoryItem* Row = Catalog->FindRow<FTN_InventoryItem>(CatalogThrowables[Pick - RaceCount], TEXT("TN.Stress caos"), false))
-		{
-			bGiven = Inventory->TryAddOrReplaceEquipped(*Row, true);
-		}
+		bGiven = Inventory->TryAddOrReplaceEquipped(*Row, true);
 	}
 	CurrentActions().ItemsGiven += bGiven ? 1 : 0;
 	return bGiven;

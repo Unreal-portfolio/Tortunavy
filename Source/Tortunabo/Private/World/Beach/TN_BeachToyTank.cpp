@@ -307,7 +307,7 @@ void ATN_BeachToyTank::AdvanceShots(double Now, bool bServer)
 		Shot.LastPos = Shot.Pos;
 		Shot.Pos = P;
 		// A quién da (servidor): solo con lo recorrido hasta la pared.
-		if (bServer && Shot.bArmed && IsRaceLive(this))
+		if (bServer && Shot.bArmed)
 		{
 			if (!bGathered)
 			{
@@ -395,7 +395,6 @@ void ATN_BeachToyTank::ServerTick(float DeltaSeconds)
 	const EState State = static_cast<EState>(GetMoverState());
 	const float Age = GetStateAge();
 	const bool bStunned = IsHitStunned();
-	const bool bLive = IsRaceLive(this);
 	ReloadLeft -= DeltaSeconds;
 	const FVector Goal = PatrolCenter + PatrolAxis * (PatrolHalf * PatrolSign);
 
@@ -409,7 +408,7 @@ void ATN_BeachToyTank::ServerTick(float DeltaSeconds)
 	else
 	{
 		// Busca tortuga mientras patrulla o gira.
-		if (bLive && (State == EState::Patrol || State == EState::Turn))
+		if (State == EState::Patrol || State == EState::Turn)
 		{
 			ScanTimer -= DeltaSeconds;
 			if (ScanTimer <= 0.f)
@@ -452,9 +451,9 @@ void ATN_BeachToyTank::ServerTick(float DeltaSeconds)
 			// Se para (frenando) y apunta con la torreta.
 			DriveToward(Goal, 0.f, DeltaSeconds, false);
 			ATortugaCharacter* Victim = Target.Get();
-			if (!bLive || !IsTargetable(Victim) || FVector::Dist2D(Victim->GetActorLocation(), SimLoc) > TNBeachTank::LoseRadius)
+			if (!IsTargetable(Victim) || FVector::Dist2D(Victim->GetActorLocation(), SimLoc) > TNBeachTank::LoseRadius)
 			{
-				Victim = bLive ? ScanTarget(TNBeachTank::DetectRadius) : nullptr;
+				Victim = ScanTarget(TNBeachTank::DetectRadius);
 				Target = Victim;
 			}
 			if (!Victim)

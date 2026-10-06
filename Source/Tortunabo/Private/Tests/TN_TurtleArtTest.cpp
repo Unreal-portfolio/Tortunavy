@@ -19,11 +19,9 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/WorldSettings.h"
 #include "Lobby/TN_CosmeticPreview.h"
-#include "Lobby/TN_GeneralBriefing.h"
 #include "Lobby/TN_ShopKeeper.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/ScopeExit.h"
-#include "UI/Race/TN_RacePodiumStage.h"
 #include "UObject/StrongObjectPtr.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -190,8 +188,8 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTurtleArtCopiesTest,
 
 bool FTNTurtleArtCopiesTest::RunTest(const FString& Parameters)
 {
-	// #581: se cambiaba la malla de BP_TortugaCharacter y el tendero, el general, el escaparate y el podio seguían con
-	// TotugaDemo_Rig (cada uno la cargaba por su ruta). Con otra malla (y otra escala) en el personaje, todas la siguen.
+	// #581: se cambiaba la malla de BP_TortugaCharacter y el tendero y el escaparate seguían con TotugaDemo_Rig (cada uno
+	// la cargaba por su ruta). Con otra malla (y otra escala) en el personaje, todas la siguen.
 	using namespace TNTurtleArtTestDetail;
 	USkeletalMesh* Other = OtherSkeletalMesh();
 	if (!TestNotNull(TEXT("Malla esquelética del motor SkeletalCube"), Other)) { return false; }
@@ -206,11 +204,9 @@ bool FTNTurtleArtCopiesTest::RunTest(const FString& Parameters)
 	FPlayWorld Play(true);
 	UWorld* World = Play.World;
 	ATN_ShopKeeper* Keeper = World->SpawnActor<ATN_ShopKeeper>();
-	ATN_GeneralBriefing* General = World->SpawnActor<ATN_GeneralBriefing>();
 	ATN_CosmeticPreview* Preview = ATN_CosmeticPreview::Get(World);
-	ATN_RacePodiumStage* Podium = ATN_RacePodiumStage::Get(World);
-	const AActor* Copies[] = { Keeper, General, Preview, Podium };
-	const TCHAR* Names[] = { TEXT("Tendero"), TEXT("General"), TEXT("Escaparate"), TEXT("Podio") };
+	const AActor* Copies[] = { Keeper, Preview };
+	const TCHAR* Names[] = { TEXT("Tendero"), TEXT("Escaparate") };
 	for (int32 i = 0; i < UE_ARRAY_COUNT(Copies); ++i)
 	{
 		if (!TestNotNull(FString::Printf(TEXT("%s creado"), Names[i]), Copies[i])) { continue; }
@@ -228,12 +224,6 @@ bool FTNTurtleArtCopiesTest::RunTest(const FString& Parameters)
 			Body && Body->GetRelativeScale3D().Equals(FVector(FloatProperty(Keeper, TEXT("KeeperScale")) * 1.2f), 1.e-3));
 		// La maqueta del tendero (una tortuga suelta con la malla del personaje) se reconoce como tortuga.
 		TestTrue(TEXT("La malla del personaje es una tortuga de maqueta"), TNTurtleArt::IsTurtleMesh(Other));
-	}
-	if (General)
-	{
-		const USkeletalMeshComponent* Body = General->FindComponentByClass<USkeletalMeshComponent>();
-		TestTrue(TEXT("General: la escala del personaje (x1,2) sobre la suya (3,4)"),
-			Body && Body->GetRelativeScale3D().Equals(FVector(FloatProperty(General, TEXT("GeneralScale")) * 1.2f), 1.e-3));
 	}
 	// Las maquetas que aún llevan la de demo siguen siendo tortugas; una malla cualquiera, no.
 	TNTurtleArt::SetTemplateMeshForTest(nullptr);

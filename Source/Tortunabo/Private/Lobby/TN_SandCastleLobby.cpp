@@ -1043,10 +1043,6 @@ void ATN_SandCastleLobby::ServerUpdate(float DeltaSeconds)
 		}
 	}
 	EggMask = Mask;
-	if (NumInRoom + NumInEggs > 0)
-	{
-		StartStyle = NumInRoom >= NumInEggs ? ETNMatchStartStyle::Gate : ETNMatchStartStyle::Eggs;
-	}
 
 	// Puerta 1: se abre si alguien se acerca por la plaza o quiere salir, y mientras haya gente dentro sin estar todos.
 	// Con todos dentro se cierra (se ve la segunda puerta cerrada delante) y queda así hasta el viaje.

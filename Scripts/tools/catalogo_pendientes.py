@@ -24,7 +24,6 @@ CLEANUP_ISSUE = 31
 # (prefijo de la ruta /Game, issue que lo aplica). Gana el primero que encaja: lo concreto va antes.
 PENDING = (
     ("/Game/Art/IA/puzzles/", 599),
-    ("/Game/Art/IA/todos_contra_todos/", 600),
     ("/Game/Art/IA/decoracion/", 601),
     ("/Game/Audio/EffectSounds/FootstepsMiniPack/", 604),
     ("/Game/Audio/EffectSounds/", 348),

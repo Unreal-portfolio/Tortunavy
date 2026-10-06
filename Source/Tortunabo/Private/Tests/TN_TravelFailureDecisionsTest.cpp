@@ -51,7 +51,7 @@ bool FTNTravelFailureTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("LVL_Lobby es el lobby por defecto"), IsLobbyMap(TEXT("LVL_Lobby"), FString()));
 	TestTrue(TEXT("LVL_HQ es el lobby del que se salió"), IsLobbyMap(TEXT("LVL_HQ"), TEXT("/Game/Maps/Lobby/LVL_HQ")));
 	TestFalse(TEXT("LVL_Lobby no es el lobby si se salió de LVL_HQ"), IsLobbyMap(TEXT("LVL_Lobby"), TEXT("/Game/Maps/Lobby/LVL_HQ")));
-	TestFalse(TEXT("Un mapa de partida no es el lobby"), IsLobbyMap(TEXT("LVL_Run"), FString()));
+	TestFalse(TEXT("Un mapa de partida no es el lobby"), IsLobbyMap(TEXT("LVL_Demo01"), FString()));
 	TestFalse(TEXT("El menú no es el lobby"), IsLobbyMap(TEXT("LVL_Menu"), FString()));
 	TestFalse(TEXT("Sin nombre de mapa no es el lobby"), IsLobbyMap(FString(), FString()));
 	TestTrue(TEXT("Las opciones de la URL no cuentan"), IsLobbyMap(TEXT("LVL_Lobby"), TEXT("/Game/Maps/Lobby/LVL_Lobby?game=")));

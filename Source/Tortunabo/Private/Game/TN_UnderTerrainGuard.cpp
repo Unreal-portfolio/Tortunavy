@@ -24,7 +24,7 @@
 namespace TNUnderTerrainDetail
 {
 	TAutoConsoleVariable<int32> CVarUnderTerrainGuard(TEXT("TN.SafetyNet.UnderTerrain"), 1,
-		TEXT("Coop y Clásico (servidor): 1 = red de seguridad bajo el terreno: una tortuga hundida bajo el terreno vuelve a la superficie, con aviso «[Red de seguridad]» en el registro; 0 = apagada (para comparar). La carrera de la playa tiene la suya (TN.Race.SafetyNet)."));
+		TEXT("Servidor: 1 = red de seguridad bajo el terreno: una tortuga hundida bajo el terreno vuelve a la superficie, con aviso «[Red de seguridad]» en el registro; 0 = apagada (para comparar)."));
 
 	/** Una superficie donde ponerse de pie: hacia arriba al menos esto (el suelo andable de la tortuga). */
 	constexpr double MinStandNormalZ = 0.6;
@@ -63,8 +63,7 @@ namespace TNUnderTerrainDetail
 
 	/**
 	 * TN.SafetyNet.Bury [metros = 3] [jugador = 0] (en el anfitrión): mete a la tortuga Metros bajo el suelo que pisa, cayendo,
-	 * para probar la red de seguridad en Coop y Clásico. La red la tiene que devolver encima en ~0,2 s con un aviso en el
-	 * registro. En la playa, TN.Race.Bury.
+	 * para probar la red de seguridad. La red la tiene que devolver encima en ~0,2 s con un aviso en el registro.
 	 */
 	void BuryCommand(const TArray<FString>& Args, UWorld* World)
 	{
@@ -100,7 +99,7 @@ namespace TNUnderTerrainDetail
 	}
 
 	FAutoConsoleCommandWithWorldAndArgs CmdBury(TEXT("TN.SafetyNet.Bury"),
-		TEXT("Coop y Clásico (anfitrión): mete a la tortuga bajo el suelo que pisa para probar la red de seguridad bajo el terreno (vuelve encima con un aviso «[Red de seguridad]» en el registro). TN.SafetyNet.Bury [metros = 3] [jugador = 0]."),
+		TEXT("Anfitrión: mete a la tortuga bajo el suelo que pisa para probar la red de seguridad bajo el terreno (vuelve encima con un aviso «[Red de seguridad]» en el registro). TN.SafetyNet.Bury [metros = 3] [jugador = 0]."),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&BuryCommand));
 }
 

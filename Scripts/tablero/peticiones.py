@@ -17,8 +17,7 @@ import re
 from datetime import date
 
 import objetos
-from base import (REPO, ErrorTablero, cargar_issue, comentar, es_de, gh, poner_campo, rechazar_descartada,
-                  usuario_actual)
+from base import REPO, ErrorTablero, cargar_issue, comentar, es_de, gh, poner_campo, usuario_actual
 
 ETIQUETA = "peticion"
 COLOR = "D93F0B"
@@ -71,7 +70,6 @@ def cmd_pedir(args: argparse.Namespace) -> None:
     issue = proyecto["items"].get(args.numero)
     if issue is None:
         raise ErrorTablero(f"La issue #{args.numero} no está en el tablero.")
-    rechazar_descartada(args.numero, issue)
     if issue["state"] != "OPEN":
         raise ErrorTablero(f"#{args.numero} está cerrada: si el mismo fallo ha vuelto, `tablero.py editor {args.numero} falla`; "
                            "si es otra cosa, crea una issue nueva en su objeto.")

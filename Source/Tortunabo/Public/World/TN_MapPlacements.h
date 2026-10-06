@@ -24,11 +24,8 @@ namespace TNMapPlacements
 		Decor,
 		/** Mata o palmera instanciada (mallas de flora del mapa procedural): local, sin colisión. */
 		Vegetation,
-		/** ATN_ProcEggNest: servidor, replicado. */
-		EggNest,
 		/** ATN_ProcGeyser: local en cada máquina (así lo quiere la clase). */
 		Geyser,
-		ItemBox,
 		SearchSpot,
 		ScoreShell,
 		/** Charco de pesca (ATN_FishingPool): servidor, replicado. */
@@ -97,13 +94,6 @@ namespace TNMapPlacements
 
 	/** Lee el bloque "placements" del manifest. False solo si el bloque existe y no tiene la forma esperada. */
 	TORTUNABO_API bool ParseBlock(const FJsonObject& Manifest, FParseResult& Out);
-
-	/**
-	 * Avance (m del principal) de P por el recorrido, comparable entre líneas: el orden de los nidos y su progreso.
-	 * Su progress_m si lo trae; si no (una entrada manual), el de la entrada con progress_m más cercana en planta; si
-	 * ninguna lo trae (bloque anterior a progress_m), s_m.
-	 */
-	TORTUNABO_API double AdvanceOf(const FParseResult& Parsed, const FPlacement& P);
 
 	/** Lo que crea el cargador para (category, kind); OutElement, si es un elemento de la playa. */
 	TORTUNABO_API ESpawn SpawnOf(const FString& Category, const FString& Kind, ETNBeachElement& OutElement);

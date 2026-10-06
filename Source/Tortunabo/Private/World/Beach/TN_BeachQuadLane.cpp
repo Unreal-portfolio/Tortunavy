@@ -1,7 +1,6 @@
 #include "World/Beach/TN_BeachQuadLane.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "TN_BeachEnemyKit.h"
 #include "TN_BeachEnemyMeshes.h"
 #include "Components/StaticMeshComponent.h"
@@ -167,17 +166,8 @@ void ATN_BeachQuadLane::BuildQuad()
 bool ATN_BeachQuadLane::BuildRuts()
 {
 	// Dos rodadas oscuras de arena apisonada por donde van las ruedas, pegadas a la arena: avisan de dónde pasa el quad.
-	// La altura es la de la malla del terreno (ATN_BeachRaceGenerator::TraceTerrainAt) o, donde no la hay, la del generador,
-	// como las ruedas: una traza contra el mundo daba entre las palmeras en los muros invisibles de los lados (una que empieza
-	// dentro de uno sube la rodada 30 m) y, sobre el decorado, la subía encima de lo que hubiera. Cada tira se apoya en la
-	// arena a lo ancho (RutAcross puntos) y a lo largo cada RutStep: una tira plana de 6 m con tramos de 5 m flotaba en las
-	// hondonadas y en las cuestas de lado.
-	const ATN_BeachRaceGenerator* Gen = FindGenerator();
-	if (Gen && !Gen->IsRoundReady() && RutsTries < 8)
-	{
-		// El terreno de la ronda (con sus asientos) aún no está montado en esta máquina: se reintenta.
-		return false;
-	}
+	// La altura sale de una traza contra el suelo. Cada tira se apoya en la arena a lo ancho (RutAcross puntos) y a lo largo
+	// cada RutStep: una tira plana de 6 m con tramos de 5 m flotaba en las hondonadas y en las cuestas de lado.
 	const FTransform LaneXf = GetActorTransform();
 	const double S = TNBeach::Scale;
 	const double TrackY = TNBeachMeshes::QuadTrackHalf * S * SizeK;
@@ -204,17 +194,8 @@ bool ATN_BeachQuadLane::BuildRuts()
 			{
 				const FVector OnGround = LaneXf.TransformPosition(FVector(LocalXAt(j), LocalYAt(Side, k), 0.0));
 				float Z = static_cast<float>(OnGround.Z);
-				if (Gen)
+				if (TraceGround(this, OnGround, Z))
 				{
-					if (!Gen->TraceTerrainAt(OnGround, Z))
-					{
-						Z = Gen->GetGroundHeightAt(OnGround);
-					}
-					++Hits;
-				}
-				else if (TraceGround(this, OnGround, Z))
-				{
-					// Sin generador (pruebas en otro mapa): traza, como antes.
 					++Hits;
 				}
 				LocalZ[ZIndex(Side, j, k)] = LaneXf.InverseTransformPosition(FVector(OnGround.X, OnGround.Y, Z)).Z + TNBeachQuad::RutLift;
@@ -323,55 +304,52 @@ void ATN_BeachQuadLane::ServerTick(float DeltaSeconds)
 	const double HalfW = TNBeachMeshes::QuadWheelHalfW * S + 45.0;
 	const double Contact = TNBeachMeshes::QuadWheelR * S * 0.55 + 45.0;
 	const double Height = TNBeachMeshes::QuadWheelR * 2.0 * S;
-	if (IsRaceLive(this))
+	TArray<ATortugaCharacter*> Turtles;
+	GatherTurtles(this, Turtles);
+	const double WorldNow = GetWorld()->GetTimeSeconds();
+	for (ATortugaCharacter* Turtle : Turtles)
 	{
-		TArray<ATortugaCharacter*> Turtles;
-		GatherTurtles(this, Turtles);
-		const double WorldNow = GetWorld()->GetTimeSeconds();
-		for (ATortugaCharacter* Turtle : Turtles)
+		if (!CanBeHit(Turtle))
 		{
-			if (!CanBeHit(Turtle))
+			continue;
+		}
+		const FVector L = LaneXf.InverseTransformPosition(Turtle->GetActorLocation());
+		if (FMath::Abs(L.Z) > Height + 1500.0)
+		{
+			continue;
+		}
+		if (const double* Last = LastHit.Find(Turtle))
+		{
+			if (WorldNow - *Last < TNBeachQuad::HitCooldown)
 			{
 				continue;
 			}
-			const FVector L = LaneXf.InverseTransformPosition(Turtle->GetActorLocation());
-			if (FMath::Abs(L.Z) > Height + 1500.0)
+		}
+		// La tortuga de un cliente se juzga contra el quad que ese cliente veía (un ping antes): esquivar en su pantalla
+		// es esquivar de verdad.
+		const APlayerState* State = Turtle->GetPlayerState();
+		const double Eval = FTNQuadPass::HitEvalTime(Now, Turtle->IsLocallyControlled(), State ? State->GetPingInMilliseconds() : 0.f);
+		float SeenX = QuadX;
+		if (Eval != Now && !Pass.QuadXAt(Eval, SeenX))
+		{
+			continue;
+		}
+		for (int32 i = 0; i < 4; ++i)
+		{
+			const FVector W = WheelLocal(i, SeenX);
+			if (FMath::Abs(L.Y - W.Y) > HalfW || FMath::Abs(L.X - W.X) > Contact)
 			{
 				continue;
 			}
-			if (const double* Last = LastHit.Find(Turtle))
-			{
-				if (WorldNow - *Last < TNBeachQuad::HitCooldown)
-				{
-					continue;
-				}
-			}
-			// La tortuga de un cliente se juzga contra el quad que ese cliente veía (un ping antes): esquivar en su pantalla
-			// es esquivar de verdad.
-			const APlayerState* State = Turtle->GetPlayerState();
-			const double Eval = FTNQuadPass::HitEvalTime(Now, Turtle->IsLocallyControlled(), State ? State->GetPingInMilliseconds() : 0.f);
-			float SeenX = QuadX;
-			if (Eval != Now && !Pass.QuadXAt(Eval, SeenX))
-			{
-				continue;
-			}
-			for (int32 i = 0; i < 4; ++i)
-			{
-				const FVector W = WheelLocal(i, SeenX);
-				if (FMath::Abs(L.Y - W.Y) > HalfW || FMath::Abs(L.X - W.X) > Contact)
-				{
-					continue;
-				}
-				LastHit.Add(Turtle, WorldNow);
-				const FVector Travel = LaneXf.TransformVectorNoScale(FVector(Dir, 0.0, 0.0));
-				const FVector Out = LaneXf.TransformVectorNoScale(FVector(0.0, L.Y >= W.Y ? 1.0 : -1.0, 0.0));
-				// Atropello: sale lanzada en ragdoll por delante de la rueda, dando vueltas de campana.
-				const FVector Push = Travel * TNBeachQuad::LaunchForward + Out * TNBeachQuad::LaunchSide + FVector(0.0, 0.0, TNBeachQuad::LaunchUp);
-				const FVector Spin = FVector::CrossProduct(FVector::UpVector, Travel) * TNBeachQuad::LaunchSpin;
-				KnockDownTurtle(Turtle, UTN_CombatTuning::Get().QuadLaneKnockSeconds, Push, Spin);
-				MulticastRunOver(Turtle);
-				break;
-			}
+			LastHit.Add(Turtle, WorldNow);
+			const FVector Travel = LaneXf.TransformVectorNoScale(FVector(Dir, 0.0, 0.0));
+			const FVector Out = LaneXf.TransformVectorNoScale(FVector(0.0, L.Y >= W.Y ? 1.0 : -1.0, 0.0));
+			// Atropello: sale lanzada en ragdoll por delante de la rueda, dando vueltas de campana.
+			const FVector Push = Travel * TNBeachQuad::LaunchForward + Out * TNBeachQuad::LaunchSide + FVector(0.0, 0.0, TNBeachQuad::LaunchUp);
+			const FVector Spin = FVector::CrossProduct(FVector::UpVector, Travel) * TNBeachQuad::LaunchSpin;
+			KnockDownTurtle(Turtle, UTN_CombatTuning::Get().QuadLaneKnockSeconds, Push, Spin);
+			MulticastRunOver(Turtle);
+			break;
 		}
 	}
 	if (IsDebugDraw())

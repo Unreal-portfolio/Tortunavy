@@ -126,8 +126,6 @@ float TNCoopItemRules::CatalogWeight(ETN_ItemUseType Use, float BaseWeight)
 	switch (Use)
 	{
 	case ETN_ItemUseType::None:
-	case ETN_ItemUseType::RaceItem:
-	case ETN_ItemUseType::TctItem:
 	case ETN_ItemUseType::CoopItem:
 		return 0.f;
 	default:

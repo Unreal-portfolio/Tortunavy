@@ -14,7 +14,6 @@
 #include "Lobby/Playground/TN_PlaygroundPiece.h"
 #include "Lobby/Playground/TN_WobblyBridge.h"
 #include "Lobby/TN_ChangingBooth.h"
-#include "Lobby/TN_GeneralBriefing.h"
 #include "Lobby/TN_SandCastleLobby.h"
 #include "Lobby/TN_ShopKeeper.h"
 #include "PhysicsEngine/BodySetup.h"
@@ -77,7 +76,6 @@ bool FTNLobbyGeneratedMeshCollisionTest::RunTest(const FString& Parameters)
 		ATN_ChangingBooth::StaticClass(),
 		ATN_WobblyBridge::StaticClass(),
 		ATN_ShopKeeper::StaticClass(),
-		ATN_GeneralBriefing::StaticClass(),
 	};
 
 	for (UClass* Class : Classes)

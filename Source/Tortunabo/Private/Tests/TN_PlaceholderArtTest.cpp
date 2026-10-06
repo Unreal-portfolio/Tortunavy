@@ -1,5 +1,5 @@
 // Arte de código en lugar de los marcadores del motor (#49, #50): la detección, el ajuste de tamaño y, en un mundo de
-// juego de prueba, que cada Blueprint afectado (y la pila de huevos del mapa procedural) nazca sin ninguna malla del
+// juego de prueba, que cada Blueprint afectado nazca sin ninguna malla del
 // motor a la vista y con arte propio.
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Assets.PlaceholderArt; Quit" -nullrhi -unattended
 
@@ -14,7 +14,6 @@
 #include "GameFramework/Actor.h"
 #include "Materials/MaterialInterface.h"
 #include "World/TN_PlaceholderArt.h"
-#include "World/ProcMap/TN_ProcEggNest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -51,26 +50,6 @@ namespace TNPlaceholderArtTest
 			}
 		}
 		return Count;
-	}
-
-	/** Material del motor (formas básicas, depuración, editor o el de rejilla por defecto): no es arte del juego. */
-	bool IsDebugMaterial(const UMaterialInterface* Material)
-	{
-		return Material && Material->GetPathName().StartsWith(TNPlaceholderArt::EnginePrefix());
-	}
-
-	/** Malla del primer huevo de la pila (Egg0). */
-	const UStaticMesh* FindEggMesh(const AActor* Nest)
-	{
-		TInlineComponentArray<UStaticMeshComponent*> Components(Nest);
-		for (const UStaticMeshComponent* Component : Components)
-		{
-			if (Component->GetFName() == TEXT("Egg0"))
-			{
-				return Component->GetStaticMesh();
-			}
-		}
-		return nullptr;
 	}
 
 	/** Mundo de juego mínimo con BeginPlay hecho: los actores que nazcan en él ejecutan su BeginPlay. */
@@ -164,71 +143,6 @@ bool FTNPlaceholderArtBlueprintsTest::RunTest(const FString& Parameters)
 		TestEqual(FString::Printf(TEXT("%s sin mallas del motor a la vista"), *Class->GetName()), Placeholders, 0);
 		TestTrue(FString::Printf(TEXT("%s con arte propio a la vista"), *Class->GetName()), Art > 0);
 		Actor->Destroy();
-	}
-	DestroyPlayWorld(World);
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNPlaceholderArtEggNestTest,
-	"Tortunabo.Assets.PlaceholderArt.EggNest",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNPlaceholderArtEggNestTest::RunTest(const FString& Parameters)
-{
-	using namespace TNPlaceholderArtTest;
-	// La clase por defecto ya no carga ninguna forma básica visible (antes, un cilindro y ocho esferas). Los colisionadores
-	// invisibles de la peana y de la pila (cilindro y cono del motor, ocultos en juego) no son arte.
-	TArray<UObject*> Subobjects;
-	GetMutableDefault<ATN_ProcEggNest>()->GetDefaultSubobjects(Subobjects);
-	for (const UObject* Subobject : Subobjects)
-	{
-		const UStaticMeshComponent* Static = Cast<UStaticMeshComponent>(Subobject);
-		if (Static && !Static->bHiddenInGame)
-		{
-			TestFalse(FString::Printf(TEXT("%s sin malla del motor en la clase"), *Static->GetName()), TNPlaceholderArt::IsPlaceholderMesh(Static->GetStaticMesh()));
-		}
-	}
-
-	UWorld* World = CreatePlayWorld();
-	if (!TestNotNull(TEXT("Mundo de prueba"), World))
-	{
-		return false;
-	}
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ATN_ProcEggNest* Nest = World->SpawnActor<ATN_ProcEggNest>(ATN_ProcEggNest::StaticClass(), FTransform::Identity, Params);
-	if (TestNotNull(TEXT("Nace la pila de huevos"), Nest))
-	{
-		auto CheckNest = [this, Nest](const TCHAR* Phase)
-		{
-			TInlineComponentArray<UStaticMeshComponent*> Components(Nest);
-			int32 Art = 0;
-			for (const UStaticMeshComponent* Component : Components)
-			{
-				if (Component->bHiddenInGame)
-				{
-					continue;
-				}
-				const UStaticMesh* Mesh = Component->GetStaticMesh();
-				TestFalse(FString::Printf(TEXT("%s: %s sin malla del motor"), Phase, *Component->GetName()), TNPlaceholderArt::IsPlaceholderMesh(Mesh));
-				for (int32 Slot = 0; Slot < Component->GetNumMaterials(); ++Slot)
-				{
-					const UMaterialInterface* Material = Component->GetMaterial(Slot);
-					TestFalse(FString::Printf(TEXT("%s: %s sin material de formas básicas ni de depuración"), Phase, *Component->GetName()),
-						IsDebugMaterial(Material));
-				}
-				Art += (Mesh && Component->IsVisible()) ? 1 : 0;
-			}
-			AddInfo(FString::Printf(TEXT("Pila de huevos (%s): piezas de arte=%d"), Phase, Art));
-			TestEqual(FString::Printf(TEXT("%s: el nido y los ocho huevos se ven"), Phase), Art, 9);
-		};
-		CheckNest(TEXT("sin activar"));
-		const UStaticMesh* IdleEgg = FindEggMesh(Nest);
-		Nest->MarkActivated();
-		TestTrue(TEXT("La pila queda activada"), Nest->IsActivated());
-		CheckNest(TEXT("activada"));
-		TestTrue(TEXT("Al activarla, los huevos cambian de cáscara"), IdleEgg != nullptr && FindEggMesh(Nest) != IdleEgg);
-		Nest->Destroy();
 	}
 	DestroyPlayWorld(World);
 	return true;

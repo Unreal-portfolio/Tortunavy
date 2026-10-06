@@ -8,8 +8,6 @@
 #include "TN_TurtleMovementComponent.generated.h"
 
 class ATortugaCharacter;
-class ATN_ProcMapGenerator;
-class UTN_RaceItemComponent;
 
 /** Fase del panzazo en el suelo. La simulan igual el cliente dueño (predicha y guardada en sus movimientos) y el servidor. */
 enum class ETNBellyPhase : uint8
@@ -212,14 +210,15 @@ public:
 	/** Topes predichos que pide el movimiento guardado Move. */
 	static uint8 GetSavedMovePredictedCaps(const FSavedMove_Character& Move);
 
-	// ── Turbo de los objetos de carrera (issue #22) ─────────────────────────
+	// ── Turbo (issue #22) ─────────────────────────────────────────────────────
 	// Va en la predicción como el panzazo: quien mueve la tortuga (su dueño o el anfitrión) toma el multiplicador de
-	// UTN_RaceItemComponent al empezar cada movimiento y lo guarda en él (FTNSavedMove_Turtle: marca FLAG_Custom_1 al
-	// servidor y el valor para repetirlo); el servidor simula los movimientos marcados con el que él le reconoce
-	// (UTN_RaceItemComponent::ResolveOwnerBoostMultiplier) y los demás sin turbo. GetMaxSpeed y GetMaxAcceleration lo aplican.
+	// SetBoostMultiplier al empezar cada movimiento y lo guarda en él (FTNSavedMove_Turtle: marca FLAG_Custom_1 al servidor
+	// y el valor para repetirlo); el servidor simula los movimientos marcados con el que él le reconoce (con el margen de
+	// TNItemRuntime::BoostGraceSeconds) y los demás sin turbo. GetMaxSpeed y GetMaxAcceleration lo aplican. Lo usarán los
+	// efectos que cambien la velocidad (Docs/2026-10-06-Plan-Maestro-Modo-Unico.md).
 
-	/** Los objetos de carrera de la tortuga (UTN_RaceItemComponent::ApplyEffects se da a conocer en cada máquina). */
-	void SetRaceItems(UTN_RaceItemComponent* InRaceItems);
+	/** Turbo que tiene la tortuga ahora (1 = sin turbo). Lo pone cada máquina con lo que sabe del efecto, a la vez. */
+	void SetBoostMultiplier(float InMultiplier);
 
 	/** Multiplicador del turbo en el movimiento que se simula (1 = sin turbo). */
 	float GetRaceBoostMultiplier() const { return RaceBoostMultiplier; }
@@ -603,9 +602,6 @@ private:
 	/** Velocidad del arrastre en este paso: pendiente, rozamiento, freno por velocidad y tope. */
 	void CalcBellySlideVelocity(float DeltaTime);
 
-	/** Tabla de surf y cohete de feria (#786): el rumbo que impone el estilo del multiplicador del movimiento (en Acceleration). */
-	void ApplyRaceMoveStyle(float DeltaTime);
-
 	/**
 	 * Tumbada, tras cada movimiento: si la cabeza o las patas (fuera de la cápsula) se meterían en una pared, aparta a la
 	 * tortuga lo justo, le quita la velocidad contra la pared y, arrastrándose, apunta el rebote.
@@ -690,14 +686,19 @@ private:
 	float PreJumpCapsuleHalfHeight = 0.f;
 
 	TNTurtleSurface::FNameCache SurfaceNameCache;
-	TWeakObjectPtr<ATN_ProcMapGenerator> Generator;
-	double NextGeneratorLookup = 0.0;
 
 	/** Lo que el cliente manda al servidor en cada movimiento (SetNetworkMoveDataContainer en el constructor). */
 	FTNTurtleNetworkMoveDataContainer TurtleNetworkMoveData;
 
-	TWeakObjectPtr<UTN_RaceItemComponent> RaceItems;
+	/** Turbo de esta máquina (SetBoostMultiplier) y, en el servidor, el último mayor que 1 y su hora del servidor. */
+	float BoostMultiplier = 1.f;
+	float RecentBoostMultiplier = 1.f;
+	double RecentBoostTime = -1.0;
+	/** Multiplicador del movimiento que se simula (el que guarda el movimiento o reconoce el servidor). */
 	float RaceBoostMultiplier = 1.f;
+
+	/** Servidor: el turbo que reconoce a un movimiento del dueño marcado con turbo (TNItemRuntime::ResolveClaimedBoost). */
+	float ResolveOwnerBoostMultiplier() const;
 
 	/** Lo que el servidor contesta (SetMoveResponseDataContainer en el constructor): en las correcciones, su panzazo. */
 	FTNTurtleMoveResponseDataContainer TurtleMoveResponseData;

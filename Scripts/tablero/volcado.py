@@ -16,7 +16,6 @@ from __future__ import annotations
 import shlex
 from datetime import datetime, timedelta
 
-import flujo
 import lotes
 import objetos
 from base import ESTADOS, ErrorTablero
@@ -25,10 +24,9 @@ MAX_TITULO = 70
 # Una issue de GitHub admite 65 536 caracteres de cuerpo.
 MAX_CUERPO = 60000
 # Subcomandos que el workflow acepta por `workflow_dispatch`: los que mantienen el tablero.
-# Quedan fuera los que crean ramas o dependen del usuario que los lanza (`coger`, `revision`). `chamber` solo lo
-# lanza un aprobador: lo comprueban `argumentos_de_puente` y, otra vez, `control.cmd_chamber`.
+# Quedan fuera los que crean ramas o dependen del usuario que los lanza (`coger`, `revision`).
 PERMITIDOS = ("estado", "campo", "sync", "auditar", "colisiones", "bloquear", "colgar", "resumen", "decidir",
-              "editor", "ia", "volcado", "pedir", "atendida", "chamber")
+              "editor", "ia", "volcado", "pedir", "atendida")
 CABECERA = ("| # | Título | Asignados | Prio. | Tam. | Área | Fase | Revisión IA | Editor | Revisor | PR | Etiquetas "
             "| Espera a |")
 SEPARADOR = "|" + "---|" * 13
@@ -36,12 +34,8 @@ SEPARADOR = "|" + "---|" * 13
 ESTADOS_VIVOS = ("In progress", "In review", "Revisiones", "QA editor", "Validada")
 
 
-def argumentos_de_puente(texto: str, actor: str | None = None, aprobadores=()) -> list[str]:
-    """Trocea el comando recibido por el workflow; lo rechaza si su subcomando no está permitido.
-
-    `actor` es quien disparó el puente (None si no se sabe: lo vuelve a comprobar el comando). Un `chamber` lanzado
-    por alguien que no está en `aprobadores` se rechaza aquí, antes de tocar nada.
-    """
+def argumentos_de_puente(texto: str) -> list[str]:
+    """Trocea el comando recibido por el workflow; lo rechaza si su subcomando no está permitido."""
     try:
         partes = shlex.split(texto or "")
     except ValueError as exc:
@@ -50,10 +44,6 @@ def argumentos_de_puente(texto: str, actor: str | None = None, aprobadores=()) -
         raise ErrorTablero("Comando vacío.")
     if partes[0] not in PERMITIDOS:
         raise ErrorTablero(f"«{partes[0]}» no se puede lanzar por el puente. Permitidos: {', '.join(PERMITIDOS)}")
-    if "--retomar" in partes:  # el puente comenta con el token de otro: recuperar una descartada se hace en local
-        raise ErrorTablero("«--retomar» no se puede lanzar por el puente: lo hace un aprobador en local.")
-    if partes[0] == "chamber" and actor is not None and (motivo := flujo.motivo_para_no_descartar(actor, aprobadores)):
-        raise ErrorTablero(motivo)
     return partes
 
 
@@ -95,11 +85,8 @@ def atascadas(issues: list[dict], ahora: datetime, dias: int) -> list[tuple[dict
 
 
 def render(items: dict[int, dict], prs_por_issue: dict[int, list[int]], ahora: datetime, dias_atasco: int = 3) -> str:
-    """Tablero completo en Markdown: las issues abiertas por estado, lo atascado y lo incoherente aparte, y los objetos.
-
-    Las descartadas (`chamber`) no salen en ninguna sección.
-    """
-    issues = sorted(flujo.sin_chamber(items).values(), key=lambda i: i["number"])
+    """Tablero completo en Markdown: las issues abiertas por estado, lo atascado y lo incoherente aparte, y los objetos."""
+    issues = sorted(items.values(), key=lambda i: i["number"])
     trabajo = [i for i in issues if not objetos.es_objeto(i) and not lotes.es_lote(i)]
     abiertas = [i for i in trabajo if i.get("state") == "OPEN"]
     lineas = [f"Volcado automático del tablero · {ahora:%Y-%m-%d %H:%M} UTC · {len(abiertas)} issues abiertas.",

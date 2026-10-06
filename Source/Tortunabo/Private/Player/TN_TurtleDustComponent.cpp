@@ -3,10 +3,6 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_TurtleSurface.h"
 #include "World/ProcMap/TN_ProcMapAmbientFX.h"
-#include "World/ProcMap/TN_ProcMapEnums.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
-#include "World/ProcMap/TN_ProcMapLayout.h"
-#include "World/ProcMap/TN_ProcMapTypes.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -38,11 +34,8 @@ namespace TNTurtleDust
 	{
 		TArray<FSlot> Slots;
 		TNTurtleSurface::FNameCache NameCache;
-		TWeakObjectPtr<ATN_ProcMapGenerator> Generator;
-		double NextGeneratorLookup = 0.0;
-		/** Última superficie bajo la tripa, qué era y dónde y cuándo se miró. */
+		/** Última superficie bajo la tripa y dónde y cuándo se miró. */
 		float Surface[TNTurtleSurface::Num] = { 0.f, 0.f, 1.f, 0.f, 0.f };
-		TNTurtleSurface::FContact Contact;
 		FVector LastProbe = FVector::ZeroVector;
 		double LastProbeTime = -10.0;
 		/** Fotograma anterior: sobre la tripa en el suelo, cayendo, la caída más rápida y la velocidad. */
@@ -76,9 +69,9 @@ namespace TNTurtleDust
 
 	/**
 	 * Colores del polvo y de los trocitos: arena clara, tierra marrón, polvo gris de roca, serrín claro con astillas y
-	 * rocío blanco en el agua. En el terreno del mapa, arena, tierra y roca se tiñen con el camino (o la roca) del bioma.
+	 * rocío blanco en el agua.
 	 */
-	void SurfaceColors(int32 Kind, const TNTurtleSurface::FContact& Contact, FLinearColor& OutDust, FLinearColor& OutBits)
+	void SurfaceColors(int32 Kind, FLinearColor& OutDust, FLinearColor& OutBits)
 	{
 		switch (Kind)
 		{
@@ -102,22 +95,6 @@ namespace TNTurtleDust
 			OutDust = FLinearColor(0.88f, 0.95f, 1.f);
 			OutBits = FLinearColor(0.8f, 0.92f, 1.f);
 			break;
-		}
-		if (Contact.bProcTerrain && Contact.Biome >= 0
-			&& (Kind == TNTurtleSurface::Sand || Kind == TNTurtleSurface::Soil || Kind == TNTurtleSurface::Rock))
-		{
-			FLinearColor BiomeGround;
-			FLinearColor BiomePath;
-			FLinearColor BiomeRock;
-			FLinearColor BiomeBed;
-			TN_DefaultBiomeColors(TNProcMap::BiomeFromIndex(Contact.Biome), BiomeGround, BiomePath, BiomeRock, BiomeBed);
-			const FLinearColor Source = Kind == TNTurtleSurface::Rock ? BiomeRock : BiomePath;
-			// El polvo en el aire se ve más claro que el suelo; los trocitos, del color del suelo.
-			const FLinearColor Light = Source + (FLinearColor::White - Source) * 0.35f;
-			OutDust = OutDust + (Light - OutDust) * 0.6f;
-			OutBits = OutBits + (Source - OutBits) * 0.6f;
-			OutDust.A = 1.f;
-			OutBits.A = 1.f;
 		}
 	}
 
@@ -435,12 +412,7 @@ void UTN_TurtleDustComponent::TickComponent(float DeltaTime, ELevelTick TickType
 		// Superficie bajo la tripa (una traza cada 0,1 s o cada 40 cm).
 		if (Now - S.LastProbeTime > 0.1 || FVector::DistSquared(Contact, S.LastProbe) > FMath::Square(40.0))
 		{
-			if (!S.Generator.IsValid() && Now >= S.NextGeneratorLookup)
-			{
-				S.NextGeneratorLookup = Now + 2.0;
-				S.Generator = TNTurtleSurface::FindGenerator(DustWorld);
-			}
-			TNTurtleSurface::Probe(DustWorld, Turtle, Turtle->GetActorLocation(), Foot, S.Generator.Get(), &S.NameCache, S.Surface, &S.Contact);
+			TNTurtleSurface::Probe(DustWorld, Turtle, Turtle->GetActorLocation(), Foot, &S.NameCache, S.Surface);
 			S.LastProbeTime = Now;
 			S.LastProbe = Contact;
 		}
@@ -457,7 +429,7 @@ void UTN_TurtleDustComponent::TickComponent(float DeltaTime, ELevelTick TickType
 			if (Weight < 0.2f) { continue; }
 			FLinearColor DustColor;
 			FLinearColor BitsColor;
-			TNTurtleDust::SurfaceColors(Kind, S.Contact, DustColor, BitsColor);
+			TNTurtleDust::SurfaceColors(Kind, DustColor, BitsColor);
 			for (int32 Layer = 0; Layer < 2; ++Layer)
 			{
 				const bool bBits = Layer == 1;

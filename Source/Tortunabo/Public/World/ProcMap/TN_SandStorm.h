@@ -30,8 +30,7 @@ struct FTNSandStormCycle
 /**
  * Tormenta de arena periódica del coop (#790). Cada cierto tiempo llega una tormenta que dura unos segundos: cierra la
  * niebla y tiñe la imagen de arena (por código, sin assets), frena un poco a las tortugas y la empujan ráfagas de hasta
- * 8 m/s. Sin daño ni muerte. Dentro de un búnker (ATN_BeachShelterVolume) ni frena ni empuja. No sustituye a la tormenta
- * de bañistas (ATN_PathStorm): conviven, y si el jugador está dentro de aquella, esta no toca la niebla.
+ * 8 m/s. Sin daño ni muerte. Dentro de un búnker (ATN_BeachShelterVolume) ni frena ni empuja.
  *
  * Red: el servidor fija el ciclo (semilla y hora de inicio, Cycle replicado) y todas las máquinas calculan la tormenta
  * con la hora del servidor, así la ven a la vez. El empuje y el freno se aplican donde se simula el movimiento de cada
@@ -96,8 +95,6 @@ private:
 	/** Niebla, tinte y sonido de esta máquina (no en un servidor dedicado). */
 	void ApplyLocalLook(float Intensity, float Gust);
 	void RestoreFog();
-	/** La niebla la lleva ahora la tormenta de bañistas (el jugador está dentro de ella). */
-	bool PathStormOwnsFog(const FVector& ViewLocation) const;
 
 	float CurrentIntensity = 0.f;
 	float LastGust = 0.f;

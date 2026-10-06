@@ -13,8 +13,6 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Framework/Application/SlateApplication.h"
-#include "Game/TN_ProcMapGameMode.h"
-#include "Game/TN_ProcMapGameState.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
@@ -24,7 +22,6 @@
 #include "MoviePlayer.h"
 #include "Sound/SoundGenerator.h"
 #include "UObject/UObjectGlobals.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
 #include <atomic>
 #include <cmath>
 
@@ -526,11 +523,6 @@ namespace TNLoadingTimes
 	constexpr double LobbyCancelSeconds = 0.25;
 	/** Como mucho, lo que espera un viaje pedido con RunWhenClosed. */
 	constexpr double MaxWaitForCloseSeconds = 1.5;
-	/**
-	 * Mapa procedural: espera máxima a que empiece la ronda con el mapa ya listo en esta máquina (el servidor la arranca
-	 * cuando todos tienen el mapa: mínimo 2 s y máximo 30 s).
-	 */
-	constexpr double MaxRoundWaitSeconds = 40.0;
 }
 
 namespace TNLoadingLayers
@@ -538,74 +530,6 @@ namespace TNLoadingLayers
 	/** Orden en el viewport: el huevo tapa todo (HUD y menús incluidos); «¡ADELANTE!» sin huevo va justo debajo. */
 	constexpr int32 EggZOrder = 20000;
 	constexpr int32 GoBannerZOrder = EggZOrder - 10;
-}
-
-namespace TNLoadingRounds
-{
-	/** Qué hace el huevo con el mapa ya listo, según la ronda del mapa procedural. */
-	enum class EGate : uint8
-	{
-		/** No es un mapa de rondas (lobby, menú, LVL_Run, mapa de solo terreno...) o la partida ya acabó: «¡PUM!». */
-		None,
-		/** Mapa procedural con la ronda sin empezar (o con el GameState aún en camino): el huevo sigue cerrado. */
-		Waiting,
-		/** Ronda en juego: se rompe con «¡ADELANTE!». */
-		Started
-	};
-
-	/** GameState de un mapa de rondas: el del mapa procedural o uno cooperativo con el GameMode del mapa procedural. */
-	const ATN_CoopGameState* GetRoundState(const UWorld* World)
-	{
-		const AGameStateBase* BaseState = World ? World->GetGameState() : nullptr;
-		if (!BaseState)
-		{
-			return nullptr;
-		}
-		if (const ATN_ProcMapGameState* ProcState = Cast<ATN_ProcMapGameState>(BaseState))
-		{
-			return ProcState;
-		}
-		const bool bProcMode = BaseState->GameModeClass && BaseState->GameModeClass->IsChildOf(ATN_ProcMapGameMode::StaticClass());
-		return bProcMode ? Cast<ATN_CoopGameState>(BaseState) : nullptr;
-	}
-
-	/** La ronda está en juego (en los clientes basta con que haya llegado cualquiera de las dos señales). */
-	bool IsRoundLive(const ATN_CoopGameState* RoundState)
-	{
-		if (!RoundState)
-		{
-			return false;
-		}
-		if (RoundState->MatchFlowState == ETNMatchFlowState::InProgress)
-		{
-			return true;
-		}
-		const ATN_ProcMapGameState* ProcState = Cast<ATN_ProcMapGameState>(RoundState);
-		return ProcState && ProcState->bRoundInProgress;
-	}
-
-	EGate GetGate(const UWorld* World)
-	{
-		if (!World)
-		{
-			return EGate::None;
-		}
-		const ATN_CoopGameState* RoundState = GetRoundState(World);
-		if (!RoundState)
-		{
-			// Cliente con el GameState aún en camino en un mapa de rondas (procedural o playa de la carrera): se espera a
-			// saber en qué punto está la ronda.
-			const FString RoundMap = World->GetMapName();
-			return (!World->GetGameState() && (RoundMap.Contains(TEXT("ProcMap")) || RoundMap.Contains(TEXT("BeachRace"))))
-				? EGate::Waiting : EGate::None;
-		}
-		if (IsRoundLive(RoundState))
-		{
-			return EGate::Started;
-		}
-		// Quien llega con la partida ya acabada ve los resultados; si no, se espera a la ronda.
-		return RoundState->MatchFlowState == ETNMatchFlowState::Results ? EGate::None : EGate::Waiting;
-	}
 }
 
 bool UTN_LoadingScreenSubsystem::ShouldCreateSubsystem(UObject* Outer) const
@@ -671,7 +595,7 @@ FString UTN_LoadingScreenSubsystem::FriendlyStatusForMap(const FString& MapName)
 	{
 		return NSLOCTEXT("TNLoading", "StatusToHeadquarters", "Rumbo al cuartel").ToString();
 	}
-	if (MapName.Contains(TEXT("ProcMap")) || MapName.Contains(TEXT("LVL_Run")) || MapName.Contains(TEXT("BeachRace")))
+	if (MapName.Contains(TEXT("LVL_Demo")))
 	{
 		return NSLOCTEXT("TNLoading", "StatusHatching", "Incubando la partida").ToString();
 	}
@@ -795,7 +719,6 @@ void UTN_LoadingScreenSubsystem::HandleSeamlessTravelStart(UWorld* World, const 
 	LoadingMapName = MapName;
 	BeginLoading(FriendlyStatusForMap(MapName));
 	LoadDoneTime = -1.0;
-	WorldReadyTime = -1.0;
 }
 
 void UTN_LoadingScreenSubsystem::BeginLoading(const FString& InStatus, bool bStartClosed)
@@ -833,7 +756,6 @@ void UTN_LoadingScreenSubsystem::BeginLoading(const FString& InStatus, bool bSta
 		.StartClosed(bStartClosed)
 		.Status(TNLocText::Literal(Clean));
 	LoadDoneTime = -1.0;
-	WorldReadyTime = -1.0;
 	BreakAtTime = -1.0;
 	FiredBreakCues = 0;
 	FiredKnockSerial = -1;
@@ -869,7 +791,6 @@ void UTN_LoadingScreenSubsystem::CloseAndHold(TNEggLoading::EHold Reason, const 
 		HoldReason = Reason;
 		HoldStartTime = FPlatformTime::Seconds();
 		LoadDoneTime = -1.0;
-		WorldReadyTime = -1.0;
 	}
 }
 
@@ -1030,89 +951,15 @@ void UTN_LoadingScreenSubsystem::TickGoBanner(double Now)
 	}
 }
 
-void UTN_LoadingScreenSubsystem::UpdateRoundWatch(UWorld* World)
+void UTN_LoadingScreenSubsystem::TickWorldReady(UWorld* World, double Now)
 {
-	const bool bLive = TNLoadingRounds::IsRoundLive(TNLoadingRounds::GetRoundState(World));
-	if (RoundWatchWorld.Get() != World)
-	{
-		// Mundo nuevo: una ronda que ya estuviera en juego al llegar no cuenta como salida (de esa se encarga el huevo).
-		RoundWatchWorld = World;
-		bRoundWasLive = bLive;
-		return;
-	}
-	if (bLive && !bRoundWasLive)
-	{
-		HandleRoundStarted();
-	}
-	bRoundWasLive = bLive;
-}
-
-void UTN_LoadingScreenSubsystem::HandleRoundStarted()
-{
-	// El huevo sigue cerrado esperando a la ronda: se rompe él con su «¡ADELANTE!» (o ya se está rompiendo con él).
-	if (Screen.IsValid() && !Screen->IsOpening() && (!Screen->IsBreaking() || Screen->HasGoFinale()))
+	// El huevo se rompe en cuanto el mapa está listo en esta máquina (o se acaba su espera).
+	const bool bLoadTimedOut = Now - LoadDoneTime > TNLoadingTimes::MaxAfterLoadSeconds;
+	if (!bLoadTimedOut && !IsWorldReady(World, Now))
 	{
 		return;
 	}
-	// Rondas siguientes (el mapa se regenera sin viajar y no hay huevo): el rótulo solo, en el mismo momento en que
-	// saldría al reventar el huevo (poco antes de que el servidor abra la salida).
-	ShowGoBanner(FTNEggTimeline::PopAt);
-}
-
-void UTN_LoadingScreenSubsystem::ShowRoundWaitStatus(const UWorld* World)
-{
-	if (!Screen.IsValid())
-	{
-		return;
-	}
-	const ATN_CoopGameState* RoundState = TNLoadingRounds::GetRoundState(World);
-	const FString WaitStatus = (RoundState && RoundState->ConnectedPlayers > 1)
-		? NSLOCTEXT("TNLoading", "StatusWaitingOthers", "Esperando a las demás tortugas").ToString()
-		: NSLOCTEXT("TNLoading", "StatusPreparingExit", "Preparando la salida").ToString();
-	if (LastAutoStatus != WaitStatus)
-	{
-		LastAutoStatus = WaitStatus;
-		Screen->SetStatus(TNLocText::Literal(LastAutoStatus));
-	}
-}
-
-void UTN_LoadingScreenSubsystem::TickRoundGate(UWorld* World, double Now)
-{
-	// Mapa listo en esta máquina (o se acabó su espera): desde aquí cuenta la espera a la ronda.
-	if (WorldReadyTime < 0.0)
-	{
-		const bool bLoadTimedOut = Now - LoadDoneTime > TNLoadingTimes::MaxAfterLoadSeconds;
-		if (!bLoadTimedOut && !IsWorldReady(World, Now))
-		{
-			return;
-		}
-		WorldReadyTime = Now;
-		// El texto de la espera a la ronda se pone de cero (el huevo puede venir del lobby con el suyo).
-		LastAutoStatus.Reset();
-	}
-
-	switch (TNLoadingRounds::GetGate(World))
-	{
-	case TNLoadingRounds::EGate::Started:
-		// Salida de la ronda del mapa procedural: «¡ADELANTE!» en lugar del «¡PUM!».
-		BreakNow(true);
-		break;
-	case TNLoadingRounds::EGate::Waiting:
-		if (Now - WorldReadyTime > TNLoadingTimes::MaxRoundWaitSeconds)
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("[Carga] La ronda no ha empezado %.0f s después de tener el mapa listo: se rompe el huevo igualmente."),
-				Now - WorldReadyTime);
-			BreakNow();
-		}
-		else
-		{
-			ShowRoundWaitStatus(World);
-		}
-		break;
-	default:
-		BreakNow();
-		break;
-	}
+	BreakNow();
 }
 
 void UTN_LoadingScreenSubsystem::AddToViewport()
@@ -1152,7 +999,6 @@ void UTN_LoadingScreenSubsystem::Hide()
 	bHold = false;
 	BreakAtTime = -1.0;
 	LoadDoneTime = -1.0;
-	WorldReadyTime = -1.0;
 	HoldReason = TNEggLoading::EHold::None;
 	LobbyCancelSince = -1.0;
 	LastAutoStatus.Reset();
@@ -1190,21 +1036,6 @@ bool UTN_LoadingScreenSubsystem::IsWorldReady(UWorld* World, double Now) const
 		bAllPawns = bAllPawns && LocalPC->GetPawn() != nullptr;
 	}
 	if (!bAllPawns && SinceLoad < 6.0)
-	{
-		return false;
-	}
-	// Mapa procedural: el terreno de la generación que ha pedido el servidor tiene que estar construido en esta máquina.
-	bool bFoundGenerator = false;
-	for (TActorIterator<ATN_ProcMapGenerator> It(World); It; ++It)
-	{
-		bFoundGenerator = true;
-		const bool bBuilt = It->IsMapReady() && It->GetRequestedGeneration() > 0 && It->GetBuiltGeneration() == It->GetRequestedGeneration();
-		if (!bBuilt)
-		{
-			return false;
-		}
-	}
-	if (!bFoundGenerator && MapName.Contains(TEXT("ProcMap")) && SinceLoad < 12.0)
 	{
 		return false;
 	}
@@ -1371,7 +1202,6 @@ void UTN_LoadingScreenSubsystem::Tick(float DeltaTime)
 
 	FlushWhenClosed(false);
 	UpdateAutoClose(World, Now);
-	UpdateRoundWatch(World);
 	TickGoBanner(Now);
 	if (!Screen.IsValid())
 	{
@@ -1427,7 +1257,6 @@ void UTN_LoadingScreenSubsystem::Tick(float DeltaTime)
 	if (bTravelling)
 	{
 		LoadDoneTime = -1.0;
-		WorldReadyTime = -1.0;
 		return;
 	}
 	if (LoadDoneTime < 0.0)
@@ -1456,5 +1285,5 @@ void UTN_LoadingScreenSubsystem::Tick(float DeltaTime)
 	}
 
 	// Mapa listo (como mucho 45 s) y, en el mapa procedural, ronda empezada (como mucho 40 s más).
-	TickRoundGate(World, Now);
+	TickWorldReady(World, Now);
 }
