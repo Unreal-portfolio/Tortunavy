@@ -1,0 +1,60 @@
+{
+  "repo": "Unreal-portfolio/Tortunavy",
+  "proyecto": {
+    "owner": "Unreal-portfolio",
+    "numero": 2
+  },
+  "rama_integracion": "dev",
+  "rama_estable": "main",
+  "aprobadores": [
+    "SkiTemplar",
+    "Mokius"
+  ],
+  "miembros": {
+    "SkiTemplar": {
+      "nombre": "Rodrigo",
+      "rol": "director y aprobador"
+    },
+    "Mokius": {
+      "nombre": "Mokius",
+      "rol": "código y aprobador"
+    },
+    "Ruben-Besteiro": {
+      "nombre": "Rubi",
+      "rol": "código; sus PR las aprueba SkiTemplar o Mokius"
+    }
+  },
+  "dias_sin_movimiento": 3,
+  "avisos": {
+    "destinatarios": [
+      "SkiTemplar"
+    ],
+    "rutas_organizacion": [
+      "Scripts/tablero/",
+      "Scripts/tests/test_tablero",
+      ".claude/",
+      ".github/",
+      "CLAUDE.md",
+      "Docs/"
+    ]
+  },
+  "rutas_organizacion_propagar": [
+    "Scripts/tablero/",
+    "Scripts/tests/test_tablero*",
+    ".claude/",
+    ".github/",
+    "CLAUDE.md"
+  ],
+  "revisores": {
+    "Ruben-Besteiro": [
+      "Mokius",
+      "SkiTemplar"
+    ],
+    "SkiTemplar": [
+      "Mokius"
+    ],
+    "Mokius": [
+      "SkiTemplar"
+    ]
+  }
+}
