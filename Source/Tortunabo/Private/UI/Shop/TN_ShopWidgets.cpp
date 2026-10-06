@@ -273,6 +273,12 @@ FReply UTN_ShopButton::NativeOnMouseButtonDown(const FGeometry& InGeometry, cons
 	return FReply::Handled();
 }
 
+FReply UTN_ShopButton::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	// El segundo clic de un doble clic llega por aquí y no como otro «Down»: sin esto, al soltarlo no se pulsaría.
+	return NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
+
 FReply UTN_ShopButton::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	if (InMouseEvent.GetEffectingButton() != EKeys::LeftMouseButton) { return FReply::Unhandled(); }
