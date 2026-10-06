@@ -4,27 +4,17 @@
 #include "Blueprint/UserWidget.h"
 #include "TN_PlayerHUDWidget.generated.h"
 
-class UProgressBar;
 class UWidget;
 class UTextBlock;
 class UImage;
-class UTN_StaminaComponent;
 class UTN_InventoryComponent;
 class UTexture2D;
 class ATN_CoopPlayerState;
 
 /**
- * @brief HUD principal con barra de stamina, slots de inventario, RaceScore y hooks DBNO/Revive.
+ * @brief HUD principal con slots de inventario, RaceScore y hooks DBNO/Revive. La estamina no se ve en la interfaz.
  *
  * Widgets opcionales — nómbralos EXACTAMENTE igual en el BP Designer:
- *
- *   STAMINA:
- *   - StaminaBar       (UProgressBar)     → relleno proporcional a stamina actual/max
- *   - WeightPenaltyBar (UProgressBar)     → zona bloqueada por peso (superponer sobre StaminaBar,
- *                                           alineada a la derecha, color distinto ej. marrón oscuro)
- *                                           Percent = WeightPenalty / MaxStamina
- *   - ExhaustedRoot    (cualquier widget) → visible solo durante penalización por agotamiento
- *   - StaminaText      (UTextBlock)       → opcional, muestra "120 / 200"
  *
  *   INVENTARIO:
  *   - SlotEquippedImage    (UImage)           → icono del ítem equipado (slot activo)
@@ -40,26 +30,6 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
-	// ── Stamina bar ───────────────────────────────────────────────────────────
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UProgressBar> StaminaBar;
-
-	/**
-	 * Barra que muestra la zona de stamina bloqueada por el peso de los ítems.
-	 * Superponer sobre StaminaBar con alineación a la derecha y distinto color.
-	 * Percent = WeightPenalty / MaxStamina.
-	 * Si no hay peso, el porcentaje será 0 (invisible si el color tiene alpha 0).
-	 */
-	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UProgressBar> WeightPenaltyBar;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UWidget> ExhaustedRoot;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UTextBlock> StaminaText;
 
 	// ── Score (RaceScore live) ────────────────────────────────────────────────
 
@@ -97,19 +67,6 @@ protected:
 
 	// ── Blueprint hooks ───────────────────────────────────────────────────────
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Stamina")
-	void OnStaminaUpdated(float CurrentStamina, float MaxStamina, bool bExhausted);
-
-	/**
-	 * Llamado cuando cambia el peso total cargado (o la stamina por peso).
-	 * Úsalo en BP para animar la zona oscura de la barra o mostrar el icono de peso.
-	 * @param WeightPenalty     Stamina "bloqueada" por el peso actual (0 = sin peso).
-	 * @param MaxStamina        Stamina máxima base (sin penalización).
-	 * @param EffectiveMaxStamina  Stamina máxima real = MaxStamina - WeightPenalty.
-	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Stamina|Weight")
-	void OnWeightUpdated(float WeightPenalty, float MaxStamina, float EffectiveMaxStamina);
-
 	/**
 	 * Llamado cuando el inventario cambia. Úsalo en BP para animaciones de slot.
 	 * @param EquippedIcon    Icono del ítem equipado (puede ser null si no hay ítem)
@@ -142,7 +99,6 @@ protected:
 	void OnRaceScoreUpdated(int32 NewScore, int32 Delta);
 
 private:
-	void RefreshStaminaWidgets();
 	void RefreshInventoryWidgets();
 	void BindToPlayerStateScore();
 	void UnbindFromPlayerStateScore();
@@ -153,13 +109,7 @@ private:
 	TWeakObjectPtr<ATN_CoopPlayerState> BoundPlayerState;
 	int32 LastRaceScore = 0;
 
-	TWeakObjectPtr<UTN_StaminaComponent>    CachedStamina;
 	TWeakObjectPtr<UTN_InventoryComponent>  CachedInventory;
-
-	// Stamina throttle
-	float LastStamina       = -1.f;
-	float LastWeightPenalty = -1.f;
-	bool  bLastExhausted    = false;
 
 	// Inventory change detection (compare by ItemId to avoid redundant refreshes)
 	FName LastEquippedId = NAME_None;
