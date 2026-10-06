@@ -1662,6 +1662,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Emotes")
 	void RequestWheelEmote(uint8 EmoteID);
 
+	/**
+	 * Emote oculto (#839): el siguiente de los dos que no están en la rueda (TNSecretEmote::HiddenEmotes), por turnos. Lo
+	 * llama AMP_GamePlayerController al escribir el código secreto con el teclado; se arranca, se pide al servidor y se
+	 * replica como cualquier otro emote. Solo en la máquina que controla a la tortuga.
+	 */
+	void PlayHiddenEmote();
+
 	UFUNCTION(BlueprintCallable, Category = "Stamina")
 	void GrantInfiniteStamina(float DurationSeconds);
 
@@ -2047,7 +2054,12 @@ private:
 
 private:
 	bool IsValidWheelEmoteId(int32 EmoteID) const;
+	/** Un emote que el servidor acepta: uno de la rueda o uno de los ocultos (#839). */
+	bool IsPlayableEmoteId(int32 EmoteID) const;
 	float GetWheelEmoteCooldown(int32 EmoteID) const;
+
+	/** Veces que se ha escrito el código secreto en esta máquina: los dos emotes ocultos salen por turnos (#839). */
+	int32 HiddenEmoteTurn = 0;
 
 	/** Periodo del timer de TickReviveChannel; debe coincidir con el incremento de ReviveChannelElapsed. */
 	static constexpr float ReviveChannelTickInterval = 0.1f;

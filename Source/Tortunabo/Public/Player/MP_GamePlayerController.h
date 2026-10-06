@@ -5,6 +5,7 @@
 #include "UI/HUD/TN_RadialWheelTypes.h"
 #include "Core/TN_CosmeticsTypes.h"
 #include "Voice/TN_VoiceRouting.h"
+#include "Player/TN_SecretEmote.h"
 #include "MP_GamePlayerController.generated.h"
 
 struct FInputActionValue;
@@ -257,6 +258,9 @@ protected:
 	/** @brief Carga UInputActions (soft refs) y bindea acciones de ruedas radiales y menú. */
 	virtual void SetupInputComponent() override;
 
+	/** @brief Mira cada tecla para el código secreto de los emotes ocultos (#839); no la consume. */
+	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
+
 	/**
 	 * @brief El servidor me echa (AGameSession::KickPlayer, cuando la expulsión por ATN_RoomInfo no ha llegado a tiempo).
 	 *        Vuelve al menú con el aviso de expulsión (UMP_GameInstance::HandleKickedFromRoom) antes de que se corte la
@@ -405,6 +409,16 @@ private:
 
 	/** @brief Cast centralizado de GetGameInstance() a UMP_GameInstance; nullptr si no aplica. */
 	UMP_GameInstance* GetTNGameInstance() const;
+
+	/**
+	 * @brief Lleva la cuenta del código «tortunabo» (TNSecretEmote) con las teclas del teclado y, al completarlo, activa un emote
+	 *        oculto de la tortuga (#839). Solo cuenta con la tortuga a los mandos, sin menú a la vista (pausa, tienda, ruedas) y
+	 *        sin un campo de texto con el foco; cualquier otra tecla lo reinicia.
+	 */
+	void FeedSecretEmoteCode(const FInputKeyEventArgs& Params);
+
+	/** @brief Letras seguidas del código secreto que lleva escritas (#839). */
+	TNSecretEmote::FCodeMatcher SecretEmoteMatcher;
 
 	/** @brief Pone el input mode a Game (focus al viewport, sin cursor). */
 	void ApplyGameplayInputMode();
