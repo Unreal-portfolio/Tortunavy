@@ -6,6 +6,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "GameFramework/Pawn.h"
 #include "Materials/MaterialInterface.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Rally/TN_RallyGate.h"
@@ -13,6 +14,7 @@
 #include "Rally/TN_RallyTrack.h"
 #include "TN_RallyTrackDressingBatches.h"
 #include "UObject/Package.h"
+#include "World/TN_MapPlacementSpawner.h"
 #include "../World/Beach/TN_BeachDecorKit.h"
 #include "../World/ProcMap/TN_ProcMapFaunaMeshes.h"
 #include "../World/ProcMap/TN_ProcMapRuntimeMesh.h"
@@ -269,13 +271,38 @@ bool ATN_RallyTrackDressing::TraceGround(const FVector& Location, double UpCm, d
 		return false;
 	}
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(RallyDressingGround), true, this);
-	FHitResult Hit;
-	if (!World->LineTraceSingleByObjectType(Hit, Location + FVector(0.0, 0.0, UpCm), Location - FVector(0.0, 0.0, DownCm),
-		FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+	// Todo lo que toca, de arriba abajo: el primer suelo que es igual en todas las máquinas (IsStableGround).
+	TArray<FHitResult> Hits;
+	World->LineTraceMultiByObjectType(Hits, Location + FVector(0.0, 0.0, UpCm), Location - FVector(0.0, 0.0, DownCm),
+		FCollisionObjectQueryParams(ECC_WorldStatic), Params);
+	for (const FHitResult& Hit : Hits)
+	{
+		if (IsStableGround(Hit.GetActor()))
+		{
+			OutGround = Hit.ImpactPoint;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ATN_RallyTrackDressing::IsStableGround(const AActor* Actor)
+{
+	if (!Actor)
+	{
+		return true;
+	}
+	if (Actor->IsA<APawn>() || (Actor->GetIsReplicated() && !Actor->IsNetStartupActor()))
 	{
 		return false;
 	}
-	OutGround = Hit.ImpactPoint;
+	for (const AActor* Owner = Actor; Owner; Owner = Owner->GetOwner())
+	{
+		if (Owner->IsA<ATN_MapPlacementSpawner>())
+		{
+			return false;
+		}
+	}
 	return true;
 }
 
