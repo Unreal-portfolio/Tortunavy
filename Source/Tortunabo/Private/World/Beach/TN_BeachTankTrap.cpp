@@ -3,15 +3,12 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/TN_Log.h"
-#include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_ShellBody.h"
 #include "Player/TN_ShellComponent.h"
 #include "ProceduralMeshComponent.h"
 #include "TN_BeachTrapKit.h"
-#include "Vehicles/TN_Buggy.h"
-#include "Vehicles/TN_RallyCombatLogic.h"
 #include "World/Beach/TN_BeachCreatureRules.h"
 
 namespace TNBeachTankTrapDetail
@@ -179,25 +176,11 @@ void ATN_BeachTankTrap::GatherImpactors(TArray<FImpactor>& Out) const
 		}
 		Out.Add({ Turtle, EBody::Ball, Box->GetComponentLocation(), Box->GetComponentVelocity() * Flat });
 	}
-	// Los buggies, también los de la IA (no tienen estado de jugador).
-	for (TActorIterator<ATN_Buggy> It(GetWorld()); It; ++It)
-	{
-		ATN_Buggy* Buggy = *It;
-		if (IsValid(Buggy) && !Buggy->IsActorBeingDestroyed())
-		{
-			Out.Add({ Buggy, EBody::Buggy, Buggy->GetActorLocation(), Buggy->GetVelocity() * Flat });
-		}
-	}
 }
 
-double ATN_BeachTankTrap::ReachOf(const FImpactor& Who, const FVector& Dir)
+double ATN_BeachTankTrap::ReachOf(const FImpactor& Who)
 {
 	using TNBeachCreatureRules::TankTrap::EBody;
-	if (Who.Body == EBody::Buggy)
-	{
-		const FVector Local = Who.Actor->GetActorTransform().InverseTransformVectorNoScale(Dir);
-		return TNBeachCreatureRules::TankTrap::BuggyReachCm(Local, TNRallyCombat::DefaultHalfLengthCm, TNRallyCombat::DefaultHalfWidthCm);
-	}
 	if (Who.Body == EBody::Ball)
 	{
 		return TNBeachTankTrapDetail::BallRadiusCm;
@@ -210,7 +193,7 @@ void ATN_BeachTankTrap::CheckImpact(const FImpactor& Who, const FVector& Center,
 	using namespace TNBeachCreatureRules::TankTrap;
 	const FVector Delta = Center - Who.Location;
 	const FVector Dir = Delta.GetSafeNormal2D();
-	const double Reach = Radius + ReachOf(Who, Dir) + TNBeachTankTrapDetail::ContactSlack;
+	const double Reach = Radius + ReachOf(Who) + TNBeachTankTrapDetail::ContactSlack;
 	if (FVector2D(Delta.X, Delta.Y).SizeSquared() > Reach * Reach || FMath::Abs(Delta.Z) > 400.0)
 	{
 		return;
@@ -249,14 +232,6 @@ void ATN_BeachTankTrap::ApplyResponse(const FImpactor& Who, TNBeachCreatureRules
 	case EResponse::StunBall:
 		// La bola sale rebotada y la tortuga se queda mareada dentro, como la que lanza una ola o un enemigo.
 		TNBeach::StunTurtle(Cast<ACharacter>(Who.Actor), KnockSeconds, -Dir * BounceBack + FVector(0.0, 0.0, BounceUp));
-		break;
-	case EResponse::BounceBuggy:
-		if (ATN_Buggy* Buggy = Cast<ATN_Buggy>(Who.Actor))
-		{
-			// El chasis rebota (la colisión ya lo ha parado) y la dirección se bambolea (el escudo de burbuja se lo ahorra).
-			Buggy->ApplyVelocityImpulse(-Dir * BounceBack + FVector(0.0, 0.0, BuggyBounceUp));
-			Buggy->ApplyCocoHit(FVector::ZeroVector);
-		}
 		break;
 	default:
 		break;

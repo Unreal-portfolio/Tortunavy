@@ -1,4 +1,4 @@
-// Bots en el lobby (#694): al volver de una partida con bots, los pilotos IA viajaban al lobby con el seamless travel
+// Bots en el lobby (#694): al volver de una partida con bots, los controladores IA viajaban al lobby con el seamless travel
 // (AController::ShouldParticipateInSeamlessTravel es true con PlayerState) y su PlayerState contaba como un jugador más
 // que nunca se pone listo: la cuenta atrás no arrancaba y PendingTravelPlayerCount los sumaba a la partida siguiente.
 // La regla de «todos listos» y el recuento de conectados solo cuentan humanos.
@@ -12,7 +12,6 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/WorldSettings.h"
-#include "Rally/TN_RallyAIController.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -78,29 +77,21 @@ bool FTNLobbyBotsReadyTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Sin bots: 2 conectados"), Humans.Connected, 2);
 	TestTrue(TEXT("Sin bots: 2 de 2 listos arrancan"), Humans.AllReady(1));
 
-	// Con bots: uno marcado con SetIsABot y otro cuyo dueño es un piloto IA (como el que llegaba al lobby con el viaje,
-	// HandleSeamlessTravelPlayer → InitPlayerState). Ninguno se pone listo nunca.
+	// Con un bot marcado con SetIsABot, que no se pone listo nunca.
 	ATN_CoopPlayerState* MarkedBot = AddState(World, GameState, World->SpawnActor<AActor>(), false);
-	ATN_RallyAIController* Pilot = World->SpawnActor<ATN_RallyAIController>();
-	ATN_CoopPlayerState* TravelledBot = AddState(World, GameState, Pilot, false);
-	if (!TestTrue(TEXT("Bots creados"), MarkedBot && Pilot && TravelledBot))
+	if (!TestTrue(TEXT("Bot creado"), MarkedBot != nullptr))
 	{
 		DestroyGameWorld(World);
 		return false;
 	}
 	MarkedBot->SetIsABot(true);
 	TestTrue(TEXT("El marcado es un bot"), TN_IsBotPlayerState(MarkedBot));
-	TestTrue(TEXT("El del piloto IA es un bot"), TN_IsBotPlayerState(TravelledBot));
 	TestFalse(TEXT("Un humano no es un bot"), TN_IsBotPlayerState(A));
 
-	// El piloto IA con PlayerState no viaja con el seamless travel (vuelta al lobby o ?Restart): AController lo haría.
-	Pilot->SetPlayerState(TravelledBot);
-	TestFalse(TEXT("El piloto IA no viaja al lobby"), Pilot->ShouldParticipateInSeamlessTravel());
-
 	const FTNLobbyReadyCount WithBots = TN_CountLobbyReady(GameState);
-	TestEqual(TEXT("Con bots: siguen 2 conectados"), WithBots.Connected, 2);
-	TestEqual(TEXT("Con bots: 2 listos"), WithBots.Ready, 2);
-	TestTrue(TEXT("Con bots: los humanos listos arrancan sin esperar a los bots (#694)"), WithBots.AllReady(1));
+	TestEqual(TEXT("Con un bot: siguen 2 conectados"), WithBots.Connected, 2);
+	TestEqual(TEXT("Con un bot: 2 listos"), WithBots.Ready, 2);
+	TestTrue(TEXT("Con un bot: los humanos listos arrancan sin esperar al bot (#694)"), WithBots.AllReady(1));
 	TestEqual(TEXT("PendingTravelPlayerCount no suma bots"), TN_CountConnectedCoopPlayers(GameState), 2);
 
 	// Un humano sale de la zona: con bots o sin ellos, no hay cuenta atrás.

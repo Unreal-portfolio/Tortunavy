@@ -1,1 +1,0 @@
-Circuito de Rally por vueltas R06_circuito_lomas: Scripts/gen_terrain_rally_circuit.py (semilla 6933, perfil tierra, tema lomas_secas, #692).

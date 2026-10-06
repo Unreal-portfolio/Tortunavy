@@ -54,16 +54,16 @@ namespace TNShopUI
 	const FLinearColor PriceColor = TNHUDArt::Hex(0xD9432F);
 	const FLinearColor WornColor = TNHUDArt::Hex(0x1E7FB0);
 
-	/** Si ya es suyo. El buggy va siempre con el perfil guardado; lo demás, con el de este jugador (invitado local incluido). */
+	/** Si ya es suyo, con el perfil de este jugador (invitado local incluido). */
 	bool IsOwned(const UMP_GameInstance* GI, const APlayerController* PC, ETNCosmeticCategory Category, FName Id)
 	{
-		return TNIsBuggyCategory(Category) ? GI->IsCosmeticUnlocked(Category, Id) : GI->IsCosmeticUnlockedFor(PC, Category, Id);
+		return GI->IsCosmeticUnlockedFor(PC, Category, Id);
 	}
 
-	/** Conchas con las que se paga: el buggy, con las del perfil guardado (como RequestPurchaseCosmetic); lo demás, con las de este jugador. */
-	int32 Balance(const UMP_GameInstance* GI, const APlayerController* PC, ETNCosmeticCategory Category)
+	/** Conchas con las que se paga: las de este jugador (como RequestPurchaseCosmetic). */
+	int32 Balance(const UMP_GameInstance* GI, const APlayerController* PC)
 	{
-		return TNIsBuggyCategory(Category) ? GI->GetAccumulatedRaceScore() : GI->GetAccumulatedRaceScoreFor(PC);
+		return GI->GetAccumulatedRaceScoreFor(PC);
 	}
 
 	template <typename T>
@@ -154,46 +154,23 @@ namespace TNShopUI
 		return false;
 	}
 
-	/** Pestañas de la tienda; la del buggy (BuggyModel) enseña también las pinturas. */
+	/** Pestañas de la tienda y filas del probador, en su orden. */
 	const TArray<ETNCosmeticCategory>& Categories()
-	{
-		static const TArray<ETNCosmeticCategory> List = { ETNCosmeticCategory::Helmet, ETNCosmeticCategory::Shell, ETNCosmeticCategory::Body,
-			ETNCosmeticCategory::Eyes, ETNCosmeticCategory::BuggyModel };
-		return List;
-	}
-
-	/** Categorías de una pestaña: la del buggy, modelos y luego pinturas. */
-	TArray<ETNCosmeticCategory> TabCategories(ETNCosmeticCategory Tab)
-	{
-		if (TNIsBuggyCategory(Tab)) { return { ETNCosmeticCategory::BuggyModel, ETNCosmeticCategory::BuggyPaint }; }
-		return { Tab };
-	}
-
-	/** Filas del probador: la página de la tortuga y la del buggy. */
-	const TArray<ETNCosmeticCategory>& TurtleRows()
 	{
 		static const TArray<ETNCosmeticCategory> List = { ETNCosmeticCategory::Helmet, ETNCosmeticCategory::Shell, ETNCosmeticCategory::Body, ETNCosmeticCategory::Eyes };
 		return List;
 	}
 
-	const TArray<ETNCosmeticCategory>& BuggyRows()
-	{
-		static const TArray<ETNCosmeticCategory> List = { ETNCosmeticCategory::BuggyModel, ETNCosmeticCategory::BuggyPaint };
-		return List;
-	}
-
-	constexpr int32 NumCategories = static_cast<int32>(ETNCosmeticCategory::BuggyPaint) + 1;
+	constexpr int32 NumCategories = static_cast<int32>(ETNCosmeticCategory::Eyes) + 1;
 
 	FText CategoryTitle(ETNCosmeticCategory Category)
 	{
 		switch (Category)
 		{
-		case ETNCosmeticCategory::Helmet:     return NSLOCTEXT("Tortunabo", "ShopTabHelmets", "CASCOS");
-		case ETNCosmeticCategory::Shell:      return NSLOCTEXT("Tortunabo", "ShopTabShells", "CAPARAZONES");
-		case ETNCosmeticCategory::Eyes:       return NSLOCTEXT("Tortunabo", "ShopTabEyes", "OJOS");
-		case ETNCosmeticCategory::BuggyModel:
-		case ETNCosmeticCategory::BuggyPaint: return NSLOCTEXT("Tortunabo", "ShopTabBuggy", "BUGGY");
-		default:                              return NSLOCTEXT("Tortunabo", "ShopTabBodies", "COLORES");
+		case ETNCosmeticCategory::Helmet: return NSLOCTEXT("Tortunabo", "ShopTabHelmets", "CASCOS");
+		case ETNCosmeticCategory::Shell:  return NSLOCTEXT("Tortunabo", "ShopTabShells", "CAPARAZONES");
+		case ETNCosmeticCategory::Eyes:   return NSLOCTEXT("Tortunabo", "ShopTabEyes", "OJOS");
+		default:                          return NSLOCTEXT("Tortunabo", "ShopTabBodies", "COLORES");
 		}
 	}
 
@@ -201,12 +178,10 @@ namespace TNShopUI
 	{
 		switch (Category)
 		{
-		case ETNCosmeticCategory::Helmet:     return NSLOCTEXT("Tortunabo", "BoothRowHelmet", "CASCO");
-		case ETNCosmeticCategory::Shell:      return NSLOCTEXT("Tortunabo", "BoothRowShell", "CAPARAZÓN");
-		case ETNCosmeticCategory::Eyes:       return NSLOCTEXT("Tortunabo", "BoothRowEyes", "OJOS");
-		case ETNCosmeticCategory::BuggyModel: return NSLOCTEXT("Tortunabo", "BoothRowBuggyModel", "BUGGY");
-		case ETNCosmeticCategory::BuggyPaint: return NSLOCTEXT("Tortunabo", "BoothRowBuggyPaint", "PINTURA");
-		default:                              return NSLOCTEXT("Tortunabo", "BoothRowBody", "COLOR");
+		case ETNCosmeticCategory::Helmet: return NSLOCTEXT("Tortunabo", "BoothRowHelmet", "CASCO");
+		case ETNCosmeticCategory::Shell:  return NSLOCTEXT("Tortunabo", "BoothRowShell", "CAPARAZÓN");
+		case ETNCosmeticCategory::Eyes:   return NSLOCTEXT("Tortunabo", "BoothRowEyes", "OJOS");
+		default:                          return NSLOCTEXT("Tortunabo", "BoothRowBody", "COLOR");
 		}
 	}
 }
@@ -471,17 +446,6 @@ FTN_TurtleLook UTN_CosmeticMenuBase::GetWornLook() const
 	return Worn;
 }
 
-FTN_BuggyLook UTN_CosmeticMenuBase::GetWornBuggyLook() const
-{
-	const APlayerController* PC = GetOwningPlayer();
-	if (const ATN_CoopPlayerState* TNPS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr)
-	{
-		return TNPS->EquippedBuggyLook;
-	}
-	const UMP_GameInstance* GI = GetTNGI();
-	return GI ? GI->GetEquippedBuggyLook() : FTN_BuggyLook();
-}
-
 UTextureRenderTarget2D* UTN_CosmeticMenuBase::Thumbnail(ETNCosmeticCategory Category, FName Id) const
 {
 	ATN_CosmeticPreview* Stage = Preview.IsValid() ? Preview.Get() : ATN_CosmeticPreview::GetFor(GetOwningPlayer());
@@ -623,9 +587,9 @@ void UTN_ShopWidget::BuildTree()
 		for (const ETNCosmeticCategory Category : TNShopUI::Categories())
 		{
 			UTN_ShopButton* TabButton = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
-			TabButton->Setup(TNShopUI::CategoryTitle(Category), TNShopArt::Pill(0x2A5A92, 0x173A66), TNShopUI::CreamColor, 17, FVector2D(146.f, 56.f),
+			TabButton->Setup(TNShopUI::CategoryTitle(Category), TNShopArt::Pill(0x2A5A92, 0x173A66), TNShopUI::CreamColor, 20, FVector2D(196.f, 56.f),
 				[this, Category]() { ShowTab(Category); });
-			TNShopUI::AddH(TabRow, TabButton, FMargin(0.f, 0.f, 8.f, 0.f));
+			TNShopUI::AddH(TabRow, TabButton, FMargin(0.f, 0.f, 12.f, 0.f));
 			Tabs.Add(TabButton);
 		}
 		TNShopUI::AddV(Right, TabRow, FMargin(12.f, 0.f, 0.f, 8.f), HAlign_Left);
@@ -676,7 +640,7 @@ void UTN_ShopWidget::SetShop(ATN_ShopKeeper* InShop)
 
 	const APlayerState* PS = GetOwningPlayer() ? GetOwningPlayer()->PlayerState : nullptr;
 	const FText Who = PS ? TNLocText::Literal(PS->GetPlayerName()) : NSLOCTEXT("Tortunabo", "ShopSailor", "marinero");
-	Say(FText::Format(NSLOCTEXT("Tortunabo", "ShopHelloBuggy", "¡Hola, {0}! Pasa, pasa: hoy los cascos, caparazones, colores y ojos son gratis. Los buggies del Rally y sus pinturas van por conchas. Pruébatelo todo luego en las botellas."),
+	Say(FText::Format(NSLOCTEXT("Tortunabo", "ShopHelloFree", "¡Hola, {0}! Pasa, pasa: hoy los cascos, caparazones, colores y ojos son gratis. Pruébatelo todo luego en las botellas."),
 		Who));
 }
 
@@ -688,9 +652,8 @@ void UTN_ShopWidget::DebugShowTab(int32 Index, int32 Item)
 	if (Items.IsValidIndex(Item)) { Select(Item, true); }
 }
 
-void UTN_BoothWidget::DebugShowPage(int32 InPage, int32 Row, int32 Steps)
+void UTN_BoothWidget::DebugShowRow(int32 Row, int32 Steps)
 {
-	ShowPage(InPage);
 	FocusRow(Row);
 	for (int32 i = 0; i < Steps; ++i) { Cycle(Row, 1); }
 }
@@ -699,7 +662,6 @@ void UTN_BoothWidget::DebugShowPage(int32 InPage, int32 Row, int32 Steps)
 void UTN_ShopWidget::ShowTab(ETNCosmeticCategory Category)
 {
 	Tab = Category;
-	const bool bBuggyTab = TNIsBuggyCategory(Category);
 	for (int32 i = 0; i < Tabs.Num(); ++i)
 	{
 		const bool bActive = TNShopUI::Categories()[i] == Category;
@@ -707,17 +669,8 @@ void UTN_ShopWidget::ShowTab(ETNCosmeticCategory Category)
 	}
 	Items.Reset();
 	const UMP_GameInstance* GI = GetTNGI();
-	for (const ETNCosmeticCategory Part : TNShopUI::TabCategories(Category))
-	{
-		Items.Add({ Part, NAME_None });
-		if (GI) { for (const FName Id : GI->GetCosmeticCatalog(Part)) { Items.Add({ Part, Id }); } }
-	}
-	// En la pestaña del buggy, el escaparate enseña el buggy con la tortuga al volante.
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer()))
-	{
-		Stage->SetBuggyMode(bBuggyTab);
-		if (bBuggyTab) { Stage->SetBuggyLook(GetWornBuggyLook()); }
-	}
+	Items.Add({ Category, NAME_None });
+	if (GI) { for (const FName Id : GI->GetCosmeticCatalog(Category)) { Items.Add({ Category, Id }); } }
 
 	Grid->ClearChildren();
 	Cards.Reset();
@@ -730,9 +683,9 @@ void UTN_ShopWidget::ShowTab(ETNCosmeticCategory Category)
 		Cards.Add(Card);
 	}
 	GridScroll->ScrollToStart();
-	// Empieza en lo que lleva puesto (en el buggy, su modelo).
-	const FName WornId = bBuggyTab ? GetWornBuggyLook().Get(ETNCosmeticCategory::BuggyModel) : GetWornLook().Get(Category);
-	const int32 WornIndex = Items.IndexOfByPredicate([&](const FTNShopItem& Item) { return Item.Category == (bBuggyTab ? ETNCosmeticCategory::BuggyModel : Category) && Item.Id == WornId; });
+	// Empieza en lo que lleva puesto.
+	const FName WornId = GetWornLook().Get(Category);
+	const int32 WornIndex = Items.IndexOfByPredicate([&WornId](const FTNShopItem& Item) { return Item.Id == WornId; });
 	RefreshWallet();
 	Select(WornIndex == INDEX_NONE ? 0 : WornIndex, false);
 }
@@ -740,8 +693,7 @@ void UTN_ShopWidget::ShowTab(ETNCosmeticCategory Category)
 FText UTN_ShopWidget::TagFor(const FTNShopItem& Item, FLinearColor& OutColor) const
 {
 	const UMP_GameInstance* GI = GetTNGI();
-	const FName WornId = TNIsBuggyCategory(Item.Category) ? GetWornBuggyLook().Get(Item.Category) : GetWornLook().Get(Item.Category);
-	if (WornId == Item.Id)
+	if (GetWornLook().Get(Item.Category) == Item.Id)
 	{
 		OutColor = TNShopUI::WornColor;
 		return NSLOCTEXT("Tortunabo", "ShopTagWorn", "PUESTO");
@@ -782,13 +734,13 @@ void UTN_ShopWidget::RefreshBuyButton()
 	const int32 Price = GI->GetCosmeticPrice(Item.Category, Item.Id);
 	BuyButton->SetLabel(Price <= 0 ? NSLOCTEXT("Tortunabo", "ShopBuyFree", "COMPRAR · GRATIS")
 		: FText::Format(NSLOCTEXT("Tortunabo", "ShopBuyPrice", "COMPRAR · {0}"), FText::AsNumber(Price)));
-	BuyButton->SetDisabled(Price > TNShopUI::Balance(GI, GetOwningPlayer(), Item.Category));
+	BuyButton->SetDisabled(Price > TNShopUI::Balance(GI, GetOwningPlayer()));
 }
 
 void UTN_ShopWidget::RefreshWallet()
 {
 	const UMP_GameInstance* GI = GetTNGI();
-	if (WalletText) { WalletText->SetText(FText::AsNumber(GI ? TNShopUI::Balance(GI, GetOwningPlayer(), Tab) : 0)); }
+	if (WalletText) { WalletText->SetText(FText::AsNumber(GI ? TNShopUI::Balance(GI, GetOwningPlayer()) : 0)); }
 }
 
 void UTN_ShopWidget::Select(int32 Index, bool bSpeak)
@@ -799,20 +751,10 @@ void UTN_ShopWidget::Select(int32 Index, bool bSpeak)
 	const FTNShopItem Item = Items[Index];
 	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer()))
 	{
-		if (TNIsBuggyCategory(Item.Category))
-		{
-			// El buggy se prueba el modelo o la pintura que miras con el resto de lo que tiene puesto.
-			FTN_BuggyLook TryingBuggy = GetWornBuggyLook();
-			TryingBuggy.Set(Item.Category, Item.Id);
-			Stage->SetBuggyLook(TryingBuggy);
-		}
-		else
-		{
-			// La tortuga se prueba lo que miras encima de lo que lleva.
-			FTN_TurtleLook Trying = GetWornLook();
-			Trying.Set(Item.Category, Item.Id);
-			Stage->SetLook(Trying);
-		}
+		// La tortuga se prueba lo que miras encima de lo que lleva.
+		FTN_TurtleLook Trying = GetWornLook();
+		Trying.Set(Item.Category, Item.Id);
+		Stage->SetLook(Trying);
 		if (bSpeak && bChanged) { Stage->PlayPose(false); }
 	}
 	RefreshCards();
@@ -831,12 +773,10 @@ void UTN_ShopWidget::Buy()
 	if (!Items.IsValidIndex(Selected)) { return; }
 	const FTNShopItem Item = Items[Selected];
 	const FName Id = Item.Id;
-	const bool bBuggy = TNIsBuggyCategory(Item.Category);
 	UMP_GameInstance* GI = GetTNGI();
 	if (Id == NAME_None)
 	{
-		Say(bBuggy ? NSLOCTEXT("Tortunabo", "ShopSerieBuggy", "Ese viene con el carnet de conducir: todas las tortugas del Rally lo tienen de serie.")
-			: NSLOCTEXT("Tortunabo", "ShopSerie", "Eso ya viene de serie con tu caparazón. ¡Gratis desde que naciste!"));
+		Say(NSLOCTEXT("Tortunabo", "ShopSerie", "Eso ya viene de serie con tu caparazón. ¡Gratis desde que naciste!"));
 		return;
 	}
 	if (GI && TNShopUI::IsOwned(GI, GetOwningPlayer(), Item.Category, Id))
@@ -847,8 +787,7 @@ void UTN_ShopWidget::Buy()
 	AMP_GamePlayerController* PC = GetTNPC();
 	if (PC && PC->RequestPurchaseCosmetic(Item.Category, Id))
 	{
-		Say(FText::Format(bBuggy ? NSLOCTEXT("Tortunabo", "ShopBoughtBuggy", "¡Hecho! {0} ya es tuyo. En la botella del probador, pasa a la página del buggy y póntelo.")
-			: NSLOCTEXT("Tortunabo", "ShopBought", "¡Hecho! {0} ya es tuyo. Ve a una botella del probador y póntelo."),
+		Say(FText::Format(NSLOCTEXT("Tortunabo", "ShopBought", "¡Hecho! {0} ya es tuyo. Ve a una botella del probador y póntelo."),
 			UTN_CosmeticLook::GetDisplayName(this, Item.Category, Id)));
 		if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer())) { Stage->PlayPose(true); }
 		RefreshWallet();
@@ -930,25 +869,11 @@ void UTN_BoothWidget::BuildTree()
 	TNShopUI::Pin(Canvas, MakePreviewPanel(620.f), FVector2D(0.06f, 0.56f), FVector2D::ZeroVector);
 
 	UVerticalBox* Right = TNShopUI::New<UVerticalBox>(Tree);
-	{
-		// Páginas: la tortuga y su buggy del Rally (Q/E).
-		UHorizontalBox* PageRow = TNShopUI::New<UHorizontalBox>(Tree);
-		const FText PageTitles[] = { NSLOCTEXT("Tortunabo", "BoothPageTurtle", "TORTUGA"), NSLOCTEXT("Tortunabo", "BoothPageBuggy", "BUGGY") };
-		for (int32 p = 0; p < 2; ++p)
-		{
-			UTN_ShopButton* PageButton = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
-			PageButton->Setup(PageTitles[p], TNShopArt::Pill(0x2A5A92, 0x173A66), TNShopUI::CreamColor, 19, FVector2D(190.f, 54.f), [this, p]() { ShowPage(p); });
-			TNShopUI::AddH(PageRow, PageButton, FMargin(0.f, 0.f, p == 0 ? 12.f : 0.f, 0.f));
-			PageButtons.Add(PageButton);
-		}
-		TNShopUI::AddV(Right, PageRow, FMargin(0.f, 0.f, 0.f, 12.f), HAlign_Center);
-	}
-	const TArray<ETNCosmeticCategory>& Rows = TNShopUI::TurtleRows();
+	const TArray<ETNCosmeticCategory>& Rows = TNShopUI::Categories();
 	for (int32 r = 0; r < Rows.Num(); ++r)
 	{
 		UHorizontalBox* Line = TNShopUI::New<UHorizontalBox>(Tree);
 		UTextBlock* Caption = TNShopUI::Label(Tree, TNShopUI::RowTitle(Rows[r]), TEXT("Black"), 22, TNShopUI::InkColor, false);
-		RowCaptions.Add(Caption);
 		TNShopUI::AddH(Line, TNShopUI::Sized(Tree, Caption, 170.f, 0.f), FMargin(6.f, 0.f, 6.f, 0.f));
 
 		UTN_ShopButton* Prev = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
@@ -989,7 +914,7 @@ void UTN_BoothWidget::BuildTree()
 			[this]() { CloseMenu(); });
 		TNShopUI::AddH(Buttons, Cancel);
 		TNShopUI::AddV(Right, Buttons, FMargin(0.f, 10.f, 0.f, 0.f), HAlign_Center);
-		UTextBlock* Keys = TNShopUI::Label(Tree, NSLOCTEXT("Tortunabo", "BoothKeysPages", "Arriba/abajo: fila · Izquierda/derecha: cambiar · Q/E: tortuga o buggy · Intro: listo · Esc: cancelar"),
+		UTextBlock* Keys = TNShopUI::Label(Tree, NSLOCTEXT("Tortunabo", "BoothKeys", "Arriba/abajo: fila · Izquierda/derecha: cambiar · Intro: listo · Esc: cancelar"),
 			TEXT("Regular"), 14, TNHUDArt::SeaLight, true);
 		TNShopUI::AddV(Right, Keys, FMargin(0.f, 10.f, 0.f, 0.f), HAlign_Center);
 	}
@@ -1001,14 +926,9 @@ void UTN_BoothWidget::SetBooth(ATN_ChangingBooth* InBooth)
 {
 	Booth = InBooth;
 	Initial = GetWornLook();
-	InitialBuggy = GetWornBuggyLook();
 	LoadOptions();
-	ShowPage(0);
-}
-
-const TArray<ETNCosmeticCategory>& UTN_BoothWidget::PageRows() const
-{
-	return Page == 1 ? TNShopUI::BuggyRows() : TNShopUI::TurtleRows();
+	FocusRow(0);
+	RefreshRows();
 }
 
 void UTN_BoothWidget::LoadOptions()
@@ -1030,8 +950,7 @@ void UTN_BoothWidget::LoadOptions()
 				if (TNShopUI::IsOwned(GI, GetOwningPlayer(), Category, Id)) { Owned.Add(Id); }
 			}
 		}
-		const FName WornId = TNIsBuggyCategory(Category) ? InitialBuggy.Get(Category) : Initial.Get(Category);
-		const int32 Worn = Owned.IndexOfByKey(WornId);
+		const int32 Worn = Owned.IndexOfByKey(Initial.Get(Category));
 		Choice[c] = Worn == INDEX_NONE ? 0 : Worn;
 	}
 }
@@ -1045,38 +964,13 @@ FName UTN_BoothWidget::ChosenId(ETNCosmeticCategory Category) const
 FTN_TurtleLook UTN_BoothWidget::ChosenLook() const
 {
 	FTN_TurtleLook Look;
-	for (const ETNCosmeticCategory Category : TNShopUI::TurtleRows()) { Look.Set(Category, ChosenId(Category)); }
+	for (const ETNCosmeticCategory Category : TNShopUI::Categories()) { Look.Set(Category, ChosenId(Category)); }
 	return Look;
-}
-
-FTN_BuggyLook UTN_BoothWidget::ChosenBuggyLook() const
-{
-	FTN_BuggyLook Look;
-	for (const ETNCosmeticCategory Category : TNShopUI::BuggyRows()) { Look.Set(Category, ChosenId(Category)); }
-	return Look;
-}
-
-void UTN_BoothWidget::ShowPage(int32 NewPage)
-{
-	Page = FMath::Clamp(NewPage, 0, 1);
-	for (int32 p = 0; p < PageButtons.Num(); ++p)
-	{
-		PageButtons[p]->SetArt(p == Page ? TNShopArt::Pill(0xFF8A70, 0xD9432F) : TNShopArt::Pill(0x2A5A92, 0x173A66));
-	}
-	const int32 Count = PageRows().Num();
-	for (int32 r = 0; r < RowFrames.Num(); ++r)
-	{
-		RowFrames[r]->SetVisibility(r < Count ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-		if (r < Count && RowCaptions.IsValidIndex(r)) { RowCaptions[r]->SetText(TNShopUI::RowTitle(PageRows()[r])); }
-	}
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer())) { Stage->SetBuggyMode(Page == 1); }
-	FocusRow(0);
-	RefreshRows();
 }
 
 void UTN_BoothWidget::RefreshRows()
 {
-	const TArray<ETNCosmeticCategory>& Rows = PageRows();
+	const TArray<ETNCosmeticCategory>& Rows = TNShopUI::Categories();
 	for (int32 r = 0; r < Rows.Num(); ++r)
 	{
 		const ETNCosmeticCategory Category = Rows[r];
@@ -1092,16 +986,12 @@ void UTN_BoothWidget::RefreshRows()
 			if (UTextureRenderTarget2D* RT = Thumbnail(Category, Id)) { RowThumbMIDs[r]->SetTextureParameterValue(TEXT("Capture"), RT); }
 		}
 	}
-	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer()))
-	{
-		Stage->SetLook(ChosenLook());
-		Stage->SetBuggyLook(ChosenBuggyLook());
-	}
+	if (ATN_CosmeticPreview* Stage = ATN_CosmeticPreview::GetFor(GetOwningPlayer())) { Stage->SetLook(ChosenLook()); }
 }
 
 void UTN_BoothWidget::FocusRow(int32 Row)
 {
-	FocusedRow = FMath::Clamp(Row, 0, FMath::Max(0, PageRows().Num() - 1));
+	FocusedRow = FMath::Clamp(Row, 0, FMath::Max(0, TNShopUI::Categories().Num() - 1));
 	for (int32 r = 0; r < RowFrames.Num(); ++r)
 	{
 		RowFrames[r]->SetBrush(TNShopUI::BoxBrush(TNShopArt::SandPanel(r == FocusedRow), TNShopUI::SandBoxMargin));
@@ -1112,8 +1002,8 @@ void UTN_BoothWidget::FocusRow(int32 Row)
 
 void UTN_BoothWidget::Cycle(int32 Row, int32 Dir)
 {
-	if (!PageRows().IsValidIndex(Row)) { return; }
-	const int32 c = static_cast<int32>(PageRows()[Row]);
+	if (!TNShopUI::Categories().IsValidIndex(Row)) { return; }
+	const int32 c = static_cast<int32>(TNShopUI::Categories()[Row]);
 	if (!Options.IsValidIndex(c) || Options[c].Num() == 0) { return; }
 	const int32 Num = Options[c].Num();
 	Choice[c] = (Choice[c] + Dir + Num) % Num;
@@ -1125,7 +1015,6 @@ void UTN_BoothWidget::Accept()
 {
 	AMP_GamePlayerController* PC = GetTNPC();
 	const FTN_TurtleLook Chosen = ChosenLook();
-	const FTN_BuggyLook ChosenBuggy = ChosenBuggyLook();
 	if (PC)
 	{
 		if (Chosen.HelmetId != Initial.HelmetId)
@@ -1136,7 +1025,6 @@ void UTN_BoothWidget::Accept()
 		if (Chosen.ShellId != Initial.ShellId) { PC->RequestEquipShell(Chosen.ShellId); }
 		if (Chosen.SkinId != Initial.SkinId) { PC->RequestEquipSkin(Chosen.SkinId); }
 		if (Chosen.EyesId != Initial.EyesId) { PC->RequestEquipEyes(Chosen.EyesId); }
-		if (ChosenBuggy != InitialBuggy) { PC->RequestEquipBuggyLook(ChosenBuggy); }
 	}
 	CloseMenu();
 }
@@ -1144,12 +1032,11 @@ void UTN_BoothWidget::Accept()
 bool UTN_BoothWidget::HandleKey(const FKey& Key)
 {
 	using TNShopUI::IsKey;
-	const int32 Rows = FMath::Max(1, PageRows().Num());
+	const int32 Rows = FMath::Max(1, TNShopUI::Categories().Num());
 	if (IsKey(Key, { EKeys::Up, EKeys::W, EKeys::Gamepad_DPad_Up })) { FocusRow((FocusedRow + Rows - 1) % Rows); return true; }
 	if (IsKey(Key, { EKeys::Down, EKeys::S, EKeys::Gamepad_DPad_Down })) { FocusRow((FocusedRow + 1) % Rows); return true; }
 	if (IsKey(Key, { EKeys::Left, EKeys::A, EKeys::Gamepad_DPad_Left })) { Cycle(FocusedRow, -1); return true; }
 	if (IsKey(Key, { EKeys::Right, EKeys::D, EKeys::Gamepad_DPad_Right })) { Cycle(FocusedRow, 1); return true; }
-	if (IsKey(Key, { EKeys::Q, EKeys::E, EKeys::Tab, EKeys::Gamepad_LeftShoulder, EKeys::Gamepad_RightShoulder })) { ShowPage(1 - Page); return true; }
 	if (IsKey(Key, { EKeys::Enter, EKeys::SpaceBar, EKeys::Gamepad_FaceButton_Bottom })) { Accept(); return true; }
 	return false;
 }

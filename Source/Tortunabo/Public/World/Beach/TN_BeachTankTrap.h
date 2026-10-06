@@ -12,8 +12,8 @@ class UStaticMeshComponent;
 
 /**
  * Erizos checos con comportamiento (#688, Excel_DayT «Erizos checos»): la colisión bloquea el paso y chocar deprisa
- * (corriendo, rodando en bola o en buggy) rebota y derriba; andando solo bloquea (TNBeachCreatureRules::TankTrap). Sin daño.
- * A pie, derribo con ragdoll; en bola, rebote y mareo dentro del caparazón; en buggy, rebote del chasis y bamboleo.
+ * (corriendo o rodando en bola) rebota y derriba; andando solo bloquea (TNBeachCreatureRules::TankTrap). Sin daño.
+ * A pie, derribo con ragdoll; en bola, rebote y mareo dentro del caparazón.
  *
  * Dos usos:
  *  - Vigilante de la carrera (SpawnGuard): los erizos antitanque de la ronda son decorado instanciado con su colisión
@@ -51,10 +51,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Erizo checo")
 	float BounceUp = 380.f;
 
-	/** Subida (cm/s) del rebote de un buggy: menos que la de una tortuga para no volcarlo. */
-	UPROPERTY(EditAnywhere, Category = "Erizo checo")
-	float BuggyBounceUp = 150.f;
-
 	/** El choque, en el servidor (lo oyen todos por el derribo de la tortuga; el golpe metálico va aparte). */
 	UPROPERTY(EditDefaultsOnly, Category = "Erizo checo|Feedback")
 	TObjectPtr<USoundBase> ClangSound;
@@ -72,10 +68,10 @@ protected:
 	TObjectPtr<UProceduralMeshComponent> HogCollision;
 
 private:
-	/** Lo que puede chocar contra los erizos en este paso: la tortuga a pie, su bola de caparazón o un buggy (#698). */
+	/** Lo que puede chocar contra los erizos en este paso: la tortuga a pie o su bola de caparazón (#698). */
 	struct FImpactor
 	{
-		/** La tortuga o el buggy (clave del enfriamiento y de la velocidad anterior). */
+		/** La tortuga (clave del enfriamiento y de la velocidad anterior). */
 		AActor* Actor = nullptr;
 		TNBeachCreatureRules::TankTrap::EBody Body = TNBeachCreatureRules::TankTrap::EBody::Walker;
 		FVector Location = FVector::ZeroVector;
@@ -83,11 +79,11 @@ private:
 		FVector Velocity = FVector::ZeroVector;
 	};
 
-	/** Servidor: las tortugas (a pie o en su bola) y los buggies que pueden chocar ahora. */
+	/** Servidor: las tortugas (a pie o en su bola) que pueden chocar ahora. */
 	void GatherImpactors(TArray<FImpactor>& Out) const;
-	/** Distancia (cm) del centro del que choca a su contorno hacia Dir. */
-	static double ReachOf(const FImpactor& Who, const FVector& Dir);
-	/** Servidor: choque de una tortuga, su bola o un buggy contra un sitio (centro y radio). */
+	/** Distancia (cm) del centro del que choca a su contorno. */
+	static double ReachOf(const FImpactor& Who);
+	/** Servidor: choque de una tortuga o su bola contra un sitio (centro y radio). */
 	void CheckImpact(const FImpactor& Who, const FVector& Center, float Radius, double Now);
 	/** Servidor: el rebote y el derribo que tocan a Who (Dir: de Who hacia el erizo, plana). */
 	void ApplyResponse(const FImpactor& Who, TNBeachCreatureRules::TankTrap::EResponse Response, const FVector& Dir);

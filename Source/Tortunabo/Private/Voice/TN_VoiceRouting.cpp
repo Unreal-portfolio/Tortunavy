@@ -1,54 +1,36 @@
 #include "Voice/TN_VoiceRouting.h"
 
-#include "GameFramework/PlayerState.h"
-
 namespace TNVoiceRouting
 {
-	bool SharesIntercom(int32 SpeakerGroup, int32 ListenerGroup)
+	bool IsInRange(double DistanceSquared, double OuterRadiusCm)
 	{
-		return SpeakerGroup != INDEX_NONE && SpeakerGroup == ListenerGroup;
+		return DistanceSquared <= FMath::Square(OuterRadiusCm);
 	}
 
-	ERoute Route(int32 SpeakerGroup, const FCandidate& Listener, double OuterRadiusCm)
+	TArray<bool> SelectListeners(TConstArrayView<double> DistancesSquared, double OuterRadiusCm, int32 MaxListeners)
 	{
-		if (SharesIntercom(SpeakerGroup, Listener.IntercomGroup))
+		TArray<bool> Selected;
+		Selected.Reserve(DistancesSquared.Num());
+		TArray<int32> InRange;
+		for (int32 Index = 0; Index < DistancesSquared.Num(); ++Index)
 		{
-			return ERoute::Intercom;
-		}
-		return Listener.DistanceSquared <= FMath::Square(OuterRadiusCm) ? ERoute::Proximity : ERoute::None;
-	}
-
-	TArray<ERoute> SelectListeners(int32 SpeakerGroup, TConstArrayView<FCandidate> Candidates, double OuterRadiusCm,
-		int32 MaxProximityListeners)
-	{
-		TArray<ERoute> Routes;
-		Routes.Reserve(Candidates.Num());
-		TArray<int32> Proximity;
-		for (int32 Index = 0; Index < Candidates.Num(); ++Index)
-		{
-			const ERoute Found = Route(SpeakerGroup, Candidates[Index], OuterRadiusCm);
-			Routes.Add(Found);
-			if (Found == ERoute::Proximity)
+			const bool bInRange = IsInRange(DistancesSquared[Index], OuterRadiusCm);
+			Selected.Add(bInRange);
+			if (bInRange)
 			{
-				Proximity.Add(Index);
+				InRange.Add(Index);
 			}
 		}
-		if (MaxProximityListeners <= 0 || Proximity.Num() <= MaxProximityListeners)
+		if (MaxListeners <= 0 || InRange.Num() <= MaxListeners)
 		{
-			return Routes;
+			return Selected;
 		}
 		// Solo los más cercanos: los de lejos la oirían muy baja de todos modos.
-		Proximity.StableSort([&Candidates](int32 A, int32 B) { return Candidates[A].DistanceSquared < Candidates[B].DistanceSquared; });
-		for (int32 Rank = MaxProximityListeners; Rank < Proximity.Num(); ++Rank)
+		InRange.StableSort([&DistancesSquared](int32 A, int32 B) { return DistancesSquared[A] < DistancesSquared[B]; });
+		for (int32 Rank = MaxListeners; Rank < InRange.Num(); ++Rank)
 		{
-			Routes[Proximity[Rank]] = ERoute::None;
+			Selected[InRange[Rank]] = false;
 		}
-		return Routes;
-	}
-
-	int32 IntercomGroupOf(const APlayerState* PlayerState)
-	{
-		const ITN_VoiceIntercom* Intercom = Cast<ITN_VoiceIntercom>(PlayerState);
-		return Intercom ? Intercom->GetVoiceIntercomGroup() : INDEX_NONE;
+		return Selected;
 	}
 }

@@ -133,9 +133,6 @@ def vertex_colors(model: MapModel, world: np.ndarray, normals: np.ndarray) -> np
     trail = trail_full * flat_up
     trail_color = np.array(getattr(model, "trail_color", TRAIL_COLOR))
     out = out + (trail_color - out) * (getattr(model, "trail_strength", 0.7) * trail)[:, None]
-    if hasattr(model, "mud_mask"):                  # barro (badén de los circuitos de tierra, #682)
-        mud = model.mud_mask(x, y) * (1.0 - wet)
-        out = out + (np.array(model.mud_color) - out) * (model.mud_strength * mud)[:, None]
     plaza = model.plaza_mask(x, y) * flat_up
     out = out + (np.array(PLAZA_COLOR) - out) * (0.8 * plaza)[:, None]
     out = out * (1.0 - strata)[:, None]
@@ -223,11 +220,6 @@ def build_chunk(model: MapModel, col: int, row: int, z_range: ZRange | None = No
     pinned = (verts[:, 0] < 1e-6) | (verts[:, 0] > edge * STEP_XY_M - 1e-6) \
         | (verts[:, 1] < 1e-6) | (verts[:, 1] > edge * STEP_XY_M - 1e-6)
     x0, _, y0, _ = cell_bounds(col, row)
-    # Zonas que el modelo pide sin suavizar (unsmoothed_mask(x, y) en metros del mundo, opcional): el Taubin es un
-    # paso bajo y aplana las ondas de pocos metros, como la tabla de lavar de los circuitos de Rally (#696).
-    unsmoothed = getattr(model, "unsmoothed_mask", None)
-    if unsmoothed is not None and len(verts):
-        pinned = pinned | np.asarray(unsmoothed(verts[:, 0] + x0, verts[:, 1] + y0), dtype=bool)
     smoothed = taubin(verts, faces, pinned, SMOOTH_ITERATIONS)
     # (las normales de la malla se calculan tras orientar las caras: ver mesh_normals)
     world = smoothed + np.array([x0, y0, zr.z_min_m])

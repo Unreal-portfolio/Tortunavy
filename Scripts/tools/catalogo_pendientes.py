@@ -26,14 +26,6 @@ PENDING = (
     ("/Game/Art/IA/puzzles/", 599),
     ("/Game/Art/IA/todos_contra_todos/", 600),
     ("/Game/Art/IA/decoracion/", 601),
-    ("/Game/Art/IA/rally/caja_items/", 304),
-    ("/Game/Art/IA/rally/", 602),
-    ("/Game/Art/Source/Vehicles/Buggy/", 290),
-    # El buggy de HellYeah (no está en dev; se borra antes de fusionar el lote) y la plantilla Vehicle: los sustituye el
-    # modelo de Art/Source (SM_TN_BuggyBody).
-    ("/Game/Generated/", 290),
-    ("/Game/Vehicles/", 290),
-    ("/Game/Audio/Rally/", 603),
     ("/Game/Audio/EffectSounds/FootstepsMiniPack/", 604),
     ("/Game/Audio/EffectSounds/", 348),
     # La galería de assets es una herramienta: la abre y la rehace su issue.

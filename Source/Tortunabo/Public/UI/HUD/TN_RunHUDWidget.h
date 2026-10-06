@@ -22,7 +22,6 @@ class ATortugaCharacter;
 class UTN_ButtonGlyphWidget;
 class UTN_HoldRingWidget;
 class UTN_ScoreShellSynthComponent;
-class UTN_SurvivalMinimap;
 
 /**
  * Icono de concha que vuela al contador del HUD (UTN_RunHUDWidget): nace donde estaba la concha en pantalla, sale de un
@@ -94,8 +93,6 @@ private:
 	void TickBadge(float DeltaTime);
 	void TickInventory(float DeltaTime);
 	void TickTrack(float DeltaTime);
-	/** Pasa al minimapa de Supervivencia dónde están las tortugas. */
-	void TickMinimap();
 	void TickScore(float DeltaTime);
 	void TickAlerts(float DeltaTime);
 
@@ -129,8 +126,6 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UImage> StormMarker;
 	UPROPERTY(Transient) TObjectPtr<UImage> MiniFace;
 	UPROPERTY(Transient) TArray<TObjectPtr<UImage>> MateMarkers;
-	/** Minimapa de Supervivencia (UTN_SurvivalMinimap): solo se dibuja con un mapa de Supervivencia. */
-	UPROPERTY(Transient) TObjectPtr<UTN_SurvivalMinimap> SurvivalMap;
 
 	UPROPERTY(Transient) TObjectPtr<UOverlay> ScoreRoot;
 	UPROPERTY(Transient) TObjectPtr<UBorder> StormBanner;

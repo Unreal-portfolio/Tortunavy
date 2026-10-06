@@ -13,10 +13,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRaceScoreChanged, int32, NewScore
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnScoreShellCollected, int32 /*Value*/, uint8 /*Tier*/, const FVector& /*WorldLocation*/);
 
 class ATortugaCharacter;
-class ATN_CoopPlayerState;
-
-/** Un PlayerState ha cambiado de buggy del Rally (en cualquier máquina): lo escucha ATN_Buggy para repintarse ya. */
-DECLARE_MULTICAST_DELEGATE_OneParam(FTNOnBuggyLookChanged, const ATN_CoopPlayerState* /*PlayerState*/);
 
 /**
  * @brief PlayerState replicado por jugador — contiene estado individual de partida y cosméticos equipados.
@@ -163,24 +159,6 @@ public:
 	/** @brief OnRep de EquippedEyesId: reaplica los materiales en el pawn local. */
 	UFUNCTION()
 	void OnRep_EquippedEyesId();
-
-	/**
-	 * Buggy del Rally equipado (modelo y pintura del catálogo de Vehicles/TN_BuggyCosmetics.h). Lo escribe solo el
-	 * servidor tras validarlo (SetEquippedBuggyLook) y lo pinta el ATN_Buggy que conduce esta jugadora en todas las
-	 * máquinas. NAME_None = el de serie.
-	 */
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_EquippedBuggyLook, Category = "Cosmetics")
-	FTN_BuggyLook EquippedBuggyLook;
-
-	/** Servidor: pone el buggy (ya validado), lo empuja a los clientes y lo aplica aquí (el anfitrión no recibe OnRep). */
-	void SetEquippedBuggyLook(const FTN_BuggyLook& Look);
-
-	/** @brief OnRep de EquippedBuggyLook: avisa (OnAnyBuggyLookChanged) para que se repinte el buggy que conduce. */
-	UFUNCTION()
-	void OnRep_EquippedBuggyLook();
-
-	/** Cualquier PlayerState que cambia de buggy (OnRep, o en el servidor al ponérselo). */
-	static FTNOnBuggyLookChanged OnAnyBuggyLookChanged;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop")
 	float FinishTimeSeconds = -1.f;

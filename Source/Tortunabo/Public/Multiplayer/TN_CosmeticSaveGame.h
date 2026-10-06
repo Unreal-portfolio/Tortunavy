@@ -48,14 +48,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Cosmetics")
 	FName EquippedEyesId = NAME_None;
 
-	/** Modelos y pinturas del buggy del Rally comprados en la tienda (Ids de TNBuggyCosmetics). */
-	UPROPERTY(BlueprintReadWrite, Category = "Cosmetics")
-	TArray<FName> UnlockedBuggyIds;
-
-	/** Buggy equipado en el probador (modelo y pintura). NAME_None = el de serie. */
-	UPROPERTY(BlueprintReadWrite, Category = "Cosmetics")
-	FTN_BuggyLook EquippedBuggyLook;
-
 	/**
 	 * Puntos de carrera acumulados (#26).
 	 * Se suman al terminar cada carrera según posición de llegada.

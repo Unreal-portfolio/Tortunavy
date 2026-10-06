@@ -384,8 +384,7 @@ void UProximityVoiceComponent::SetupPlayback(int32 InSampleRate)
 	// fades to silence at OuterRadius (default 2500cm = 25m).
 	PlaybackAudioComponent->bAllowSpatialization = true;
 	PlaybackAudioComponent->bOverrideAttenuation = true;
-	PlaybackAudioComponent->AttenuationOverrides = MakeAttenuation(false);
-	bPlaybackIntercom = false;
+	PlaybackAudioComponent->AttenuationOverrides = MakeAttenuation();
 
 	PlaybackAudioComponent->RegisterComponent();
 	PlaybackAudioComponent->SetVolumeMultiplier(PlaybackVolume);
@@ -449,8 +448,8 @@ void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// El peón pasa a ser de este jugador después de BeginPlay (la artillera que sube al volante del buggy, o el controlador
-	// que llega por red después que el componente): se abre el micrófono entonces, una sola vez.
+	// El peón pasa a ser de este jugador después de BeginPlay (el controlador que llega por red después que el componente):
+	// se abre el micrófono entonces, una sola vez.
 	if (!bCaptureOpenAttempted && !bIsShuttingDown && IsLocallyOwned())
 	{
 		OpenCapture();
@@ -679,8 +678,7 @@ void UProximityVoiceComponent::Server_SendVoiceData_Implementation(const TArray<
 
 void UProximityVoiceComponent::RelayVoiceToListeners(const TArray<uint8>& CompressedData, int32 SenderSampleRate)
 {
-	// Solo a quien la va a oír: los de su interfono (las dos ocupantes de un buggy del Rally) siempre, y el resto dentro de
-	// OuterRadius, como mucho los MaxVoiceListeners más cercanos (TNVoiceRouting).
+	// Solo a quien la va a oír: dentro de OuterRadius y, como mucho, los MaxVoiceListeners más cercanos (TNVoiceRouting).
 	AActor* Speaker = GetOwner();
 	UWorld* World = GetWorld();
 	if (!Speaker || !World)
@@ -690,9 +688,8 @@ void UProximityVoiceComponent::RelayVoiceToListeners(const TArray<uint8>& Compre
 	const APawn* SpeakerPawn = Cast<APawn>(Speaker);
 	const APlayerState* SpeakerState = SpeakerPawn ? SpeakerPawn->GetPlayerState() : nullptr;
 	const FVector SpeakerLoc = Speaker->GetActorLocation();
-	const int32 SpeakerGroup = TNVoiceRouting::IntercomGroupOf(SpeakerState);
 	TArray<ITN_VoiceListener*, TInlineAllocator<16>> Listeners;
-	TArray<TNVoiceRouting::FCandidate, TInlineAllocator<16>> Candidates;
+	TArray<double, TInlineAllocator<16>> DistancesSquared;
 	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PC = It->Get();
@@ -704,51 +701,28 @@ void UProximityVoiceComponent::RelayVoiceToListeners(const TArray<uint8>& Compre
 			continue;
 		}
 		Listeners.Add(Listener);
-		Candidates.Add({ TNVoiceRouting::IntercomGroupOf(PC->PlayerState),
-			FVector::DistSquared(ListenerPawn->GetActorLocation(), SpeakerLoc) });
+		DistancesSquared.Add(FVector::DistSquared(ListenerPawn->GetActorLocation(), SpeakerLoc));
 	}
-	const TArray<TNVoiceRouting::ERoute> Routes = TNVoiceRouting::SelectListeners(SpeakerGroup, Candidates, OuterRadius, MaxVoiceListeners);
+	const TArray<bool> Selected = TNVoiceRouting::SelectListeners(DistancesSquared, OuterRadius, MaxVoiceListeners);
 	for (int32 Index = 0; Index < Listeners.Num(); ++Index)
 	{
-		if (Routes[Index] != TNVoiceRouting::ERoute::None)
+		if (Selected[Index])
 		{
-			Listeners[Index]->SendVoiceToOwningClient(CompressedData, SenderSampleRate, Speaker,
-				Routes[Index] == TNVoiceRouting::ERoute::Intercom);
+			Listeners[Index]->SendVoiceToOwningClient(CompressedData, SenderSampleRate, Speaker);
 		}
 	}
 }
 
-FSoundAttenuationSettings UProximityVoiceComponent::MakeAttenuation(bool bIntercom) const
+FSoundAttenuationSettings UProximityVoiceComponent::MakeAttenuation() const
 {
 	FSoundAttenuationSettings Settings;
-	// Interfono: ni atenuación ni espacialización (la cámara de persecución del Rally va a 8 m del buggy).
-	Settings.bAttenuate = !bIntercom;
-	Settings.bSpatialize = !bIntercom;
+	Settings.bAttenuate = true;
+	Settings.bSpatialize = true;
 	Settings.FalloffDistance = FMath::Max(OuterRadius - InnerRadius, 100.f);
 	Settings.AttenuationShape = EAttenuationShape::Sphere;
 	Settings.AttenuationShapeExtents = FVector(InnerRadius);
 	Settings.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound;
 	return Settings;
-}
-
-void UProximityVoiceComponent::ApplyPlaybackRoute(bool bIntercom)
-{
-	if (!PlaybackAudioComponent || bPlaybackIntercom == bIntercom)
-	{
-		return;
-	}
-	bPlaybackIntercom = bIntercom;
-	PlaybackAudioComponent->bAllowSpatialization = !bIntercom;
-	// AdjustAttenuation también cambia el sonido que ya está sonando.
-	PlaybackAudioComponent->AdjustAttenuation(MakeAttenuation(bIntercom));
-}
-
-void UProximityVoiceComponent::PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, bool bIntercom)
-{
-	PlayRemoteVoice(CompressedData, SenderSampleRate);
-	// Después del paquete: el primero crea el playback (SetupPlayback) con la ruta de proximidad, y AdjustAttenuation
-	// también cambia lo que ya está sonando.
-	ApplyPlaybackRoute(bIntercom);
 }
 
 bool UProximityVoiceComponent::IsHeardSpeaking() const

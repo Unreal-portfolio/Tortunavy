@@ -16,8 +16,6 @@
 #include "Lobby/TN_SandCastleLobby.h"
 #include "Lobby/TN_TutorialCourse.h"
 #include "Misc/Paths.h"
-#include "Rally/TN_RallyTrack.h"
-#include "Rally/TN_RallyTrackDressing.h"
 #include "Scalability.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
@@ -57,7 +55,7 @@ namespace TNMapFingerprintTest
 			return World->SpawnActor<T>(T::StaticClass(), Where, Params);
 		}
 
-		/** Un cargador de variantes con la variante puesta antes de OnConstruction (como ATN_RallyGameState::PrepareTrack). */
+		/** Un cargador de variantes con la variante puesta antes de OnConstruction (como en partida). */
 		ATN_MapVariantLoader* SpawnLoader(FName Variant)
 		{
 			ATN_MapVariantLoader* Loader = World->SpawnActorDeferred<ATN_MapVariantLoader>(ATN_MapVariantLoader::StaticClass(),
@@ -161,7 +159,7 @@ namespace TNMapFingerprintTest
 		return FPaths::FileExists(FPaths::ProjectDir() / TEXT("Scripts/terrain_volumes/Variants") / Variant.ToString() / TEXT("manifest.json"));
 	}
 
-	// ── Coop, Supervivencia y Karts (ATN_ProcMapGenerator) ──
+	// ── Coop y Supervivencia (ATN_ProcMapGenerator) ──
 
 	/** Un mapa del generador del Coop, opcionalmente después de otro (el anfitrión en la segunda ronda). */
 	TNMapFingerprint::FResult ProcMapFingerprint(ETNProcGameMode Mode, int32 Seed, int32 SurvivalDifficulty, int32 Quality, int32 SeedBefore)
@@ -215,47 +213,7 @@ namespace TNMapFingerprintTest
 		return TNMapFingerprint::Compute(Test.World);
 	}
 
-	// ── Rally (ATN_MapVariantLoader + ATN_RallyTrack + ATN_RallyTrackDressing) ──
-
-	/**
-	 * Terreno, pista y decorado de un circuito. Con bLateActor, antes del decorado hay una losa con colisión que el servidor
-	 * habría creado en partida y replicado (a un cliente le llega cuando le llega): el decorado no se apoya en ella.
-	 */
-	TNMapFingerprint::FResult RallyFingerprint(FName Variant, int32 Quality, bool bLateActor)
-	{
-		FScopedQuality ScopedQuality(Quality);
-		FTestWorld Test(TEXT("TNMapFingerprintRally"));
-		Test.SpawnLoader(Variant);
-		ATN_RallyTrack* Track = Test.Spawn<ATN_RallyTrack>();
-		if (!Track || !Track->BuildFromVariant(Variant)) { return TNMapFingerprint::FResult(); }
-		AActor* Slab = nullptr;
-		if (bLateActor)
-		{
-			const TNRallyDressing::FTrackData Data = TNRallyDressing::SampleTrack(*Track, 500.0);
-			if (Data.Samples.Num() > 0)
-			{
-				// 200 m de lado, un metro por encima de la salida: la tapa entera para las sondas de suelo de alrededor.
-				Slab = Test.World->SpawnActor<AActor>(AActor::StaticClass(), FTransform(Data.Samples[0].Location + FVector(0.0, 0.0, 100.0)));
-				UBoxComponent* Box = NewObject<UBoxComponent>(Slab, TEXT("Slab"));
-				Box->SetBoxExtent(FVector(10000.0, 10000.0, 20.0));
-				Box->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
-				Slab->SetRootComponent(Box);
-				Box->RegisterComponent();
-				Slab->SetActorLocation(Data.Samples[0].Location + FVector(0.0, 0.0, 100.0));
-				Slab->SetReplicates(true);
-			}
-		}
-		ATN_RallyTrackDressing* Dressing = Test.Spawn<ATN_RallyTrackDressing>();
-		if (!Dressing || !Dressing->BuildFromTrack(Track, static_cast<int32>(FCrc::StrCrc32(*Variant.ToString()))))
-		{
-			return TNMapFingerprint::FResult();
-		}
-		TNMapFingerprint::FOptions Options;
-		Options.Filter = [Slab](const AActor* Actor) { return Actor != Slab; };
-		return TNMapFingerprint::Compute(Test.World, Options);
-	}
-
-	// ── Variantes del disco (Rally y Todos contra Todos) ──
+	// ── Variantes del disco (camino y Todos contra Todos) ──
 
 	/** Un cargador en partida con Variant; con Before, primero monta esa (la guardada en el nivel) y luego cambia. */
 	TNMapFingerprint::FResult VariantFingerprint(FName Variant, FName Before, int32 Quality)
@@ -309,7 +267,6 @@ bool FTNMapFingerprintProcMapTest::RunTest(const FString& Parameters)
 	const FCase Cases[] = {
 		{ TEXT("Coop"), ETNProcGameMode::Coop, 21, 0 },
 		{ TEXT("Supervivencia"), ETNProcGameMode::Survival, 7, 3 },
-		{ TEXT("Karts"), ETNProcGameMode::Karts, 11, 0 },
 	};
 	for (const FCase& C : Cases)
 	{
@@ -332,25 +289,6 @@ bool FTNMapFingerprintBeachTest::RunTest(const FString& Parameters)
 	const TNMapFingerprint::FResult AtOnce = BeachFingerprint(42, 3, true, 0);
 	ExpectSame(*this, TEXT("Playa, semilla 42, por partes y en Baja"), AtOnce, BeachFingerprint(42, 0, false, 0), true);
 	ExpectSame(*this, TEXT("Playa, semilla 42, después de la ronda de la semilla 7"), AtOnce, BeachFingerprint(42, 3, true, 7), true);
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNMapFingerprintRallyTest,
-	"Tortunabo.Map.Fingerprint.Rally",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNMapFingerprintRallyTest::RunTest(const FString& Parameters)
-{
-	using namespace TNMapFingerprintTest;
-	const FName Variant(TEXT("R01_circuito_dunas"));
-	if (!HasVariant(Variant))
-	{
-		AddWarning(TEXT("Sin Scripts/terrain_volumes/Variants/R01_circuito_dunas (build cocinada): se salta."));
-		return true;
-	}
-	const TNMapFingerprint::FResult Plain = RallyFingerprint(Variant, 3, false);
-	const TNMapFingerprint::FResult WithLateActor = RallyFingerprint(Variant, 0, true);
-	ExpectSame(*this, TEXT("Rally R01"), Plain, WithLateActor);
 	return true;
 }
 

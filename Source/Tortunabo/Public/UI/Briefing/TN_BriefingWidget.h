@@ -79,26 +79,6 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> DifficultyHeading;
 
-	/** Rally y Karts (solo el anfitrión): una tortuga por buggy o por parejas. */
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<UTN_ShopButton>> SeatsButtons;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UTextBlock> SeatsHeading;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UWidget> SeatsRow;
-
-	/** Rally (solo el anfitrión, #632): un botón por circuito de TNLobbyMission::RallyMapOptions, en su orden. */
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<UTN_ShopButton>> MapButtons;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UTextBlock> MapHeading;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UWidget> MapRow;
-
 	/** Todos contra Todos (solo el anfitrión, #651): un botón por arena de TNLobbyMission::TctArenaOptions, en su orden. */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTN_ShopButton>> ArenaButtons;
@@ -118,20 +98,17 @@ private:
 	FString FullLine;
 	float Reveal = 0.f;
 
-	/** Pastillas de modo (y de circuito) por fila: con siete modos, dos filas que caben en la página (#632). */
+	/** Pastillas de modo por fila: con más de cuatro modos, dos filas que caben en la página (#632). */
 	static constexpr int32 ModePillsPerRow = 4;
 	/** Pastillas de arena por fila (Todos contra Todos tiene más de veinte: más pequeñas y en más filas). */
 	static constexpr int32 ArenaPillsPerRow = 6;
 
-	/**
-	 * Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad, 2 = plazas por buggy (Rally y Karts)
-	 * o arena (Todos contra Todos), 3 = circuito (Rally).
-	 */
+	/** Fila con el foco del teclado y el mando en «Misión»: 0 = modo, 1 = dificultad, 2 = arena (Todos contra Todos). */
 	int32 MissionRow = 0;
 	/** Lo último que se ha pintado en «Misión» (si cambia desde otra máquina, se repinta y el general lo anuncia). */
 	ETNProcGameMode ShownMode = ETNProcGameMode::Count;
 	ETNProcDifficulty ShownDifficulty = ETNProcDifficulty::Count;
-	/** Circuito del Rally o arena de Todos contra Todos pintados (el anfitrión puede cambiar solo eso). */
+	/** Arena de Todos contra Todos pintada (el anfitrión puede cambiar solo eso). */
 	FName ShownMap;
 
 	void BuildTree();
@@ -146,23 +123,13 @@ private:
 	/** Clic en un modo o en una dificultad (o ←/→): solo el anfitrión; a los demás, el general les recuerda quién manda. */
 	void PickMode(ETNProcGameMode Mode);
 	void PickDifficulty(ETNProcDifficulty Difficulty);
-	/** Karts: tortugas por kart (1 o 2). Solo el anfitrión. */
-	void PickSeats(int32 Seats);
-	/** Plazas por kart elegidas en la GameInstance del anfitrión. */
-	int32 GetKartSeats() const;
-	/** Hay fila de plazas: el anfitrión con el Rally o Karts elegido. */
-	bool HasSeatsRow() const;
-	/** Hay fila de circuito: el anfitrión con el Rally elegido. */
-	bool HasMapRow() const;
 	/** Hay fila de arena: el anfitrión con Todos contra Todos elegido. */
 	bool HasArenaRow() const;
-	/** Última fila con foco posible (1, 2 o 3). */
+	/** Última fila con foco posible (1 o 2). */
 	int32 MaxMissionRow() const;
-	/** Rally: circuito (uno de TNLobbyMission::RallyMapOptions). Solo el anfitrión. */
-	void PickRallyMap(FName Variant);
 	/** Todos contra Todos: arena (una de TNLobbyMission::TctArenaOptions). Solo el anfitrión. */
 	void PickTctArena(FName Arena);
-	/** Pinta una fila de pastillas (circuitos o arenas) con la elegida en coral. */
+	/** Pinta una fila de pastillas (arenas) con la elegida en coral. */
 	void PaintChoicePills(const TArray<TObjectPtr<UTN_ShopButton>>& Buttons, const TArray<FName>& Options, FName Chosen);
 	/** ←/→ con el teclado o el mando: la opción anterior o la siguiente de la fila con el foco. */
 	void StepMission(int32 Direction);
@@ -172,10 +139,10 @@ private:
 	/** La misión que se ve: la de la GameInstance en el anfitrión y la replicada en el general en los demás. */
 	ETNProcGameMode GetMissionMode() const;
 	/**
-	 * Mapa de la misión que se ve (circuito del Rally o arena de Todos contra Todos): el de la GameInstance en el anfitrión
-	 * y el replicado en el general en los demás.
+	 * Mapa de la misión que se ve (arena de Todos contra Todos): el de la GameInstance en el anfitrión y el replicado en el
+	 * general en los demás.
 	 */
-	FName GetMissionRallyMap() const;
+	FName GetMissionMap() const;
 	ETNProcDifficulty GetMissionDifficulty() const;
 
 	void AddHeading(const FText& Text);

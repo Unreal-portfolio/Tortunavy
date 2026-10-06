@@ -10,8 +10,6 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 
-FTNOnBuggyLookChanged ATN_CoopPlayerState::OnAnyBuggyLookChanged;
-
 ATN_CoopPlayerState::ATN_CoopPlayerState()
 {
 	// 5 Hz (1 Hz en reposo con la frecuencia adaptativa): con ocho jugadores, 30 Hz por PlayerState eran casi 1700 miradas
@@ -76,23 +74,6 @@ void ATN_CoopPlayerState::OnRep_EquippedEyesId()
 	}
 }
 
-void ATN_CoopPlayerState::SetEquippedBuggyLook(const FTN_BuggyLook& Look)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-	EquippedBuggyLook = Look;
-	ForceNetUpdate();
-	OnRep_EquippedBuggyLook();
-}
-
-void ATN_CoopPlayerState::OnRep_EquippedBuggyLook()
-{
-	// El buggy que conduzca se repinta ya, sin esperar a su repaso periódico.
-	OnAnyBuggyLookChanged.Broadcast(this);
-}
-
 void ATN_CoopPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -107,7 +88,6 @@ void ATN_CoopPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ATN_CoopPlayerState, EquippedSkinId);
 	DOREPLIFETIME(ATN_CoopPlayerState, EquippedShellId);
 	DOREPLIFETIME(ATN_CoopPlayerState, EquippedEyesId);
-	DOREPLIFETIME(ATN_CoopPlayerState, EquippedBuggyLook);
 	DOREPLIFETIME(ATN_CoopPlayerState, FinishTimeSeconds);
 	DOREPLIFETIME(ATN_CoopPlayerState, FinishRank);
 	DOREPLIFETIME(ATN_CoopPlayerState, bIsEliminated);

@@ -162,12 +162,6 @@ public:
 	void PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate);
 
 	/**
-	 * @brief Igual que la anterior, por la ruta que eligió el servidor.
-	 * @param bIntercom El que habla comparte interfono con este jugador (TNVoiceRouting): se oye sin atenuar.
-	 */
-	void PlayRemoteVoice(const TArray<uint8>& CompressedData, int32 SenderSampleRate, bool bIntercom);
-
-	/**
 	 * @brief Servidor: añade la voz a Pawn si aún no la tiene (lo hacen los PlayerController en OnPossess). En la máquina
 	 *        del jugador el micrófono se abre cuando el peón pasa a ser suyo.
 	 * @return El componente del peón, o nullptr fuera del servidor.
@@ -259,17 +253,11 @@ private:
 	/** @brief Servidor: reenvía un paquete a los oyentes que tocan (TNVoiceRouting::SelectListeners). */
 	void RelayVoiceToListeners(const TArray<uint8>& CompressedData, int32 SenderSampleRate);
 
-	/** @brief Atenuación del playback: por distancia (proximidad) o sin atenuar ni espacializar (interfono). */
-	FSoundAttenuationSettings MakeAttenuation(bool bIntercom) const;
-
-	/** @brief Cambia el playback a interfono o a proximidad si ha cambiado. */
-	void ApplyPlaybackRoute(bool bIntercom);
+	/** @brief Atenuación del playback por distancia (de InnerRadius a OuterRadius). */
+	FSoundAttenuationSettings MakeAttenuation() const;
 
 	/** Ya se ha intentado abrir el micrófono (con éxito o no): no se repite cada fotograma. */
 	bool bCaptureOpenAttempted = false;
-
-	/** El playback suena ahora como interfono (sin atenuar). */
-	bool bPlaybackIntercom = false;
 
 	/** @brief Inicializa la SoundWaveProcedural y el AudioComponent de playback con el sample rate dado. */
 	void SetupPlayback(int32 InSampleRate = 0);

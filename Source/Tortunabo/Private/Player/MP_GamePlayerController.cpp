@@ -31,7 +31,6 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_Ghost.h"
 #include "Player/TN_CosmeticsSync.h"
-#include "Vehicles/TN_BuggyCosmetics.h"
 #include "Player/TN_DebugRpcDecisions.h"
 #include "TN_GhostInternal.h"
 #include "Game/TN_ProcMapGameMode.h"
@@ -392,13 +391,13 @@ void AMP_GamePlayerController::ServerReportProcMapReady_Implementation(int32 Gen
 }
 
 void AMP_GamePlayerController::SendVoiceToOwningClient(const TArray<uint8>& CompressedData, int32 SenderSampleRate,
-	AActor* SpeakerActor, bool bIntercom)
+	AActor* SpeakerActor)
 {
-	ClientReceiveVoice(CompressedData, SenderSampleRate, SpeakerActor, bIntercom);
+	ClientReceiveVoice(CompressedData, SenderSampleRate, SpeakerActor);
 }
 
 void AMP_GamePlayerController::ClientReceiveVoice_Implementation(const TArray<uint8>& CompressedData, int32 SenderSampleRate,
-	AActor* SpeakerActor, bool bIntercom)
+	AActor* SpeakerActor)
 {
 	if (!SpeakerActor)
 	{
@@ -407,7 +406,7 @@ void AMP_GamePlayerController::ClientReceiveVoice_Implementation(const TArray<ui
 
 	if (UProximityVoiceComponent* VoiceComp = SpeakerActor->FindComponentByClass<UProximityVoiceComponent>())
 	{
-		VoiceComp->PlayRemoteVoice(CompressedData, SenderSampleRate, bIntercom);
+		VoiceComp->PlayRemoteVoice(CompressedData, SenderSampleRate);
 	}
 }
 
@@ -1070,22 +1069,9 @@ bool AMP_GamePlayerController::RequestEquipEyes(FName EyesId)
 bool AMP_GamePlayerController::RequestPurchaseCosmetic(ETNCosmeticCategory Category, FName Id)
 {
 	UMP_GameInstance* GI = GetTNGameInstance();
-	// El buggy va con el perfil guardado (el de la partida local no lo tiene): sus desbloqueos, también.
-	const bool bBuggy = TNIsBuggyCategory(Category);
-	if (!GI || !(bBuggy ? GI->PurchaseCosmetic(Category, Id) : GI->PurchaseCosmeticFor(this, Category, Id))) { return false; }
+	if (!GI || !GI->PurchaseCosmeticFor(this, Category, Id)) { return false; }
 	if (Category == ETNCosmeticCategory::Helmet) { ServerSyncUnlockedHelmets(GI->GetUnlockedHelmetIdsFor(this)); }
-	else if (bBuggy) { ServerSyncUnlockedBuggy(GI->GetUnlockedBuggyIds()); }
 	else { ServerSyncUnlockedSkins(GI->GetUnlockedSkinIdsFor(this)); }
-	return true;
-}
-
-bool AMP_GamePlayerController::RequestEquipBuggyLook(const FTN_BuggyLook& Look)
-{
-	UMP_GameInstance* GI = GetTNGameInstance();
-	if (GI && !GI->EquipBuggyLook(Look)) { return false; }
-	// Los desbloqueos primero (la RPC es fiable y ordenada): el servidor valida el buggy contra ellos.
-	if (GI) { ServerSyncUnlockedBuggy(GI->GetUnlockedBuggyIds()); }
-	ServerSetEquippedBuggyLook(TNBuggyCosmetics::Sanitize(Look));
 	return true;
 }
 
@@ -1184,40 +1170,6 @@ void AMP_GamePlayerController::ServerSyncUnlockedSkins_Implementation(const TArr
 	const UMP_GameInstance* GI = GetTNGameInstance();
 	TNCosmeticsSync::FilterKnownRows(GI ? GI->GetSkinDataTable() : nullptr, UnlockedSkinIds, TNCosmeticsSync::MaxUnlockedSkins,
 		ServerUnlockedSkins);
-}
-
-bool AMP_GamePlayerController::ServerSyncUnlockedBuggy_Validate(const TArray<FName>& UnlockedBuggyIds)
-{
-	return UnlockedBuggyIds.Num() <= TNCosmeticsSync::RpcArrayCap;
-}
-
-void AMP_GamePlayerController::ServerSyncUnlockedBuggy_Implementation(const TArray<FName>& UnlockedBuggyIds)
-{
-	// Solo lo que exista en el catálogo del servidor; una lista más larga que la cota se ignora entera.
-	if (!TNBuggyCosmetics::FilterKnownIds(UnlockedBuggyIds, TNBuggyCosmetics::MaxUnlocked, ServerUnlockedBuggy))
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSyncUnlockedBuggy: %d ids de %s (más de %d): se ignoran"), UnlockedBuggyIds.Num(),
-			*GetNameSafe(this), TNBuggyCosmetics::MaxUnlocked);
-	}
-}
-
-bool AMP_GamePlayerController::ServerSetEquippedBuggyLook_Validate(const FTN_BuggyLook& Look)
-{
-	return true;
-}
-
-void AMP_GamePlayerController::ServerSetEquippedBuggyLook_Implementation(const FTN_BuggyLook& Look)
-{
-	if (!TNCosmeticsSync::CanEquipBuggyLook(Look, ServerUnlockedBuggy))
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[PC] ServerSetEquippedBuggyLook: '%s' no es un buggy desbloqueado de %s"),
-			*TNBuggyCosmetics::LookKey(Look), *GetNameSafe(this));
-		return;
-	}
-	if (ATN_CoopPlayerState* TNPS = GetPlayerState<ATN_CoopPlayerState>())
-	{
-		TNPS->SetEquippedBuggyLook(Look);
-	}
 }
 
 void AMP_GamePlayerController::ServerSetEquippedShell_Implementation(FName ShellId)
@@ -1428,9 +1380,6 @@ void AMP_GamePlayerController::SyncCosmeticsToServer()
 		ServerSetEquippedSkin(GI->GetEquippedSkinIdFor(this));
 		ServerSetEquippedShell(GI->GetEquippedShellIdFor(this));
 		ServerSetEquippedEyes(GI->GetEquippedEyesIdFor(this));
-		// Buggy del Rally: los desbloqueos antes que el equipado (se valida contra ellos).
-		ServerSyncUnlockedBuggy(GI->GetUnlockedBuggyIds());
-		ServerSetEquippedBuggyLook(GI->GetEquippedBuggyLook());
 	}
 }
 

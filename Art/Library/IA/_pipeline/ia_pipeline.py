@@ -1,6 +1,6 @@
 """Pipeline de un asset de la biblioteca: malla -> .blend + FBX -> validación (también del FBX reimportado) -> lámina.
 
-Unidades: la escena trabaja en cm (scale_length 0,01) y el FBX sale en cm (UnitScaleFactor 1), como el buggy.
+Unidades: la escena trabaja en cm (scale_length 0,01) y el FBX sale en cm (UnitScaleFactor 1).
 Material único M_TN_IAProp: réplica en Blender de la decodificación de zonas (ver ia_mesh.ZONE_MASKS).
 """
 import datetime
@@ -499,8 +499,7 @@ def run_asset(asset, generator_rel):
         'blender': bpy.app.version_string,
         'license': 'Original de Tortunabo, generado por script (sin fuentes externas)',
         'source_url': None,
-        'style_reference': ['Source/Tortunabo/Private/World/Beach/TN_BeachCritterMeshes.h (tanque de juguete)',
-                            'Art/Source/Vehicles/Buggy/ (buggy biplaza)'],
+        'style_reference': ['Source/Tortunabo/Private/World/Beach/TN_BeachCritterMeshes.h (tanque de juguete)'],
         'budget_tris': asset['budget'], 'tris_total': total, 'parts': parts,
         'blend': rel(blend), 'sheet': rel(sheet), 'sheet_kb': round(sheet_bytes / 1024, 1),
         'material': {'slot': MATERIAL_NAME, 'vertex_color': 'Zone',

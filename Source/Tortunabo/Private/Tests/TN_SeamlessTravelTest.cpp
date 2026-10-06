@@ -1,6 +1,6 @@
-// Vuelta al lobby sin cortes (#711): el anfitrión crasheaba al volver al lobby desde el Rally y los Karts. Los bots no viajan
-// (#694), pero sus PlayerState seguían en el PlayerArray del GameState, que sí viaja al mapa de transición; tras el GC del mapa
-// viejo quedaban huecos nulos y AGameStateBase::SeamlessTravelTransitionCheckpoint los leía al salir hacia el lobby.
+// Vuelta al lobby sin cortes (#711): un PlayerState que no viaja seguía en el PlayerArray del GameState, que sí viaja al
+// mapa de transición; tras el GC del mapa viejo quedaban huecos nulos y AGameStateBase::SeamlessTravelTransitionCheckpoint
+// los leía al salir hacia el lobby. Los GameState del juego los quitan antes (TN_RemoveStalePlayerStates).
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Multiplayer.SeamlessTravel; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
@@ -12,8 +12,6 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/WorldSettings.h"
-#include "Rally/TN_RallyAIController.h"
-#include "Rally/TN_RallyGameState.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -46,61 +44,6 @@ namespace TNSeamlessTravelTestDetail
 	}
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSeamlessTravelBotsStayBehindTest,
-	"Tortunabo.Multiplayer.SeamlessTravel.BotsStayBehind",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNSeamlessTravelBotsStayBehindTest::RunTest(const FString& Parameters)
-{
-	using namespace TNSeamlessTravelTestDetail;
-	UWorld* World = CreateGameWorld();
-	AGameStateBase* GameState = World->SpawnActor<AGameStateBase>();
-	APlayerState* Human = AddState(World, World->SpawnActor<AActor>());
-	ATN_RallyAIController* Pilot = World->SpawnActor<ATN_RallyAIController>();
-	APlayerState* PilotBot = AddState(World, Pilot);
-	APlayerState* MarkedBot = AddState(World, World->SpawnActor<AActor>());
-	if (!TestTrue(TEXT("Mundo, GameState, humano y bots creados"), GameState && Human && Pilot && PilotBot && MarkedBot))
-	{
-		DestroyGameWorld(World);
-		return false;
-	}
-	MarkedBot->SetIsABot(true);
-	TestEqual(TEXT("Los tres en el PlayerArray"), GameState->PlayerArray.Num(), 3);
-
-	// Como AGameModeBase::GetSeamlessTravelActorList hacia la transición: el PlayerArray entero y el GameState.
-	TArray<AActor*> ActorList;
-	ActorList.Append(GameState->PlayerArray);
-	ActorList.Add(GameState);
-	TestEqual(TEXT("Se quedan los dos bots"), TN_DropBotsFromSeamlessTravel(GameState, ActorList), 2);
-	TestTrue(TEXT("El humano viaja"), ActorList.Contains(Human));
-	TestTrue(TEXT("El GameState viaja"), ActorList.Contains(GameState));
-	TestFalse(TEXT("El bot del piloto IA no viaja (#694)"), ActorList.Contains(PilotBot));
-	TestFalse(TEXT("El bot marcado no viaja (#694)"), ActorList.Contains(MarkedBot));
-
-	// Lo que se rompía (#711): el GameState que viaja solo lleva PlayerState que viajan con él.
-	bool bAllTravel = true;
-	for (APlayerState* PlayerState : GameState->PlayerArray)
-	{
-		bAllTravel &= ActorList.Contains(PlayerState);
-	}
-	TestTrue(TEXT("Todo el PlayerArray del GameState que viaja está en la lista del viaje"), bAllTravel);
-	TestEqual(TEXT("En el PlayerArray solo queda el humano"), GameState->PlayerArray.Num(), 1);
-
-	// Los bots mueren con el mapa viejo; en la transición, el motor marca a los que viajaron.
-	PilotBot->Destroy();
-	MarkedBot->Destroy();
-	GameState->SeamlessTravelTransitionCheckpoint(false);
-	TestTrue(TEXT("El humano llega marcado como del mapa anterior"), Human->IsFromPreviousLevel());
-
-	// Sin GameState (no viaja), solo se filtra la lista.
-	TArray<AActor*> OnlyList = { Human };
-	TestEqual(TEXT("Sin GameState y sin bots en la lista, no se queda nadie"), TN_DropBotsFromSeamlessTravel(nullptr, OnlyList), 0);
-	TestEqual(TEXT("La lista sigue con el humano"), OnlyList.Num(), 1);
-
-	DestroyGameWorld(World);
-	return true;
-}
-
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSeamlessTravelStalePlayerStatesTest,
 	"Tortunabo.Multiplayer.SeamlessTravel.StalePlayerStates",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
@@ -130,22 +73,20 @@ bool FTNSeamlessTravelStalePlayerStatesTest::RunTest(const FString& Parameters)
 		DestroyGameWorld(World);
 	}
 
-	// Los GameState del juego limpian antes de que el motor marque el PlayerArray (Rally y Karts, y los del cooperativo).
-	for (UClass* StateClass : { ATN_RallyGameState::StaticClass(), ATN_CoopGameState::StaticClass() })
+	// El GameState del juego limpia antes de que el motor marque el PlayerArray.
 	{
 		UWorld* World = CreateGameWorld();
-		AGameStateBase* GameState = World->SpawnActor<AGameStateBase>(StateClass);
+		AGameStateBase* GameState = World->SpawnActor<ATN_CoopGameState>();
 		APlayerState* Alive = AddState(World, World->SpawnActor<AActor>());
 		APlayerState* Gone = AddState(World, World->SpawnActor<AActor>());
-		if (TestTrue(FString::Printf(TEXT("%s: GameState y PlayerState creados"), *GetNameSafe(StateClass)), GameState && Alive && Gone))
+		if (TestTrue(TEXT("ATN_CoopGameState: GameState y PlayerState creados"), GameState && Alive && Gone))
 		{
 			Gone->Destroy();
 			GameState->PlayerArray.Add(Gone);
 			GameState->SeamlessTravelTransitionCheckpoint(true);
-			TestTrue(FString::Printf(TEXT("%s: en el PlayerArray solo queda el vivo"), *GetNameSafe(StateClass)),
+			TestTrue(TEXT("ATN_CoopGameState: en el PlayerArray solo queda el vivo"),
 				GameState->PlayerArray.Num() == 1 && GameState->PlayerArray[0] == Alive);
-			TestTrue(FString::Printf(TEXT("%s: el vivo queda marcado como del mapa anterior"), *GetNameSafe(StateClass)),
-				Alive->IsFromPreviousLevel());
+			TestTrue(TEXT("ATN_CoopGameState: el vivo queda marcado como del mapa anterior"), Alive->IsFromPreviousLevel());
 		}
 		DestroyGameWorld(World);
 	}
