@@ -31,6 +31,8 @@ namespace TNMapPlacements
 		ItemBox,
 		SearchSpot,
 		ScoreShell,
+		/** Charco de pesca (ATN_FishingPool): servidor, replicado. */
+		FishingPool,
 		/** Puzles: throw_chain, plate_balance, breakable_chain, shell_gauntlet y wobbly_run. */
 		ThrowWall,
 		PlateBalance,

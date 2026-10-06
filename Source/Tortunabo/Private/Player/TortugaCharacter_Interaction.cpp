@@ -22,6 +22,7 @@
 #include "World/TN_ConchPickup.h"
 #include "World/TN_InkProjectile.h"
 #include "Game/TN_TctItems.h"
+#include "Game/TN_CoopItems.h"
 #include "World/Beach/TN_RaceItems.h"
 #include "Game/TN_BeachRaceGameState.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -334,6 +335,13 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 	if (EquippedItem.UseType == ETN_ItemUseType::TctItem)
 	{
 		TNTctItems::ServerUse(this, EquippedItem);
+		return;
+	}
+
+	// ── Objetos del cooperativo (charco de pesca, pez globo, arpón...): Game/TN_CoopItems.h ──
+	if (EquippedItem.UseType == ETN_ItemUseType::CoopItem)
+	{
+		TNCoopItems::ServerUse(this, EquippedItem);
 		return;
 	}
 }

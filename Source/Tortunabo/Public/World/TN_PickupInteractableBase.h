@@ -43,6 +43,12 @@ public:
 	 */
 	bool IsBlockedOnlyByFullInventory(APawn* Interactor) const;
 
+	/** El objeto que da (cualquier máquina). */
+	const FTN_InventoryItem& GetPickupItem() const { return PickupItem; }
+
+	/** Ya lo ha cogido alguien (cualquier máquina). */
+	bool IsTaken() const { return bTaken; }
+
 protected:
 	/**
 	 * [Data-driven] DataTable con filas de tipo FTN_InventoryItem.

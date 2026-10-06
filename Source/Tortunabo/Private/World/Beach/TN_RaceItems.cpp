@@ -1,6 +1,8 @@
 #include "World/Beach/TN_RaceItems.h"
 #include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctItems.h"
+#include "Game/TN_CoopItems.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "Core/TN_GameplayPreload.h"
 #include "TN_RaceItemArt.h"
 #include "World/Beach/TN_RaceItemBox.h"
@@ -282,6 +284,12 @@ void TNRaceItems::ResolveVisuals(FTN_InventoryItem& Item)
 		TNTctItems::ResolveVisuals(Item);
 		return;
 	}
+	// Y los del cooperativo (TN_CoopItems.h).
+	if (Item.UseType == ETN_ItemUseType::CoopItem)
+	{
+		TNCoopItems::ResolveVisuals(Item);
+		return;
+	}
 	if (Item.UseType != ETN_ItemUseType::RaceItem || IsRunningDedicatedServer() || !FApp::CanEverRender())
 	{
 		return;
@@ -512,7 +520,8 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 bool TNRaceItems::IsInvulnerable(const AActor* Turtle)
 {
 	const UTN_RaceItemComponent* Comp = UTN_RaceItemComponent::FindOn(Turtle);
-	if (Comp && Comp->IsInvulnerable())
+	// También la protección del pez globo (objeto del coop): ni derribo ni aturdimiento mientras dura.
+	if ((Comp && Comp->IsInvulnerable()) || UTN_CoopItemComponent::IsTurtleProtected(Turtle))
 	{
 		return true;
 	}

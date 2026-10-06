@@ -79,6 +79,8 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Alambre como decorado → sin pieza"), SpawnOf(TEXT("decor"), TEXT("BarbedWire"), Element) == ESpawn::Unsupported);
 	TestTrue(TEXT("Pasarela de mecánica → decorado local"), SpawnOf(TEXT("mechanic"), TEXT("Boardwalk"), Element) == ESpawn::Decor);
 	TestTrue(TEXT("Cofre de botín → elemento"), SpawnOf(TEXT("loot"), TEXT("TreasureChest"), Element) == ESpawn::BeachElement);
+	TestTrue(TEXT("Charco de pesca → su actor"), SpawnOf(TEXT("loot"), TEXT("FishingPool"), Element) == ESpawn::FishingPool);
+	TestEqual(TEXT("Charco de pesca: nombre en el registro"), FString(SpawnName(ESpawn::FishingPool)), FString(TEXT("FishingPool")));
 	TestTrue(TEXT("Puzle pendiente → sin pieza"), SpawnOf(TEXT("puzzle"), TEXT("think_room"), Element) == ESpawn::Unsupported);
 
 	// Reparto por la polilínea (en L: 10 m al este y 10 m al norte).

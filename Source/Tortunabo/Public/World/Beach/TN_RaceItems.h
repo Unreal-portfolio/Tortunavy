@@ -208,7 +208,10 @@ namespace TNRaceItems
 
 	// ── Estado de la tortuga (lo que dicen el protector y el pelícano) ──────────────────────────────────────────────
 
-	/** true si nada la puede aturdir ni derribar ahora: protector solar puesto o volando en el pelícano. Cualquier máquina. */
+	/**
+	 * true si nada la puede aturdir ni derribar ahora: protector solar puesto, volando en el pelícano o protegida por el pez
+	 * globo (objeto del coop, UTN_CoopItemComponent). Cualquier máquina.
+	 */
 	TORTUNABO_API bool IsInvulnerable(const AActor* Turtle);
 
 	/** true mientras la lleva el pelícano taxi. Cualquier máquina. */

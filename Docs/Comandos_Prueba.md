@@ -334,6 +334,20 @@ generador pasa esos tests en las dos configuraciones antes de actualizar una hue
 | `TN.Lobby.Castle 0` / `TN.Lobby.Valley 0` | Esconde el castillo o el valle del lobby (al recargarlo). |
 | `TN.Storm.Cough 1` / `TN.Storm.Cough 2` | Carraspeos sueltos (`1`) o tos fuerte (`2`) de la tormenta sin tormenta; `0` la apaga. |
 
+### Objetos del coop y charco de pesca
+
+Objetos del GDD definidos en código (`Game/TN_CoopItems.h`, ItemId `Coop_<objeto>_<cuenta>`). Salen de los rebuscables del
+coop y del charco de pesca (tabla del coop: filas de `DT_Items` con peso 15 y los objetos del coop con su peso del Excel). Los
+que se apilan suman en el mismo hueco hasta su límite; el icono lleva la cuenta (o los usos que quedan) cuando pasa de uno.
+Objetos: `PufferFish` (pez globo: 5 s sin derribo ni aturdimiento y 2 s de mareo), `SlipperyPeel` (cáscara: se lanza a 8 m y
+quien la pisa resbala), `StunShell` (concha: aturde 4 s al enemigo de la mira a 10 m) y `Harpoon` (arpón, 15 usos: a 15 m trae
+un objeto suelto, pesca en un charco o rescata a una compañera derribada o en el agua). Pruebas: `Tortunabo.Coop.Items`.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Coop.Item <objeto\|list> [jugador=0]` | Da ese objeto del coop a la tortuga (a la mano; si la mochila está llena, sustituye). `list` enseña objetos, apilado, usos y peso. |
+| `TN.Coop.FishingPool [jugador=0]` / `TN.Coop.FishingPool clear` | Un charco de pesca 4 m delante de esa tortuga / quita los de prueba. Mantener E 2 s pesca un objeto; 12 s de respiro por charco. |
+
 ## Huella del mapa: anfitrión y clientes con el mismo mapa (#828)
 
 Lo que ve el anfitrión tiene que ser exactamente lo que ven todos, en cualquier modo. `TN.Map.Fingerprint` escribe en el log

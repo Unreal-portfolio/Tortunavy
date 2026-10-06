@@ -45,6 +45,7 @@
 #include "Core/TN_InventoryTypes.h"
 #include "Player/TN_CarryComponent.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItems.h"
 #include "Player/TN_InventoryComponent.h"
 #include "InputAction.h"
 #include "Voice/ProximityVoiceComponent.h"
@@ -658,6 +659,11 @@ bool UTN_RunHUDWidget::ShouldShowAimDot() const
 	{
 		// Las armas y lanzables de Todos contra Todos (#707).
 		return TNTctItemRules::UsesAim(TNTctItems::KindOf(Equipped));
+	}
+	if (Use == ETN_ItemUseType::CoopItem)
+	{
+		// Del coop, los que se apuntan: se lanzan o disparan hacia la mira.
+		return TNCoopItems::IsAimed(TNCoopItems::KindOf(Equipped));
 	}
 	return Use == ETN_ItemUseType::Throwable || Use == ETN_ItemUseType::InkThrower;
 }
