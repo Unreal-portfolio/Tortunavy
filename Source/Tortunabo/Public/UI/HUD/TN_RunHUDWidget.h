@@ -58,11 +58,11 @@ struct FTNShellFlight
  * @brief HUD de la tortuga en partida, estilo Tortunavy (boceto para el equipo de arte), hecho en código.
  *
  * Tortugas que salen del nido y tienen que llegar al mar:
- *  - Distintivo: la cara cartoon de la tortuga (TN_HUDFaces.h) según cómo va: feliz, cansada, jadeando con la lengua
- *    fuera, caparazón cerrado si se mete dentro, mareada si queda panza arriba y con ojos de estrella al llegar. La
- *    rodea un salvavidas grueso que es la energía (sin número): del verde al rojo según se vacía
- *    (M_UI_TurtleBadge, Scripts/build_ui_assets.py). Debajo, una cinta con el nombre que no lo tapa. Cuando la
- *    tortuga habla por la voz de proximidad, la cara rebota y sale un bocadillo con barras de volumen.
+ *  - Distintivo: la cara cartoon de la tortuga (TN_HUDFaces.h) según cómo va: feliz, caparazón cerrado si se mete
+ *    dentro, mareada si queda eliminada y con ojos de estrella al llegar, sobre un disco de mar con su salvavidas
+ *    (M_UI_TurtleBadge, Scripts/build_ui_assets.py). La estamina no se ve en la interfaz. Debajo, una cinta con el
+ *    nombre que no lo tapa. Cuando la tortuga habla por la voz de proximidad, la cara rebota y sale un bocadillo con
+ *    barras de volumen.
  *  - Pista de la playa al mar (mapa procedural): del nido con la tortuguita asomando a la ola con la bandera de
  *    meta; tu cara avanza por la arena, los compañeros son caparazones de colores y la nube de tormenta te persigue
  *    oscureciendo la arena que ya se ha tragado.
@@ -74,7 +74,7 @@ struct FTNShellFlight
  *    puntuación real (RaceScore): lo que sube sin concha (la llegada) sale de la tortuga, y si baja se ajusta solo.
  * Hereda toda la lógica de UTN_PlayerHUDWidget creando los widgets que esa clase enlaza por nombre (los que ella
  * rellena y aquí no se ven quedan ocultos y se leen en el Tick).
- * Vista previa de estados en consola: tn.HUD.Energy, tn.HUD.Face y tn.HUD.Talk.
+ * Vista previa de estados en consola: tn.HUD.Face y tn.HUD.Talk.
  */
 UCLASS()
 class TORTUNABO_API UTN_RunHUDWidget : public UTN_PlayerHUDWidget
@@ -111,7 +111,6 @@ private:
 
 	UPROPERTY(Transient) TObjectPtr<UCanvasPanel> Canvas;
 	UPROPERTY(Transient) TObjectPtr<UImage> Badge;
-	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> BadgeMID;
 	UPROPERTY(Transient) TObjectPtr<UImage> FaceImage;
 	UPROPERTY(Transient) TObjectPtr<UWidget> TalkBubble;
 	UPROPERTY(Transient) TArray<TObjectPtr<UImage>> TalkBars;
@@ -151,7 +150,6 @@ private:
 	TWeakObjectPtr<UObject> LastEquippedIcon;
 	TWeakObjectPtr<UObject> LastStoredIcon;
 	float Time = 0.f;
-	float ShownEnergy = 1.f;
 	/** Cara mostrada (ETNTurtleFace de TN_HUDFaces.h) y el rebote al cambiar. */
 	uint8 ShownFace = 0;
 	float FacePop = 0.f;
@@ -218,10 +216,10 @@ private:
  * Hereda la lógica de UTN_CoopFlowHUDWidget creando los widgets que esa clase enlaza por nombre.
  *  - Durante la carrera el cartel de estado no se ve (el objetivo ya lo cuenta la pista); si te eliminan sale un
  *    cartel con la cara mareada y en los resultados la cara va con ojos de estrella si llegaste o mareada si no.
- *  - Tripulación (a la izquierda): la cara de cada compañero según cómo va (su energía, caparazón, panza arriba,
- *    llegada), en un aro de su color (el mismo que su caparazón en la pista) y con su nombre. Las frases del chat
- *    rápido salen en un bocadillo junto a la cara de quien las dice (las tuyas, junto a tu distintivo) en vez de en
- *    un chat global, y cuando alguien habla por la voz de proximidad le sale un bocadillo con barras de volumen.
+ *  - Tripulación (a la izquierda): la cara de cada compañero según cómo va (caparazón, eliminación, llegada), en un
+ *    aro de su color (el mismo que su caparazón en la pista) y con su nombre. Las frases del chat rápido salen en un
+ *    bocadillo junto a la cara de quien las dice (las tuyas, junto a tu distintivo) en vez de en un chat global, y
+ *    cuando alguien habla por la voz de proximidad le sale un bocadillo con barras de volumen.
  */
 UCLASS()
 class TORTUNABO_API UTN_RunFlowHUDWidget : public UTN_CoopFlowHUDWidget

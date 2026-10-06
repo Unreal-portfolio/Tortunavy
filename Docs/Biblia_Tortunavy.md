@@ -1049,7 +1049,7 @@ asset (no de un documento); el menú de pausa las lista siempre desde el `IMC_Pl
 | Moverse (`IA_Move`) | **W A S D** | Stick izquierdo | Continuo | En el menú de pausa sale por direcciones: Avanzar, Retroceder, Ir a la izquierda, Ir a la derecha (se reasignan las del teclado; el stick no) |
 | Mover la cámara (`IA_Look`) | **Ratón** | Stick derecho | Continuo | Sensibilidad e inversión del eje Y en los ajustes; no se reasigna |
 | Saltar (`IA_Jump`) | **Espacio** | **A** (Cruz) | Pulsar | En el aire, otra vez: **panzazo** (plancha) |
-| Correr (`IA_Sprint`) | **Mayús izquierda** | **Gatillo derecho** (RT) | **Mantener** | Gasta energía (salvavidas del HUD) |
+| Correr (`IA_Sprint`) | **Mayús izquierda** | **Gatillo derecho** (RT) | **Mantener** | Gasta energía (no se ve en el HUD) |
 | Usar, coger y lanzar (`IA_Interact`) | **E** | **X** (Cuadrado) | Pulsar / **mantener** | Interactuar con lo que hay delante; coger y lanzar tortugas en caparazón; usar el objeto de la mano si no hay nada que coger; mantener para rebuscar decorados (1,3 s), el cofre del lobby (5 s) y el de la playa (5,5 s) |
 | Meterse en el caparazón (`IA_Shell`) | **Ctrl izquierdo** | **B** (Círculo) | Pulsar (alterna) | No hace nada con un objeto en la mano. El botón del mando llegó en la ronda 4 (ver el punto de abajo) |
 | Soltar el objeto (`IA_DropItem`) | **X** | **Y** (Triángulo) | Pulsar | También suelta a quien llevas |
@@ -1180,7 +1180,7 @@ Tres botones (Crear partida, Unirse, Salir) sobre una escena sencilla con músic
 
 | Elemento | Dónde | Qué muestra |
 |---|---|---|
-| **Distintivo** | Abajo a la izquierda | La **cara cartoon** de tu tortuga según cómo va (feliz, cansada, jadeando con la lengua fuera, caparazón cerrado, mareada, ojos de estrella al llegar; umbrales y prioridad en el §24.3) rodeada de un **salvavidas** que es la **energía** (sin número; del verde al rojo según se vacía; parte se tiñe por el peso que llevas). «¡SIN ALIENTO!» al agotarla. Debajo, una cinta con tu nombre. Cuando hablas por voz, la cara rebota y sale un bocadillo con barras de volumen |
+| **Distintivo** | Abajo a la izquierda | La **cara cartoon** de tu tortuga según cómo va (feliz, caparazón cerrado, mareada, ojos de estrella al llegar; prioridad en el §24.3) sobre un disco de mar con su **salvavidas**, siempre lleno: la estamina no se ve en la interfaz (#851). Debajo, una cinta con tu nombre. Cuando hablas por voz, la cara rebota y sale un bocadillo con barras de volumen |
 | **Inventario** | Abajo en el centro | Dos burbujas iguales: «EN LA ALETA» (con aro de cuerda) y «EN EL CAPARAZÓN»; el aro rueda a la otra al cambiar de objeto |
 | **Contador de conchas** | Arriba a la derecha | La concha de puntos con tu `RaceScore`. Al coger una, iconos de su tamaño (hasta 15) salen de donde estaba la concha, dan un saltito y **vuelan en arco** al contador; cada uno suma su parte con un rebote y un «pom» que sube por la escala pentatónica; «+N» dorado debajo. El número acaba siempre en la puntuación real |
 | **Aviso de interacción** | Abajo en el centro (por encima del inventario) | Tecla + texto, más el aro de mantener |
@@ -1377,7 +1377,7 @@ toca gráficos ni pantalla).
 
 | Opción | Dónde | Qué hace | Por qué está / a quién ayuda |
 |---|---|---|---|
-| **Filtro para daltónicos**: No · Deuteranopía (verde) · Protanopía (rojo) · Tritanopía (azul) | Juego > Accesibilidad | `UWidgetBlueprintLibrary::SetColorVisionDeficiencyType` en modo corrección: Slate lo aplica a la **imagen final de la ventana**, así que corrige a la vez el mapa, el HUD y sus marcadores sin tocar colores uno a uno | El juego usa el color para informar: energía del salvavidas de verde a rojo, aros de color por jugador en la tripulación y la pista, oro y coral en la cuenta atrás, colores de huevos y conchas. Ayuda a jugadores con daltonismo |
+| **Filtro para daltónicos**: No · Deuteranopía (verde) · Protanopía (rojo) · Tritanopía (azul) | Juego > Accesibilidad | `UWidgetBlueprintLibrary::SetColorVisionDeficiencyType` en modo corrección: Slate lo aplica a la **imagen final de la ventana**, así que corrige a la vez el mapa, el HUD y sus marcadores sin tocar colores uno a uno | El juego usa el color para informar: aros de color por jugador en la tripulación y la pista, oro y coral en la cuenta atrás, colores de huevos y conchas. Ayuda a jugadores con daltonismo |
 | **Intensidad del filtro** 0–100 % | Juego > Accesibilidad | Cuánto corrige | Ajustar al gusto: un filtro entero cansa o distorsiona la escena |
 | **Tamaño de la interfaz** 75–130 % | Juego > Interfaz | Multiplica la escala de la interfaz del motor (`UUserInterfaceSettings::ApplicationScale`): cambia el HUD y los menús de UMG al momento, no el editor. El menú de pausa se encoge si no cabe | Baja visión, pantallas de sofá o de portátil, resoluciones extremas (4:3, 16:10, 4K) |
 | **Brillo** 0–100 % (50 % = el de siempre) | Gráficos > Pantalla | Gamma de salida del motor (`GEngine->DisplayGamma`), ±0,7 | Pantallas mal calibradas, salas con reflejos; la playa es muy luminosa |
@@ -1387,8 +1387,8 @@ toca gráficos ni pantalla).
 | **Contador de FPS** | Gráficos > Pantalla | FPS y peor fotograma | Diagnóstico para quien ajuste la calidad |
 | **Calidad general / partes / escala de resolución / límite de FPS / vsync / modo de ventana / resolución** | Gráficos | Niveles Baja–Épica por sombras, efectos, vegetación, distancia de visión, antialiasing, texturas, postprocesado, iluminación global y reflejos; «Calidad recomendada» mide el equipo | Accesibilidad **de hardware**: equipos modestos (la vegetación llega a ~500 000 instancias). El cambio de modo de ventana o resolución pide confirmar en 12 s y **se deshace solo**, para no dejar al jugador ante una imagen que no ve |
 
-**Redundancias visuales ya presentes en el diseño** (no son opciones, pero ayudan): la energía se lee también por la **cara** del distintivo
-(feliz, cansada, jadeando, mareada) y por el texto «¡SIN ALIENTO!»; la cuenta atrás de la carrera es **un número** además de color y sonido;
+**Redundancias visuales ya presentes en el diseño** (no son opciones, pero ayudan): el estado de la tortuga se lee también por la
+**cara** del distintivo (feliz, caparazón, mareada, victoria); la cuenta atrás de la carrera es **un número** además de color y sonido;
 los peligros se anuncian con
 forma (sombra de gaviota, «!», nube de quads, montículos que vibran); el HUD nombra a cada compañero; los avisos importantes son **texto**.
 
@@ -1916,11 +1916,11 @@ recorta el valor actual).
 **Barra de energía sin fin** (`StaminaBoost`, `GrantUnlimitedStamina`): la barra queda llena y no gasta durante los segundos del
 objeto; al acabar entra la penalización.
 
-**Red.** `CurrentStamina` viaja solo al dueño; los demás (espectador, caras del HUD, sonido) reciben `StaminaShared`, un byte con
+**Red.** `CurrentStamina` viaja solo al dueño; los demás (cara de la tortuga, jadeo y sonido) reciben `StaminaShared`, un byte con
 la fracción, solo cuando cambia. `bIsSprinting` y `bIsExhausted`, a todos. El RPC de correr solo sale al cambiar de estado.
 
-**Ver la estamina.** El HUD dibuja un salvavidas de energía con la cara de la tortuga (§24); un espectador ve la de la
-tortuga que sigue.
+**Ver la estamina.** La interfaz no la enseña (#851): ni barra ni salvavidas de energía ni caras de cansancio en el HUD. Se nota
+en la tortuga (jadeo, cara y sonido).
 
 ## 16. El caparazón y la bola física
 
@@ -2450,13 +2450,13 @@ arriba abajo:
 | **Victoria** (`Win`) | Ha llegado a la meta y no está eliminada | Ojos de estrella |
 | **Mareada** (`Down`) | Eliminada (o en DBNO, hoy inactivo). **No** sale al quedar derribada | Ojos en cruz y estrellitas |
 | **Caparazón** (`Shell`) | Metida en el caparazón | Caparazón cerrado |
-| **Jadeando** (`Panting`) | Agotada o energía < 0,22 (sale a 0,3) | Lengua fuera |
-| **Cansada** (`Tired`) | Energía < 0,5 (sale a 0,6) | Párpados a media asta y una gota de sudor |
 | **Feliz** (`Happy`) | El resto | Sonrisa |
 
-Consola: `tn.HUD.Face 0-5` (0 feliz, 1 cansada, 2 jadeando, 3 caparazón, 4 mareada, 5 victoria; −1 = la real), `tn.HUD.Energy 0.3`,
+La estamina no cambia la cara del HUD (#851). El disco del distintivo (`M_UI_TurtleBadge`) lleva el salvavidas siempre lleno.
+
+Consola: `tn.HUD.Face 0-3` (0 feliz, 1 caparazón, 2 mareada, 3 victoria; −1 = la real),
 `tn.HUD.Talk 1`, `tn.HUD.CrewPreview 3`. Con 8 jugadores la tripulación es de hasta 7 filas (a partir de 6 filas, al 88 %). La interfaz de
-la tortuga seguida por un espectador es la del HUD en código; con el HUD de Blueprint solo sigue la energía y el inventario.
+la tortuga seguida por un espectador es la del HUD en código; con el HUD de Blueprint solo sigue el inventario.
 
 ## 25. Emotes y chat rápido
 
@@ -4876,7 +4876,7 @@ escucha). Los índices de jugador empiezan en 0 (0 = el anfitrión).
 | Objetos de carrera | `TN.Race.Item <objeto\|list> [j]`, `TN.Race.ItemUse`, `TN.Race.ItemBox [n]\|clear`, `TN.Race.ItemRank`, `TN.Race.Boost`, `TN.Race.Star`, `TN.Race.ItemClear` (§29.9) | Dar y usar objetos, ver los pesos por puesto |
 | Plancha y caparazón | `TN.Dive.Slide`, `.Friction`, `.Slope`, `.MaxTime`, `.Body`, `.Debug` (§17.6); `TN.Shell.PhysicsRep 0\|1`; `TN.Shell.Impact 0\|1`, `.Debug`, `.Volume`, `.MinSpeed`, `.Test <timbre\|todos> [fuerza]` (§9.7) | Simulación de la plancha, réplica de la bola y golpes del caparazón |
 | Fantasma | `TN.Ghost.Become [j]` (cualquier modo, también el lobby), `TN.Ghost.Revive [j]` (cooperativo y lobby) | Espectador y volver a la vida desde un huevo |
-| Cara y HUD | `tn.Face.Mood 0-3`, `tn.Face.Tongue 0-3`, `tn.Face.Talk 1`, `tn.HUD.Face 0-5`, `tn.HUD.Energy`, `tn.HUD.Talk`, `tn.HUD.CrewPreview` | Caras de la tortuga y del HUD |
+| Cara y HUD | `tn.Face.Mood 0-3`, `tn.Face.Tongue 0-3`, `tn.Face.Talk 1`, `tn.HUD.Face 0-3`, `tn.HUD.Talk`, `tn.HUD.CrewPreview` | Caras de la tortuga y del HUD |
 | Sonido y música | `TN.Voice.*` (`Volume`, `Surface`, `Steps`, `Pant`, `Drag`, `Debug`), `TN.Music.Play <pista>`, `TN.Music.MatchVolume`, `TN.Race.Music.Play\|Stop\|Auto\|Restart\|Status\|Tension\|Duck\|Layers\|Force\|Volume\|Debug`, `TN.Ambience.Debug\|Volume`, `TN.Storm.Cough 0\|1\|2` | Foley, voz, música de fin de partida y de la carrera (funciona en cualquier mapa) |
 | Ajustes e idioma | `TN.Fisheye.D`, `TN.Fisheye.S`; en la línea de comandos, `-culture=xx`, `-language=xx`, `-culture=LEET`, `-culture=keys` | Intensidad del ojo de pez y probar idiomas y textos sin localizar (§10.1) |
 | Interacción | `TN.Debug.Interaction 1` | Esfera y líneas de depuración de la interacción |
