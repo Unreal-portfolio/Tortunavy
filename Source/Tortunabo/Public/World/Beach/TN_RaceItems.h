@@ -61,7 +61,12 @@ enum class ETNRaceLootSource : uint8
 	/** La caja de objetos del suelo. */
 	Box,
 	/** Un cofre de la playa. */
-	Chest
+	Chest,
+	/**
+	 * El cofre de la cima de una fortaleza: los pesos del cofre con la tabla de las últimas para cualquier puesto, así que
+	 * hasta quien va la primera puede sacar la bala, el protector o el coco dorado (#741).
+	 */
+	Summit
 };
 
 /** Puesto de una tortuga en la carrera ahora mismo (0 = va la primera). */

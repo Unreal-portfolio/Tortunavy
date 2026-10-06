@@ -151,6 +151,8 @@ void ATN_BeachFortress::SpawnPrizes()
 		ChestSpec.Element = ETNBeachElement::TreasureChest;
 		ChestSpec.Seed = static_cast<int32>(TNBeachTrapKit::SeedOf(Spec.Seed, 223u) & 0x7FFFFFFFu);
 		ChestSpec.SizeScale = 1.f;
+		// El de la cima da lo mejor de la carrera para cualquier puesto (ETNRaceLootSource::Summit).
+		ChestSpec.Flags = TNBeach::FlagSummitPrize;
 		const FTransform ChestXf(FRotator(0.0, Yaw + ChestYaw, 0.0), ActorXf.TransformPosition(ChestLocal));
 		if (ATN_BeachElement* Chest = ATN_BeachElement::SpawnElement(World, ChestXf, ChestSpec))
 		{

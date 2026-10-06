@@ -632,6 +632,10 @@ void ATN_BeachChest::ApplySpec()
 	}
 	const FTransform Where(FRotator(0.0, GetActorRotation().Yaw, 0.0), GetActorLocation());
 	ChestSpot = World->SpawnActor<ATN_BeachChestSpot>(ATN_BeachChestSpot::StaticClass(), Where, Params);
+	if (ChestSpot)
+	{
+		ChestSpot->SetSummitPrize((Spec.Flags & TNBeach::FlagSummitPrize) != 0);
+	}
 	UE_LOG(LogTortunabo, Verbose, TEXT("[Playa] cofre %s en %s."), *GetNameSafe(ChestSpot), *Where.GetLocation().ToString());
 }
 
@@ -972,8 +976,9 @@ void ATN_BeachChestSpot::SpawnPrizes(const APawn* Opener)
 		if (bItem)
 		{
 			FTN_InventoryItem Item;
-			// El objeto de más, sorteado según el puesto de quien abre el cofre (pesos del cofre: lo mejor para avanzar).
-			if (TNRaceItems::RollLoot(Opener, ETNRaceLootSource::Chest, Table, Item) && Item.PickupActorClass)
+			// El objeto de más, sorteado según el puesto de quien abre el cofre (pesos del cofre: lo mejor para avanzar; el de la
+			// cima de una fortaleza, la tabla de los mejores para cualquier puesto).
+			if (TNRaceItems::RollLoot(Opener, GetRaceLootSource(), Table, Item) && Item.PickupActorClass)
 			{
 				Landing = Ground + FVector(0.0, 0.0, 5.0);
 				FActorSpawnParameters Params;

@@ -644,6 +644,8 @@ private:
 	void SpawnRoundElement(int32 Index, TArray<int8>& HasClass, TMap<FString, int32>& MissingByClass);
 	/** Servidor: el vigilante de los erizos checos de la ronda (#688): derriban al chocar deprisa (ATN_BeachTankTrap). */
 	void SpawnTankTrapGuard();
+	/** Servidor: la catapulta potenciada y el cofre de cima del patio de un castillo enorme de la pasada de castillos (#741). */
+	void SpawnCastlePrizes(const TNBeachLayout::FItem& Item);
 	static FString DescribeMissing(const TMap<FString, int32>& MissingByClass);
 	void DestroyRoundElements();
 	void TickTurtles(float DeltaSeconds);

@@ -257,14 +257,16 @@ Por pasadas, de lo grande y lo que tiene que verse a lo que rellena:
    2-3 y 3-4 en Fácil), un tramo cada una al azar. Todas (`TryAddFortress`): Yaw 0 ± 10° (su +X, al mar), `SizeScale` 0,94-1,06 (la mediana, hasta 1,03: sus
    torres llegan a 21,3 m por tamaño), **rodeo** (25 m libres entre la muralla y la selva por cada lado,
    `FortressDetour`), 12 m hasta lo que ya hubiera (`FortressPad`) y su **franja de caída** libre y reservada: 16 m de
-   ancho de 40 m a 100 m del centro hacia su +X (`FortressLandingZone`: el trampolín potenciado de la cima cae a 45-66 m
-   y la catapulta a 80-90 m y aún rebota). La franja se apunta como `JumpArc` desde el borde de la muralla (así el botín
+   ancho de 40 m a 100 m del centro hacia su +X (`FortressLandingZone`: la catapulta potenciada de la cima cae a 80-90 m y
+   aún rebota; el trampolín, que ya no sale en las cimas, caía a 45-66 m). La franja se apunta como `JumpArc` desde el borde de la muralla (así el botín
    no dibuja conchitas a través de la fortaleza); en su centro no hay `Summit`: la cima (conchas, cofre y lanzador) la
    pone su clase. Alrededor, sus **guardias** (`PlaceGuards`: 2, 3 o 5 según el tamaño, por los enemigos), sobre todo
    por delante: cangrejos, erizos, lagartos y algún tanque que patrulla a lo largo de la muralla.
 5. **Castillos de arena enormes** (6-9 pedidos, 9-14 con 1200 m; salen unos 4 por ronda porque el terreno y las
    estructuras no dejan más sitio; a ±98 m del centro): uno por tramo con sus propios intentos y los que falten, donde
-   quepan; la mitad (más con ayudas) con un trampolín delante para subirse.
+   quepan; la mitad (más con ayudas) con un trampolín delante para subirse. Con la puerta hacia quien llega (180° ± 12°,
+   de su semilla; la malla no gira al azar: `TNBeachDecorKit::HasFixedYaw`) y, en su patio, **catapulta potenciada y cofre
+   de cima** (#741; ver «Premio de los castillos enormes y con salas»).
 6. **Zonas de gaviotas y pelícanos**: 3-4 por la raíz de los enemigos y `LengthScale` (2-3 en Fácil, 4-6 en Difícil;
    4-6, 3-5 y 6-9 con 1200 m), una por tramo del 10 al 97 %, en lados alternos, separadas `GullZoneSpacing` (100 m hasta
    tres y pico zonas, algo menos con más; 150 m con 1200 m) y cada una con su tamaño de círculo, distinto de las demás.
@@ -1811,11 +1813,30 @@ resto no lo usa.
   +3,2 m, con la terraza sobre el pasillo): dos muretes de 70 cm que se saltan o se rodean por el hueco de cada uno y
   ventanas de 2 x 1,9 m (a 80 cm del suelo) al mar y a la playa; se puede saltar por ellas (~4 m) → **salida** por la
   puerta alta de la muralla +X (3,6 x 4 m) a una rampa de arena de 6,4 m (30°).
+- **Premio arriba** (#741): en la terraza del piso de arriba, una **catapulta potenciada** (0,72) a lo largo de X, a media
+  terraza y a 6 m del muro de dentro (lanza hacia el mar por encima de la muralla +X), y un **cofre de cima**
+  (`TNBeach::FlagSummitPrize`, fuente `Summit`) en el cuarto -X, lejos del cartel. Mismo código de creación que el
+  castillo enorme (`TNBeachCastlePrizes::SpawnSummit`).
 - Las piezas de dentro las crea el servidor con `ATN_BeachElement::SpawnElement` (puerta de conchas `Extent` 320;
   algas de `SizeScale` 0,3-0,6 y `Extent` 320) y las destruye con el castillo. Con `bSpawnEnemiesInside` (apagado)
   crearía además un erizo (0,35) junto a la escalera y un cangrejo (0,4) en la sala de las columnas: está apagado porque
   los enemigos de ahora no bajan de 0,75-0,8 de tamaño, se alejan 16-38 m de su sitio sin chocar con paredes y buscan
   el suelo desde arriba (se subirían al techo del pasillo).
+
+### Premio de los castillos enormes y con salas (#741)
+
+Como las fortalezas, todo castillo con cima lleva arriba una catapulta potenciada y un cofre de cima
+(`TN_BeachCastlePrizes.*`; los crea el servidor con el castillo y los destruye con él).
+
+- **Castillo enorme** (`SandCastleHuge` de la pasada de castillos, `EItemRole::Castle`): decorado instanciado, así que los
+  crea el generador al montar la ronda (`ATN_BeachRaceGenerator::SpawnCastlePrizes`) con la misma colocación que el campo
+  de decorado (`ItemBodyPlacement`: sin giro al azar). Van en el patio (suelo de 80 cm, dentro de la muralla), con la
+  catapulta (0,72) en la franja +Y entre el torreón y la muralla, girada 180° respecto de la malla (mira al -X del castillo,
+  que es el mar con la puerta a quien llega), corrida 87 cm hacia el lado contrario a su cartel; y el cofre en la franja
+  -X, de cara al centro. Los castillos enormes de relleno (`Fill`) siguen girando al azar y sin premio.
+- **Castillo con salas**: en la terraza de arriba (ver su sección).
+- El cofre sortea con la fuente `Summit` (la tabla de las últimas para cualquier puesto). Con 6-9 castillos enormes, hasta
+  3 con salas y 1-4 fortalezas por ronda salen una docena larga de cofres de cima: es lo que pide el criterio (#741).
 
 ### Fortalezas de arena (`ATN_BeachFortress`)
 
@@ -1872,12 +1893,13 @@ de arena de molde, cada una más alta y más pequeña que la anterior; la últim
 `TN.Beach.Place clear`):
 
 - **Lanzador potenciado** (`TNBeach::FlagBoosted`) en el borde +X, mirando al +X de la fortaleza (si no queda a ±45° del
-  mar, se gira solo hacia él): catapulta el 55 % de las veces (tamaño 0,89 / 1,02 / 1,15: brazo de 9,8-11,5 m de lado a
-  lado de la cima) y trampolín el resto (0,58 / 0,65 / 0,76). Ver «Catapulta» y «Trampolín».
-- **Cofre** (`TreasureChest` → `ATN_BeachChest`, con `SpawnElement`) en el cuarto -X del lado contrario al cartel del
-  lanzador (`TNBeachSignKit::SideOf` de la semilla del lanzador), con el frente hacia el mar: lo que suelta cae en la
-  cima. Si aún no existe su clase, la cima va sin cofre
-  (se registra).
+  mar, se gira solo hacia él): **siempre catapulta** (#741; antes el 45 % eran trampolines que no compensaban la subida),
+  de tamaño 0,89 / 1,02 / 1,15 (brazo de 9,8-11,5 m de lado a lado de la cima). Ver «Catapulta».
+- **Cofre** (`TreasureChest` → `ATN_BeachChest`, con `SpawnElement` y `TNBeach::FlagSummitPrize`) en el cuarto -X del lado
+  contrario al cartel del lanzador (`TNBeachSignKit::SideOf` de la semilla del lanzador), con el frente hacia el mar: lo que
+  suelta cae en la cima. Sortea con la fuente `Summit` (ver «Pesos por posición»): la tabla de las últimas para cualquier
+  puesto, así que hasta quien va la primera puede sacar el pelícano taxi, el protector solar o el coco dorado. Si aún no
+  existe su clase, la cima va sin cofre (se registra).
 - **Conchas de puntos** (`ATN_ScorePickup`, las del botín: suman a `RaceScore`), en las esquinas de la cima: 100 + 50
   (mediana), 100 + 50 + 50 (grande) y 100 + 100 + 50 + 50 (colosal). Además, una de 50 al final de cada atajo en las
   terrazas de en medio (grande: 2; colosal: 3). En total: 150, 300 y 450 puntos.
@@ -1893,7 +1915,7 @@ medidas, cascos y triángulos).
 
 **Probar**: `TN.Beach.Place FortressColossal 1 0 <semilla>` (y `FortressMedium`, `FortressLarge`), mirando hacia donde
 quieras que lance: sale a ~54 m delante (la colosal) con su premio. `TN.Beach.Fortress.Top [jugador]` sube a esa tortuga a
-la cima de la fortaleza más cercana, detrás del lanzador. Semillas seguidas para ver catapulta o trampolín y el espejo.
+la cima de la fortaleza más cercana, detrás de la catapulta. Semillas seguidas para ver el espejo y las variantes.
 
 ### Mina (`ATN_BeachMine`)
 
@@ -3361,8 +3383,10 @@ funcionando.
 
 El puesto sale de lo que ha avanzado cada tortuga en carrera por la playa (`ATN_BeachRaceGenerator::GetCourseProgress`;
 `TNRaceItems::GetRank`): `Norm` = 0 la primera, 1 la última, 0,5 si va sola. Cada objeto tiene tres pesos (primera / a medias
-/ última) que se interpolan (`TNRaceItems::PositionWeight`). En el **cofre** se multiplican por un factor que sesga a lo mejor.
-«Mín.» es el número de tortugas en carrera sin el cual no sale.
+/ última) que se interpolan (`TNRaceItems::PositionWeight`). En el **cofre** se multiplican por un factor que sesga a lo mejor. El **cofre de la cima de una
+castillo** (fortaleza, enorme o con salas; fuente `Summit`, #741) usa la columna «Última» con ese factor **para cualquier puesto**: la tabla de los mejores
+objetos (pelícano taxi, protector solar, triple coco, coco dorado: ~63 % de los pesos de los objetos de carrera con 4 tortugas) también para quien va
+la primera, que en un cofre corriente no los sacaría nunca. «Mín.» es el número de tortugas en carrera sin el cual no sale.
 
 | Objeto | Primera | A medias | Última | Cofre × | Mín. |
 |---|---|---|---|---|---|
@@ -3397,7 +3421,8 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
 - **Rebuscables** (`ATN_BeachSearchSpot`): `PickLoot` (ahora virtual en `ATN_ProcSearchSpot`, con la tortuga que rebusca)
   sortea por el puesto de quien rebusca (fuente `Search`).
 - **Cofres** (`ATN_BeachChestSpot`): el objeto que cae hacia quien lo abre y el de más, ambos con la fuente `Chest`
-  (factor de la tabla) según el puesto de quien lo abre.
+  (factor de la tabla) según el puesto de quien lo abre; el de la cima de un castillo (fortaleza, enorme o con salas), con la fuente `Summit` (la tabla
+  de las últimas para cualquier puesto).
 - Los objetos que suelta el lagarto generoso siguen con los pesos de siempre (`TNBeachLoot::RaceWeight`, sin puesto).
 
 ### Red (resumen)

@@ -200,10 +200,11 @@ namespace TNRaceItemCmd
 		for (int32 Index = static_cast<int32>(ETNRaceItem::Coconut); Index < static_cast<int32>(ETNRaceItem::Count); ++Index)
 		{
 			const ETNRaceItem Kind = static_cast<ETNRaceItem>(Index);
-			UE_LOG(LogTortunabo, Display, TEXT("[Carrera]   %-16s rebuscar %.2f · caja %.2f · cofre %.2f"), *TNRaceItems::CodeName(Kind),
+			UE_LOG(LogTortunabo, Display, TEXT("[Carrera]   %-16s rebuscar %.2f · caja %.2f · cofre %.2f · cofre de cima %.2f"), *TNRaceItems::CodeName(Kind),
 				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Search),
 				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Box),
-				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Chest));
+				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Chest),
+				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Summit));
 		}
 	}
 

@@ -88,12 +88,19 @@ public:
 	 */
 	static float ChestWeight(FName RowName, const FTN_InventoryItem& Row);
 
+	/** Servidor: es el cofre de la cima de una fortaleza (lo pone ATN_BeachChest por TNBeach::FlagSummitPrize). */
+	void SetSummitPrize(bool bInSummitPrize) { bSummitPrize = bInSummitPrize; }
+	bool IsSummitPrize() const { return bSummitPrize; }
+
 protected:
 	// ── ATN_ProcSearchSpot ───────────────────────────────────────────────────
 	virtual float GetLuck() const override;
 	virtual float GetLootWeight(FName RowName, const FTN_InventoryItem& Row) const override;
-	/** El cofre da lo mejor: los objetos de carrera con los pesos del cofre, según el puesto de quien lo abre. */
-	virtual ETNRaceLootSource GetRaceLootSource() const override { return ETNRaceLootSource::Chest; }
+	/**
+	 * El cofre da lo mejor: los objetos de carrera con los pesos del cofre, según el puesto de quien lo abre. El de la cima de
+	 * una fortaleza (SetSummitPrize) usa la tabla de las últimas para cualquier puesto.
+	 */
+	virtual ETNRaceLootSource GetRaceLootSource() const override { return bSummitPrize ? ETNRaceLootSource::Summit : ETNRaceLootSource::Chest; }
 	virtual FVector GetLootOrigin(const APawn* Pawn) const override;
 	virtual FVector GetRummageOrigin(const APawn* Searcher) const override;
 	virtual FVector FindLanding(const APawn* Pawn, const FVector& From) const override;
@@ -125,6 +132,9 @@ protected:
 	TObjectPtr<UStaticMeshComponent> BeaconBeam;
 
 private:
+	/** Cofre de la cima de una fortaleza: sortea con la tabla de los mejores objetos. Solo lo mira el servidor al abrirlo. */
+	bool bSummitPrize = false;
+
 	/** Premios que saltan de dentro al abrirse (el segundo objeto y las conchas de puntos). */
 	UPROPERTY(ReplicatedUsing = OnRep_Prizes)
 	TArray<TObjectPtr<AActor>> Prizes;

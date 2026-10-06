@@ -330,7 +330,7 @@ void ATN_BeachDecorField::AddItem(const TNBeachLayout::FItem& LayoutItem, int32 
 		return;
 	}
 	const uint32 Key = TNBeachDecorFieldDetail::SingleKey(Element, Variant);
-	Item.BodyXf = TNBeachDecorKit::BodyPlacement(Recipe.Info, Item.Seed, Item.Size) * Item.ItemXf;
+	Item.BodyXf = TNBeachDecorKit::ItemBodyPlacement(Recipe.Info, LayoutItem, Item.Size) * Item.ItemXf;
 	Item.BodyBatch = BatchFor(Key, Element, Recipe.Body, false, Recipe.bCollision, Recipe.Info.bBlocksCamera, Recipe.Info.bCastShadow);
 	{
 		TNBeachDecorFieldTypes::FBatch& Batch = Batches[Item.BodyBatch];
