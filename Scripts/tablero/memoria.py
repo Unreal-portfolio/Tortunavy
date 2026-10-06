@@ -44,5 +44,11 @@ def texto_decision(texto: str, quien: str, dia: date) -> str:
     return f"{CABECERA_DECISION} ({dia.isoformat()}, {quien}): {compactar(texto, '--texto')}"
 
 
+def quien_decide(comentario: str) -> str | None:
+    """Quién firma una línea «**Decisión** (fecha, quién): …»; None si el comentario no es una decisión."""
+    encontrado = re.match(rf"\s*{re.escape(CABECERA_DECISION)} \([^,()]+, ([^()]+)\):", comentario)
+    return encontrado.group(1).strip() if encontrado else None
+
+
 def es_resumen(comentario: str) -> bool:
     return comentario.lstrip().startswith(CABECERA_RESUMEN)
