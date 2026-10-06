@@ -1,6 +1,7 @@
 // Guantazo con la aleta (#832, #709): el dueño lo da al momento y el servidor decide a quién da. Ver TN_FlipperSlapComponent.h.
 
 #include "Player/TN_FlipperSlapComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Core/TN_Log.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -19,6 +20,14 @@ namespace TNFlipperSlapDetail
 {
 	/** Altura del pecho sobre los pies (cm): de donde sale la línea de vista y donde brilla el golpe. */
 	constexpr float ChestHeight = 35.f;
+
+	/** El pecho de una tortuga: sus pies (centro de la cápsula menos la media altura) y ChestHeight encima. */
+	FVector ChestOf(const ACharacter& Turtle)
+	{
+		const UCapsuleComponent* Capsule = Turtle.GetCapsuleComponent();
+		const float HalfHeight = Capsule ? Capsule->GetScaledCapsuleHalfHeight() : 0.f;
+		return Turtle.GetActorLocation() + FVector(0.0, 0.0, ChestHeight - HalfHeight);
+	}
 
 	/** Hasta dónde llega el destello desde el centro de la golpeada, hacia quien golpea (cm). */
 	constexpr float ImpactInset = 40.f;
@@ -170,7 +179,7 @@ void UTN_FlipperSlapComponent::ResolveOnServer(double Now)
 	Aim.Roll = 0.f;
 	const FVector Forward = Aim.Vector();
 	const FVector Origin = Turtle->GetActorLocation();
-	const FVector Chest(0.0, 0.0, ChestHeight);
+	const FVector Chest = ChestOf(*Turtle);
 
 	TArray<ATortugaCharacter*> Candidates;
 	TArray<FVector> Points;
@@ -179,7 +188,7 @@ void UTN_FlipperSlapComponent::ResolveOnServer(double Now)
 		ATortugaCharacter* Other = *It;
 		float Score = 0.f;
 		if (Other == Turtle || !CanBeSlapped(Other) || !TNFlipperSlap::InArc(Origin, Forward, Other->GetActorLocation(), Score)
-			|| !HasLineOfSight(World, Origin + Chest, Other->GetActorLocation() + Chest, Turtle, Other))
+			|| !HasLineOfSight(World, Chest, ChestOf(*Other), Turtle, Other))
 		{
 			continue;
 		}
@@ -193,7 +202,7 @@ void UTN_FlipperSlapComponent::ResolveOnServer(double Now)
 	if (Victim)
 	{
 		const FVector At = Victim->GetActorLocation();
-		ImpactPoint = At + (Origin - At).GetSafeNormal2D() * ImpactInset + Chest;
+		ImpactPoint = ChestOf(*Victim) + (Origin - At).GetSafeNormal2D() * ImpactInset;
 		// Mareo de siempre (lento un momento), un empujoncito y la sacudida mínima de cámara; sin derribo.
 		Victim->ApplyMareoEffect(TNFlipperSlap::DizzySeconds);
 		UTN_TurtleMovementComponent::LaunchFromServer(Victim, TNFlipperSlap::PushVelocity(Origin, Forward, At));
