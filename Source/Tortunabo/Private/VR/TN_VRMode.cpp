@@ -115,7 +115,8 @@ void TNVR::AddToScreen(UUserWidget* Widget, int32 ZOrder)
 	{
 		if (UTN_VRSubsystem* VR = UTN_VRSubsystem::Get(Widget))
 		{
-			if (VR->HostWidget(Widget, ZOrder))
+			// El widget de un jugador: al apagar la VR vuelve a su trozo de la pantalla partida (#639).
+			if (VR->HostWidget(Widget, ZOrder, true))
 			{
 				return;
 			}

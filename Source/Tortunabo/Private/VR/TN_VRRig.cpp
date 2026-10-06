@@ -1215,10 +1215,10 @@ void ATN_VRRig::PointerScroll(float Delta)
 // Pantalla
 // ─────────────────────────────────────────────────────────────────────────────
 
-bool ATN_VRRig::HostWidget(UUserWidget* Widget, int32 ZOrder)
+bool ATN_VRRig::HostWidget(UUserWidget* Widget, int32 ZOrder, bool bPlayerScreen)
 {
 	EnsureScreen();
-	return Screen && Screen->Host(Widget, ZOrder);
+	return Screen && Screen->Host(Widget, ZOrder, bPlayerScreen);
 }
 
 bool ATN_VRRig::IsHosting(const UUserWidget* Widget) const

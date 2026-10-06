@@ -333,7 +333,7 @@ ATN_VRRig* UTN_VRSubsystem::GetActiveRig() const
 	return Existing && !Existing->IsActorBeingDestroyed() ? Existing : nullptr;
 }
 
-bool UTN_VRSubsystem::HostWidget(UUserWidget* Widget, int32 ZOrder)
+bool UTN_VRSubsystem::HostWidget(UUserWidget* Widget, int32 ZOrder, bool bPlayerScreen)
 {
 	if (!Widget || Mode == ETNVRMode::Off)
 	{
@@ -341,7 +341,7 @@ bool UTN_VRSubsystem::HostWidget(UUserWidget* Widget, int32 ZOrder)
 	}
 	UWorld* World = Widget->GetWorld();
 	ATN_VRRig* TargetRig = GetRig(World, true);
-	return TargetRig && TargetRig->HostWidget(Widget, ZOrder);
+	return TargetRig && TargetRig->HostWidget(Widget, ZOrder, bPlayerScreen);
 }
 
 bool UTN_VRSubsystem::IsHostedWidget(const UUserWidget* Widget) const

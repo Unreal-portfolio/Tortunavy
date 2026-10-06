@@ -53,8 +53,11 @@ public:
 	/** El rig del mundo World; con bCreate lo crea si hay VR y es un mundo de juego. */
 	ATN_VRRig* GetRig(UWorld* World, bool bCreate);
 
-	/** Aloja un widget en el panel VR del mundo del widget; false sin VR o sin mundo de juego (entonces va al viewport). */
-	bool HostWidget(UUserWidget* Widget, int32 ZOrder);
+	/**
+	 * Aloja un widget en el panel VR del mundo del widget; false sin VR o sin mundo de juego (entonces va al viewport).
+	 * bPlayerScreen: es el de un jugador (TNVR::AddToScreen); al apagar la VR vuelve a su trozo de la pantalla partida (#639).
+	 */
+	bool HostWidget(UUserWidget* Widget, int32 ZOrder, bool bPlayerScreen = false);
 
 	/** ¿Está el widget en el panel VR del mundo actual? */
 	bool IsHostedWidget(const UUserWidget* Widget) const;
