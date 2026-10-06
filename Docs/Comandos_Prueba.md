@@ -155,7 +155,8 @@ necesita espera a que esté lista.
 Se escriben en la ventana del anfitrión (o de un cliente del PIE: actúan en el mundo del servidor). Los objetos se llaman por
 su nombre en inglés, en español o por su número: `Coconut`/`coco`, `TripleCoconut3`/`triple`, `GoldenCoconut`/`dorado`,
 `PelicanTaxi`/`pelicano`/`taxi`, `Sunscreen`/`protector`/`estrella`, `HomingCrab`/`cangrejo`, `GullStrike`/`gaviota`,
-`SandMine`/`mina`, `StormCloud`/`nube`/`rayo`, `Frisbee`/`disco`, `Whistle`/`silbato`. `TN.Race.Item list` enseña todos.
+`SandMine`/`mina`, `StormCloud`/`nube`/`rayo`, `Frisbee`/`disco`, `Whistle`/`silbato` y, de la #786, `TablaSurf`/`tabla`/`surf`,
+`CanaPescar`/`cana`/`pescar`, `Remolino` y `CoheteFeria`/`cohete`. `TN.Race.Item list` enseña todos.
 Para usarlos, la tecla de siempre de usar el objeto de la mano (E si no hay nada que coger cerca).
 
 | Comando | Qué hace |
@@ -172,6 +173,12 @@ Pruebas con una sola tortuga: `TN.Race.ItemUse Coconut`, `Sunscreen`, `PelicanTa
 cerca) y `HomingCrab` (contra el enemigo más cercano por delante). La gaviota justiciera y la nube de tormenta necesitan a otra
 tortuga: con el anfitrión y un cliente, `TN.Race.ItemUse GullStrike 1` da la gaviota al cliente y va a por quien vaya delante de él.
 Con dos jugadores, `TN.Beach.Go 200 0` y `TN.Beach.Go 100 1` colocan al anfitrión por delante para ver quién recibe qué en las cajas.
+
+Objetos de la #786: `TN.Race.ItemUse TablaSurf` (la ola 3 s hacia el mar; se acaba contra una pared de frente y derriba a las
+tortugas que encuentra), `TN.Race.ItemUse CoheteFeria` (2 s muy rápido y casi sin girar; voltereta al acabar), `TN.Race.ItemUse
+Remolino` (se queda detrás 12 s; quien lo suelta no cae en él los 2 primeros) y la caña con el anfitrión por delante:
+`TN.Beach.Go 120 0`, `TN.Beach.Go 105 1` y `TN.Race.ItemUse CanaPescar 1` (el cliente se remolca y adelanta al anfitrión;
+con `TN.Race.Star` antes en el anfitrión, el anzuelo rebota). `TN.Race.ItemClear` también quita los remolinos.
 
 ## Música de fondo de la carrera
 

@@ -8,6 +8,7 @@
 #include "Player/TN_WadingComponent.h"
 #include "World/Beach/TN_BeachTrampoline.h"
 #include "World/Beach/TN_RaceItemComponent.h"
+#include "World/Beach/TN_RaceItemRules.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "CollisionQueryParams.h"
 #include "Components/CapsuleComponent.h"
@@ -701,6 +702,7 @@ void UTN_TurtleMovementComponent::CalcVelocity(float DeltaTime, float Friction, 
 	if (BellyPhase != ETNBellyPhase::Slide || !IsMovingOnGround() || !SimulatesBelly() || HasAnimRootMotion()
 		|| CurrentRootMotion.HasOverrideVelocity())
 	{
+		ApplyRaceMoveStyle(DeltaTime);
 		Super::CalcVelocity(DeltaTime, Friction, bFluid, BrakingDeceleration);
 		return;
 	}
@@ -1137,6 +1139,32 @@ void UTN_TurtleMovementComponent::ControlledCharacterMove(const FVector& InputVe
 	const UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
 	MovePredictedCaps = Stamina ? Stamina->GetPredictedCapMask() : 0;
 	Super::ControlledCharacterMove(InputVector, DeltaSeconds);
+}
+
+void UTN_TurtleMovementComponent::ApplyRaceMoveStyle(float DeltaTime)
+{
+	// La tabla de surf y el cohete de feria (#786) cambian el rumbo, no solo la velocidad: la ola empuja siempre hacia el mar
+	// (con algo de giro a los lados) y el cohete tira hacia delante girando muy poco. Sale del multiplicador del movimiento
+	// (el que guarda el dueño y reconoce el servidor), así que el dueño, el servidor y la repetición hacen lo mismo.
+	using namespace TNRaceItemRules;
+	const EMoveStyle Style = MoveStyleOf(RaceBoostMultiplier);
+	if (Style == EMoveStyle::Normal || HasAnimRootMotion() || CurrentRootMotion.HasOverrideVelocity() || !(IsMovingOnGround() || IsFalling()))
+	{
+		return;
+	}
+	const UTN_RaceItemComponent* Items = RaceItems.Get();
+	FVector Heading = FVector::ZeroVector;
+	if (Style == EMoveStyle::Surf)
+	{
+		Heading = SurfHeading(Items ? Items->GetCourseForward() : FVector::ForwardVector, Acceleration, SurfSteerShare);
+	}
+	else
+	{
+		const FVector Current = Velocity.SizeSquared2D() > FMath::Square(50.0) ? Velocity
+			: (UpdatedComponent ? UpdatedComponent->GetForwardVector() : FVector::ForwardVector);
+		Heading = RocketHeading(Current, Acceleration, FMath::DegreesToRadians(RocketTurnRateDeg) * DeltaTime);
+	}
+	Acceleration = Heading * GetMaxAcceleration();
 }
 
 float UTN_TurtleMovementComponent::GetMaxAcceleration() const

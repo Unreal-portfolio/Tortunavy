@@ -49,7 +49,11 @@ namespace TNRaceItemDSP
 	constexpr uint8 KindNope = 18;
 	constexpr uint8 KindBeep = 19;
 	constexpr uint8 KindLand = 20;
-	constexpr uint8 KindCount = 21;
+	constexpr uint8 KindWave = 21;
+	constexpr uint8 KindRocket = 22;
+	constexpr uint8 KindReel = 23;
+	constexpr uint8 KindGurgle = 24;
+	constexpr uint8 KindCount = 25;
 
 	/** Duración de cada efecto (s), en el orden de los tipos. El graznido se alarga después con el tono. */
 	constexpr float RaceDurations[] =
@@ -75,6 +79,10 @@ namespace TNRaceItemDSP
 		0.45f, // Nope
 		0.12f, // Beep
 		0.60f, // Land
+		1.30f, // Wave
+		1.10f, // Rocket
+		0.75f, // Reel
+		1.20f, // Gurgle
 	};
 	static_assert(sizeof(RaceDurations) / sizeof(float) == KindCount, "Falta o sobra una duración en RaceDurations");
 
@@ -489,6 +497,10 @@ namespace TNRaceItemDSP
 			case KindNope: RenderNope(Voice, Buf, Count); break;
 			case KindBeep: RenderBeep(Voice, Buf, Count); break;
 			case KindLand: RenderLand(Voice, Buf, Count); break;
+			case KindWave: RenderWave(Voice, Buf, Count); break;
+			case KindRocket: RenderRocket(Voice, Buf, Count); break;
+			case KindReel: RenderReel(Voice, Buf, Count); break;
+			case KindGurgle: RenderGurgle(Voice, Buf, Count); break;
 			default: break;
 			}
 			// Fundido de salida común, interpolado dentro del bloque.
@@ -1048,6 +1060,113 @@ namespace TNRaceItemDSP
 			}
 			RenderNotes(Voice, Buf, Count, RaceLandNotes, RaceNoteCount(RaceLandNotes), 2.f, 0.25f);
 		}
+
+		void RenderWave(FRaceVoice& Voice, float* Buf, int32 Count)
+		{
+			// Ola (#786): rugido de ruido grave que crece y se abre, rompe a los 0,45 s con un golpe y queda la espuma siseando.
+			const float T = Voice.Age;
+			const float Dt = InvRate;
+			const float Rise = RaceSmooth(T / 0.45f);
+			const float RoarG = RaceSvfCoef((180.f + 900.f * Rise) * Voice.Pitch, Rate);
+			const float RoarEnv = RaceSmooth(T / 0.12f) * RaceSmooth((1.3f - T) / 0.6f);
+			const float Crash = T >= 0.45f ? std::exp(-(T - 0.45f) / 0.12f) : 0.f;
+			const float HissG = RaceSvfCoef(4200.f * Voice.Pitch, Rate);
+			const float HissEnv = RaceSmooth((T - 0.4f) / 0.1f) * RaceSmooth((1.3f - T) / 0.7f);
+			const float LpK = RaceLpCoef(140.f * Voice.Pitch, Rate);
+			for (int32 i = 0; i < Count; ++i)
+			{
+				const float Nz = RaceNoise(Voice.NoiseState);
+				const float Roar = Voice.Filt[0].Process(Nz, RoarG, 0.7f);
+				const float Hiss = Voice.Filt[1].Process(Nz, HissG, 0.5f);
+				Voice.Lp1 += LpK * (Nz - Voice.Lp1);
+				Buf[i] += 0.9f * Roar * RoarEnv + 0.8f * Voice.Lp1 * Crash * 3.f + 0.35f * Hiss * HissEnv;
+			}
+		}
+
+		void RenderRocket(FRaceVoice& Voice, float* Buf, int32 Count)
+		{
+			// Cohete de feria (#786): chisporroteo de mecha 0,25 s y arranque silbante que sube, con el soplo de la tobera.
+			const float T = Voice.Age;
+			const float Dt = InvRate;
+			const float Fuse = RaceSmooth((0.3f - T) / 0.05f);
+			const float Launch = RaceSmooth((T - 0.22f) / 0.06f) * RaceSmooth((1.1f - T) / 0.4f);
+			const float WhistleHz = (700.f + 1900.f * RaceSmooth((T - 0.22f) / 0.8f)) * Voice.Pitch;
+			const float BlastG = RaceSvfCoef((600.f + 1500.f * RaceSmooth((T - 0.22f) / 0.5f)) * Voice.Pitch, Rate);
+			const float SnapK = std::exp(-Dt / 0.0015f);
+			for (int32 i = 0; i < Count; ++i)
+			{
+				float Excite = 0.f;
+				Voice.PulseClock -= Dt;
+				if (Voice.PulseClock <= 0.f && Fuse > 0.01f)
+				{
+					Voice.PulseClock = 0.006f + 0.02f * RaceUnit(Voice.NoiseState);
+					Voice.Burst = 0.5f + 0.5f * RaceUnit(Voice.NoiseState);
+					Excite = Voice.Burst;
+				}
+				Voice.Burst *= SnapK;
+				const float Nz = RaceNoise(Voice.NoiseState);
+				RaceAdvance(Voice.PhaseA, WhistleHz * Dt);
+				const float Crackle = Nz * Voice.Burst * Fuse + 0.2f * Excite;
+				const float Blast = Voice.Filt[0].Process(Nz, BlastG, 0.5f) * Launch;
+				const float Whistle = (RaceSin(Voice.PhaseA) + 0.25f * RaceSin(2.f * Voice.PhaseA)) * Launch;
+				Buf[i] += 0.45f * Crackle + 0.9f * Blast + 0.22f * Whistle;
+			}
+		}
+
+		void RenderReel(FRaceVoice& Voice, float* Buf, int32 Count)
+		{
+			// Carrete (#786): carraca de clics que se aceleran y el zumbido del sedal que sube.
+			const float T = Voice.Age;
+			const float Dt = InvRate;
+			const float ZipHz = (320.f + 520.f * RaceSmooth(T / 0.6f)) * Voice.Pitch;
+			const float ZipEnv = RaceSmooth(T / 0.05f) * RaceSmooth((0.75f - T) / 0.2f);
+			const float SnapK = std::exp(-Dt / 0.0009f);
+			for (int32 i = 0; i < Count; ++i)
+			{
+				const float Tl = T + static_cast<float>(i) * Dt;
+				float Excite = 0.f;
+				Voice.PulseClock -= Dt;
+				if (Voice.PulseClock <= 0.f && Tl < 0.68f)
+				{
+					// De 25 a 60 clics por segundo.
+					Voice.PulseClock = 1.f / (25.f + 35.f * RaceSmooth(Tl / 0.5f));
+					Voice.Burst = 1.f;
+					Excite = 1.f;
+					Voice.ResA.Tune(3100.f * Voice.Pitch, 700.f, Rate);
+				}
+				Voice.Burst *= SnapK;
+				RaceAdvance(Voice.PhaseA, ZipHz * Dt);
+				const float Click = Voice.ResA.Process(Excite * 0.6f + RaceNoise(Voice.NoiseState) * Voice.Burst * 0.4f);
+				const float Zip = RaceSaw(Voice.PhaseA, ZipHz * Dt) * ZipEnv;
+				Buf[i] += 0.7f * Click + 0.08f * Zip;
+			}
+		}
+
+		void RenderGurgle(FRaceVoice& Voice, float* Buf, int32 Count)
+		{
+			// Remolino (#786): agua grave que da vueltas (ruido filtrado con el corte girando) y burbujas que suben de tono.
+			const float T = Voice.Age;
+			const float Dt = InvRate;
+			const float Env = RaceSmooth(T / 0.15f) * RaceSmooth((1.2f - T) / 0.4f);
+			const float Swirl = 0.5f + 0.5f * std::sin(RaceTwoPi * 2.6f * T);
+			const float WaterG = RaceSvfCoef((220.f + 420.f * Swirl) * Voice.Pitch, Rate);
+			for (int32 i = 0; i < Count; ++i)
+			{
+				const float Tl = T + static_cast<float>(i) * Dt;
+				float Excite = 0.f;
+				Voice.PulseClock -= Dt;
+				if (Voice.PulseClock <= 0.f && Tl < 1.05f)
+				{
+					Voice.PulseClock = 0.05f + 0.09f * RaceUnit(Voice.NoiseState);
+					Excite = 1.f;
+					Voice.ResA.Tune((380.f + 500.f * RaceUnit(Voice.NoiseState)) * Voice.Pitch, 60.f, Rate);
+				}
+				const float Nz = RaceNoise(Voice.NoiseState);
+				const float Water = Voice.Filt[0].Process(Nz, WaterG, 0.35f);
+				const float Bubble = Voice.ResA.Process(Excite * 0.8f);
+				Buf[i] += (0.8f * Water + 0.5f * Bubble) * Env;
+			}
+		}
 	};
 
 	/** Generador del hilo de render de audio: solo C++ puro y la cola compartida. */
@@ -1107,6 +1226,10 @@ static_assert(static_cast<uint8>(ETNRaceSound::Zap) == TNRaceItemDSP::KindZap, "
 static_assert(static_cast<uint8>(ETNRaceSound::Nope) == TNRaceItemDSP::KindNope, "ETNRaceSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNRaceSound::Beep) == TNRaceItemDSP::KindBeep, "ETNRaceSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNRaceSound::Land) == TNRaceItemDSP::KindLand, "ETNRaceSound y el motor DSP deben coincidir");
+static_assert(static_cast<uint8>(ETNRaceSound::Wave) == TNRaceItemDSP::KindWave, "ETNRaceSound y el motor DSP deben coincidir");
+static_assert(static_cast<uint8>(ETNRaceSound::Rocket) == TNRaceItemDSP::KindRocket, "ETNRaceSound y el motor DSP deben coincidir");
+static_assert(static_cast<uint8>(ETNRaceSound::Reel) == TNRaceItemDSP::KindReel, "ETNRaceSound y el motor DSP deben coincidir");
+static_assert(static_cast<uint8>(ETNRaceSound::Gurgle) == TNRaceItemDSP::KindGurgle, "ETNRaceSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNRaceSound::Count) == TNRaceItemDSP::KindCount, "ETNRaceSound y el motor DSP deben coincidir");
 
 // ─────────────────────────────────────────────────────────────────────────────

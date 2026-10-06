@@ -11718,102 +11718,130 @@ msgid "Coger caja"
 msgstr "Weź pudełko"
 
 #. Key:	ItemBox
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(209)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
 msgctxt "TNRace,ItemBox"
 msgid "Caja de objetos"
 msgstr "Pudełko przedmiotów"
 
 #. Key:	ItemCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(210)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
 msgctxt "TNRace,ItemCoconut"
 msgid "Coco turbo"
 msgstr "Turbokokos"
 
 #. Key:	ItemTripleCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(211)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
 msgctxt "TNRace,ItemTripleCoconut"
 msgid "Triple coco"
 msgstr "Potrójny kokos"
 
 #. Key:	ItemTripleCoconut2
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(212)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
 msgctxt "TNRace,ItemTripleCoconut2"
 msgid "Triple coco (2)"
 msgstr "Potrójny kokos (2)"
 
 #. Key:	ItemTripleCoconut1
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(213)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
 msgctxt "TNRace,ItemTripleCoconut1"
 msgid "Triple coco (1)"
 msgstr "Potrójny kokos (1)"
 
 #. Key:	ItemGoldenCoconut
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(214)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
 msgctxt "TNRace,ItemGoldenCoconut"
 msgid "Coco dorado"
 msgstr "Złoty kokos"
 
 #. Key:	ItemPelicanTaxi
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(215)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
 msgctxt "TNRace,ItemPelicanTaxi"
 msgid "Pelícano taxi"
 msgstr "Pelikan-taksówka"
 
 #. Key:	ItemSunscreen
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(216)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(223)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(223)
 msgctxt "TNRace,ItemSunscreen"
 msgid "Protector solar"
 msgstr "Krem z filtrem"
 
 #. Key:	ItemHomingCrab
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(217)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(224)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(224)
 msgctxt "TNRace,ItemHomingCrab"
 msgid "Cangrejo teledirigido"
 msgstr "Krab samonaprowadzający"
 
 #. Key:	ItemGullStrike
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(218)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(225)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(225)
 msgctxt "TNRace,ItemGullStrike"
 msgid "Gaviota justiciera"
 msgstr "Mewa mścicielka"
 
 #. Key:	ItemSandMine
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(219)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(226)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(226)
 msgctxt "TNRace,ItemSandMine"
 msgid "Mina de arena"
 msgstr "Piaskowa mina"
 
 #. Key:	ItemStormCloud
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(220)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(227)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(227)
 msgctxt "TNRace,ItemStormCloud"
 msgid "Nube de tormenta"
 msgstr "Burzowa chmura"
 
 #. Key:	ItemFrisbee
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(221)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(228)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(228)
 msgctxt "TNRace,ItemFrisbee"
 msgid "Disco volador"
 msgstr "Frisbee"
 
 #. Key:	ItemWhistle
-#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
-#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(222)
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(229)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(229)
 msgctxt "TNRace,ItemWhistle"
 msgid "Silbato del sargento"
 msgstr "Gwizdek sierżanta"
+
+#. Key:	ItemTablaSurf
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(230)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(230)
+msgctxt "TNRace,ItemTablaSurf"
+msgid "Tabla de surf"
+msgstr "Deska surfingowa"
+
+#. Key:	ItemCanaPescar
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(231)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(231)
+msgctxt "TNRace,ItemCanaPescar"
+msgid "Caña de pescar"
+msgstr "Wędka"
+
+#. Key:	ItemRemolino
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(232)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(232)
+msgctxt "TNRace,ItemRemolino"
+msgid "Remolino"
+msgstr "Wir wodny"
+
+#. Key:	ItemCoheteFeria
+#. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(233)
+#: Source/Tortunabo/Private/World/Beach/TN_RaceItems.cpp(233)
+msgctxt "TNRace,ItemCoheteFeria"
+msgid "Cohete de feria"
+msgstr "Odpustowa rakieta"
 
 #. Key:	MineBoom
 #. SourceLocation:	Source/Tortunabo/Private/World/Beach/TN_RaceMine.cpp(907)
@@ -11844,8 +11872,8 @@ msgid "Pulsar"
 msgstr "Naciśnij"
 
 #. Key:	SearchSpotPrompt
-#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(705)
-#: Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(705)
+#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(704)
+#: Source/Tortunabo/Private/World/ProcMap/TN_ProcSearchSpot.cpp(704)
 msgctxt "Tortunabo,SearchSpotPrompt"
 msgid "Mantén para rebuscar"
 msgstr "Przytrzymaj, by poszperać"

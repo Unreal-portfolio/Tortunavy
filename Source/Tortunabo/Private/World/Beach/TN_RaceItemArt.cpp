@@ -1,4 +1,5 @@
 #include "TN_RaceItemArt.h"
+#include "TN_RaceItemArtExtra.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
 #include "Misc/App.h"
@@ -916,7 +917,8 @@ namespace TNRaceItemArtDetail
 				BuildWhistle(B);
 				return true;
 			default:
-				return false;
+				// Los de la issue #786 (tabla de surf, caña, remolino y cohete) están en TN_RaceItemArtExtra.cpp.
+				return TNRaceItemArtExtra::BuildItemMesh(Kind, B);
 		}
 	}
 
@@ -1490,7 +1492,7 @@ namespace TNRaceItemArtDetail
 			case ETNRaceItem::Whistle:
 				return PaintWhistleIcon();
 			default:
-				return nullptr;
+				return TNRaceItemArtExtra::PaintIcon(Kind);
 		}
 	}
 
