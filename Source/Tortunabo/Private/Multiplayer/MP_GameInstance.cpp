@@ -25,7 +25,6 @@
 #include "TimerManager.h"
 #include "Multiplayer/TN_CosmeticSlot.h"
 #include "Multiplayer/TN_CosmeticSaveGame.h"
-#include "Vehicles/TN_BuggyCosmetics.h"
 #include "HAL/IConsoleManager.h"
 #include "Multiplayer/TN_LocalPlayRules.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
@@ -336,7 +335,6 @@ bool UMP_GameInstance::IsCosmeticUnlocked(ETNCosmeticCategory Category, FName Id
 int32 UMP_GameInstance::GetCosmeticPrice(ETNCosmeticCategory Category, FName Id) const
 {
 	if (Id == NAME_None) { return 0; }
-	if (TNIsBuggyCategory(Category)) { return TNBuggyCosmetics::PriceOf(Category, Id); }
 	if (Category == ETNCosmeticCategory::Helmet)
 	{
 		const FTN_HelmetData* HelmRow = FindHelmetRow(Id, TEXT("GetCosmeticPrice"));
@@ -353,7 +351,6 @@ bool UMP_GameInstance::PurchaseCosmetic(ETNCosmeticCategory Category, FName Id)
 
 TArray<FName> UMP_GameInstance::GetCosmeticCatalog(ETNCosmeticCategory Category) const
 {
-	if (TNIsBuggyCategory(Category)) { return TNBuggyCosmetics::CatalogIds(Category); }
 	TArray<FName> Out;
 	if (Category == ETNCosmeticCategory::Helmet)
 	{
@@ -512,12 +509,6 @@ bool UMP_GameInstance::IsCosmeticUnlockedFor(const APlayerController* PC, ETNCos
 {
 	if (Id == NAME_None) { return true; }
 	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
-	if (TNIsBuggyCategory(Category))
-	{
-		// Lo gratis del catálogo no hace falta comprarlo.
-		if (!TNBuggyCosmetics::IsKnown(Category, Id)) { return false; }
-		return TNBuggyCosmetics::PriceOf(Category, Id) == 0 || (Profile && Profile->UnlockedBuggyIds.Contains(Id));
-	}
 	if (!Profile) { return false; }
 	return Category == ETNCosmeticCategory::Helmet ? Profile->UnlockedHelmetIds.Contains(Id) : Profile->UnlockedSkinIds.Contains(Id);
 }
@@ -526,13 +517,11 @@ bool UMP_GameInstance::PurchaseCosmeticFor(const APlayerController* PC, ETNCosme
 {
 	UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
 	if (!Profile || Id == NAME_None) { return false; }
-	if (TNIsBuggyCategory(Category) && !TNBuggyCosmetics::IsKnown(Category, Id)) { return false; }
 	if (IsCosmeticUnlockedFor(PC, Category, Id)) { return true; }
 	const int32 Price = GetCosmeticPrice(Category, Id);
 	if (Price > Profile->AccumulatedRaceScore) { return false; }
 	Profile->AccumulatedRaceScore -= Price;
 	if (Category == ETNCosmeticCategory::Helmet) { Profile->UnlockedHelmetIds.AddUnique(Id); }
-	else if (TNIsBuggyCategory(Category)) { Profile->UnlockedBuggyIds.AddUnique(Id); }
 	else { Profile->UnlockedSkinIds.AddUnique(Id); }
 	SaveCosmeticsFor(PC);
 	UE_LOG(LogTortunabo, Log, TEXT("[Tienda] Desbloqueado '%s' por %d (quedan %d)%s."), *Id.ToString(), Price, Profile->AccumulatedRaceScore,
@@ -574,30 +563,6 @@ int32 UMP_GameInstance::GetAccumulatedRaceScoreFor(const APlayerController* PC) 
 {
 	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
 	return Profile ? Profile->AccumulatedRaceScore : 0;
-}
-
-TArray<FName> UMP_GameInstance::GetUnlockedBuggyIds() const
-{
-	return CosmeticProfile ? CosmeticProfile->UnlockedBuggyIds : TArray<FName>();
-}
-
-bool UMP_GameInstance::EquipBuggyLook(const FTN_BuggyLook& Look)
-{
-	if (!CosmeticProfile) { return false; }
-	const FTN_BuggyLook Clean = TNBuggyCosmetics::Sanitize(Look);
-	if (!IsCosmeticUnlocked(ETNCosmeticCategory::BuggyModel, Clean.ModelId) || !IsCosmeticUnlocked(ETNCosmeticCategory::BuggyPaint, Clean.PaintId))
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[Tienda] Buggy '%s' sin desbloquear: no se equipa."), *TNBuggyCosmetics::LookKey(Clean));
-		return false;
-	}
-	CosmeticProfile->EquippedBuggyLook = Clean;
-	SaveCosmeticProfile();
-	return true;
-}
-
-FTN_BuggyLook UMP_GameInstance::GetEquippedBuggyLook() const
-{
-	return CosmeticProfile ? TNBuggyCosmetics::Sanitize(CosmeticProfile->EquippedBuggyLook) : FTN_BuggyLook();
 }
 
 const FTN_HelmetData* UMP_GameInstance::FindHelmetRow(FName HelmetId, const TCHAR* Ctx) const
@@ -1600,10 +1565,10 @@ int32 UMP_GameInstance::GetAccumulatedCoopScore() const
 }
 
 #if !UE_BUILD_SHIPPING
-// Para probar la tienda (los buggies cuestan conchas): suma conchas al perfil local y las guarda.
+// Para probar la tienda con cosméticos de pago: suma conchas al perfil local y las guarda.
 static FAutoConsoleCommandWithWorldAndArgs GTNShopAddShellsCommand(
 	TEXT("TN.Shop.AddShells"),
-	TEXT("Tienda: TN.Shop.AddShells <conchas = 5000>: suma conchas al perfil cosmético local (para comprar buggies y pinturas)."),
+	TEXT("Tienda: TN.Shop.AddShells <conchas = 5000>: suma conchas al perfil cosmético local (para comprar cosméticos de pago)."),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		UMP_GameInstance* GI = World ? Cast<UMP_GameInstance>(World->GetGameInstance()) : nullptr;
@@ -2000,9 +1965,7 @@ void UMP_GameInstance::HostRoom(const FTNRoomConfig& Config)
 	AdvertisedLocked = INDEX_NONE;
 	bKickedFromRoom = false;
 	SelectedProcMode = ActiveRoom.Mode;
-	SelectedRallyVariant = ActiveRoom.RallyVariant;
 	SelectedTctArena = ActiveRoom.TctArena;
-	SelectedKartSeats = FMath::Clamp(ActiveRoom.RallySeats, 1, 2);
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Salas] Crear sala «%s» (%s, %s, %d plazas, código %s)."), *TNRoomNames::GetIn(ActiveRoom.NameId, true),
 		*UEnum::GetValueAsString(ActiveRoom.Mode), ActiveRoom.bPrivate ? TEXT("privada") : TEXT("pública"), ActiveRoom.MaxPlayers, *ActiveRoom.Code);
@@ -2021,15 +1984,12 @@ FTNRoomConfig UMP_GameInstance::MakeRoomDraft() const
 	{
 		Draft.Mode = TNLobbyMission::NormalizeMenuMode(SelectedProcMode);
 		Draft.MaxPlayers = Sizes.Num() > 0 ? Sizes.Last() : TNRoomLimits::Max;
-		Draft.RallyVariant = SelectedRallyVariant;
 		Draft.TctArena = SelectedTctArena;
-		Draft.RallySeats = FMath::Clamp(SelectedKartSeats, 1, 2);
 	}
 	if (!Sizes.Contains(Draft.MaxPlayers) && Sizes.Num() > 0)
 	{
 		Draft.MaxPlayers = Sizes.Last();
 	}
-	Draft.RallyVariant = TNLobbyMission::ResolveRallyMap(Draft.RallyVariant, TNLobbyMission::RallyMapOptions());
 	Draft.TctArena = TNLobbyMission::ResolveTctArena(Draft.TctArena, TNLobbyMission::TctArenaOptions());
 	// Nombre y código nuevos cada vez que se abre la pantalla (el nombre, distinto del de la última vez).
 	Draft.NameId = TNRoomNames::Random(bHasRoomDraft ? RoomDraft.NameId : INDEX_NONE);

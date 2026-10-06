@@ -403,20 +403,6 @@ void ATN_HQGameMode::BeginMatchTravel()
 			// Supervivencia: los niveles del Clásico (LVL_Run) con su propio GameMode (alias «Survival», DefaultEngine.ini).
 			TravelURL = MatchMapPath + TEXT("?game=Survival");
 		}
-		else if (GI->SelectedProcMode == ETNProcGameMode::Karts)
-		{
-			// Karts: el mapa procedural del cooperativo con karts (ATN_KartGameMode, alias «Karts» en DefaultEngine.ini).
-			// La dificultad y las plazas las lee el GameMode de la GameInstance.
-			TravelURL = ProcMapPath + TEXT("?game=Karts");
-		}
-		else if (GI->SelectedProcMode == ETNProcGameMode::Rally && FPackageName::DoesPackageExist(RallyMapPath)
-			&& !TNLobbyMission::ResolveRallyMap(GI->SelectedRallyVariant, TNLobbyMission::RallyMapOptions()).IsNone())
-		{
-			// Rally (#632): un circuito de LVL_Rally (ATN_RallyGameMode). La dificultad y las plazas las lee el GameMode de la
-			// GameInstance; con ?FromLobby vuelve aquí al acabar.
-			TravelURL = TNLobbyMission::RallyTravelURL(
-				TNLobbyMission::ResolveRallyMap(GI->SelectedRallyVariant, TNLobbyMission::RallyMapOptions()), RallyMapPath);
-		}
 		else if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll && FPackageName::DoesPackageExist(TctMapPath)
 			&& !TNLobbyMission::ResolveTctArena(GI->SelectedTctArena, TNLobbyMission::TctArenaOptions()).IsNone())
 		{
@@ -431,12 +417,6 @@ void ATN_HQGameMode::BeginMatchTravel()
 			{
 				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] No existe %s (se crea con Scripts/build_beach_race.py): la carrera se juega en el mapa procedural."),
 					*BeachRaceMapPath);
-			}
-			if (GI->SelectedProcMode == ETNProcGameMode::Rally)
-			{
-				UE_LOG(LogTortunabo, Error, TEXT("[HQGameMode] Sin %s o sin circuitos en Scripts/terrain_volumes/Variants (build cocinada): se juega el cooperativo."),
-					*RallyMapPath);
-				GI->SelectedProcMode = ETNProcGameMode::Coop;
 			}
 			if (GI->SelectedProcMode == ETNProcGameMode::FreeForAll)
 			{
@@ -491,8 +471,8 @@ void ATN_HQGameMode::SetFlowState(ETNMatchFlowState NewState) const
 
 void ATN_HQGameMode::HandleSeamlessTravelPlayer(AController*& C)
 {
-	// Un bot de la partida (piloto IA del Rally) no tiene sitio en el lobby: ni peón ni plaza en «todos listos» (#694).
-	// El Rally ya no los deja viajar; esto cubre a cualquier controlador sin jugador que llegue igualmente.
+	// Un bot de la partida no tiene sitio en el lobby: ni peón ni plaza en «todos listos» (#694). Cubre a cualquier
+	// controlador sin jugador que llegue con el viaje.
 	if (C && !C->IsA<APlayerController>())
 	{
 		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] HandleSeamlessTravelPlayer: %s es un bot, fuera del lobby."), *GetNameSafe(C));

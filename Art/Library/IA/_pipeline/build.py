@@ -15,11 +15,10 @@ sys.path.insert(0, HERE)
 import ia_pipeline  # noqa: E402
 import assets_tct  # noqa: E402
 import assets_puzzles  # noqa: E402
-import assets_rally  # noqa: E402
 import assets_deco  # noqa: E402
 
-MODULES = (assets_tct, assets_puzzles, assets_rally, assets_deco)
-CATEGORY_ORDER = ['todos_contra_todos', 'puzzles', 'rally', 'decoracion']
+MODULES = (assets_tct, assets_puzzles, assets_deco)
+CATEGORY_ORDER = ['todos_contra_todos', 'puzzles', 'decoracion']
 
 
 def _args():
@@ -46,11 +45,11 @@ def write_index():
         '',
         'Borradores para que el equipo de modelado los rehaga; **no están importados a Content**. '
         'Se regeneran con `powershell -File Art/Library/IA/_pipeline/build_library.ps1` '
-        '(opcional `-Only slug1,slug2` o `-Category rally`), que también reescribe este índice.',
+        '(opcional `-Only slug1,slug2` o `-Category puzzles`), que también reescribe este índice.',
         '',
         'Convenciones: FBX en cm (UnitScaleFactor 1), +X delante, Z arriba; origen en la base (props) o en el punto de '
         'agarre (objetos de mano, socket `Grip` en el origen); 1 material `M_TN_IAProp` con zonas en el color de '
-        'vértice `Zone` (mismas máscaras que `M_TN_Buggy`: Trim/Paint/Detail/Dark/Light), sin texturas. '
+        'vértice `Zone` (máscaras Trim/Paint/Detail/Dark/Light), sin texturas. '
         'Colisión simple en `UCX_*` cuando la hay. Import en Unreal: Static Mesh, Combine Meshes on, Import Vertex '
         'Color = Replace, Normal Import = Import Normals, Auto Generate Collision off.',
         '',

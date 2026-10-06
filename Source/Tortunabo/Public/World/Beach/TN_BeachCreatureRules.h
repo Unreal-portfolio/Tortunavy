@@ -270,7 +270,7 @@ namespace TNBeachCreatureRules
 			None,
 			/** Andando: la colisión la para y ya está. */
 			Block,
-			/** Corriendo, rodando en bola o en buggy: rebote y derribo. */
+			/** Corriendo o rodando en bola: rebote y derribo. */
 			KnockDown,
 		};
 
@@ -290,8 +290,6 @@ namespace TNBeachCreatureRules
 			Walker,
 			/** Tortuga rodando en su bola de caparazón. */
 			Ball,
-			/** Buggy (conducido por una tortuga o por la IA). */
-			Buggy,
 		};
 
 		/** Cómo se aplica el derribo según lo que choca. */
@@ -303,8 +301,6 @@ namespace TNBeachCreatureRules
 			KnockDownWalker,
 			/** Bola: rebota y la tortuga queda mareada dentro del caparazón. */
 			StunBall,
-			/** Buggy: rebote del chasis y bamboleo de la dirección. */
-			BounceBuggy,
 		};
 
 		inline EResponse ResponseFor(EBody Body, float SpeedToward, float Threshold = KnockSpeed)
@@ -316,19 +312,8 @@ namespace TNBeachCreatureRules
 			switch (Body)
 			{
 			case EBody::Ball: return EResponse::StunBall;
-			case EBody::Buggy: return EResponse::BounceBuggy;
 			default: return EResponse::KnockDownWalker;
 			}
-		}
-
-		/**
-		 * Distancia (cm) del centro de un buggy a su contorno en la dirección LocalDir (en sus ejes, plana): el apoyo de su
-		 * caja en planta (semilargo HalfLength en X, semiancho HalfWidth en Y). De morro cuenta el largo; de lado, el ancho.
-		 */
-		inline double BuggyReachCm(const FVector& LocalDir, double HalfLength, double HalfWidth)
-		{
-			const FVector Flat = FVector(LocalDir.X, LocalDir.Y, 0.0).GetSafeNormal();
-			return FMath::Abs(Flat.X) * HalfLength + FMath::Abs(Flat.Y) * HalfWidth;
 		}
 	}
 

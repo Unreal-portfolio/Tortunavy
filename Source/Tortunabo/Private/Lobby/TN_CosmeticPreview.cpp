@@ -3,8 +3,6 @@
 #include "Art/TN_ArtMeshComponent.h"
 #include "Art/TN_TurtleArt.h"
 #include "Core/TN_CosmeticLook.h"
-#include "Vehicles/TN_Buggy.h"
-#include "Vehicles/TN_BuggyLookComponent.h"
 #include "Animation/AnimationAsset.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -21,23 +19,14 @@
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInterface.h"
 #include "../World/ProcMap/TN_ProcMapRuntimeMesh.h"
-#include "../Vehicles/TN_BuggyArt.h"
 
 namespace TNPreviewDetail
 {
 	/** Donde vive el escaparate: muy alto, lejos de todo. */
 	const FVector StageLocation(0.0, 0.0, 60000.0);
 	constexpr float TurtleScale = 2.5f;
-	/** El buggy de 4,2 m en la peana, como un juguete de 1,5 m; con la tortuga al volante, de pie sobre el cojín. */
-	constexpr float BuggyScale = 0.36f;
-	constexpr float SeatedTurtleHeightCm = 90.f;
-	/** Equipo del escaparate: el de serie con su skin y su color, y en las tortugas, iris y banderín de ese color. */
-	constexpr int32 BuggyPreviewTeam = 1;
 	const FVector TurtleCamPos(430.f, 0.f, 112.f);
 	const FVector TurtleCamFocus(0.f, 0.f, 80.f);
-	/** Con el buggy, la cámara más alta para ver el lomo de placas. */
-	const FVector BuggyCamPos(430.f, 0.f, 156.f);
-	const FVector BuggyCamFocus(0.f, 0.f, 46.f);
 	constexpr float PedestalTop = 12.f;
 	constexpr float AutoSpinSpeed = 24.f;
 	constexpr int32 LiveSize = 1024;
@@ -156,20 +145,6 @@ ATN_CosmeticPreview::ATN_CosmeticPreview()
 	Helmet->SetupAttachment(Turtle);
 	SetupStudioPrimitive(Helmet);
 
-	BuggyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("BuggyRoot"));
-	BuggyRoot->SetupAttachment(Turntable);
-	BuggyRoot->SetRelativeLocation(FVector(0.f, 0.f, PedestalTop));
-	BuggyRoot->SetRelativeScale3D(FVector(BuggyScale));
-	Buggy = CreateDefaultSubobject<UTN_BuggyLookComponent>(TEXT("Buggy"));
-	Buggy->SetupAttachment(BuggyRoot);
-
-	ThumbBuggyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("ThumbBuggyRoot"));
-	ThumbBuggyRoot->SetupAttachment(StageRoot);
-	ThumbBuggyRoot->SetRelativeLocation(FVector(0.f, 0.f, PedestalTop));
-	ThumbBuggyRoot->SetRelativeScale3D(FVector(BuggyScale));
-	ThumbBuggy = CreateDefaultSubobject<UTN_BuggyLookComponent>(TEXT("ThumbBuggy"));
-	ThumbBuggy->SetupAttachment(ThumbBuggyRoot);
-
 	// Cámara de frente, un pelín por encima: la tortuga (133 cm) y un sombrero alto caben con aire.
 	Capture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Capture"));
 	Capture->SetupAttachment(StageRoot);
@@ -251,62 +226,8 @@ void ATN_CosmeticPreview::BeginPlay()
 	Capture->ShowOnlyComponent(Pedestal);
 	AddStudioArt(Pedestal, Capture);
 
-	// El buggy: sus piezas se crean al vestirlo y solo las ven las capturas.
-	Buggy->SetStudio(StudioChannel());
-	Buggy->ApplyLook(BuggyLookState, BuggyPreviewTeam, true);
-	ThumbBuggy->SetStudio(StudioChannel());
-	ThumbBuggy->ApplyLook(FTN_BuggyLook(), BuggyPreviewTeam, true);
-	TArray<UPrimitiveComponent*> BuggyParts;
-	BuggyPrimitives(BuggyParts);
-	for (UPrimitiveComponent* Part : BuggyParts) { Capture->ShowOnlyComponent(Part); }
-
 	if (IdleAnim) { Turtle->PlayAnimation(IdleAnim, true); }
 	ApplyLookNow(Look);
-	ApplyMode(bBuggyMode);
-}
-
-void ATN_CosmeticPreview::BuggyPrimitives(TArray<UPrimitiveComponent*>& Out) const
-{
-	if (Buggy) { Buggy->GetPrimitives(Out); }
-}
-
-void ATN_CosmeticPreview::ApplyMode(bool bBuggy)
-{
-	using namespace TNPreviewDetail;
-	bBuggyMode = bBuggy;
-	BuggyRoot->SetVisibility(bBuggy, true);
-	if (bBuggy)
-	{
-		// La tortuga del jugador va al volante, de pie sobre el cojín de la conductora (igual en todos los modelos): la
-		// cabeza queda donde la lleva la tortuga sentada del Rally.
-		Turtle->AttachToComponent(BuggyRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		Turtle->SetRelativeLocationAndRotation(FVector(ATN_Buggy::DriverSeatLocal.X - 4.f, 0.f, TNBuggyArt::Frame::DriverCushionZ), FRotator(0.f, -90.f, 0.f));
-		const USkeletalMesh* TurtleMesh = Turtle->GetSkeletalMeshAsset();
-		const float Height = TurtleMesh ? static_cast<float>(TurtleMesh->GetBounds().BoxExtent.Z) * 2.f : 0.f;
-		Turtle->SetRelativeScale3D(FVector(Height > KINDA_SMALL_NUMBER ? SeatedTurtleHeightCm / Height : 1.f));
-	}
-	else
-	{
-		Turtle->AttachToComponent(Turntable, FAttachmentTransformRules::KeepRelativeTransform);
-		Turtle->SetRelativeLocationAndRotation(FVector(0.f, 0.f, PedestalTop), FRotator(0.f, -90.f, 0.f));
-		Turtle->SetRelativeScale3D(FVector(TurtleScale));
-	}
-	Turtle->SetVisibility(true, true);
-	Pedestal->SetRelativeScale3D(FVector(bBuggy ? 1.35f : 1.f, bBuggy ? 1.35f : 1.f, 1.f));
-	const FVector CamPos = bBuggy ? BuggyCamPos : TurtleCamPos;
-	Capture->SetRelativeLocationAndRotation(CamPos, LookRotation(CamPos, bBuggy ? BuggyCamFocus : TurtleCamFocus));
-	if (bLive) { Capture->CaptureScene(); }
-}
-
-void ATN_CosmeticPreview::SetBuggyMode(bool bInBuggyMode)
-{
-	if (bInBuggyMode != bBuggyMode) { ApplyMode(bInBuggyMode); }
-}
-
-void ATN_CosmeticPreview::SetBuggyLook(const FTN_BuggyLook& InLook)
-{
-	BuggyLookState = InLook;
-	if (Buggy) { Buggy->ApplyLook(InLook, TNPreviewDetail::BuggyPreviewTeam); }
 }
 
 void ATN_CosmeticPreview::BuildPedestal()
@@ -378,8 +299,7 @@ UTextureRenderTarget2D* ATN_CosmeticPreview::GetThumbnail(ETNCosmeticCategory Ca
 {
 	using namespace TNPreviewDetail;
 	const TCHAR* Prefix = Category == ETNCosmeticCategory::Helmet ? TEXT("H")
-		: Category == ETNCosmeticCategory::Shell ? TEXT("S") : Category == ETNCosmeticCategory::Eyes ? TEXT("E")
-		: Category == ETNCosmeticCategory::BuggyModel ? TEXT("M") : Category == ETNCosmeticCategory::BuggyPaint ? TEXT("P") : TEXT("B");
+		: Category == ETNCosmeticCategory::Shell ? TEXT("S") : Category == ETNCosmeticCategory::Eyes ? TEXT("E") : TEXT("B");
 	const FName Key(*FString::Printf(TEXT("%s_%s"), Prefix, *Id.ToString()));
 	if (TObjectPtr<UTextureRenderTarget2D>* Found = Thumbnails.Find(Key)) { return *Found; }
 	UTextureRenderTarget2D* RT = UKismetRenderingLibrary::CreateRenderTarget2D(this, ThumbSize, ThumbSize, RTF_RGBA16f, FLinearColor(0.f, 0.f, 0.f, 1.f));
@@ -388,72 +308,13 @@ UTextureRenderTarget2D* ATN_CosmeticPreview::GetThumbnail(ETNCosmeticCategory Ca
 	Request.Category = Category;
 	Request.Id = Id;
 	Request.Target = RT;
-	(TNIsBuggyCategory(Category) ? PendingBuggyThumbs : PendingThumbs).Add(Request);
+	PendingThumbs.Add(Request);
 	return RT;
-}
-
-void ATN_CosmeticPreview::TickBuggyThumbs()
-{
-	if (PendingBuggyThumbs.Num() == 0 || !ThumbBuggy) { return; }
-	const FThumbRequest& Request = PendingBuggyThumbs[0];
-	FTN_BuggyLook Wanted;
-	Wanted.Set(Request.Category, Request.Id);
-	if (ThumbBuggy->GetLook() != Wanted)
-	{
-		ThumbBuggy->ApplyLook(Wanted, TNPreviewDetail::BuggyPreviewTeam);
-		BuggyThumbFrames = 0;
-		bBuggyThumbPrimed = false;
-		return;
-	}
-	// Un fotograma para que la escena tenga las mallas nuevas y, si hay precarga de PSO, a que acabe (con tope). Mientras
-	// precarga, una pieza puede no tener aún su proxy de render (no se dibuja): también se espera.
-	bool bPrecaching = false;
-	TArray<UPrimitiveComponent*> Parts;
-	ThumbBuggy->GetPrimitives(Parts);
-	for (UPrimitiveComponent* Part : Parts)
-	{
-		if (!Part || !Part->IsVisible()) { continue; }
-		bPrecaching |= Part->CheckPSOPrecachingAndBoostPriority(EPSOPrecachePriority::Highest) || (Part->IsRegistered() && !Part->SceneProxy);
-	}
-	if (++BuggyThumbFrames < 2 || (bPrecaching && BuggyThumbFrames < 600)) { return; }
-	// Dos capturas en fotogramas seguidos: la captura guarda su estado de render, y la oclusión de la miniatura anterior
-	// (otra cámara, otra carrocería) taparía piezas que ahora se ven. La primera la pone al día; la segunda es la buena.
-	CaptureBuggyThumbnail(Request);
-	if (!bBuggyThumbPrimed)
-	{
-		bBuggyThumbPrimed = true;
-		return;
-	}
-	bBuggyThumbPrimed = false;
-	PendingBuggyThumbs.RemoveAt(0);
-}
-
-void ATN_CosmeticPreview::CaptureBuggyThumbnail(const FThumbRequest& Request)
-{
-	using namespace TNPreviewDetail;
-	// Buggy solo, de tres cuartos por el lado de la conductora: el modelo entero o, la pintura (en el de serie), desde más
-	// arriba para que se vean los pontones y el capó.
-	ThumbCapture->ClearShowOnlyComponents();
-	TArray<UPrimitiveComponent*> Parts;
-	ThumbBuggy->GetPrimitives(Parts);
-	for (UPrimitiveComponent* Part : Parts) { ThumbCapture->ShowOnlyComponent(Part); }
-	const bool bModel = Request.Category == ETNCosmeticCategory::BuggyModel;
-	const FTransform BuggyXf = ThumbBuggyRoot->GetComponentTransform();
-	const FVector Focus = BuggyXf.TransformPosition(bModel ? FVector(0.f, 0.f, 90.f) : FVector(10.f, 0.f, 80.f));
-	const FVector ViewDir = (bModel ? FVector(0.78, -0.52, 0.36) : FVector(0.55, -0.62, 0.56)).GetSafeNormal();
-	const float Reach = (bModel ? 270.f : 235.f) * BuggyScale;
-	const float Distance = Reach / FMath::Tan(FMath::DegreesToRadians(CaptureFOV * 0.5f)) * 1.02f;
-	const FVector CamPos = Focus + ViewDir * Distance;
-	ThumbCapture->SetWorldLocationAndRotation(CamPos, LookRotation(CamPos, Focus));
-	ThumbCapture->TextureTarget = Request.Target;
-	ThumbCapture->CaptureScene();
 }
 
 void ATN_CosmeticPreview::CaptureThumbnail(const FThumbRequest& Request)
 {
 	using namespace TNPreviewDetail;
-	// Las miniaturas de la tortuga son con la tortuga en la peana.
-	if (bBuggyMode) { ApplyMode(false); }
 	FTN_TurtleLook ThumbLook;
 	ThumbLook.Set(Request.Category, Request.Id);
 	ApplyLookNow(ThumbLook);
@@ -524,16 +385,12 @@ void ATN_CosmeticPreview::Tick(float DeltaSeconds)
 	// Miniaturas: unas pocas por fotograma, con la peana quieta de frente, y luego vuelve el conjunto de verdad.
 	if (PendingThumbs.Num() > 0)
 	{
-		const bool bWasBuggy = bBuggyMode;
 		Turntable->SetRelativeRotation(FRotator::ZeroRotator);
 		const int32 Count = FMath::Min(4, PendingThumbs.Num());
 		for (int32 i = 0; i < Count; ++i) { CaptureThumbnail(PendingThumbs[i]); }
 		PendingThumbs.RemoveAt(0, Count);
 		ApplyLookNow(Look);
-		if (bBuggyMode != bWasBuggy) { ApplyMode(bWasBuggy); }
-		Turtle->SetVisibility(true, true);
 	}
-	TickBuggyThumbs();
 
 	if (ManualSpinHold > 0.f) { ManualSpinHold -= DeltaSeconds; }
 	else if (bLive) { SpinDeg = FMath::Fmod(SpinDeg + AutoSpinSpeed * DeltaSeconds, 360.f); }

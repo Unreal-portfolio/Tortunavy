@@ -1,49 +1,13 @@
-// Sincronización de cosméticos cliente -> servidor, común a los PlayerController del juego (AMP_GamePlayerController)
-// y del Rally (ATN_RallyPlayerController). El cliente lee de su GameInstance lo desbloqueado y lo equipado; el servidor
-// lo valida contra sus DataTables (DT_Helmets y DT_Skins) y contra el catálogo del buggy (TNBuggyCosmetics) y lo escribe
-// en el ATN_CoopPlayerState, que lo replica.
+// Validación en el servidor de los cosméticos que manda el cliente (AMP_GamePlayerController): el cliente lee de su
+// GameInstance lo desbloqueado y lo equipado; el servidor lo valida contra sus DataTables (DT_Helmets y DT_Skins) y lo
+// escribe en el ATN_CoopPlayerState, que lo replica.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Core/TN_CosmeticsTypes.h"
-#include "TN_CosmeticsSync.generated.h"
 
-class ATN_CoopPlayerState;
 class UDataTable;
 class UMP_GameInstance;
-
-/** Lote completo de cosméticos de un jugador, tal como lo guarda su GameInstance. */
-USTRUCT()
-struct TORTUNABO_API FTNCosmeticLoadout
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TArray<FName> UnlockedHelmetIds;
-
-	UPROPERTY()
-	TArray<FName> UnlockedSkinIds;
-
-	UPROPERTY()
-	FName HelmetId = NAME_None;
-
-	UPROPERTY()
-	FName SkinId = NAME_None;
-
-	UPROPERTY()
-	FName ShellId = NAME_None;
-
-	UPROPERTY()
-	FName EyesId = NAME_None;
-
-	/** Modelos y pinturas del buggy del Rally comprados. */
-	UPROPERTY()
-	TArray<FName> UnlockedBuggyIds;
-
-	/** Buggy equipado (modelo y pintura). */
-	UPROPERTY()
-	FTN_BuggyLook BuggyLook;
-};
 
 namespace TNCosmeticsSync
 {
@@ -52,12 +16,6 @@ namespace TNCosmeticsSync
 	/** Cotas de lo que el servidor acepta (el cliente legítimo manda menos). */
 	constexpr int32 MaxUnlockedHelmets = 50;
 	constexpr int32 MaxUnlockedSkins = 100;
-
-	/** Cliente: lo desbloqueado y lo equipado del save local. */
-	TORTUNABO_API FTNCosmeticLoadout ReadLocalLoadout(const UMP_GameInstance& GameInstance);
-
-	/** True si el lote cabe en las cotas de las RPC. */
-	TORTUNABO_API bool IsLoadoutWithinRpcCaps(const FTNCosmeticLoadout& Loadout);
 
 	/**
 	 * Filtra Ids a las filas que existen en Table. False, sin tocar OutKnown, si no hay tabla o la lista supera MaxIds;
@@ -74,15 +32,4 @@ namespace TNCosmeticsSync
 	/** Caparazón u ojos: NAME_None o una fila de DT_Skins de esa categoría y desbloqueada. */
 	TORTUNABO_API bool CanEquipSkinOfCategory(const UMP_GameInstance* GameInstance, FName Id, ETNCosmeticCategory Category,
 		const TSet<FName>& UnlockedSkins, const TCHAR* Context);
-
-	/** Buggy: modelo y pintura de serie, gratis o desbloqueados (UnlockedBuggy ya filtrado con el catálogo). */
-	TORTUNABO_API bool CanEquipBuggyLook(const FTN_BuggyLook& Look, const TSet<FName>& UnlockedBuggy);
-
-	/**
-	 * Servidor: valida el lote completo y escribe en PlayerState lo que pase la validación (lo que no, se queda como
-	 * estaba y se avisa en el log). Devuelve cuántos de los cinco huecos (casco, color, caparazón, ojos y buggy) se
-	 * aplicaron.
-	 */
-	TORTUNABO_API int32 ApplyLoadoutOnServer(const UMP_GameInstance* GameInstance, ATN_CoopPlayerState& PlayerState,
-		const FTNCosmeticLoadout& Loadout);
 }

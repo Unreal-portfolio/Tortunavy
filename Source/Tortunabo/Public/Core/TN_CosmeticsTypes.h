@@ -11,8 +11,7 @@ class UTexture2D;
 /**
  * Categoría de cosmético de la tienda y del probador del lobby. Un casco es una fila de DT_Helmets; el caparazón, el
  * color del cuerpo y los ojos son filas de DT_Skins, y se equipan por separado (EquippedShellId, EquippedSkinId y
- * EquippedEyesId). El modelo y la pintura del buggy del Rally salen del catálogo en C++ de Vehicles/TN_BuggyCosmetics.h
- * y se equipan juntos (EquippedBuggyLook).
+ * EquippedEyesId).
  */
 UENUM(BlueprintType)
 enum class ETNCosmeticCategory : uint8
@@ -21,15 +20,7 @@ enum class ETNCosmeticCategory : uint8
 	Shell      UMETA(DisplayName = "Caparazón"),
 	Body       UMETA(DisplayName = "Color"),
 	Eyes       UMETA(DisplayName = "Ojos"),
-	BuggyModel UMETA(DisplayName = "Modelo de buggy"),
-	BuggyPaint UMETA(DisplayName = "Pintura de buggy"),
 };
-
-/** Categorías del buggy del Rally (no son de la tortuga). */
-inline bool TNIsBuggyCategory(ETNCosmeticCategory Category)
-{
-	return Category == ETNCosmeticCategory::BuggyModel || Category == ETNCosmeticCategory::BuggyPaint;
-}
 
 /** Tipo de ojo (parámetro EyeStyle de M_TurtleBody). */
 UENUM(BlueprintType)
@@ -254,13 +245,10 @@ struct FTN_TurtleLook
 		case ETNCosmeticCategory::Helmet:     return HelmetId;
 		case ETNCosmeticCategory::Shell:      return ShellId;
 		case ETNCosmeticCategory::Eyes:       return EyesId;
-		case ETNCosmeticCategory::BuggyModel:
-		case ETNCosmeticCategory::BuggyPaint: return NAME_None;
 		default:                              return SkinId;
 		}
 	}
 
-	/** Las categorías del buggy no son de la tortuga: se ignoran (van en FTN_BuggyLook). */
 	void Set(ETNCosmeticCategory Category, FName Id)
 	{
 		switch (Category)
@@ -268,8 +256,6 @@ struct FTN_TurtleLook
 		case ETNCosmeticCategory::Helmet:     HelmetId = Id; break;
 		case ETNCosmeticCategory::Shell:      ShellId = Id; break;
 		case ETNCosmeticCategory::Eyes:       EyesId = Id; break;
-		case ETNCosmeticCategory::BuggyModel:
-		case ETNCosmeticCategory::BuggyPaint: break;
 		default:                              SkinId = Id; break;
 		}
 	}
@@ -280,38 +266,3 @@ struct FTN_TurtleLook
 	}
 };
 
-/**
- * Aspecto del buggy del Rally de una jugadora: el modelo de carrocería y la pintura (colores de la carrocería, de las
- * placas y de las aletas, dibujo y brillo). NAME_None = el de serie (Buggy Clásico en Verde de serie). Lo replica el
- * PlayerState (EquippedBuggyLook), lo guarda el perfil cosmético y lo pinta ATN_Buggy con el de su conductora. El
- * catálogo (nombres, precios y colores) está en Vehicles/TN_BuggyCosmetics.h.
- */
-USTRUCT(BlueprintType)
-struct FTN_BuggyLook
-{
-	GENERATED_BODY()
-
-	/** Fila de modelo (BuggyModel_*). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cosmetics")
-	FName ModelId = NAME_None;
-
-	/** Fila de pintura (BuggyPaint_*): colores, dibujo y brillo. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cosmetics")
-	FName PaintId = NAME_None;
-
-	FName Get(ETNCosmeticCategory Category) const
-	{
-		return Category == ETNCosmeticCategory::BuggyModel ? ModelId : (Category == ETNCosmeticCategory::BuggyPaint ? PaintId : NAME_None);
-	}
-
-	/** Las categorías de la tortuga se ignoran. */
-	void Set(ETNCosmeticCategory Category, FName Id)
-	{
-		if (Category == ETNCosmeticCategory::BuggyModel) { ModelId = Id; }
-		else if (Category == ETNCosmeticCategory::BuggyPaint) { PaintId = Id; }
-	}
-
-	bool Equals(const FTN_BuggyLook& Other) const { return ModelId == Other.ModelId && PaintId == Other.PaintId; }
-	bool operator==(const FTN_BuggyLook& Other) const { return Equals(Other); }
-	bool operator!=(const FTN_BuggyLook& Other) const { return !Equals(Other); }
-};

@@ -181,13 +181,6 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_PauseRow> ModeRow;
 
-	/** Rally (#632): circuito, solo con el Rally elegido, y tortugas por buggy, con el Rally o Karts. */
-	UPROPERTY(Transient)
-	TObjectPtr<UTN_PauseRow> RallyMapRow;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UTN_PauseRow> RallySeatsRow;
-
 	/** Todos contra Todos (#651): arena, solo con el modo elegido. */
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_PauseRow> TctArenaRow;

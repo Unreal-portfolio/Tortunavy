@@ -1,5 +1,4 @@
-// Validación de cosméticos en el servidor (TN_CosmeticsSync.h), común a AMP_GamePlayerController y al
-// PlayerController del Rally.
+// Validación de cosméticos en el servidor (TN_CosmeticsSync.h) que usa AMP_GamePlayerController.
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Cosmetics; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
@@ -44,22 +43,6 @@ bool FTNCosmeticsSyncFilterTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Color sin GameInstance (sin DT_Skins): se rechaza"), CanEquipSkin(nullptr, FName(TEXT("Azul")), Known));
 	TestTrue(TEXT("Caparazón de serie siempre vale"),
 		CanEquipSkinOfCategory(nullptr, NAME_None, ETNCosmeticCategory::Shell, Known, TEXT("Test")));
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCosmeticsSyncRpcCapsTest,
-	"Tortunabo.Cosmetics.Sync.RpcCaps",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNCosmeticsSyncRpcCapsTest::RunTest(const FString& Parameters)
-{
-	using namespace TNCosmeticsSync;
-	FTNCosmeticLoadout Loadout;
-	TestTrue(TEXT("Lote vacío: dentro de las cotas"), IsLoadoutWithinRpcCaps(Loadout));
-	Loadout.UnlockedSkinIds.Init(FName(TEXT("Azul")), RpcArrayCap);
-	TestTrue(TEXT("Justo en la cota"), IsLoadoutWithinRpcCaps(Loadout));
-	Loadout.UnlockedHelmetIds.Init(FName(TEXT("Gorro")), RpcArrayCap + 1);
-	TestFalse(TEXT("Una de más: manipulado"), IsLoadoutWithinRpcCaps(Loadout));
 	return true;
 }
 

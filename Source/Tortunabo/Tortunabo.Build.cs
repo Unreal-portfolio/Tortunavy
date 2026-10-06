@@ -42,8 +42,6 @@ public class Tortunabo : ModuleRules
 
 		// Json: ATN_MapVariantLoader lee manifest.json e index.json de Scripts/terrain_volumes/Variants/.
 		PrivateDependencyModuleNames.AddRange(new string[] { "Json" });
-		// Foliage: las sondas de techo del decorado del Rally no cuentan el follaje (UFoliageInstancedStaticMeshComponent, #698).
-		PrivateDependencyModuleNames.Add("Foliage");
 		// Monkey y estrés (Source/Tortunabo/Private/Testing): tiempos de hilo de juego, de render y de GPU (GGameThreadTime, RHIGetGPUFrameCycles).
 		PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore", "RHI" });
 		if (Target.bBuildEditor)
@@ -57,9 +55,6 @@ public class Tortunabo : ModuleRules
 		// Modo VR (Docs/Modo_VR.md): gafas y mandos (HeadMountedDisplay: UMotionControllerComponent; XRBase: funciones de
 		// las gafas y su pantalla de carga) y la textura del huevo para esa pantalla (RenderCore: BeginCleanup).
 		PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "XRBase", "RenderCore" });
-
-		// Rally Tortuga (Docs/Rally_MVP.md): buggy biplaza sobre Chaos Vehicles (ATN_Buggy y sus ruedas).
-		PrivateDependencyModuleNames.AddRange(new string[] { "ChaosVehicles", "ChaosVehiclesCore" });
 
 		// Steam solo existe en escritorio: en Android (Meta Quest) el juego usa el subsistema en línea NULL.
 		if (Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.Linux || Target.Platform == UnrealTargetPlatform.Mac)

@@ -1,6 +1,5 @@
-// Capturas de prueba de la tienda y del probador con la pestaña y la página del buggy (TN.Shop.UIShots), fuera de
-// Shipping: compra un modelo y una pintura con conchas de prueba en el perfil local, abre la tienda y el probador y saca
-// capturas con la interfaz.
+// Capturas de prueba de la tienda y del probador (TN.Shop.UIShots), fuera de Shipping: abre la tienda en las pestañas
+// de cascos y de ojos y el probador, y saca capturas con la interfaz.
 //   UnrealEditor-Win64-DebugGame.exe <uproject> /Game/Maps/Lobby/LVL_Lobby -game -RenderOffScreen -ResX=1600 -ResY=900
 //     -NoSteam -ExecCmds="TN.Tutorial.Skip, TN.Shop.UIShots C:/ruta"
 
@@ -13,7 +12,6 @@
 #include "HAL/FileManager.h"
 #include "HAL/IConsoleManager.h"
 #include "Misc/Paths.h"
-#include "Multiplayer/MP_GameInstance.h"
 #include "Player/MP_GamePlayerController.h"
 #include "UObject/UObjectIterator.h"
 #include "UnrealClient.h"
@@ -35,7 +33,7 @@ namespace TNShopUIShotsDetail
 
 static FAutoConsoleCommandWithWorldAndArgs GTNShopUIShotsCommand(
 	TEXT("TN.Shop.UIShots"),
-	TEXT("Pruebas: TN.Shop.UIShots [carpeta] [espera = 6]: compra un buggy y una pintura de prueba, saca capturas con interfaz de la tienda (pestaña Buggy) y del probador (página Buggy) y cierra el juego."),
+	TEXT("Pruebas: TN.Shop.UIShots [carpeta] [espera = 6]: saca capturas con interfaz de la tienda (pestañas de cascos y de ojos) y del probador y cierra el juego."),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld*)
 	{
 		const FString Dir = Args.IsValidIndex(0) ? Args[0] : FPaths::ProjectSavedDir() / TEXT("ShopUIShots");
@@ -63,29 +61,23 @@ static FAutoConsoleCommandWithWorldAndArgs GTNShopUIShotsCommand(
 			switch ((*Step)++)
 			{
 			case 0:
-				if (UMP_GameInstance* GI = Cast<UMP_GameInstance>(PC->GetGameInstance()))
-				{
-					GI->AddRaceScore(5000);
-					PC->RequestPurchaseCosmetic(ETNCosmeticCategory::BuggyModel, FName(TEXT("BuggyModel_Caiman")));
-					PC->RequestPurchaseCosmetic(ETNCosmeticCategory::BuggyPaint, FName(TEXT("BuggyPaint_Lava")));
-				}
 				PC->TNShop();
 				*Pause = 8;
 				return true;
 			case 1:
-				if (UTN_ShopWidget* Shop = FindOpen<UTN_ShopWidget>(World)) { Shop->DebugShowTab(4, 2); }
+				if (UTN_ShopWidget* Shop = FindOpen<UTN_ShopWidget>(World)) { Shop->DebugShowTab(0, 2); }
 				*Pause = 12;
 				return true;
 			case 2:
-				Shot(TEXT("tienda_buggy_modelo"));
+				Shot(TEXT("tienda_cascos"));
 				*Pause = 4;
 				return true;
 			case 3:
-				if (UTN_ShopWidget* Shop = FindOpen<UTN_ShopWidget>(World)) { Shop->DebugShowTab(4, 12); }
+				if (UTN_ShopWidget* Shop = FindOpen<UTN_ShopWidget>(World)) { Shop->DebugShowTab(3, 2); }
 				*Pause = 8;
 				return true;
 			case 4:
-				Shot(TEXT("tienda_buggy_pintura"));
+				Shot(TEXT("tienda_ojos"));
 				*Pause = 4;
 				return true;
 			case 5:
@@ -94,11 +86,11 @@ static FAutoConsoleCommandWithWorldAndArgs GTNShopUIShotsCommand(
 				*Pause = 12;
 				return true;
 			case 6:
-				if (UTN_BoothWidget* Booth = FindOpen<UTN_BoothWidget>(World)) { Booth->DebugShowPage(1, 0, 1); }
+				if (UTN_BoothWidget* Booth = FindOpen<UTN_BoothWidget>(World)) { Booth->DebugShowRow(0, 1); }
 				*Pause = 10;
 				return true;
 			case 7:
-				Shot(TEXT("probador_buggy"));
+				Shot(TEXT("probador"));
 				*Pause = 4;
 				return true;
 			default:

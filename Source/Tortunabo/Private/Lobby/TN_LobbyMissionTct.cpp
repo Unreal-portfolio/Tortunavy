@@ -190,7 +190,6 @@ FName TNLobbyMission::GetHostMissionMap(const UObject* WorldContext)
 {
 	switch (GetHostMode(WorldContext))
 	{
-	case ETNProcGameMode::Rally:      return GetHostRallyMap(WorldContext);
 	case ETNProcGameMode::FreeForAll: return GetHostTctArena(WorldContext);
 	default:                          return NAME_None;
 	}

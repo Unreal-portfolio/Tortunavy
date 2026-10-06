@@ -1,11 +1,10 @@
 """Primitivas low-poly de caras planas para la biblioteca de borradores (cm, +X delante, Z arriba).
 
-Mismo estilo que el buggy (Art/Source/Vehicles/Buggy/buggy_mesh.py) y el tanque de juguete de
-TN_BeachCritterMeshes.h: piezas cerradas (cada una manifold por sí misma) que se acumulan en un solo bmesh, con una
-zona de color por cara. Las zonas se codifican en el color de vértice con las mismas máscaras RGB que M_TN_Buggy,
-así un único material maestro decodifica cualquier prop:
+Mismo estilo que el tanque de juguete de TN_BeachCritterMeshes.h: piezas cerradas (cada una manifold por sí misma)
+que se acumulan en un solo bmesh, con una zona de color por cara. Las zonas se codifican en el color de vértice con
+máscaras RGB; así un único material maestro decodifica cualquier prop:
     Base = lerp(lerp(lerp(lerp(Trim, Paint, R), Detail, G), Dark, B), Light, R*G*B) * A
-(A = sombreado por cara; «dark» ocupa el canal que en el buggy se llama «wheel»).
+(A = sombreado por cara).
 
 `Builder.frame(matrix)` apila transformaciones: todo lo que se crea dentro se coloca con esa matriz, igual que los
 sockets (`socket`) y las envolventes de colisión (`col_box`, `col_hull`).

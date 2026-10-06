@@ -1,1 +1,0 @@
-Circuito de Rally por vueltas R01_circuito_dunas: Scripts/gen_terrain_rally_circuit.py (semilla 622, perfil dunas, tema base, #622).

@@ -1,5 +1,5 @@
 # Regenera la biblioteca de borradores Art/Library/IA (FBX, .blend, láminas, manifest.json e INDEX.md).
-#   powershell -File Art/Library/IA/_pipeline/build_library.ps1 [-Only slug1,slug2] [-Category rally]
+#   powershell -File Art/Library/IA/_pipeline/build_library.ps1 [-Only slug1,slug2] [-Category puzzles]
 # Sale con código distinto de 0 si algún asset no pasa la validación.
 param(
     [string]$Only = '',

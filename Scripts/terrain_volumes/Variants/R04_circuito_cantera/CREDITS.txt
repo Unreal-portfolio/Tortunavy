@@ -1,1 +1,0 @@
-Circuito de Rally por vueltas R04_circuito_cantera: Scripts/gen_terrain_rally_circuit.py (semilla 6929, perfil tierra, tema cantera, #692).

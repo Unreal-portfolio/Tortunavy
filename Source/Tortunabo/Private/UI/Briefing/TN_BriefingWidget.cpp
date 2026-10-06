@@ -60,10 +60,6 @@ namespace TNBriefingUI
 			return NSLOCTEXT("Tortunabo", "BriefingOrderRace", "¡Carrera! Todas contra todas hasta el agua. Tres conchas y al podio.");
 		case ETNProcGameMode::Survival:
 			return NSLOCTEXT("Tortunabo", "BriefingOrderSurvival", "¡Supervivencia! Nivel tras nivel, cada uno peor que el anterior. Solo queda en pie la última.");
-		case ETNProcGameMode::Karts:
-			return NSLOCTEXT("Tortunabo", "BriefingOrderKarts", "¡Karts! Al volante sola o con una artillera detrás. Cajas, géiseres y cascadas hasta la playa.");
-		case ETNProcGameMode::Rally:
-			return NSLOCTEXT("Tortunabo", "BriefingOrderRally", "¡Rally! Circuito de autor, puertas en orden y una artillera con las cajas «?». Nada de atajos.");
 		case ETNProcGameMode::TwoVsTwo:
 			return NSLOCTEXT("Tortunabo", "BriefingOrder2v2", "¡2 vs 2! Por parejas y hasta el agua. Si al salir no sois cuatro, se corre la Carrera.");
 		case ETNProcGameMode::FreeForAll:
@@ -430,15 +426,9 @@ void UTN_BriefingWidget::ShowTab(int32 Index)
 	// Lo de «Misión» solo existe mientras se ve.
 	ModeButtons.Reset();
 	DifficultyButtons.Reset();
-	SeatsButtons.Reset();
-	MapButtons.Reset();
 	ArenaButtons.Reset();
 	ModeHeading = nullptr;
 	DifficultyHeading = nullptr;
-	SeatsHeading = nullptr;
-	SeatsRow = nullptr;
-	MapHeading = nullptr;
-	MapRow = nullptr;
 	ArenaHeading = nullptr;
 	ArenaRow = nullptr;
 	MissionOrders = nullptr;
@@ -602,57 +592,9 @@ void UTN_BriefingWidget::BuildMissionPage()
 		TNLobbyMission::DifficultyName(ETNProcDifficulty::Normal), TNLobbyMission::DifficultyBlurb(ETNProcDifficulty::Normal),
 		TNLobbyMission::DifficultyName(ETNProcDifficulty::Hard), TNLobbyMission::DifficultyBlurb(ETNProcDifficulty::Hard)));
 
-	// Rally y Karts (solo el anfitrión, que es quien lo elige): una tortuga por buggy o por parejas (la segunda, de
-	// artillera) y, en el Rally, el circuito.
+	// Todos contra Todos (solo el anfitrión, que es quien lo elige): la arena.
 	if (bHost)
 	{
-		UVerticalBox* SeatsBox = New<UVerticalBox>(Tree);
-		SeatsHeading = Label(Tree, FText::GetEmpty(), TEXT("Black"), 23, TNHUDArt::CoralDeep, false);
-		AddV(SeatsBox, SeatsHeading, FMargin(0.f, 12.f, 0.f, 6.f));
-		UHorizontalBox* SeatsOptions = New<UHorizontalBox>(Tree);
-		for (int32 Seats = 1; Seats <= 2; ++Seats)
-		{
-			UTN_ShopButton* Option = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
-			Option->Setup(TNLobbyMission::RallySeatsName(Seats).ToUpper(), IdlePill(), TNHUDArt::Cream, 21, FVector2D(260.f, 58.f),
-				[this, Seats]() { PickSeats(Seats); });
-			AddH(SeatsOptions, Option, FMargin(0.f, 0.f, 12.f, 0.f));
-			SeatsButtons.Add(Option);
-		}
-		AddV(SeatsBox, SeatsOptions, FMargin(0.f, 0.f, 0.f, 8.f), HAlign_Left);
-		UTextBlock* SeatsLine = Label(Tree, NSLOCTEXT("Tortunabo", "BriefingBuggySeatsLine",
-			"•  Por parejas, la segunda de cada buggy va de artillera: maneja la torreta (en Karts, también los objetos) y su peso cambia cuánto gira el buggy."),
-			TEXT("Regular"), 18, TNHUDArt::Ink, false);
-		SeatsLine->SetAutoWrapText(true);
-		AddV(SeatsBox, SeatsLine, FMargin(0.f, 0.f, 8.f, 0.f));
-		SeatsRow = SeatsBox;
-		AddV(Page, SeatsBox, FMargin(0.f));
-
-		UVerticalBox* MapBox = New<UVerticalBox>(Tree);
-		MapHeading = Label(Tree, FText::GetEmpty(), TEXT("Black"), 23, TNHUDArt::CoralDeep, false);
-		AddV(MapBox, MapHeading, FMargin(0.f, 12.f, 0.f, 6.f));
-		UHorizontalBox* MapOptions = nullptr;
-		const TArray<FName>& Maps = TNLobbyMission::RallyMapOptions();
-		for (int32 Index = 0; Index < Maps.Num(); ++Index)
-		{
-			if (Index % ModePillsPerRow == 0)
-			{
-				MapOptions = New<UHorizontalBox>(Tree);
-				AddV(MapBox, MapOptions, FMargin(0.f, 0.f, 0.f, 8.f), HAlign_Left);
-			}
-			const FName Map = Maps[Index];
-			UTN_ShopButton* Option = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
-			Option->Setup(TNLobbyMission::RallyMapName(Map).ToUpper(), IdlePill(), TNHUDArt::Cream, 17, FVector2D(200.f, 58.f),
-				[this, Map]() { PickRallyMap(Map); });
-			AddH(MapOptions, Option, FMargin(0.f, 0.f, 12.f, 0.f));
-			MapButtons.Add(Option);
-		}
-		UTextBlock* MapLine = Label(Tree, NSLOCTEXT("Tortunabo", "BriefingRallyCircuitLine",
-			"•  Los circuitos del Rally tienen puertas en orden, vueltas y saltos de autor."), TEXT("Regular"), 18, TNHUDArt::Ink, false);
-		MapLine->SetAutoWrapText(true);
-		AddV(MapBox, MapLine, FMargin(0.f, 0.f, 8.f, 0.f));
-		MapRow = MapBox;
-		AddV(Page, MapBox, FMargin(0.f));
-
 		UVerticalBox* ArenaBox = New<UVerticalBox>(Tree);
 		ArenaHeading = Label(Tree, FText::GetEmpty(), TEXT("Black"), 23, TNHUDArt::CoralDeep, false);
 		AddV(ArenaBox, ArenaHeading, FMargin(0.f, 12.f, 0.f, 6.f));
@@ -696,7 +638,7 @@ void UTN_BriefingWidget::BuildMissionPage()
 	MissionRow = 0;
 	ShownMode = GetMissionMode();
 	ShownDifficulty = GetMissionDifficulty();
-	ShownMap = GetMissionRallyMap();
+	ShownMap = GetMissionMap();
 	RefreshMission(false);
 }
 
@@ -705,7 +647,7 @@ void UTN_BriefingWidget::RefreshMission(bool bAnnounce)
 	using namespace TNBriefingUI;
 	const ETNProcGameMode Mode = GetMissionMode();
 	const ETNProcDifficulty Difficulty = GetMissionDifficulty();
-	const FName Map = GetMissionRallyMap();
+	const FName Map = GetMissionMap();
 	const bool bChanged = Mode != ShownMode || Difficulty != ShownDifficulty || Map != ShownMap;
 	ShownMode = Mode;
 	ShownDifficulty = Difficulty;
@@ -744,36 +686,18 @@ void UTN_BriefingWidget::RefreshMission(bool bAnnounce)
 	};
 	StyleHeading(ModeHeading, 0, NSLOCTEXT("Tortunabo", "BriefingMissionModeH", "Modo de la misión"));
 	StyleHeading(DifficultyHeading, 1, NSLOCTEXT("Tortunabo", "BriefingMissionDiffH", "Dificultad"));
-	StyleHeading(SeatsHeading, 2, NSLOCTEXT("Tortunabo", "BriefingBuggySeatsH", "Tortugas por buggy"));
-	StyleHeading(MapHeading, 3, NSLOCTEXT("Tortunabo", "BriefingRallyCircuitH", "Circuito del Rally"));
 	StyleHeading(ArenaHeading, 2, NSLOCTEXT("Tortunabo", "BriefingTctArenaH", "Arena"));
-	if (SeatsRow)
-	{
-		SeatsRow->SetVisibility(HasSeatsRow() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
-	}
-	if (MapRow)
-	{
-		MapRow->SetVisibility(HasMapRow() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
-	}
 	if (ArenaRow)
 	{
 		ArenaRow->SetVisibility(HasArenaRow() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-	PaintChoicePills(MapButtons, TNLobbyMission::RallyMapOptions(), TNLobbyMission::GetHostRallyMap(this));
 	PaintChoicePills(ArenaButtons, TNLobbyMission::TctArenaOptions(), TNLobbyMission::GetHostTctArena(this));
-	for (int32 i = 0; i < SeatsButtons.Num(); ++i)
-	{
-		if (UTN_ShopButton* Option = SeatsButtons[i])
-		{
-			Option->SetArt(GetKartSeats() == i + 1 ? ChosenPill() : IdlePill());
-		}
-	}
 	MissionRow = FMath::Min(MissionRow, MaxMissionRow());
 
 	if (MissionOrders)
 	{
 		MissionOrders->SetText(FText::Format(NSLOCTEXT("Tortunabo", "BriefingMissionOrders", "Orden del día: {0} · {1}"),
-			TNLobbyMission::MissionTitle(Mode, GetMissionRallyMap()).ToUpper(), TNLobbyMission::DifficultyName(Difficulty).ToUpper()));
+			TNLobbyMission::MissionTitle(Mode, Map).ToUpper(), TNLobbyMission::DifficultyName(Difficulty).ToUpper()));
 	}
 	if (bAnnounce && bChanged)
 	{
@@ -814,23 +738,6 @@ void UTN_BriefingWidget::PickDifficulty(ETNProcDifficulty Difficulty)
 	RefreshMission(false);
 }
 
-int32 UTN_BriefingWidget::GetKartSeats() const
-{
-	const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance());
-	return GI ? FMath::Clamp(GI->SelectedKartSeats, 1, 2) : 2;
-}
-
-bool UTN_BriefingWidget::HasSeatsRow() const
-{
-	const ETNProcGameMode Mode = GetMissionMode();
-	return CanChooseMission() && (Mode == ETNProcGameMode::Karts || Mode == ETNProcGameMode::Rally) && SeatsButtons.Num() > 0;
-}
-
-bool UTN_BriefingWidget::HasMapRow() const
-{
-	return CanChooseMission() && GetMissionMode() == ETNProcGameMode::Rally && MapButtons.Num() > 0;
-}
-
 bool UTN_BriefingWidget::HasArenaRow() const
 {
 	return CanChooseMission() && GetMissionMode() == ETNProcGameMode::FreeForAll && ArenaButtons.Num() > 0;
@@ -838,7 +745,7 @@ bool UTN_BriefingWidget::HasArenaRow() const
 
 int32 UTN_BriefingWidget::MaxMissionRow() const
 {
-	return HasMapRow() ? 3 : (HasSeatsRow() || HasArenaRow() ? 2 : 1);
+	return HasArenaRow() ? 2 : 1;
 }
 
 void UTN_BriefingWidget::PaintChoicePills(const TArray<TObjectPtr<UTN_ShopButton>>& Buttons, const TArray<FName>& Options, FName Chosen)
@@ -864,41 +771,6 @@ void UTN_BriefingWidget::PickTctArena(FName Arena)
 	RefreshMission(false);
 }
 
-void UTN_BriefingWidget::PickRallyMap(FName Variant)
-{
-	if (!CanChooseMission() || !TNLobbyMission::SetRallyMap(this, Variant))
-	{
-		return;
-	}
-	MissionRow = 3;
-	Say(FText::Format(NSLOCTEXT("Tortunabo", "BriefingSayRallyCircuit", "¡Circuito de {0}! Puertas en orden y nada de atajos por la arena."),
-		TNLobbyMission::RallyMapName(Variant)));
-	RefreshMission(false);
-}
-
-void UTN_BriefingWidget::PickSeats(int32 Seats)
-{
-	UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance());
-	if (!CanChooseMission() || !GI)
-	{
-		return;
-	}
-	MissionRow = 2;
-	TNLobbyMission::SetRallySeats(this, Seats);
-	const bool bKarts = GetMissionMode() == ETNProcGameMode::Karts;
-	if (GI->SelectedKartSeats == 1)
-	{
-		Say(bKarts ? NSLOCTEXT("Tortunabo", "BriefingSayKartsSolo", "¡Cada tortuga a su kart! Al volante y con la torreta, todo tuyo.")
-			: NSLOCTEXT("Tortunabo", "BriefingSayRallySolo", "¡Cada tortuga a su buggy! Al volante y con la torreta, todo tuyo."));
-	}
-	else
-	{
-		Say(bKarts ? NSLOCTEXT("Tortunabo", "BriefingSayKartsPairs", "¡Por parejas! Una conduce y la otra dispara, usa los objetos y carga el peso en las curvas.")
-			: NSLOCTEXT("Tortunabo", "BriefingSayRallyPairs", "¡Por parejas! Una conduce y la otra dispara la munición de las cajas y carga el peso en las curvas."));
-	}
-	RefreshMission(false);
-}
-
 void UTN_BriefingWidget::StepMission(int32 Direction)
 {
 	using namespace TNBriefingUI;
@@ -910,22 +782,6 @@ void UTN_BriefingWidget::StepMission(int32 Direction)
 		if (Arenas.IsValidIndex(NextArena) && NextArena != Current)
 		{
 			PickTctArena(Arenas[NextArena]);
-		}
-		return;
-	}
-	if (MissionRow == 2)
-	{
-		PickSeats(FMath::Clamp(GetKartSeats() + Direction, 1, 2));
-		return;
-	}
-	if (MissionRow == 3)
-	{
-		const TArray<FName>& Maps = TNLobbyMission::RallyMapOptions();
-		const int32 Current = Maps.IndexOfByKey(TNLobbyMission::GetHostRallyMap(this));
-		const int32 NextMap = FMath::Clamp(Current + Direction, 0, Maps.Num() - 1);
-		if (Maps.IsValidIndex(NextMap) && NextMap != Current)
-		{
-			PickRallyMap(Maps[NextMap]);
 		}
 		return;
 	}
@@ -965,14 +821,14 @@ bool UTN_BriefingWidget::CanChooseMission() const
 	return TNLobbyMission::CanLocalPlayerChoose(this);
 }
 
-FName UTN_BriefingWidget::GetMissionRallyMap() const
+FName UTN_BriefingWidget::GetMissionMap() const
 {
 	if (CanChooseMission())
 	{
 		return TNLobbyMission::GetHostMissionMap(this);
 	}
 	const ATN_GeneralBriefing* Speaker = General.Get();
-	return Speaker ? Speaker->GetMissionRallyVariant() : FName(NAME_None);
+	return Speaker ? Speaker->GetMissionMapVariant() : FName(NAME_None);
 }
 
 ETNProcGameMode UTN_BriefingWidget::GetMissionMode() const
@@ -1025,7 +881,7 @@ void UTN_BriefingWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 	}
 	// «Misión»: si el anfitrión la cambia (a los demás les llega replicada en el general), se repinta y el general avisa.
 	if (Tab == TNBriefingUI::TabMission && ModeButtons.Num() > 0
-		&& (GetMissionMode() != ShownMode || GetMissionDifficulty() != ShownDifficulty || GetMissionRallyMap() != ShownMap))
+		&& (GetMissionMode() != ShownMode || GetMissionDifficulty() != ShownDifficulty || GetMissionMap() != ShownMap))
 	{
 		RefreshMission(true);
 	}

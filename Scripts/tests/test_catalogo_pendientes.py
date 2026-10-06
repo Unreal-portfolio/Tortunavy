@@ -23,8 +23,6 @@ def test_anota_la_issue_de_un_asset_sin_usar():
 
 
 def test_lo_concreto_gana_a_lo_general():
-    assert cp.issue_for("/Game/Art/IA/rally/caja_items/SM_TN_CajaItemsRally") == 304
-    assert cp.issue_for("/Game/Art/IA/rally/caracola/SM_TN_Caracola") == 602
     assert cp.issue_for("/Game/Audio/EffectSounds/FootstepsMiniPack/SoundWav/SandAudio") == 604
     assert cp.issue_for("/Game/Audio/EffectSounds/Throw/SC_Throw") == 348
 
@@ -37,7 +35,7 @@ def test_no_toca_los_usados_ni_el_original():
 
 
 def test_es_idempotente_y_quita_la_marca_si_ya_se_usa():
-    once = cp.annotate([row("/Game/Audio/Rally/SFX_Buggy_Land")])
+    once = cp.annotate([row("/Game/Art/IA/puzzles/palanca/SM_TN_PalancaBase")])
     assert cp.annotate(once) == once
     used = [{**once[0], "uso": "código C++"}]
     assert cp.annotate(used)[0]["nota"] == "Biblioteca IA"
@@ -58,7 +56,6 @@ def test_el_catalogo_versionado_no_tiene_assets_sin_usar_sin_issue():
 def test_los_restos_sin_usar_van_a_la_limpieza():
     assert cp.issue_for("/Game/Blueprints/Characters/SKM_Tortuga_Merged") == cp.CLEANUP_ISSUE
     assert cp.issue_for("/Game/Blueprints/Gameplay/GridMap/MI_Grid_Rock") == cp.CLEANUP_ISSUE
-    assert cp.issue_for("/Game/Generated/Meshes/Buggy/SM_BuggyBody") == 290
     assert cp.issue_for("/Game/Maps/Dev/LVL_GaleriaAssets") == 312
 
 

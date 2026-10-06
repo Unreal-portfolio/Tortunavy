@@ -264,8 +264,7 @@ void ATN_GeneralBriefing::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ATN_GeneralBriefing, MissionMode);
 	DOREPLIFETIME(ATN_GeneralBriefing, MissionDifficulty);
-	DOREPLIFETIME(ATN_GeneralBriefing, MissionRallyVariant);
-	DOREPLIFETIME(ATN_GeneralBriefing, MissionRallySeats);
+	DOREPLIFETIME(ATN_GeneralBriefing, MissionMapVariant);
 }
 
 void ATN_GeneralBriefing::SyncMissionFromGameInstance()
@@ -279,17 +278,14 @@ void ATN_GeneralBriefing::SyncMissionFromGameInstance()
 	{
 		return;
 	}
-	const FName RallyVariant = TNLobbyMission::GetHostMissionMap(this);
-	const uint8 RallySeats = static_cast<uint8>(TNLobbyMission::GetHostRallySeats(this));
-	if (MissionMode == GI->SelectedProcMode && MissionDifficulty == GI->SelectedProcDifficulty && MissionRallyVariant == RallyVariant
-		&& MissionRallySeats == RallySeats)
+	const FName MapVariant = TNLobbyMission::GetHostMissionMap(this);
+	if (MissionMode == GI->SelectedProcMode && MissionDifficulty == GI->SelectedProcDifficulty && MissionMapVariant == MapVariant)
 	{
 		return;
 	}
 	MissionMode = GI->SelectedProcMode;
 	MissionDifficulty = GI->SelectedProcDifficulty;
-	MissionRallyVariant = RallyVariant;
-	MissionRallySeats = RallySeats;
+	MissionMapVariant = MapVariant;
 	// En el servidor el RepNotify no salta solo; a los demás, cuanto antes.
 	OnRep_Mission();
 	ForceNetUpdate();
@@ -308,7 +304,7 @@ void ATN_GeneralBriefing::RefreshMissionBoard()
 		return;
 	}
 	MissionBoard->SetText(FText::Format(NSLOCTEXT("Tortunabo", "GeneralMissionBoard", "ORDEN DEL DÍA<br>MISIÓN: {0}<br>DIFICULTAD: {1}"),
-		TNLobbyMission::MissionTitle(MissionMode, MissionRallyVariant).ToUpper(), TNLobbyMission::DifficultyName(MissionDifficulty).ToUpper()));
+		TNLobbyMission::MissionTitle(MissionMode, MissionMapVariant).ToUpper(), TNLobbyMission::DifficultyName(MissionDifficulty).ToUpper()));
 	// Siempre dentro de la pizarra, con un margen de tiza alrededor.
 	MissionBoard->SetWorldSize(BoardChalkSize);
 	const FVector TextSize = MissionBoard->GetTextLocalSize();

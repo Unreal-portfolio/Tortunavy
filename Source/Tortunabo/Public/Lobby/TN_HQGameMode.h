@@ -124,9 +124,6 @@ protected:
 	/** Nivel de Todos contra Todos (ATN_TctGameMode, alias «Tct»; la arena es una variante inventada, #651). */
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
 	FString TctMapPath = TEXT("/Game/Maps/Run/LVL_Tct");
-	/** Nivel de los circuitos del Rally (modo Rally con un circuito elegido, #632; ATN_RallyGameMode). */
-	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
-	FString RallyMapPath = TEXT("/Game/Maps/Rally/LVL_Rally");
 
 private:
 	/** El recorrido del tutorial de este lobby. */

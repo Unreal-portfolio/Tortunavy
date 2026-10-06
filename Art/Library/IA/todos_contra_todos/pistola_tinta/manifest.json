@@ -21,8 +21,7 @@
   "license": "Original de Tortunabo, generado por script (sin fuentes externas)",
   "source_url": null,
   "style_reference": [
-    "Source/Tortunabo/Private/World/Beach/TN_BeachCritterMeshes.h (tanque de juguete)",
-    "Art/Source/Vehicles/Buggy/ (buggy biplaza)"
+    "Source/Tortunabo/Private/World/Beach/TN_BeachCritterMeshes.h (tanque de juguete)"
   ],
   "budget_tris": 1500,
   "tris_total": 434,

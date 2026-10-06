@@ -25,9 +25,9 @@ enum class ETNProcBiome : uint8
 };
 
 /**
- * Modo de juego. Classic y Survival viajan al mapa de chunks de siempre (LVL_Run); Survival, con ?game=Survival. Karts va
- * al mapa procedural con ?game=Karts (ATN_KartGameMode): el mapa del cooperativo recorrido en kart (el buggy del Rally),
- * aparte del Rally de LVL_Rally. FreeForAll (Todos contra Todos, #651) viaja a LVL_Tct con ?game=Tct (ATN_TctGameMode).
+ * Modo de juego. Classic y Survival viajan al mapa de chunks de siempre (LVL_Run); Survival, con ?game=Survival.
+ * FreeForAll (Todos contra Todos, #651) viaja a LVL_Tct con ?game=Tct (ATN_TctGameMode). Karts y Rally no tienen modo de
+ * juego desde #848: se conservan solo para que su número no se reutilice.
  * Los valores se guardan como número en las salas (TNRoomKeys::Mode): cada uno lleva su número fijo, que no se cambia
  * nunca; los nuevos van al final con el siguiente. Si cambia el significado de un número, sube TNRoomKeys::ModeSchemaVersion.
  */
@@ -39,10 +39,11 @@ enum class ETNProcGameMode : uint8
 	TwoVsTwo   = 2 UMETA(DisplayName = "2 vs 2"),
 	Classic    = 3 UMETA(DisplayName = "Clásico (chunks)"),
 	Survival   = 4 UMETA(DisplayName = "Supervivencia"),
-	Karts      = 5 UMETA(DisplayName = "Karts (en el mapa del cooperativo)"),
+	/** Sin modo de juego desde #848 (número reservado). */
+	Karts      = 5 UMETA(DisplayName = "Karts (retirado)"),
 	FreeForAll = 6 UMETA(DisplayName = "Todos contra Todos"),
-	/** Rally (#632): un circuito de LVL_Rally (ATN_RallyGameMode), aparte de Karts. */
-	Rally      = 7 UMETA(DisplayName = "Rally"),
+	/** Sin modo de juego desde #848 (número reservado). */
+	Rally      = 7 UMETA(DisplayName = "Rally (retirado)"),
 	Count      = 8 UMETA(Hidden)
 };
 

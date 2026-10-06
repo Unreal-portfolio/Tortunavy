@@ -19,9 +19,7 @@
 #include "Player/TortugaCharacter.h"
 #include "UI/Credits/TN_CreditsWidget.h"
 #include "Core/TN_GameModeSpawnUtils.h"
-#include "Kart/TN_KartGameState.h"
 #include "Lobby/TN_LobbyMission.h"
-#include "Rally/TN_RallyGameMode.h"
 #include "World/TN_TctArena.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
@@ -331,7 +329,7 @@ namespace TNPauseUI
 		return OnlineSub ? OnlineSub->GetSessionInterface() : nullptr;
 	}
 
-	/** Jugadoras que salen en la cabecera: las personas, no los bots del Rally ni de Karts (#706). */
+	/** Jugadoras que salen en la cabecera: las personas, no los bots (#706). */
 	bool ShowsInRoster(const APlayerState* PS)
 	{
 		return PS && !TN_IsBotPlayerState(PS);
@@ -1826,18 +1824,6 @@ void UTN_PauseMenuWidget::RefreshHeader()
 	{
 		Mode = NSLOCTEXT("TNPause", "ModeTerrain", "Solo terreno · paseo por el mapa procedural");
 	}
-	else if (const ATN_KartGameState* Karts = Cast<ATN_KartGameState>(State))
-	{
-		static const FText KartDifficulties[] = { NSLOCTEXT("TNPause", "DiffEasy", "fácil"), NSLOCTEXT("TNPause", "DiffNormal", "normal"),
-			NSLOCTEXT("TNPause", "DiffHard", "difícil") };
-		const int32 Difficulty = FMath::Clamp(static_cast<int32>(Karts->Difficulty), 0, 2);
-		Mode = FText::Format(NSLOCTEXT("TNPause", "ModeKarts", "Karts · el camino del cooperativo · {0} · semilla {1}"),
-			KartDifficulties[Difficulty], FText::AsNumber(Karts->MapSeed, &FNumberFormattingOptions::DefaultNoGrouping()));
-	}
-	else if (const ATN_RallyGameState* Rally = Cast<ATN_RallyGameState>(State))
-	{
-		Mode = FText::Format(NSLOCTEXT("TNPause", "ModeRallyCircuit", "Rally · {0}"), TNLobbyMission::RallyMapName(Rally->Variant));
-	}
 	else if (const ATN_ProcMapGameState* Proc = Cast<ATN_ProcMapGameState>(State))
 	{
 		const FText Round = FText::AsNumber(FMath::Max(1, Proc->CurrentRound));
@@ -3197,13 +3183,6 @@ void UTN_PauseMenuWidget::ReturnToLobby()
 			{
 				return;
 			}
-			// Rally y Karts (ATN_KartGameMode hereda de él): la misma vuelta que al acabar la carrera.
-			if (ATN_RallyGameMode* RallyMode = World->GetAuthGameMode<ATN_RallyGameMode>())
-			{
-				Menu->CloseMenu();
-				RallyMode->ReturnToLobbyNow();
-				return;
-			}
 			ATN_RunGameMode* GameMode = World->GetAuthGameMode<ATN_RunGameMode>();
 			if (!GameMode)
 			{
@@ -4000,6 +3979,5 @@ bool UTN_PauseMenuWidget::CanReturnToLobby() const
 	// terreno no sale de un lobby.
 	const UWorld* World = GetWorld();
 	const AGameStateBase* State = World ? World->GetGameState() : nullptr;
-	return State && State->GameModeClass && (State->GameModeClass->IsChildOf(ATN_RunGameMode::StaticClass())
-		|| State->GameModeClass->IsChildOf(ATN_RallyGameMode::StaticClass()));
+	return State && State->GameModeClass && State->GameModeClass->IsChildOf(ATN_RunGameMode::StaticClass());
 }

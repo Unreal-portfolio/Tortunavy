@@ -1,8 +1,8 @@
 # Biblioteca de borradores IA
 
-Borradores para que el equipo de modelado los rehaga; **no están importados a Content**. Se regeneran con `powershell -File Art/Library/IA/_pipeline/build_library.ps1` (opcional `-Only slug1,slug2` o `-Category rally`), que también reescribe este índice.
+Borradores para que el equipo de modelado los rehaga; **no están importados a Content**. Se regeneran con `powershell -File Art/Library/IA/_pipeline/build_library.ps1` (opcional `-Only slug1,slug2` o `-Category puzzles`), que también reescribe este índice.
 
-Convenciones: FBX en cm (UnitScaleFactor 1), +X delante, Z arriba; origen en la base (props) o en el punto de agarre (objetos de mano, socket `Grip` en el origen); 1 material `M_TN_IAProp` con zonas en el color de vértice `Zone` (mismas máscaras que `M_TN_Buggy`: Trim/Paint/Detail/Dark/Light), sin texturas. Colisión simple en `UCX_*` cuando la hay. Import en Unreal: Static Mesh, Combine Meshes on, Import Vertex Color = Replace, Normal Import = Import Normals, Auto Generate Collision off.
+Convenciones: FBX en cm (UnitScaleFactor 1), +X delante, Z arriba; origen en la base (props) o en el punto de agarre (objetos de mano, socket `Grip` en el origen); 1 material `M_TN_IAProp` con zonas en el color de vértice `Zone` (máscaras Trim/Paint/Detail/Dark/Light), sin texturas. Colisión simple en `UCX_*` cuando la hay. Import en Unreal: Static Mesh, Combine Meshes on, Import Vertex Color = Replace, Normal Import = Import Normals, Auto Generate Collision off.
 
 | Categoría | Asset | Mallas (tris) | Total / presupuesto | Tamaño (cm, X×Y×Z) | Sockets | Herramienta | Estado | Validación | Lámina |
 |---|---|---|---|---|---|---|---|---|---|
@@ -18,15 +18,10 @@ Convenciones: FBX en cm (UnitScaleFactor 1), +X delante, Z arriba; origen en la 
 | puzzles | [Palanca con base](puzzles/palanca/manifest.json) | `SM_TN_PalancaBase` (220)<br>`SM_TN_PalancaBrazo` (148) | 368 / 800 | 74.36×52×52<br>15×15×73.1 | Pivot | bpy procedural | borrador IA | OK | [PNG](puzzles/palanca/palanca_lamina.png) |
 | puzzles | [Placa de presión (subida y bajada)](puzzles/placa_presion/manifest.json) | `SM_TN_PlacaPresion_Subida` (196)<br>`SM_TN_PlacaPresion_Bajada` (188) | 384 / 800 | 124×124×12.2<br>124×124×8.4 | — | bpy procedural | borrador IA | OK | [PNG](puzzles/placa_presion/placa_presion_lamina.png) |
 | puzzles | [Puerta de puzzle de madera y conchas](puzzles/puerta_puzzle/manifest.json) | `SM_TN_PuertaMarco` (674)<br>`SM_TN_PuertaHoja` (352) | 1026 / 1500 | 46.8×332×325.76<br>14.9×218.8×251.38 | Leaf, LeafOpen | bpy procedural | borrador IA | OK | [PNG](puzzles/puerta_puzzle/puerta_puzzle_lamina.png) |
-| rally | [Caja de ítems del Rally](rally/caja_items/manifest.json) | `SM_TN_CajaItemsRally` (480) | 480 / 600 | 98.1×98.1×92.2 | — | bpy procedural | borrador IA | OK | [PNG](rally/caja_items/caja_items_lamina.png) |
-| rally | [Bocina / caracola de la artillera](rally/caracola/manifest.json) | `SM_TN_Caracola` (476) | 476 / 600 | 40.13×27.6×26.05 | Grip, Muzzle | bpy procedural | borrador IA | OK | [PNG](rally/caracola/caracola_lamina.png) |
-| rally | [Checkpoint](rally/checkpoint/manifest.json) | `SM_TN_Checkpoint` (620) | 620 / 800 | 96.08×1592×530 | Gate | bpy procedural | borrador IA | OK | [PNG](rally/checkpoint/checkpoint_lamina.png) |
-| rally | [Meta y pórtico de salida (arco de neumático)](rally/portico_meta_salida/manifest.json) | `SM_TN_PorticoMeta` (932)<br>`SM_TN_PorticoSalida` (968) | 1900 / 2000 | 183.58×1703.6×808<br>183.58×1703.6×808 | FinishLine, StartLights, StartLine | bpy procedural | borrador IA | OK | [PNG](rally/portico_meta_salida/portico_meta_salida_lamina.png) |
-| rally | [Rampa de salto](rally/rampa_salto/manifest.json) | `SM_TN_RampaSalto` (316) | 316 / 800 | 832.42×600×214.5 | — | bpy procedural | borrador IA | OK | [PNG](rally/rampa_salto/rampa_salto_lamina.png) |
 | decoracion | [Molino (de L04 Rin / pl)](decoracion/molino/manifest.json) | `SM_TN_MolinoTorre` (380)<br>`SM_TN_MolinoAspas` (522) | 902 / 1500 | 426.32×380.64×672<br>40×749.54×749.54 | Sails | bpy procedural | borrador IA | OK | [PNG](decoracion/molino/molino_lamina.png) |
 | decoracion | [Pagoda (zh, L12 Guilin / L13 Taroko)](decoracion/pagoda/manifest.json) | `SM_TN_Pagoda` (838) | 838 / 1500 | 468×470×744 | — | bpy procedural | borrador IA | OK | [PNG](decoracion/pagoda/pagoda_lamina.png) |
 | decoracion | [Torii (ja, L10 Fuji)](decoracion/torii/manifest.json) | `SM_TN_Torii` (300) | 300 / 1500 | 62×670×508 | — | bpy procedural | borrador IA | OK | [PNG](decoracion/torii/torii_lamina.png) |
 
-20 assets, 30 mallas, 12662 triángulos en total.
+15 assets, 24 mallas, 8870 triángulos en total.
 
 Licencia de todos: original de Tortunabo, generado por script (sin fuentes externas). Los FBX y .blend no se versionan (el repositorio no tiene Git LFS para esas extensiones).
