@@ -129,6 +129,10 @@ ATN_Buggy::ATN_Buggy()
 	using namespace TNBuggyDetail;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
+	// Relevante en todos los clientes (#781): con la distancia por defecto (150 m alrededor del peón propio, o de la parrilla
+	// para quien solo mira) un buggy lejano no existía en el cliente, su fila de la clasificación llegaba sin Vehicle y el
+	// espectador, el dron y la tableta de la copiloto se lo saltaban. Son pocos (uno por equipo).
+	bAlwaysRelevant = true;
 
 	ChassisMeshAsset = TSoftObjectPtr<USkeletalMesh>(FSoftObjectPath(ChassisMeshPath));
 	BodyMeshAsset = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(BodyMeshPath));
