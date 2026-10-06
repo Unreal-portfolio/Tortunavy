@@ -3,8 +3,11 @@
 
 #include "Game/TN_TctGameMode.h"
 #include "Game/TN_TctItemComponent.h"
+#include "Game/TN_TctGameState.h"
 #include "Game/TN_TctItems.h"
 #include "Core/TN_Log.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_RaceItemComponent.h"
 #include "World/TN_TctArena.h"
@@ -46,7 +49,7 @@ namespace TNTctGameModeItemsDetail
 	}
 
 	FAutoConsoleCommandWithWorldAndArgs CmdItem(TEXT("TN.Tct.Item"),
-		TEXT("Todos contra Todos: da un objeto a la tortuga N. TN.Tct.Item <objeto: KnockoutPistol, AirBlunderbuss, Grapple, Shovel, BeachBall, Anchor, JellyDart, InkPistol, Ball, ConchTrap, BigHead, SandMine, Frisbee o su número> [jugadora = 0]"),
+		TEXT("Todos contra Todos: da un objeto a la tortuga N. TN.Tct.Item <objeto: KnockoutPistol, AirBlunderbuss, Grapple, Shovel, BeachBall, Anchor, JellyDart, InkPistol, Ball, ConchTrap, BigHead, SandMine, Frisbee, Cocobomba, Alga, GaviotaLadrona, Flotador, MedusaTrampolin, Cohete, BotasMuelle, Aletas, Cambiazo, Burbuja, Puas, Red, Remolino, TaponMarea, Paraguas o su número> [jugadora = 0]"),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 		{
 			const ETNTctItem Kind = Args.Num() > 0 ? ParseKind(Args[0]) : ETNTctItem::None;
@@ -94,17 +97,33 @@ void ATN_TctGameMode::CreateItemPads()
 		}
 	}
 	const TArray<FVector>& Candidates = Arena->GetSpawnCandidates();
+	const TArray<float>& Exposure = Arena->GetSpawnExposure();
+	// Cada sitio con su altura sobre el agua (0-1) y lo expuesto que está (#830): los más altos y expuestos dan lo mejor.
+	const float BaseZ = Arena->GetBaseWaterZ();
+	const float Span = FMath::Max(1.f, Arena->GetTopZ() - BaseZ);
+	TArray<FTNTctPadSpot> Spots;
+	for (int32 Index = 0; Index < Candidates.Num(); ++Index)
+	{
+		FTNTctPadSpot& Spot = Spots.AddDefaulted_GetRef();
+		Spot.Pos = Candidates[Index];
+		Spot.HeightFrac = FMath::Clamp((static_cast<float>(Candidates[Index].Z) - BaseZ) / Span, 0.f, 1.f);
+		Spot.Exposure = Exposure.IsValidIndex(Index) ? Exposure[Index] : 0.f;
+	}
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	for (const int32 Index : TNTctItemRules::PickPadPoints(Candidates, ItemPadCount, Arena->GetGroundBox().GetCenter(), Avoid, ItemPadMinFromSpawn))
+	int32 PerRarity[3] = { 0, 0, 0 };
+	for (const FTNTctPadPick& Pick : TNTctItemRules::PlanPads(Spots, ItemPadCount, Avoid, ItemPadMinFromSpawn, ItemPadMinSpacing))
 	{
-		const FVector Where = Candidates[Index] + FVector(0.0, 0.0, 2.0);
+		const FVector Where = Candidates[Pick.Index] + FVector(0.0, 0.0, 2.0);
 		if (ATN_TctItemPad* Pad = World->SpawnActor<ATN_TctItemPad>(ATN_TctItemPad::StaticClass(), FTransform(Where), Params))
 		{
+			Pad->ServerSetRarity(Pick.Rarity);
 			ItemPads.Add(Pad);
+			++PerRarity[static_cast<int32>(Pick.Rarity)];
 		}
 	}
-	UE_LOG(LogTortunabo, Log, TEXT("[TcT] Puntos de objetos: %d repartidos por la arena (de %d sitios)."), ItemPads.Num(), Candidates.Num());
+	UE_LOG(LogTortunabo, Log, TEXT("[TcT] Puntos de objetos: %d repartidos por la arena (de %d sitios): %d épicos, %d raros, %d comunes."),
+		ItemPads.Num(), Candidates.Num(), PerRarity[2], PerRarity[1], PerRarity[0]);
 }
 
 void ATN_TctGameMode::StartItemPads()
@@ -157,6 +176,20 @@ void ATN_TctGameMode::ResetItemsForRound(APawn* Pawn) const
 	UTN_RaceItemComponent::FindOrAddOn(Turtle);
 }
 
+void ATN_TctGameMode::RescueFromWater(ATortugaCharacter* Turtle, float WaterZ) const
+{
+	UCharacterMovementComponent* Movement = Turtle ? Turtle->GetCharacterMovement() : nullptr;
+	FVector Dry;
+	if (!Movement || !Arena || !TNTctItemRules::NearestDryPoint(Arena->GetSpawnCandidates(), Turtle->GetActorLocation(), WaterZ, Dry))
+	{
+		return;
+	}
+	const FVector Target = Dry + FVector(0.0, 0.0, Turtle->GetSimpleCollisionHalfHeight() + 20.0);
+	UTN_TurtleMovementComponent::LaunchFromServer(Turtle, TNTctItemRules::RescueLaunch(Turtle->GetActorLocation(), Target, Movement->GetGravityZ()));
+	TNTctItems::PlayCue(Turtle, ETNRaceSound::Boing, 1.1f);
+	UE_LOG(LogTortunabo, Log, TEXT("[TcT] El flotador lanza a %s a tierra (%.0f, %.0f, %.0f)."), *GetNameSafe(Turtle), Dry.X, Dry.Y, Dry.Z);
+}
+
 void ATN_TctGameMode::DebugGiveItem(int32 PlayerIndex, ETNTctItem Kind)
 {
 	const TArray<APlayerController*> Controllers = GetPlayingControllers();
@@ -169,6 +202,20 @@ void ATN_TctGameMode::DebugGiveItem(int32 PlayerIndex, ETNTctItem Kind)
 	const bool bGiven = TNTctItems::GiveItem(Turtle, Kind);
 	UE_LOG(LogTortunabo, Log, TEXT("[TcT] TN.Tct.Item: %s a %s%s."), TNTctItemRules::Spec(Kind).Code, *GetNameSafe(Turtle),
 		bGiven ? TEXT("") : TEXT(" (no se ha podido: falta su fila en DT_Items)"));
+}
+
+bool ATN_TctGameMode::DelayFlood(float Seconds)
+{
+	ATN_TctGameState* State = GetTctState();
+	if (!bRoundLive || !State || State->Flood.StartServerTime < 0.f)
+	{
+		return false;
+	}
+	const float Now = static_cast<float>(State->GetServerWorldTimeSeconds());
+	State->Flood.StartServerTime = TNTctRules::DelayedFloodStart(State->Flood.StartServerTime, Seconds, Now);
+	State->ForceNetUpdate();
+	UE_LOG(LogTortunabo, Log, TEXT("[TcT] El tapón de marea retrasa el agua %.0f s."), Seconds);
+	return true;
 }
 
 void ATN_TctGameMode::DebugRespawnItems()

@@ -1,5 +1,8 @@
 #include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctItems.h"
+#include "Game/TN_CoopItems.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "Core/TN_GameplayPreload.h"
 #include "TN_RaceItemArt.h"
 #include "World/Beach/TN_RaceItemBox.h"
@@ -10,11 +13,17 @@
 #include "World/Beach/TN_RaceMine.h"
 #include "World/Beach/TN_RacePelicanTaxi.h"
 #include "World/Beach/TN_RaceStormCloud.h"
+#include "World/Beach/TN_RaceFishingHook.h"
+#include "World/Beach/TN_RaceItemRules.h"
+#include "World/Beach/TN_RaceWhirlpool.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
+#include "World/ProcMap/TN_ProcMapGenerator.h"
+#include "World/TN_ChunkManager.h"
 #include "World/TN_PickupInteractableBase.h"
+#include "World/TN_CatalogItemVisuals.h"
 #include "Core/TN_Log.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
@@ -74,6 +83,12 @@ namespace TNRaceItemsDetail
 		{ ETNRaceItem::StormCloud,     TEXT("StormCloud"),     TEXT("Nube de tormenta"),     TEXT("nube"),      TEXT("rayo"),      0.f, 0.2f, 1.3f, 1.0f, 2 },
 		{ ETNRaceItem::Frisbee,        TEXT("Frisbee"),        TEXT("Disco volador"),        TEXT("disco"),     TEXT("boomerang"), 1.4f, 1.3f, 0.9f, 1.0f, 1 },
 		{ ETNRaceItem::Whistle,        TEXT("Whistle"),        TEXT("Silbato del sargento"), TEXT("silbato"),   TEXT("sargento"),  1.0f, 1.0f, 0.8f, 0.6f, 1 },
+		// #786. La tabla sale más a medias y al final; la caña, a las de atrás (nunca a la primera: no tiene a nadie delante);
+		// el remolino, a las de delante (se deja detrás); el cohete, a las últimas.
+		{ ETNRaceItem::TablaSurf,      TEXT("TablaSurf"),      TEXT("Tabla de surf"),        TEXT("tabla"),     TEXT("surf"),      0.2f, 1.2f, 1.5f, 1.4f, 1 },
+		{ ETNRaceItem::CanaPescar,     TEXT("CanaPescar"),     TEXT("Caña de pescar"),       TEXT("cana"),      TEXT("pescar"),    0.f,  0.9f, 1.6f, 1.2f, 2 },
+		{ ETNRaceItem::Remolino,       TEXT("Remolino"),       TEXT("Remolino"),             TEXT("whirlpool"), TEXT("trampa"),    1.6f, 1.0f, 0.3f, 0.8f, 2 },
+		{ ETNRaceItem::CoheteFeria,    TEXT("CoheteFeria"),    TEXT("Cohete de feria"),      TEXT("cohete"),    TEXT("rocket"),    0.f,  0.4f, 1.8f, 1.6f, 1 },
 	};
 
 	const FItemInfo* FindInfo(ETNRaceItem Kind)
@@ -101,6 +116,12 @@ namespace TNRaceItemsDetail
 			}
 		}
 		return Cached;
+	}
+
+	/** La posición con la que se pesa un sorteo: la cima de una fortaleza siempre pesa como la última (1), sea cual sea el puesto. */
+	float EffectiveNorm(float Norm, ETNRaceLootSource Source)
+	{
+		return Source == ETNRaceLootSource::Summit ? 1.f : Norm;
 	}
 
 	/** Interpola el peso entre primera (0), a medias (0,5) y última (1). */
@@ -218,6 +239,10 @@ FText TNRaceItems::DisplayName(ETNRaceItem Item)
 	case ETNRaceItem::StormCloud:     return NSLOCTEXT("TNRace", "ItemStormCloud", "Nube de tormenta");
 	case ETNRaceItem::Frisbee:        return NSLOCTEXT("TNRace", "ItemFrisbee", "Disco volador");
 	case ETNRaceItem::Whistle:        return NSLOCTEXT("TNRace", "ItemWhistle", "Silbato del sargento");
+	case ETNRaceItem::TablaSurf:      return NSLOCTEXT("TNRace", "ItemTablaSurf", "Tabla de surf");
+	case ETNRaceItem::CanaPescar:     return NSLOCTEXT("TNRace", "ItemCanaPescar", "Caña de pescar");
+	case ETNRaceItem::Remolino:       return NSLOCTEXT("TNRace", "ItemRemolino", "Remolino");
+	case ETNRaceItem::CoheteFeria:    return NSLOCTEXT("TNRace", "ItemCoheteFeria", "Cohete de feria");
 	default:                          return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
 	}
 }
@@ -269,10 +294,21 @@ FTN_InventoryItem TNRaceItems::MakeItem(ETNRaceItem Item)
 
 void TNRaceItems::ResolveVisuals(FTN_InventoryItem& Item)
 {
+	// Los objetos de siempre de DT_Items: icono (y malla, si la fila trae una del motor) dibujados en código (#787).
+	if (TNCatalogItemVisuals::ResolveVisuals(Item))
+	{
+		return;
+	}
 	// Los de Todos contra Todos también se definen en código: el inventario y los pickups los resuelven por aquí.
 	if (Item.UseType == ETN_ItemUseType::TctItem)
 	{
 		TNTctItems::ResolveVisuals(Item);
+		return;
+	}
+	// Y los del cooperativo (TN_CoopItems.h).
+	if (Item.UseType == ETN_ItemUseType::CoopItem)
+	{
+		TNCoopItems::ResolveVisuals(Item);
 		return;
 	}
 	if (Item.UseType != ETN_ItemUseType::RaceItem || IsRunningDedicatedServer() || !FApp::CanEverRender())
@@ -330,13 +366,40 @@ void TNRaceItems::GatherRacers(const UObject* WorldContext, TArray<ATortugaChara
 	ATN_BeachEnemy::GatherTurtles(WorldContext, Out);
 }
 
+namespace
+{
+	/** El mapa del nivel de Supervivencia (el del ChunkManager por niveles), si está listo; null en los demás modos. */
+	const ATN_ProcMapGenerator* FindSurvivalLevelMap(const UObject* WorldContext)
+	{
+		UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		if (!World)
+		{
+			return nullptr;
+		}
+		for (TActorIterator<ATN_ChunkManager> It(World); It; ++It)
+		{
+			const ATN_ProcMapGenerator* LevelMap = It->IsLevelMode() ? It->GetLevelGenerator() : nullptr;
+			if (LevelMap && LevelMap->IsMapReady())
+			{
+				return LevelMap;
+			}
+		}
+		return nullptr;
+	}
+}
+
 float TNRaceItems::CourseProgress(const UObject* WorldContext, const FVector& Where)
 {
 	if (const ATN_BeachRaceGenerator* Generator = ATN_BeachRaceGenerator::Find(WorldContext))
 	{
 		return Generator->GetCourseProgress(Where);
 	}
-	// Sin playa (pruebas en otro mapa): a lo largo del eje X.
+	// Supervivencia: lo recorrido del camino del mapa del nivel hacia su meta (lo mismo que mide lo que falta para desempatar).
+	if (const ATN_ProcMapGenerator* LevelMap = FindSurvivalLevelMap(WorldContext))
+	{
+		return LevelMap->GetPathProgress(Where) * 1.0e-5f;
+	}
+	// Sin playa ni nivel (pruebas en otro mapa): a lo largo del eje X.
 	return static_cast<float>(Where.X * 1.0e-5);
 }
 
@@ -387,8 +450,9 @@ float TNRaceItems::PositionWeight(ETNRaceItem Item, float Norm, int32 Racers, ET
 	{
 		return 0.f;
 	}
-	float Weight = TNRaceItemsDetail::Blend(*Info, Norm);
-	if (Source == ETNRaceLootSource::Chest)
+	// Arriba de una fortaleza vale la tabla de las últimas para cualquier puesto, con los factores del cofre.
+	float Weight = TNRaceItemsDetail::Blend(*Info, TNRaceItemsDetail::EffectiveNorm(Norm, Source));
+	if (Source == ETNRaceLootSource::Chest || Source == ETNRaceLootSource::Summit)
 	{
 		Weight *= Info->ChestFactor;
 	}
@@ -420,9 +484,9 @@ float TNRaceItems::PositionWeightForUse(ETN_ItemUseType Use, float Norm, ETNRace
 		case ETN_ItemUseType::None:             return 0.f;
 		default:                                break;
 	}
-	const float Clamped = FMath::Clamp(Norm, 0.f, 1.f);
+	const float Clamped = FMath::Clamp(TNRaceItemsDetail::EffectiveNorm(Norm, Source), 0.f, 1.f);
 	float Weight = Clamped <= 0.5f ? FMath::Lerp(Lead, Mid, Clamped * 2.f) : FMath::Lerp(Mid, Last, (Clamped - 0.5f) * 2.f);
-	if (Source == ETNRaceLootSource::Chest)
+	if (Source == ETNRaceLootSource::Chest || Source == ETNRaceLootSource::Summit)
 	{
 		Weight *= ChestFactor;
 	}
@@ -430,6 +494,13 @@ float TNRaceItems::PositionWeightForUse(ETN_ItemUseType Use, float Norm, ETNRace
 }
 
 bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog, FTN_InventoryItem& OutItem)
+{
+	return RollLoot(Picker, Source, Catalog,
+		[](ETN_ItemUseType /*Use*/, ETNRaceItem /*Kind*/, float RaceWeight, const FTNRaceRank& /*Rank*/) { return RaceWeight; }, OutItem);
+}
+
+bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog,
+	TFunctionRef<float(ETN_ItemUseType, ETNRaceItem, float, const FTNRaceRank&)> WeightOf, FTN_InventoryItem& OutItem)
 {
 	const FTNRaceRank Rank = GetRank(Picker);
 
@@ -445,13 +516,13 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 	// Los objetos de siempre de DT_Items (los que se pueden recoger y usar), con el peso de su uso según el puesto.
 	if (Catalog && Catalog->GetRowStruct() && Catalog->GetRowStruct()->IsChildOf(FTN_InventoryItem::StaticStruct()))
 	{
-		Catalog->ForeachRow<FTN_InventoryItem>(TEXT("TNRaceItems::RollLoot"), [&Options, &Total, &Rank, Source](const FName& /*RowName*/, const FTN_InventoryItem& Row)
+		Catalog->ForeachRow<FTN_InventoryItem>(TEXT("TNRaceItems::RollLoot"), [&Options, &Total, &Rank, &WeightOf, Source](const FName& /*RowName*/, const FTN_InventoryItem& Row)
 		{
 			if (!Row.IsValid() || !Row.PickupActorClass || Row.UseType == ETN_ItemUseType::None || Row.UseType == ETN_ItemUseType::RaceItem)
 			{
 				return;
 			}
-			const float Weight = PositionWeightForUse(Row.UseType, Rank.Norm, Source);
+			const float Weight = WeightOf(Row.UseType, ETNRaceItem::None, PositionWeightForUse(Row.UseType, Rank.Norm, Source), Rank);
 			if (Weight <= 0.f)
 			{
 				return;
@@ -468,7 +539,7 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 	for (int32 Index = static_cast<int32>(ETNRaceItem::Coconut); Index < static_cast<int32>(ETNRaceItem::Count); ++Index)
 	{
 		const ETNRaceItem Kind = static_cast<ETNRaceItem>(Index);
-		const float Weight = PositionWeight(Kind, Rank.Norm, Rank.Count, Source);
+		const float Weight = WeightOf(ETN_ItemUseType::RaceItem, Kind, PositionWeight(Kind, Rank.Norm, Rank.Count, Source), Rank);
 		if (Weight <= 0.f)
 		{
 			continue;
@@ -504,7 +575,14 @@ bool TNRaceItems::RollLoot(const APawn* Picker, ETNRaceLootSource Source, const 
 bool TNRaceItems::IsInvulnerable(const AActor* Turtle)
 {
 	const UTN_RaceItemComponent* Comp = UTN_RaceItemComponent::FindOn(Turtle);
-	return Comp && Comp->IsInvulnerable();
+	// También la protección del pez globo (objeto del coop): ni derribo ni aturdimiento mientras dura.
+	if ((Comp && Comp->IsInvulnerable()) || UTN_CoopItemComponent::IsTurtleProtected(Turtle))
+	{
+		return true;
+	}
+	// La burbuja de Todos contra Todos (#830): nada la empuja, derriba ni marea mientras dura.
+	const UTN_TctItemComponent* Tct = UTN_TctItemComponent::FindOn(Turtle);
+	return Tct && Tct->IsFxActive(ETNTctFx::Bubble);
 }
 
 bool TNRaceItems::IsRiding(const AActor* Turtle)
@@ -673,6 +751,18 @@ void TNRaceItems::ServerUse(ATortugaCharacter* Turtle, const FTN_InventoryItem& 
 			bUsed = true;
 			break;
 		}
+		case ETNRaceItem::TablaSurf:
+			bUsed = Effects->GrantSurf(TNRaceItemRules::SurfSeconds);
+			break;
+		case ETNRaceItem::CanaPescar:
+			bUsed = ATN_RaceFishingHook::ServerCast(Turtle);
+			break;
+		case ETNRaceItem::Remolino:
+			bUsed = ATN_RaceWhirlpool::ServerDrop(Turtle);
+			break;
+		case ETNRaceItem::CoheteFeria:
+			bUsed = Effects->GrantRocket(TNRaceItemRules::RocketSeconds);
+			break;
 		default:
 			break;
 	}

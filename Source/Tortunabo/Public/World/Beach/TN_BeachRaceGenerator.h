@@ -176,6 +176,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Beach")
 	bool IsRoundReady() const;
 
+	/**
+	 * Cliente: ya le han llegado los elementos replicados quietos de la ronda (trampas y estructuras, que bloquean), los de
+	 * su propio reparto (#828). Servidor: siempre. Si alguno no llega en ElementsArrivalTimeoutSeconds (p. ej. ya destruido en
+	 * el servidor), se da por llegada con un aviso.
+	 */
+	bool HasRoundElements() const;
+
 	UFUNCTION(BlueprintPure, Category = "Beach")
 	int32 GetRoundNumber() const { return RoundNet.Round; }
 
@@ -479,6 +486,16 @@ private:
 	/** Ronda que se monta por partes (null si no hay ninguna a medias) y su número (RoundNet.Round). */
 	TSharedPtr<FTNBeachRoundBuild> PendingBuild;
 	int32 PendingRound = 0;
+	/** Cliente: comprueba (cada medio segundo) si ya tiene los elementos quietos de la ronda montada (HasRoundElements). */
+	void UpdateRoundElementsArrival(float DeltaSeconds);
+	static constexpr double ElementsArrivalTimeoutSeconds = 20.0;
+	int32 ElementsCheckedRound = 0;
+	bool bRoundElementsArrived = false;
+	float ElementsCheckClock = 0.f;
+	double ElementsWaitSince = -1.0;
+	/** Tortugas locales paradas por HoldLocalPawnsWhileBuilding y desde cuándo (s del mundo). */
+	TArray<TWeakObjectPtr<ACharacter>> HeldLocalPawns;
+	double HeldSince = 0.0;
 	/** Teselas del terreno pendientes de subir con los asientos de la ronda nueva. */
 	TSharedPtr<FTNBeachTileBatch> PendingTiles;
 	/** Hay teselas con asientos a medio subir: la ronda siguiente las rehace todas. */
@@ -603,6 +620,14 @@ private:
 	void CancelRoundBuild();
 	/** Ronda montada entera: botín (servidor), registro de tiempos y aviso. */
 	void FinishRoundBuild();
+	/** ¿Se está corriendo ya (fase Racing del estado de la carrera)? */
+	bool IsRaceRunning() const;
+	/**
+	 * Con la carrera ya en marcha y la ronda aún a medio montar en esta máquina (el servidor suelta tras esperar como mucho
+	 * ClientRoundReadyTimeoutSeconds), las tortugas locales esperan quietas hasta tenerla entera: con los asientos o el
+	 * decorado de la ronda anterior, su mapa no es el del anfitrión (#828).
+	 */
+	void HoldLocalPawnsWhileBuilding(bool bRacing);
 	/** Crea el campo de decorado si falta (pegado al generador, en su espacio). */
 	ATN_BeachDecorField* EnsureDecorField();
 	/** Si el nido de los huevos se hizo con otro reparto (el nuevo aún no estaba), lo rehace con los asientos nuevos. */
@@ -619,6 +644,8 @@ private:
 	void SpawnRoundElement(int32 Index, TArray<int8>& HasClass, TMap<FString, int32>& MissingByClass);
 	/** Servidor: el vigilante de los erizos checos de la ronda (#688): derriban al chocar deprisa (ATN_BeachTankTrap). */
 	void SpawnTankTrapGuard();
+	/** Servidor: la catapulta potenciada y el cofre de cima del patio de un castillo enorme de la pasada de castillos (#741). */
+	void SpawnCastlePrizes(const TNBeachLayout::FItem& Item);
 	static FString DescribeMissing(const TMap<FString, int32>& MissingByClass);
 	void DestroyRoundElements();
 	void TickTurtles(float DeltaSeconds);

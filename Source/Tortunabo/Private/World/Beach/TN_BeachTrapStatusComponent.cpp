@@ -193,7 +193,7 @@ void UTN_BeachTrapStatusComponent::ServerRelease(const FVector& HopVelocity, flo
 	OnRep_Trap();
 	if (ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(GetOwner()); Turtle && DizzySeconds > 0.f)
 	{
-		Turtle->MulticastApplyMareoEffect(DizzySeconds);
+		Turtle->ApplyMareoEffect(DizzySeconds);
 	}
 	GetOwner()->ForceNetUpdate();
 }

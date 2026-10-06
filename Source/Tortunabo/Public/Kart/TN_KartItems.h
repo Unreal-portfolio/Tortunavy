@@ -26,6 +26,16 @@ enum class ETNKartItem : uint8
 	Tinta         UMETA(DisplayName = "Tinta de calamar"),
 	/** Invulnerable y algo más rápida unos segundos; aparta a los karts que toca. */
 	Estrella      UMETA(DisplayName = "Estrella de mar"),
+	/** Mortero (#774): vuela por encima de los karts y cae delante del de delante; la explosión levanta a los que pilla. */
+	Mortero       UMETA(DisplayName = "Mortero"),
+	/** Ráfaga de erizos (#774): 3 s disparando púas hacia delante; se apunta con el propio kart. */
+	Erizos        UMETA(DisplayName = "Ráfaga de erizos"),
+	/** Medusa saltarina (#774): bote propio de unos 3 m; esquiva conchas y charcos. */
+	Medusa        UMETA(DisplayName = "Medusa saltarina"),
+	/** Pez globo (#774): mina que se deja detrás. */
+	PezGlobo      UMETA(DisplayName = "Pez globo"),
+	/** Arpón (#774): se clava en el kart de delante y remolca hacia él. */
+	Arpon         UMETA(DisplayName = "Arpón"),
 	Count         UMETA(Hidden)
 };
 
@@ -84,7 +94,37 @@ namespace TNKart
 	/**
 	 * Bot: ¿usa ya el objeto? HeldSeconds desde que acabó la ruleta; AheadCm y BehindCm, distancia al kart de delante y al
 	 * de detrás (negativa si no hay). Las conchas, con alguien delante a menos de 60 m; el alga, con alguien detrás a menos
-	 * de 40 m; el resto, al rato. Pasados 8 s lo usa igual.
+	 * de 40 m; el resto, al rato. Pasados 8 s lo usa igual. Los de #774: el mortero, con alguien delante; los erizos, con
+	 * alguien delante a menos de 40 m; el arpón, con el de delante a entre 15 y 60 m; el pez globo, con alguien detrás a
+	 * menos de 40 m; la medusa, con bHopThreat (una teledirigida le persigue o tiene un charco delante) o al rato.
 	 */
-	TORTUNABO_API bool ShouldBotUseItem(ETNKartItem Item, float HeldSeconds, float AheadCm, float BehindCm);
+	TORTUNABO_API bool ShouldBotUseItem(ETNKartItem Item, float HeldSeconds, float AheadCm, float BehindCm, bool bHopThreat = false);
+
+	// ---- Objetos que reutilizan la munición de la torreta del Rally (#774) ----
+
+	/** Ráfaga de erizos: 3 s disparando púas hacia delante (a la cadencia de la torreta: 24 púas). */
+	inline constexpr float ErizosSeconds = 3.f;
+	inline constexpr int32 ErizosSpikes = 24;
+	/** Las púas salen con este cabeceo sobre el morro (grados): el kart apunta. */
+	inline constexpr float ErizosPitchDeg = 2.f;
+	/** Mortero: cae a esta distancia (cm) por delante del kart de delante; sin nadie delante, a MortarNoTargetCm del propio. */
+	inline constexpr float MortarLeadCm = 600.f;
+	inline constexpr float MortarNoTargetCm = 4000.f;
+	/** Vuelo del mortero (s): más largo cuanto más lejos (MortarRangeCmPerSecond), entre MortarMinFlightSeconds y Max. */
+	inline constexpr float MortarRangeCmPerSecond = 2500.f;
+	inline constexpr float MortarMinFlightSeconds = 1.2f;
+	inline constexpr float MortarMaxFlightSeconds = 3.f;
+	/** Arpón: alcance (cm) con el que va a por el kart de delante; más lejos, sale recto. */
+	inline constexpr float HarpoonRangeCm = 8000.f;
+	/** El pez globo cae a esta distancia detrás del kart (cm). */
+	inline constexpr float PufferBehindCm = 500.f;
+
+	/** Segundos de vuelo del mortero hasta un blanco a DistanceCm en horizontal. */
+	TORTUNABO_API float MortarFlightSeconds(float DistanceCm);
+
+	/**
+	 * Velocidad de salida para que un proyectil con la gravedad GravityZ (cm/s², negativa) vaya de Start a Target en
+	 * FlightSeconds: (Target − Start) / T − ½ · g · T.
+	 */
+	TORTUNABO_API FVector MortarLaunchVelocity(const FVector& Start, const FVector& Target, float GravityZ, float FlightSeconds);
 }

@@ -17,6 +17,10 @@ class ATN_SpectatorGhost;
  * mira el vuelo del fantasma hasta el huevo (luego la tapa la cáscara oscura). Si un gusano de arena se come a la tortuga
  * seguida (fin de la carrera), cualquiera de las dos pasa, con otra mezcla, a la vista lejana de la escena que ve ella
  * (ATN_BeachSandWorm::GetSpectatorView), con el gusano entero.
+ *
+ * Con gafas (#646; Docs/Modo_VR.md): ni fija ni libre. La posición sigue a la tortuga seguida, sin retardo, y la base de la
+ * vista mira a un rumbo fijo (el de la cámara de esa tortuga al empezar a mirarla): solo gira la cabeza del jugador. El brazo
+ * de cámara de la otra tortuga llegaba tarde y giraba cuando giraba ese jugador, y mareaba. Sin gafas y simulado no cambia.
  */
 UCLASS()
 class TORTUNABO_API UTN_GhostCameraModifier : public UCameraModifier
@@ -38,6 +42,9 @@ public:
 
 	void ToggleFree();
 	bool IsFree() const { return bFree; }
+
+	/** ¿Puso este fotograma la vista de VR del fantasma (con gafas)? El rig la coloca entonces donde esta vista, sin el brazo de la otra tortuga. */
+	bool IsVRViewActive() const { return bVRViewActive; }
 
 	/** Vista que dejó el último fotograma (el fantasma flota ahí). */
 	bool HasLastView() const { return bHasLastView; }
@@ -66,6 +73,11 @@ private:
 
 	bool bHasLastView = false;
 	FMinimalViewInfo LastView;
+
+	/** Con gafas (#646): rumbo fijo de la vista (el de la cámara seguida al empezar) y si este fotograma se puso la vista de VR. */
+	bool bVRYawReady = false;
+	float VRYaw = 0.f;
+	bool bVRViewActive = false;
 
 	/** Vista lejana del gusano que se come a la seguida: mezcla (0-1) y la última vista que dio. */
 	float WormBlend = 0.f;

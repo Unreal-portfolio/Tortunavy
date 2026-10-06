@@ -512,7 +512,15 @@ const TNArt::FResolved* TNArt::Find(FName Slot)
 			Result = MakeUnique<FResolved>();
 			Result->Mesh = Mesh;
 			Result->Adjust = Entry->Adjust;
-			Result->bUseArtCollision = Entry->bUseArtCollision;
+			// La colisión es siempre la generada (#828): la de arte dependería de lo que vea cada máquina (TN.Art.Enabled, una
+			// malla que no carga, un catálogo distinto) y el cliente chocaría con otra cosa que el anfitrión.
+			Result->bUseArtCollision = false;
+			if (Entry->bUseArtCollision && !C.Warned.Contains(Slot))
+			{
+				C.Warned.Add(Slot);
+				UE_LOG(LogTortunabo, Warning, TEXT("[Arte] %s pide bUseArtCollision: no se usa, choca la colisión generada (igual en todas las máquinas, #828)."),
+					*Slot.ToString());
+			}
 			Result->Bone = Entry->Bone;
 			for (const TSoftObjectPtr<UMaterialInterface>& Mat : Entry->Materials)
 			{

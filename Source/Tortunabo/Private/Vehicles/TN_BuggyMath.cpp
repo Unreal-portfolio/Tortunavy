@@ -184,6 +184,37 @@ namespace TNBuggy
 		return Excess > 0.f ? Excess * FMath::Max(Gain, 0.f) : 0.f;
 	}
 
+	float SpeedCapCms(const FSpeedCapInput& In)
+	{
+		float Cap = 0.f;
+		// Nunca 0 (sería «sin tope»): como mucho, 1 cm/s.
+		const auto Limit = [&Cap](float Value)
+		{
+			Value = FMath::Max(Value, 1.f);
+			Cap = Cap > 0.f ? FMath::Min(Cap, Value) : Value;
+		};
+		if (In.PuddleCapCms > 0.f)
+		{
+			Limit(In.PuddleCapCms);
+		}
+		if (In.bWading)
+		{
+			// Con daño, el agua frena también (#719, #720).
+			Limit(In.TopSpeedCms * FMath::Clamp(In.WaterSpeedMultiplier, 0.f, 1.f) * FMath::Clamp(In.DamageScale, 0.f, 1.f));
+		}
+		if (In.DamageScale < 1.f)
+		{
+			const float Top = FMath::Lerp(In.TopSpeedCms, FMath::Max(In.BoostTopSpeedCms, In.TopSpeedCms), FMath::Clamp(In.BoostStrength01, 0.f, 1.f));
+			Limit(Top * FMath::Max(In.DamageScale, 0.f));
+		}
+		return Cap;
+	}
+
+	float DamageStatScale(float Health01, float MinScale)
+	{
+		return FMath::Lerp(FMath::Clamp(MinScale, 0.f, 1.f), 1.f, FMath::Clamp(Health01, 0.f, 1.f));
+	}
+
 	float SteerWobble(float TimeLeft, float Duration, float Amplitude, float Frequency)
 	{
 		if (TimeLeft <= 0.f || Duration <= 0.f)
@@ -280,10 +311,11 @@ namespace TNBuggy
 		return Keys;
 	}
 
-	TArray<FCurveKey> TorqueCurveKeys(float MaxTorque)
+	TArray<FCurveKey> TorqueCurveKeys(float MaxTorque, float TopEndScale)
 	{
-		// Desde el 80 % de MaxRPM, el par absoluto de la curva antigua: con más MaxTorque, la fracción baja en proporción.
-		const float Scale = MaxTorque > UE_KINDA_SMALL_NUMBER ? LegacyMaxTorque / MaxTorque : 1.f;
+		// Desde el 80 % de MaxRPM, el par absoluto de la curva antigua (por TopEndScale): con más MaxTorque, la fracción baja
+		// en proporción.
+		const float Scale = MaxTorque > UE_KINDA_SMALL_NUMBER ? LegacyMaxTorque * FMath::Max(TopEndScale, 0.f) / MaxTorque : 1.f;
 		const TConstArrayView<FCurveKey> Legacy = LegacyTorqueCurveKeys();
 		TArray<FCurveKey> Keys = { { 0.f, 0.9f }, { 0.1f, 1.f }, { 0.55f, 1.f } };
 		for (const FCurveKey& Key : Legacy)

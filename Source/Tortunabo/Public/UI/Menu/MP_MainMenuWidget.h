@@ -78,6 +78,9 @@ private:
 	/** Monta el botón «Ajustes» junto a los del Blueprint (una sola vez). */
 	void BuildSettingsButton();
 
+	/** Encoge el hueco vertical entre los botones de la caja para que quepa el texto de los cinco. */
+	void FitButtonGaps();
+
 	/** Los ajustes se han cerrado: este menú vuelve a recibir clics y el foco vuelve a «Ajustes». */
 	void HandleSettingsClosed();
 

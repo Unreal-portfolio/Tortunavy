@@ -152,6 +152,13 @@ struct FTNGameSettings
 	bool bShowTalkers = false;
 
 	/**
+	 * Efectos del clima (0..1): cuánto se ve la niebla y el tinte de la tormenta de arena del coop (#790). 1 = como está
+	 * pensado; menos, atenuado (nunca del todo: TNSandStorm::MIN_VISUAL). No cambia el freno ni el empuje.
+	 */
+	UPROPERTY()
+	float WeatherEffects = 1.f;
+
+	/**
 	 * Idioma del juego: código de cultura de la lista de idiomas (UTN_LanguageSettings; «es-ES», «en», «pt-BR»...). Vacío =
 	 * todavía sin elegir: se usa el idioma del sistema si está en la lista y, si no, el español.
 	 */
@@ -182,6 +189,18 @@ struct FTNGameSettings
 	/** Giro con el stick derecho en VR: 0 a pasos de 30°, 1 a pasos de 45°, 2 suave. */
 	UPROPERTY()
 	uint8 VRTurn = 0;
+
+	/**
+	 * Viñeta de confort en VR (#647): 0 apagada, 1 la de serie, 2 el doble (TNVRHands::ComfortVignette). Es la misma fuerza que
+	 * TN.VR.ComfortVignette, que manda sobre el ajuste si se toca por consola. Valor de serie 1: un guardado de antes no trae el
+	 * campo y se queda con el de serie (sin paso de migración, como bFisheye).
+	 */
+	UPROPERTY()
+	uint8 VRVignette = 1;
+
+	/** Vibración de los mandos Touch en VR (#647); TN.VR.Haptics, por consola, manda sobre el ajuste. Encendida de serie. */
+	UPROPERTY()
+	bool bVRHaptics = true;
 
 	/**
 	 * Cámara sin gafas (Docs/Modo_VR.md, «Primera persona»): 0 tercera persona (la de siempre), 1 primera persona (en la

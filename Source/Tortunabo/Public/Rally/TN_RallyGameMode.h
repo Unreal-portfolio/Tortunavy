@@ -124,6 +124,12 @@ public:
 	/** Sin los PlayerState de los bots: no viajan al lobby ni a la carrera siguiente (#694). */
 	virtual void GetSeamlessTravelActorList(bool bToTransition, TArray<AActor*>& ActorList) override;
 
+	/**
+	 * Pruebas: el vehículo se ha movido a mano (TN.Kart.Place). Su avance en la pista pasa al punto más cercano y se olvidan
+	 * el fuera de pista, el atasco y el contramano; si no, la carrera lo veía lejos de su arco y lo devolvía a la puerta.
+	 */
+	void NotifyVehicleRelocated(const APawn* Vehicle);
+
 	UFUNCTION(BlueprintPure, Category = "Rally")
 	FName GetVariant() const { return Variant; }
 

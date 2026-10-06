@@ -1,4 +1,5 @@
 #include "VR/TN_VRScreenWidget.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -39,7 +40,7 @@ void UTN_VRScreenWidget::BuildTree()
 	WidgetTree->RootWidget = Canvas;
 }
 
-bool UTN_VRScreenWidget::Host(UUserWidget* Widget, int32 ZOrder)
+bool UTN_VRScreenWidget::Host(UUserWidget* Widget, int32 ZOrder, bool bPlayerScreen)
 {
 	BuildTree();
 	if (!Widget || !Canvas || Widget == this)
@@ -53,7 +54,11 @@ bool UTN_VRScreenWidget::Host(UUserWidget* Widget, int32 ZOrder)
 		TNVRScreenDetail::FillSlot(Cast<UCanvasPanelSlot>(Widget->Slot), ZOrder);
 		for (FHostedWidget& Entry : Hosted)
 		{
-			if (Entry.Widget.Get() == Widget) { Entry.ZOrder = ZOrder; }
+			if (Entry.Widget.Get() == Widget)
+			{
+				Entry.ZOrder = ZOrder;
+				Entry.bPlayerScreen = bPlayerScreen;
+			}
 		}
 		return true;
 	}
@@ -70,6 +75,7 @@ bool UTN_VRScreenWidget::Host(UUserWidget* Widget, int32 ZOrder)
 	FHostedWidget Entry;
 	Entry.Widget = Widget;
 	Entry.ZOrder = ZOrder;
+	Entry.bPlayerScreen = bPlayerScreen;
 	Hosted.Add(Entry);
 	return true;
 }
@@ -142,6 +148,12 @@ void UTN_VRScreenWidget::ReleaseAll(bool bToViewport)
 		Widget->RemoveFromParent();
 		if (bToViewport)
 		{
+			// Partida local (#639): lo de un jugador vuelve a su trozo de la pantalla partida, no a toda la pantalla.
+			if (ReturnsToPlayerScreen(Entry.bPlayerScreen, Widget->GetOwningLocalPlayer() != nullptr, UTN_LocalPlaySubsystem::IsLocalGame(Widget))
+				&& Widget->AddToPlayerScreen(Entry.ZOrder))
+			{
+				continue;
+			}
 			Widget->AddToViewport(Entry.ZOrder);
 		}
 	}

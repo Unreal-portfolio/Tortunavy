@@ -356,11 +356,18 @@ protected:
 	/** Probabilidad de que salga un objeto (por defecto LootChance, o la de tn.Search.Luck si se fuerza). */
 	virtual float GetLuck() const;
 
+	/** Agotado para Interactor: sin aviso ni poder rebuscar. Por defecto, IsSpent (igual para todas). */
+	virtual bool IsSpentFor(const APawn* Interactor) const { return IsSpent(); }
+
+	/** Agotado para quien juega en esta pantalla: sin chispitas ni anillo. Por defecto, IsSpent (igual para todas). */
+	virtual bool IsSpentForLocalView() const { return IsSpent(); }
+
 	/** Peso de una fila del catálogo en el sorteo (por defecto, el de LootWeights por nombre de fila o ItemId, o 1). */
 	virtual float GetLootWeight(FName RowName, const FTN_InventoryItem& Row) const;
 
 	/**
-	 * Servidor: sortea el objeto que sale al completarse la búsqueda de Searcher (por defecto, del catálogo con GetLootWeight).
+	 * Servidor: sortea el objeto que sale al completarse la búsqueda de Searcher (por defecto, de la tabla del coop:
+	 * TNCoopItems::RollLoot, con las filas del catálogo con GetLootWeight y los objetos del coop definidos en código).
 	 * La playa lo sobrescribe: allí los pesos dependen del puesto de quien rebusca (TNRaceItems::RollLoot).
 	 */
 	virtual bool PickLoot(FTN_InventoryItem& OutItem, const APawn* Searcher) const;

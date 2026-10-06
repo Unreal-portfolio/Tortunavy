@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "HAL/IConsoleManager.h"
 #include "InputActionValue.h"
 #include "Kart/TN_KartGunnerPawn.h"
 #include "Kart/TN_KartInput.h"
@@ -17,7 +18,9 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "Rally/TN_RallyLogic.h"
 #include "Vehicles/TN_BuggyData.h"
+#include "Vehicles/TN_BuggyMath.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
+#include "Vehicles/TN_BuggyWheel.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 #include "VR/TN_VRSeatComponent.h"
 
@@ -36,10 +39,86 @@ namespace TNKart
 		const float Step = FMath::Max(0.f, RecenterDegPerSecond) * FMath::Max(0.f, DeltaSeconds);
 		return FMath::Abs(Degrees) <= Step ? 0.f : Degrees - FMath::Sign(Degrees) * Step;
 	}
+
+	void ApplyKartTuning(UTN_BuggyData& Data, float SpeedScale, float TopEndTorqueScale)
+	{
+		const float Scale = FMath::Max(SpeedScale, 0.1f);
+		// Punta y aceleración: el régimen y el par suben por Scale y el par de la parte alta de la curva (que es el que fija la
+		// punta) por TopEndTorqueScale.
+		Data.MaxRPM *= Scale;
+		Data.MaxTorque *= Scale;
+		Data.TopEndTorqueScale = TopEndTorqueScale;
+		// El turbo parte de TNRallyTurret::BuggyTopSpeedCms, la punta del Rally: su múltiplo sigue a la del kart. Empuja más
+		// fuerte (el mini-turbo del derrape dura poco) y sube y baja deprisa.
+		Data.BoostTopSpeedMultiplier *= Scale;
+		Data.BoostPushAccel *= Scale * 1.8f;
+		Data.BoostPushFadeBandCms *= Scale;
+		Data.BoostRampUpSeconds = 0.25f;
+		Data.BoostRampDownSeconds = 0.35f;
+		// A más velocidad, el alabeo se deja de corregir más tarde (igual de seguro que en el Rally a su velocidad).
+		Data.AntiRollGroundRollFullSpeedCms *= Scale;
+		Data.AntiRollGroundRollZeroSpeedCms *= Scale;
+		// Derrape que se controla: el freno de mano suelta menos la trasera y el contravolante no pelea con un derrape corto.
+		Data.HandbrakeRearFriction = 2.2f;
+		Data.CounterSteerStartSlipDeg = 16.f;
+	}
+
+	float SpeedSteerMultiplier(float ForwardSpeedCms)
+	{
+		const float Ratio = FMath::Abs(ForwardSpeedCms) / SteerHalfSpeedCms;
+		return FMath::Max(MinSteerFraction, 1.f / (1.f + FMath::Pow(Ratio, SteerFallExponent)));
+	}
+
+	float DriftBoostSeconds(float DriftSeconds)
+	{
+		if (DriftSeconds >= DriftTier3Seconds)
+		{
+			return DriftBoost3Seconds;
+		}
+		if (DriftSeconds >= DriftTier2Seconds)
+		{
+			return DriftBoost2Seconds;
+		}
+		return DriftSeconds >= DriftTier1Seconds ? DriftBoost1Seconds : 0.f;
+	}
+
+	FDriftStep AdvanceDrift(float DriftSeconds, bool bHandbrake, bool bGrounded, float ForwardSpeedCms, float Steer, float SlipDeg,
+		float Dt)
+	{
+		FDriftStep Out;
+		if (!bHandbrake)
+		{
+			// Al soltar el freno de mano se cobra el derrape, si lo hubo.
+			Out.BoostSeconds = DriftBoostSeconds(DriftSeconds);
+			return Out;
+		}
+		if (ForwardSpeedCms < DriftMinSpeedCms)
+		{
+			// Casi parado con el freno puesto: se frenó, no se derrapó.
+			return Out;
+		}
+		const bool bDrifting = bGrounded && (FMath::Abs(Steer) >= DriftMinSteer || FMath::Abs(SlipDeg) >= DriftMinSlipDeg);
+		Out.DriftSeconds = DriftSeconds + (bDrifting ? FMath::Max(Dt, 0.f) : 0.f);
+		return Out;
+	}
 }
 
 namespace TNKartBuggyDetail
 {
+	/**
+	 * Mandos de prueba (se ponen con -ExecCmds o en la consola): se leen cuando aparece cada kart. TN.Kart.Tuning 0 deja el
+	 * kart como el buggy del Rally para comparar.
+	 */
+	TAutoConsoleVariable<int32> CVarKartTuning(TEXT("TN.Kart.Tuning"), 1,
+		TEXT("Karts (#742): 1 = conducción de los karts (más punta y aceleración, dirección que se cierra a velocidad, mini-turbo del derrape); 0 = como el buggy del Rally. Se lee al aparecer cada kart."),
+		ECVF_Default);
+	TAutoConsoleVariable<float> CVarKartSpeedScale(TEXT("TN.Kart.SpeedScale"), TNKart::DefaultSpeedScale,
+		TEXT("Karts (#742): cuánto más rápido que el buggy del Rally (1,3 = un 30 % más). Se lee al aparecer cada kart."),
+		ECVF_Default);
+	TAutoConsoleVariable<float> CVarKartTopEndTorque(TEXT("TN.Kart.TopEndTorque"), TNKart::DefaultTopEndTorqueScale,
+		TEXT("Karts (#742): multiplicador del par de la parte alta de la curva (el que fija la punta). Se lee al aparecer cada kart."),
+		ECVF_Default);
+
 	/** Envíos del apuntado de la conductora sola al servidor por segundo, y cambio mínimo que se envía (grados). */
 	constexpr float AimSendRate = 10.f;
 	constexpr float AimSendMinDeltaDeg = 1.5f;
@@ -68,6 +147,29 @@ ATN_KartBuggy::ATN_KartBuggy()
 	Traversal = CreateDefaultSubobject<UTN_KartTraversalComponent>(TEXT("KartTraversal"));
 	GunnerPawnClass = ATN_KartGunnerPawn::StaticClass();
 }
+
+void ATN_KartBuggy::PostInitializeComponents()
+{
+	using namespace TNKartBuggyDetail;
+	// La conducción de los karts es un ajuste (UTN_BuggyData) propio de este kart, que lee ATN_Buggy al crear el motor: tiene que
+	// estar puesto antes de Super. Un kart con ajuste asignado a mano se queda con el suyo.
+	bKartTuned = bKartTuning && !Data && CVarKartTuning.GetValueOnGameThread() != 0;
+	if (bKartTuned)
+	{
+		KartSpeedScale = FMath::Clamp(CVarKartSpeedScale.GetValueOnGameThread(), 0.5f, 3.f);
+		UTN_BuggyData* Tuned = NewObject<UTN_BuggyData>(this, TEXT("KartTuning"));
+		TNKart::ApplyKartTuning(*Tuned, KartSpeedScale, CVarKartTopEndTorque.GetValueOnGameThread());
+		Data = Tuned;
+		// Con más régimen el cambio automático de Chaos (sube a 4500 rpm) pasaría a 2.ª: se queda siempre en 1.ª, como el Rally.
+		if (UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement())
+		{
+			Move->TransmissionSetup.ChangeUpRPM = FMath::Max(Move->TransmissionSetup.ChangeUpRPM, Tuned->MaxRPM + 1000.f);
+		}
+	}
+	Super::PostInitializeComponents();
+}
+
+const FName ATN_KartBuggy::AppliedSteeringProperty = TEXT("SteeringInput");
 
 void ATN_KartBuggy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -370,6 +472,17 @@ void ATN_KartBuggy::MeasureRideHeight()
 	}
 }
 
+bool ATN_KartBuggy::FindWaterSurfaceZ(const FVector& Location, double& OutZ) const
+{
+	float SurfaceZ = 0.f;
+	if (Traversal && Traversal->FindWaterSurfaceAt(Location, 0.f, SurfaceZ))
+	{
+		OutZ = SurfaceZ;
+		return true;
+	}
+	return Super::FindWaterSurfaceZ(Location, OutZ);
+}
+
 void ATN_KartBuggy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -387,6 +500,17 @@ void ATN_KartBuggy::Tick(float DeltaSeconds)
 	if (HasAuthority() || IsLocallyControlled())
 	{
 		ApplyLeanSteering();
+		if (bKartTuned)
+		{
+			ApplyKartHandbrake();
+			ApplyDriftStability();
+		}
+	}
+	if (HasAuthority() && bKartTuned)
+	{
+		// El mini-turbo lo decide solo el servidor (#742): la conductora cliente no lo predice, porque una decisión suya que
+		// el servidor no tomara se quedaría como un turbo que solo ella tiene. El servidor lo replica (TimedBoostEndServerTime).
+		UpdateDrift(DeltaSeconds);
 	}
 	if (IsLocallyControlled() && IsPlayerControlled())
 	{
@@ -402,7 +526,12 @@ void ATN_KartBuggy::ApplyLeanSteering()
 	{
 		return;
 	}
-	const float Wanted = TNKart::LeanSteerMultiplier(GetGunnerLean(), Move->GetSteeringInput());
+	// La dirección se cierra con la velocidad (#742), pero solo la de la conductora humana: la IA acota su giro por aceleración
+	// lateral (ITN_RallyVehicle::GetMaxSteerAngleDeg) y con menos ángulo del que cuenta no sujetaría la pista. La dirección es
+	// la que aplica Chaos: en el servidor, la de la conductora cliente (la cruda ahí es 0, #710).
+	const bool bAIDriven = Controller && !Controller->IsPlayerController();
+	const float SpeedFactor = bKartTuned && !bAIDriven ? TNKart::SpeedSteerMultiplier(Move->GetForwardSpeed()) : 1.f;
+	const float Wanted = TNKart::LeanSteerMultiplier(GetGunnerLean(), GetAppliedSteering()) * SpeedFactor;
 	const bool bNeutral = FMath::Abs(Wanted - 1.f) < TNKartBuggyDetail::LeanSteerEpsilon;
 	// ATN_Buggy::ApplyWheelFriction vuelve a poner el ángulo del ajuste cada vez que cambia la fricción (freno de mano,
 	// charco): con la inclinación se reaplica cada fotograma; sin ella basta con devolverlo una vez.
@@ -415,6 +544,85 @@ void ATN_KartBuggy::ApplyLeanSteering()
 	for (int32 Wheel = 0; Wheel < 2; ++Wheel)
 	{
 		Move->SetWheelMaxSteerAngle(Wheel, Angle);
+	}
+}
+
+float ATN_KartBuggy::GetAppliedDriftSteering() const
+{
+	// SteeringInput de Chaos (protegida y reflejada): la dirección que mueve las ruedas en esta máquina. La que da
+	// GetSteeringInput es la entrada cruda, que solo existe donde se conduce: en el servidor, con una conductora cliente, es 0.
+	static const FFloatProperty* Property = CastField<FFloatProperty>(
+		UChaosVehicleMovementComponent::StaticClass()->FindPropertyByName(AppliedSteeringProperty));
+	const UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement();
+	return Move && Property ? FMath::Clamp(Property->GetPropertyValue_InContainer(Move), -1.f, 1.f) : 0.f;
+}
+
+void ATN_KartBuggy::ApplyKartHandbrake()
+{
+	// Una vez por pulsación: si Chaos recrea la simulación, las ruedas vuelven al par de la clase.
+	if (!IsHandbrakeHeld())
+	{
+		bKartHandbrakeApplied = false;
+		return;
+	}
+	UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement();
+	if (bKartHandbrakeApplied || !Move || !Move->HasValidPhysicsState() || Move->WheelSetups.Num() < 4)
+	{
+		return;
+	}
+	// Las traseras (2 y 3) son las del freno de mano; el par de serie es el de UTN_BuggyWheelRear.
+	const float Torque = GetDefault<UTN_BuggyWheelRear>()->MaxHandBrakeTorque * TNKart::DriftHandbrakeTorqueFraction;
+	for (int32 Wheel = 2; Wheel < 4; ++Wheel)
+	{
+		Move->SetWheelHandbrakeTorque(Wheel, Torque);
+	}
+	bKartHandbrakeApplied = true;
+}
+
+void ATN_KartBuggy::ApplyDriftStability()
+{
+	USkeletalMeshComponent* Chassis = GetMesh();
+	if (!IsHandbrakeHeld() || IsAirborne() || !Chassis || !Chassis->IsSimulatingPhysics())
+	{
+		return;
+	}
+	TNBuggy::FStabilityTuning Tuning;
+	Tuning.StartSlipDeg = TNKart::DriftHoldSlipDeg;
+	Tuning.Stiffness = TNKart::DriftHoldStiffness;
+	Tuning.Damping = TNKart::DriftHoldDamping;
+	Tuning.MaxAccel = TNKart::DriftHoldMaxAccel;
+	const FVector Up = GetActorUpVector();
+	const FVector Velocity = GetVelocity();
+	const float Slip = TNBuggy::SlipAngleDeg(GetActorForwardVector(), Velocity);
+	const float YawRate = static_cast<float>(Chassis->GetPhysicsAngularVelocityInRadians() | Up);
+	const float Flat = static_cast<float>(FVector(Velocity.X, Velocity.Y, 0.f).Size());
+	// Como StabilityYawAccel del buggy, pero con el freno de mano (el derrape largo del Rally) y a partir de una deriva mayor.
+	const float Accel = TNBuggy::StabilityYawAccel(Slip, YawRate, Flat, false, false, Tuning);
+	if (Accel != 0.f)
+	{
+		Chassis->AddTorqueInRadians(Up * Accel, NAME_None, true);
+	}
+}
+
+void ATN_KartBuggy::UpdateDrift(float DeltaSeconds)
+{
+	UChaosWheeledVehicleMovementComponent* Move = GetWheeledMovement();
+	if (!Move || !Move->HasValidPhysicsState())
+	{
+		DriftSeconds = 0.f;
+		return;
+	}
+	const float Slip = TNBuggy::SlipAngleDeg(GetActorForwardVector(), GetVelocity());
+	// Con el giro que aplica Chaos, no con la entrada cruda: en el servidor, con una conductora cliente, esa es 0 y el derrape
+	// y el mini-turbo saldrían distintos en cada máquina.
+	const TNKart::FDriftStep Step = TNKart::AdvanceDrift(DriftSeconds, IsHandbrakeHeld(), !IsAirborne(), Move->GetForwardSpeed(),
+		GetAppliedDriftSteering(), Slip, DeltaSeconds);
+	DriftSeconds = Step.DriftSeconds;
+	if (Step.BoostSeconds > 0.f)
+	{
+		// Solo el servidor lo pide (Tick); la hora de fin se replica a todas las máquinas, la conductora incluida.
+		GrantTimedBoost(Step.BoostSeconds);
+		UE_LOG(LogTNRally, Verbose, TEXT("[Karts] %s: mini-turbo de %.1f s tras el derrape."), *GetName(), Step.BoostSeconds);
 	}
 }
 

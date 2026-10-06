@@ -51,7 +51,7 @@ necesita espera a que esté lista.
   - `Mine`: mina.
   - `Trampoline`: trampolín (4 variantes por semilla).
     - Caídas en red (#21): `TN.Beach.Drop <metros>[/<metros>...] [veces=1] [cada=3 s] [jugador=anfitrión]` en el anfitrión deja caer esa tortuga sobre lo más alto del trampolín de `TN.Beach.Place` más cercano (si no hay, crea uno de gelatina). Con `p.NetShowCorrections 1` y `NetEmulation.PktLag 120` en el cliente, `TN.Beach.Drop 5/7 10 4 1` hace diez caídas alternas de 5 y 7 m del jugador 1: tiene que rebotar igual en los dos y sin correcciones (solo las del propio teletransporte). La primera espera una vuelta para que el jugador acabe de entrar.
-  - `FortressMedium`, `FortressLarge`, `FortressColossal`: fortaleza de arena con premio en la cima (lanzador potenciado, cofre y conchas de 50 y 100). Mira hacia donde miras (lanza hacia allí) y sale lejos: la colosal, a ~54 m. Por ejemplo `TN.Beach.Place FortressColossal 1 0 7`; semillas seguidas cambian catapulta o trampolín y el lado de la espiral.
+  - `FortressMedium`, `FortressLarge`, `FortressColossal`: fortaleza de arena con premio en la cima (catapulta potenciada, cofre con lo mejor de la carrera para cualquier puesto y conchas de 50 y 100). Mira hacia donde miras (lanza hacia allí) y sale lejos: la colosal, a ~54 m. Por ejemplo `TN.Beach.Place FortressColossal 1 0 7`; semillas seguidas cambian el lado de la espiral.
 - **Lanzadores potenciados** (los de la cima de las fortalezas): `TN.Beach.PlaceBoosted <Catapult|Trampoline> [Tamaño=1] [Semilla]`, delante de ti y mirando hacia donde miras. `TN.Beach.Place clear` también los borra.
 - **Subir a la cima:** `TN.Beach.Fortress.Top [jugador=0]` lleva a esa tortuga a la cima de la fortaleza más cercana, detrás del lanzador y mirando hacia él.
   - `TreasureChest`: cofre (mira hacia donde mira tu tortuga; `TN.Beach.Chest` lo pone con el frente hacia ti).
@@ -155,7 +155,8 @@ necesita espera a que esté lista.
 Se escriben en la ventana del anfitrión (o de un cliente del PIE: actúan en el mundo del servidor). Los objetos se llaman por
 su nombre en inglés, en español o por su número: `Coconut`/`coco`, `TripleCoconut3`/`triple`, `GoldenCoconut`/`dorado`,
 `PelicanTaxi`/`pelicano`/`taxi`, `Sunscreen`/`protector`/`estrella`, `HomingCrab`/`cangrejo`, `GullStrike`/`gaviota`,
-`SandMine`/`mina`, `StormCloud`/`nube`/`rayo`, `Frisbee`/`disco`, `Whistle`/`silbato`. `TN.Race.Item list` enseña todos.
+`SandMine`/`mina`, `StormCloud`/`nube`/`rayo`, `Frisbee`/`disco`, `Whistle`/`silbato` y, de la #786, `TablaSurf`/`tabla`/`surf`,
+`CanaPescar`/`cana`/`pescar`, `Remolino` y `CoheteFeria`/`cohete`. `TN.Race.Item list` enseña todos.
 Para usarlos, la tecla de siempre de usar el objeto de la mano (E si no hay nada que coger cerca).
 
 | Comando | Qué hace |
@@ -163,7 +164,7 @@ Para usarlos, la tecla de siempre de usar el objeto de la mano (E si no hay nada
 | `TN.Race.Item <objeto\|list> [jugador=0]` | Da ese objeto a la tortuga (a la mano; si la mochila está llena, sustituye lo de la mano). |
 | `TN.Race.ItemUse <objeto> [jugador=0]` | Se lo da y lo usa en el acto (para ver el efecto sin más). Si no se puede usar (sin nadie a quien apuntar, sin sitio...), suena el «nop». |
 | `TN.Race.ItemBox [n=1]` / `TN.Race.ItemBox clear` | `n` cajas de objetos en fila delante de ti; `clear` quita las puestas así. |
-| `TN.Race.ItemRank [jugador=0]` | Puesto en la carrera y peso de cada objeto de carrera para ese puesto (rebuscar, caja y cofre). |
+| `TN.Race.ItemRank [jugador=0]` | Puesto en la carrera y peso de cada objeto de carrera para ese puesto (rebuscar, caja, cofre y cofre de la cima de una fortaleza). |
 | `TN.Race.Boost [segundos=3] [multiplicador=2] [jugador=0]` | Turbo sin gastar objeto. |
 | `TN.Race.Star [segundos=8] [jugador=0]` | Protector solar sin gastar objeto. |
 | `TN.Race.ItemClear` | Quita lo lanzado (cangrejos, minas, discos, gaviotas, nubes, pelícanos) y cancela los efectos de todas las tortugas. |
@@ -172,6 +173,12 @@ Pruebas con una sola tortuga: `TN.Race.ItemUse Coconut`, `Sunscreen`, `PelicanTa
 cerca) y `HomingCrab` (contra el enemigo más cercano por delante). La gaviota justiciera y la nube de tormenta necesitan a otra
 tortuga: con el anfitrión y un cliente, `TN.Race.ItemUse GullStrike 1` da la gaviota al cliente y va a por quien vaya delante de él.
 Con dos jugadores, `TN.Beach.Go 200 0` y `TN.Beach.Go 100 1` colocan al anfitrión por delante para ver quién recibe qué en las cajas.
+
+Objetos de la #786: `TN.Race.ItemUse TablaSurf` (la ola 3 s hacia el mar; se acaba contra una pared de frente y derriba a las
+tortugas que encuentra), `TN.Race.ItemUse CoheteFeria` (2 s muy rápido y casi sin girar; voltereta al acabar), `TN.Race.ItemUse
+Remolino` (se queda detrás 12 s; quien lo suelta no cae en él los 2 primeros) y la caña con el anfitrión por delante:
+`TN.Beach.Go 120 0`, `TN.Beach.Go 105 1` y `TN.Race.ItemUse CanaPescar 1` (el cliente se remolca y adelanta al anfitrión;
+con `TN.Race.Star` antes en el anfitrión, el anzuelo rebota). `TN.Race.ItemClear` también quita los remolinos.
 
 ## Música de fondo de la carrera
 
@@ -334,6 +341,44 @@ generador pasa esos tests en las dos configuraciones antes de actualizar una hue
 | `TN.Lobby.Castle 0` / `TN.Lobby.Valley 0` | Esconde el castillo o el valle del lobby (al recargarlo). |
 | `TN.Storm.Cough 1` / `TN.Storm.Cough 2` | Carraspeos sueltos (`1`) o tos fuerte (`2`) de la tormenta sin tormenta; `0` la apaga. |
 
+### Objetos del coop y charco de pesca
+
+Objetos del GDD definidos en código (`Game/TN_CoopItems.h`, ItemId `Coop_<objeto>_<cuenta>`). Salen de los rebuscables del
+coop y del charco de pesca (tabla del coop: filas de `DT_Items` con peso 15 y los objetos del coop con su peso del Excel). Los
+que se apilan suman en el mismo hueco hasta su límite; el icono lleva la cuenta (o los usos que quedan) cuando pasa de uno.
+Objetos: `PufferFish` (pez globo: 5 s sin derribo ni aturdimiento y 2 s de mareo), `SlipperyPeel` (cáscara: se lanza a 8 m y
+quien la pisa resbala), `StunShell` (concha: aturde 4 s al enemigo de la mira a 10 m) y `Harpoon` (arpón, 15 usos: a 15 m trae
+un objeto suelto, pesca en un charco o rescata a una compañera derribada o en el agua). Pruebas: `Tortunabo.Coop.Items`.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Coop.Item <objeto\|list> [jugador=0]` | Da ese objeto del coop a la tortuga (a la mano; si la mochila está llena, sustituye). `list` enseña objetos, apilado, usos y peso. |
+| `TN.Coop.FishingPool [jugador=0]` / `TN.Coop.FishingPool clear` | Un charco de pesca 4 m delante de esa tortuga / quita los de prueba. Mantener E 2 s pesca un objeto; 12 s de respiro por charco. |
+
+## Huella del mapa: anfitrión y clientes con el mismo mapa (#828)
+
+Lo que ve el anfitrión tiene que ser exactamente lo que ven todos, en cualquier modo. `TN.Map.Fingerprint` escribe en el log
+la huella de todo lo que bloquea en esa máquina (terreno, estructuras, rocas y decorado con colisión, posiciones redondeadas a
+1 cm), con una línea por clase de actor. No cuenta lo que se mueve solo (tortugas, karts, enemigos con movimiento replicado,
+física) ni los disparadores que solo solapan.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Map.Fingerprint` | `[Huella] <mapa> · anfitrión\|cliente: mapa <hash> · generado en cada máquina <hash> · replicado <hash> · N piezas en M clases`, y debajo `[Huella]   <hash> <clase> · N piezas`. |
+| `TN.Map.Fingerprint 40` | Lo mismo dentro de 40 s (sirve en `-ExecCmds` al arrancar: aguanta el viaje al mapa). |
+| `TN.Map.Fingerprint all` | Cuenta también lo visual sin colisión (puede cambiar con la calidad gráfica: ahí no tiene por qué coincidir). |
+
+Para comparar en vivo, con el mapa ya montado y quietos (en la carrera, durante la cuenta de la salida), en la consola del
+anfitrión y de cada cliente: `TN.Map.Fingerprint`. La línea `mapa` y la de `generado en cada máquina` deben coincidir; si no,
+la clase cuya línea cambia es la que diverge. Una clase de algo que se mueve (una plataforma o un puente que se balancea) puede
+salir distinta solo por el momento: se repite la medida.
+
+Tests (`Automation RunTests Tortunabo.Map.Fingerprint`): cada mapa se monta dos veces en condiciones distintas y compara las
+huellas: Coop, Supervivencia y Karts (calidad Épica frente a Baja y tras generar otro mapa), la playa de la carrera (de una
+vez frente a por partes con 0,5 ms por fotograma y tras otra ronda), el Rally (con un actor replicado más en la salida), las
+variantes del disco de Rally y Todos contra Todos (directa frente a montada tras la del nivel) y el lobby (orden distinto).
+`Tortunabo.Map.Fingerprint.Detects` comprueba que la huella ve una caja movida 2 cm y no un disparador.
+
 ## Karts en el mapa del cooperativo
 
 Se elige como los demás modos: «Karts» en el menú al crear sala, en la sala o con el General Galápago (pestaña
@@ -349,9 +394,12 @@ cada 250 m, salida en el claro y meta en la playa (más en `Docs/Karts.md`). Al 
 | `...?Bots=3` / `TN.Kart.Bots 3` | Bots de la parrilla; sin ninguno de los dos se completa hasta 4 karts (`TN.Kart.Bots -1`; si no, manda `TN.Rally.Bots`). |
 | `...?Seats=1` / `TN.Kart.Seats 1` | Un kart por tortuga (sin artillera); `2` (por defecto) empareja a la segunda de artillera. |
 | `TN.Rally.Status` | Fase, puestos, ocupantes y cajas en el log (`LogTNRally`). |
-| `TN.Kart.GiveItem Coco` | Da un objeto al kart propio sin ruleta (`Coco`, `TripleCoco`, `Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Estrella`; servidor o partida sola). |
-| `TN.Rally.GiveAmmo Concha [cargas]` | Munición especial de las cajas «?» del Rally para el buggy propio (`Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Burbuja`, `Mortero`, `Ancla`; sin cargas, las de una caja). Servidor o partida sola. |
+| `TN.Kart.GiveItem Coco` | Da un objeto al kart propio sin ruleta (`Coco`, `TripleCoco`, `Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Estrella`, `Mortero`, `Erizos`, `Medusa`, `PezGlobo`, `Arpon`; servidor o partida sola). |
+| `TN.Rally.GiveAmmo Concha [cargas]` | Munición especial de las cajas «?» del Rally para el buggy propio (`Concha`, `ConchaGuiada`, `Alga`, `Tinta`, `Burbuja`, `Mortero`, `Ancla`, `Erizos`, `Medusa`, `Arpon`, `PezGlobo`; sin cargas, las de una caja). Servidor o partida sola. |
 | `TN.Kart.Place Geyser\|Cascada\|Agua [equipo] [s]` | Pone el kart (el tuyo con `-1` o sin equipo; el de un bot con su número) encima de un géiser, en lo alto de una cascada o en el agua, tras esos segundos. Servidor o partida sola, fuera de Shipping. |
+| `TN.Kart.Tuning 0\|1` / `TN.Kart.SpeedScale 1.3` / `TN.Kart.TopEndTorque 1.7` | Conducción de los karts (#742): `0` deja el kart como el buggy del Rally para comparar; los otros dos mueven la punta (se leen cuando aparece cada kart: ponerlos con `-ExecCmds` o antes de la partida). |
+| `Automation RunTests Tortunabo.Kart.Measure` | Con física y sin ventana (#742): Karts contra el kart del Rally en llano (0-60, 0-100 y punta), derrape con mini-turbo, giro a 100 y 130 km/h y aceleración lateral según el volante a 50, 90 y 125 km/h. |
+| `Automation RunTests Tortunabo.Rally.Measure.LateralShot` | Con física y sin ventana (#717): disparo lateral con el buggy a 70 km/h; el proyectil vuela a menos de 3° de la mira (con la suma de antes, 18°). |
 | `TN.Kart.ProbeArc 790` | Con `LogTNRally Verbose`, perfil del suelo a lo ancho del camino alrededor de ese arco (m) al empezar (atascos). |
 | `log LogTNRally Verbose` | Objetos que salen y se usan (`[KartItems]`), géiseres, obstáculos y puertas de la pista y los karts del primer tramo. |
 | `...?BotDriver` | Cada jugadora entra de artillera y su kart lo conduce el piloto IA (para probar la torreta y la inclinación). |
@@ -474,12 +522,17 @@ reiniciarlo al arrancar sin consola, `Saved/ResetTutorial.txt` (vacío = todas l
 Los avisos (aviso de interacción del HUD, cartel del tutorial, ayuda de las ruedas y del fantasma) enseñan la tecla con teclado
 y ratón y el botón dibujado con mando, según el último aparato tocado (stick y gatillos pasado un 35 %; el ratón, si se mueve
 más de 3 px). La familia del mando sale de Steam Input con Steam y, sin él, del nombre del aparato; por defecto, Xbox. Con
-mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala abre el teclado en pantalla de Steam.
+mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala abre el teclado en pantalla de Steam. Los mandos
+que no son de Xbox (DualShock 4, DualSense, Switch Pro, genéricos) los lee el lector DirectInput: `Docs/Mandos.md`.
 
 | Comando | Qué hace |
 |---|---|
 | `TN.Input.Device 0\|1\|2` | Aparato de los avisos: 0 el último usado, 1 teclado y ratón, 2 mando. |
-| `TN.Input.PadFamily 0\|1\|2\|3` | Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck. |
+| `TN.Input.PadFamily 0\|1\|2\|3\|4` | Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck, 4 Switch. |
+| `TN.Input.Pads` | Escribe en el registro los ajustes de los mandos (#743), los perfiles, los aparatos de mando del motor y cada mando de DirectInput (en uso, callado porque lo traduce Steam Input, XInput o de Valve). |
+| `TN.Input.Pads.Rescan` | Vuelve a buscar los mandos de DirectInput y a elegir su perfil. |
+| `TN.Input.PadDebug 0\|1` | Botones, ejes y hat en crudo de los mandos de DirectInput (para hacer un perfil de un mando nuevo). |
+| `TN.Input.DirectInput 0\|1\|2` | Lector de mandos que no son de Xbox: 0 apagado, 1 automático (sin los que traduce Steam Input), 2 siempre. |
 | `TN.Input.Press <tecla> [segundos]` | Pulsa (y mantiene) una tecla o un botón como si viniera del aparato, por Slate: `TN.Input.Press Gamepad_DPad_Up` pasa los avisos a mando y `TN.Input.Press ScrollLock`, a teclado. |
 | `TN.Later <segundos> <comando>` | Ejecuta el comando pasado ese tiempo, como escrito en la consola del jugador (para encadenar pruebas en `-ExecCmds`, también `shot showui`). |
 | `tn.HUD.Prompt 1` | Enseña el aviso de interacción sin nada al alcance, con la tecla o el botón de interactuar del aparato de ahora. |

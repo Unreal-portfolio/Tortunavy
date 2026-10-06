@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
 #include "Core/TN_MatchFlowTypes.h"
+#include "Core/TN_EndTitles.h"
 #include "TN_CoopGameState.generated.h"
 
 /** @brief Disparado en clientes cuando MatchFlowState replica, y manualmente en server vía BroadcastFlowStateChange(). */
@@ -53,6 +54,8 @@ public:
 	 *       de replicación en clientes (Results puede llegar antes que el último update
 	 *       de RaceScore): OnRep_RaceScore reinvoca este método y el delta pendiente se
 	 *       persiste al llegar. Público porque lo llama ATN_CoopPlayerState::OnRep_RaceScore.
+	 *       También suma al perfil los muñecos tortuga del jugador local (#797) y su puntuación final del Coop (#789),
+	 *       por diferencia igual que los puntos.
 	 */
 	void PersistLocalPlayerScoreIfResults();
 
@@ -135,6 +138,13 @@ public:
 	void Server_UpsertRaceResult(int32 InPlayerId, const FString& InPlayerName,
 		int32 InFinishRank, float InFinishTime, int32 InRaceScore, bool bInEliminated);
 
+	/**
+	 * Título Saltarín de la partida (#798): quien más ha saltado (empate: quien entró antes en la sala). Lo decide el
+	 * servidor al entrar en Results (BroadcastFlowStateChange) y lo enseña la pantalla de resultados.
+	 */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Titles")
+	FTN_EndTitle JumperTitle;
+
 	// ── Quick Chat ────────────────────────────────────────────────────────────
 	/** Disparado en todas las máquinas cuando llega un nuevo mensaje de Quick Chat. Bindear en BP o C++. */
 	UPROPERTY(BlueprintAssignable, Category = "QuickChat")
@@ -169,5 +179,14 @@ private:
 	 */
 	int32 PersistedScoreThisRace = 0;
 
+	/** Muñecos tortuga del jugador local ya sumados al perfil en este ciclo de Results (#797), igual que los puntos. */
+	int32 PersistedDollsThisRace = 0;
+
+	/** Puntuación final del Coop del jugador local ya sumada al perfil en este ciclo de Results (#789). */
+	int32 PersistedCoopScoreThisRace = 0;
+
 	int32 NextQuickChatSequence = 0;
+
+	/** Servidor: decide los títulos de fin de partida con los PlayerState de la sala. */
+	void AwardEndTitles();
 };

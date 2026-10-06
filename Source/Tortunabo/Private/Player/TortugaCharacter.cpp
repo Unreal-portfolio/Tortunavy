@@ -19,10 +19,12 @@
 #include "Player/TN_CarriedCamera.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
+#include "Player/TN_FlipperSlapComponent.h"
 #include "Player/TN_HeadLook.h"
 #include "Player/TN_TurtleFaceComponent.h"
 #include "Player/TN_SlopeTiltComponent.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_SwimHopRules.h"
 #include "Player/TN_WadingComponent.h"
 #include "VR/TN_VRGrabComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
@@ -53,6 +55,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "World/Beach/TN_BeachTrapStatusComponent.h"
+#include "TN_InkScreen.h"
 
 // ── CVar de debug ─────────────────────────────────────────────────────────────
 // Activar en consola con: TN.Debug.Interaction 1
@@ -158,6 +161,7 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	WadingComponent = CreateDefaultSubobject<UTN_WadingComponent>(TEXT("WadingComponent"));
 	ShellComponent = CreateDefaultSubobject<UTN_ShellComponent>(TEXT("ShellComponent"));
 	CarryComponent = CreateDefaultSubobject<UTN_CarryComponent>(TEXT("CarryComponent"));
+	FlipperSlap = CreateDefaultSubobject<UTN_FlipperSlapComponent>(TEXT("FlipperSlap"));
 	// La malla se inclina con la pendiente (solo visual; ver UTN_SlopeTiltComponent).
 	SlopeTilt = CreateDefaultSubobject<UTN_SlopeTiltComponent>(TEXT("SlopeTilt"));
 	DizzyBirds = CreateDefaultSubobject<UTN_DizzyBirdsComponent>(TEXT("DizzyBirds"));
@@ -843,6 +847,7 @@ void ATortugaCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	GetWorldTimerManager().ClearTimer(KnockdownTimerHandle);
 	GetWorldTimerManager().ClearTimer(ReviveChannelTimerHandle);
 	GetWorldTimerManager().ClearTimer(RagdollFreezeTimerHandle);
+	GetWorldTimerManager().ClearTimer(MareoTimerHandle);
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -982,38 +987,73 @@ void ATortugaCharacter::RemoveBigHeadEffect()
 	bBigHead = false;
 	ApplyBigHeadVisual(false);
 
-	// Disparar efecto de mareo en todas las máquinas (#2).
+	// Al acabar la cabeza gorda, mareo (#2).
 	if (HasAuthority() && MareoDurationSeconds > 0.f)
 	{
-		MulticastApplyMareoEffect(MareoDurationSeconds);
+		ApplyMareoEffect(MareoDurationSeconds);
 	}
 }
 
-void ATortugaCharacter::MulticastApplyMareoEffect_Implementation(float Duration)
+void ATortugaCharacter::ApplyMareoEffect(float Duration)
 {
-	// ── Reducir velocidad durante la duración del mareo ───────────────────────
-	if (MareoSpeedCap > 0.f)
+	// Muerta no se marea: el tope sobreviviría a la reaparición en el mismo actor (SetDeadVisual lo quita al morir).
+	if (!HasAuthority() || Duration <= 0.f || bIsDead)
 	{
-		if (UTN_StaminaComponent* SC = FindComponentByClass<UTN_StaminaComponent>())
-		{
-			SC->SetSpeedCap(TNMovementLimits::MareoSource(), MareoSpeedCap);
-
-			FTimerDelegate Del = FTimerDelegate::CreateUObject(this, &ATortugaCharacter::ClearMareoSpeedCap);
-			GetWorldTimerManager().SetTimer(MareoTimerHandle, Del, Duration, false);
-		}
+		return;
 	}
-
-	// ── Feedback local (camera shake, VFX, audio) — solo cliente local ───────
-	if (IsLocallyControlled())
+	// Un mareo corto (el guantazo de la aleta, #832) no acorta uno más largo que ya esté en marcha (sin temporizador, -1).
+	if (GetWorldTimerManager().GetTimerRemaining(MareoTimerHandle) >= Duration)
 	{
-		OnMareoEffect(Duration);
+		return;
 	}
+	bMareo = true;
+	ApplyMareoLocalState(true);
+	const FTimerDelegate EndDelegate = FTimerDelegate::CreateUObject(this, &ATortugaCharacter::EndMareo);
+	GetWorldTimerManager().SetTimer(MareoTimerHandle, EndDelegate, Duration, false);
+	// Cuanto antes lo sepa el dueño, antes lo pide en sus movimientos (el servidor le da 0,5 s de gracia).
+	ForceNetUpdate();
 }
 
-void ATortugaCharacter::ClearMareoSpeedCap()
+void ATortugaCharacter::EndMareo()
 {
-	// Solo el tope del mareo: el de llevar a otra, el del caparazón o el de una zona lenta siguen.
-	if (UTN_StaminaComponent* SC = FindComponentByClass<UTN_StaminaComponent>())
+	if (!HasAuthority())
+	{
+		return;
+	}
+	GetWorldTimerManager().ClearTimer(MareoTimerHandle);
+	if (!bMareo)
+	{
+		return;
+	}
+	bMareo = false;
+	ApplyMareoLocalState(false);
+	ForceNetUpdate();
+}
+
+void ATortugaCharacter::OnRep_Mareo()
+{
+	ApplyMareoLocalState(bMareo);
+}
+
+void ATortugaCharacter::ApplyMareoLocalState(bool bOn)
+{
+	if (bMareoApplied == bOn)
+	{
+		return;
+	}
+	bMareoApplied = bOn;
+	UTN_StaminaComponent* SC = FindComponentByClass<UTN_StaminaComponent>();
+	if (!SC)
+	{
+		return;
+	}
+	// Solo el tope del mareo: el de llevar a otra, el del caparazón o el de una zona lenta siguen. Es un tope predicho: el
+	// movimiento lo aplica desde el primero que lo pide (UTN_TurtleMovementComponent::GetMaxSpeed).
+	if (bOn && MareoSpeedCap > 0.f)
+	{
+		SC->SetSpeedCap(TNMovementLimits::MareoSource(), MareoSpeedCap);
+	}
+	else
 	{
 		SC->ClearSpeedCap(TNMovementLimits::MareoSource());
 	}
@@ -1023,7 +1063,13 @@ void ATortugaCharacter::ClearMareoSpeedCap()
 
 void ATortugaCharacter::ApplyInkEffect(float Duration)
 {
-	if (!IsLocallyControlled() || !InkOverlayMaterial || !InkPostProcess) { return; }
+	if (!IsLocallyControlled()) { return; }
+	// El BP trae el DefaultPostProcessMaterial del motor, que no tapa nada: entonces, manchas de tinta en pantalla (#787).
+	if (!InkPostProcess || TNInkScreen::NeedsFallback(InkOverlayMaterial))
+	{
+		TNInkScreen::Show(Cast<APlayerController>(GetController()), Duration);
+		return;
+	}
 
 	// Registrar el material en el PostProcess local y activarlo.
 	// AddOrUpdateBlendable garantiza que no se acumulan entradas duplicadas
@@ -1139,6 +1185,14 @@ void ATortugaCharacter::OnJumped_Implementation()
 	{
 		MulticastPlaySfx(JumpSound);
 	}
+	// Título Saltarín (#798): el servidor cuenta los saltos de cada jugadora.
+	if (HasAuthority())
+	{
+		if (ATN_CoopPlayerState* TNPS = GetPlayerState<ATN_CoopPlayerState>())
+		{
+			TNPS->RegisterJump();
+		}
+	}
 }
 
 void ATortugaCharacter::Jump()
@@ -1154,17 +1208,11 @@ void ATortugaCharacter::Jump()
 	if (GetWorld() && GetWorld()->GetTimeSeconds() < GetUpLockUntil) { return; }
 	if (CarryComponent && CarryComponent->IsBeingCarried()) { return; }
 
-	// Nadando: salto desde el agua para salir a orillas e isletas.
+	// Nadando: el salto es un brinco desde el agua para salir a orillas e isletas. Lo decide el movimiento con la marca de
+	// salto, predicho igual que en el servidor (UTN_TurtleMovementComponent::CanAttemptJump/DoJump, #573).
 	if (GetCharacterMovement()->IsSwimming())
 	{
-		if (CanSwimHop())
-		{
-			PerformSwimHop();
-			if (!HasAuthority())
-			{
-				ServerSwimHop();
-			}
-		}
+		Super::Jump();
 		return;
 	}
 
@@ -1209,26 +1257,14 @@ void ATortugaCharacter::PerformAirDashLocally()
 	LaunchCharacter(DashVelocity, true, true);
 }
 
-bool ATortugaCharacter::CanSwimHop() const
+bool ATortugaCharacter::CanSwimHopNow() const
 {
-	const UCharacterMovementComponent* CMC = GetCharacterMovement();
-	return CMC && CMC->IsSwimming() && !bIsKnockedDown && !bIsDead && !IsInShell()
-		&& GetWorld() && GetWorld()->GetTimeSeconds() - LastSwimHopTime >= 0.6f;
+	return !bIsKnockedDown && !bIsDead && !IsInShell();
 }
 
-void ATortugaCharacter::PerformSwimHop()
+FVector ATortugaCharacter::GetSwimHopVelocity() const
 {
-	LastSwimHopTime = GetWorld()->GetTimeSeconds();
-	const FVector Forward = FVector(GetActorForwardVector().X, GetActorForwardVector().Y, 0.f).GetSafeNormal();
-	LaunchCharacter(Forward * SwimHopForward + FVector::UpVector * SwimHopVelocity, true, true);
-}
-
-void ATortugaCharacter::ServerSwimHop_Implementation()
-{
-	if (CanSwimHop())
-	{
-		PerformSwimHop();
-	}
+	return TNSwimHop::HopVelocity(GetActorForwardVector(), SwimHopForward, SwimHopVelocity);
 }
 
 void ATortugaCharacter::ServerPerformAirDash_Implementation()
@@ -1337,11 +1373,20 @@ void ATortugaCharacter::TryInteract()
 	}
 
 	// Si tras el scan sigue sin haber interactuable → coger a una tortuga en caparazón
-	// o aturdida si hay una delante; si no, usar ítem equipado (lanzar bola, etc.)
+	// o aturdida si hay una delante; si no, usar ítem equipado (lanzar bola, etc.) o,
+	// sin objeto ni arma en las aletas, dar un guantazo (#832)
 	if (!FocusedInteractable.IsValid())
 	{
 		if (CarryComponent && CarryComponent->TryGrabNearest())
 		{
+			return;
+		}
+
+		if (FlipperSlap && InventoryComponent && !InventoryComponent->HasEquippedItem())
+		{
+			// En VR el servidor decide el cono con la aleta que mandó (fiable: llega antes que el golpe).
+			SendVRAimToServer();
+			FlipperSlap->TrySlap();
 			return;
 		}
 
@@ -1680,6 +1725,7 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReviveProgress, COND_OwnerOnly);
 	// BigHead consumable
 	DOREPLIFETIME(ATortugaCharacter, bBigHead);
+	DOREPLIFETIME(ATortugaCharacter, bMareo);
 	// Dive
 	DOREPLIFETIME(ATortugaCharacter, bIsDiving);
 	DOREPLIFETIME(ATortugaCharacter, DiveSerial);

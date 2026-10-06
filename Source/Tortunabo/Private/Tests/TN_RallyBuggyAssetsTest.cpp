@@ -6,6 +6,7 @@
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_BuggyWheel.h"
+#include "ChaosVehicleMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
@@ -31,6 +32,23 @@ namespace TNBuggyAssetsTest
 	const FName ChassisBodyBone(TEXT("OffroadCar"));
 	/** Tolerancia de las cotas (cm): el manifest las redondea a centésimas. */
 	constexpr double SocketToleranceCm = 0.5;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyBuggyAppliedInputsTest,
+	"Tortunabo.Rally.Buggy.AppliedInputs",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyBuggyAppliedInputsTest::RunTest(const FString& Parameters)
+{
+	// ATN_Buggy::GetApplied* leen por reflexión las entradas que aplica Chaos (protegidas): si el motor las renombra, la balsa de
+	// Karts dejaría de remar en el servidor sin avisar (#710).
+	const UClass* MoveClass = UChaosVehicleMovementComponent::StaticClass();
+	for (const FName Name : { ATN_Buggy::AppliedSteeringProperty, ATN_Buggy::AppliedThrottleProperty, ATN_Buggy::AppliedBrakeProperty })
+	{
+		TestNotNull(*FString::Printf(TEXT("UChaosVehicleMovementComponent tiene la propiedad float %s"), *Name.ToString()),
+			CastField<FFloatProperty>(MoveClass->FindPropertyByName(Name)));
+	}
+	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyBuggyAssetsTest,

@@ -23,6 +23,7 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_LocText.h"
+#include "Game/TN_TctItems.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
@@ -36,6 +37,7 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Player/TN_SpectatorGhost.h"
 #include "UI/HUD/TN_HoldRingWidget.h"
+#include "UI/HUD/TN_SurvivalMinimap.h"
 #include "World/TN_EnemySeagull.h"
 #include "World/TN_InteractableBase.h"
 #include "World/TN_ScoreShells.h"
@@ -44,12 +46,15 @@
 #include "Core/TN_InventoryTypes.h"
 #include "Player/TN_CarryComponent.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItems.h"
 #include "Player/TN_InventoryComponent.h"
 #include "InputAction.h"
 #include "Voice/ProximityVoiceComponent.h"
 #include "World/ProcMap/TN_PathStorm.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
+#include "VR/TN_VRControls.h"
+#include "VR/TN_VRMode.h"
 #include "UI/HUD/TN_ButtonGlyphWidget.h"
 
 // Con nombre (no anónimo): un using-directive dentro de un namespace anónimo se ve en todo el resto del bloque
@@ -73,6 +78,12 @@ namespace TNRunHUDDetail
 	constexpr float TrackH = 66.f;
 	constexpr float TrackFrom = 0.1f;
 	constexpr float TrackTo = 0.84f;
+
+	/** Minimapa de Supervivencia: lado (px) y sitio bajo el contador de conchas y su «+N». */
+	constexpr float MinimapSide = 300.f;
+	const FVector2D MinimapOffset(-28.f, 140.f);
+	/** Tu caparazón en el minimapa (los compañeros llevan el suyo de MateColors). */
+	const FLinearColor MinimapOwnColor = TNHUDArt::CoralC;
 
 	/** Inventario: burbujas iguales en columnas de ancho fijo (el aro de cuerda rueda de una a otra). */
 	constexpr float BubbleSize = 90.f;
@@ -494,6 +505,12 @@ void UTN_RunHUDWidget::BuildTree()
 		}
 	}
 
+	// ── Minimapa de Supervivencia (a la derecha, bajo el contador; en los demás modos no se dibuja) ──
+	{
+		SurvivalMap = Make<UTN_SurvivalMinimap>(Tree, TEXT("SurvivalMinimap"));
+		Place(Canvas, MakeSize(Tree, SurvivalMap, MinimapSide, MinimapSide), FVector2D(1.f, 0.f), MinimapOffset);
+	}
+
 	// ── Pista de la playa al mar (arriba en el centro) ──
 	{
 		TrackRoot = Make<UOverlay>(Tree, TEXT("SeaTrack"));
@@ -606,6 +623,7 @@ void UTN_RunHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 	TickBadge(InDeltaTime);
 	TickInventory(InDeltaTime);
 	TickTrack(InDeltaTime);
+	TickMinimap();
 	BindShellEvents();
 	TickShellFlights(InDeltaTime, MyGeometry);
 	TickScore(InDeltaTime);
@@ -650,6 +668,16 @@ bool UTN_RunHUDWidget::ShouldShowAimDot() const
 		// De la carrera, los que se lanzan a mano (el cangrejo va solo hacia su rival y el resto no se lanza).
 		const ETNRaceItem Kind = TNRaceItems::KindOf(Equipped);
 		return Kind == ETNRaceItem::SandMine || Kind == ETNRaceItem::Frisbee;
+	}
+	if (Use == ETN_ItemUseType::TctItem)
+	{
+		// Las armas y lanzables de Todos contra Todos (#707).
+		return TNTctItemRules::UsesAim(TNTctItems::KindOf(Equipped));
+	}
+	if (Use == ETN_ItemUseType::CoopItem)
+	{
+		// Del coop, los que se apuntan: se lanzan o disparan hacia la mira.
+		return TNCoopItems::IsAimed(TNCoopItems::KindOf(Equipped));
 	}
 	return Use == ETN_ItemUseType::Throwable || Use == ETN_ItemUseType::InkThrower;
 }
@@ -727,8 +755,14 @@ void UTN_RunHUDWidget::RefreshPromptKey(const APlayerController* PC, const ATort
 	PromptKeyTimer = PromptKeyRefreshSeconds;
 	PromptKeyDevice = static_cast<uint8>(Device);
 	PromptKeyFamily = static_cast<uint8>(Family);
-	const FKey Key = Devices ? Devices->KeyForAction(PC, Turtle->GetInteractAction()) : FKey();
-	const bool bGlyph = PromptGlyph && TNInputGlyphs::DeviceOfKey(Key) == ETNInputDevice::Gamepad && PromptGlyph->SetKey(Key, Family);
+	// Con gafas (#644): el botón de los mandos Touch, con su nombre («Gatillo derecho»), no el dibujo de un mando.
+	const bool bVR = Device == ETNInputDevice::VR;
+	FKey Key = Devices ? Devices->KeyForAction(PC, Turtle->GetInteractAction()) : FKey();
+	if (bVR && !FTNVRKeys::IsVRKey(Key))
+	{
+		Key = TNVRControls::KeyForAction(TEXT("IA_Interact"));
+	}
+	const bool bGlyph = !bVR && PromptGlyph && TNInputGlyphs::DeviceOfKey(Key) == ETNInputDevice::Gamepad && PromptGlyph->SetKey(Key, Family);
 	if (PromptGlyph) { PromptGlyph->SetVisibility(bGlyph ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed); }
 	if (PromptKeyCap) { PromptKeyCap->SetVisibility(bGlyph ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible); }
 	if (!bGlyph && Key.IsValid())
@@ -850,6 +884,44 @@ void UTN_RunHUDWidget::TickInventory(float DeltaTime)
 		RopeImage->SetRenderTranslation(FVector2D(RopeX, 0.f));
 		RopeImage->SetRenderTransformAngle(RopeX / Pitch * 180.f);
 	}
+}
+
+void UTN_RunHUDWidget::TickMinimap()
+{
+	using namespace TNRunHUDDetail;
+	if (!SurvivalMap || !SurvivalMap->HasMap()) { return; }
+	const UWorld* World = GetWorld();
+	APawn* SubjectPawn = nullptr;
+	APlayerState* SubjectState = nullptr;
+	TNGhost::GetHUDSubject(GetOwningPlayer(), SubjectPawn, SubjectState);
+	auto IsOut = [](const APlayerState* PS)
+	{
+		const ATN_CoopPlayerState* Coop = Cast<ATN_CoopPlayerState>(PS);
+		return Coop && (Coop->bHasFinishedRun || !Coop->bIsAlive);
+	};
+
+	// Los compañeros con el color de su fila en la tripulación (el mismo que en la pista) y tú (o a quien sigues).
+	TArray<FTNSurvivalMinimapMark> Marks;
+	const TArray<const APlayerState*> Crew = CrewOf(World, SubjectState);
+	for (int32 m = 0; m < Crew.Num() && m < MaxMates; ++m)
+	{
+		if (const APawn* P = TurtleOf(World, Crew[m]))
+		{
+			FTNSurvivalMinimapMark& Mark = Marks.AddDefaulted_GetRef();
+			Mark.Location = P->GetActorLocation();
+			Mark.Color = MateColors[m];
+			Mark.bOut = IsOut(Crew[m]);
+		}
+	}
+	if (SubjectPawn)
+	{
+		FTNSurvivalMinimapMark& Mark = Marks.AddDefaulted_GetRef();
+		Mark.Location = SubjectPawn->GetActorLocation();
+		Mark.Color = MinimapOwnColor;
+		Mark.bMine = true;
+		Mark.bOut = IsOut(SubjectState);
+	}
+	SurvivalMap->SetMarks(MoveTemp(Marks));
 }
 
 void UTN_RunHUDWidget::TickTrack(float DeltaTime)
@@ -1419,6 +1491,16 @@ void UTN_RunFlowHUDWidget::BuildTree()
 		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(ResultsRankText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f)); }
 		ResultsTimeText = MakeText(Tree, TEXT("ResultsTimeText"), FText::GetEmpty(), TEXT("Regular"), 20, TNHUDArt::Foam);
 		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(ResultsTimeText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 2.f, 0.f, 14.f)); }
+		// Puntuación final del Coop (#789): solo se ve si la partida la tiene.
+		CoopScoreText = MakeText(Tree, TEXT("CoopScoreText"), FText::GetEmpty(), TEXT("Regular"), 18, FLinearColor::White);
+		CoopScoreText->SetJustification(ETextJustify::Center);
+		CoopScoreText->SetVisibility(ESlateVisibility::Collapsed);
+		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(CoopScoreText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 0.f, 0.f, 14.f)); }
+		// Títulos de fin de partida (#798): Saltarín, en dorado.
+		EndTitleText = MakeText(Tree, TEXT("EndTitleText"), FText::GetEmpty(), TEXT("Bold"), 20, TNHUDArt::Gold);
+		EndTitleText->SetJustification(ETextJustify::Center);
+		EndTitleText->SetVisibility(ESlateVisibility::Collapsed);
+		if (UVerticalBoxSlot* S = Board->AddChildToVerticalBox(EndTitleText)) { S->SetHorizontalAlignment(HAlign_Center); S->SetPadding(FMargin(0.f, 0.f, 0.f, 12.f)); }
 
 		// Clasificación: una fila por jugador que cabe (puesto, nombre, tiempo, puntos con su concha), alternando el fondo.
 		// Las cuatro primeras se ven siempre; de la quinta a la octava, solo si hay tantos resultados (ApplyScoreboardDensity,
@@ -1746,7 +1828,9 @@ void UTN_RunRadialWheelWidget::NativeTick(const FGeometry& MyGeometry, float InD
 	Time += InDeltaTime;
 	const int32 Sel = GetSelectedIndex();
 	// Con mando se apunta con el stick: la ayuda cambia al momento si se cambia de aparato con la rueda abierta (#347).
-	const bool bPad = UTN_GameSettingsSubsystem::IsUsingGamepad(GetOwningPlayer());
+	// Con las gafas también se elige con el stick derecho (#644).
+	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(GetOwningPlayer());
+	const bool bPad = UTN_GameSettingsSubsystem::IsUsingGamepad(GetOwningPlayer()) || (Devices && Devices->IsUsingVR(GetOwningPlayer()));
 	if (Sel != ShownSelection || bPad != bShownPad)
 	{
 		ShownSelection = Sel;

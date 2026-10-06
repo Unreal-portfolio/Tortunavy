@@ -28,6 +28,10 @@ class UWorld;
  *  - StormCloud: nube de tormenta que marea a todas las demás (rayo).
  *  - Frisbee: disco volador que va y vuelve (bumerán).
  *  - Whistle: silbato del sargento, aturde a los enemigos de alrededor.
+ *  - TablaSurf: una ola que te lleva 3 s hacia el mar y derriba lo que encuentra (#786).
+ *  - CanaPescar: el anzuelo a la tortuga de delante y el remolque hasta adelantarla (#786).
+ *  - Remolino: trampa de agua que se deja detrás; atrapa, hace girar y marea (#786).
+ *  - CoheteFeria: acelerón muy fuerte con poco giro y voltereta al acabar (#786).
  *  - Box: la caja de objetos del suelo (el «?» de las carreras de karts); nunca se lleva encima: al cogerla sale un objeto
  *    según la posición de quien la coge.
  */
@@ -49,6 +53,10 @@ enum class ETNRaceItem : uint8
 	StormCloud      UMETA(DisplayName = "Nube de tormenta"),
 	Frisbee         UMETA(DisplayName = "Disco volador"),
 	Whistle         UMETA(DisplayName = "Silbato del sargento"),
+	TablaSurf       UMETA(DisplayName = "Tabla de surf"),
+	CanaPescar      UMETA(DisplayName = "Caña de pescar"),
+	Remolino        UMETA(DisplayName = "Remolino"),
+	CoheteFeria     UMETA(DisplayName = "Cohete de feria"),
 	Count           UMETA(Hidden)
 };
 
@@ -61,7 +69,12 @@ enum class ETNRaceLootSource : uint8
 	/** La caja de objetos del suelo. */
 	Box,
 	/** Un cofre de la playa. */
-	Chest
+	Chest,
+	/**
+	 * El cofre de la cima de una fortaleza: los pesos del cofre con la tabla de las últimas para cualquier puesto, así que
+	 * hasta quien va la primera puede sacar la bala, el protector o el coco dorado (#741).
+	 */
+	Summit
 };
 
 /** Puesto de una tortuga en la carrera ahora mismo (0 = va la primera). */
@@ -155,7 +168,8 @@ namespace TNRaceItems
 	/**
 	 * Si Item es de carrera, le pone la malla (EquippedMesh, escala y giro) y el icono de esta máquina (construidos en
 	 * ejecución, una vez, sin assets). No hace nada en servidor dedicado ni con otros objetos. Lo llaman el inventario al
-	 * recibir un objeto (servidor) o al replicarse (clientes) y los pickups.
+	 * recibir un objeto (servidor) o al replicarse (clientes) y los pickups. Los de Todos contra Todos los pasa a
+	 * TNTctItems::ResolveVisuals y los de DT_Items a TNCatalogItemVisuals::ResolveVisuals (World/TN_CatalogItemVisuals.h).
 	 */
 	TORTUNABO_API void ResolveVisuals(FTN_InventoryItem& Item);
 
@@ -180,6 +194,15 @@ namespace TNRaceItems
 	 */
 	TORTUNABO_API bool RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog, FTN_InventoryItem& OutItem);
 
+	/**
+	 * Igual, pero WeightOf da el peso final de cada objeto a partir del de la carrera (RaceWeight) y del puesto de Picker:
+	 * Kind es None en las filas de DT_Items (por su Use) y Use es RaceItem en los de carrera; 0 o menos lo quita. Lo usa
+	 * Supervivencia para su lista de objetos (TN_SurvivalLoot.h).
+	 */
+	TORTUNABO_API bool RollLoot(const APawn* Picker, ETNRaceLootSource Source, const UDataTable* Catalog,
+		TFunctionRef<float(ETN_ItemUseType Use, ETNRaceItem Kind, float RaceWeight, const FTNRaceRank& Rank)> WeightOf,
+		FTN_InventoryItem& OutItem);
+
 	/** Ruta de DT_Items (el catálogo de siempre). */
 	TORTUNABO_API const TCHAR* CatalogPath();
 
@@ -203,7 +226,10 @@ namespace TNRaceItems
 
 	// ── Estado de la tortuga (lo que dicen el protector y el pelícano) ──────────────────────────────────────────────
 
-	/** true si nada la puede aturdir ni derribar ahora: protector solar puesto o volando en el pelícano. Cualquier máquina. */
+	/**
+	 * true si nada la puede aturdir ni derribar ahora: protector solar puesto, volando en el pelícano o protegida por el pez
+	 * globo (objeto del coop, UTN_CoopItemComponent). Cualquier máquina.
+	 */
 	TORTUNABO_API bool IsInvulnerable(const AActor* Turtle);
 
 	/** true mientras la lleva el pelícano taxi. Cualquier máquina. */
@@ -218,7 +244,10 @@ namespace TNRaceItems
 	/** Las tortugas en carrera (vivas, sin haber llegado). Lo mismo que ATN_BeachEnemy::GatherTurtles. */
 	TORTUNABO_API void GatherRacers(const UObject* WorldContext, TArray<ATortugaCharacter*>& Out);
 
-	/** Progreso de una tortuga por la playa (0 = salida, 1 = filo del acantilado); sin playa, a lo largo del eje X. */
+	/**
+	 * Progreso de una tortuga por la playa (0 = salida, 1 = filo del acantilado); en Supervivencia, lo recorrido del camino del
+	 * mapa del nivel (cm × 1e-5); sin ninguno de los dos, a lo largo del eje X. Solo vale para comparar.
+	 */
 	TORTUNABO_API float CourseProgress(const UObject* WorldContext, const FVector& Where);
 
 	/**

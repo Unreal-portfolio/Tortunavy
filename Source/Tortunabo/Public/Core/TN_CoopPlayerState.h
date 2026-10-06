@@ -4,6 +4,8 @@
 #include "Engine/NetSerialization.h"
 #include "GameFramework/PlayerState.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Core/TN_CoopScore.h"
+#include "Core/TN_DeathCause.h"
 #include "TN_CoopPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRaceScoreChanged, int32, NewScore);
@@ -73,6 +75,13 @@ public:
 	 *       revive — el revive conserva el RaceScore ganado (ver TN_RunGameMode::RevivePlayer).
 	 */
 	void ResetForNewRace();
+
+	/**
+	 * Servidor: guarda en el perfil del jugador (tienda) el RaceScore de una ronda que se cierra sin pasar por Results,
+	 * antes de ResetForNewRace (#567). Lo llaman la carrera (StartNextRound, StartSprint) y el mapa procedural
+	 * (StartNextRound); Results sigue guardando la última ronda. Sin efecto en bots ni con RaceScore 0.
+	 */
+	void BankRoundScoreToProfile();
 
 	/**
 	 * @brief Indica si el servidor puede aceptar otro QuickChat de este jugador respetando el cooldown.
@@ -187,6 +196,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop")
 	bool bIsEliminated = false;
 
+	/** Qué la ha eliminado (#728): lo enseña el panel de resultados. Solo vale con bIsEliminated. */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop")
+	ETNDeathCause DeathCause = ETNDeathCause::Unknown;
+
 	/** @brief Predicado "vivo y jugable": true si el jugador puede participar activamente (no muerto, no eliminado). */
 	UFUNCTION(BlueprintPure, Category = "Coop|Estado")
 	bool IsAliveAndPlaying() const { return bIsAlive && !bIsEliminated; }
@@ -199,6 +212,14 @@ public:
 	 */
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_RaceScore, Category = "Coop|Score")
 	int32 RaceScore = 0;
+
+	/**
+	 * Máquina del jugador (fiable): suma RoundScore a su perfil local (UMP_GameInstance::AddRaceScore). Lleva el valor
+	 * explícito para no depender del orden en que llegan RaceScore y MatchFlowState. Solo el primer jugador local, como
+	 * PersistLocalPlayerScoreIfResults.
+	 */
+	UFUNCTION(Client, Reliable)
+	void ClientBankRoundScore(int32 RoundScore);
 
 	/** @brief OnRep de RaceScore: dispara OnRaceScoreChanged para refrescar el HUD. */
 	UFUNCTION()
@@ -219,6 +240,53 @@ public:
 	 */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
 	int32 RaceShellHalves = 0;
+
+	/**
+	 * Muñecos tortuga cogidos en la partida (#797, ATN_TurtleDoll): uno por muñeco y jugadora. Lo lee la puntuación final
+	 * del Coop y, al acabar, se suma al contador del perfil. No toca RaceScore ni las conchas. Lo resetea el GameMode al
+	 * empezar la partida; no ResetForNewRace (se llama en cada ronda).
+	 */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_TurtleDollsCollected, Category = "Coop|Collectibles")
+	int32 TurtleDollsCollected = 0;
+
+	/** @brief OnRep de TurtleDollsCollected: si ya se está en Results, guarda en el perfil lo que falte (por diferencia). */
+	UFUNCTION()
+	void OnRep_TurtleDollsCollected();
+
+	/** Servidor: suma un muñeco tortuga (ATN_TurtleDoll ya ha comprobado que esta jugadora no lo tenía). */
+	void AddTurtleDoll();
+
+	/**
+	 * Servidor: puntos de concha cogidos en la partida (ATN_ScorePickup), para el término de conchas de la puntuación
+	 * final del Coop (#789). Solo cuenta: no suma nada a RaceScore. Lo resetea el GameMode al empezar la partida.
+	 */
+	UPROPERTY()
+	int32 CollectedShellPoints = 0;
+
+	/**
+	 * Puntuación final del Coop con su desglose (#789, TN_CoopScore.h). La calcula el servidor al entrar en Results; la
+	 * pantalla de resultados la enseña y la jugadora de esta máquina suma Total a su perfil. Aparte de las conchas.
+	 */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CoopScore, Category = "Coop|Score")
+	FTN_CoopScoreBreakdown CoopScore;
+
+	/** Servidor: pone la puntuación final y la empuja a los clientes. */
+	void SetCoopScore(const FTN_CoopScoreBreakdown& InScore);
+
+	/** @brief OnRep de CoopScore: si ya se está en Results, guarda en el perfil lo que falte (por diferencia). */
+	UFUNCTION()
+	void OnRep_CoopScore();
+
+	/**
+	 * Servidor: saltos de la partida (#798, título Saltarín). Lo suma ATortugaCharacter::OnJumped en el servidor. No se
+	 * replica: el título lo decide el servidor (ATN_CoopGameState::JumperTitle). Empieza de cero en cada mapa (el
+	 * PlayerState es nuevo tras el viaje); no lo toca ResetForNewRace, así cuentan todas las rondas.
+	 */
+	UPROPERTY()
+	int32 JumpCount = 0;
+
+	/** Servidor: un salto más. */
+	void RegisterJump() { if (HasAuthority()) { ++JumpCount; } }
 
 	/** Pareja de la ronda actual en 2vs2 (0 o 1). -1 fuera de 2vs2. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")

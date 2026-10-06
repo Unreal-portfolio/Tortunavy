@@ -2,6 +2,7 @@
 #include "Multiplayer/TN_LocalViews.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
+#include "World/ProcMap/TN_ProcMapTypes.h"
 #include "World/ProcMap/TN_StormCough.h"
 #include "TN_PathStormFX.h"
 #include "ProceduralMeshComponent.h"
@@ -69,6 +70,25 @@ void ATN_PathStorm::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	RestoreFog();
 	TNAmbientFX::Registry().Remove(this);
 	Super::EndPlay(EndPlayReason);
+}
+
+ATN_PathStorm* ATN_PathStorm::SpawnFor(UWorld* World, const ATN_ProcMapGenerator* Generator, TSubclassOf<ATN_PathStorm> DefaultClass)
+{
+	if (!World)
+	{
+		return nullptr;
+	}
+	UClass* StormClass = DefaultClass ? DefaultClass.Get() : ATN_PathStorm::StaticClass();
+	if (const UTN_ProcMapSettings* Settings = Generator ? Generator->GetSettings() : nullptr)
+	{
+		if (Settings->PathStormClass && Settings->PathStormClass->IsChildOf(ATN_PathStorm::StaticClass()))
+		{
+			StormClass = Settings->PathStormClass.Get();
+		}
+	}
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	return World->SpawnActor<ATN_PathStorm>(StormClass, FTransform::Identity, Params);
 }
 
 void ATN_PathStorm::StartStorm(ATN_ProcMapGenerator* InGenerator, float InSpeed, float GraceSeconds)

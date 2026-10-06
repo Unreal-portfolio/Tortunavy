@@ -3,8 +3,12 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_GameModeSpawnUtils.h"
+#include "Game/TN_RoundLeftovers.h"
+#include "Player/MP_GamePlayerController.h"
+#include "Multiplayer/MP_GameInstance.h"
 #include "World/TN_ChunkManager.h"
 #include "World/TN_StormVolume.h"
+#include "World/ProcMap/TN_PathStorm.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_SurvivalCatalog.h"
 #include "GameFramework/Character.h"
@@ -26,6 +30,8 @@ namespace
 ATN_SurvivalGameMode::ATN_SurvivalGameMode()
 {
 	bAllowRevive = false;
+	// El panel de resultados dice qué la ha eliminado (#728).
+	bRecordDeathCause = true;
 
 	// Los mismos Blueprints que BP_RunGameMode (como ATN_ProcMapGameMode): la clase C++ sirve tal cual como
 	// ?game=Survival sin un BP propio.
@@ -51,15 +57,48 @@ void ATN_SurvivalGameMode::StartPlay()
 		const FString SeedOption = UGameplayStatics::ParseOption(OptionsString, TEXT("SurvivalSeed"));
 		const int32 Seed = SeedOption.IsEmpty() ? FMath::RandRange(1, 1 << 30) : FCString::Atoi(*SeedOption);
 		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Semilla de la partida: %d (?SurvivalSeed=%d para repetirla)."), Seed, Seed);
-		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap());
+		// La dificultad elegida con el general decide en qué mapa del catálogo se empieza (#730); ?ProcDifficulty= manda.
+		const ETNProcDifficulty Difficulty = ResolveDifficulty();
+		const int32 StartDifficulty = TNSurvivalLogic::StartMapDifficulty(Difficulty);
+		const int32 TrapsPer100mTenths = TNSurvivalLogic::TrapsPer100mTenths(Difficulty);
+		const int32 SearchPer100mTenths = TNSurvivalLogic::SearchSpotsPer100mTenths(Difficulty);
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Dificultad %s: el nivel 1 juega un mapa de dificultad %d, cada nivel sube una hasta 5 y se buscan %.1f trampas y %.1f rebuscables cada 100 m."),
+			*UEnum::GetValueAsString(Difficulty), StartDifficulty, TrapsPer100mTenths / 10.0, SearchPer100mTenths / 10.0);
+		Manager->SetLevelMode(true, Seed, ParseFirstLevelMap(), StartDifficulty, TrapsPer100mTenths, SearchPer100mTenths);
 	}
 	else
 	{
 		UE_LOG(LogTortunabo, Error, TEXT("[Survival] No hay ATN_ChunkManager en el mapa: Supervivencia necesita LVL_Run."));
 	}
 
+	// La tormenta va por el camino de cada nivel (StartLevelStorm): la caja de LVL_Run avanzaría en línea recta y cruzaría
+	// el camino por donde le tocara. Se quita antes del BeginPlay de los actores.
+	TArray<ATN_StormVolume*> BoxStorms;
+	for (TActorIterator<ATN_StormVolume> It(GetWorld()); It; ++It)
+	{
+		BoxStorms.Add(*It);
+	}
+	for (ATN_StormVolume* BoxStorm : BoxStorms)
+	{
+		BoxStorm->Destroy();
+	}
+
 	Super::StartPlay();
 	PublishLevel();
+}
+
+ETNProcDifficulty ATN_SurvivalGameMode::ResolveDifficulty() const
+{
+	ETNProcDifficulty Difficulty = ETNProcDifficulty::Normal;
+	if (const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
+	{
+		Difficulty = GI->SelectedProcDifficulty;
+	}
+	const FString Option = UGameplayStatics::ParseOption(OptionsString, TEXT("ProcDifficulty"));
+	if (Option.Equals(TEXT("Easy"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Easy; }
+	else if (Option.Equals(TEXT("Normal"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Normal; }
+	else if (Option.Equals(TEXT("Hard"), ESearchCase::IgnoreCase)) { Difficulty = ETNProcDifficulty::Hard; }
+	return Difficulty;
 }
 
 uint32 ATN_SurvivalGameMode::ParseFirstLevelMap() const
@@ -257,6 +296,7 @@ void ATN_SurvivalGameMode::UpdateRoundProgressAndMaybeFinish()
 	switch (Decision.Outcome)
 	{
 	case ETNSurvivalOutcome::Advance:
+		StopLevelStorm();
 		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Nivel %d superado. El siguiente sale en %.1f s."), CurrentLevel, LevelTransitionSeconds);
 		GetWorldTimerManager().SetTimer(LevelTransitionTimerHandle, this, &ATN_SurvivalGameMode::AdvanceLevel, LevelTransitionSeconds, false);
 		break;
@@ -297,6 +337,14 @@ void ATN_SurvivalGameMode::AdvanceLevel()
 		}
 	}
 	DeadPlayerPawns.Reset();
+
+	// Ni lo soltado ni las conchas trampa pasan al nivel siguiente (#569): con el terreno nuevo quedarían flotando o
+	// enterrados, y una trampa armada inmovilizaría a quien pasara por ella. Antes de construir: el nivel nuevo es síncrono.
+	const int32 Removed = TNRoundLeftovers::DestroyPlayerLeftovers(GetWorld());
+	if (Removed > 0)
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[Survival] Nivel %d: %d objetos sueltos del nivel anterior quitados."), CurrentLevel, Removed);
+	}
 
 	if (!Manager->BuildLevel(CurrentLevel))
 	{
@@ -345,20 +393,43 @@ void ATN_SurvivalGameMode::PollLevelReady()
 	{
 		UE_LOG(LogTortunabo, Warning, TEXT("[Survival] El suelo del nivel %d no tiene colisión tras %.1f s: salen igualmente."), CurrentLevel, Waited);
 	}
+	// Y cada cliente con el mismo mapa montado en su máquina (#828): sin él, su tortuga pisaría otro suelo que la del servidor.
+	FString Waiting;
+	if (Generator && CountClientsWithoutMap(Generator->GetRequestedGeneration(), Waiting) > 0)
+	{
+		if (Waited < ClientLevelReadyTimeoutSeconds)
+		{
+			return;
+		}
+		UE_LOG(LogTortunabo, Warning, TEXT("[Survival] Nivel %d: %s no ha dicho que tenga el mapa tras %.1f s: salen igualmente (quietos en su máquina hasta tenerlo)."),
+			CurrentLevel, *Waiting, Waited);
+	}
 
 	GetWorldTimerManager().ClearTimer(LevelReadyPollHandle);
 	SendSurvivorsToLevelStart();
 }
 
+int32 ATN_SurvivalGameMode::CountClientsWithoutMap(int32 Generation, FString& OutWaiting) const
+{
+	int32 Missing = 0;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const AMP_GamePlayerController* PC = Cast<AMP_GamePlayerController>(It->Get());
+		// El anfitrión usa el mapa del servidor.
+		if (!PC || PC->IsLocalController() || PC->GetReportedProcMapGeneration() >= Generation)
+		{
+			continue;
+		}
+		++Missing;
+		OutWaiting += (OutWaiting.IsEmpty() ? TEXT("") : TEXT(", ")) + GetNameSafe(PC);
+	}
+	return Missing;
+}
+
 void ATN_SurvivalGameMode::SendSurvivorsToLevelStart()
 {
-	// Cada nivel sale del mismo sitio: la tormenta de LVL_Run vuelve a empezar con él (#448).
-	for (TActorIterator<ATN_StormVolume> It(GetWorld()); It; ++It)
-	{
-		It->ResetToInitialState();
-	}
-
-	const ATN_ChunkManager* Manager = FindChunkManager();
+	// Las vivas que siguen en la partida.
+	TArray<APlayerController*> Survivors;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PC = It->Get();
@@ -367,58 +438,75 @@ void ATN_SurvivalGameMode::SendSurvivorsToLevelStart()
 		{
 			continue;
 		}
-
 		TNPS->bHasFinishedRun = false;
 		TNPS->FinishRank = 0;
 		TNPS->DeathZoneTimeRemaining = -1.f;
 		TNPS->ForceNetUpdate();
+		Survivors.Add(PC);
+	}
 
-		// ChoosePlayerStart y no FindPlayerStart: este devuelve el sitio de la vez anterior (el corral en el nivel 1).
-		AActor* Start = ChoosePlayerStart(PC);
-		PC->StartSpot = Start;
-		const FVector FallbackLocation = Manager ? Manager->GetActorLocation() : FVector::ZeroVector;
-		const FVector StartLocation = Start ? Start->GetActorLocation() : FallbackLocation + FVector(0.f, 0.f, 100.f);
-		const FRotator StartRotation(0.f, Start ? Start->GetActorRotation().Yaw : (Manager ? Manager->GetActorRotation().Yaw : 0.f), 0.f);
-
-		APawn* Pawn = FinishedPawns.FindRef(TNPS->GetPlayerId()).Get();
-		APawn* CurrentPawn = PC->GetPawn();
-		if (Pawn)
-		{
-			// Mismo camino que una reanimación: visible, con colisión, poseído y con el input restaurado.
-			RestorePossessionAfterRevive(PC, Pawn, StartLocation, true);
-			Pawn->SetActorRotation(StartRotation);
-			PC->ClientSetRotation(StartRotation);
-		}
-		else if (CurrentPawn && !TNPS->IsOnlyASpectator())
-		{
-			// Sigue en juego (en el nivel 1, desde el corral): se le lleva a la salida tal cual.
-			ACharacter* Character = Cast<ACharacter>(CurrentPawn);
-			UCharacterMovementComponent* Move = Character ? Character->GetCharacterMovement() : nullptr;
-			if (Move)
-			{
-				Move->StopMovementImmediately();
-			}
-			CurrentPawn->SetActorLocationAndRotation(StartLocation, StartRotation, false, nullptr, ETeleportType::TeleportPhysics);
-			PC->ClientSetRotation(StartRotation, true);
-			if (Move)
-			{
-				Move->SetMovementMode(MOVE_Falling);
-			}
-		}
-		else
-		{
-			if (PC->PlayerState)
-			{
-				PC->PlayerState->SetIsOnlyASpectator(false);
-			}
-			RestartPlayer(PC);
-		}
+	for (APlayerController* PC : Survivors)
+	{
+		ReleaseSurvivor(PC);
 	}
 	FinishedPawns.Reset();
 	bLevelLoading = false;
+	// La tormenta sale con ellos, por detrás de la salida (#448: cada nivel empieza igual para todos).
+	StartLevelStorm();
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Survival] ═══ Nivel %d ═══"), CurrentLevel);
 	UpdateRoundProgressAndMaybeFinish();
+}
+
+void ATN_SurvivalGameMode::ReleaseSurvivor(APlayerController* PC)
+{
+	ATN_CoopPlayerState* TNPS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
+	if (!TNPS)
+	{
+		return;
+	}
+	const ATN_ChunkManager* Manager = FindChunkManager();
+	// ChoosePlayerStart y no FindPlayerStart: este devuelve el sitio de la vez anterior (el corral en el nivel 1).
+	AActor* Start = ChoosePlayerStart(PC);
+	PC->StartSpot = Start;
+	const FVector FallbackLocation = Manager ? Manager->GetActorLocation() : FVector::ZeroVector;
+	const FVector StartLocation = Start ? Start->GetActorLocation() : FallbackLocation + FVector(0.f, 0.f, 100.f);
+	const FRotator StartRotation(0.f, Start ? Start->GetActorRotation().Yaw : (Manager ? Manager->GetActorRotation().Yaw : 0.f), 0.f);
+
+	APawn* Pawn = FinishedPawns.FindRef(TNPS->GetPlayerId()).Get();
+	APawn* CurrentPawn = PC->GetPawn();
+	if (Pawn)
+	{
+		// Mismo camino que una reanimación: visible, con colisión, poseído y con el input restaurado.
+		RestorePossessionAfterRevive(PC, Pawn, StartLocation, true);
+		Pawn->SetActorRotation(StartRotation);
+		PC->ClientSetRotation(StartRotation);
+	}
+	else if (CurrentPawn && !TNPS->IsOnlyASpectator())
+	{
+		// Sigue en juego (en el nivel 1, desde el corral): se le lleva a la salida tal cual.
+		ACharacter* Character = Cast<ACharacter>(CurrentPawn);
+		UCharacterMovementComponent* Move = Character ? Character->GetCharacterMovement() : nullptr;
+		if (Move)
+		{
+			Move->StopMovementImmediately();
+		}
+		CurrentPawn->SetActorLocationAndRotation(StartLocation, StartRotation, false, nullptr, ETeleportType::TeleportPhysics);
+		PC->ClientSetRotation(StartRotation, true);
+		if (Move)
+		{
+			Move->SetMovementMode(MOVE_Falling);
+		}
+	}
+	else
+	{
+		if (PC->PlayerState)
+		{
+			PC->PlayerState->SetIsOnlyASpectator(false);
+		}
+		RestartPlayer(PC);
+	}
+	FinishedPawns.Remove(TNPS->GetPlayerId());
 }
 
 void ATN_SurvivalGameMode::FinishSurvival(int32 WinnerId)
@@ -431,6 +519,7 @@ void ATN_SurvivalGameMode::FinishSurvival(int32 WinnerId)
 	bLevelLoading = false;
 	GetWorldTimerManager().ClearTimer(LevelTransitionTimerHandle);
 	GetWorldTimerManager().ClearTimer(LevelReadyPollHandle);
+	StopLevelStorm();
 
 	const TArray<FTNSurvivalPlayer> Players = GatherPlayers();
 	const TArray<int32> Ranked = TNSurvivalLogic::RankPlayers(Players, WinnerId);
@@ -463,4 +552,36 @@ void ATN_SurvivalGameMode::FinishSurvival(int32 WinnerId)
 		CurrentLevel, StartingPlayers <= 1 ? TEXT("solitario,") : TEXT("gana"), WinnerId);
 
 	StartResults();
+}
+
+void ATN_SurvivalGameMode::StartLevelStorm()
+{
+	const ATN_ChunkManager* Manager = FindChunkManager();
+	ATN_ProcMapGenerator* Generator = Manager ? Manager->GetLevelGenerator() : nullptr;
+	if (!Generator || !Generator->IsMapReady())
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[Survival] El nivel %d no tiene mapa listo: va sin tormenta."), CurrentLevel);
+		return;
+	}
+	if (!Storm)
+	{
+		Storm = ATN_PathStorm::SpawnFor(GetWorld(), Generator);
+	}
+	if (!Storm)
+	{
+		return;
+	}
+	const float Speed = StormSpeed;
+	// Sale a la vez que las tortugas, sin espera: solo la ventaja de aparecer 30 m por detrás de la salida.
+	Storm->StartStorm(Generator, Speed, 0.f);
+	UE_LOG(LogTortunabo, Log, TEXT("[Survival] Tormenta del nivel %d: %.0f cm/s por un camino de %.0f m."),
+		CurrentLevel, Speed, Generator->GetMainPathLength() / 100.f);
+}
+
+void ATN_SurvivalGameMode::StopLevelStorm()
+{
+	if (Storm)
+	{
+		Storm->StopStorm();
+	}
 }

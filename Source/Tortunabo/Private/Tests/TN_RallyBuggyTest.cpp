@@ -167,6 +167,47 @@ bool FTNRallyBuggyTintAndPuddleTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRallyBuggySpeedCapTest,
+	"Tortunabo.Rally.Buggy.SpeedCap",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNRallyBuggySpeedCapTest::RunTest(const FString& Parameters)
+{
+	using namespace TNBuggy;
+	FSpeedCapInput Dry;
+	Dry.TopSpeedCms = 3000.f;
+	Dry.BoostTopSpeedCms = 4000.f;
+	Dry.WaterSpeedMultiplier = 0.5f;
+	TestEqual(TEXT("en seco y sin daño no hay tope: manda el motor"), SpeedCapCms(Dry), 0.f);
+
+	// #719: por el agua, la mitad de la punta; al salir, sin tope.
+	FSpeedCapInput Water = Dry;
+	Water.bWading = true;
+	TestEqual(TEXT("en el agua, la mitad de la punta"), SpeedCapCms(Water), 1500.f, 0.01f);
+	Water.BoostStrength01 = 1.f;
+	TestEqual(TEXT("el turbo no salta el tope del agua"), SpeedCapCms(Water), 1500.f, 0.01f);
+	FSpeedCapInput WaterAndPuddle = Water;
+	WaterAndPuddle.PuddleCapCms = 1200.f;
+	TestEqual(TEXT("agua y charco: manda el tope más bajo"), SpeedCapCms(WaterAndPuddle), 1200.f, 0.01f);
+
+	// #720: con daño, la punta baja; con turbo, la punta del turbo por la misma fracción.
+	FSpeedCapInput Damaged = Dry;
+	Damaged.DamageScale = 0.8f;
+	TestEqual(TEXT("con daño, la punta por la fracción"), SpeedCapCms(Damaged), 2400.f, 0.01f);
+	Damaged.BoostStrength01 = 1.f;
+	TestEqual(TEXT("con daño y turbo, la punta del turbo por la fracción"), SpeedCapCms(Damaged), 3200.f, 0.01f);
+	FSpeedCapInput DamagedInWater = Damaged;
+	DamagedInWater.bWading = true;
+	TestEqual(TEXT("con daño en el agua, el tope del agua también baja con el daño"), SpeedCapCms(DamagedInWater), 1200.f, 0.01f);
+
+	TestEqual(TEXT("vida llena: estadística entera"), DamageStatScale(1.f, 0.6f), 1.f);
+	TestEqual(TEXT("sin vida: el mínimo"), DamageStatScale(0.f, 0.6f), 0.6f, 0.0001f);
+	TestEqual(TEXT("media vida: a medio camino"), DamageStatScale(0.5f, 0.6f), 0.8f, 0.0001f);
+	TestTrue(TEXT("baja de forma progresiva"), DamageStatScale(0.75f, 0.6f) > DamageStatScale(0.25f, 0.6f));
+	TestEqual(TEXT("vida fuera de rango: se recorta"), DamageStatScale(2.f, 0.6f), 1.f);
+	return true;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Torreta
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,9 +337,9 @@ bool FTNRallyTurretEffectsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("coco: bamboleo 0,4 s"), CocoWobbleSeconds, 0.4f);
 	TestEqual(TEXT("charco: 6 m"), AlgaPuddleRadiusCm, 600.f);
 	TestEqual(TEXT("charco: 5 s"), AlgaPuddleSeconds, 5.f);
-	TestEqual(TEXT("charco: agarre x0,5"), PuddleGripMultiplier(true), 0.5f);
+	TestEqual(TEXT("charco: agarre x0,35 (#770)"), PuddleGripMultiplier(true), 0.35f);
 	TestEqual(TEXT("fuera del charco: agarre x1"), PuddleGripMultiplier(false), 1.f);
-	TestEqual(TEXT("charco: velocidad máxima x0,6"), PuddleSpeedCapCms(true), PuddleSpeedCapCms(false) * 0.6f, 0.01f);
+	TestEqual(TEXT("charco: velocidad máxima x0,5 (#770)"), PuddleSpeedCapCms(true), PuddleSpeedCapCms(false) * 0.5f, 0.01f);
 	TestEqual(TEXT("burbuja: flota 6 s"), SpecFor(ETNRallyAmmo::Burbuja).LifeSeconds, 6.f);
 	TestEqual(TEXT("burbuja: sin gravedad"), SpecFor(ETNRallyAmmo::Burbuja).GravityScale, 0.f);
 	TestEqual(TEXT("escudo: 4 s"), ShieldSeconds, 4.f);

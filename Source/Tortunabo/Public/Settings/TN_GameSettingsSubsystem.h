@@ -279,6 +279,9 @@ public:
 	/** Temblor de cámara permitido (el subsistema ya apaga los modificadores «...Shake...» del PlayerCameraManager). */
 	bool IsCameraShakeEnabled() const { return Settings.bCameraShake; }
 
+	/** Efectos del clima (0..1, accesibilidad): cuánto se ve la tormenta de arena del coop (#790). */
+	float GetWeatherEffects() const { return Settings.WeatherEffects; }
+
 	/**
 	 * Grados que el jugador suma al campo de visión. La tortuga propia ya lo lleva y, mirando a otra tortuga, lo suma
 	 * UTN_SettingsFovModifier: no hace falta sumarlo en otras cámaras.

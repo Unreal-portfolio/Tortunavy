@@ -158,6 +158,28 @@ namespace TNBuggy
 	 */
 	TORTUNABO_API float SpeedCapDecel(float Speed, float Cap, float Gain);
 
+	/** Lo que limita la velocidad del buggy en un fotograma: charco, agua (#719) y vida perdida (#720). */
+	struct FSpeedCapInput
+	{
+		/** Punta sin turbo y con el turbo a tope (cm/s), y fuerza del turbo en [0, 1]. */
+		float TopSpeedCms = 0.f;
+		float BoostTopSpeedCms = 0.f;
+		float BoostStrength01 = 0.f;
+		/** Tope del charco (cm/s); 0 = fuera del charco. */
+		float PuddleCapCms = 0.f;
+		/** Con las ruedas metidas en el agua, la punta sin turbo por WaterSpeedMultiplier. */
+		bool bWading = false;
+		float WaterSpeedMultiplier = 1.f;
+		/** Fracción de la punta que deja la vida perdida (1 = sin daño): se aplica a la punta del turbo que lleve y al agua. */
+		float DamageScale = 1.f;
+	};
+
+	/** Velocidad máxima (cm/s) que imponen el charco, el agua y el daño (la menor); 0 si nada la limita y manda el motor. */
+	TORTUNABO_API float SpeedCapCms(const FSpeedCapInput& In);
+
+	/** Fracción de una estadística (par, punta o giro) con la vida Health01 (#720): 1 con la vida llena y MinScale a 0. */
+	TORTUNABO_API float DamageStatScale(float Health01, float MinScale);
+
 	/** Dirección extra del bamboleo del coco: seno de Frequency Hz que se apaga linealmente hasta TimeLeft = 0. */
 	TORTUNABO_API float SteerWobble(float TimeLeft, float Duration, float Amplitude, float Frequency);
 
@@ -214,9 +236,10 @@ namespace TNBuggy
 	/**
 	 * Curva de par: X = fracción de MaxRPM, Y = fracción del par máximo (su máximo es 1, porque Chaos la normaliza).
 	 * Plana a 1 desde el 10 % hasta el 55 % (todo el arranque hasta 60 km/h; el ralentí de Chaos ya está en el 35 %) y,
-	 * desde el 80 %, el mismo par absoluto que la curva antigua con LegacyMaxTorque: la punta no cambia.
+	 * desde el 80 %, el mismo par absoluto que la curva antigua con LegacyMaxTorque: la punta no cambia. TopEndScale (1 en el
+	 * Rally) multiplica ese par de la parte alta: la punta la fija ahí, así que los karts de #742 lo suben para correr más.
 	 */
-	TORTUNABO_API TArray<FCurveKey> TorqueCurveKeys(float MaxTorque);
+	TORTUNABO_API TArray<FCurveKey> TorqueCurveKeys(float MaxTorque, float TopEndScale = 1.f);
 
 	/** Curva antigua (OffroadCar_TorqueCurve de TP_VehicleAdvBP, interpolada lineal) para comparar en los tests. */
 	TORTUNABO_API TConstArrayView<FCurveKey> LegacyTorqueCurveKeys();

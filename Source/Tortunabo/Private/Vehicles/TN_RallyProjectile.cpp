@@ -1,4 +1,5 @@
 #include "Vehicles/TN_RallyProjectile.h"
+#include "Kart/TN_KartShell.h"
 #include "Rally/TN_RallyHitReport.h"
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyHealthComponent.h"
@@ -6,6 +7,8 @@
 #include "Vehicles/TN_BuggyTurretComponent.h"
 #include "Vehicles/TN_RallyAnchor.h"
 #include "Vehicles/TN_RallyFXParticles.h"
+#include "Vehicles/TN_RallyHarpoon.h"
+#include "Vehicles/TN_RallyPufferMine.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -46,6 +49,9 @@ namespace TNRallyFX
 		case ETNRallyAmmo::Mortero: return 28.f;
 		case ETNRallyAmmo::Alga: return 24.f;
 		case ETNRallyAmmo::Ancla: return 26.f;
+		case ETNRallyAmmo::Erizos: return 10.f;
+		case ETNRallyAmmo::Arpon: return 14.f;
+		case ETNRallyAmmo::PezGlobo: return 30.f;
 		default: return 18.f;
 		}
 	}
@@ -119,6 +125,10 @@ namespace TNRallyLook
 		case ETNRallyAmmo::Ancla: return FLinearColor(0.45f, 0.47f, 0.50f);
 		case ETNRallyAmmo::Concha: return FLinearColor(0.25f, 0.85f, 0.45f);
 		case ETNRallyAmmo::ConchaGuiada: return FLinearColor(0.95f, 0.25f, 0.20f);
+		case ETNRallyAmmo::Erizos: return FLinearColor(0.30f, 0.12f, 0.35f);
+		case ETNRallyAmmo::Medusa: return FLinearColor(0.95f, 0.55f, 0.85f);
+		case ETNRallyAmmo::Arpon: return FLinearColor(0.55f, 0.62f, 0.68f);
+		case ETNRallyAmmo::PezGlobo: return FLinearColor(0.95f, 0.78f, 0.30f);
 		default: return FLinearColor(0.35f, 0.20f, 0.08f);
 		}
 	}
@@ -339,8 +349,21 @@ void ATN_RallyProjectile::Impact(ATN_Buggy* HitBuggy, const FVector& Where, bool
 		break;
 	case ETNRallyAmmo::Coco:
 	case ETNRallyAmmo::Ancla:
+	case ETNRallyAmmo::Arpon:
 		HitBuggyWith(HitBuggy, Where, Dir, bGunnerHit);
 		ATN_RallyBurstFX::Broadcast(Via, ETNRallyBurstKind::CocoHit, Where, 80.f);
+		break;
+	case ETNRallyAmmo::Erizos:
+		// Púa de la ráfaga (#715): golpe pequeño; contra el escenario, sin ráfaga (son muchas).
+		HitBuggyWith(HitBuggy, Where, Dir, bGunnerHit);
+		if (HitBuggy)
+		{
+			ATN_RallyBurstFX::Broadcast(HitBuggy, ETNRallyBurstKind::CocoHit, Where, 40.f);
+		}
+		break;
+	case ETNRallyAmmo::PezGlobo:
+		// Pez globo (#773): donde cae (en un buggy, en el suelo de debajo) se queda la mina; no hace daño al caer.
+		ATN_RallyPufferMine::SpawnOnGround(World, Where, Cast<ATN_Buggy>(GetOwner()));
 		break;
 	default:
 		break;
@@ -363,6 +386,11 @@ void ATN_RallyProjectile::HitBuggyWith(ATN_Buggy* HitBuggy, const FVector& Where
 		{
 			TNRallyHitLog::NotifyServer(Shooter.Get(), HitBuggy, Ammo, Where, !bLanded);
 		}
+		// Arpón (#772): solo si se clava (sin escudo ni fantasma) tira del buggy que lo ha disparado (el dueño).
+		if (bLanded && Ammo == ETNRallyAmmo::Arpon)
+		{
+			ATN_RallyHarpoonTether::Attach(Cast<ATN_Buggy>(GetOwner()), HitBuggy, Where);
+		}
 		return;
 	}
 	// Sin componente de vida (un buggy de otra clase): los efectos de siempre, sin daño ni empujón en el punto.
@@ -371,6 +399,13 @@ void ATN_RallyProjectile::HitBuggyWith(ATN_Buggy* HitBuggy, const FVector& Where
 	case ETNRallyAmmo::Coco: HitBuggy->ApplyCocoHit(Dir); break;
 	case ETNRallyAmmo::Tinta: HitBuggy->ApplyInk(); break;
 	case ETNRallyAmmo::Mortero: HitBuggy->ApplyMortarBlast(); break;
+	case ETNRallyAmmo::Erizos: HitBuggy->ApplySpikeHit(Dir); break;
+	case ETNRallyAmmo::Arpon:
+		if (!HitBuggy->TryConsumeShield())
+		{
+			ATN_RallyHarpoonTether::Attach(Cast<ATN_Buggy>(GetOwner()), HitBuggy, Where);
+		}
+		break;
 	case ETNRallyAmmo::Ancla:
 		if (!HitBuggy->TryConsumeShield())
 		{
@@ -383,36 +418,63 @@ void ATN_RallyProjectile::HitBuggyWith(ATN_Buggy* HitBuggy, const FVector& Where
 
 void ATN_RallyProjectile::SpawnAlgaPuddle(ATN_Buggy* HitBuggy, const FVector& Where)
 {
-	UWorld* World = GetWorld();
-	// El charco va al suelo bajo el impacto.
-	FVector Ground = Where;
-	FHitResult Down;
-	FCollisionQueryParams Params(FName(TEXT("TNRallyPuddle")), false, this);
-	if (HitBuggy)
+	// El charco va al suelo bajo el impacto (#770): solo el escenario, así que el buggy alcanzado, los de alrededor y sus
+	// tortugas no lo sostienen; si el impacto es en una pared o en la barrera, se busca el suelo hacia donde venía.
+	const FVector Velocity = Movement->Velocity;
+	const FVector BackDir = -FVector(Velocity.X, Velocity.Y, 0.f).GetSafeNormal();
+	ATN_RallyAlgaPuddle::SpawnOnGround(GetWorld(), Where, BackDir);
+}
+
+void ATN_RallyProjectile::LifeSpanExpired()
+{
+	if (HasAuthority() && !bImpacted && Ammo == ETNRallyAmmo::Alga && GetWorld())
 	{
-		Params.AddIgnoredActor(HitBuggy);
+		// Se acaba en el aire (#770): el charco cae al suelo de debajo en vez de desaparecer con el proyectil.
+		bImpacted = true;
+		SpawnAlgaPuddle(nullptr, GetActorLocation());
 	}
-	if (World->LineTraceSingleByChannel(Down, Where + FVector(0.f, 0.f, 50.f), Where - FVector(0.f, 0.f, 1000.f), ECC_WorldStatic, Params))
+	if (HasAuthority() && !bImpacted && Ammo == ETNRallyAmmo::PezGlobo && GetWorld())
 	{
-		Ground = Down.ImpactPoint;
+		// Igual el pez globo (#773): la mina cae al suelo de debajo.
+		bImpacted = true;
+		ATN_RallyPufferMine::SpawnOnGround(GetWorld(), GetActorLocation(), Cast<ATN_Buggy>(GetOwner()));
 	}
-	FActorSpawnParameters Spawn;
-	Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	World->SpawnActor<ATN_RallyAlgaPuddle>(ATN_RallyAlgaPuddle::StaticClass(), FTransform(Ground), Spawn);
+	Super::LifeSpanExpired();
 }
 
 void ATN_RallyProjectile::MortarBlast(ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir, bool bGunnerHit)
 {
-	for (TActorIterator<ATN_Buggy> It(GetWorld()); It; ++It)
+	MortarBlastAt(GetWorld(), Shooter.Get(), HitBuggy, Where, Dir, bGunnerHit, Ammo);
+}
+
+void ATN_RallyProjectile::MortarBlastAt(UWorld* World, ATN_Buggy* Shooter, ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir,
+	bool bGunnerHit, ETNRallyAmmo ReportAmmo)
+{
+	if (!World)
+	{
+		return;
+	}
+	for (TActorIterator<ATN_Buggy> It(World); It; ++It)
 	{
 		ATN_Buggy* Buggy = *It;
-		if (FVector::Dist(Buggy->GetActorLocation(), Where) > TNRallyTurret::MortarRadiusCm)
+		if (!Buggy->HasAuthority() || FVector::Dist(Buggy->GetActorLocation(), Where) > TNRallyTurret::MortarRadiusCm)
 		{
 			continue;
 		}
 		// El alcanzado recibe el golpe en el punto del impacto; el resto, en su centro. La artillera, solo con impacto directo.
 		const FVector Point = Buggy == HitBuggy ? Where : Buggy->GetActorLocation();
-		HitBuggyWith(Buggy, Point, Dir, bGunnerHit && Buggy == HitBuggy);
+		if (UTN_BuggyHealthComponent* Health = Buggy->FindComponentByClass<UTN_BuggyHealthComponent>())
+		{
+			// Tras reaparecer es un fantasma: el impacto no existe y no se avisa a nadie (#332).
+			const bool bGhost = Buggy->IsRespawnProtected();
+			const bool bLanded = Health->ReceiveAmmoHit(ETNRallyAmmo::Mortero, Point, Dir, bGunnerHit && Buggy == HitBuggy);
+			if (!bGhost)
+			{
+				TNRallyHitLog::NotifyServer(Shooter, Buggy, ReportAmmo, Point, !bLanded);
+			}
+			continue;
+		}
+		Buggy->ApplyMortarBlast();
 	}
 }
 
@@ -434,6 +496,86 @@ ATN_RallyAlgaPuddle::ATN_RallyAlgaPuddle()
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> SplashFinder(TEXT("/Game/Audio/Rally/SFX_Impact_Splash.SFX_Impact_Splash"));
 	SplashSound = SplashFinder.Object;
+}
+
+namespace TNRallyPuddleGround
+{
+	/** Subida sobre el punto de partida desde la que se busca el suelo (cm): el impacto ya está sobre él o encima. */
+	constexpr float ProbeUpCm = 30.f;
+	/** Pasos hacia atrás si bajo el impacto no hay suelo (pared o barrera) y la subida extra de cada uno (cm). */
+	constexpr float BackStepCm = 150.f;
+	constexpr float BackStepUpCm = 90.f;
+	constexpr int32 BackSteps = 2;
+	/** El disco queda un poco por encima del plano ajustado, para no quedar tapado en las hondonadas (cm). */
+	constexpr float LiftCm = 3.f;
+
+	bool TraceGround(UWorld& World, const FVector& From, float UpCm, FHitResult& OutHit)
+	{
+		// Por tipo de objeto WorldStatic: el terreno, la barrera y el decorado. Los buggies (Vehicle) y las tortugas (Pawn)
+		// no cuentan; con el canal WorldStatic los dos lo bloqueaban y el charco se quedaba encima de ellos.
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(TNRallyPuddleGround), true);
+		return World.LineTraceSingleByObjectType(OutHit, From + FVector(0.f, 0.f, UpCm),
+			From - FVector(0.f, 0.f, TNRallyTurret::PuddleGroundProbeCm), FCollisionObjectQueryParams(ECC_WorldStatic), Params);
+	}
+
+	/** Suelo bajo Where o, si no lo hay (pared, nada), unos pasos hacia BackDir. */
+	bool FindGround(UWorld& World, const FVector& Where, const FVector& BackDir, FHitResult& OutHit)
+	{
+		for (int32 Step = 0; Step <= BackSteps; ++Step)
+		{
+			const FVector From = Where + BackDir * (BackStepCm * Step);
+			if (TraceGround(World, From, ProbeUpCm + BackStepUpCm * Step, OutHit) && TNRallyTurret::IsPuddleGround(OutHit.ImpactNormal))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+ATN_RallyAlgaPuddle* ATN_RallyAlgaPuddle::SpawnOnGround(UWorld* World, const FVector& Where, const FVector& BackDir, ATN_Buggy* Dropper)
+{
+	using namespace TNRallyPuddleGround;
+	FHitResult Center;
+	if (!World || !FindGround(*World, Where, BackDir.GetSafeNormal2D(), Center))
+	{
+		UE_LOG(LogTNBuggy, Verbose, TEXT("Charco de alga sin suelo bajo (%.0f, %.0f, %.0f)"), Where.X, Where.Y, Where.Z);
+		return nullptr;
+	}
+	// Plano del suelo con el centro y unos puntos del borde: en una cuesta, un peralte o una duna el disco sigue el suelo
+	// en vez de quedar horizontal (medio enterrado y medio flotando).
+	TArray<FVector, TInlineAllocator<TNRallyTurret::PuddleRimSamples + 1>> Points;
+	Points.Add(Center.ImpactPoint);
+	const float RimCm = TNRallyTurret::AlgaPuddleRadiusCm * TNRallyTurret::PuddleRimSampleFraction;
+	for (int32 Index = 0; Index < TNRallyTurret::PuddleRimSamples; ++Index)
+	{
+		const float Angle = 2.f * PI * Index / TNRallyTurret::PuddleRimSamples;
+		const FVector Rim = Center.ImpactPoint + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * RimCm;
+		FHitResult RimHit;
+		// Desde arriba del centro y hasta poco por debajo: un borde que cae por un barranco no tumba el disco.
+		if (TraceGround(*World, Rim, RimCm, RimHit) && TNRallyTurret::IsPuddleGround(RimHit.ImpactNormal)
+			&& FMath::Abs(RimHit.ImpactPoint.Z - Center.ImpactPoint.Z) <= RimCm)
+		{
+			Points.Add(RimHit.ImpactPoint);
+		}
+	}
+	FVector PlaneCenter = Center.ImpactPoint;
+	FVector Normal = Center.ImpactNormal;
+	TNRallyTurret::FitGroundPlane(Points, PlaneCenter, Normal);
+	// El centro del disco sobre la vertical del impacto, a la altura del plano ajustado.
+	const FVector Offset = Center.ImpactPoint - PlaneCenter;
+	const double Along = FVector::DotProduct(Offset, Normal);
+	const FVector Location = Center.ImpactPoint - Normal * Along + Normal * LiftCm;
+	const FTransform Where3D(TNRallyTurret::PuddleRotation(Normal, -BackDir), Location);
+
+	ATN_RallyAlgaPuddle* Puddle = World->SpawnActorDeferred<ATN_RallyAlgaPuddle>(ATN_RallyAlgaPuddle::StaticClass(), Where3D,
+		nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (Puddle)
+	{
+		Puddle->Dropper = Dropper;
+		Puddle->FinishSpawning(Where3D);
+	}
+	return Puddle;
 }
 
 void ATN_RallyAlgaPuddle::BeginPlay()
@@ -463,15 +605,19 @@ void ATN_RallyAlgaPuddle::Tick(float DeltaSeconds)
 	}
 	CheckAccumulator = 0.f;
 	const FVector Center = GetActorLocation();
+	// El disco va inclinado con el suelo (#770): la distancia se mide en su plano y la altura, sobre su normal.
+	const FVector Up = GetActorUpVector();
+	const float Age = GetGameTimeSinceCreation();
 	for (TActorIterator<ATN_Buggy> It(GetWorld()); It; ++It)
 	{
 		ATN_Buggy* Buggy = *It;
 		const FVector Delta = Buggy->GetActorLocation() - Center;
-		if (FVector(Delta.X, Delta.Y, 0.f).Size() > TNRallyTurret::AlgaPuddleRadiusCm || FMath::Abs(Delta.Z) > 300.f)
+		const double Height = FVector::DotProduct(Delta, Up);
+		if ((Delta - Up * Height).Size() > TNRallyTurret::AlgaPuddleRadiusCm || FMath::Abs(Height) > 300.0)
 		{
 			continue;
 		}
-		if (Immune.Contains(Buggy))
+		if (Immune.Contains(Buggy) || !TNRallyTurret::PuddleAffects(Buggy == Dropper.Get(), Age, Buggy->IsAirborne()))
 		{
 			continue;
 		}
@@ -576,4 +722,54 @@ void ATN_RallyBurstFX::Tick(float DeltaSeconds)
 	const float Grow = 1.f - FMath::Square(1.f - Alpha);
 	const float Shrink = Alpha > 0.8f ? 1.f - (Alpha - 0.8f) / 0.2f : 1.f;
 	Mesh->SetRelativeScale3D(FVector(FMath::Max(0.01f, Grow * Shrink) * RadiusCm / TNRallyFX::BasicShapeRadiusCm));
+}
+
+// ── Peligros que salta la medusa (#771) ───────────────────────────────────────
+
+bool TNRallyHazards::HopThreatNear(const ATN_Buggy& Buggy)
+{
+	UWorld* World = Buggy.GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+	const FVector Location = Buggy.GetActorLocation();
+	for (TActorIterator<ATN_KartShell> It(World); It; ++It)
+	{
+		if (TNRallyTurret::IsShellThreat(Location, It->GetActorLocation(), It->IsHomingAt(&Buggy)))
+		{
+			return true;
+		}
+	}
+	for (TActorIterator<ATN_RallyAlgaPuddle> It(World); It; ++It)
+	{
+		if (TNRallyTurret::IsPuddleAhead(Location, Buggy.GetActorForwardVector(), It->GetActorLocation()))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+// ── Lanzamiento sin torreta (objetos de Karts, #774) ──────────────────────────
+
+ATN_RallyProjectile* ATN_RallyProjectile::Launch(UWorld* World, ETNRallyAmmo InAmmo, const FVector& Where, const FVector& Velocity,
+	ATN_Buggy* FiredBy)
+{
+	if (!World || Velocity.IsNearlyZero() || Velocity.ContainsNaN())
+	{
+		return nullptr;
+	}
+	const FTransform Spawn(Velocity.Rotation(), Where);
+	ATN_RallyProjectile* Projectile = World->SpawnActorDeferred<ATN_RallyProjectile>(ATN_RallyProjectile::StaticClass(), Spawn, FiredBy,
+		FiredBy, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (!Projectile)
+	{
+		return nullptr;
+	}
+	Projectile->Init(InAmmo, Velocity, FiredBy);
+	Projectile->FinishSpawning(Spawn);
+	// Como los de la torreta: los clientes simulan el vuelo desde su posición y velocidad de salida.
+	Projectile->ForceNetUpdate();
+	return Projectile;
 }

@@ -620,7 +620,7 @@ void ATortugaCharacter::RequestKill(AActor* KillInstigator)
 	UE_LOG(LogTortunabo, Log, TEXT("[Character] RequestKill on '%s' by '%s'"),
 		*GetNameSafe(this), *GetNameSafe(KillInstigator));
 
-	GM->MarkPlayerDead(PC);
+	GM->MarkPlayerDeadBy(PC, TNDeathCause::FromInstigator(KillInstigator, this));
 }
 
 // DEATH VISUAL SYSTEM
@@ -635,6 +635,11 @@ void ATortugaCharacter::SetDeadVisual(bool bDead)
 	if (bDead && ShellComponent)
 	{
 		ShellComponent->ForceExitShell();
+	}
+	// Igual con el mareo: acaba al morir, con su temporizador (#574).
+	if (bDead)
+	{
+		EndMareo();
 	}
 
 	bIsDead = bDead;

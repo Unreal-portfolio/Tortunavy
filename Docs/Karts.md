@@ -27,11 +27,16 @@ El HUD de los karts hace una ruleta y enseña lo que ha tocado. Con artillera, l
 | Triple coco turbo | Tres acelerones, uno por pulsación. | Solo detrás |
 | Concha | Sale recta (hacia atrás con Q/B o Q/LB), rebota en las paredes y hace trompear al primero que toca. | Delante |
 | Concha teledirigida | Persigue al kart de justo delante. | Sobre todo detrás |
-| Alga resbaladiza | Charco detrás: poco agarre y menos velocidad. | Sobre todo delante |
+| Alga resbaladiza | Charco detrás, apoyado en el suelo: poco agarre, menos velocidad y un derrape al entrar; quien lo suelta no lo pisa los primeros 2 s. | Sobre todo delante |
 | Tinta de calamar | Tinta en la pantalla de todos los que van por delante. | Nunca a la primera |
 | Estrella de mar | 7 s invulnerable y algo más rápida; aparta a los karts que toca. | Nunca a la primera |
+| Mortero (#774) | Parábola por encima de los karts que cae delante del kart de delante (donde estará al caer); la explosión del mortero levanta a los que pilla. Sin nadie delante, 40 m por delante. | Sobre todo detrás |
+| Ráfaga de erizos (#774) | 3 s disparando púas hacia delante (24, la cadencia de la torreta); se apunta con el propio kart. Cada púa: empujón lateral y bamboleo. | Sobre todo delante |
+| Medusa saltarina (#774) | Bote propio de unos 3 m al pulsar (no en el aire); en el aire las conchas pasan por debajo y los charcos no le tocan. | Sobre todo detrás |
+| Pez globo (#774) | Mina detrás, 15 s: se arma a los 0,5 s, quien la suelta es inmune 1,5 s y explota como el mortero con un kart a menos de 4 m. | Sobre todo delante |
+| Arpón (#774) | Se clava en el kart de delante (a menos de 80 m; si no, sale recto) y remolca hacia él 2 s, hasta el 115 % de la punta. El escudo lo anula. | Solo detrás (nunca a la primera) |
 
-Reparto: `TNKart::ItemWeightsForPlace` (cuanto más atrás, más objetos buenos). Los bots los usan solos
+Reparto: `TNKart::ItemWeightsForPlace` (cuanto más atrás, más objetos buenos). Los cinco de #774 reutilizan la munición de la torreta del Rally (`ATN_RallyProjectile::Launch`, `ATN_RallyPufferMine`, `ATN_RallyHarpoonTether`). Los bots los usan solos
 (`TNKart::ShouldBotUseItem`).
 
 ## Artillera (#295)
@@ -49,6 +54,35 @@ Reparto: `TNKart::ItemWeightsForPlace` (cuanto más atrás, más objetos buenos)
 - Se bajan por la **cascada**: empujón ladera abajo, el morro hacia donde baja el agua y sin vueltas de campana; abajo, la poza.
 - **Agua** (canales abiertos del camino, el mar y las pozas): el kart pliega las ruedas hacia abajo y flota como una balsa;
   acelerador y dirección lo mueven y en la orilla sube la rampa sobre sus ruedas. Salpicaduras al entrar y estela.
+
+## Conducción (#742)
+
+El kart de Karts conduce distinto del buggy del Rally (que sigue igual en `LVL_Rally`: `ATN_RallyKartBuggy` no lleva este ajuste).
+Medido con `Tortunabo.Kart.Measure.*` (llano, sin turbo; Rally → Karts):
+
+| | Rally | Karts |
+|---|---|---|
+| Punta | 111 km/h | 145 km/h (+30 %) |
+| 0-100 km/h | 3,5 s | 2,65 s (+33 % de aceleración media) |
+| 0-60 km/h | 1,9 s | 1,6 s (lo limita el agarre de salida) |
+
+- **Más punta y aceleración**: el régimen del motor y el par suben un 30 % y el par de la parte alta de la curva (el que fija la
+  punta) un 70 % (`TNKart::ApplyKartTuning`). El turbo, el acelerón del objeto y la estrella siguen a la punta nueva. El
+  antivuelco deja de corregir el alabeo a una velocidad un 30 % mayor.
+- **Dirección progresiva**: el buggy tiene tanto agarre que a 90 km/h un 10 % del volante ya daba 1,3 g. El ángulo de las ruedas
+  de la conductora humana baja con la velocidad (`TNKart::SpeedSteerMultiplier`: 1 parado, la mitad a 58 km/h, 0,13 a 125 km/h) y
+  ahora un 10 % del volante da 0,3-0,4 g y el volante a tope 1,5-2 g a cualquier velocidad. La IA no lo lleva: acota su giro por
+  aceleración lateral.
+- **Derrape con el freno de mano**: antes acababa en trompo (deriva media de 100° con el volante a tope). Ahora el freno de mano
+  conserva un cuarto de su par, las traseras agarran algo más (1,4 → 2,2) y, con él puesto, se devuelve el morro hacia la
+  velocidad pasados 22° de deriva: el derrape se sostiene a unos 20-35° con el volante a tope. Un derrape de más de 0,7 s (con el
+  freno puesto, en el suelo, a más de 22 km/h y girando o deslizando) da **mini-turbo al soltar el freno de mano**: 0,6 s a los
+  0,7 s de derrape, 1 s a los 1,4 s y 1,5 s a los 2,2 s (`TNKart::AdvanceDrift`, `ATN_Buggy::GrantTimedBoost`). Llama, sonido y
+  cámara son los del turbo, y la barra del turbo no se gasta. Lo decide solo el servidor, con el giro que aplica Chaos
+  (`ATN_KartBuggy::GetAppliedDriftSteering`; la entrada cruda vale 0 en el servidor si conduce una cliente) y lo replica
+  (`TimedBoostEndServerTime`): la conductora cliente recibe el turbo con la latencia, sin predecirlo.
+- **Para comparar**: `TN.Kart.Tuning 0` (antes de la partida) deja el kart como el buggy del Rally. `TN.Kart.SpeedScale` (1,3) y
+  `TN.Kart.TopEndTorque` (1,7) mueven la punta sin recompilar. Los bots no cambian de velocidad (74/84/94 km/h por dificultad).
 
 ## Controles propios de los karts
 
@@ -87,10 +121,11 @@ completo y cómo funciona en `Docs/Modo_VR.md` («Vehículos»).
 | `ATN_KartGameState` | Hace la pista con el generador (`PrepareTrack`, el único gancho nuevo en el Rally). |
 | `ATN_KartTrack`, `TNKart::PlanRouteFromPath` | Pista desde el camino: puertas, línea del piloto IA, alas y cajas. |
 | `ATN_KartBuggy`, `ATN_KartGunnerPawn` | El buggy y la artillera de SkiTemplar con objetos, peso y cámara de la conductora sola. |
+| `TNKart::ApplyKartTuning`, `AdvanceDrift` | Conducción de los karts (#742): ajuste del buggy, dirección según la velocidad y mini-turbo del derrape. |
 | `UTN_KartItemComponent`, `ATN_KartItemBox`, `ATN_KartShell` | Objetos, cajas y conchas. |
 | `UTN_KartTraversalComponent` | Géiseres, cascadas y agua. |
 | `UTN_KartHUDWidget` | Objeto, ruleta, kilómetros que quedan y peso de la artillera. |
 | `TNProcMap::FGenParams::bDrivable` | El camino del cooperativo hecho para el kart (sin ramas, huecos ni cosas de las tortugas a pie). |
 
-Pruebas: `Tortunabo.Kart.*` (ruta, objetos, artillera, géiser y flotación), `Tortunabo.ProcMap.Drivable` y, con gafas,
+Pruebas: `Tortunabo.Kart.*` (ruta, objetos, artillera, géiser y flotación, `Tuning` y, con física y sin ventana, `Measure`), `Tortunabo.ProcMap.Drivable` y, con gafas,
 `Tortunabo.VR.Vehicle.*`. Comandos de prueba en `Docs/Comandos_Prueba.md` («Karts en el mapa del cooperativo» y «Modo VR»).

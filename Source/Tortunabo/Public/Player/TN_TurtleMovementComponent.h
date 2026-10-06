@@ -42,6 +42,9 @@ struct FTNTurtleNetworkMoveDataContainer : public FCharacterNetworkMoveDataConta
 	/** Giro del panzazo que pide Data, si es uno de estos datos (0 si no). */
 	uint16 GetDiveYaw(const FCharacterNetworkMoveData* Data) const;
 
+	/** Topes predichos que pide Data, si es uno de estos datos (0 si no). */
+	uint8 GetPredictedCaps(const FCharacterNetworkMoveData* Data) const;
+
 	virtual void ClientFillNetworkMoveData(const FSavedMove_Character* ClientNewMove, const FSavedMove_Character* ClientPendingMove,
 		const FSavedMove_Character* ClientOldMove) override;
 
@@ -52,21 +55,24 @@ private:
 };
 
 /**
- * Estado del panzazo del servidor tras el movimiento que corrige (#24): si estaba en un panzazo, su número y la semialtura
- * sin escalar de la cápsula. Con él, el dueño repite sus movimientos desde lo mismo que el servidor.
+ * Estado del servidor tras el movimiento que corrige: el del panzazo (#24: si estaba en un panzazo, su número y la
+ * semialtura sin escalar de la cápsula) y la espera del brinco desde el agua (#573). Con él, el dueño repite sus
+ * movimientos desde lo mismo que el servidor.
  */
 struct FTNDiveNetState
 {
 	bool bDiving = false;
 	uint8 Serial = 0;
 	float CapsuleHalfHeight = 0.f;
+	/** Espera del brinco desde el agua al acabar ese movimiento (s de simulación). */
+	float SwimHopCooldown = 0.f;
 	/** Movimiento del cliente tras el que se tomó (el de la corrección). */
 	float TimeStamp = -1.f;
 };
 
 /**
- * Respuesta del servidor a los movimientos del cliente: la de serie y, en las correcciones, el estado del panzazo del
- * servidor en el movimiento corregido (FTNDiveNetState, 6 bytes). El panzazo empieza dentro del movimiento (predicho): si el
+ * Respuesta del servidor a los movimientos del cliente: la de serie y, en las correcciones, el estado del panzazo y la
+ * espera del brinco del servidor en el movimiento corregido (FTNDiveNetState, 10 bytes). El panzazo empieza dentro del movimiento (predicho): si el
  * servidor no lo empezó (o sí y el dueño no), la corrección lleva también eso y el dueño lo repite desde ahí.
  */
 struct FTNTurtleMoveResponseDataContainer : public FCharacterMoveResponseDataContainer
@@ -168,6 +174,43 @@ public:
 
 	/** Lo que pide ahora el jugador (lo que se guarda en el movimiento nuevo). */
 	bool InputWantsToSprint() const { return bInputWantsToSprint; }
+
+	// ── Brinco desde el agua, predicho (#573) ───────────────────────────────
+	// Nadando, el salto de serie (ACharacter::Jump, marca FLAG_JumpPressed del movimiento) es un brinco: CanAttemptJump mira
+	// la espera y DoJump pone la velocidad del brinco. La espera (TNSwimHop) corre con el tiempo de simulación de los
+	// movimientos y va guardada en cada uno (FTNSavedMove_Turtle), así que el dueño y el servidor brincan en el mismo.
+
+	/** Espera que queda para el siguiente brinco (s de simulación; 0 = listo). */
+	float GetSwimHopCooldown() const { return SwimHopCooldown; }
+
+	/**
+	 * La espera al empezar el movimiento que se va a guardar (FTNSavedMove_Turtle::SetInitialPosition). El cliente lee el
+	 * salto antes de guardar el movimiento: si en él ha brincado, devuelve (y olvida) la de antes del brinco.
+	 */
+	float ConsumeMoveStartSwimHopCooldown();
+
+	/**
+	 * Combinación de movimientos (FTNSavedMove_Turtle::CombineWith): la espera con que empezó el pendiente. Corrección del
+	 * servidor: la suya tras el movimiento corregido. Al repetir los movimientos no se restaura la guardada: se recalcula
+	 * desde la de la corrección.
+	 */
+	void RestoreSwimHopCooldown(float InSeconds);
+
+	// ── Topes de velocidad predichos: llevar a otra y mareo (#575, #574) ────
+	// Quien la mueve toma al empezar cada movimiento los topes predichos que conoce (UTN_StaminaComponent::
+	// GetPredictedCapMask) y los guarda en él; el cliente los manda al servidor en FTNTurtleNetworkMoveData y el servidor
+	// simula ese movimiento con los que acepta (UTN_StaminaComponent::ConsumeClientPredictedCaps, en MoveAutonomous).
+	// GetMaxSpeed usa los del movimiento, no los de la máquina: así el tope empieza y acaba en el mismo movimiento en el
+	// dueño y en el servidor.
+
+	/** Topes predichos del movimiento que se simula (bits de TNMovementLimits). */
+	uint8 GetMovePredictedCaps() const { return MovePredictedCaps; }
+
+	/** Repetición de movimientos (FTNSavedMove_Turtle::PrepMoveFor): los topes con que se hizo. */
+	void RestoreMovePredictedCaps(uint8 InMask) { MovePredictedCaps = InMask; }
+
+	/** Topes predichos que pide el movimiento guardado Move. */
+	static uint8 GetSavedMovePredictedCaps(const FSavedMove_Character& Move);
 
 	// ── Turbo de los objetos de carrera (issue #22) ─────────────────────────
 	// Va en la predicción como el panzazo: quien mueve la tortuga (su dueño o el anfitrión) toma el multiplicador de
@@ -484,7 +527,10 @@ protected:
 	virtual void ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLocation,
 		UPrimitiveComponent* ClientMovementBase, FName ClientBaseBoneName, uint8 ClientMovementMode) override;
 
-	/** Servidor: el movimiento del cliente que estrena un lanzamiento concedido lo aplica; el cliente, al repetirlo, también. */
+	/**
+	 * Servidor: el movimiento del cliente que estrena un lanzamiento concedido lo aplica; el cliente, al repetirlo, también.
+	 * Y el servidor decide aquí con qué topes predichos simula el movimiento del cliente (con su DeltaTime validado).
+	 */
 	virtual void MoveAutonomous(float ClientTimeStamp, float DeltaTime, uint8 CompressedFlags, const FVector& NewAccel) override;
 
 	/** Cliente dueño: el lanzamiento concedido que ha llegado entra en este movimiento. */
@@ -557,6 +603,9 @@ private:
 	/** Velocidad del arrastre en este paso: pendiente, rozamiento, freno por velocidad y tope. */
 	void CalcBellySlideVelocity(float DeltaTime);
 
+	/** Tabla de surf y cohete de feria (#786): el rumbo que impone el estilo del multiplicador del movimiento (en Acceleration). */
+	void ApplyRaceMoveStyle(float DeltaTime);
+
 	/**
 	 * Tumbada, tras cada movimiento: si la cabeza o las patas (fuera de la cápsula) se meterían en una pared, aparta a la
 	 * tortuga lo justo, le quita la velocidad contra la pared y, arrastrándose, apunta el rebote.
@@ -575,6 +624,17 @@ private:
 
 	/** Multiplicador del vadeo en este paso del movimiento (1 = fuera del agua). */
 	float MoveWadingMultiplier = 1.f;
+
+	/** Topes predichos del movimiento que se simula (ver GetMovePredictedCaps). */
+	uint8 MovePredictedCaps = 0;
+
+	/** Espera del brinco desde el agua (s de simulación) y la de antes del brinco del movimiento que se está guardando. */
+	float SwimHopCooldown = 0.f;
+	bool bHasPreJumpSwimHop = false;
+	float PreJumpSwimHopCooldown = 0.f;
+
+	/** DoJump nadando: el brinco desde el agua en este movimiento (velocidad, espera y a caer). */
+	bool DoSwimHop(bool bReplayingMoves);
 
 	/**
 	 * Trampolines de la playa (#21), al empezar cada paso: si la cápsula toca el sensor de uno (ATN_BeachTrampoline) y no

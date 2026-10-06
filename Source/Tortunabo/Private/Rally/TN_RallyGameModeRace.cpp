@@ -11,6 +11,8 @@
 #include "Rally/TN_RallyPlayerState.h"
 #include "Rally/TN_RallyTrack.h"
 #include "Rally/TN_RallyVehicle.h"
+#include "Vehicles/TN_Buggy.h"
+#include "Vehicles/TN_BuggyHealthComponent.h"
 #include "World/TN_DeathZoneVolume.h"
 
 namespace
@@ -352,6 +354,14 @@ void ATN_RallyGameMode::RespawnTeam(FTeamRuntime& Team, ETNRallyRespawnReason Re
 	}
 	// Fantasma hasta medio segundo después del bloqueo: no recupera la colisión mientras sigue inmóvil (#103).
 	RallyVehicle->RallyTeleport(Where, RespawnLockSeconds, TNRallyRace::EffectiveGhostSeconds(RespawnLockSeconds, RespawnGhostSeconds));
+	// Reaparece con la vida llena (#720): con la R, al caer o al reventar; las estadísticas vuelven con ella.
+	if (const ATN_Buggy* Buggy = Cast<ATN_Buggy>(Team.Vehicle.Get()))
+	{
+		if (UTN_BuggyHealthComponent* Health = Buggy->GetHealthComponent())
+		{
+			Health->RestoreFullHealth();
+		}
+	}
 
 	const double Time = Now();
 	Team.RespawnEndTime = Time + RespawnLockSeconds;

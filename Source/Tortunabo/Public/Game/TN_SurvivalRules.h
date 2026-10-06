@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "World/ProcMap/TN_ProcMapEnums.h"
 
 /**
  * Reglas del modo Supervivencia (ATN_SurvivalGameMode) como funciones PURAS, igual que TN_ChunkDecisions.h:
@@ -124,9 +125,49 @@ namespace TNSurvivalLogic
 		return Ids;
 	}
 
-	/** Dificultad 1–5 del mapa del nivel (TNProcMap::MakeSurvivalParams): el nivel N pide min(N, 5). */
-	inline int32 LevelMapDifficulty(int32 Level)
+	/**
+	 * Dificultad 1–5 del mapa del nivel 1 según la dificultad elegida con el general (#730): fácil 1, normal 3 y difícil 5,
+	 * lo mismo que ?ProcMode=Survival en LVL_ProcMap.
+	 */
+	inline int32 StartMapDifficulty(ETNProcDifficulty Difficulty)
 	{
-		return FMath::Clamp(Level, 1, 5);
+		return FMath::Clamp(1 + 2 * static_cast<int32>(Difficulty), 1, 5);
+	}
+
+	/**
+	 * Densidad de trampas que se busca en cada mapa según la dificultad elegida con el general (#730), en décimas de trampa
+	 * cada 100 m de camino: fácil 6,5, normal 10 y difícil 15 (un chunk normal del Clásico lleva 7-11).
+	 */
+	inline int32 TrapsPer100mTenths(ETNProcDifficulty Difficulty)
+	{
+		switch (Difficulty)
+		{
+			case ETNProcDifficulty::Easy: return 65;
+			case ETNProcDifficulty::Hard: return 150;
+			default:                      return 100;
+		}
+	}
+
+	/**
+	 * Rebuscables que se buscan en cada mapa según la dificultad elegida (#724), en décimas cada 100 m de camino: 1 cada 2
+	 * trampas (fácil 3, normal 5, difícil 7,5). Donde más se sufre, más ayuda; y cada tortuga rebusca cada uno una vez.
+	 */
+	inline int32 SearchSpotsPer100mTenths(ETNProcDifficulty Difficulty)
+	{
+		switch (Difficulty)
+		{
+			case ETNProcDifficulty::Easy: return 30;
+			case ETNProcDifficulty::Hard: return 75;
+			default:                      return 50;
+		}
+	}
+
+	/**
+	 * Dificultad 1–5 del mapa del nivel (TNProcMap::MakeSurvivalParams): el nivel 1 juega StartDifficulty y cada nivel sube
+	 * una hasta 5. Con la de fácil (1), el nivel N pide min(N, 5).
+	 */
+	inline int32 LevelMapDifficulty(int32 Level, int32 StartDifficulty = 1)
+	{
+		return FMath::Clamp(FMath::Clamp(StartDifficulty, 1, 5) + FMath::Max(Level, 1) - 1, 1, 5);
 	}
 }

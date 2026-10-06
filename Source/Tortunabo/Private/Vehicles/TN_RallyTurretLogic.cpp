@@ -11,7 +11,8 @@ namespace TNRallyTurret
 			Spec = { 6000.f, 0.3f, 3.f, 120.f, 0.25f, 0 };
 			break;
 		case ETNRallyAmmo::Alga:
-			Spec = { 3500.f, 1.f, 4.f, 60.f, 0.5f, 2 };
+			// Cae antes (#770): con 3500 cm/s y la gravedad normal llegaba a 50 m y se iba por encima del blanco.
+			Spec = { AlgaSpeedCms, AlgaGravityScale, 4.f, 60.f, 0.5f, 2 };
 			break;
 		case ETNRallyAmmo::Burbuja:
 			// Retroceso pequeño (#629): todas las municiones empujan al buggy, pero la burbuja sale lenta para poder cogerla.
@@ -32,6 +33,22 @@ namespace TNRallyTurret
 			break;
 		case ETNRallyAmmo::ConchaGuiada:
 			Spec = { ShellSpeedCms, 0.f, 12.f, 250.f, 0.5f, 1 };
+			break;
+		case ETNRallyAmmo::Erizos:
+			// Cada púa (#715): rápida, cae poco y empuja poco; la cadencia es la de la ráfaga y una carga da una ráfaga.
+			Spec = { ErizosSpeedCms, ErizosGravityScale, ErizosLifeSeconds, ErizosRecoilCms, ErizosSpikeInterval, 1 };
+			break;
+		case ETNRallyAmmo::Medusa:
+			// Bote propio (#771): sin proyectil ni retroceso; dos botes por caja.
+			Spec = { 0.f, 0.f, 0.f, 0.f, 0.5f, 2 };
+			break;
+		case ETNRallyAmmo::Arpon:
+			// Arpón (#772): rápido y con poca caída; una carga por caja.
+			Spec = { HarpoonSpeedCms, HarpoonGravityScale, HarpoonLifeSeconds, HarpoonRecoilCms, 0.6f, 1 };
+			break;
+		case ETNRallyAmmo::PezGlobo:
+			// Pez globo (#773): parábola corta; donde cae se queda la mina. Dos por caja.
+			Spec = { PufferThrowSpeedCms, 1.f, 3.f, 40.f, 0.6f, 2 };
 			break;
 		default:
 			break;
@@ -148,6 +165,50 @@ namespace TNRallyTurret
 		return ClampAim(Local.Rotation());
 	}
 
+	FVector ShotVelocity(const FVector& Dir, const FVector& InheritedCms, float SpeedCms)
+	{
+		const FVector Unit = Dir.GetSafeNormal();
+		const double Speed = FMath::Max(SpeedCms, 0.f);
+		const FVector Plain = Unit * Speed + InheritedCms;
+		if (Unit.IsNearlyZero() || InheritedCms.IsNearlyZero())
+		{
+			return Plain;
+		}
+		// Rapidez neta K en la dirección Unit tal que |K·Unit - Inherited| = Speed: K² - 2K(Unit·V) + |V|² - Speed² = 0.
+		const double AlongInherited = FVector::DotProduct(Unit, InheritedCms);
+		const double Discriminant = AlongInherited * AlongInherited - InheritedCms.SizeSquared() + Speed * Speed;
+		if (Discriminant <= 0.0)
+		{
+			return Plain;
+		}
+		const double Net = AlongInherited + FMath::Sqrt(Discriminant);
+		return Net > UE_KINDA_SMALL_NUMBER ? Unit * Net : Plain;
+	}
+
+	FVector AimedShotDirection(const FVector& Muzzle, const FVector& TargetPoint, const FVector& CameraForward,
+		const FVector& InheritedCms, float SpeedCms, float GravityCms2)
+	{
+		const FVector Forward = CameraForward.GetSafeNormal();
+		const FVector To = TargetPoint - Muzzle;
+		const double Distance = To.Size();
+		if (Distance < MinAimedDistanceCm || TargetPoint.ContainsNaN())
+		{
+			return Forward;
+		}
+		const FVector Straight = To / Distance;
+		if (!Forward.IsNearlyZero()
+			&& FVector::DotProduct(Straight, Forward) < FMath::Cos(FMath::DegreesToRadians(static_cast<double>(MaxAimedOffAxisDeg))))
+		{
+			return Forward;
+		}
+		// Caída durante el vuelo con la rapidez neta de la salida: se apunta tanto más arriba del punto.
+		const double NetSpeed = ShotVelocity(Straight, InheritedCms, SpeedCms).Size();
+		const double Flight = NetSpeed > UE_KINDA_SMALL_NUMBER ? Distance / NetSpeed : 0.0;
+		const double Drop = 0.5 * FMath::Max(GravityCms2, 0.f) * Flight * Flight;
+		const double MaxDrop = Distance * FMath::Tan(FMath::DegreesToRadians(static_cast<double>(MaxDropCompensationDeg)));
+		return (TargetPoint + FVector(0.0, 0.0, FMath::Min(Drop, MaxDrop)) - Muzzle).GetSafeNormal();
+	}
+
 	FVector ResolveClientFireDirection(const FVector& ServerDir, const FVector& ClientDir, float MaxErrorDeg)
 	{
 		const FVector Server = ServerDir.GetSafeNormal();
@@ -187,7 +248,7 @@ namespace TNRallyTurret
 		{
 			return Out;
 		}
-		Out.LiftCms = FMath::Min(RecoilCms * RecoilLiftRatio * FMath::Abs(Forwardness), MaxRecoilLiftCms);
+		Out.LiftCms = RecoilCms * RecoilLiftRatio * FMath::Abs(Forwardness);
 		Out.LocalPoint = FVector(FMath::Sign(Forwardness) * FMath::Max(HalfLengthCm, 0.f) * 0.9f, 0.f, 0.f);
 		return Out;
 	}
@@ -302,5 +363,244 @@ namespace TNRallyTurret
 	float PuddleSpeedCapCms(bool bInPuddle)
 	{
 		return BuggyTopSpeedCms * (bInPuddle ? AlgaSpeedMultiplier : 1.f);
+	}
+}
+
+namespace TNRallyTurret
+{
+	float PuddleEntrySpinDegPerSecond(float SpeedCms, bool bClockwise)
+	{
+		const float Speed = FMath::Abs(SpeedCms);
+		if (Speed < AlgaSpinMinSpeedCms)
+		{
+			return 0.f;
+		}
+		const float Alpha = FMath::Clamp((Speed - AlgaSpinMinSpeedCms) / (AlgaSpinFullSpeedCms - AlgaSpinMinSpeedCms), 0.f, 1.f);
+		return AlgaSpinYawDegPerSecond * Alpha * (bClockwise ? 1.f : -1.f);
+	}
+
+	bool PuddleAffects(bool bIsDropper, float PuddleAgeSeconds, bool bAirborne)
+	{
+		return !bAirborne && (!bIsDropper || PuddleAgeSeconds >= AlgaDropperGraceSeconds);
+	}
+
+	bool IsPuddleGround(const FVector& Normal)
+	{
+		return !Normal.ContainsNaN() && Normal.GetSafeNormal().Z >= PuddleMinGroundNormalZ;
+	}
+
+	bool FitGroundPlane(TConstArrayView<FVector> Points, FVector& OutCenter, FVector& OutNormal)
+	{
+		if (Points.Num() == 0)
+		{
+			return false;
+		}
+		OutCenter = Points[0];
+		OutNormal = FVector::UpVector;
+		if (Points.Num() < 3)
+		{
+			return true;
+		}
+		FVector Sum = FVector::ZeroVector;
+		for (const FVector& Point : Points)
+		{
+			Sum += Point;
+		}
+		OutCenter = Sum / Points.Num();
+		// Abanico desde el primero (el centro): cada par de puntos del borde da un triángulo; su normal, siempre hacia arriba.
+		FVector NormalSum = FVector::ZeroVector;
+		for (int32 Index = 1; Index < Points.Num(); ++Index)
+		{
+			const FVector& A = Points[Index];
+			const FVector& B = Points[Index + 1 < Points.Num() ? Index + 1 : 1];
+			FVector Normal = FVector::CrossProduct(A - Points[0], B - Points[0]);
+			if (Normal.Z < 0.0)
+			{
+				Normal = -Normal;
+			}
+			NormalSum += Normal.GetSafeNormal();
+		}
+		const FVector Normal = NormalSum.GetSafeNormal();
+		OutNormal = Normal.IsNearlyZero() ? FVector::UpVector : Normal;
+		return true;
+	}
+
+	FQuat PuddleRotation(const FVector& GroundNormal, const FVector& Forward)
+	{
+		const FVector Up = GroundNormal.IsNearlyZero() || GroundNormal.ContainsNaN() ? FVector::UpVector : GroundNormal.GetSafeNormal();
+		FVector X = Forward - FVector::DotProduct(Forward, Up) * Up;
+		if (X.IsNearlyZero())
+		{
+			// Forward paralelo a la normal: cualquier eje del plano vale.
+			X = FVector::CrossProduct(Up, FMath::Abs(Up.X) < 0.9 ? FVector::ForwardVector : FVector::RightVector);
+		}
+		return FRotationMatrix::MakeFromZX(Up, X.GetSafeNormal()).ToQuat();
+	}
+}
+
+namespace TNRallyTurret
+{
+	bool IsBurstAmmo(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::Erizos;
+	}
+
+	bool IsBurstActive(const FBurst& Burst)
+	{
+		return Burst.SpikesLeft > 0;
+	}
+
+	FBurst HoldBurst(const FBurst& Burst, double Now, float HoldSeconds, int32 Spikes)
+	{
+		FBurst Out = Burst;
+		if (!IsBurstActive(Out))
+		{
+			Out.SpikesLeft = FMath::Max(0, Spikes);
+			Out.NextSpikeAt = Now;
+		}
+		Out.HoldUntil = FMath::Max(Out.HoldUntil, Now + FMath::Max(HoldSeconds, 0.f));
+		return Out;
+	}
+
+	bool BurstSpikeDue(const FBurst& Burst, double Now)
+	{
+		return IsBurstActive(Burst) && Now >= Burst.NextSpikeAt && Now <= Burst.HoldUntil;
+	}
+
+	FBurst AfterBurstSpike(const FBurst& Burst, double Now, float Interval)
+	{
+		FBurst Out = Burst;
+		Out.SpikesLeft = FMath::Max(0, Out.SpikesLeft - 1);
+		// A la hora prevista, aunque el fotograma llegue un poco tarde (la media no se retrasa); tras una pausa, desde ahora.
+		const double Next = Out.NextSpikeAt + Interval;
+		Out.NextSpikeAt = Next > Now ? Next : Now + Interval;
+		return Out;
+	}
+
+	float BurstHoldSeconds(bool bHumanTrigger)
+	{
+		return bHumanTrigger ? ErizosHoldSeconds : ErizosBurstSeconds + 0.5f;
+	}
+}
+
+namespace TNRallyTurret
+{
+	FVector SpikePushDir(const FVector& Forward, const FVector& PushDir)
+	{
+		const FVector FlatForward = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
+		const FVector Right(-FlatForward.Y, FlatForward.X, 0.f);
+		FVector Lateral(PushDir.X, PushDir.Y, 0.f);
+		Lateral -= FVector::DotProduct(Lateral, FlatForward) * FlatForward;
+		if (Lateral.IsNearlyZero(0.05f))
+		{
+			return FVector::DotProduct(PushDir, Right) >= 0.0 ? Right : -Right;
+		}
+		return Lateral.GetSafeNormal();
+	}
+}
+
+namespace TNRallyTurret
+{
+	bool IsSelfAmmo(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::Medusa;
+	}
+
+	float HopUpCms(float HeightCm, float GravityCms2)
+	{
+		return FMath::Sqrt(2.f * FMath::Max(GravityCms2, 0.f) * FMath::Max(HeightCm, 0.f));
+	}
+
+	float HopApexCm(float UpCms, float GravityCms2)
+	{
+		return GravityCms2 > 0.f ? FMath::Square(FMath::Max(UpCms, 0.f)) / (2.f * GravityCms2) : 0.f;
+	}
+
+	bool CanHop(bool bAirborne)
+	{
+		return !bAirborne;
+	}
+
+	bool IsShellThreat(const FVector& Buggy, const FVector& Shell, bool bTargetsMe)
+	{
+		return bTargetsMe && FVector::DistSquared(Buggy, Shell) <= FMath::Square(HopShellThreatCm);
+	}
+
+	bool IsPuddleAhead(const FVector& Buggy, const FVector& Forward, const FVector& Puddle, float RadiusCm)
+	{
+		const FVector FlatForward = FVector(Forward.X, Forward.Y, 0.f).GetSafeNormal();
+		const FVector To(Puddle.X - Buggy.X, Puddle.Y - Buggy.Y, 0.f);
+		const double Along = FVector::DotProduct(To, FlatForward);
+		const double Side = (To - FlatForward * Along).Size();
+		return !FlatForward.IsNearlyZero() && Along > 0.0 && Along - RadiusCm <= HopPuddleLookAheadCm && Side <= RadiusCm;
+	}
+}
+
+namespace TNRallyTurret
+{
+	float HarpoonTopSpeedCms(float TopSpeedCms)
+	{
+		return TopSpeedCms * HarpoonTopSpeedFactor;
+	}
+
+	FVector HarpoonPullAccel(const FVector& PullerVelocity, const FVector& ToTarget, float DeltaSeconds, float TopSpeedCms)
+	{
+		const FVector Flat(ToTarget.X, ToTarget.Y, 0.f);
+		if (Flat.Size() < HarpoonMinDistanceCm)
+		{
+			return FVector::ZeroVector;
+		}
+		const FVector Dir = Flat.GetSafeNormal();
+		const float Along = static_cast<float>(FVector::DotProduct(PullerVelocity, Dir));
+		const float Room = HarpoonTopSpeedCms(TopSpeedCms) - Along;
+		if (Room <= 0.f)
+		{
+			return FVector::ZeroVector;
+		}
+		// El último paso solo llega al tope: nunca lo pasa.
+		const float Accel = DeltaSeconds > 0.f ? FMath::Min(HarpoonAccelCms2, Room / DeltaSeconds) : HarpoonAccelCms2;
+		return Dir * Accel;
+	}
+
+	bool HarpoonHolds(float DistanceCm, bool bPullerRespawnProtected, bool bTargetRespawnProtected)
+	{
+		return !bPullerRespawnProtected && !bTargetRespawnProtected && DistanceCm <= HarpoonMaxDistanceCm;
+	}
+
+	bool BotHarpoonInRange(float AheadCm)
+	{
+		return AheadCm >= BotHarpoonMinCm && AheadCm <= BotHarpoonMaxCm;
+	}
+}
+
+namespace TNRallyTurret
+{
+	bool IsMineAmmo(ETNRallyAmmo Ammo)
+	{
+		return Ammo == ETNRallyAmmo::PezGlobo;
+	}
+
+	bool PufferTriggers(float AgeSeconds, float DistanceCm, bool bIsThrower)
+	{
+		if (AgeSeconds < PufferArmSeconds || DistanceCm > PufferTriggerRadiusCm)
+		{
+			return false;
+		}
+		return !bIsThrower || AgeSeconds >= PufferThrowerImmuneSeconds;
+	}
+
+	float PufferInflate(float SinceTriggerSeconds)
+	{
+		if (SinceTriggerSeconds <= 0.f)
+		{
+			return 1.f;
+		}
+		const float Alpha = FMath::Clamp(SinceTriggerSeconds / PufferInflateSeconds, 0.f, 1.f);
+		return FMath::Lerp(1.f, PufferInflateScale, Alpha);
+	}
+
+	float PufferLifeOnTrigger(float LifeLeftSeconds)
+	{
+		return FMath::Max(LifeLeftSeconds, PufferInflateSeconds + PufferExplodeMarginSeconds);
 	}
 }

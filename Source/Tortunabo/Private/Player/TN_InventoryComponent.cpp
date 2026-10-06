@@ -6,6 +6,7 @@
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TN_TurtleFoleyComponent.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItems.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -175,6 +176,14 @@ bool UTN_InventoryComponent::CanReceiveItem(const FTN_InventoryItem& NewItem, bo
 		return false;
 	}
 
+	// Un objeto del coop que ya se lleva: se coge si se puede apilar (o recargar) y no si ya está al máximo.
+	int32 Slot = INDEX_NONE;
+	FTN_InventoryItem Merged;
+	const ETNCoopStack Stack = static_cast<ETNCoopStack>(DecideCoopStack(NewItem, Slot, Merged));
+	if (Stack != ETNCoopStack::Separate)
+	{
+		return Stack == ETNCoopStack::Merge;
+	}
 	return TNInventoryLogic::CanReceiveItem(bHasEquippedItem, bHasStoredItem, bAllowReplaceIfFull);
 }
 
@@ -732,6 +741,33 @@ bool UTN_InventoryComponent::AddItemInternal(const FTN_InventoryItem& NewItem)
 {
 	using namespace TNInventoryLogic;
 
+	// Objetos del coop: el mismo que ya se lleva se suma a su hueco (o no se coge si está al máximo).
+	int32 StackSlot = INDEX_NONE;
+	FTN_InventoryItem Merged;
+	const ETNCoopStack Stack = static_cast<ETNCoopStack>(DecideCoopStack(NewItem, StackSlot, Merged));
+	if (Stack == ETNCoopStack::Full)
+	{
+		return false;
+	}
+	if (Stack == ETNCoopStack::Merge)
+	{
+		TNCoopItems::ResolveVisuals(Merged);
+		if (StackSlot == 0)
+		{
+			EquippedItem = Merged;
+			RefreshEquippedVisual();
+		}
+		else
+		{
+			StoredItem = Merged;
+		}
+		if (ATortugaCharacter* Char = Cast<ATortugaCharacter>(GetOwner()))
+		{
+			PlayInventorySfx(Char->PickupSound);
+		}
+		return true;
+	}
+
 	switch (DecideAddSlot(bHasEquippedItem, bHasStoredItem))
 	{
 		case EAddDecision::ToEquipped:
@@ -759,6 +795,14 @@ bool UTN_InventoryComponent::AddItemInternal(const FTN_InventoryItem& NewItem)
 bool UTN_InventoryComponent::AddOrReplaceEquippedInternal(const FTN_InventoryItem& NewItem, bool bReplaceIfFull)
 {
 	using namespace TNInventoryLogic;
+
+	// Un objeto del coop que ya se lleva se apila (o no se coge) en vez de ocupar otro hueco o sustituir lo de la mano.
+	int32 StackSlot = INDEX_NONE;
+	FTN_InventoryItem Merged;
+	if (static_cast<ETNCoopStack>(DecideCoopStack(NewItem, StackSlot, Merged)) != ETNCoopStack::Separate)
+	{
+		return AddItemInternal(NewItem);
+	}
 
 	const EAddDecision Decision = DecideAddOrReplace(bHasEquippedItem, bHasStoredItem, bReplaceIfFull);
 	if (Decision == EAddDecision::ToEquipped || Decision == EAddDecision::ToStored)
@@ -812,6 +856,27 @@ bool UTN_InventoryComponent::ConsumeEquippedInternal(FTN_InventoryItem& OutItem)
 
 	RefreshEquippedVisual();
 	return true;
+}
+
+uint8 UTN_InventoryComponent::DecideCoopStack(const FTN_InventoryItem& NewItem, int32& OutSlot, FTN_InventoryItem& OutMerged) const
+{
+	OutSlot = INDEX_NONE;
+	if (NewItem.UseType != ETN_ItemUseType::CoopItem)
+	{
+		return static_cast<uint8>(ETNCoopStack::Separate);
+	}
+	// La mano primero, luego el caparazón: el primer hueco con el mismo objeto decide.
+	const FTN_InventoryItem* const Slots[2] = { bHasEquippedItem ? &EquippedItem : nullptr, bHasStoredItem ? &StoredItem : nullptr };
+	for (int32 Index = 0; Index < 2; ++Index)
+	{
+		const ETNCoopStack Decision = Slots[Index] ? TNCoopItems::DecideStack(*Slots[Index], NewItem, OutMerged) : ETNCoopStack::Separate;
+		if (Decision != ETNCoopStack::Separate)
+		{
+			OutSlot = Index;
+			return static_cast<uint8>(Decision);
+		}
+	}
+	return static_cast<uint8>(ETNCoopStack::Separate);
 }
 
 void UTN_InventoryComponent::SwapSlotsInternal()

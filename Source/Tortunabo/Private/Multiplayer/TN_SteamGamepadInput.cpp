@@ -13,8 +13,10 @@ THIRD_PARTY_INCLUDES_END
 
 // Las reglas de TNInputGlyphs llevan estos valores sin la cabecera de Steam: si un SDK nuevo los cambia, no compila.
 static_assert(k_ESteamInputType_PS4Controller == 5 && k_ESteamInputType_PS3Controller == 12
-	&& k_ESteamInputType_PS5Controller == 13 && k_ESteamInputType_SteamDeckController == 14,
-	"ESteamInputType ha cambiado: revisa TNInputGlyphs::FamilyFromSteamInputType");
+	&& k_ESteamInputType_PS5Controller == 13 && k_ESteamInputType_SteamDeckController == 14
+	&& k_ESteamInputType_GenericGamepad == 4 && k_ESteamInputType_SwitchJoyConPair == 8
+	&& k_ESteamInputType_SwitchJoyConSingle == 9 && k_ESteamInputType_SwitchProController == 10,
+	"ESteamInputType ha cambiado: revisa TNInputGlyphs::FamilyFromSteamInputType y TNGamepadRules::IsFamilyTranslatedBySteam");
 #endif
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del bloque.
@@ -80,6 +82,21 @@ namespace TNSteamGamepadInputDetail
 			Listener = nullptr;
 			PendingText = nullptr;
 		});
+	}
+
+	/**
+	 * Steam Input listo para preguntar qué mandos hay (una vez). Init sin RunFrame explícito: lo hace SteamAPI_RunCallbacks,
+	 * que ya llama el subsistema de Steam. No cambia cómo llega el mando al juego (la emulación de mando sigue igual).
+	 */
+	ISteamInput* ReadyInput()
+	{
+		ISteamInput* Input = TNSteamGamepadInput::IsSteamActive() ? SteamInput() : nullptr;
+		if (!Input)
+		{
+			return nullptr;
+		}
+		static const bool bInputReady = Input->Init(false);
+		return bInputReady ? Input : nullptr;
 	}
 
 	bool TryOpen(ETNSteamKeyboard Kind, const FTNSteamKeyboardRequest& Request)
@@ -165,15 +182,8 @@ bool TNSteamGamepadInput::IsOnSteamDeck()
 int32 TNSteamGamepadInput::GetPadInputType()
 {
 #if TN_WITH_STEAMWORKS
-	ISteamInput* Input = IsSteamActive() ? SteamInput() : nullptr;
+	ISteamInput* Input = TNSteamGamepadInputDetail::ReadyInput();
 	if (!Input)
-	{
-		return 0;
-	}
-	// Init sin RunFrame explícito: lo hace SteamAPI_RunCallbacks, que ya llama el subsistema de Steam. No cambia cómo llega
-	// el mando al juego (la emulación de mando sigue igual): solo deja preguntar qué mando hay detrás.
-	static const bool bInputReady = Input->Init(false);
-	if (!bInputReady)
 	{
 		return 0;
 	}
@@ -187,6 +197,23 @@ int32 TNSteamGamepadInput::GetPadInputType()
 #else
 	return 0;
 #endif
+}
+
+TArray<int32> TNSteamGamepadInput::GetConnectedPadInputTypes()
+{
+	TArray<int32> Types;
+#if TN_WITH_STEAMWORKS
+	if (ISteamInput* Input = TNSteamGamepadInputDetail::ReadyInput())
+	{
+		InputHandle_t Connected[STEAM_INPUT_MAX_COUNT] = {};
+		const int32 Count = Input->GetConnectedControllers(Connected);
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			Types.AddUnique(static_cast<int32>(Input->GetInputTypeForHandle(Connected[Index])));
+		}
+	}
+#endif
+	return Types;
 }
 
 TArray<ETNSteamKeyboard> TNSteamGamepadInput::KeyboardOrder(bool bSteamActive, bool bOnDeck, bool bUsingGamepad)

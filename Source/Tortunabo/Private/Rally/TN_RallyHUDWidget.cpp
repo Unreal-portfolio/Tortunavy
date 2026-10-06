@@ -1,6 +1,7 @@
 #include "Rally/TN_RallyHUDWidget.h"
 
 #include "../UI/Race/TN_RaceUIKit.h"
+#include "../World/Beach/TN_RaceItemArt.h"
 #include "Core/TN_GameModeSpawnUtils.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
@@ -19,6 +20,9 @@
 #include "Rally/TN_RallyCameraDirector.h"
 #include "Rally/TN_RallyPlayerController.h"
 #include "Rally/TN_RallyTrack.h"
+#include "Settings/TN_InputDeviceSubsystem.h"
+#include "VR/TN_VRControls.h"
+#include "VR/TN_VRMode.h"
 #include "Sound/SoundBase.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Vehicles/TN_Buggy.h"
@@ -57,6 +61,29 @@ namespace TNRallyHUD
 	FText AmmoName(ETNRallyAmmo Ammo)
 	{
 		return TNRallyHitLog::AmmoName(Ammo);
+	}
+
+	/** Lado del icono de la munición (px). */
+	constexpr float AmmoIconSize = 40.f;
+
+	/** Icono de cada munición (#715), con el arte dibujado en código de la mochila y del HUD (sin assets). */
+	UTexture2D* AmmoIcon(ETNRallyAmmo Ammo)
+	{
+		switch (Ammo)
+		{
+		case ETNRallyAmmo::Alga: return TNHUDArt::SeaIcon();
+		case ETNRallyAmmo::Burbuja: return TNHUDArt::BubbleIcon();
+		case ETNRallyAmmo::Mortero: return TNRaceItemArt::GetIcon(ETNRaceItem::GoldenCoconut);
+		case ETNRallyAmmo::Tinta: return TNHUDArt::StormIcon();
+		case ETNRallyAmmo::Ancla: return TNHUDArt::AnchorIcon();
+		case ETNRallyAmmo::Concha: return TNHUDArt::ShellIcon();
+		case ETNRallyAmmo::ConchaGuiada: return TNHUDArt::ShellIconTier(3);
+		case ETNRallyAmmo::Erizos: return TNRaceItemArt::GetIcon(ETNRaceItem::HomingCrab);
+		case ETNRallyAmmo::Medusa: return TNRaceItemArt::GetIcon(ETNRaceItem::PelicanTaxi);
+		case ETNRallyAmmo::Arpon: return TNHUDArt::RopeRing();
+		case ETNRallyAmmo::PezGlobo: return TNRaceItemArt::GetIcon(ETNRaceItem::SandMine);
+		default: return TNRaceItemArt::GetIcon(ETNRaceItem::Coconut);
+		}
 	}
 
 	FText CrewName(const FTNRallyStanding& Entry)
@@ -244,7 +271,10 @@ void UTN_RallyHUDWidget::BuildTurretPanel()
 	using namespace TNRaceUI;
 	UWidgetTree* Tree = WidgetTree;
 	AmmoText = MakeText(Tree, FText::GetEmpty(), TEXT("Bold"), 28, TNHUDArt::Foam);
-	Place(Canvas, AmmoText, FVector2D(0.f, 1.f), FVector2D(40.f, -84.f));
+	Place(Canvas, AmmoText, FVector2D(0.f, 1.f), FVector2D(TNRallyHUD::AmmoIconSize + 52.f, -84.f));
+	// Icono de la munición a la izquierda del texto (#715).
+	AmmoIcon = MakeImage(Tree, nullptr, FVector2D(TNRallyHUD::AmmoIconSize));
+	Place(Canvas, MakeSize(Tree, AmmoIcon, TNRallyHUD::AmmoIconSize, TNRallyHUD::AmmoIconSize), FVector2D(0.f, 1.f), FVector2D(40.f, -80.f));
 	HeatLabel = MakeText(Tree, NSLOCTEXT("Rally", "TurretHeat", "Torreta"), TEXT("Regular"), 22, TNHUDStyle::TextDim);
 	Place(Canvas, HeatLabel, FVector2D(0.f, 1.f), FVector2D(40.f, -52.f));
 	HeatBar = Make<UProgressBar>(Tree);
@@ -371,10 +401,13 @@ void UTN_RallyHUDWidget::Refresh(const ATN_RallyGameState& RallyState)
 
 	// La conductora no tiene interfaz de pantalla salvo los avisos (semáforo, contramano, reaparición, meta y resultados):
 	// velocidad, turbo y vida van en el salpicadero, y puesto y vuelta en el cartel del arco (UTN_RallyDashboardComponent);
-	// el mapa, las notas y su munición si va sola, en la tableta compacta. La artillera conserva su HUD.
+	// el mapa, las notas y su munición si va sola, en la tableta compacta. La artillera conserva su HUD. Con artillera (#718),
+	// la conductora tampoco ve el contramano: toda la información la lleva la artillera.
 	const bool bSeatedView = Vehicle != nullptr && RallyState.Phase != ETNRallyPhase::Results && !Mine->bFinished;
 	const bool bGunner = Me && Me->IsGunner();
 	const bool bGunnerView = bSeatedView && bGunner;
+	const ATN_Buggy* Buggy = Mine ? Cast<ATN_Buggy>(Mine->Vehicle) : nullptr;
+	const bool bDriverWithGunner = !bGunner && Buggy && Buggy->HasGunner();
 	RefreshPlace(RallyState, Mine, bGunnerView);
 
 	Show(SpeedText, bGunnerView);
@@ -394,7 +427,7 @@ void UTN_RallyHUDWidget::Refresh(const ATN_RallyGameState& RallyState)
 	Show(HeatBar ? HeatBar->GetParent() : nullptr, bShowWeapon);
 	Show(HeatLabel, bShowWeapon);
 
-	Show(WrongWayText, bRacing && Mine && Mine->bWrongWay && !Mine->bFinished);
+	Show(WrongWayText, bRacing && Mine && Mine->bWrongWay && !Mine->bFinished && !bDriverWithGunner);
 	const double RespawnLeft = Mine ? Mine->RespawnEndServerTime - ServerTime : 0.0;
 	Show(RespawnText, Mine && Mine->RespawnEndServerTime > 0.f && RespawnLeft > 0.0);
 	if (RespawnLeft > 0.0)
@@ -559,6 +592,11 @@ void UTN_RallyHUDWidget::RefreshSpectate(const ATN_RallyGameState& RallyState)
 	{
 		return;
 	}
+	// Con gafas (#644): el stick derecho (las teclas A/D y los botones LB/RB no hacen nada en los mandos Touch).
+	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(GetOwningPlayer());
+	SpectateHintText->SetText(Devices && Devices->IsUsingVR(GetOwningPlayer())
+		? FText::Format(NSLOCTEXT("Rally", "SpectateHintVR", "{0}: cambiar de vista"), TNVRControls::KeyName(FTNVRKeys::RightStickX))
+		: NSLOCTEXT("Rally", "SpectateHint", "A / D · LB / RB: cambiar de vista"));
 	const int32 Team = Director->GetSpectatedTeam();
 	const FTNRallyStanding* Watched = RallyState.Standings.FindByPredicate([Team](const FTNRallyStanding& Entry) { return Entry.TeamIndex == Team; });
 	SpectateText->SetText(Director->IsDroneView() || !Watched
@@ -591,7 +629,16 @@ void UTN_RallyHUDWidget::RefreshRespawnHint(const ATN_RallyGameState& RallyState
 		}
 		Input.DistanceToAxisCm = DistanceToTrackAxis(RallyState, Vehicle->GetActorLocation());
 	}
-	TNRallyHUD::Show(RespawnHintText, TNRallyRespawnHint::Update(RespawnHintState, Input, static_cast<float>(Step)));
+	const bool bShowRespawnHint = TNRallyRespawnHint::Update(RespawnHintState, Input, static_cast<float>(Step));
+	if (bShowRespawnHint)
+	{
+		// Con gafas (#644): la Y de los mandos Touch (enderezar; mantenida, reaparecer), no la R.
+		const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(GetOwningPlayer());
+		RespawnHintText->SetText(Devices && Devices->IsUsingVR(GetOwningPlayer())
+			? FText::Format(NSLOCTEXT("Rally", "RespawnHintVR", "Mantén {0} para volver a la pista"), TNVRControls::KeyName(FTNVRKeys::Y))
+			: NSLOCTEXT("Rally", "RespawnHint", "Mantén R para volver a la pista"));
+	}
+	TNRallyHUD::Show(RespawnHintText, bShowRespawnHint);
 }
 
 float UTN_RallyHUDWidget::DistanceToTrackAxis(const ATN_RallyGameState& RallyState, const FVector& Location)
@@ -619,6 +666,7 @@ void UTN_RallyHUDWidget::RefreshAmmo(bool bVisible)
 {
 	using namespace TNRallyHUD;
 	Show(AmmoText, bVisible);
+	Show(AmmoIcon, bVisible);
 	if (!bVisible)
 	{
 		return;
@@ -643,6 +691,7 @@ void UTN_RallyHUDWidget::RefreshAmmo(bool bVisible)
 	}
 	AmmoText->SetText(Line);
 	AmmoText->SetColorAndOpacity(FSlateColor(bSpecialSelected ? TNHUDArt::Gold : TNHUDArt::Foam));
+	TNRaceUI::SetImageTexture(AmmoIcon, TNRallyHUD::AmmoIcon(bHasSpecial ? SpecialAmmo : ETNRallyAmmo::Coco));
 }
 
 void UTN_RallyHUDWidget::RefreshHealth(bool bVisible)

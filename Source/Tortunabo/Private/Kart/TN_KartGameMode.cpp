@@ -118,11 +118,12 @@ ATN_ProcMapGenerator* ATN_KartGameMode::GenerateMap()
 
 void ATN_KartGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
-	// Nadie se sienta hasta que todas tienen el mapa y el suelo en su máquina: así salen a la vez y ningún kart cae.
-	if (!bPlayersReleased && NewPlayer)
+	// Nadie se sienta hasta que todas tienen el mapa y el suelo en su máquina: así salen a la vez y ningún kart cae. Quien
+	// llega después, en cuanto lo tenga en la suya (#828).
+	if (NewPlayer && (!bPlayersReleased || !IsPlayerTrackReady(NewPlayer)))
 	{
 		WaitingPlayers.AddUnique(NewPlayer);
-		UE_LOG(LogTNRally, Log, TEXT("[Karts] %s espera a que todas tengan el mapa."), *GetNameSafe(NewPlayer));
+		UE_LOG(LogTNRally, Log, TEXT("[Karts] %s espera a tener el mapa en su máquina."), *GetNameSafe(NewPlayer));
 		return;
 	}
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
@@ -168,18 +169,48 @@ bool ATN_KartGameMode::AreAllPlayersReady() const
 	return Connected >= ExpectedHumans;
 }
 
+bool ATN_KartGameMode::IsPlayerTrackReady(const APlayerController* Player) const
+{
+	// El anfitrión usa la pista del servidor (antes del tope, AreAllPlayersReady espera también a que sea jugable).
+	if (Player && Player->IsLocalController())
+	{
+		return true;
+	}
+	const ATN_KartGameState* KartState = GetKartState();
+	if (!Player || !KartState)
+	{
+		return false;
+	}
+	const int32* Built = ClientTrackGeneration.Find(Player);
+	return Built && *Built == KartState->MapGeneration;
+}
+
 void ATN_KartGameMode::ReleaseWaitingPlayers(const TCHAR* Why)
 {
 	bPlayersReleased = true;
-	TArray<TWeakObjectPtr<APlayerController>> Waiting = MoveTemp(WaitingPlayers);
-	WaitingPlayers.Reset();
-	UE_LOG(LogTNRally, Log, TEXT("[Karts] %d tortuga(s) a los karts: %s."), Waiting.Num(), Why);
-	for (const TWeakObjectPtr<APlayerController>& Player : Waiting)
+	TArray<TWeakObjectPtr<APlayerController>> Ready;
+	for (int32 Index = WaitingPlayers.Num() - 1; Index >= 0; --Index)
 	{
-		if (Player.IsValid())
+		const TWeakObjectPtr<APlayerController>& Player = WaitingPlayers[Index];
+		if (!Player.IsValid())
 		{
-			Super::HandleStartingNewPlayer_Implementation(Player.Get());
+			WaitingPlayers.RemoveAt(Index);
 		}
+		else if (IsPlayerTrackReady(Player.Get()))
+		{
+			Ready.Insert(Player, 0);
+			WaitingPlayers.RemoveAt(Index);
+		}
+	}
+	if (Ready.Num() == 0)
+	{
+		return;
+	}
+	UE_LOG(LogTNRally, Log, TEXT("[Karts] %d tortuga(s) a los karts: %s%s."), Ready.Num(), Why,
+		WaitingPlayers.Num() > 0 ? *FString::Printf(TEXT(" (%d siguen esperando a tener el mapa en su máquina)"), WaitingPlayers.Num()) : TEXT(""));
+	for (const TWeakObjectPtr<APlayerController>& Player : Ready)
+	{
+		Super::HandleStartingNewPlayer_Implementation(Player.Get());
 	}
 }
 
@@ -198,6 +229,12 @@ void ATN_KartGameMode::Tick(float DeltaSeconds)
 		{
 			ReleaseWaitingPlayers(TEXT("tope de espera"));
 		}
+	}
+	else if (World && bPlayersReleased && WaitingPlayers.Num() > 0 && World->GetTimeSeconds() >= NextReadyCheckTime)
+	{
+		// Las que no tenían el mapa al empezar (o han entrado después): en cuanto lo tienen en su máquina.
+		NextReadyCheckTime = World->GetTimeSeconds() + TNKartMode::ReadyCheckIntervalSeconds;
+		ReleaseWaitingPlayers(TEXT("ya tiene el mapa en su máquina"));
 	}
 	// La vuelta al lobby al acabar los resultados es la del Rally (ATN_RallyGameMode::RestartOrQuit).
 	Super::Tick(DeltaSeconds);
@@ -278,7 +315,7 @@ void ATN_KartGameMode::Logout(AController* Exiting)
 #if !UE_BUILD_SHIPPING
 static FAutoConsoleCommandWithWorldAndArgs GTNKartGiveItemCommand(
 	TEXT("TN.Kart.GiveItem"),
-	TEXT("Karts (servidor o partida sola): da un objeto al kart del jugador local, sin ruleta. TN.Kart.GiveItem Coco|TripleCoco|Concha|ConchaGuiada|Alga|Tinta|Estrella."),
+	TEXT("Karts (servidor o partida sola): da un objeto al kart del jugador local, sin ruleta. TN.Kart.GiveItem Coco|TripleCoco|Concha|ConchaGuiada|Alga|Tinta|Estrella|Mortero|Erizos|Medusa|PezGlobo|Arpon."),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		const APlayerController* Player = World ? World->GetFirstPlayerController() : nullptr;
@@ -382,6 +419,11 @@ namespace TNKartDebug
 			return;
 		}
 		Kart->RallyTeleport(FTransform(FRotator(0.0, Facing.Rotation().Yaw, 0.0), Where + FVector(0.0, 0.0, 50.0)), 0.f, 0.f);
+		// Que la carrera sepa dónde está: si no, lo ve lejos de su arco y lo devuelve a la última puerta por fuera de pista.
+		if (ATN_RallyGameMode* RallyMode = World->GetAuthGameMode<ATN_RallyGameMode>())
+		{
+			RallyMode->NotifyVehicleRelocated(Kart);
+		}
 		if (USkeletalMeshComponent* Chassis = Kart->GetMesh(); Chassis && Speed > 0.f)
 		{
 			Chassis->SetPhysicsLinearVelocity(Facing * Speed);

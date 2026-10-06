@@ -66,7 +66,8 @@ void UTN_BeachRoundSyncComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	}
 	const ATN_BeachRaceGenerator* Gen = Generator.Get();
 	const int32 Round = Gen->GetRoundNumber();
-	if (Round <= 0 || Round == ReportedRound || !Gen->IsRoundReady())
+	// Montada en esta máquina y con las trampas y estructuras replicadas ya aquí (#828): si no, chocaría con menos que el servidor.
+	if (Round <= 0 || Round == ReportedRound || !Gen->IsRoundReady() || !Gen->HasRoundElements())
 	{
 		return;
 	}

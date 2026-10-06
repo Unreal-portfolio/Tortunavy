@@ -59,6 +59,25 @@ public:
 	float ComputeMaxWalkSpeed(bool bSprinting, float EnvironmentMultiplier, float RaceMultiplier = 1.f) const;
 
 	/**
+	 * Como ComputeMaxWalkSpeed, pero los topes predichos (llevar a otra, mareo: TNMovementLimits::PredictedCapBit) son los
+	 * del movimiento que se simula (MovePredictedCaps), no los que tiene ahora esta máquina (#575, #574).
+	 */
+	float ComputeMoveMaxWalkSpeed(bool bSprinting, float EnvironmentMultiplier, float RaceMultiplier, uint8 MovePredictedCaps) const;
+
+	/** Los topes predichos que tiene puestos esta máquina (bits de TNMovementLimits). */
+	uint8 GetPredictedCapMask() const { return PredictedCapMask; }
+
+	/**
+	 * Servidor, cada movimiento validado de su dueño (una vez por movimiento, con su DeltaTime): con qué topes predichos lo
+	 * simula si pide ClaimedMask (TNMovementLimits::StepPredictedCap con la ventana del último cambio de cada tope). Avanza
+	 * el reloj de movimientos del dueño, que es con el que se miden las ventanas.
+	 */
+	uint8 ConsumeClientPredictedCaps(uint8 ClaimedMask, float MoveDeltaSeconds);
+
+	/** Reloj de movimientos del dueño en el servidor: la suma de los DeltaTime que ha validado (s). */
+	double GetServerMoveClock() const { return ServerMoveClock; }
+
+	/**
 	 * @brief Otorga stamina ilimitada durante DurationSeconds (Barrita Energética / boosts).
 	 * @param DurationSeconds Duración del boost.
 	 * @note Al expirar, activa PostBoostExhaustion (multiplicadores de velocidad y drenaje).
@@ -214,7 +233,7 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerGrantUnlimitedStamina(float DurationSeconds);
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentStamina)
 	float CurrentStamina = 100.0f;
 
 	/**
@@ -257,6 +276,20 @@ private:
 	 */
 	float ActiveSpeedCap = TNumericLimits<float>::Max();
 
+	/** El menor de los topes que no son predichos (los predichos los pone cada movimiento: ComputeMoveMaxWalkSpeed). */
+	float UnpredictedSpeedCap = TNumericLimits<float>::Max();
+
+	/** Topes predichos puestos ahora y su último valor. */
+	uint8 PredictedCapMask = 0;
+	float PredictedCapValues[TNMovementLimits::NumPredictedCaps] = { TNMovementLimits::NoCap, TNMovementLimits::NoCap };
+
+	/** Servidor: la ventana del último cambio de cada tope predicho y el reloj de movimientos del dueño que las mide. */
+	TNMovementLimits::FPredictedCapGrace PredictedCapGrace[TNMovementLimits::NumPredictedCaps];
+	double ServerMoveClock = 0.0;
+
+	/** Tras cambiar SpeedCaps: el tope que manda, el de los no predichos y la velocidad. */
+	void RefreshSpeedCaps();
+
 	/** Límites de salto y escalas de gravedad por quien los pone, y los valores de base guardados al poner el primero. */
 	TMap<FName, TNMovementLimits::FJumpLimit> JumpLimits;
 	TMap<FName, float> GravityScaleOverrides;
@@ -273,6 +306,14 @@ private:
 	/** @brief OnRep: aplica MovementSpeed/visual al cambiar el estado de sprint. */
 	UFUNCTION()
 	void OnRep_IsSprinting();
+
+	/**
+	 * @brief OnRep (solo el dueño: se replica solo a él): la estamina llega del servidor, que es quien la gasta; vuelve a
+	 *        decidir si esprinta con ella. El dueño no simula la estamina (TickComponent solo corre en el servidor), así que
+	 *        sin esto bIsSprinting se quedaba en true con la tecla pulsada hasta soltarla aunque la estamina llegara a 0 (#834).
+	 */
+	UFUNCTION()
+	void OnRep_CurrentStamina();
 
 	/** @brief OnRep: feedback visual cuando el boost de stamina ilimitada cambia. */
 	UFUNCTION()

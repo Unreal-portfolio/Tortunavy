@@ -16,6 +16,7 @@ class UInputAction;
 class UTN_InventoryComponent;
 class UTN_ShellComponent;
 class UTN_CarryComponent;
+class UTN_FlipperSlapComponent;
 class UTN_DizzyBirdsComponent;
 class UTN_TurtleFaceComponent;
 class UTN_SlopeTiltComponent;
@@ -88,12 +89,16 @@ public:
 	void RemoveBigHeadEffect();
 
 	/**
-	 * Aplica el efecto de mareo (ralentización + feedback visual) en todas las máquinas.
-	 * Llamado automáticamente desde RemoveBigHeadEffect.
-	 * También disponible para otros sistemas que quieran causar mareo (#2).
+	 * Servidor: marea a la tortuga Duration segundos (tope de velocidad MareoSpeedCap). Lo llaman RemoveBigHeadEffect, el
+	 * dardo de medusa y las trampas de la playa (#2). El estado va replicado (bMareo) y el tope, predicho en el movimiento
+	 * (TNMovementLimits::PredictedCapMareoBit): empieza y acaba en el mismo movimiento en el dueño y en el servidor (#574).
+	 * Otra vez mareada mientras dura: la cuenta vuelve a empezar si así acaba más tarde (un mareo corto, como el guantazo de
+	 * la aleta, no acorta uno más largo, #832).
 	 */
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastApplyMareoEffect(float Duration);
+	void ApplyMareoEffect(float Duration);
+
+	/** Está mareada (replicado a todos). */
+	bool IsMareoActive() const { return bMareo; }
 
 	/** Devuelve true si el efecto Big Head está activo en este momento. */
 	bool HasBigHeadActive() const { return bBigHead; }
@@ -106,6 +111,12 @@ public:
 
 	/** Devuelve el componente de inventario (acceso de solo lectura para sistemas externos). */
 	UTN_InventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
+	/**
+	 * Punto donde nacen la bola lanzada, la tinta y lo que se suelta: 120 cm delante y 40 cm por encima del centro de la
+	 * cápsula, recortado con un barrido para que nunca quede al otro lado de un muro, puerta o valla (#571).
+	 */
+	FVector GetItemSpawnLocation() const;
 
 	/**
 	 * Aplica el efecto de tinta de calamar (#13) en la máquina local del jugador afectado.
@@ -317,6 +328,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Carry")
 	TObjectPtr<UTN_CarryComponent> CarryComponent;
 
+	/** Guantazo con la aleta: el botón de ataque sin objeto ni arma (#832). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<UTN_FlipperSlapComponent> FlipperSlap;
+
 	/** Pajaritos y estrellitas del mareo sobre la cabeza mientras está noqueada (local y cosmético). */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Knockdown")
 	TObjectPtr<UTN_DizzyBirdsComponent> DizzyBirds;
@@ -349,6 +364,15 @@ protected:
 	/** Impulso hacia delante del salto desde el agua. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swim", meta = (ClampMin = "0.0"))
 	float SwimHopForward = 250.f;
+
+public:
+	/** El estado de la tortuga permite el brinco desde el agua (ni derribada, ni muerta, ni en el caparazón). */
+	bool CanSwimHopNow() const;
+
+	/** Velocidad del brinco desde el agua con la orientación de ahora (TNSwimHop::HopVelocity). */
+	FVector GetSwimHopVelocity() const;
+
+protected:
 
 	// ── Caídas ───────────────────────────────────────────────────────────────
 
@@ -779,14 +803,6 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerPerformAirDash();
 
-	// ── Salto desde el agua (mismo patrón que el air dash: local + servidor) ──
-	float LastSwimHopTime = -10.f;
-	bool CanSwimHop() const;
-	void PerformSwimHop();
-
-	UFUNCTION(Server, Reliable)
-	void ServerSwimHop();
-
 	void Move(const FInputActionValue& Value);
 	void OnMoveReleased();
 	void Look(const FInputActionValue& Value);
@@ -803,7 +819,6 @@ private:
 	void TryUseEquippedItem();
 	void RefreshSprintRequest();
 	void UpdateFocusedInteractable();
-	FVector GetItemSpawnLocation() const;
 	FVector GetItemForwardDirection() const;
 
 	void TickLegAnimation(float DeltaTime);
@@ -1192,11 +1207,18 @@ protected:
 	float MareoSpeedCap = 250.f;
 
 	/**
-	 * Evento de mareo disparado en el cliente local (usa para camera shake, VFX, audio).
-	 * Duration = MareoDurationSeconds del servidor.
+	 * Mareada: el servidor lo pone en ApplyMareoEffect y lo quita al acabar (EndMareo). Antes iba en una multicast no fiable:
+	 * si se perdía, el dueño andaba a 450 mientras el servidor lo simulaba a 250 y lo corregía durante 3 s (#574).
 	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "BigHead|Mareo")
-	void OnMareoEffect(float Duration);
+	UPROPERTY(ReplicatedUsing = OnRep_Mareo)
+	bool bMareo = false;
+
+	UFUNCTION()
+	void OnRep_Mareo();
+
+	/** El tope del mareo en esta máquina, una vez por cambio. */
+	void ApplyMareoLocalState(bool bOn);
+	bool bMareoApplied = false;
 
 	/**
 	 * Llamado en TODAS las máquinas (servidor + clientes) tras aplicar el visual
@@ -1213,10 +1235,8 @@ protected:
 
 	void ClearInkEffect();
 
-	/** Llamado cuando expira el timer de mareo — restaura el speed cap de stamina.
-	 *  Usa CreateUObject (no lambda): el binding es weak, así que si el objeto ya
-	 *  se destruyó el timer no ejecuta nada (no depende de un clear explícito en EndPlay). */
-	void ClearMareoSpeedCap();
+	/** Servidor: acaba el mareo (temporizador de ApplyMareoEffect, con CreateUObject: si el actor ya no está, no hace nada). */
+	void EndMareo();
 
 	/** Rotación relativa del mesh al spawnear (guardada en BeginPlay para restaurarla). */
 	FRotator MeshDefaultRelativeRotation = FRotator::ZeroRotator;
@@ -1520,6 +1540,9 @@ public:
 	/** Componente de coger y lanzar. */
 	UTN_CarryComponent* GetCarryComponent() const { return CarryComponent; }
 
+	/** Componente del guantazo con la aleta. */
+	UTN_FlipperSlapComponent* GetFlipperSlapComponent() const { return FlipperSlap; }
+
 	/**
 	 * Dirección de un lanzamiento (objeto, tinta o compañero) con el giro del mando AimRotation: el rumbo de la cámara y un
 	 * ángulo bajo sobre la horizontal (ThrowBasePitchDeg con la cámara a nivel; ver Throwable). Vale en el servidor.
@@ -1636,6 +1659,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Emotes")
 	void RequestWheelEmote(uint8 EmoteID);
+
+	/**
+	 * Emote oculto (#839): el siguiente de los dos que no están en la rueda (TNSecretEmote::HiddenEmotes), por turnos. Lo
+	 * llama AMP_GamePlayerController al escribir el código secreto con el teclado; se arranca, se pide al servidor y se
+	 * replica como cualquier otro emote. Solo en la máquina que controla a la tortuga.
+	 */
+	void PlayHiddenEmote();
 
 	UFUNCTION(BlueprintCallable, Category = "Stamina")
 	void GrantInfiniteStamina(float DurationSeconds);
@@ -2022,7 +2052,12 @@ private:
 
 private:
 	bool IsValidWheelEmoteId(int32 EmoteID) const;
+	/** Un emote que el servidor acepta: uno de la rueda o uno de los ocultos (#839). */
+	bool IsPlayableEmoteId(int32 EmoteID) const;
 	float GetWheelEmoteCooldown(int32 EmoteID) const;
+
+	/** Veces que se ha escrito el código secreto en esta máquina: los dos emotes ocultos salen por turnos (#839). */
+	int32 HiddenEmoteTurn = 0;
 
 	/** Periodo del timer de TickReviveChannel; debe coincidir con el incremento de ReviveChannelElapsed. */
 	static constexpr float ReviveChannelTickInterval = 0.1f;

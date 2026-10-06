@@ -73,6 +73,10 @@ TNLocalPlay::EJoin TNLocalPlay::DecideJoin(const FJoinQuery& Query)
 	{
 		return EJoin::NotLobby;
 	}
+	if (Query.bVR)
+	{
+		return EJoin::VR;
+	}
 	if (Query.Players >= MaxPlayers)
 	{
 		return EJoin::Full;

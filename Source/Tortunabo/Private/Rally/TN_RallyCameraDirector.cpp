@@ -206,6 +206,17 @@ TArray<const FTNRallyStanding*> UTN_RallyCameraDirector::RacingStandings(const A
 	return Racing;
 }
 
+TArray<int32> UTN_RallyCameraDirector::TeamsOf(const TArray<const FTNRallyStanding*>& Racing)
+{
+	TArray<int32> Teams;
+	Teams.Reserve(Racing.Num());
+	for (const FTNRallyStanding* Entry : Racing)
+	{
+		Teams.Add(Entry->TeamIndex);
+	}
+	return Teams;
+}
+
 void UTN_RallyCameraDirector::CycleSpectate(int32 Delta)
 {
 	const UWorld* World = GetWorld();
@@ -214,35 +225,27 @@ void UTN_RallyCameraDirector::CycleSpectate(int32 Delta)
 	{
 		return;
 	}
-	const TArray<const FTNRallyStanding*> Racing = RacingStandings(*RallyState);
-	SpectateSlot = TNRallyCamera::CycleSpectate(SpectateSlot, Delta, Racing.Num(), !IsVR());
-	SpectateTeam = Racing.IsValidIndex(SpectateSlot) ? Racing[SpectateSlot]->TeamIndex : INDEX_NONE;
+	Spectated = TNRallyCamera::StepSpectate(TeamsOf(RacingStandings(*RallyState)), Spectated, Delta, !IsVR());
 }
 
 void UTN_RallyCameraDirector::UpdateSpectate(const ATN_RallyGameState& RallyState, float DeltaTime)
 {
 	const TArray<const FTNRallyStanding*> Racing = RacingStandings(RallyState);
-	// Se sigue al mismo equipo aunque cambie de puesto.
-	const int32 TeamSlot = Racing.IndexOfByPredicate([this](const FTNRallyStanding* Entry) { return Entry->TeamIndex == SpectateTeam; });
-	const bool bWasDrone = SpectateSlot >= 0 && SpectateSlot == Racing.Num();
-	SpectateSlot = TeamSlot != INDEX_NONE ? TeamSlot : TNRallyCamera::ClampSpectate(bWasDrone ? Racing.Num() : SpectateSlot,
-		Racing.Num(), !IsVR());
+	// Se sigue al mismo equipo aunque cambie de puesto, y el dron sigue en el dron aunque llegue alguien.
+	Spectated = TNRallyCamera::FollowSpectate(TeamsOf(Racing), Spectated, !IsVR());
 	// Sin nadie corriendo no hay a quién mirar (ni líder para el dron): el podio.
-	bHasSpectateTarget = SpectateSlot != INDEX_NONE && Racing.Num() > 0;
-	bDrone = bHasSpectateTarget && SpectateSlot == Racing.Num();
+	bHasSpectateTarget = Spectated.HasTarget();
 	if (!bHasSpectateTarget)
 	{
 		UpdatePodium(GetWorld()->GetRealTimeSeconds());
 		return;
 	}
-	if (bDrone)
+	if (Spectated.bDrone)
 	{
-		SpectateTeam = INDEX_NONE;
 		ViewDrone(*Racing[0]->Vehicle, DeltaTime);
 		return;
 	}
-	SpectateTeam = Racing[SpectateSlot]->TeamIndex;
-	ViewBuggy(Racing[SpectateSlot]->Vehicle);
+	ViewBuggy(Racing[Spectated.Slot]->Vehicle);
 }
 
 void UTN_RallyCameraDirector::ViewBuggy(APawn* Vehicle)

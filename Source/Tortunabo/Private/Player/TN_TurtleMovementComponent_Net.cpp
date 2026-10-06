@@ -3,7 +3,9 @@
 
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Core/TN_Log.h"
+#include "Player/TN_MovementLimits.h"
 #include "Player/TN_ShellComponent.h"
+#include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
@@ -55,6 +57,12 @@ uint16 FTNTurtleNetworkMoveDataContainer::GetDiveYaw(const FCharacterNetworkMove
 	return MoveData ? MoveData->DiveYaw : 0;
 }
 
+uint8 FTNTurtleNetworkMoveDataContainer::GetPredictedCaps(const FCharacterNetworkMoveData* Data) const
+{
+	const FTNTurtleNetworkMoveData* MoveData = FindTurtleData(Data);
+	return MoveData ? MoveData->PredictedCaps : 0;
+}
+
 void FTNTurtleNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType)
 {
 	FCharacterNetworkMoveData::ClientFillNetworkMoveData(ClientMove, MoveType);
@@ -63,6 +71,8 @@ void FTNTurtleNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Charac
 	LaunchId = TurtleMove ? TurtleMove->GetServerLaunch().GetIdForMove(ClientMove.TimeStamp) : 0;
 	// El panzazo que pide este movimiento (su marca ya va en CompressedMoveFlags): la dirección (#24).
 	DiveYaw = (CompressedMoveFlags & TNDiveLogic::DiveRequestFlag) != 0 ? UTN_TurtleMovementComponent::GetSavedMoveDiveYaw(ClientMove) : 0;
+	// Los topes predichos con que el dueño ha hecho este movimiento (#575, #574).
+	PredictedCaps = UTN_TurtleMovementComponent::GetSavedMovePredictedCaps(ClientMove) & TNMovementLimits::PredictedCapAllBits;
 }
 
 bool FTNTurtleNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType)
@@ -80,6 +90,10 @@ bool FTNTurtleNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterM
 	}
 	// Con la marca del panzazo (ya leída con lo de serie), su giro: 16 bits; sin ella, nada.
 	TNDiveLogic::SerializeDiveRequest(Ar, CompressedMoveFlags, DiveYaw);
+	// Los topes predichos: un bit cada uno.
+	uint8 Caps = PredictedCaps & TNMovementLimits::PredictedCapAllBits;
+	Ar.SerializeBits(&Caps, TNMovementLimits::NumPredictedCaps);
+	PredictedCaps = Caps & TNMovementLimits::PredictedCapAllBits;
 	return bBaseOk && !Ar.IsError();
 }
 
@@ -107,6 +121,7 @@ void FTNTurtleMoveResponseDataContainer::ServerFillResponseData(const UCharacter
 	DiveState.bDiving = Turtle && Turtle->IsDiving();
 	DiveState.Serial = Turtle ? Turtle->GetDiveSerial() : 0;
 	DiveState.CapsuleHalfHeight = Capsule ? Capsule->GetUnscaledCapsuleHalfHeight() : 0.f;
+	DiveState.SwimHopCooldown = TurtleMove ? TurtleMove->GetSwimHopCooldown() : 0.f;
 	DiveState.TimeStamp = PendingAdjustment.TimeStamp;
 }
 
@@ -120,6 +135,8 @@ bool FTNTurtleMoveResponseDataContainer::Serialize(UCharacterMovementComponent& 
 		DiveState.bDiving = bDiving != 0;
 		Ar << DiveState.Serial;
 		Ar << DiveState.CapsuleHalfHeight;
+		Ar << DiveState.SwimHopCooldown;
+		DiveState.SwimHopCooldown = FMath::Max(0.f, DiveState.SwimHopCooldown);
 		DiveState.TimeStamp = ClientAdjustment.TimeStamp;
 	}
 	return bBaseOk && !Ar.IsError();
@@ -202,6 +219,16 @@ void UTN_TurtleMovementComponent::MoveAutonomous(float ClientTimeStamp, float De
 	if (FindServerLaunchForMove(ClientTimeStamp, LaunchVelocity))
 	{
 		Launch(LaunchVelocity);
+	}
+	// Topes predichos (#575, #574). Servidor, movimiento validado de un cliente: los que pide, si caen en la ventana del
+	// último cambio, medida con el tiempo de sus movimientos (este DeltaTime), no con la hora de llegada. Al repetir en el
+	// dueño, ya los puso PrepMoveFor.
+	if (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority && !CharacterOwner->IsLocallyControlled())
+	{
+		const ATortugaCharacter* Turtle = GetTurtle();
+		UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+		const uint8 Claimed = TurtleNetworkMoveData.GetPredictedCaps(GetCurrentNetworkMoveData());
+		MovePredictedCaps = Stamina ? Stamina->ConsumeClientPredictedCaps(Claimed, DeltaTime) : 0;
 	}
 	Super::MoveAutonomous(ClientTimeStamp, DeltaTime, CompressedFlags, NewAccel);
 }

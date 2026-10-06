@@ -8,6 +8,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/App.h"
+#include "World/TN_TctAlgaPuddle.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TN_TurtleMovementComponent.h"
@@ -47,6 +50,18 @@ namespace TNTctProjectileDetail
 		case ETNTctItem::JellyDart:
 			Out.Radius = 8.f; Out.Gravity = 0.12f; Out.bFollowVelocity = true; Out.Life = DartLifeSeconds;
 			break;
+		case ETNTctItem::Cocobomba:
+			// Rueda poco y se queda donde cae hasta que explota (manda la mecha, no la vida).
+			Out.Radius = 16.f; Out.Gravity = 1.f; Out.bBounce = true; Out.Bounciness = 0.3f; Out.Friction = 0.7f;
+			Out.Life = CocoFuseSeconds + 3.f;
+			break;
+		case ETNTctItem::Alga:
+			Out.Radius = 12.f; Out.Gravity = 1.f; Out.Life = 4.f;
+			break;
+		case ETNTctItem::Red:
+			// Lenta de ver y de poco alcance: baja pronto.
+			Out.Radius = 30.f; Out.Gravity = 0.6f; Out.Life = NetLifeSeconds;
+			break;
 		default:
 			break;
 		}
@@ -60,12 +75,19 @@ namespace TNTctProjectileDetail
 		case ETNTctItem::BeachBall: return TNTctItemTuning::BallSpeed;
 		case ETNTctItem::Anchor:    return TNTctItemTuning::AnchorSpeed;
 		case ETNTctItem::JellyDart: return TNTctItemTuning::DartSpeed;
+		case ETNTctItem::Cocobomba: return TNTctItemTuning::CocoSpeed;
+		case ETNTctItem::Alga:      return TNTctItemTuning::AlgaSpeed;
+		case ETNTctItem::Red:       return TNTctItemTuning::NetSpeed;
 		default:                    return 0.f;
 		}
 	}
 
 	/** Tras golpear o clavarse, lo que se queda a la vista antes de irse. */
 	constexpr float LingerSeconds = 1.2f;
+
+	/** Fogonazo de la cocobomba: lo que dura y su tamaño final (escala de la esfera del motor de 100 uu). */
+	constexpr float BlastSeconds = 0.35f;
+	constexpr float BlastScale = 2.f * TNTctItemTuning::CocoBlastRadius / 100.f;
 }
 
 ATN_TctProjectile::ATN_TctProjectile()
@@ -96,6 +118,10 @@ ATN_TctProjectile::ATN_TctProjectile()
 	Movement->bAutoActivate = false;
 	Movement->InitialSpeed = 0.f;
 	Movement->MaxSpeed = 0.f;
+	// #708: pasos fijos de 1/60 s: el rebote contra una rampa no depende del fotograma de cada máquina.
+	Movement->bForceSubStepping = true;
+	Movement->MaxSimulationTimeStep = 1.f / 60.f;
+	Movement->MaxSimulationIterations = 12;
 }
 
 void ATN_TctProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -113,9 +139,24 @@ bool ATN_TctProjectile::ServerLaunch(ATortugaCharacter* Thrower, uint8 Kind, con
 	{
 		return false;
 	}
-	const FVector Dir = Direction.GetSafeNormal();
+	FVector Dir = Direction.GetSafeNormal();
 	const FVector Flat = FVector(Dir.X, Dir.Y, 0.0).GetSafeNormal();
 	const FVector Origin = Thrower->GetActorLocation() + FVector(0.0, 0.0, 50.0) + Flat * 70.0;
+	// Hacia la mira (#707): los que caen en parábola, con el arco justo para llegar al punto del centro de la pantalla; el
+	// dardo, casi recto, directo a él.
+	if (Thrower->UsesCameraThrowAim())
+	{
+		const float Gravity = TNTctProjectileDetail::FlightOf(Item).Gravity;
+		FVector Target;
+		if (Gravity >= 0.5f)
+		{
+			Dir = Thrower->GetThrowDirectionToCrosshair(Origin, Thrower->GetTurtleAimRotation(), Speed, Gravity * FMath::Max(1.f, -World->GetGravityZ()));
+		}
+		else if (Thrower->GetCrosshairPoint(Target))
+		{
+			Dir = TNTctItemRules::AimToward(Origin, Target, Dir);
+		}
+	}
 	// Lo que ya corría la tortuga se suma a medias (como al lanzar la bola corriendo).
 	const FVector Carry = FVector(Thrower->GetVelocity().X, Thrower->GetVelocity().Y, 0.0) * 0.5;
 
@@ -164,7 +205,7 @@ void ATN_TctProjectile::ApplyShot()
 	if (UStaticMesh* Look = TNTctItems::LoadMesh(Kind, true))
 	{
 		Mesh->SetStaticMesh(Look);
-		Mesh->SetRelativeScale3D(TNTctItems::MeshScale(Kind, true, Look->GetPathName().StartsWith(TEXT("/Engine/"))));
+		Mesh->SetRelativeScale3D(TNTctItems::MeshScale(Kind, true, Look->GetPathName().StartsWith(TEXT("/Engine/BasicShapes/"))));
 	}
 	Movement->ProjectileGravityScale = Flight.Gravity;
 	Movement->bShouldBounce = Flight.bBounce;
@@ -186,15 +227,20 @@ void ATN_TctProjectile::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	Age += DeltaSeconds;
+	TickBlast(DeltaSeconds);
 	const FVector Here = GetActorLocation();
 	if (HasAuthority() && bShotApplied && !bFinished)
 	{
 		ServerSweep(PrevLocation, Here);
-		// En el agua de la arena se hunde.
+		// En el agua de la arena se hunde (la cocobomba se apaga sin explotar).
 		const ATN_TctGameState* State = GetWorld() ? GetWorld()->GetGameState<ATN_TctGameState>() : nullptr;
 		if (!bFinished && State && Here.Z < State->GetWaterZ())
 		{
 			ServerFinish(Here);
+		}
+		if (!bFinished && static_cast<ETNTctItem>(Shot.Kind) == ETNTctItem::Cocobomba && Age >= TNTctItemTuning::CocoFuseSeconds)
+		{
+			ServerCocoBlast(Here);
 		}
 	}
 	PrevLocation = Here;
@@ -264,10 +310,23 @@ void ATN_TctProjectile::ServerHitTurtle(ATortugaCharacter* Victim)
 	case ETNTctItem::Anchor:
 		ServerAnchorSplash(GetActorLocation());
 		break;
+	case ETNTctItem::Red:
+		// La red clava a quien toca (no la empuja): 2,5 s sin poder andar ni saltar.
+		if (TNTctItems::CanAffect(Victim, false))
+		{
+			if (UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Victim))
+			{
+				Effects->GrantFx(ETNTctFx::Net, NetRootSeconds);
+			}
+			TNTctItems::PlayCue(Victim, ETNRaceSound::Catch, 0.8f);
+			UE_LOG(LogTortunabo, Log, TEXT("[TcT] La red clava a %s."), *GetNameSafe(Victim));
+		}
+		ServerFinish(GetActorLocation());
+		break;
 	case ETNTctItem::JellyDart:
 		if (TNTctItems::CanAffect(Victim, false))
 		{
-			Victim->MulticastApplyMareoEffect(DartDizzySeconds);
+			Victim->ApplyMareoEffect(DartDizzySeconds);
 			TNTctItems::PlayCue(Victim, ETNRaceSound::Zap, 1.3f);
 			UE_LOG(LogTortunabo, Log, TEXT("[TcT] El dardo de medusa marea a %s."), *GetNameSafe(Victim));
 		}
@@ -307,6 +366,50 @@ void ATN_TctProjectile::ServerAnchorSplash(const FVector& Center)
 	ServerFinish(Center);
 }
 
+void ATN_TctProjectile::ServerCocoBlast(const FVector& Center)
+{
+	if (bFinished)
+	{
+		return;
+	}
+	TArray<ATortugaCharacter*> Turtles;
+	// Quien la lanza tampoco se libra si se queda cerca.
+	TNTctItems::GatherTurtles(this, nullptr, Turtles);
+	int32 Pushed = 0;
+	for (ATortugaCharacter* Turtle : Turtles)
+	{
+		FVector Push;
+		// El caparazón protege del empujón.
+		if (!TNTctItems::CanAffect(Turtle, true) || !TNTctItemRules::CocoBlast(Center, Turtle->GetActorLocation(), Push))
+		{
+			continue;
+		}
+		UTN_TurtleMovementComponent::LaunchFromServer(Turtle, Push);
+		TNTctItems::PlayCue(Turtle, ETNRaceSound::Bonk, 0.6f);
+		++Pushed;
+	}
+	if (ACharacter* Thrower = Cast<ACharacter>(GetInstigator()))
+	{
+		TNTctItems::PlayCue(Thrower, ETNRaceSound::Rumble, 1.7f);
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[TcT] La cocobomba explota: %d tortugas lanzadas."), Pushed);
+	ServerFinish(Center);
+}
+
+void ATN_TctProjectile::ServerDropPuddle(const FVector& Where)
+{
+	if (bFinished)
+	{
+		return;
+	}
+	ATN_TctAlgaPuddle::ServerSpawn(GetWorld(), Where, GetInstigator());
+	if (ACharacter* Thrower = Cast<ACharacter>(GetInstigator()))
+	{
+		TNTctItems::PlayCue(Thrower, ETNRaceSound::Splat, 0.8f);
+	}
+	ServerFinish(Where);
+}
+
 void ATN_TctProjectile::ServerFinish(const FVector& Location)
 {
 	if (bFinished)
@@ -320,6 +423,15 @@ void ATN_TctProjectile::ServerFinish(const FVector& Location)
 
 void ATN_TctProjectile::OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
+	// El balón y la cocobomba rebotan en cada máquina: tras cada rebote (como mucho cada 0,1 s) el servidor devuelve a todas a
+	// su trayectoria (#708); contra una rampa, los rebotes seguidos separaban al cliente del anfitrión.
+	const ETNTctItem Bouncer = static_cast<ETNTctItem>(Shot.Kind);
+	if (HasAuthority() && !bFinished && (Bouncer == ETNTctItem::BeachBall || Bouncer == ETNTctItem::Cocobomba) && GetWorld()
+		&& GetWorld()->GetTimeSeconds() - LastBounceSyncTime >= 0.1)
+	{
+		LastBounceSyncTime = GetWorld()->GetTimeSeconds();
+		MulticastResync(GetActorLocation(), Movement->Velocity);
+	}
 	// El ancla no rebota: si el suelo la para de lado (sin OnStop), cae igual.
 	if (HasAuthority() && static_cast<ETNTctItem>(Shot.Kind) == ETNTctItem::Anchor && ImpactResult.ImpactNormal.Z > 0.4)
 	{
@@ -339,8 +451,15 @@ void ATN_TctProjectile::OnStop(const FHitResult& ImpactResult)
 		ServerAnchorSplash(GetActorLocation());
 		break;
 	case ETNTctItem::JellyDart:
+	case ETNTctItem::Red:
 		// Clavado en el escenario un momento.
 		ServerFinish(GetActorLocation());
+		break;
+	case ETNTctItem::Alga:
+		ServerDropPuddle(GetActorLocation());
+		break;
+	case ETNTctItem::Cocobomba:
+		// Quieta en el suelo hasta que se acaba la mecha.
 		break;
 	default:
 		// El balón quieto se va al poco.
@@ -371,6 +490,63 @@ void ATN_TctProjectile::MulticastImpact_Implementation(FVector_NetQuantize Locat
 {
 	bFinished = true;
 	StopAt(Location);
+	if (static_cast<ETNTctItem>(Shot.Kind) != ETNTctItem::Cocobomba)
+	{
+		return;
+	}
+	const ATN_TctGameState* State = GetWorld() ? GetWorld()->GetGameState<ATN_TctGameState>() : nullptr;
+	// En el agua se apaga sin fogonazo.
+	if (!State || Location.Z >= State->GetWaterZ())
+	{
+		ShowBlast();
+	}
+	Mesh->SetVisibility(false);
+}
+
+void ATN_TctProjectile::ShowBlast()
+{
+	if (BlastMesh || IsRunningDedicatedServer() || !FApp::CanEverRender())
+	{
+		return;
+	}
+	UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+	BlastMesh = Sphere ? NewObject<UStaticMeshComponent>(this, NAME_None, RF_Transient) : nullptr;
+	if (!BlastMesh)
+	{
+		return;
+	}
+	BlastMesh->SetStaticMesh(Sphere);
+	BlastMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BlastMesh->SetCastShadow(false);
+	BlastMesh->SetupAttachment(RootComponent);
+	BlastMesh->RegisterComponent();
+	BlastMesh->SetRelativeScale3D(FVector(0.2));
+	if (UMaterialInstanceDynamic* Material = BlastMesh->CreateDynamicMaterialInstance(0))
+	{
+		Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(1.f, 0.55f, 0.12f));
+	}
+	BlastAge = 0.f;
+}
+
+void ATN_TctProjectile::TickBlast(float DeltaSeconds)
+{
+	using namespace TNTctProjectileDetail;
+	if (!BlastMesh || BlastAge < 0.f)
+	{
+		return;
+	}
+	BlastAge += DeltaSeconds;
+	const float Alpha = FMath::Clamp(BlastAge / BlastSeconds, 0.f, 1.f);
+	if (Alpha >= 1.f)
+	{
+		BlastMesh->DestroyComponent();
+		BlastMesh = nullptr;
+		BlastAge = -1.f;
+		return;
+	}
+	// Se hincha deprisa hasta el radio de la explosión y se deshincha al final.
+	const float Fade = Alpha > 0.7f ? (1.f - Alpha) / 0.3f : 1.f;
+	BlastMesh->SetRelativeScale3D(FVector(FMath::Max(0.05f, BlastScale * FMath::Sin(Alpha * PI * 0.5f) * Fade)));
 }
 
 void ATN_TctProjectile::StopAt(const FVector& Location)

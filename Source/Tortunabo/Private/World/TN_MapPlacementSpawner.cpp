@@ -10,6 +10,7 @@
 #include "World/ProcMap/TN_ProcSearchSpot.h"
 #include "World/ProcMap/TN_ProcTraversalActors.h"
 #include "World/TN_BreakablePlatform.h"
+#include "World/TN_FishingPool.h"
 #include "World/TN_InteractableBase.h"
 #include "World/TN_PressurePlate.h"
 #include "World/TN_ScorePickup.h"
@@ -307,6 +308,10 @@ bool ATN_MapPlacementSpawner::SpawnOne(const TNMapPlacements::FPlacement& P, boo
 			Spot->SetupSpot(150.f, 0.f, 100.f, FLinearColor(0.85f, 0.78f, 0.62f));
 			bOk = true;
 		}
+		break;
+	case ESpawn::FishingPool:
+		// La huella y la malla las pone el charco al empezar (ATN_FishingPool::BeginPlay).
+		bOk = SpawnClass(ATN_FishingPool::StaticClass(), Grounded(P.Location), P.YawDeg) != nullptr;
 		break;
 	case ESpawn::ScoreShell:
 		bOk = SpawnClass(UTN_GameplayAssetSettings::GetScorePickupClass(), Grounded(P.Location) + FVector(0.0, 0.0, TNScoreShells::Hover),

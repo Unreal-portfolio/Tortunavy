@@ -257,14 +257,16 @@ Por pasadas, de lo grande y lo que tiene que verse a lo que rellena:
    2-3 y 3-4 en Fácil), un tramo cada una al azar. Todas (`TryAddFortress`): Yaw 0 ± 10° (su +X, al mar), `SizeScale` 0,94-1,06 (la mediana, hasta 1,03: sus
    torres llegan a 21,3 m por tamaño), **rodeo** (25 m libres entre la muralla y la selva por cada lado,
    `FortressDetour`), 12 m hasta lo que ya hubiera (`FortressPad`) y su **franja de caída** libre y reservada: 16 m de
-   ancho de 40 m a 100 m del centro hacia su +X (`FortressLandingZone`: el trampolín potenciado de la cima cae a 45-66 m
-   y la catapulta a 80-90 m y aún rebota). La franja se apunta como `JumpArc` desde el borde de la muralla (así el botín
+   ancho de 40 m a 100 m del centro hacia su +X (`FortressLandingZone`: la catapulta potenciada de la cima cae a 80-90 m y
+   aún rebota; el trampolín, que ya no sale en las cimas, caía a 45-66 m). La franja se apunta como `JumpArc` desde el borde de la muralla (así el botín
    no dibuja conchitas a través de la fortaleza); en su centro no hay `Summit`: la cima (conchas, cofre y lanzador) la
    pone su clase. Alrededor, sus **guardias** (`PlaceGuards`: 2, 3 o 5 según el tamaño, por los enemigos), sobre todo
    por delante: cangrejos, erizos, lagartos y algún tanque que patrulla a lo largo de la muralla.
 5. **Castillos de arena enormes** (6-9 pedidos, 9-14 con 1200 m; salen unos 4 por ronda porque el terreno y las
    estructuras no dejan más sitio; a ±98 m del centro): uno por tramo con sus propios intentos y los que falten, donde
-   quepan; la mitad (más con ayudas) con un trampolín delante para subirse.
+   quepan; la mitad (más con ayudas) con un trampolín delante para subirse. Con la puerta hacia quien llega (180° ± 12°,
+   de su semilla; la malla no gira al azar: `TNBeachDecorKit::HasFixedYaw`) y, en su patio, **catapulta potenciada y cofre
+   de cima** (#741; ver «Premio de los castillos enormes y con salas»).
 6. **Zonas de gaviotas y pelícanos**: 3-4 por la raíz de los enemigos y `LengthScale` (2-3 en Fácil, 4-6 en Difícil;
    4-6, 3-5 y 6-9 con 1200 m), una por tramo del 10 al 97 %, en lados alternos, separadas `GullZoneSpacing` (100 m hasta
    tres y pico zonas, algo menos con más; 150 m con 1200 m) y cada una con su tamaño de círculo, distinto de las demás.
@@ -1811,11 +1813,30 @@ resto no lo usa.
   +3,2 m, con la terraza sobre el pasillo): dos muretes de 70 cm que se saltan o se rodean por el hueco de cada uno y
   ventanas de 2 x 1,9 m (a 80 cm del suelo) al mar y a la playa; se puede saltar por ellas (~4 m) → **salida** por la
   puerta alta de la muralla +X (3,6 x 4 m) a una rampa de arena de 6,4 m (30°).
+- **Premio arriba** (#741): en la terraza del piso de arriba, una **catapulta potenciada** (0,72) a lo largo de X, a media
+  terraza y a 6 m del muro de dentro (lanza hacia el mar por encima de la muralla +X), y un **cofre de cima**
+  (`TNBeach::FlagSummitPrize`, fuente `Summit`) en el cuarto -X, lejos del cartel. Mismo código de creación que el
+  castillo enorme (`TNBeachCastlePrizes::SpawnSummit`).
 - Las piezas de dentro las crea el servidor con `ATN_BeachElement::SpawnElement` (puerta de conchas `Extent` 320;
   algas de `SizeScale` 0,3-0,6 y `Extent` 320) y las destruye con el castillo. Con `bSpawnEnemiesInside` (apagado)
   crearía además un erizo (0,35) junto a la escalera y un cangrejo (0,4) en la sala de las columnas: está apagado porque
   los enemigos de ahora no bajan de 0,75-0,8 de tamaño, se alejan 16-38 m de su sitio sin chocar con paredes y buscan
   el suelo desde arriba (se subirían al techo del pasillo).
+
+### Premio de los castillos enormes y con salas (#741)
+
+Como las fortalezas, todo castillo con cima lleva arriba una catapulta potenciada y un cofre de cima
+(`TN_BeachCastlePrizes.*`; los crea el servidor con el castillo y los destruye con él).
+
+- **Castillo enorme** (`SandCastleHuge` de la pasada de castillos, `EItemRole::Castle`): decorado instanciado, así que los
+  crea el generador al montar la ronda (`ATN_BeachRaceGenerator::SpawnCastlePrizes`) con la misma colocación que el campo
+  de decorado (`ItemBodyPlacement`: sin giro al azar). Van en el patio (suelo de 80 cm, dentro de la muralla), con la
+  catapulta (0,72) en la franja +Y entre el torreón y la muralla, girada 180° respecto de la malla (mira al -X del castillo,
+  que es el mar con la puerta a quien llega), corrida 87 cm hacia el lado contrario a su cartel; y el cofre en la franja
+  -X, de cara al centro. Los castillos enormes de relleno (`Fill`) siguen girando al azar y sin premio.
+- **Castillo con salas**: en la terraza de arriba (ver su sección).
+- El cofre sortea con la fuente `Summit` (la tabla de las últimas para cualquier puesto). Con 6-9 castillos enormes, hasta
+  3 con salas y 1-4 fortalezas por ronda salen una docena larga de cofres de cima: es lo que pide el criterio (#741).
 
 ### Fortalezas de arena (`ATN_BeachFortress`)
 
@@ -1872,12 +1893,13 @@ de arena de molde, cada una más alta y más pequeña que la anterior; la últim
 `TN.Beach.Place clear`):
 
 - **Lanzador potenciado** (`TNBeach::FlagBoosted`) en el borde +X, mirando al +X de la fortaleza (si no queda a ±45° del
-  mar, se gira solo hacia él): catapulta el 55 % de las veces (tamaño 0,89 / 1,02 / 1,15: brazo de 9,8-11,5 m de lado a
-  lado de la cima) y trampolín el resto (0,58 / 0,65 / 0,76). Ver «Catapulta» y «Trampolín».
-- **Cofre** (`TreasureChest` → `ATN_BeachChest`, con `SpawnElement`) en el cuarto -X del lado contrario al cartel del
-  lanzador (`TNBeachSignKit::SideOf` de la semilla del lanzador), con el frente hacia el mar: lo que suelta cae en la
-  cima. Si aún no existe su clase, la cima va sin cofre
-  (se registra).
+  mar, se gira solo hacia él): **siempre catapulta** (#741; antes el 45 % eran trampolines que no compensaban la subida),
+  de tamaño 0,89 / 1,02 / 1,15 (brazo de 9,8-11,5 m de lado a lado de la cima). Ver «Catapulta».
+- **Cofre** (`TreasureChest` → `ATN_BeachChest`, con `SpawnElement` y `TNBeach::FlagSummitPrize`) en el cuarto -X del lado
+  contrario al cartel del lanzador (`TNBeachSignKit::SideOf` de la semilla del lanzador), con el frente hacia el mar: lo que
+  suelta cae en la cima. Sortea con la fuente `Summit` (ver «Pesos por posición»): la tabla de las últimas para cualquier
+  puesto, así que hasta quien va la primera puede sacar el pelícano taxi, el protector solar o el coco dorado. Si aún no
+  existe su clase, la cima va sin cofre (se registra).
 - **Conchas de puntos** (`ATN_ScorePickup`, las del botín: suman a `RaceScore`), en las esquinas de la cima: 100 + 50
   (mediana), 100 + 50 + 50 (grande) y 100 + 100 + 50 + 50 (colosal). Además, una de 50 al final de cada atajo en las
   terrazas de en medio (grande: 2; colosal: 3). En total: 150, 300 y 450 puntos.
@@ -1893,7 +1915,7 @@ medidas, cascos y triángulos).
 
 **Probar**: `TN.Beach.Place FortressColossal 1 0 <semilla>` (y `FortressMedium`, `FortressLarge`), mirando hacia donde
 quieras que lance: sale a ~54 m delante (la colosal) con su premio. `TN.Beach.Fortress.Top [jugador]` sube a esa tortuga a
-la cima de la fortaleza más cercana, detrás del lanzador. Semillas seguidas para ver catapulta o trampolín y el espejo.
+la cima de la fortaleza más cercana, detrás de la catapulta. Semillas seguidas para ver el espejo y las variantes.
 
 ### Mina (`ATN_BeachMine`)
 
@@ -3317,6 +3339,10 @@ replica ni se guarda (un objeto en ejecución no tiene nombre de red: llega nulo
 | **Nube de tormenta** (`StormCloud`) | rayo | Una nube negra crece sobre **cada otra tortuga en carrera** (1,1 s de aviso, con sombra y truenos) y les cae un rayo que las **aturde en bola 2,2 s**. Con el protector puesto el rayo cae a su lado sin efecto. Necesita al menos otra víctima. Máximo 2 a la vez. |
 | **Disco volador** (`Frisbee`) | bumerán | Sale hacia delante dibujando un arco (26 m, curvado 7 m), gira y **vuelve a la mano** de quien lo lanzó (2,9 s en total), **derribando 1,9 s** a las tortugas (una vez por pasada) y **mareando 4 s** a los enemigos que toca; no golpea a quien lo lanza. Máximo 6 a la vez. |
 | **Silbato del sargento** (`Whistle`) | (propio) | **Aturde en área a los enemigos**: todos los que estén a menos de 55 m se marean 5 s con pajaritos (`ApplyHitStun`), sin apuntar. Onda de silbato que se expande por el suelo. |
+| **Tabla de surf** (`TablaSurf`, #786) | (propio) | Una ola la lleva **3 s hacia el mar** (×1,75 sobre la de correr: 1400 cm/s), con algo de giro a los lados (45 %), de pie en la tabla y con la ola rompiendo detrás. **Derriba 1,8 s** a las tortugas que encuentra (2,3 m; una vez cada una, empujadas hacia delante y a un lado). **Se acaba contra una pared de frente** (lo que no se puede pisar y está a menos de 53° del rumbo; otra tortuga no cuenta). Si la derriban, la aturden o se mete en el caparazón, se acaba. |
+| **Caña de pescar** (`CanaPescar`, #786) | (propio) | Lanza el anzuelo a **la tortuga de delante más cercana a 25 m o menos** (sin nadie, «nop» y el objeto se queda). Llega en 0,35 s; si engancha, **la remolca por el aire 1,5 s** hacia ella y la deja 3,5 m por delante de donde estará y 1,3 m a su lado (un solo `LaunchFromServer`, tope de 26 m/s). **El protector solar (y el pelícano) la anulan**: el anzuelo rebota y cae. |
+| **Remolino** (`Remolino`, #786) | (propio) | Trampa de agua que se deja **3,2 m detrás** y dura **12 s**. A la que entra (2,6 m) **la hace girar y la atrae al centro 1,5 s** (espiral, 1,6 vueltas por segundo) y la suelta lanzada hacia fuera y **mareada 1 s** (40 % de la velocidad y pajaritos). **Quien lo suelta es inmune 2 s**; la que sale no vuelve a caer en el mismo en 3 s; el protector solar lo atraviesa. Atrapa a una a la vez. Máximo 8. |
+| **Cohete de feria** (`CoheteFeria`, #786) | (propio) | **Acelerón muy fuerte de 2 s** (×2,6: 2080 cm/s, tira hacia delante aunque no se pulse nada) con el **giro muy reducido** (45°/s). Al acabar, **voltereta en el aire** (salto de 9 m/s con el 45 % de la velocidad y una vuelta completa de la malla en 0,85 s). Si la derriban o la aturden antes, sin voltereta. |
 | **Caja de objetos** (`Box`) | caja «?» | No se lleva: es el pickup del suelo. Cubo de juguete de colores con una «?» que flota y gira; al cogerla sale un objeto sorteado **según el puesto de quien la coge**. |
 
 Los usos que no se pueden hacer (aturdida, en el caparazón, en el pico de un enemigo, en brazos, volando en el pelícano,
@@ -3361,8 +3387,10 @@ funcionando.
 
 El puesto sale de lo que ha avanzado cada tortuga en carrera por la playa (`ATN_BeachRaceGenerator::GetCourseProgress`;
 `TNRaceItems::GetRank`): `Norm` = 0 la primera, 1 la última, 0,5 si va sola. Cada objeto tiene tres pesos (primera / a medias
-/ última) que se interpolan (`TNRaceItems::PositionWeight`). En el **cofre** se multiplican por un factor que sesga a lo mejor.
-«Mín.» es el número de tortugas en carrera sin el cual no sale.
+/ última) que se interpolan (`TNRaceItems::PositionWeight`). En el **cofre** se multiplican por un factor que sesga a lo mejor. El **cofre de la cima de una
+castillo** (fortaleza, enorme o con salas; fuente `Summit`, #741) usa la columna «Última» con ese factor **para cualquier puesto**: la tabla de los mejores
+objetos (pelícano taxi, protector solar, triple coco, coco dorado: ~63 % de los pesos de los objetos de carrera con 4 tortugas) también para quien va
+la primera, que en un cofre corriente no los sacaría nunca. «Mín.» es el número de tortugas en carrera sin el cual no sale.
 
 | Objeto | Primera | A medias | Última | Cofre × | Mín. |
 |---|---|---|---|---|---|
@@ -3377,6 +3405,10 @@ El puesto sale de lo que ha avanzado cada tortuga en carrera por la playa (`ATN_
 | Nube de tormenta | 0 | 0,2 | 1,3 | 1,0 | 2 |
 | Disco volador | 1,4 | 1,3 | 0,9 | 1,0 | 1 |
 | Silbato del sargento | 1,0 | 1,0 | 0,8 | 0,6 | 1 |
+| Tabla de surf | 0,2 | 1,2 | 1,5 | 1,4 | 1 |
+| Caña de pescar | 0 | 0,9 | 1,6 | 1,2 | 2 |
+| Remolino | 1,6 | 1,0 | 0,3 | 0,8 | 2 |
+| Cohete de feria | 0 | 0,4 | 1,8 | 1,6 | 1 |
 | *Energía sin fin* (`SelfStaminaBoost`) | 1,0 | 1,5 | 1,8 | 2,0 | |
 | *Barra llena* (`SelfStaminaFull`) | 1,4 | 1,2 | 1,0 | 1,6 | |
 | *Bola lanzable* (`Throwable`) | 1,4 | 1,3 | 0,9 | 1,2 | |
@@ -3397,7 +3429,8 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
 - **Rebuscables** (`ATN_BeachSearchSpot`): `PickLoot` (ahora virtual en `ATN_ProcSearchSpot`, con la tortuga que rebusca)
   sortea por el puesto de quien rebusca (fuente `Search`).
 - **Cofres** (`ATN_BeachChestSpot`): el objeto que cae hacia quien lo abre y el de más, ambos con la fuente `Chest`
-  (factor de la tabla) según el puesto de quien lo abre.
+  (factor de la tabla) según el puesto de quien lo abre; el de la cima de un castillo (fortaleza, enorme o con salas), con la fuente `Summit` (la tabla
+  de las últimas para cualquier puesto).
 - Los objetos que suelta el lagarto generoso siguen con los pesos de siempre (`TNBeachLoot::RaceWeight`, sin puesto).
 
 ### Red (resumen)
@@ -3411,7 +3444,15 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
   (marca `FLAG_Custom_1`; la `FLAG_Custom_0` es la petición de sprint, #250); el servidor simula los movimientos
   marcados con el que él le reconoce (`ResolveOwnerBoostMultiplier`: el de ahora o, recién acabado, el de antes durante un ping más 0,25 s) y
   `UTN_TurtleMovementComponent` lo aplica a la velocidad y la aceleración. Sin corrección al empezar ni al acabar.
-- **Sonidos** sintetizados (`UTN_RaceItemSynthComponent`, 21 sonidos, sin archivos) y efectos puntuales locales
+- **Tabla de surf y cohete de feria** (#786): también van en la predicción, sin campos nuevos: la ola y el cohete tienen un
+  multiplicador propio y exacto (1,75 y 2,6) que manda sobre el turbo y el protector, y `TNRaceItemRules::MoveStyleOf` lo
+  reconoce en el movimiento (`UTN_TurtleMovementComponent::ApplyRaceMoveStyle` cambia el rumbo: la ola hacia el mar, el cohete
+  girando 45°/s). El servidor derriba lo que encuentra la ola, la acaba contra una pared y lanza la voltereta del cohete con
+  `LaunchFromServer`; la voltereta se ve en todas las máquinas con la hora replicada del final del cohete.
+- **Caña y remolino** (#786): `ATN_RaceFishingHook` (actor de objeto: quién pesca, a quién y la fase) remolca con un solo
+  `LaunchFromServer`; `ATN_RaceWhirlpool` deriva de `ATN_BeachEnemy` como el pelícano y reutiliza su sujeción: la espiral es
+  una fórmula del reloj del servidor (la atrapada se replica una vez) y el mareo es `UTN_BeachTrapStatusComponent::ServerSlow`.
+- **Sonidos** sintetizados (`UTN_RaceItemSynthComponent`, 25 sonidos, sin archivos) y efectos puntuales locales
   (`ATN_RaceBurstFX`); nada en servidor dedicado.
 
 ### Archivos
@@ -3429,6 +3470,10 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
 | `TN_RaceItemSynth.h`, `Private/World/Beach/TN_RaceItemSynth.cpp` | Los sonidos sintetizados |
 | `Private/World/Beach/TN_RaceItemArt.h/.cpp` | Mallas e iconos dibujados en código |
 | `Private/World/Beach/TN_RaceItemCommands.cpp` | Comandos de consola (`Docs/Comandos_Prueba.md`) |
+| `Public/World/Beach/TN_RaceItemRules.h` | Reglas puras de la tabla, la caña, el remolino y el cohete (#786): valores, rumbos, a quién engancha, remolque, espiral (`Tortunabo.Race.Items.*`) |
+| `TN_RaceFishingHook.h/.cpp`, `TN_RaceWhirlpool.h/.cpp` | Caña de pescar y remolino |
+| `Private/World/Beach/TN_RaceRideFX.h/.cpp` | La tabla bajo los pies, la ola, el cohete con su llama y la voltereta |
+| `Private/World/Beach/TN_RaceItemArtExtra.h/.cpp` | Mallas, iconos y piezas de los objetos de la #786 (los llama `TN_RaceItemArt.cpp`) |
 | Cambios mínimos en lo existente | `TN_InventoryTypes.h` (`RaceItem`), `TN_InventoryComponent.*` (resolver malla e icono; `TryReplaceEquippedItem`), `TN_PickupInteractableBase.cpp` (idem), `TortugaCharacter_Interaction.cpp` (rama `RaceItem`), `TortugaCharacter_Knockdown.cpp` y `TN_BeachStun.cpp` (invulnerabilidad), `TN_BeachEnemy.*` (`CanBeHit` y `GetMaxHoldSeconds`, virtual: el seguro de la sujeción es de 6 s y el pelícano taxi lo alarga a 20 s), `TN_StaminaComponent.*` (`GetRaceBoostWalkSpeed`), `TN_TurtleMovementComponent.*` (turbo en `FTNSavedMove_Turtle`), `TN_ProcSearchSpot.*` (`PickLoot` virtual), `TN_BeachLoot.*` y `TN_BeachChest.*` (sorteo por puesto, cajas de objetos) |
 
 ### Probar
@@ -3438,6 +3483,12 @@ velocidad, con la vista más abierta), `Sunscreen` (atravesar un enemigo y otra 
 la deja de pie sin caer al agua; probar cerca de la meta: `TN.Beach.Go acantilado` → «nop»), `SandMine`, `Frisbee`, `Whistle`
 con enemigos cerca y `HomingCrab`. Con anfitrión y cliente: `GullStrike` y `StormCloud` (`TN.Race.ItemUse GullStrike 1`), y
 mirar que las dos ventanas ven lo mismo; `TN.Race.ItemBox 4` y `TN.Race.ItemRank` para ver qué toca en cada puesto.
+
+Los de la #786: `TN.Race.ItemUse TablaSurf` (3 s hacia el mar; contra un castillo de frente se acaba; con otra tortuga
+delante, la derriba), `TN.Race.ItemUse CoheteFeria` (2 s muy deprisa casi sin girar y la voltereta), `TN.Race.ItemUse
+Remolino` (queda detrás; volver a él pasados 2 s: gira, va al centro y sale mareada) y, con anfitrión y cliente,
+`TN.Race.ItemUse CanaPescar 1` con el cliente por detrás del anfitrión a menos de 25 m (y con `TN.Race.Star` en el anfitrión:
+el anzuelo rebota). Las reglas puras, sin editor: `Automation RunTests Tortunabo.Race.Items`.
 
 ### Límites conocidos
 

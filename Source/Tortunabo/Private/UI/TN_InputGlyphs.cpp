@@ -1,4 +1,5 @@
 #include "UI/TN_InputGlyphs.h"
+#include "VR/TN_VRMode.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del bloque.
 namespace TNInputGlyphsDetail
@@ -6,6 +7,9 @@ namespace TNInputGlyphsDetail
 	// Valores de ESteamInputType (steam/isteaminput.h, SDK 1.57). Aquí sin la cabecera de Steam para que las reglas se
 	// prueben en cualquier plataforma; TN_SteamGamepadInput.cpp comprueba con static_assert que siguen siendo estos.
 	constexpr int32 SteamPS4Controller = 5;
+	constexpr int32 SteamJoyConPair = 8;
+	constexpr int32 SteamJoyConSingle = 9;
+	constexpr int32 SteamSwitchProController = 10;
 	constexpr int32 SteamPS3Controller = 12;
 	constexpr int32 SteamPS5Controller = 13;
 	constexpr int32 SteamDeckController = 14;
@@ -35,6 +39,14 @@ namespace TNInputGlyphsDetail
 			Spec.Accent = Colors[Slot];
 			return Spec;
 		}
+		if (Family == ETNPadFamily::Switch)
+		{
+			// Mismo sitio, otra letra: la de abajo es B y la de la derecha, A (las lleva impresas sin color).
+			static const FText SwitchLetters[4] = { INVTEXT("B"), INVTEXT("A"), INVTEXT("Y"), INVTEXT("X") };
+			Spec.Label = SwitchLetters[Slot];
+			Spec.Accent = Plain;
+			return Spec;
+		}
 		static const FText Letters[4] = { INVTEXT("A"), INVTEXT("B"), INVTEXT("X"), INVTEXT("Y") };
 		static const FLinearColor Colors[4] = { XboxGreen, XboxRed, XboxBlue, XboxYellow };
 		Spec.Label = Letters[Slot];
@@ -55,6 +67,12 @@ namespace TNInputGlyphsDetail
 			Spec.Label = Names[(bTrigger ? 2 : 0) + (bRight ? 1 : 0)];
 			return Spec;
 		}
+		if (Family == ETNPadFamily::Switch)
+		{
+			static const FText SwitchNames[4] = { INVTEXT("L"), INVTEXT("R"), INVTEXT("ZL"), INVTEXT("ZR") };
+			Spec.Label = SwitchNames[(bTrigger ? 2 : 0) + (bRight ? 1 : 0)];
+			return Spec;
+		}
 		static const FText Names[4] = { INVTEXT("L1"), INVTEXT("R1"), INVTEXT("L2"), INVTEXT("R2") };
 		Spec.Label = Names[(bTrigger ? 2 : 0) + (bRight ? 1 : 0)];
 		return Spec;
@@ -73,7 +91,7 @@ namespace TNInputGlyphsDetail
 			Spec.Label = bRight ? INVTEXT("R") : INVTEXT("L");
 			return Spec;
 		}
-		if (Family == ETNPadFamily::Xbox)
+		if (Family == ETNPadFamily::Xbox || Family == ETNPadFamily::Switch)
 		{
 			Spec.Label = bRight ? INVTEXT("RS") : INVTEXT("LS");
 			return Spec;
@@ -123,7 +141,10 @@ FKey TNInputGlyphs::PickKey(const TArray<FKey>& Keys, ETNInputDevice Device)
 		{
 			continue;
 		}
-		if (DeviceOfKey(Key) == Device)
+		// Los botones de los Touch son «mando» para el motor, pero un aviso con mando no debe enseñar el gatillo de las gafas
+		// (y con gafas, no el A del mando): cada aparato lee los suyos.
+		const ETNInputDevice KeyDevice = FTNVRKeys::IsVRKey(Key) ? ETNInputDevice::VR : DeviceOfKey(Key);
+		if (KeyDevice == Device)
 		{
 			return AsButton(Key);
 		}
@@ -146,6 +167,10 @@ ETNPadFamily TNInputGlyphs::FamilyFromSteamInputType(int32 SteamInputType)
 			return ETNPadFamily::PlayStation;
 		case SteamDeckController:
 			return ETNPadFamily::SteamDeck;
+		case SteamJoyConPair:
+		case SteamJoyConSingle:
+		case SteamSwitchProController:
+			return ETNPadFamily::Switch;
 		default:
 			return ETNPadFamily::Xbox;
 	}
@@ -159,6 +184,14 @@ ETNPadFamily TNInputGlyphs::FamilyFromHardwareName(const FString& HardwareName)
 		if (HardwareName.Contains(Name))
 		{
 			return ETNPadFamily::PlayStation;
+		}
+	}
+	static const TCHAR* SwitchNames[] = { TEXT("Switch"), TEXT("Nintendo"), TEXT("JoyCon"), TEXT("Joy-Con") };
+	for (const TCHAR* Name : SwitchNames)
+	{
+		if (HardwareName.Contains(Name))
+		{
+			return ETNPadFamily::Switch;
 		}
 	}
 	return HardwareName.Contains(TEXT("SteamDeck")) ? ETNPadFamily::SteamDeck : ETNPadFamily::Xbox;

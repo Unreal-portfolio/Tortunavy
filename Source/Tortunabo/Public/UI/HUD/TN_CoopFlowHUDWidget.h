@@ -54,7 +54,7 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> ResultsTitle;
 
-	// "Puesto: #1" / "Eliminado"
+	// "Puesto: #1" / qué la ha eliminado ("Te ha alcanzado la tormenta"...; sin causa, "Eliminado")
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> ResultsRankText;
 
@@ -65,6 +65,14 @@ protected:
 	// "Volviendo al lobby en: 8"  — updated every 0.1 s
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> ResultsCountdown;
+
+	// Puntuación final del Coop (#789): desglose por término y total. Oculto si la partida no la tiene.
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> CoopScoreText;
+
+	// Títulos de fin de partida (#798): «Saltarín: nombre (N saltos)». Oculto si nadie se lo lleva.
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> EndTitleText;
 
 	// "Scroll para cambiar de jugador"  — shown only while spectating
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -188,6 +196,8 @@ private:
 	void ShowResultsPanel(const ATN_CoopGameState* GameState);
 	void HideResultsPanel();
 	void RefreshResultsCountdown(const ATN_CoopGameState* GameState);
+	/** Lo de Results que puede llegar más tarde que el estado (puntuación final del Coop): se repasa en cada refresco. */
+	void RefreshResultsExtras(const ATN_CoopGameState* GameState);
 	FText BuildRankTitle(int32 FinishRank, bool bEliminated) const;
 
 	void RefreshScoreboard(const ATN_CoopGameState* GameState);

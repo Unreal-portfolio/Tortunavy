@@ -4,6 +4,7 @@
 #include "GameFramework/GameMode.h"
 #include "Core/TN_MatchFlowTypes.h"
 #include "Game/TN_LateJoinRules.h"
+#include "Core/TN_DeathCause.h"
 #include "TN_RunGameMode.generated.h"
 
 class APlayerController;
@@ -93,6 +94,14 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Run")
 	virtual void MarkPlayerDead(APlayerController* PlayerController);
+
+	/**
+	 * @brief MarkPlayerDead apuntando qué la ha eliminado (#728, ATN_CoopPlayerState::DeathCause), solo en los modos con
+	 *        bRecordDeathCause. Sin causa (MarkPlayerDead a secas) o en los demás modos queda Unknown: «Eliminado». Si no
+	 *        muere (tótem, ya en meta...), no se apunta nada.
+	 * @note Server-only.
+	 */
+	void MarkPlayerDeadBy(APlayerController* PlayerController, ETNDeathCause Cause);
 
 	/**
 	 * @brief Callback server-side cuando una CollectionZone alcanza su RequiredCount.
@@ -313,6 +322,15 @@ protected:
 	 */
 	bool TryTotemAutoRevive(APlayerController* PlayerController);
 
+	/**
+	 * El panel de resultados dice qué la ha eliminado (#728). Solo Supervivencia lo activa: el Coop y los demás modos siguen
+	 * con «Eliminado».
+	 */
+	bool bRecordDeathCause = false;
+
+	/** Causa de la muerte que está en curso (MarkPlayerDeadBy); MarkPlayerDead la apunta al eliminar. */
+	ETNDeathCause PendingDeathCause = ETNDeathCause::Unknown;
+
 	/** @brief Aplica el ragdoll/ocultación de muerte sobre el pawn (RecoverFromKnockdown → StopMovementImmediately → DisableInput → bAlwaysRelevant/DORM_Awake → SetDeadVisual). */
 	void ApplyDeathVisuals(APawn* Pawn, APlayerController* PlayerController);
 
@@ -324,6 +342,12 @@ protected:
 
 	/** @brief Restaura visual, colisión, posesión e input del pawn revivido. Solo se llama cuando Pawn es válido. */
 	void RestorePossessionAfterRevive(APlayerController* PlayerController, APawn* Pawn, const FVector& ReviveTargetLocation, bool bHasReviveTargetLocation);
+
+	/**
+	 * @brief Ronda cerrada sin Results: el RaceScore de cada jugadora va a su perfil antes de que ResetForNewRace lo
+	 *        ponga a 0 (ATN_CoopPlayerState::BankRoundScoreToProfile, #567). Llamar justo antes del reinicio de la ronda.
+	 */
+	void BankRoundScoresToProfiles();
 
 private:
 	/** Decisión de entrada de cada PostLogin, de FindInactivePlayer a HandleStartingNewPlayer (el viaje sin cortes no pasa por aquí). */

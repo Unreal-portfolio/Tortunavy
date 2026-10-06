@@ -30,6 +30,23 @@ float ATN_TctGameState::GetWaterZ() const
 	return TNTctRules::WaterZAt(Flood.ToPlan(), static_cast<float>(GetServerWorldTimeSeconds()) - Flood.StartServerTime);
 }
 
+float ATN_TctGameState::GetFloodElapsed() const
+{
+	return Flood.StartServerTime < 0.f ? -1.f : static_cast<float>(GetServerWorldTimeSeconds()) - Flood.StartServerTime;
+}
+
+bool ATN_TctGameState::GetNextRise(FTNTctNextRise& OutNext) const
+{
+	OutNext = FTNTctNextRise();
+	const float Elapsed = GetFloodElapsed();
+	if (Elapsed < 0.f)
+	{
+		return false;
+	}
+	OutNext = TNTctRules::NextRise(Flood.ToPlan(), Elapsed);
+	return true;
+}
+
 float ATN_TctGameState::GetSecondsToNextRise() const
 {
 	if (Flood.StartServerTime < 0.f)

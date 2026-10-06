@@ -19,8 +19,7 @@ class USceneComponent;
  * Sin sustitutos, UploadSection sube los buffers tal cual, igual que antes, y no se crea nada más.
  *
  * Con sustituto, lo que se ve sale de la sección sin la pieza (sin colisión) y la colisión sale de los buffers enteros en una
- * sección invisible (CollisionSectionOffset más allá): el juego choca exactamente con lo mismo. Las piezas con
- * bUseArtCollision se quitan también de esa sección y chocan con su malla de arte.
+ * sección invisible (CollisionSectionOffset más allá): el juego choca exactamente con lo mismo, con o sin arte (#828).
  *
  * Solo para secciones que se construyen una vez (no las que se actualizan cada fotograma con UpdateMeshSection).
  */
@@ -129,7 +128,7 @@ namespace TNArt
 	/**
 	 * Quita las mallas de arte que puso antes el grupo de Log en el actor de AttachTo y pone, hija de AttachTo, una por cada
 	 * pieza con sustituto (una instancia por copia, en Adjust * Pivot). Las copias anidadas dentro de otra con sustituto no
-	 * se ponen. Choca solo si la pieza pide bUseArtCollision (con la respuesta de AttachTo). Anota todas las piezas del
+	 * se ponen. No chocan: la colisión es la generada (#828). Anota todas las piezas del
 	 * registro (TN.Art.Slots). Llamar siempre, después de subir todo, en el hilo de juego.
 	 */
 	void SpawnPieceArt(USceneComponent* AttachTo, const FPieceLog& Log);

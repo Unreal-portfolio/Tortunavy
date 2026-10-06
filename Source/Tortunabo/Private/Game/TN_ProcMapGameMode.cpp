@@ -3,6 +3,7 @@
 #include "Core/TN_Log.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_GameModeSpawnUtils.h"
+#include "Game/TN_RoundLeftovers.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Player/MP_GamePlayerController.h"
 #include "Player/TortugaCharacter.h"
@@ -15,6 +16,11 @@
 #include "World/ProcMap/TN_ProcEggNest.h"
 #include "World/ProcMap/TN_ProcStartStructure.h"
 #include "World/ProcMap/TN_PathStorm.h"
+#include "World/ProcMap/TN_TurtleDoll.h"
+#include "World/TN_PuzzleScoreSubsystem.h"
+#include "World/TN_ScorePickup.h"
+#include "Core/TN_CoopScore.h"
+#include "World/ProcMap/TN_SandStorm.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -31,6 +37,9 @@ namespace TNProcMapGameModeDetail
 {
 	TAutoConsoleVariable<int32> CVarProcStartStyle(TEXT("TN.Proc.StartStyle"), -1,
 		TEXT("Salida del mapa procedural: -1 = lo del lobby (por defecto), 0 = puerta doble, 1 = huevos. Vale desde la siguiente generación del mapa."));
+
+	TAutoConsoleVariable<int32> CVarCoopIntensityRound(TEXT("TN.Coop.IntensityRound"), 0,
+		TEXT("Coop (#788): ronda (1-5) con la que se lee la tabla de intensidad (Content/Data/Coop/IntensityTable.json). 0 = la ronda de la partida. Vale desde la siguiente generación del mapa."));
 
 	/** Con estructura de salida, un PlayerStart está ocupado si hay otro peón a menos de esto (los sitios de la sala distan ~2 m). */
 	constexpr double StructureStartTakenRadius = 80.0;
@@ -68,6 +77,7 @@ ATN_ProcMapGameMode::ATN_ProcMapGameMode()
 	GameStateClass = ATN_ProcMapGameState::StaticClass();
 	GeneratorClass = ATN_ProcMapGenerator::StaticClass();
 	PathStormClass = ATN_PathStorm::StaticClass();
+	SandStormClass = ATN_SandStorm::StaticClass();
 
 	// Los mismos Blueprints que BP_RunGameMode: así la clase C++ ya sirve como
 	// GameMode Override de LVL_ProcMap aunque no exista un BP propio.
@@ -229,6 +239,10 @@ void ATN_ProcMapGameMode::GenerateRoundMap()
 	ResolveStartStyle();
 	Generator->SetStartStructureStyle(StartStyle);
 
+	// Coop (#788): la ronda con la que el generador lee la tabla de intensidad (TN.Coop.IntensityRound la fuerza).
+	const int32 ForcedIntensityRound = TNProcMapGameModeDetail::CVarCoopIntensityRound.GetValueOnGameThread();
+	Generator->SetCoopRound(ForcedIntensityRound > 0 ? ForcedIntensityRound : CurrentRound);
+
 	const int32 BaseSeed = UrlSeed != 0 ? UrlSeed : FixedSeed;
 	for (int32 Attempt = 0; Attempt < 3; ++Attempt)
 	{
@@ -366,6 +380,9 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 			if (CurrentRound == 1)
 			{
 				PS->RoundWins = 0;
+				PS->TurtleDollsCollected = 0;
+				PS->CollectedShellPoints = 0;
+				PS->CoopScore = FTN_CoopScoreBreakdown();
 			}
 			PS->TeamIndex = -1;
 		}
@@ -374,6 +391,14 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 	{
 		AssignTwoVsTwoTeams();
 	}
+
+	if (CurrentRound == 1)
+	{
+		MatchTurtleDollsTotal = 0;
+		MatchShellPointsTotal = 0;
+		CollectiblesCountedGeneration = 0;
+	}
+	CountRoundCollectibles();
 
 	PlacePlayersAtStart();
 
@@ -390,6 +415,7 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 
 	bRoundActive = true;
 	StartStormIfNeeded();
+	StartSandStormIfNeeded();
 
 	// La salida se abre con el «¡ADELANTE!» de la pantalla de carga: gira la puerta 2 o se rompen los huevos.
 	GetWorldTimerManager().ClearTimer(StartStructureOpenHandle);
@@ -410,6 +436,60 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 		Generator ? Generator->GetNetConfig().Seed : 0,
 		Generator ? Generator->EstimateTraversalMinutes() : 0.f);
 	SyncGameState();
+}
+
+void ATN_ProcMapGameMode::CountRoundCollectibles()
+{
+	if (Mode != ETNProcGameMode::Coop || !Generator || !Generator->IsMapReady())
+	{
+		return;
+	}
+	// Sin regenerar entre rondas, los muñecos y las conchas son los mismos: no se cuentan dos veces.
+	const int32 Generation = Generator->GetBuiltGeneration();
+	if (Generation == CollectiblesCountedGeneration)
+	{
+		return;
+	}
+	CollectiblesCountedGeneration = Generation;
+	MatchTurtleDollsTotal += ATN_TurtleDoll::CountInWorld(GetWorld());
+	for (TActorIterator<ATN_ScorePickup> It(GetWorld()); It; ++It)
+	{
+		if (IsValid(*It) && !It->IsActorBeingDestroyed())
+		{
+			MatchShellPointsTotal += FMath::Max(0, It->GetScoreValue());
+		}
+	}
+}
+
+void ATN_ProcMapGameMode::ComputeCoopScores()
+{
+	TArray<ATN_CoopPlayerState*> Players;
+	int32 TeamShellPoints = 0;
+	for (APlayerState* BasePS : GameState->PlayerArray)
+	{
+		if (ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS))
+		{
+			Players.Add(PS);
+			TeamShellPoints += PS->CollectedShellPoints;
+		}
+	}
+	const UTN_PuzzleScoreSubsystem* Puzzles = GetWorld()->GetSubsystem<UTN_PuzzleScoreSubsystem>();
+	TNCoopScore::FInputs In;
+	In.DollsTotal = MatchTurtleDollsTotal;
+	// Las conchas que salen después (rebuscables, enemigos) también cuentan: el total nunca queda por debajo de lo cogido.
+	In.ShellsCollected = TeamShellPoints;
+	In.ShellsTotal = FMath::Max(MatchShellPointsTotal, TeamShellPoints);
+	In.PuzzleEfficiency = Puzzles ? Puzzles->GetEfficiency() : -1.f;
+	for (ATN_CoopPlayerState* PS : Players)
+	{
+		In.DollsCollected = PS->TurtleDollsCollected;
+		In.bFinished = PS->bHasFinishedRun && !PS->bIsEliminated;
+		const FTN_CoopScoreBreakdown Score = TNCoopScore::Compute(In);
+		PS->SetCoopScore(Score);
+		UE_LOG(LogTortunabo, Log, TEXT("[ProcMapGameMode] Puntuación final de %s: %d (muñecos %d/%d +%d, conchas %d/%d +%d, meta +%d, puzle %.2f +%d)."),
+			*PS->GetPlayerName(), Score.Total, Score.DollsCollected, Score.DollsTotal, Score.DollPoints, Score.ShellsCollected,
+			Score.ShellsTotal, Score.ShellPoints, Score.FinishPoints, Score.PuzzleEfficiency, Score.PuzzlePoints);
+	}
 }
 
 void ATN_ProcMapGameMode::PlacePlayersAtStart()
@@ -587,17 +667,7 @@ void ATN_ProcMapGameMode::StartStormIfNeeded()
 
 	if (!Storm)
 	{
-		UClass* StormClass = PathStormClass ? PathStormClass.Get() : ATN_PathStorm::StaticClass();
-		if (const UTN_ProcMapSettings* Settings = Generator->GetSettings())
-		{
-			if (Settings->PathStormClass && Settings->PathStormClass->IsChildOf(ATN_PathStorm::StaticClass()))
-			{
-				StormClass = Settings->PathStormClass.Get();
-			}
-		}
-		FActorSpawnParameters Params;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		Storm = GetWorld()->SpawnActor<ATN_PathStorm>(StormClass, FTransform::Identity, Params);
+		Storm = ATN_PathStorm::SpawnFor(GetWorld(), Generator, PathStormClass);
 	}
 	if (Storm)
 	{
@@ -606,6 +676,32 @@ void ATN_ProcMapGameMode::StartStormIfNeeded()
 		const float Speed = WalkSpeed > 0.f ? FMath::Min(Profile.StormSpeed, WalkSpeed) : Profile.StormSpeed;
 		Storm->StartStorm(Generator, Speed, Profile.StormGraceSeconds);
 	}
+}
+
+void ATN_ProcMapGameMode::StartSandStormIfNeeded()
+{
+	if (Mode != ETNProcGameMode::Coop || !SandStormClass || !Generator)
+	{
+		if (SandStorm) { SandStorm->StopCycle(); }
+		return;
+	}
+	if (!SandStorm)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SandStorm = GetWorld()->SpawnActor<ATN_SandStorm>(SandStormClass, FTransform::Identity, Params);
+	}
+	if (SandStorm)
+	{
+		// La semilla del mapa: con TN.Proc o una semilla fija, las tormentas llegan siempre igual.
+		SandStorm->StartCycle(Generator->GetNetConfig().Seed ^ 0x790);
+	}
+}
+
+void ATN_ProcMapGameMode::StopStorms()
+{
+	if (Storm) { Storm->StopStorm(); }
+	if (SandStorm) { SandStorm->StopCycle(); }
 }
 
 float ATN_ProcMapGameMode::GetTurtleWalkSpeed() const
@@ -992,10 +1088,7 @@ void ATN_ProcMapGameMode::UpdateRoundProgressAndMaybeFinish()
 			bRoundActive = false;
 			bMatchOver = true;
 			GetWorldTimerManager().ClearTimer(RoundTimeLimitHandle);
-			if (Storm)
-			{
-				Storm->StopStorm();
-			}
+			StopStorms();
 			SyncGameState();
 		}
 		return;
@@ -1106,10 +1199,7 @@ void ATN_ProcMapGameMode::EndRound(const TArray<APlayerController*>& Winners, co
 		GetWorldTimerManager().ClearTimer(Pending.Value);
 	}
 	PendingRespawns.Reset();
-	if (Storm)
-	{
-		Storm->StopStorm();
-	}
+	StopStorms();
 
 	for (APlayerController* Winner : Winners)
 	{
@@ -1168,6 +1258,8 @@ void ATN_ProcMapGameMode::StartNextRound()
 		Structure->Close();
 	}
 
+	// Las conchas de la ronda que acaba van al perfil antes del reinicio: Results solo guarda la última (#567).
+	BankRoundScoresToProfiles();
 	for (APlayerState* BasePS : GameState->PlayerArray)
 	{
 		if (ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS))
@@ -1246,6 +1338,14 @@ void ATN_ProcMapGameMode::CleanupRoundActors()
 			It->Destroy();
 		}
 	}
+
+	// Lo que dejan las jugadoras (objetos soltados, pickups de bolas paradas, conchas trampa) no pasa a la ronda
+	// siguiente (#569): con el mapa nuevo quedaría flotando o enterrado, y una trampa armada seguiría inmovilizando.
+	const int32 Removed = TNRoundLeftovers::DestroyPlayerLeftovers(GetWorld());
+	if (Removed > 0)
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[ProcMapGameMode] Ronda %d: %d objetos sueltos quitados."), CurrentRound, Removed);
+	}
 }
 
 void ATN_ProcMapGameMode::EnterFinalResults()
@@ -1253,9 +1353,12 @@ void ATN_ProcMapGameMode::EnterFinalResults()
 	bMatchOver = true;
 	bRoundActive = false;
 	GetWorldTimerManager().ClearTimer(RoundTimeLimitHandle);
-	if (Storm)
+	StopStorms();
+
+	// Coop: la puntuación final con su desglose, antes de Results (el anfitrión la guarda en su perfil al entrar).
+	if (Mode == ETNProcGameMode::Coop)
 	{
-		Storm->StopStorm();
+		ComputeCoopScores();
 	}
 
 	// Carrera y 2vs2: la tabla final es la de rondas ganadas (el widget de
@@ -1387,6 +1490,7 @@ void ATN_ProcMapGameMode::SyncGameState() const
 		GS->MapSeed = Generator->GetNetConfig().Seed;
 		GS->EstimatedMinutes = Generator->EstimateTraversalMinutes();
 	}
+	GS->TurtleDollsTotal = MatchTurtleDollsTotal;
 	GS->NotifyRoundInfoChanged();
 }
 

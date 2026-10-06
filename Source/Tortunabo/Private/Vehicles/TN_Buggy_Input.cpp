@@ -49,6 +49,7 @@ void ATN_Buggy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	Input->BindAction(Set->FireCoco, ETriggerEvent::Triggered, this, &ATN_Buggy::OnFireCoco);
 	Input->BindAction(Set->FireCoco, ETriggerEvent::Completed, this, &ATN_Buggy::OnFireCocoReleased);
 	Input->BindAction(Set->FireSpecial, ETriggerEvent::Started, this, &ATN_Buggy::OnFireSpecial);
+	Input->BindAction(Set->FireSpecial, ETriggerEvent::Triggered, this, &ATN_Buggy::OnFireSpecialHeld);
 	Input->BindAction(Set->FireBack, ETriggerEvent::Started, this, &ATN_Buggy::OnFireBackPressed);
 	Input->BindAction(Set->FireBack, ETriggerEvent::Completed, this, &ATN_Buggy::OnFireBackReleased);
 }
@@ -163,7 +164,8 @@ void ATN_Buggy::OnFireCoco(const FInputActionValue& Value)
 	if (Now - LastDriverFireRequest >= TNRallyTurret::SpecFor(Selected).FireInterval)
 	{
 		LastDriverFireRequest = Now;
-		bDriverFireLatched = TNRallyTurret::IsSpecial(Selected);
+		// La ráfaga de erizos (#715) se repite mientras se mantiene: el resto de especiales, una por pulsación.
+		bDriverFireLatched = TNRallyTurret::IsSpecial(Selected) && !TNRallyTurret::IsBurstAmmo(Selected);
 		RequestDriverFire(false, bAimBackward);
 	}
 }
@@ -175,10 +177,22 @@ void ATN_Buggy::OnFireCocoReleased(const FInputActionValue& Value)
 
 void ATN_Buggy::OnFireSpecial(const FInputActionValue& Value)
 {
-	if (!bGunnerSeated)
+	if (bGunnerSeated)
 	{
-		RequestDriverFire(true, bAimBackward);
+		return;
 	}
+	// Started y Triggered llegan en el mismo fotograma al pulsar: con la ráfaga, las dos comparten la cadencia de las púas
+	// (LastDriverFireRequest) y solo la primera pide, sea cual sea el orden.
+	if (Turret && TNRallyTurret::IsBurstAmmo(Turret->GetSpecialAmmo()))
+	{
+		const double Now = GetWorld()->GetTimeSeconds();
+		if (Now - LastDriverFireRequest < TNRallyTurret::ErizosSpikeInterval)
+		{
+			return;
+		}
+		LastDriverFireRequest = Now;
+	}
+	RequestDriverFire(true, bAimBackward);
 }
 
 void ATN_Buggy::RequestDriverFire(bool bSpecial, bool bBackward)
@@ -214,4 +228,19 @@ void ATN_Buggy::OnFireBackPressed(const FInputActionValue& Value)
 void ATN_Buggy::OnFireBackReleased(const FInputActionValue& Value)
 {
 	bAimBackward = false;
+}
+
+void ATN_Buggy::OnFireSpecialHeld(const FInputActionValue& Value)
+{
+	// Ráfaga de erizos (#715) de la conductora sola: mantener el botón especial repite la petición a la cadencia de las púas.
+	if (bGunnerSeated || !Turret || !TNRallyTurret::IsBurstAmmo(Turret->GetSpecialAmmo()))
+	{
+		return;
+	}
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (Now - LastDriverFireRequest >= TNRallyTurret::ErizosSpikeInterval)
+	{
+		LastDriverFireRequest = Now;
+		RequestDriverFire(true, bAimBackward);
+	}
 }

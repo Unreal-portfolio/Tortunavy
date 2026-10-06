@@ -12,6 +12,7 @@
 #include "Settings/TN_SettingsSaveGame.h"
 #include "UObject/Package.h"
 #include "VR/TN_VRMath.h"
+#include "VR/TN_VRMenuClaim.h"
 #include "VR/TN_VRMode.h"
 #include "VR/TN_VRInputTriggers.h"
 #include "VR/TN_VRRig.h"
@@ -178,6 +179,28 @@ bool FTNVRMenuKeysTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Menú → Start"), TNVRMath::MenuKeyFor(FTNVRKeys::Menu) == EKeys::Gamepad_Special_Right);
 	TestTrue(TEXT("Stick derecho abajo → cruceta abajo"), TNVRMath::MenuKeyFor(FTNVRKeys::RightStickDown) == EKeys::Gamepad_DPad_Down);
 	TestFalse(TEXT("Gatillo: es el clic del puntero, no una tecla"), TNVRMath::MenuKeyFor(FTNVRKeys::RightTrigger).IsValid());
+
+	// X e Y tienen una segunda acción antes de caer en aceptar o atrás (#648): borrar, refrescar, quitar una tecla.
+	TestTrue(TEXT("X: la X del mando primero (borrar)"), TNVRMath::SecondaryMenuKeyFor(FTNVRKeys::X) == EKeys::Gamepad_FaceButton_Left);
+	TestTrue(TEXT("Y: la Y del mando primero (refrescar, quitar tecla)"), TNVRMath::SecondaryMenuKeyFor(FTNVRKeys::Y) == EKeys::Gamepad_FaceButton_Top);
+	TestFalse(TEXT("A no tiene segunda acción"), TNVRMath::SecondaryMenuKeyFor(FTNVRKeys::A).IsValid());
+	TestFalse(TEXT("B no tiene segunda acción"), TNVRMath::SecondaryMenuKeyFor(FTNVRKeys::B).IsValid());
+
+	// Quien usa de verdad la X o la Y de un menú lo anota: el procesador solo la da por atendida si el contador se mueve (la
+	// pausa se traga toda tecla y sin esto X no aceptaba ni Y iba atrás).
+	const uint32 ClaimsBefore = TNVRMenuClaim::Count();
+	TestEqual(TEXT("Si nadie la usa, el contador no se mueve"), TNVRMenuClaim::Count(), ClaimsBefore);
+	TNVRMenuClaim::Claim();
+	TestEqual(TEXT("Al usarla, el contador sube"), TNVRMenuClaim::Count(), ClaimsBefore + 1);
+
+	// El stick derecho gira la tortuga de la tienda y el probador: sin cruceta mientras lo reservan.
+	TestTrue(TEXT("Stick derecho a la izquierda es una dirección del stick derecho"), TNVRMath::IsRightStickDirection(FTNVRKeys::RightStickLeft));
+	TestFalse(TEXT("El stick izquierdo no lo es"), TNVRMath::IsRightStickDirection(FTNVRKeys::LeftStickLeft));
+	TestEqual(TEXT("Zona muerta: no gira"), TNVRMath::StickSpinDegrees(0.15f, 0.1f), 0.f);
+	TestTrue(TEXT("Stick a la derecha gira en negativo, como arrastrar el ratón a la derecha"), TNVRMath::StickSpinDegrees(1.f, 0.1f) < 0.f);
+	TestTrue(TEXT("Stick a la izquierda gira en positivo"), TNVRMath::StickSpinDegrees(-1.f, 0.1f) > 0.f);
+	TestEqual(TEXT("A fondo, 160 grados por segundo"), TNVRMath::StickSpinDegrees(1.f, 1.f), -160.f);
+	TestEqual(TEXT("Sin tiempo no gira"), TNVRMath::StickSpinDegrees(1.f, 0.f), 0.f);
 
 	TestTrue(TEXT("A es un botón de los mandos VR"), FTNVRKeys::IsVRKey(FTNVRKeys::A));
 	TestFalse(TEXT("Un botón del mando normal no lo es"), FTNVRKeys::IsVRKey(EKeys::Gamepad_FaceButton_Bottom));

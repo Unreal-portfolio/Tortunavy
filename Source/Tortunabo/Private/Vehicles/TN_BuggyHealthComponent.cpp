@@ -239,6 +239,10 @@ void UTN_BuggyHealthComponent::ApplyAmmoEffect(ETNRallyAmmo Ammo, const FVector&
 	case ETNRallyAmmo::Ancla:
 		ATN_RallyAnchorTether::Attach(Buggy, WorldPoint);
 		break;
+	case ETNRallyAmmo::Erizos:
+		// Empujón lateral lejos del lado donde da la púa.
+		Buggy->ApplySpikeHit(Buggy->GetActorLocation() - WorldPoint);
+		break;
 	default:
 		break;
 	}
@@ -277,13 +281,17 @@ void UTN_BuggyHealthComponent::Explode()
 	// La carrera lo recoge en su bucle (ATN_RallyGameMode::ConsumeRespawnRequests) y lo hace reaparecer siempre, con su
 	// propio motivo: no es una petición de R y no espera a que acabe la inmunidad de una reaparición anterior.
 	Buggy->NotifyDestroyed();
-	World->GetTimerManager().SetTimer(RestoreTimer, this, &UTN_BuggyHealthComponent::RestoreAfterDeath,
+	World->GetTimerManager().SetTimer(RestoreTimer, this, &UTN_BuggyHealthComponent::RestoreFullHealth,
 		TNRallyCombat::DeathRestoreSeconds, false);
 	UE_LOG(LogTNBuggy, Log, TEXT("%s: revienta"), *Buggy->GetName());
 }
 
-void UTN_BuggyHealthComponent::RestoreAfterDeath()
+void UTN_BuggyHealthComponent::RestoreFullHealth()
 {
+	if (const UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(RestoreTimer);
+	}
 	Health = MaxHealth;
 	UpdateSmoke();
 	if (AActor* Owner = GetOwner())

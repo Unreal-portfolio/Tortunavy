@@ -33,6 +33,27 @@ namespace TNScoreLogic
 	 * ranks válidos primero (1, 2, 3...), sin-rank (FinishRank <= 0) después,
 	 * eliminados siempre al final aunque tuvieran rank.
 	 */
+	/**
+	 * Puntos de una ronda que se cierra sin pasar por Results y que se guardan en el perfil antes de que ResetForNewRace
+	 * ponga RaceScore a 0 (#567): carrera de la playa (StartNextRound, StartSprint) y mapa procedural (StartNextRound).
+	 * Results solo guarda la última ronda de la partida; las demás se guardan enteras aquí.
+	 * @return Lo que se suma al perfil, en [0, ∞).
+	 */
+	inline int32 ComputeRoundBank(int32 RoundScore)
+	{
+		return FMath::Max(0, RoundScore);
+	}
+
+	/**
+	 * Lo ya guardado de la partida en curso (PersistedScoreThisRace) tras un cambio de MatchFlowState: fuera de Results
+	 * vuelve a 0, en el servidor (BroadcastFlowStateChange) y en los clientes (OnRep_MatchFlowState). Antes solo el
+	 * servidor lo reiniciaba: en un cliente, tras «Volver a jugar», la partida siguiente guardaba max(0, nuevo − viejo).
+	 */
+	inline int32 PersistedAfterFlowChange(int32 AlreadyPersisted, bool bIsResults)
+	{
+		return bIsResults ? AlreadyPersisted : 0;
+	}
+
 	inline int32 ComputeResultSortKey(bool bEliminated, int32 FinishRank)
 	{
 		if (bEliminated)

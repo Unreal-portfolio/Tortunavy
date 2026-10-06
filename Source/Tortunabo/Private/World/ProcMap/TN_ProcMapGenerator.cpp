@@ -141,13 +141,16 @@ void ATN_ProcMapGenerator::ServerGenerate(int32 InSeed, ETNProcGameMode InMode, 
 	ForceNetUpdate();
 }
 
-void ATN_ProcMapGenerator::ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty)
+void ATN_ProcMapGenerator::ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty, int32 InTrapsPer100mTenths,
+	int32 InSearchPer100mTenths)
 {
 	if (!HasAuthority())
 	{
 		return;
 	}
 	NetConfig.SurvivalDifficulty = FMath::Clamp(InSurvivalDifficulty, TNProcMap::SurvivalMinDifficulty, TNProcMap::SurvivalMaxDifficulty);
+	NetConfig.SurvivalTrapsPer100mTenths = FMath::Clamp(InTrapsPer100mTenths, 0, 500);
+	NetConfig.SurvivalSearchPer100mTenths = FMath::Clamp(InSearchPer100mTenths, 0, 200);
 	ServerGenerate(InSeed, ETNProcGameMode::Survival, ETNProcDifficulty::Normal);
 }
 
@@ -196,8 +199,10 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 	}
 	const double T1 = FPlatformTime::Seconds();
 	PlanSurvivalTraps();
+	PlanCoopIntensity();
 
 	BuildTerrain();
+	PlanSurvivalSearchProps();
 	const double T2 = FPlatformTime::Seconds();
 	BuildWater();
 	BuildStructures();
@@ -223,6 +228,8 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 			{
 				SpawnHazards();
 				SpawnSurvivalTraps();
+				SpawnIntensityEnemies();
+				SpawnIntensityAllies();
 				SpawnShelters();
 				// Después de los peligros: las conchas del plan no pisan lo que estos han puesto (HazardSpots).
 				SpawnShells();

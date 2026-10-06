@@ -342,4 +342,55 @@ namespace TNVRMath
 		if (Key == FTNVRKeys::LeftStickRight || Key == FTNVRKeys::RightStickRight) { return EKeys::Gamepad_DPad_Right; }
 		return EKeys::Invalid;
 	}
+
+	/**
+	 * Segunda acción de X e Y en un menú (#648): la tecla de mando que se prueba antes de caer en aceptar o atrás (MenuKeyFor).
+	 * X → X del mando (borrar un carácter del código de sala), Y → Y del mando (refrescar la lista, quitar una tecla de
+	 * Controles). Si el menú enfocado no la usa, X sigue aceptando e Y sigue yendo atrás. EKeys::Invalid para el resto.
+	 */
+	inline FKey SecondaryMenuKeyFor(const FKey& Key)
+	{
+		if (Key == FTNVRKeys::X) { return EKeys::Gamepad_FaceButton_Left; }
+		if (Key == FTNVRKeys::Y) { return EKeys::Gamepad_FaceButton_Top; }
+		return EKeys::Invalid;
+	}
+
+	/** ¿Es una dirección del stick derecho (como botón)? Un menú que reserva ese stick (el probador) no la recibe como cruceta. */
+	inline bool IsRightStickDirection(const FKey& Key)
+	{
+		return Key == FTNVRKeys::RightStickUp || Key == FTNVRKeys::RightStickDown || Key == FTNVRKeys::RightStickLeft || Key == FTNVRKeys::RightStickRight;
+	}
+
+	/**
+	 * Cuántos grados gira la tortuga del probador en un fotograma con el stick derecho inclinado Axis (-1..1): hacia la derecha
+	 * es negativo, como arrastrar el ratón hacia la derecha. Dentro de la zona muerta, 0.
+	 */
+	inline float StickSpinDegrees(float Axis, float DeltaSeconds, float DegreesPerSecond = 160.f, float DeadZone = 0.2f)
+	{
+		return FMath::Abs(Axis) <= DeadZone ? 0.f : -Axis * DegreesPerSecond * DeltaSeconds;
+	}
+
+	// ── Fantasma con gafas (#646) ────────────────────────────────────────────
+
+	/** Cuánto detrás (cm, según el rumbo fijo) y cuánto sobre la tortuga seguida se pone la cabeza de quien la mira de fantasma. */
+	inline constexpr float GhostViewBack = 170.f;
+	inline constexpr float GhostViewUp = 85.f;
+
+	/**
+	 * Dónde se pone la cabeza del fantasma con gafas: la posición de la tortuga seguida, un poco detrás y arriba respecto del
+	 * rumbo fijo (FixedYaw), sin retardo. La vista que da el brazo de cámara de la otra tortuga marea: llega tarde y gira
+	 * cuando gira ese jugador. Solo la posición sigue a la tortuga; el rumbo lo pone el jugador con su cabeza (el rumbo fijo
+	 * no cambia aunque la tortuga se vuelva).
+	 */
+	inline FVector GhostViewLocation(const FVector& FollowedLocation, float FixedYaw)
+	{
+		const FVector Forward = FRotator(0.0, static_cast<double>(FixedYaw), 0.0).Vector();
+		return FollowedLocation - Forward * GhostViewBack + FVector(0.0, 0.0, GhostViewUp);
+	}
+
+	/** Hacia dónde mira la vista base del fantasma con gafas: solo el rumbo fijo (sin cabeceo ni alabeo: eso es de la cabeza). */
+	inline FRotator GhostViewRotation(float FixedYaw)
+	{
+		return FRotator(0.0, static_cast<double>(FixedYaw), 0.0);
+	}
 }

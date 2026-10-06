@@ -598,6 +598,14 @@ public:
 	static bool CanBeRoof(const AActor* Actor, const UPrimitiveComponent* Component);
 
 	/**
+	 * Si el decorado puede apoyarse en lo que toca una sonda de suelo: lo que está igual en todas las máquinas cuando cada una
+	 * monta su decorado (el terreno y lo del nivel). No: los pawns, los actores que crea el servidor en partida y replica
+	 * (llegan a cada cliente cuando llegan) ni lo de ATN_MapPlacementSpawner (sale en el BeginPlay del cargador, que en el
+	 * servidor va después del decorado y en el cliente antes). Con ellos, servidor y cliente colocaban distinto (#828).
+	 */
+	static bool IsStableGround(const AActor* Actor);
+
+	/**
 	 * Hay techo encima de From: lo primero que puede serlo (CanBeRoof) en la vertical, hasta UpCm por encima, deja al menos
 	 * MinGapCm de aire (más cerca es el propio suelo). Lo usan las sondas de IsUnderRoof y los tests de #693.
 	 */

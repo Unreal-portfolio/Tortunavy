@@ -1,6 +1,7 @@
 #include "World/TN_ButtonGroupManager.h"
 #include "World/TN_ButtonInteractable.h"
 #include "Core/TN_Log.h"
+#include "World/TN_PuzzleScoreSubsystem.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -70,6 +71,9 @@ void ATN_ButtonGroupManager::BeginPlay()
 
 	if (!HasAuthority()) { return; }
 
+	// Cuenta para la eficiencia de puzle de la puntuación final del Coop (#789).
+	UTN_PuzzleScoreSubsystem::Register(this);
+
 	// Suscribirse al delegate de cada botón gestionado (eyedropper clásico)
 	for (ATN_ButtonInteractable* Button : ManagedButtons)
 	{
@@ -100,12 +104,15 @@ void ATN_ButtonGroupManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 // ── Lógica ─────────────────────────────────────────────────────────────────────
 
-void ATN_ButtonGroupManager::OnButtonActivationChanged(ATN_ButtonInteractable* /*Button*/, bool /*bActivated*/)
+void ATN_ButtonGroupManager::OnButtonActivationChanged(ATN_ButtonInteractable* /*Button*/, bool bActivated)
 {
 	if (!HasAuthority()) { return; }
 
 	// Si ya se disparó y es one-shot, no procesar más cambios
 	if (bTriggered) { return; }
+
+	// El primer botón pulsado pone en marcha el reloj de la eficiencia de puzle (#789).
+	if (bActivated) { UTN_PuzzleScoreSubsystem::NotifyProgress(this); }
 
 	CheckAndTrigger();
 }
@@ -125,6 +132,7 @@ void ATN_ButtonGroupManager::CheckAndTrigger()
 		// Umbral alcanzado: disparar. El estado replica solo (también a quien entre tarde); el efecto, al momento.
 		bGroupActive = true;
 		bTriggered = bOneShot;
+		UTN_PuzzleScoreSubsystem::NotifySolved(this);
 		ApplyTriggerActions(true);
 		MulticastPlayGroupEffect(true);
 		ForceNetUpdate();

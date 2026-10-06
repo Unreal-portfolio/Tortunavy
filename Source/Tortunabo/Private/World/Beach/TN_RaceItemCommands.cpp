@@ -3,6 +3,7 @@
 #include "World/Beach/TN_RaceItemActor.h"
 #include "World/Beach/TN_RaceItemBox.h"
 #include "World/Beach/TN_RaceItemComponent.h"
+#include "World/Beach/TN_RaceWhirlpool.h"
 #include "Core/TN_Log.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -200,10 +201,11 @@ namespace TNRaceItemCmd
 		for (int32 Index = static_cast<int32>(ETNRaceItem::Coconut); Index < static_cast<int32>(ETNRaceItem::Count); ++Index)
 		{
 			const ETNRaceItem Kind = static_cast<ETNRaceItem>(Index);
-			UE_LOG(LogTortunabo, Display, TEXT("[Carrera]   %-16s rebuscar %.2f · caja %.2f · cofre %.2f"), *TNRaceItems::CodeName(Kind),
+			UE_LOG(LogTortunabo, Display, TEXT("[Carrera]   %-16s rebuscar %.2f · caja %.2f · cofre %.2f · cofre de cima %.2f"), *TNRaceItems::CodeName(Kind),
 				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Search),
 				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Box),
-				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Chest));
+				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Chest),
+				TNRaceItems::PositionWeight(Kind, Rank.Norm, Rank.Count, ETNRaceLootSource::Summit));
 		}
 	}
 
@@ -261,6 +263,12 @@ namespace TNRaceItemCmd
 				Effects->CancelEffects();
 				++Cleared;
 			}
+		}
+		// Los remolinos (#786) derivan de ATN_BeachEnemy, no de ATN_RaceItemActor: se acaban aparte.
+		for (TActorIterator<ATN_RaceWhirlpool> It(AuthWorld); It; ++It)
+		{
+			It->ServerEnd();
+			++Removed;
 		}
 		UE_LOG(LogTortunabo, Log, TEXT("[Carrera] TN.Race.ItemClear: %d actores de objetos quitados y efectos cancelados en %d tortugas."), Removed, Cleared);
 	}

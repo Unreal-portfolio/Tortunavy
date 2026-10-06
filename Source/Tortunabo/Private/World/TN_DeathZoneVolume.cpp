@@ -157,7 +157,7 @@ void ATN_DeathZoneVolume::HandlePlayerDeath(APlayerController* PlayerController)
 	if (ATN_RunGameMode* RunGameMode = ResolveRunGameMode())
 	{
 		// Muerte instantánea — sin DBNO/bleedout
-		RunGameMode->MarkPlayerDead(PlayerController);
+		RunGameMode->MarkPlayerDeadBy(PlayerController, ETNDeathCause::DeathZone);
 	}
 
 	// Notificar a subclases (ej. TN_ScriptedDeathZone)

@@ -58,6 +58,7 @@
 #include "Sound/SoundMix.h"
 #include "Sound/SoundWaveProcedural.h"
 #include "UObject/UObjectHash.h"
+#include "VR/TN_VRControls.h"
 #include "VR/TN_VRMode.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
 
@@ -187,10 +188,12 @@ namespace TNGameSettingsDetail
 		S.FieldOfViewOffset = FMath::Clamp(S.FieldOfViewOffset, -30.f, 30.f);
 		S.ColorFilter = static_cast<uint8>(FMath::Clamp<int32>(S.ColorFilter, 0, 3));
 		S.ColorFilterStrength = FMath::Clamp(S.ColorFilterStrength, 0.f, 1.f);
+		S.WeatherEffects = FMath::Clamp(S.WeatherEffects, 0.f, 1.f);
 		S.Brightness = FMath::Clamp(S.Brightness, 0.f, 1.f);
 		S.UIScale = FMath::Clamp(S.UIScale, MinUIScale, MaxUIScale);
 		S.VRMode = static_cast<uint8>(FMath::Clamp<int32>(S.VRMode, 0, 2));
 		S.VRTurn = static_cast<uint8>(FMath::Clamp<int32>(S.VRTurn, 0, 2));
+		S.VRVignette = static_cast<uint8>(FMath::Clamp<int32>(S.VRVignette, 0, 2));
 		S.CameraView = static_cast<uint8>(FMath::Clamp<int32>(S.CameraView, 0, 1));
 		// Un idioma que ya no está en la lista (se quitó de la configuración): sin elegir, que toca el del sistema.
 		if (!S.Language.IsEmpty() && TNLanguage::IndexOf(S.Language) == INDEX_NONE)
@@ -960,11 +963,14 @@ void UTN_GameSettingsSubsystem::ResetGroup(ETNSettingsGroup Group)
 		Target.ColorFilterStrength = Defaults.ColorFilterStrength;
 		Target.UIScale = Defaults.UIScale;
 		Target.bShowTalkers = Defaults.bShowTalkers;
+		Target.WeatherEffects = Defaults.WeatherEffects;
 		// Idioma sin elegir (el del sistema, o el español) y el ojo de pez de serie.
 		Target.Language = Defaults.Language;
 		Target.bFisheye = Defaults.bFisheye;
 		Target.VRMode = Defaults.VRMode;
 		Target.VRTurn = Defaults.VRTurn;
+		Target.VRVignette = Defaults.VRVignette;
+		Target.bVRHaptics = Defaults.bVRHaptics;
 		Target.CameraView = Defaults.CameraView;
 		break;
 	default:
@@ -1646,6 +1652,15 @@ FText UTN_GameSettingsSubsystem::KeyDisplayName(const FKey& Key)
 	if (!Key.IsValid())
 	{
 		return NSLOCTEXT("TNSettings", "NoKey", "—");
+	}
+	// Los botones de los mandos Touch de las gafas (OculusTouch_*): «Gatillo derecho», «A», «Stick izquierdo»... (#644).
+	if (FTNVRKeys::IsVRKey(Key))
+	{
+		const FText VRName = TNVRControls::KeyName(Key);
+		if (!VRName.IsEmpty())
+		{
+			return VRName;
+		}
 	}
 	// Los nombres de las teclas del juego, por su nombre de tecla. Una entrada por texto: las que se llaman igual comparten clave.
 	// Estático local (no de archivo): los NSLOCTEXT se crean con el sistema de localización ya en marcha.

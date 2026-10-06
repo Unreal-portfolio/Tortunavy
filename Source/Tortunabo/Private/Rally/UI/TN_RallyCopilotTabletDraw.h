@@ -213,3 +213,35 @@ struct FTNRallyTabletPainter
 		FSlateDrawElement::MakeText(Out, ++Layer, At(TopLeft, Size), Content, Font, ESlateDrawEffect::None, Fade(Color));
 	}
 };
+
+/** Piezas que comparten la tableta y el minimapa de Supervivencia (UTN_SurvivalMinimap). */
+namespace TNRallyTabletPaint
+{
+	inline TArray<FVector2f> RingPoints(const FVector2f& Center, float Radius, int32 Segments)
+	{
+		TArray<FVector2f> Points;
+		Points.Reserve(Segments + 1);
+		for (int32 Index = 0; Index <= Segments; ++Index)
+		{
+			const float Angle = 2.f * PI * Index / Segments;
+			Points.Add(Center + FVector2f(FMath::Cos(Angle), FMath::Sin(Angle)) * Radius);
+		}
+		return Points;
+	}
+
+	/** Caparazón de un buggy: disco del color del equipo con filo crema y el dibujo hexagonal encima. */
+	inline void PaintShell(FTNRallyTabletPainter& Painter, const FVector2f& Center, float Radius, const FLinearColor& Color, bool bOut)
+	{
+		const TNRallyTablet::FBrushes& Brush = TNRallyTablet::Brushes();
+		const FLinearColor Fill = bOut ? FMath::Lerp(Color, TNRallyTablet::Screen, 0.6f) : Color;
+		Painter.Circle(Center + FVector2f(0.f, 2.f), Radius + 1.f, Brush.Circle, FLinearColor(0.f, 0.f, 0.f, 0.45f));
+		Painter.Circle(Center, Radius, Brush.ShellRim, Fill);
+		TArray<FVector2f> Hexagon;
+		for (int32 Index = 0; Index <= 6; ++Index)
+		{
+			const float Angle = PI / 6.f + Index * PI / 3.f;
+			Hexagon.Add(Center + FVector2f(FMath::Cos(Angle), FMath::Sin(Angle)) * Radius * 0.5f);
+		}
+		Painter.Lines(Hexagon, FLinearColor(0.f, 0.03f, 0.08f, 0.45f), FMath::Max(1.5f, Radius * 0.14f));
+	}
+}

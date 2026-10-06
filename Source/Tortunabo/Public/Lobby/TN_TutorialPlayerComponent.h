@@ -143,6 +143,8 @@ private:
 	bool bCatapultBall = false;
 	float ChatWheelHeld = 0.f;
 	bool bDropKeyWasDown = false;
+	/** Con gafas: segundos desde que el agarre derecho estaba apretado (soltar con el agarre, #645). */
+	float VRGripAge = 100.f;
 	FName LastEquipped = NAME_None;
 	FName LastStored = NAME_None;
 
@@ -151,6 +153,8 @@ private:
 	TMap<uint8, FText> KeyTexts;
 	TMap<uint8, TArray<FKey>> KeyKeys;
 	bool bGamepad = false;
+	/** Con el modo VR (#644): los avisos nombran los botones de los mandos Touch. */
+	bool bVRKeys = false;
 	/** Con mando, el botón de cada acción para dibujarlo (#347) y la familia del mando con la que se leyó. */
 	TMap<uint8, FKey> KeyPadKeys;
 	uint8 KeyPadFamily = 0;

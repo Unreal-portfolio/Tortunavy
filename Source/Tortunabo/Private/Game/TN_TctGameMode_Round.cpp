@@ -1,9 +1,11 @@
 // Rondas de Todos contra Todos (ATN_TctGameMode): preparación, salida, vigilancia de las caídas, cierre, recuento y campeona.
 
 #include "Game/TN_TctGameMode.h"
+#include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_Log.h"
+#include "Player/TortugaCharacter.h"
 #include "Lobby/TN_LobbyMission.h"
 #include "World/TN_TctArena.h"
 
@@ -206,7 +208,7 @@ void ATN_TctGameMode::WatchFighters()
 		{
 			// El motor la ha destruido (por debajo del KillZ del nivel): ha caído.
 			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' sin tortuga en plena ronda: eliminada."), *PS->GetPlayerName());
-			MarkPlayerDead(PC);
+			MarkPlayerDeadBy(PC, ETNDeathCause::Void);
 			continue;
 		}
 		FTNTctBody Body;
@@ -214,11 +216,28 @@ void ATN_TctGameMode::WatchFighters()
 		const ACharacter* Character = Cast<ACharacter>(Pawn);
 		Body.HalfHeight = Character && Character->GetCapsuleComponent()
 			? Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : TNTctRoundDetail::DefaultHalfHeight;
-		if (TNTctRules::ShouldEliminate(Body, ArenaBounds, WaterZ))
+		ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
+		// Siempre con componente (el servidor lo crea si falta): sin él no se cuenta el veneno y el agua no puede eliminar.
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle);
+		const ETNTctFall Cause = TNTctRules::FallCause(Body, ArenaBounds, WaterZ);
+		// El agua es veneno (#831): tocarla no mata, intoxica mientras se está dentro (el flotador salva, #777) y se elimina al
+		// llegar al máximo. Caer fuera de la arena elimina como siempre.
+		bool bEliminated = Cause == ETNTctFall::OutOfArena;
+		if (!bEliminated)
 		{
-			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' cae (pies a %.0f, agua a %.0f): eliminada."),
-				*PS->GetPlayerName(), Body.Location.Z - Body.HalfHeight, WaterZ);
-			MarkPlayerDead(PC);
+			bEliminated = Effects && Effects->ServerTickWater(Cause == ETNTctFall::Water);
+		}
+		if (bEliminated)
+		{
+			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' %s (pies a %.0f, agua a %.0f): eliminada."),
+				*PS->GetPlayerName(), Cause == ETNTctFall::OutOfArena ? TEXT("cae fuera de la arena") : TEXT("muere envenenada"),
+				Body.Location.Z - Body.HalfHeight, WaterZ);
+			MarkPlayerDeadBy(PC, Cause == ETNTctFall::OutOfArena ? ETNDeathCause::Void : ETNDeathCause::Water);
+			continue;
+		}
+		if (Effects && Effects->ServerTakeRescue())
+		{
+			RescueFromWater(Turtle, WaterZ);
 		}
 	}
 }

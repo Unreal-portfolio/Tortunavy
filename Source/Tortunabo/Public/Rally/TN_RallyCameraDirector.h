@@ -34,8 +34,8 @@ public:
 
 	/** Mirando la carrera (espectador) y a qué equipo; INDEX_NONE con el dron o sin espectador. */
 	bool IsSpectating() const { return Shot == TNRallyCamera::EShot::Spectate && bHasSpectateTarget; }
-	bool IsDroneView() const { return IsSpectating() && bDrone; }
-	int32 GetSpectatedTeam() const { return IsSpectating() && !bDrone ? SpectateTeam : INDEX_NONE; }
+	bool IsDroneView() const { return IsSpectating() && Spectated.bDrone; }
+	int32 GetSpectatedTeam() const { return IsSpectating() && !Spectated.bDrone ? Spectated.Team : INDEX_NONE; }
 
 private:
 	APlayerController* GetPlayer() const;
@@ -51,6 +51,7 @@ private:
 	void UpdateSpectate(const ATN_RallyGameState& RallyState, float DeltaTime);
 	/** Buggies que siguen corriendo, por puesto (sin los que llegaron ni los retirados). */
 	TArray<const FTNRallyStanding*> RacingStandings(const ATN_RallyGameState& RallyState) const;
+	static TArray<int32> TeamsOf(const TArray<const FTNRallyStanding*>& Racing);
 	void ViewBuggy(APawn* Vehicle);
 	void ViewDrone(const APawn& Leader, float DeltaTime);
 
@@ -71,10 +72,8 @@ private:
 	bool bSlowMotion = false;
 	bool bSawStanding = false;
 	double FinishSeenRealTime = -1.0;
-	/** Hueco del espectador (TNRallyCamera::CycleSpectate) y el equipo al que corresponde, para seguirlo si cambia el orden. */
-	int32 SpectateSlot = 0;
-	int32 SpectateTeam = INDEX_NONE;
-	bool bDrone = false;
+	/** A quién mira el espectador (TNRallyCamera::FollowSpectate): hueco, equipo (para seguirlo si cambia el orden) y dron. */
+	TNRallyCamera::FSpectatePick Spectated;
 	bool bHasSpectateTarget = false;
 	bool bCameraAttached = false;
 };

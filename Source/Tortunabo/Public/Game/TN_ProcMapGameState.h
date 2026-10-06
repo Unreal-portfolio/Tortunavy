@@ -52,6 +52,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_RoundInfo, Category = "ProcMap")
 	float EstimatedMinutes = 0.f;
 
+	/**
+	 * Coop: muñecos tortuga puestos en la partida (#797), sumando los mapas de todas las rondas. Con
+	 * ATN_CoopPlayerState::TurtleDollsCollected da el «recogidos / total» de la puntuación final.
+	 */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_RoundInfo, Category = "ProcMap")
+	int32 TurtleDollsTotal = 0;
+
 	/** Se dispara en todas las máquinas cuando cambia cualquiera de los datos de ronda. */
 	UPROPERTY(BlueprintAssignable, Category = "ProcMap")
 	FOnProcRoundInfoChanged OnRoundInfoChanged;

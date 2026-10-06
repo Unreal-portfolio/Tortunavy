@@ -11,6 +11,7 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "InputAction.h"
+#include "VR/TN_VRMode.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del bloque.
 namespace TNInputDeviceDetail
@@ -19,9 +20,9 @@ namespace TNInputDeviceDetail
 	constexpr double FamilyRefreshSeconds = 3.0;
 
 	TAutoConsoleVariable<int32> CVarDevice(TEXT("TN.Input.Device"), 0,
-		TEXT("Aparato de los avisos de botones: 0 el último usado, 1 teclado y ratón, 2 mando (para probar sin mando)."), ECVF_Cheat);
+		TEXT("Aparato de los avisos de botones: 0 el último usado (VR si el modo VR está activo), 1 teclado y ratón, 2 mando, 3 mandos Touch de VR (para probar sin mando)."), ECVF_Cheat);
 	TAutoConsoleVariable<int32> CVarPadFamily(TEXT("TN.Input.PadFamily"), 0,
-		TEXT("Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck."), ECVF_Cheat);
+		TEXT("Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck, 4 Switch."), ECVF_Cheat);
 
 	/** Lee todo lo que entra por Slate (sin quedarse nada) y apunta el aparato en el subsistema. */
 	class FTracker : public IInputProcessor
@@ -82,7 +83,10 @@ namespace TNInputDeviceDetail
 		}
 	};
 
-	/** Familia por el nombre del último mando que ha visto el motor (sin Steam). */
+	/**
+	 * Familia por el nombre del último mando que ha visto el motor (sin Steam): XInputController (Xbox) o el HardwareId del
+	 * perfil del lector DirectInput (DualShock4, DualSense, SwitchPro, GenericGamepad; TN_GamepadDevice, #743).
+	 */
 	ETNPadFamily FamilyFromEngine()
 	{
 		const UInputDeviceSubsystem* Devices = UInputDeviceSubsystem::Get();
@@ -144,7 +148,14 @@ ETNInputDevice UTN_InputDeviceSubsystem::GetDevice(const APlayerController* PC) 
 	{
 		case 1:  return ETNInputDevice::KeyboardMouse;
 		case 2:  return ETNInputDevice::Gamepad;
+		case 3:  return ETNInputDevice::VR;
 		default: break;
+	}
+	// Con el modo VR (gafas o simulado) los avisos nombran los botones de los mandos Touch, uses lo que uses (#644). Sin VR no
+	// cambia nada.
+	if (TNVR::IsEnabled())
+	{
+		return ETNInputDevice::VR;
 	}
 	const ULocalPlayer* LocalPlayer = PC ? PC->GetLocalPlayer() : nullptr;
 	const int32 UserIndex = LocalPlayer ? LocalPlayer->GetPlatformUserIndex() : 0;
@@ -159,6 +170,7 @@ ETNPadFamily UTN_InputDeviceSubsystem::GetPadFamily() const
 		case 1:  return ETNPadFamily::Xbox;
 		case 2:  return ETNPadFamily::PlayStation;
 		case 3:  return ETNPadFamily::SteamDeck;
+		case 4:  return ETNPadFamily::Switch;
 		default: break;
 	}
 	const double Now = FPlatformTime::Seconds();

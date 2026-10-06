@@ -121,6 +121,18 @@ void UTN_LocalSplitOverlay::Build()
 	JoinPill->SetContent(Label(Tree, NSLOCTEXT("TNLocal", "JoinHint", "Pulsa Start en otro mando para unirte (hasta 4)"), TEXT("Bold"), 17, TNHUDArt::Foam));
 	Pin(Root, JoinPill, FVector2D(0.5f, 1.f), FVector2D(0.f, -14.f));
 	JoinPill->SetVisibility(ESlateVisibility::Collapsed);
+
+	// Un aviso suelto (con gafas, por qué no entra un invitado): arriba en el centro, ajustado al ancho de la pantalla.
+	NoticePill = Tree->ConstructWidget<UBorder>(UBorder::StaticClass());
+	TNHUDStyle::StylePanel(NoticePill, TNHUDStyle::Panel, 14.f, FMargin(20.f, 8.f, 20.f, 10.f), TNHUDStyle::Coral);
+	NoticeText = Label(Tree, FText::GetEmpty(), TEXT("Bold"), 20, TNHUDArt::Cream);
+	NoticeText->SetAutoWrapText(true);
+	USizeBox* NoticeBox = Tree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+	NoticeBox->SetMaxDesiredWidth(720.f);
+	NoticeBox->SetContent(NoticeText);
+	NoticePill->SetContent(NoticeBox);
+	Pin(Root, NoticePill, FVector2D(0.5f, 0.f), FVector2D(0.f, 24.f));
+	NoticePill->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UTN_LocalSplitOverlay::PlaceInRect(UWidget* Widget, const TNLocalPlay::FViewRect& Rect)
@@ -172,6 +184,15 @@ void UTN_LocalSplitOverlay::Refresh(const FTNSplitOverlayState& State)
 			PillSlot->SetAlignment(FVector2D(0.5f, bOnSplit ? 0.5f : 1.f));
 			PillSlot->SetPosition(FVector2D(0.f, bOnSplit ? 0.f : -14.f));
 		}
+	}
+
+	// El aviso suelto.
+	const FString WantNotice = State.Notice.ToString();
+	if (WantNotice != ShownNotice)
+	{
+		ShownNotice = WantNotice;
+		NoticeText->SetText(State.Notice);
+		NoticePill->SetVisibility(WantNotice.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
 	}
 
 	// Cada vista: su zona, su número y quién está saliendo.

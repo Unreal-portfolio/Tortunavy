@@ -20,7 +20,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTctItemsCatalogTest,
 bool FTNTctItemsCatalogTest::RunTest(const FString& Parameters)
 {
 	const TArray<ETNTctItem> Kinds = TNTctItemRules::AllKinds();
-	TestEqual(TEXT("Trece objetos"), Kinds.Num(), 13);
+	TestEqual(TEXT("Veintiocho objetos (los 18 de #651, #714 y #777 y los 10 de #830)"), Kinds.Num(), 28);
+	// Sin malla IA de #600: llevan su malla en ejecución (TNTctItemMeshes).
+	const TSet<ETNTctItem> OwnMesh = { ETNTctItem::Cocobomba, ETNTctItem::Alga, ETNTctItem::GaviotaLadrona, ETNTctItem::Flotador,
+		ETNTctItem::MedusaTrampolin, ETNTctItem::Cohete, ETNTctItem::BotasMuelle, ETNTctItem::Aletas, ETNTctItem::Cambiazo,
+		ETNTctItem::Burbuja, ETNTctItem::Puas, ETNTctItem::Red, ETNTctItem::Remolino, ETNTctItem::TaponMarea, ETNTctItem::Paraguas };
 
 	int32 InPool = 0;
 	TSet<FName> Ids;
@@ -58,7 +62,8 @@ bool FTNTctItemsCatalogTest::RunTest(const FString& Parameters)
 			TestEqual(FString::Printf(TEXT("%s: cargas de la fila"), Spec.Code), TNTctItems::ChargesOf(Item), Spec.Charges);
 			TestNotNull(FString::Printf(TEXT("%s: se puede soltar"), Spec.Code), Item.PickupActorClass.Get());
 		}
-		TestFalse(FString::Printf(TEXT("%s: malla IA de #600"), Spec.Code), TNTctItems::MeshPath(Kind).IsEmpty());
+		TestTrue(FString::Printf(TEXT("%s: malla IA de #600 o malla propia"), Spec.Code),
+			!TNTctItems::MeshPath(Kind).IsEmpty() || OwnMesh.Contains(Kind));
 	}
 	TestTrue(TEXT("Al menos siete objetos de combate en los puntos"), InPool >= 7);
 
@@ -98,10 +103,48 @@ bool FTNTctItemsPadClockTest::RunTest(const FString& Parameters)
 	Clock.MarkSpawned();
 	TestFalse(TEXT("Con objeto puesto, no sale otro"), Clock.ShouldSpawn(50.0, false));
 
-	Clock.MarkTaken(20.0, 12.f);
+	// #778: los objetos reaparecen a los 6 s (antes, 12 s).
+	TestEqual(TEXT("Reaparición de serie: 6 s"), TNTctItemTuning::PadRespawnSeconds, 6.f);
+	TestEqual(TEXT("El punto de objetos usa la de serie"), GetDefault<ATN_TctItemPad>()->RespawnSeconds, 6.f);
+	Clock.MarkTaken(20.0, TNTctItemTuning::PadRespawnSeconds);
 	TestFalse(TEXT("Recién cogido, no reaparece"), Clock.ShouldSpawn(20.0, false));
-	TestFalse(TEXT("A los 11,9 s, todavía no"), Clock.ShouldSpawn(31.9, false));
-	TestTrue(TEXT("A los 12 s, reaparece"), Clock.ShouldSpawn(32.0, false));
+	TestFalse(TEXT("A los 5,9 s, todavía no"), Clock.ShouldSpawn(25.9, false));
+	TestTrue(TEXT("A los 6 s, reaparece"), Clock.ShouldSpawn(26.0, false));
+	Clock.MarkSpawned();
+	TestFalse(TEXT("Nunca más de un objeto por punto"), Clock.ShouldSpawn(40.0, false));
+
+	// Seis puntos y alguien que coge un objeto cada 2 s del primero que lo tenga: media de puntos con objeto en 60 s.
+	const auto AverageStocked = [](float Respawn)
+	{
+		TArray<FTNTctPadClock> Pads;
+		Pads.SetNum(6);
+		for (FTNTctPadClock& Pad : Pads) { Pad.StartRound(0.0, 0.f); }
+		double Stocked = 0.0;
+		int32 Samples = 0;
+		for (int32 Tick = 0; Tick <= 600; ++Tick)
+		{
+			const double Now = Tick * 0.1;
+			for (FTNTctPadClock& Pad : Pads)
+			{
+				if (Pad.ShouldSpawn(Now, false)) { Pad.MarkSpawned(); }
+			}
+			if (Tick % 20 == 10)
+			{
+				for (FTNTctPadClock& Pad : Pads)
+				{
+					if (Pad.bHasItem) { Pad.MarkTaken(Now, Respawn); break; }
+				}
+			}
+			for (const FTNTctPadClock& Pad : Pads) { Stocked += Pad.bHasItem ? 1.0 : 0.0; }
+			++Samples;
+		}
+		return Stocked / Samples;
+	};
+	const double Before = AverageStocked(12.f);
+	const double After = AverageStocked(TNTctItemTuning::PadRespawnSeconds);
+	AddInfo(FString::Printf(TEXT("Puntos con objeto de media: %.2f con 12 s, %.2f con 6 s"), Before, After));
+	TestTrue(TEXT("Con 6 s hay más puntos con objeto a la vez"), After > Before + 0.5);
+	TestTrue(TEXT("Nunca más objetos que puntos"), After <= 6.0);
 
 	Clock.MarkSpawned();
 	Clock.Stop();

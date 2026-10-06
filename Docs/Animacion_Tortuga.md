@@ -40,6 +40,18 @@ revés en Y y en Z). Piernas: adelante +X, rodilla -X. Espalda hacia delante -X;
 las aletas llevan primero el brazo al frente (Z, +90 el izquierdo y -90 el derecho) y luego lo suben o bajan sobre X
 (+ sube, - baja; más de 90 lo lleva detrás de la cabeza); el antebrazo se dobla hacia arriba con +X.
 
+**Emotes sobre la postura en T (#838).** Los emotes 0-8 se escriben sobre la postura en T, así que lo que no tocan se queda
+en T: piernas rectas y aletas en cruz. Se hicieron para la tortuga de la demo, que tenía menos partes móviles; con esta
+quedaban las piernas tiesas y las aletas colgando casi hasta el suelo (con los brazos relajados a 68°, la punta de la
+aleta queda a 7 unidades de él: la tortuga mide 53 y sus brazos, 29 del hombro a la punta). `LegsStand` pone las piernas
+de pie (muslos algo adelantados y abiertos, rodillas a unos 32°, pies planos con las puntas hacia fuera y la cadera
+0,76 más baja para que sigan en el suelo) y `ArmsRest` deja las aletas sueltas (brazo a 68° y 14° al frente, antebrazo
+doblado 40°: cuelgan a media pierna, con la punta a unas 12 unidades del suelo). RUN sube el muslo con la rodilla doblada y el pie
+colgando (antes iba casi recta); SUPERKIRK dobla un poco las rodillas; MISTIK (modo loco) oscila con los brazos algo por
+encima de la horizontal y las rodillas siempre dobladas; SEÑALAR apunta al frente y ya no al suelo. El tiempo y el ritmo de
+cada uno son los de antes. La malla no tiene hueso de cola y el caparazón es una pieza pegada a `Spine1`: siguen al cuerpo.
+`Scripts/tools/fk_sim.py` sirve para comprobar estas poses sin abrir el editor.
+
 ## Panzazo: arrastre sobre la tripa
 
 Antes, al caer del panzazo la tortuga se paraba en seco (el frenado de andar la dejaba quieta en una décima) y se quedaba

@@ -5,7 +5,12 @@
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_RaceBurstFX.h"
 #include "World/Beach/TN_RaceItems.h"
+#include "World/Beach/TN_RaceItemRules.h"
+#include "TN_RaceRideFX.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Core/TN_Log.h"
+#include "Player/TN_SlopeTiltComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
@@ -100,8 +105,49 @@ bool UTN_RaceItemComponent::HasStar() const
 	return Effects.StarEnd > 0.f && Now() < static_cast<double>(Effects.StarEnd);
 }
 
+bool UTN_RaceItemComponent::IsSurfing() const
+{
+	return Effects.SurfEnd > 0.f && Now() < static_cast<double>(Effects.SurfEnd);
+}
+
+bool UTN_RaceItemComponent::IsRocketing() const
+{
+	return Effects.RocketEnd > 0.f && Now() < static_cast<double>(Effects.RocketEnd);
+}
+
+float UTN_RaceItemComponent::GetFlipAge() const
+{
+	if (!Effects.bRocketFlip || Effects.RocketEnd <= 0.f)
+	{
+		return -1.f;
+	}
+	const float Age = static_cast<float>(Now() - static_cast<double>(Effects.RocketEnd));
+	return (Age >= 0.f && Age <= TNRaceItemRules::FlipSeconds) ? Age : -1.f;
+}
+
+FVector UTN_RaceItemComponent::GetCourseForward() const
+{
+	const ATN_BeachRaceGenerator* Generator = RoundGenerator.Get();
+	if (!Generator)
+	{
+		Generator = ATN_BeachRaceGenerator::Find(this);
+	}
+	const FVector Sea = Generator ? Generator->GetSeaDirection().GetSafeNormal2D() : FVector::ZeroVector;
+	return Sea.IsNearlyZero() ? FVector::ForwardVector : Sea;
+}
+
 float UTN_RaceItemComponent::GetSpeedMultiplier() const
 {
+	// La ola y el cohete mandan sobre el turbo y el protector, con su valor exacto: así el movimiento sabe qué rumbo darle
+	// (TNRaceItemRules::MoveStyleOf, #786).
+	if (IsRocketing())
+	{
+		return TNRaceItemRules::RocketMultiplier;
+	}
+	if (IsSurfing())
+	{
+		return TNRaceItemRules::SurfMultiplier;
+	}
 	float Multiplier = 1.f;
 	if (IsBoosting())
 	{
@@ -111,7 +157,7 @@ float UTN_RaceItemComponent::GetSpeedMultiplier() const
 	{
 		Multiplier *= TNRaceItems::StarMultiplier;
 	}
-	return FMath::Min(Multiplier, TNRaceItems::MaxSpeedMultiplier);
+	return TNRaceItemRules::AvoidStyleValues(FMath::Min(Multiplier, TNRaceItems::MaxSpeedMultiplier));
 }
 
 float UTN_RaceItemComponent::ResolveOwnerBoostMultiplier() const
@@ -186,6 +232,40 @@ void UTN_RaceItemComponent::SetRiding(bool bInRiding)
 	ApplyEffects();
 }
 
+bool UTN_RaceItemComponent::GrantSurf(float Seconds)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner || !Owner->HasAuthority() || Seconds <= 0.f || IsSurfing() || IsRocketing())
+	{
+		return false;
+	}
+	SurfStartTime = Now();
+	Effects.SurfEnd = static_cast<float>(SurfStartTime + static_cast<double>(Seconds));
+	SurfVictims.Reset();
+	NoteRound();
+	ApplyEffects();
+	Owner->ForceNetUpdate();
+	MulticastCue(ETNRaceSound::Wave, 1.f);
+	return true;
+}
+
+bool UTN_RaceItemComponent::GrantRocket(float Seconds)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner || !Owner->HasAuthority() || Seconds <= 0.f || IsSurfing() || IsRocketing())
+	{
+		return false;
+	}
+	Effects.RocketEnd = static_cast<float>(Now() + static_cast<double>(Seconds));
+	Effects.bRocketFlip = false;
+	bRocketEndHandled = false;
+	NoteRound();
+	ApplyEffects();
+	Owner->ForceNetUpdate();
+	MulticastCue(ETNRaceSound::Rocket, 1.f);
+	return true;
+}
+
 void UTN_RaceItemComponent::NoteRound()
 {
 	EffectsRound = -1;
@@ -207,6 +287,8 @@ void UTN_RaceItemComponent::CancelEffects()
 		return;
 	}
 	Effects = FTNRaceEffectState();
+	bRocketEndHandled = true;
+	SurfVictims.Reset();
 	ApplyEffects();
 }
 
@@ -235,7 +317,8 @@ void UTN_RaceItemComponent::ApplyEffects()
 void UTN_RaceItemComponent::RefreshTickState()
 {
 	const bool bBusy = IsBoosting() || HasStar() || bShownBoost || bShownStar || bFovSaved || AppliedMultiplier > 1.f + KINDA_SMALL_NUMBER
-		|| (bEmittersReady && (TNBeachKit::AnyAlive(Streaks) || TNBeachKit::AnyAlive(Dust) || TNBeachKit::AnyAlive(Sparks)));
+		|| (bEmittersReady && (TNBeachKit::AnyAlive(Streaks) || TNBeachKit::AnyAlive(Dust) || TNBeachKit::AnyAlive(Sparks)))
+		|| IsSurfing() || IsRocketing() || !bRocketEndHandled || GetFlipAge() >= 0.f || (RideFX.IsValid() && RideFX->IsBusy());
 	if (!bBusy)
 	{
 		SetComponentTickEnabled(false);
@@ -247,6 +330,11 @@ void UTN_RaceItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	// El movimiento la tiene con un puntero débil: sin el componente, sin turbo.
 	AppliedMultiplier = 1.f;
 	StopVisuals();
+	if (RideFX.IsValid())
+	{
+		RideFX->Stop(Cast<ACharacter>(GetOwner()));
+		RideFX.Reset();
+	}
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -276,6 +364,10 @@ void UTN_RaceItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	{
 		ServerStarContacts(DeltaTime);
 	}
+	if (Owner->HasAuthority())
+	{
+		ServerRideTick();
+	}
 	// Los efectos no pasan a la ronda siguiente (el reparto nuevo cambia el número de ronda del generador).
 	if (Owner->HasAuthority() && EffectsRound >= 0)
 	{
@@ -293,7 +385,9 @@ void UTN_RaceItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	}
 	if (Owner->GetNetMode() != NM_DedicatedServer)
 	{
-		TickVisuals(DeltaTime, bBoost, bStar);
+		// El cohete lleva las rayas, el polvo y el campo de visión del turbo.
+		TickVisuals(DeltaTime, bBoost || IsRocketing(), bStar);
+		TickRideVisuals(DeltaTime);
 	}
 	RefreshTickState();
 }
@@ -395,6 +489,174 @@ void UTN_RaceItemComponent::ServerStarContacts(float DeltaTime)
 			}
 		}
 	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tabla de surf y cohete de feria (#786): servidor
+// ─────────────────────────────────────────────────────────────────────────────
+
+void UTN_RaceItemComponent::ServerRideTick()
+{
+	using namespace TNRaceItemRules;
+	ATortugaCharacter* Self = Cast<ATortugaCharacter>(GetOwner());
+	if (!Self)
+	{
+		return;
+	}
+	const bool bSurf = IsSurfing();
+	const bool bRocket = IsRocketing();
+	if ((bSurf || bRocket) && !TNRaceItems::CanUseNow(Self))
+	{
+		// La han derribado, aturdido, metido en el caparazón, cogido...: se acaba sin voltereta.
+		Effects.SurfEnd = 0.f;
+		Effects.RocketEnd = 0.f;
+		Effects.bRocketFlip = false;
+		bRocketEndHandled = true;
+		ApplyEffects();
+		Self->ForceNetUpdate();
+		UE_LOG(LogTortunabo, Log, TEXT("[Carrera] %s pierde la ola o el cohete."), *GetNameSafe(Self));
+		return;
+	}
+	if (bSurf)
+	{
+		if (Now() - SurfStartTime >= static_cast<double>(SurfWallMinAge) && ServerSurfHitsWall())
+		{
+			Effects.SurfEnd = static_cast<float>(Now());
+			ApplyEffects();
+			Self->ForceNetUpdate();
+			MulticastCue(ETNRaceSound::Splat, 0.8f);
+			UE_LOG(LogTortunabo, Log, TEXT("[Carrera] %s choca de frente con una pared: se acaba la ola."), *GetNameSafe(Self));
+		}
+		else if (ATN_BeachEnemy::IsRaceLive(this))
+		{
+			// Derriba a las tortugas que encuentra (una vez cada una por ola), empujándolas hacia delante y a un lado.
+			FVector Heading = Flat(Self->GetVelocity());
+			if (Self->GetVelocity().Size2D() < 200.0 || Heading.IsNearlyZero())
+			{
+				Heading = GetCourseForward();
+			}
+			const FVector Right(-Heading.Y, Heading.X, 0.0);
+			TArray<ATortugaCharacter*> Racers;
+			ATN_BeachEnemy::GatherTurtles(this, Racers);
+			for (ATortugaCharacter* Other : Racers)
+			{
+				if (!Other || Other == Self || SurfVictims.Contains(TWeakObjectPtr<AActor>(Other)) || !TNRaceItems::CanBeHurt(Other) || !ATN_BeachEnemy::CanBeHit(Other))
+				{
+					continue;
+				}
+				const FVector Delta = Other->GetActorLocation() - Self->GetActorLocation();
+				if (Delta.SizeSquared2D() > FMath::Square(static_cast<double>(SurfKnockRadius)) || FMath::Abs(Delta.Z) > SurfKnockHeight)
+				{
+					continue;
+				}
+				SurfVictims.Add(TWeakObjectPtr<AActor>(Other));
+				const double Side = FVector::DotProduct(Delta, Right) >= 0.0 ? 1.0 : -1.0;
+				const FVector Push = Heading * SurfKnockForward + Right * (Side * SurfKnockSide) + FVector(0.0, 0.0, SurfKnockLift);
+				TNBeach::KnockDownTurtle(Other, SurfKnockSeconds, Push);
+				MulticastCue(ETNRaceSound::Bonk, 1.1f);
+				UE_LOG(LogTortunabo, Log, TEXT("[Carrera] La ola de %s derriba a %s."), *GetNameSafe(Self), *GetNameSafe(Other));
+			}
+		}
+	}
+	if (!bRocketEndHandled && Effects.RocketEnd > 0.f && Now() >= static_cast<double>(Effects.RocketEnd))
+	{
+		ServerFinishRocket();
+	}
+}
+
+bool UTN_RaceItemComponent::ServerSurfHitsWall() const
+{
+	using namespace TNRaceItemRules;
+	const ACharacter* Self = Cast<ACharacter>(GetOwner());
+	const UCapsuleComponent* Capsule = Self ? Self->GetCapsuleComponent() : nullptr;
+	UWorld* World = GetWorld();
+	if (!Capsule || !World)
+	{
+		return false;
+	}
+	FVector Heading = Flat(Self->GetVelocity());
+	if (Self->GetVelocity().Size2D() < 200.0 || Heading.IsNearlyZero())
+	{
+		Heading = GetCourseForward();
+	}
+	// La cápsula algo más baja y estrecha, levantada del suelo: el suelo y los escalones pequeños no cuentan como pared.
+	const float Radius = Capsule->GetScaledCapsuleRadius() * 0.9f;
+	const float HalfHeight = FMath::Max(Radius, Capsule->GetScaledCapsuleHalfHeight() * 0.7f);
+	const FVector Lift(0.0, 0.0, Capsule->GetScaledCapsuleHalfHeight() * 0.3);
+	const FVector Start = Self->GetActorLocation() + Lift;
+	const FVector End = Start + Heading * static_cast<double>(SurfWallProbe);
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNRaceSurfWall), false, Self);
+	FCollisionResponseParams Response;
+	Capsule->InitSweepCollisionParams(Params, Response);
+	FHitResult Hit;
+	if (!World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, Capsule->GetCollisionObjectType(), FCollisionShape::MakeCapsule(Radius, HalfHeight),
+		Params, Response))
+	{
+		return false;
+	}
+	// Otra tortuga o algo que anda no es una pared (a las tortugas las derriba).
+	if (Hit.bStartPenetrating || Cast<APawn>(Hit.GetActor()))
+	{
+		return false;
+	}
+	return IsHeadOnWall(Hit.ImpactNormal, Heading, WalkableNormalZ, SurfHeadOnCos);
+}
+
+void UTN_RaceItemComponent::ServerFinishRocket()
+{
+	using namespace TNRaceItemRules;
+	bRocketEndHandled = true;
+	ATortugaCharacter* Self = Cast<ATortugaCharacter>(GetOwner());
+	if (!Self || !TNRaceItems::CanUseNow(Self))
+	{
+		return;
+	}
+	// Voltereta: un salto con parte de la velocidad que llevaba. Lo estrena el dueño en su siguiente movimiento (sin corrección).
+	const FVector Velocity = Self->GetVelocity();
+	const FVector Launch(Velocity.X * FlipKeepHorizontal, Velocity.Y * FlipKeepHorizontal, FlipLaunchUp);
+	UTN_TurtleMovementComponent::LaunchFromServer(Self, Launch);
+	Self->SetFallImmuneUntilLanded();
+	Effects.bRocketFlip = true;
+	ApplyEffects();
+	Self->ForceNetUpdate();
+	MulticastCue(ETNRaceSound::Boing, 1.3f);
+	UE_LOG(LogTortunabo, Log, TEXT("[Carrera] %s acaba el cohete con una voltereta."), *GetNameSafe(Self));
+}
+
+void UTN_RaceItemComponent::TickRideVisuals(float DeltaTime)
+{
+	ACharacter* Turtle = Cast<ACharacter>(GetOwner());
+	if (!Turtle)
+	{
+		return;
+	}
+	FTNRaceRideFX::FState State;
+	State.bSurf = IsSurfing();
+	State.bRocket = IsRocketing();
+	State.FlipAge = GetFlipAge();
+	if (!RideFX.IsValid())
+	{
+		if (!State.bSurf && !State.bRocket && State.FlipAge < 0.f)
+		{
+			return;
+		}
+		RideFX = MakeShared<FTNRaceRideFX>();
+	}
+	if (State.FlipAge >= 0.f)
+	{
+		// La voltereta gira la malla después de quien más la toca: el actor (panzazo), el movimiento (suavizado de red) y la
+		// inclinación por la pendiente. Así lo último que se escribe en el fotograma es la vuelta.
+		if (UCharacterMovementComponent* Move = Turtle->GetCharacterMovement())
+		{
+			PrimaryComponentTick.AddPrerequisite(Move, Move->PrimaryComponentTick);
+		}
+		PrimaryComponentTick.AddPrerequisite(Turtle, Turtle->PrimaryActorTick);
+		if (UTN_SlopeTiltComponent* Tilt = Turtle->FindComponentByClass<UTN_SlopeTiltComponent>())
+		{
+			PrimaryComponentTick.AddPrerequisite(Tilt, Tilt->PrimaryComponentTick);
+		}
+	}
+	RideFX->Tick(Turtle, DeltaTime, State);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

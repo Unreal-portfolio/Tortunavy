@@ -26,6 +26,7 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
+#include "VR/TN_VRMenuClaim.h"
 #include "Voice/ProximityVoiceComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
@@ -68,7 +69,9 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "Styling/SlateTypes.h"
+#include "VR/TN_VRControls.h"
 #include "VR/TN_VRMode.h"
+#include "World/ProcMap/TN_SandStormRules.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
 // del bloque.
@@ -968,6 +971,8 @@ FReply UTN_PauseRow::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEven
 	{
 		if (!InKeyEvent.IsRepeat() && bEnabled && OnReset)
 		{
+			// Con gafas, la Y de los Touch llega aquí antes de ir atrás (#648); solo cuenta si de verdad devuelve la tecla.
+			TNVRMenuClaim::Claim();
 			PlaySound(ETNPauseSound::Press);
 			// Lo último: rehace la lista entera.
 			OnReset();
@@ -1050,6 +1055,17 @@ FReply UTN_PauseRow::NativeOnMouseButtonDown(const FGeometry& InGeometry, const 
 	default:
 		return FReply::Handled();
 	}
+}
+
+FReply UTN_PauseRow::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	// El segundo clic de un doble clic llega por aquí y no como otro «Down»: sin esto, dos clics rápidos en una flecha
+	// solo avanzan una opción. Solo en las flechas y la barra: un botón, una tecla o una entrada se activarían dos veces.
+	if (Kind == ETNPauseRowKind::Choice || Kind == ETNPauseRowKind::Slider)
+	{
+		return NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+	}
+	return Super::NativeOnMouseButtonDoubleClick(InGeometry, InMouseEvent);
 }
 
 FReply UTN_PauseRow::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -2681,6 +2697,16 @@ void UTN_PauseMenuWidget::FillGameTab()
 				[WeakSettings](float V) { if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([V](FTNGameSettings& D) { D.ColorFilterStrength = V; }); } });
 			Row->SetDescription(NSLOCTEXT("TNPause", "FilterStrengthDesc", "Cuánto corrige el filtro para daltónicos."));
 		}
+		if (UTN_PauseRow* Row = AddListRow(SettingsList))
+		{
+			// Por debajo de MIN_VISUAL la tormenta de arena se seguiría viendo igual (es su mínimo).
+			Row->SetupSlider(NSLOCTEXT("TNPause", "WeatherEffects", "Efectos del clima"), TNSandStorm::MIN_VISUAL, 1.f, 0.05f,
+				FMath::Max(Data.WeatherEffects, TNSandStorm::MIN_VISUAL),
+				[](float V) { return TNPauseUI::Percent(V); },
+				[WeakSettings](float V) { if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([V](FTNGameSettings& D) { D.WeatherEffects = V; }); } });
+			Row->SetDescription(NSLOCTEXT("TNPause", "WeatherEffectsDesc",
+				"Cuánto cierran la vista la niebla y el color de la tormenta de arena. Bájalo si te cuesta ver o te marea. El viento sigue empujando igual."));
+		}
 		AddToggleRow(NSLOCTEXT("TNPause", "Talkers", "Quién habla (texto)"),
 			NSLOCTEXT("TNPause", "TalkersDesc", "A la derecha de la pantalla, el nombre de quien está hablando por voz. Para jugar sin sonido o si oyes mal."),
 			Data.bShowTalkers, [WeakSettings](bool bOn)
@@ -2727,6 +2753,25 @@ void UTN_PauseMenuWidget::FillGameTab()
 			Row->SetDescription(NSLOCTEXT("TNPause", "VRTurnDesc",
 				"Cómo gira la tortuga con el stick derecho. A pasos marea mucho menos; suave, para quien ya está acostumbrado."));
 		}
+		// Viñeta de confort y vibración de los mandos Touch (#647): el rig las lee cada fotograma (TN.VR.ComfortVignette y
+		// TN.VR.Haptics, por consola, mandan sobre ellas).
+		if (UTN_PauseRow* Row = AddListRow(SettingsList))
+		{
+			const TArray<FText> Strengths = { NSLOCTEXT("TNPause", "VRVignetteOff", "Apagada"), NSLOCTEXT("TNPause", "VRVignetteNormal", "Normal"),
+				NSLOCTEXT("TNPause", "VRVignetteStrong", "Fuerte") };
+			Row->SetupChoice(NSLOCTEXT("TNPause", "VRVignette", "Viñeta de confort"), Strengths, FMath::Clamp<int32>(Data.VRVignette, 0, 2), [WeakSettings](int32 Choice)
+			{
+				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([Choice](FTNGameSettings& D) { D.VRVignette = static_cast<uint8>(Choice); }); }
+			});
+			Row->SetDescription(NSLOCTEXT("TNPause", "VRVignetteDesc",
+				"Oscurece los bordes de la vista al andar deprisa, caer, salir lanzado o girar suave, y marea menos. Fuerte los oscurece el doble."));
+		}
+		AddToggleRow(NSLOCTEXT("TNPause", "VRHaptics", "Vibración de los mandos VR"),
+			NSLOCTEXT("TNPause", "VRHapticsDesc", "Los mandos Touch vibran al coger, soltar y lanzar, al tocar una pared y al pulsar en los menús."),
+			Data.bVRHaptics, [WeakSettings](bool bOn)
+			{
+				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([bOn](FTNGameSettings& D) { D.bVRHaptics = bOn; }); }
+			});
 	}
 
 	if (UTN_PauseRow* Row = AddListRow(SettingsList))
@@ -2737,7 +2782,7 @@ void UTN_PauseMenuWidget::FillGameTab()
 			if (UTN_PauseMenuWidget* Menu = WeakThis.Get()) { Menu->ShowTab(ETNPauseTab::Game); }
 		}, nullptr, NSLOCTEXT("TNPause", "ResetAction", "Restablecer"));
 		Row->SetDescription(bGuest ? NSLOCTEXT("TNLocal", "ResetGameGuestDesc", "Temblor de cámara encendido y campo de visión de siempre (solo los tuyos).")
-			: NSLOCTEXT("TNPause", "ResetGameDesc", "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla», el idioma de tu sistema, la cámara en tercera persona y el modo VR automático con giro a pasos de 30°."));
+			: NSLOCTEXT("TNPause", "ResetGameDesc", "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla», el idioma de tu sistema, la cámara en tercera persona y el modo VR automático con giro a pasos de 30°, viñeta normal y vibración encendida."));
 	}
 	if (UTN_PauseRow* Row = AddListRow(SettingsList))
 	{
@@ -2867,6 +2912,14 @@ void UTN_PauseMenuWidget::FillControlsList()
 		NSLOCTEXT("TNPause", "SpectateZoomPad", "Gatillos"), NSLOCTEXT("TNPause", "SpectateZoomDesc", "Con la cámara libre."));
 	AddInfo(NSLOCTEXT("TNPause", "MenuNav", "Moverse por los menús"), NSLOCTEXT("TNPause", "MenuNavKeys", "Flechas · WASD · Intro · Esc"),
 		NSLOCTEXT("TNPause", "MenuNavPad", "Stick · cruceta · A · B"), FText::GetEmpty());
+
+	// Los mandos Touch de las gafas (#647), solo lectura: no se reasignan (Docs/Modo_VR.md, «Controles»).
+	AddListHeader(ControlsList, NSLOCTEXT("TNPause", "HeadVRControls", "REALIDAD VIRTUAL (MANDOS TOUCH)"));
+	AddListNote(ControlsList, NSLOCTEXT("TNPause", "VRControlsNote", "Solo para ver: los botones de los mandos Touch no se cambian."));
+	for (const TNVRControls::FGuideLine& Line : TNVRControls::GetGuide())
+	{
+		AddInfo(Line.Label, Line.Buttons, FText::GetEmpty(), FText::GetEmpty());
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2974,8 +3027,17 @@ void UTN_PauseMenuWidget::FillRoomList()
 		{
 			if (UTN_PauseRow* Row = AddListRow(RoomList))
 			{
-				Row->SetupButton(ETNPauseRowStyle::List, NSLOCTEXT("TNPause", "RoomInvite", "Invitar a amigos de Steam"), [WeakGameInstance]()
+				Row->SetupButton(ETNPauseRowStyle::List, NSLOCTEXT("TNPause", "RoomInvite", "Invitar a amigos de Steam"), [WeakThis, WeakGameInstance]()
 				{
+					// Con gafas la ventana de Steam no se ve (#648): se avisa en vez de abrirla.
+					if (TNVR::IsHeadset())
+					{
+						if (UTN_PauseMenuWidget* Menu = WeakThis.Get())
+						{
+							Menu->ShowNotice(NSLOCTEXT("TNPause", "RoomInviteVR", "Con las gafas puestas no se ve la ventana de Steam: quítatelas un momento para invitar a tus amigos."), 7.f);
+						}
+						return;
+					}
 					if (UMP_GameInstance* RoomOwner = WeakGameInstance.Get()) { RoomOwner->InviteFriends(); }
 				}, nullptr, NSLOCTEXT("TNPause", "RoomInviteAction", "Abrir Steam"));
 				Row->SetDescription(NSLOCTEXT("TNPause", "RoomInviteDesc", "La lista de amigos de Steam, para invitarles (la invitación también vale en las salas privadas)."));
@@ -3781,6 +3843,8 @@ FReply UTN_PauseMenuWidget::NativeOnPreviewKeyDown(const FGeometry& InGeometry, 
 	{
 		return Super::NativeOnPreviewKeyDown(InGeometry, InKeyEvent);
 	}
+	// Esperando una tecla se queda con la que llegue, también la X o la Y de los Touch (#648): que no siga con aceptar o atrás.
+	TNVRMenuClaim::Claim();
 	if (InKeyEvent.IsRepeat())
 	{
 		return FReply::Handled();

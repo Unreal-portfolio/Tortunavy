@@ -49,6 +49,11 @@ enum class ETN_ItemUseType : uint8
 	 * cargas que le quedan salen del ItemId («Tct_Shovel_4», «Tct_Grapple_2»...). No tiene fila en DT_Items.
 	 */
 	TctItem          UMETA(DisplayName = "Tct Item"),
+	/**
+	 * Objeto del cooperativo y de los modos de a pie definido solo desde código (TNCoopItems, Game/TN_CoopItems.h): el objeto
+	 * y su cuenta (apilados o usos) salen del ItemId («Coop_Harpoon_15»...). No tiene fila en DT_Items.
+	 */
+	CoopItem         UMETA(DisplayName = "Coop Item"),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

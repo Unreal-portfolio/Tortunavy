@@ -36,6 +36,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Pickup")
 	void InitializeFromInventoryItem(const FTN_InventoryItem& NewPickupItem);
 
+	/**
+	 * true si Interactor no puede cogerlo solo porque tiene las dos ranuras llenas: el pickup está activo, sin coger y con
+	 * un ítem válido. Con E se usa entonces el objeto de la mano (ServerTryInteract); en cualquier otro caso (cogido por
+	 * otra jugadora hace un instante, desactivado, sin ítem) no se gasta nada (#570).
+	 */
+	bool IsBlockedOnlyByFullInventory(APawn* Interactor) const;
+
+	/** El objeto que da (cualquier máquina). */
+	const FTN_InventoryItem& GetPickupItem() const { return PickupItem; }
+
+	/** Ya lo ha cogido alguien (cualquier máquina). */
+	bool IsTaken() const { return bTaken; }
+
 protected:
 	/**
 	 * [Data-driven] DataTable con filas de tipo FTN_InventoryItem.

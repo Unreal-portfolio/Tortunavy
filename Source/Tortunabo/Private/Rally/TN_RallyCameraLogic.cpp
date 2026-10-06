@@ -81,18 +81,46 @@ namespace TNRallyCamera
 		return ((From + Delta) % Slots + Slots) % Slots;
 	}
 
-	int32 ClampSpectate(int32 Current, int32 NumRacing, bool bAllowDrone)
+	namespace CameraDetail
 	{
-		const int32 Slots = NumRacing + (bAllowDrone ? 1 : 0);
-		if (Slots <= 0)
+		FSpectatePick PickSlot(TConstArrayView<int32> RacingTeams, int32 Slot)
 		{
-			return INDEX_NONE;
+			FSpectatePick Pick;
+			Pick.Slot = Slot;
+			Pick.bDrone = Slot == RacingTeams.Num();
+			Pick.Team = RacingTeams.IsValidIndex(Slot) ? RacingTeams[Slot] : INDEX_NONE;
+			return Pick;
 		}
-		if (Current >= 0 && Current < Slots)
+	}
+
+	FSpectatePick FollowSpectate(TConstArrayView<int32> RacingTeams, const FSpectatePick& Current, bool bAllowDrone)
+	{
+		const int32 NumRacing = RacingTeams.Num();
+		// Sin nadie corriendo no hay buggy ni líder para el dron.
+		if (NumRacing == 0)
 		{
-			return Current;
+			return FSpectatePick();
 		}
-		return NumRacing > 0 ? 0 : NumRacing;
+		if (Current.bDrone && bAllowDrone)
+		{
+			return PickSlot(RacingTeams, NumRacing);
+		}
+		const int32 TeamSlot = Current.Team != INDEX_NONE ? RacingTeams.IndexOfByKey(Current.Team) : INDEX_NONE;
+		if (TeamSlot != INDEX_NONE)
+		{
+			return PickSlot(RacingTeams, TeamSlot);
+		}
+		return PickSlot(RacingTeams, RacingTeams.IsValidIndex(Current.Slot) ? Current.Slot : 0);
+	}
+
+	FSpectatePick StepSpectate(TConstArrayView<int32> RacingTeams, const FSpectatePick& Current, int32 Delta, bool bAllowDrone)
+	{
+		const FSpectatePick From = FollowSpectate(RacingTeams, Current, bAllowDrone);
+		if (!From.HasTarget())
+		{
+			return From;
+		}
+		return PickSlot(RacingTeams, CycleSpectate(From.Slot, Delta, RacingTeams.Num(), bAllowDrone));
 	}
 
 	FVector FinishSideLocation(const FVector& BuggyLocation, const FVector& BuggyForward)

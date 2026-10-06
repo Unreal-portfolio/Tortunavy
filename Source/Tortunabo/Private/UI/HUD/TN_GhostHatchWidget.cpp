@@ -291,6 +291,7 @@ void UTN_GhostHatchWidget::NativeTick(const FGeometry& MyGeometry, float InDelta
 		return;
 	}
 	const float Now = Elapsed();
+	UpdateVRCover(Now);
 	if (bCurtain)
 	{
 		TickCurtain(Now);
@@ -336,6 +337,28 @@ void UTN_GhostHatchWidget::NativeTick(const FGeometry& MyGeometry, float InDelta
 		return;
 	}
 	Invalidate(EInvalidateWidgetReason::Paint);
+}
+
+void UTN_GhostHatchWidget::UpdateVRCover(float Now) const
+{
+	using namespace TNGhostHatchDetail;
+	if (!TNVR::IsHeadset())
+	{
+		return;
+	}
+	// Se oscurece como la pantalla (revivir: el negro de antes del ¡pum!; carrera: las mitades al entrar) y se aclara al abrirse.
+	const float In = bCurtain ? FMath::Square(FMath::Clamp(Now / FMath::Max(DarkAt, 0.01f), 0.f, 1.f))
+		: FMath::SmoothStep(FMath::Max(0.f, DarkAt - 0.4f), DarkAt, Now);
+	float Out = 1.f;
+	if (OpenAt >= 0.f)
+	{
+		Out = 1.f - FMath::Clamp((Now - OpenAt) / (OpenSeconds * 0.6f), 0.f, 1.f);
+	}
+	else if (FadeOutAt >= 0.f)
+	{
+		Out = 1.f - FMath::Clamp((Now - FadeOutAt) / CurtainFadeSeconds, 0.f, 1.f);
+	}
+	TNVR::SetViewCover(In * Out);
 }
 
 void UTN_GhostHatchWidget::TickCurtain(float Now)
@@ -422,6 +445,7 @@ void UTN_GhostHatchWidget::Finish()
 		return;
 	}
 	bFinished = true;
+	TNVR::SetViewCover(0.f);
 	SetVisibility(ESlateVisibility::Collapsed);
 	// Se quita en el fotograma siguiente, no mientras Slate lo está recorriendo.
 	TWeakObjectPtr<UTN_GhostHatchWidget> WeakThis(this);
@@ -443,6 +467,10 @@ void UTN_GhostHatchWidget::Finish()
 
 void UTN_GhostHatchWidget::NativeDestruct()
 {
+	if (!bFinished)
+	{
+		TNVR::SetViewCover(0.f);
+	}
 	if (Synth)
 	{
 		Synth->Stop();

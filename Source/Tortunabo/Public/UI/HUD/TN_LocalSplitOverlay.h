@@ -33,6 +33,8 @@ struct FTNSplitOverlayState
 	TNLocalPlay::FViewRect EmptyRect;
 	/** En el lobby y con sitio: cómo se une otro mando. */
 	bool bCanJoin = false;
+	/** Un aviso suelto arriba en el centro (con gafas, por qué no entra un invitado, #639); vacío si no hay. */
+	FText Notice;
 };
 
 /**
@@ -68,6 +70,12 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UBorder> JoinPill;
 
+	UPROPERTY(Transient)
+	TObjectPtr<UBorder> NoticePill;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> NoticeText;
+
 	/** Por vista (hasta cuatro): su zona, la etiqueta con el número y el aviso de salir con su barra. */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UCanvasPanel>> ViewAreas;
@@ -89,6 +97,7 @@ private:
 	TArray<FString> ShownTags;
 	int32 ShownEmpty = -1;
 	int32 ShownJoin = -1;
+	FString ShownNotice;
 
 	void Build();
 	/** Pone el hueco Widget del lienzo en Rect (fracciones de la pantalla). */

@@ -48,6 +48,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "MapVariant")
 	bool bSpawnPlacements = true;
 
+	/**
+	 * Al empezar la partida, pone una zona de muerte por cada caja de "kill_boxes_uu" del manifest (fondo de los barrancos).
+	 * Todos contra Todos la apaga: ahí el agua es veneno (#831), no una muerte al tocarla.
+	 */
+	UPROPERTY(EditAnywhere, Category = "MapVariant")
+	bool bSpawnKillZones = true;
+
 	/** Campo "description" del manifest de la variante cargada. Solo lectura. */
 	UPROPERTY(VisibleAnywhere, Category = "MapVariant")
 	FString VariantDescription;
@@ -57,7 +64,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "MapVariant")
 	TArray<FString> GetVariantNames() const;
 
-	/** Reconstruye la malla desde cero. */
+	/**
+	 * Reconstruye la malla desde cero. En partida, también lo demás que sale del manifest (zonas de muerte y placements):
+	 * un cliente monta en su BeginPlay la variante guardada en el nivel y la cambia al recibir la de la partida (#828).
+	 */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "MapVariant")
 	void Recargar();
 
@@ -74,6 +84,8 @@ private:
 	void SpawnKillZones();
 	/** Coloca el bloque "placements" del manifest (ATN_MapPlacementSpawner, en cada máquina). */
 	void SpawnPlacements();
+	/** Quita las zonas de muerte y los placements de la variante montada. */
+	void DestroyManifestActors();
 
 	/** Un UProceduralMeshComponent por trozo del manifest ("cells"). Transitorios: no se guardan en
 	 *  el nivel (pesaba 350 MB y, al abrirlo, se veia la malla de la ultima vez que se guardo, no la

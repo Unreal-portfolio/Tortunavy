@@ -54,8 +54,26 @@ namespace TNRallyCamera
 	 */
 	TORTUNABO_API int32 CycleSpectate(int32 Current, int32 Delta, int32 NumRacing, bool bAllowDrone);
 
-	/** Hueco válido para el estado actual: el mismo si sigue existiendo; si no, el primero (o el dron si no corre nadie). */
-	TORTUNABO_API int32 ClampSpectate(int32 Current, int32 NumRacing, bool bAllowDrone);
+	/** A quién mira el espectador: hueco (0..N-1 buggies por puesto, N el dron), su equipo y si es el dron. */
+	struct FSpectatePick
+	{
+		int32 Slot = INDEX_NONE;
+		/** INDEX_NONE con el dron o sin nadie a quien mirar. */
+		int32 Team = INDEX_NONE;
+		bool bDrone = false;
+
+		bool HasTarget() const { return Slot != INDEX_NONE; }
+	};
+
+	/**
+	 * Lo que se mira este fotograma (RacingTeams: equipos que corren, por puesto). Se sigue al mismo equipo aunque cambie de
+	 * puesto; el dron sigue siendo el dron aunque cambie cuántos corren; si el equipo ya no corre, el mismo hueco (o el primero).
+	 */
+	TORTUNABO_API FSpectatePick FollowSpectate(TConstArrayView<int32> RacingTeams, const FSpectatePick& Current, bool bAllowDrone);
+
+	/** Anterior (-1) o siguiente (+1) desde lo que se mira (FollowSpectate), con el dron al final si se permite. */
+	TORTUNABO_API FSpectatePick StepSpectate(TConstArrayView<int32> RacingTeams, const FSpectatePick& Current, int32 Delta,
+		bool bAllowDrone);
 
 	// ── Posiciones ───────────────────────────────────────────────────────────
 

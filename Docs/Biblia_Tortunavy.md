@@ -2098,7 +2098,7 @@ juego. **No confirmado**.
 - **Velocidad** (`SwimSpeed` [C]): **625 cm/s**, con la flotabilidad en 1,08 (`SwimBuoyancy`: sube a la superficie). Con el
   Blueprint es **más rápido que esprintar (400)**; con el código estaba entre andar (450) y esprintar (800). Correr no acelera
   el nado (fija la velocidad máxima de andar, no la de nadar) [inferido del código].
-- **Salto del agua** (`PerformSwimHop`): impulso de **640 cm/s hacia arriba y 250 hacia delante**, cada 0,6 s como mucho, para
+- **Salto del agua** (`UTN_TurtleMovementComponent::DoJump` nadando, predicho en el movimiento: #573): impulso de **640 cm/s hacia arriba y 250 hacia delante**, cada 0,6 s de simulación como mucho, para
   subir a orillas e islotes. Nadando la plancha no existe: el salto es este.
 - **No se puede** entrar en el caparazón nadando (la bola se hundiría y saldría en el acto). La bola que cae al agua sale y nada.
   Un panzazo que acaba en el agua termina y nada. Las caídas en el agua no rompen.
@@ -2472,14 +2472,20 @@ Se hacen con la **rueda de emotes** (Q o LT, mantener y soltar; elegir con rató
 | 1 | HAPPIE | Aplauso | Brazos en V cerrada, palmadas a 4 Hz | 3 s | no |
 | 2 | PARACOPTER | Helicóptero | Brazos y piernas giran | bucle | no |
 | 3 | SAX-O | Palmada potente | Ambos brazos, golpe rápido abajo y lento arriba | bucle | no |
-| 4 | *(no está en la rueda: no se puede lanzar)* | Aplaudir | Brazo derecho, palmada; cola girando | 2 s | no |
+| 4 | *(oculto: solo con el código secreto)* | Aplaudir | Brazo derecho, palmada; cola girando | 2 s | no |
 | 5 | RUN | Baile irlandés | Los brazos se juntan por detrás | bucle | **sí** |
 | 6 | SUPERKIRK | Flotar (Superman) | Pose de vuelo | 5 s | **sí** |
-| 7 | *(no está en la rueda: no se puede lanzar)* | Señalar | Un brazo apunta | 1,2 s | no |
+| 7 | *(oculto: solo con el código secreto)* | Señalar | Un brazo apunta | 1,2 s | no |
 | 8 | MISTIK | Modo loco 2 | Caos total con traslaciones | bucle | no |
 | 9 | PATRICK | Fiesta (modo loco) | Caos de rotaciones; clip `Yelling` con rebote | bucle | no |
 | 100 | *(interno)* | Derribo | El «emote» del derribo (`KNOCKDOWN_EMOTE_ID`) | mientras dure | — |
 
+- **Emotes ocultos (#839).** El 4 y el 7 no están en la rueda ni en las teclas directas (`IsValidWheelEmoteId` los rechaza) y no
+  tienen nombre, icono ni texto en ningún menú ni en el tutorial. Solo salen al **escribir `tortunabo` con el teclado** durante la
+  partida (`AMP_GamePlayerController::InputKey` → `TNSecretEmote::FCodeMatcher`, `Player/TN_SecretEmote.h`): sale uno y, la vez
+  siguiente, el otro (`ATortugaCharacter::PlayHiddenEmote`). Cualquier otra tecla reinicia la cuenta (Mayús, Ctrl, Alt y Bloq
+  Mayús no); tampoco cuenta con un menú a la vista (pausa, tienda, ruedas) o un campo de texto con el foco. El servidor los acepta
+  (`IsPlayableEmoteId`) con el enfriamiento de 0,5 s y se replican como cualquier otro emote. Prueba: `Tortunabo.SecretEmote`.
 - Cada emote reproduce la **canción** `/Game/Audio/DanceSounds/<ID>` en bucle mientras dure, en 3D con atenuación de voz
   (círculo interior 300 cm, exterior 2500 cm) [BP].
 - **Reglas del servidor** (`ServerSetEmote`): el ID tiene que existir en el catálogo; se rechaza si la jugadora no está viva, está
@@ -4023,12 +4029,14 @@ en medio, una «mota» de terrazas macizas de arena de molde, cada una más alta
 - **Atajos arriesgados**: **salto de torrecillas** (6 / 8 / 8 torrecillas de cubo, cada una ~50 cm más alta; caerse es volver al
   patio), **la pala y la cornisa** (una pala de juguete tendida lleva a una cornisa de 70 cm colgada de la primera terraza que sube
   a 30°) y, en la colosal, otra fila de 10 torrecillas por la terraza +X.
-- **Premio en la cima** (lo crea el servidor al construirla y lo destruye con ella): un **lanzador potenciado** en el borde +X
-  (catapulta el 55 % de las veces, tamaño 0,89 / 1,02 / 1,15; trampolín el resto, 0,58 / 0,65 / 0,76), un **cofre** (§34.11), y
+- **Premio en la cima** (lo crea el servidor al construirla y lo destruye con ella): una **catapulta potenciada** en el borde +X
+  (siempre, #741; tamaño 0,89 / 1,02 / 1,15), un **cofre** (§34.11) que da lo mejor de la carrera para cualquier puesto (fuente
+  `Summit`: la tabla de las últimas), y
   **conchas de puntos**: 100 + 50 (mediana), 100 + 50 + 50 (grande), 100 + 100 + 50 + 50 (colosal) en las esquinas de la cima, más
   una de 50 al final de cada atajo de las terrazas de en medio (grande 2, colosal 3).
+  El castillo enorme (patio, con la puerta a quien llega) y el castillo con salas (terraza de arriba) llevan también catapulta potenciada y cofre de cima (#741).
 - **Caída del lanzador**: el reparto reserva una franja de 16 m de ancho entre 40 y 100 m del centro hacia su +X: la catapulta
-  potenciada cae a 80–90 m (±6 m) y aún rebota; el trampolín, a ~38–47 m andando y ~44–53 m esprintando (un 15–20 % menos que los 45–55 y 55–66 m que salen con las velocidades del código [calc]).
+  potenciada cae a 80–90 m (±6 m) y aún rebota. (El trampolín, que ya no sale en las cimas, caía a ~38–47 m andando y ~44–53 m esprintando.)
 - **Guardias**: en cada fortaleza, 2, 3 o 5 enemigos alrededor (cangrejos, erizos, lagartos y algún tanque) sobre todo por delante.
 - **Rodeo**: 25 m libres entre la muralla y la selva por cada lado (`FortressDetour`) y 12 m hasta lo que ya hubiera (`FortressPad`).
 - **Pruebas**: `TN.Beach.Place FortressColossal 1 0 <semilla>`, `TN.Beach.Fortress.Top [jugador]`, `TN.Beach.PlaceBoosted`.
@@ -4051,7 +4059,9 @@ Dos actores: `ATN_BeachChest` es el elemento del reparto (solo servidor, no se r
   reina de 100: 200 o 250 puntos) que saltan en parábolas altas y caen en corona a 1–3 m del borde, dejando libre el frente de
   quien lo abrió. Los objetos se sortean **por el puesto** de quien abre (`TNRaceItems::RollLoot`, fuente `Chest`): energía sin fin
   ×2, barra llena ×1,6, pelícano taxi ×1,6, coco dorado ×2, protector solar ×1,4 y triple coco ×1,4; concha trampa y silbato ×0,6; la
-  cabezota y el tótem, nunca (pesos completos en el §29.5).
+  cabezota y el tótem, nunca (pesos completos en el §29.5). El cofre de la **cima de un castillo** (fortaleza, castillo enorme o con salas; `TNBeach::FlagSummitPrize`,
+  fuente `Summit`, #741) sortea con la tabla de las últimas para cualquier puesto: hasta la primera puede sacar el pelícano taxi,
+  el protector solar, el triple coco o el coco dorado (~63 % de los pesos de los objetos de carrera con 4 tortugas).
 - **Después**: una vez por ronda; queda abierto y vacío, con brillo dorado apagado; la columna se estrecha y se va en 0,8 s.
 - **Cantidad**: 12 de sitio especial en Normal (`ChestsBase` = 18 × 2/3, por las ayudas de la dificultad; los limitan los sitios
   donde caben) más los de los rincones y los de las cimas de las fortalezas: en total 15–18 en Normal (media 17), 11–23 en

@@ -1,5 +1,6 @@
 #include "World/ProcMap/TN_ProcSearchSpot.h"
 #include "Audio/TN_AudioVoices.h"
+#include "Game/TN_CoopItems.h"
 #include "Multiplayer/TN_LocalViews.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "TN_ProcMapAmbientFX.h"
@@ -839,7 +840,7 @@ bool ATN_ProcSearchSpot::IsSpent() const
 
 bool ATN_ProcSearchSpot::CanInteract(APawn* Interactor) const
 {
-	if (!Super::CanInteract(Interactor) || IsSpent())
+	if (!Super::CanInteract(Interactor) || IsSpentFor(Interactor))
 	{
 		return false;
 	}
@@ -871,7 +872,7 @@ float ATN_ProcSearchSpot::GetHoldDuration() const
 
 float ATN_ProcSearchSpot::GetHoldProgress(const APawn* Interactor) const
 {
-	if (!Interactor || IsSpent() || SearchState.Searcher.Get() != Interactor)
+	if (!Interactor || IsSpentFor(Interactor) || SearchState.Searcher.Get() != Interactor)
 	{
 		return -1.f;
 	}
@@ -1075,7 +1076,9 @@ bool ATN_ProcSearchSpot::PickLoot(FTN_InventoryItem& OutItem, const APawn* /*Sea
 		UE_LOG(LogTortunabo, Warning, TEXT("[Search] Sin catálogo de objetos (%s): no sale nada."), *LootTable.ToString());
 		return false;
 	}
-	return PickCatalogItem(Table, [this](FName RowName, const FTN_InventoryItem& Row) { return GetLootWeight(RowName, Row); }, OutItem);
+	// La tabla del coop: las filas de DT_Items con su peso de aquí y los objetos del coop definidos en código (TN_CoopItems.h).
+	return TNCoopItems::RollLoot(Table, [this](FName RowName, const FTN_InventoryItem& Row) { return GetLootWeight(RowName, Row); },
+		FMath::FRand(), OutItem);
 }
 
 bool ATN_ProcSearchSpot::PickCatalogItem(const UDataTable* Table, TFunctionRef<float(FName, const FTN_InventoryItem&)> WeightOf,
@@ -1309,7 +1312,7 @@ void ATN_ProcSearchSpot::Tick(float DeltaSeconds)
 		}
 	}
 	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
-	const bool bBusy = SearchState.Searcher != nullptr || bHopActive || (bNearView && !IsSpent()) || bMarkerAnimating
+	const bool bBusy = SearchState.Searcher != nullptr || bHopActive || (bNearView && !IsSpentForLocalView()) || bMarkerAnimating
 		|| Now - LastFxTime < TNSearchSpotDetail::FxTail || WantsFrameTick();
 	const float WantedInterval = bBusy ? 0.f : TNSearchSpotDetail::IdleTickInterval;
 	if (!FMath::IsNearlyEqual(GetActorTickInterval(), WantedInterval))
@@ -1333,7 +1336,7 @@ void ATN_ProcSearchSpot::TickLocalFX(float DeltaSeconds)
 
 	// Por buscar: alguna chispita dorada al pie, de vez en cuando («aquí se puede rebuscar»); en los decorados grandes,
 	// más de una a la vez por el borde (una por cada 30 m de perímetro de más).
-	if (bNearView && !IsSpent() && !SearchState.Searcher)
+	if (bNearView && !IsSpentForLocalView() && !SearchState.Searcher)
 	{
 		HintClock -= DeltaSeconds;
 		if (HintClock <= 0.f)
@@ -1381,7 +1384,7 @@ void ATN_ProcSearchSpot::TickLocalFX(float DeltaSeconds)
 		return;
 	}
 	const bool bFxQuiet = !bHopActive && !SearchState.Searcher && World->GetTimeSeconds() - LastFxTime >= TNSearchSpotDetail::FxTail;
-	if (bFxQuiet && (!bNearView || IsSpent()))
+	if (bFxQuiet && (!bNearView || IsSpentForLocalView()))
 	{
 		// Lejos de la cámara (o ya buscado) y sin nada vivo: fuera los emisores, para que no se acumulen instancias por
 		// todo el mapa. Si vuelven a hacer falta se crean otra vez (las mallas de partícula van en caché).
@@ -1719,7 +1722,7 @@ void ATN_ProcSearchSpot::TickMarker(float DeltaSeconds)
 	const double CameraDistance = TNLocalViews::ClosestCameraDistance(World, Center);
 	const double ViewDistance = CameraDistance < 1e8
 		? FMath::Max(0.0, CameraDistance - static_cast<double>(RingRadius)) : 0.0;
-	const bool bWant = !bPending && !IsSpent() && ViewDistance < static_cast<double>(MarkerDrawDistance);
+	const bool bWant = !bPending && !IsSpentForLocalView() && ViewDistance < static_cast<double>(MarkerDrawDistance);
 	MarkerAppear = bWant ? FMath::Min(1.f, MarkerAppear + TNSearchSpotDetail::MarkerAppearSpeed * DeltaSeconds)
 		: FMath::Max(0.f, MarkerAppear - TNSearchSpotDetail::MarkerHideSpeed * DeltaSeconds);
 	bMarkerAnimating = MarkerAppear > 0.f && ViewDistance < static_cast<double>(TNSearchSpotDetail::MarkerAnimDistance);

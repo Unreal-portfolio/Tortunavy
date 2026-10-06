@@ -31,7 +31,8 @@ void ATN_PickupInteractableBase::BeginPlay()
 
 	// Objetos de carrera y de Todos contra Todos definidos en código (la caja de objetos lleva su fila en el valor por
 	// defecto de la clase, que no se replica): malla y tamaño en cada máquina a partir del ItemId.
-	if (PickupItem.UseType == ETN_ItemUseType::RaceItem || PickupItem.UseType == ETN_ItemUseType::TctItem)
+	if (PickupItem.UseType == ETN_ItemUseType::RaceItem || PickupItem.UseType == ETN_ItemUseType::TctItem
+		|| PickupItem.UseType == ETN_ItemUseType::CoopItem)
 	{
 		TNRaceItems::ResolveVisuals(PickupItem);
 		if (Mesh && PickupItem.EquippedMesh)
@@ -135,6 +136,16 @@ bool ATN_PickupInteractableBase::CanInteract(APawn* Interactor) const
 		UE_LOG(LogTortunabo, Verbose, TEXT("[Pickup:CanInteract] Inventario lleno — '%s' no se puede recoger"), *GetName());
 	}
 	return bCanReceive;
+}
+
+bool ATN_PickupInteractableBase::IsBlockedOnlyByFullInventory(APawn* Interactor) const
+{
+	if (!Interactor || bTaken || !PickupItem.IsValid() || !ATN_InteractableBase::CanInteract(Interactor))
+	{
+		return false;
+	}
+	const UTN_InventoryComponent* InventoryComponent = Interactor->FindComponentByClass<UTN_InventoryComponent>();
+	return InventoryComponent && !InventoryComponent->CanReceiveItem(PickupItem, false);
 }
 
 void ATN_PickupInteractableBase::Interact(APawn* Interactor)

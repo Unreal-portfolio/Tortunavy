@@ -1,6 +1,7 @@
 #include "TN_VRInputProcessor.h"
 #include "VR/TN_VRMath.h"
 #include "VR/TN_VRHandMath.h"
+#include "VR/TN_VRMenuClaim.h"
 
 #include "VR/TN_VRMode.h"
 #include "VR/TN_VRRig.h"
@@ -77,8 +78,11 @@ void FTNVRInputProcessor::Tick(const float DeltaTime, FSlateApplication& SlateAp
 	if (!IsMenuUp() || !TNVR::IsHeadset())
 	{
 		StickDir[0] = StickDir[1] = 0;
+		TNVR::SetMenuRightStick(FVector2D::ZeroVector);
 		return;
 	}
+	// El stick derecho para los menús que lo usan para algo propio (girar la tortuga del probador, #648).
+	TNVR::SetMenuRightStick(Sticks[1]);
 	// Las direcciones ya llegan como botones: con esas basta.
 	if (FPlatformTime::Seconds() - LastDigitalStickTime < 1.0)
 	{
@@ -86,6 +90,12 @@ void FTNVRInputProcessor::Tick(const float DeltaTime, FSlateApplication& SlateAp
 	}
 	for (int32 s = 0; s < 2; ++s)
 	{
+		// Un menú que reserva el stick derecho (la tienda y el probador lo giran la tortuga) no lo recibe como cruceta.
+		if (s == 1 && TNVR::IsRightStickReserved())
+		{
+			StickDir[1] = 0;
+			continue;
+		}
 		const int32 Dir = TNVRMath::StickDirection(Sticks[s]);
 		if (Dir != StickDir[s])
 		{
@@ -130,11 +140,41 @@ bool FTNVRInputProcessor::HandleKeyDownEvent(FSlateApplication& SlateApp, const 
 	if (IsStickDirection(Key))
 	{
 		LastDigitalStickTime = FPlatformTime::Seconds();
+		if (TNVR::IsRightStickReserved() && TNVRMath::IsRightStickDirection(Key))
+		{
+			return true;
+		}
 	}
 	// Los agarres cambian de pestaña por su eje (HandleAnalogInputEvent) si llega: el botón no lo repite.
 	if ((Key == FTNVRKeys::LeftGrip || Key == FTNVRKeys::RightGrip) && FPlatformTime::Seconds() - LastGripAxisTime < 1.0)
 	{
 		return true;
+	}
+	// X e Y tienen una segunda acción en algunos menús (#648): borrar un carácter del código de sala, refrescar la lista, quitar
+	// una tecla. Se prueba primero la X o la Y del mando; si ningún widget la usa de verdad, cae en aceptar o atrás como siempre.
+	const FKey Secondary = TNVRMath::SecondaryMenuKeyFor(Key);
+	if (Secondary.IsValid())
+	{
+		const FKey* Previous = Held.Find(Key);
+		if (Previous && *Previous == Secondary)
+		{
+			// Mantenido: repite la que se atendió.
+			SendKey(SlateApp, Secondary, true, InKeyEvent.IsRepeat());
+			return true;
+		}
+		if (!Previous)
+		{
+			// Que Slate la dé por atendida no basta (la pausa se traga toda tecla): la usa quien la anota con TNVRMenuClaim.
+			const uint32 ClaimsBefore = TNVRMenuClaim::Count();
+			SendKey(SlateApp, Secondary, true, InKeyEvent.IsRepeat());
+			if (TNVRMenuClaim::Count() != ClaimsBefore)
+			{
+				Held.Add(Key, Secondary);
+				return true;
+			}
+			// Nadie la usó: se suelta sin más y sigue con aceptar o atrás.
+			SendKey(SlateApp, Secondary, false, false);
+		}
 	}
 	const FKey Mapped = TNVRMath::MenuKeyFor(Key);
 	if (Mapped.IsValid())

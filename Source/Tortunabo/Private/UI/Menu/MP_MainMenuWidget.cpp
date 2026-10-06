@@ -51,6 +51,10 @@ namespace TNMainMenuDetail
 	/** Pantallas de salas: por encima de este menú. */
 	constexpr int32 RoomMenuZOrder = 10;
 
+	/** Margen máximo encima y debajo de cada botón. El Blueprint pone 50, pensado para tres botones: con «Ajustes» y
+	 *  «Créditos» son cinco en la misma caja y a cada uno le quedaban unos 40 px para un texto de 50 pt. */
+	constexpr float MaxButtonGapY = 10.f;
+
 	/** Colocación de un botón dentro de su caja (vertical u horizontal): margen, tamaño y alineación. */
 	struct FBoxSlotLayout
 	{
@@ -186,6 +190,7 @@ void UMP_MainMenuWidget::NativeConstruct()
 		CreditsButton = UTN_CreditsWidget::AddMenuButton(WidgetTree, FindButton, QuitButton);
 		if (CreditsButton) { CreditsButton->OnClicked.AddUniqueDynamic(this, &UMP_MainMenuWidget::OnCreditsClicked); }
 	}
+	FitButtonGaps();
 
 	// Con el mando, el foco empieza en «Crear partida».
 	if (HostButton && !(RoomMenu && RoomMenu->IsOpen()))
@@ -295,6 +300,26 @@ void UMP_MainMenuWidget::BuildSettingsButton()
 			CanvasSlot->SetAlignment(FVector2D(0.5f, 1.f));
 			CanvasSlot->SetPosition(FVector2D(0.0, -90.0));
 			CanvasSlot->SetAutoSize(true);
+		}
+	}
+}
+
+void UMP_MainMenuWidget::FitButtonGaps()
+{
+	const UPanelWidget* Box = QuitButton ? QuitButton->GetParent() : nullptr;
+	if (!Box)
+	{
+		return;
+	}
+	for (int32 ChildIndex = 0; ChildIndex < Box->GetChildrenCount(); ++ChildIndex)
+	{
+		const UWidget* Child = Box->GetChildAt(ChildIndex);
+		if (UVerticalBoxSlot* VSlot = Child ? Cast<UVerticalBoxSlot>(Child->Slot) : nullptr)
+		{
+			FMargin Gap = VSlot->GetPadding();
+			Gap.Top = FMath::Min(Gap.Top, TNMainMenuDetail::MaxButtonGapY);
+			Gap.Bottom = FMath::Min(Gap.Bottom, TNMainMenuDetail::MaxButtonGapY);
+			VSlot->SetPadding(Gap);
 		}
 	}
 }

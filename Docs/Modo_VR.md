@@ -86,7 +86,13 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
   - sin temblores de cámara, sin ojo de pez, sin desenfoque de movimiento, sin aberración cromática ni profundidad de campo;
   - cortes secos en vez de fundidos de cámara (cambiar de tortuga como espectador, entrar y salir del probador);
   - la almeja y el gusano de la playa no se llevan la cámara (se sigue en primera persona);
-  - de fantasma espectador, la vista es la de la cámara del jugador seguido (sin la cámara libre que orbita sola).
+  - de fantasma espectador, con gafas (#646): ni cámara fija ni libre. La cabeza sigue la posición de la tortuga seguida
+    (detrás y arriba, sin retardo) y la base de la vista mira a un rumbo fijo (el de su cámara al empezar a mirarla), así que
+    solo gira con tu cabeza: el brazo de cámara de la otra tortuga llegaba tarde y giraba cuando giraba ese jugador
+    (`UTN_GhostCameraModifier`, `TNVRMath::GhostViewLocation`). El rig se queda ahí (no colgado del brazo de la otra tortuga) y
+    el HUD va suelto delante, siguiendo a la cabeza con retraso. Simulado (`TN.VR 2`): la cámara de la tortuga seguida, como antes;
+  - la cáscara de revivir tapa toda la vista (#646): el panel de la interfaz abarca unos 80°, así que, además de pintarse en él,
+    pide una esfera oscura alrededor de la cabeza (`TNVR::SetViewCover`, `ATN_VRRig::CoverDome`) que se aclara al abrirse.
 - **Voz**: con «Pulsar para hablar», el clic del stick izquierdo.
 - **Manos que no atraviesan el escenario**: la punta de cada aleta se queda en la superficie de paredes, suelo y rocas
   (lo que para la cámara, `ECC_Camera`), con los brazos del cuerpo y lo que se coge; no se coge ni se pulsa nada a través
@@ -103,11 +109,15 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
   el gatillo (`TNVRHands::UpdatePoke`).
 - **Vibración de los mandos** (si los mandos vibran): al coger o interactuar con la mano, al soltar y al lanzar, al tocar
   una pared o el suelo, cuando lo cogido se engancha y tira de la mano (más fuerte cuanto más se separa) o se escapa, al ser
-  derribada (las dos manos) y con el láser al pasar por un botón y al pulsar. `TN.VR.Haptics` (0-1, 1 de serie).
+  derribada (las dos manos) y con el láser al pasar por un botón y al pulsar. Ajustes > Juego > Realidad virtual >
+  «Vibración de los mandos VR» (encendida o apagada) y `TN.VR.Haptics` (0-1, 1 de serie); la consola, si se toca, manda
+  sobre el ajuste (#647).
 - **Viñeta de confort**: los bordes de la vista se oscurecen al andar deprisa, caer, salir lanzado (catapulta) o con el
   giro suave; parada, girando a pasos o con una rueda abierta, nada. Nunca baja de la que ya hay (la de la escena, 0,4 del
   motor y los volúmenes como el de las tormentas, o la del caparazón): se nota cuando la supera, a partir de unos 4 m/s o
-  45°/s de giro suave. `TN.VR.ComfortVignette` (0 la quita, 1 de serie, 2 el doble).
+  45°/s de giro suave. Ajustes > Juego > Realidad virtual > «Viñeta de confort» (Apagada, Normal o Fuerte: 0, 1 o 2) y
+  `TN.VR.ComfortVignette` (0 la quita, 1 de serie, 2 el doble); si se toca la variable de consola, manda sobre el ajuste
+  (#647).
 
 ## Controles (Meta Quest Touch)
 
@@ -126,6 +136,14 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
 | X | Cambiar de objeto | Aceptar |
 | Y | Rueda de emotes (mantener) | Atrás |
 | Menú (mando izquierdo) | Menú de pausa | Cerrar |
+
+Los avisos del juego nombran estos botones (#644): con el modo VR puesto, el aparato de los avisos
+(`UTN_InputDeviceSubsystem`, `ETNInputDevice::VR`) es siempre el de las gafas, y el aviso de interactuar dice «Gatillo
+derecho»; igual el tutorial, el HUD del fantasma («Stick derecho  cambiar de tortuga»), los karts («Usar: B», «Usar: Gatillo
+izquierdo», «Peso (cabeza · Stick izquierdo)»), el Rally («Mantén Y para volver a la pista», «Stick derecho: cambiar de vista»)
+y la lista de controles del briefing. Los nombres salen de `TNVRControls::KeyName` (también lo usa `KeyDisplayName`, así que
+Ajustes los dice igual) y el botón de cada acción, de `TNVRControls::KeyForAction`. Ajustes > Controles los enseña en solo
+lectura al final («Realidad virtual (mandos Touch)», `TNVRControls::GetGuide`). Sin VR no cambia nada.
 
 ## Vehículos: buggy del Rally y karts (con gafas)
 
@@ -171,8 +189,8 @@ para que el Rally y los karts lo hereden (#529).
 | Y | Enderezar (mantener: reaparecer) | Enderezar (mantener: reaparecer) |
 | Clic del stick derecho / izquierdo | Recentrar / hablar | Recentrar / hablar |
 
-Fuera de esto (otras tarjetas): los nombres de los botones Touch en los HUD, la munición, las notas y la tableta del Rally,
-la pausa y la salida en el Rally y los karts, y el rendimiento en estéreo.
+Fuera de esto (otras tarjetas): la munición, las notas y la tableta del Rally, la pausa y la salida en el Rally y los karts,
+y el rendimiento en estéreo. Los nombres de los botones Touch en los HUD ya están (#644, ver «Controles»).
 
 Piezas: `UTN_VRSeatComponent` (`VR/TN_VRSeatComponent.*`), `TNVRVehicle` (`VR/TN_VRVehicleMath.h`), `ATN_Buggy`
 (`Vehicles/TN_Buggy_VR.cpp`), `ATN_BuggyGunnerPawn` (`Vehicles/TN_BuggyGunnerPawn_VR.cpp`), las asas en
@@ -336,7 +354,8 @@ Steam, así que no se juega con los del PC). Para mañana, mejor la opción A.
 | `ATN_VRRig` | `VR/TN_VRRig.*` | El jugador local en VR (solo en su máquina): manos con `UMotionControllerComponent` (LeftGrip, RightGrip, RightAim, LeftAim), panel de la interfaz (`UWidgetComponent` plano e invisible) y su malla curva (`CurvedPanel`), la playa en 360 de la carga (`LoadingDome`), láser (`UWidgetInteractionComponent` con rayo propio), el contexto de entrada `IMC_VR` (prioridad 10) sobre las acciones de siempre, los agarres (coger y lanzar), el giro y el recentrado. Sin peón (menú principal), la vista es su cámara. |
 | `UTN_VRGrabComponent` | `VR/TN_VRGrabComponent.*` | En la tortuga: coger objetos con física con la mano (servidor si el actor se replica, local si no), quién lleva cada objeto, agarres enganchados y cápsula que no choca con lo que lleva. |
 | Manos del rig | `VR/TN_VRRigHands.cpp` | Agarres (coger, lanzar, anular), manos contra el escenario (`ATN_VRRig::BlockHandLocation`), vibración de los mandos y viñeta de confort. |
-| `TNVRHands` | `VR/TN_VRHandMath.h` | Cuentas de las manos sin mundo: ventana de velocidad, agarre enganchado, toques de vibración, viñeta y sitio del HUD. |
+| `TNVRHands` | `VR/TN_VRHandMath.h` | Cuentas de las manos sin mundo: ventana de velocidad, agarre enganchado, toques de vibración, viñeta y sitio del HUD; la fuerza de la viñeta y la vibración desde los ajustes. |
+| `TNVRControls` | `VR/TN_VRControls.*` | Nombre en pantalla de cada botón Touch, botón de cada acción y guía de controles de Ajustes (#644, #647). |
 | Primera persona | `Player/TortugaCharacter_FirstPerson.cpp` | Cámara en la cabeza (con y sin gafas), cuerpo sin cabeza (solo vista desde ella), caparazón oscuro, tecla de «Cambiar de cámara» (`FTNGameSettings::CameraKey`/`CameraPadKey`, fila `Camera` de `UTN_GameSettingsSubsystem`) y `TN.Camera`. |
 | IK de los brazos | `Player/TN_TurtleAnimInstance.cpp` (`ReachArm`) | Las manos del cuerpo van a los mandos en VR. |
 | `UTN_VRScreenWidget` | `VR/TN_VRScreenWidget.*` | La pantalla VR: lienzo de 1920 × 1080 donde van todos los widgets de pantalla completa con su ZOrder. Se quitan con `RemoveFromParent` de siempre. |
@@ -344,7 +363,8 @@ Steam, así que no se juega con los del PC). Para mañana, mejor la opción A.
 | `TNVRMath` | `VR/TN_VRMath.h` | Cuentas sin mundo (las prueba `Tortunabo.VR.*`). |
 | Tortuga | `Player/TortugaCharacter_VR.cpp` | `SetVRView` (cámara VR, cuerpo oculto, giro con la cabeza), `AddVRYaw`, `TickVRView`, `GetTurtleAimRotation`, `ServerSetVRAim`, `bVRPlayer`. |
 | Entrada OpenXR | `Config/DefaultInput.ini` | Asignaciones clásicas `TNVR_*` con los botones de los Touch: OpenXR crea sus acciones con ellas (sin ellas no llegan los botones). |
-| Ajustes | `FTNGameSettings::VRMode`, `VRTurn` | Ajustes > Juego > Realidad virtual. |
+| Ajustes | `FTNGameSettings::VRMode`, `VRTurn`, `VRVignette`, `bVRHaptics` | Ajustes > Juego > Realidad virtual. |
+| Fantasma | `Player/TN_GhostCameraModifier.*`, `ATN_VRRig::IsGhostVRView` | La vista del fantasma con gafas (#646). |
 
 Comandos: `TN.VR`, `TN.VR.Status`, `TN.VR.Recenter`, `TN.VR.HudDistance` (150), `TN.VR.HudFov` (80, arco del HUD),
 `TN.VR.HudFollow` (0 anclado a la cámara), `TN.VR.MenuDistance` (160), `TN.VR.MenuFov` (100, arco de los menús),
@@ -402,8 +422,12 @@ Sin gafas (modo simulado, PIE):
 6. Ruedas de emotes y de frases: salen en el panel y se eligen como siempre.
 7. Carrera: cuenta atrás, reloj de ronda, recuento, campeón y «¡ADELANTE!» salen en el panel; el huevo de carga también.
 8. Espectador/fantasma: se ve desde la cámara de la tortuga seguida, sin cámara libre; ←/→ cambian de tortuga sin fundido.
+   Con gafas (#646): la cabeza va sobre la tortuga seguida sin retardo y, aunque esa tortuga se vuelva o gire su jugador, la
+   vista no gira; solo con tu cabeza. Al revivir, la cáscara tapa toda la vista (no solo el panel) y se aclara al abrirse.
 9. Ajustes > Juego > Realidad virtual: «Modo VR» Simulado/Desactivado cambia en el acto; «Giro en VR» se guarda.
-   «Restablecer esta pestaña» los deja en Automático y 30°.
+   «Restablecer esta pestaña» los deja en Automático y 30°. «Viñeta de confort» (Apagada/Normal/Fuerte) y «Vibración de los
+   mandos VR» se guardan y se notan en el acto (#647); Ajustes > Controles, al final, lista los botones Touch (solo lectura).
+   Con `TN.VR 2`, el aviso de interactuar dice «Gatillo derecho» y el tutorial nombra los botones Touch (#644).
 10. Temblor de cámara y ojo de pez no se notan con el modo VR puesto, aunque estén encendidos.
 
 Con las Quest (VR Preview o `-vr`):

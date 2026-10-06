@@ -2,6 +2,8 @@
 
 #include "Game/TN_TctItems.h"
 #include "TN_TctItemArt.h"
+#include "TN_TctItemMeshes.h"
+#include "Game/TN_TctItemComponent.h"
 #include "Core/TN_Log.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
@@ -170,6 +172,21 @@ FText TNTctItems::DisplayName(ETNTctItem Kind)
 	case ETNTctItem::BigHead:        return NSLOCTEXT("TNTct", "ItemBigHead", "Cabezota");
 	case ETNTctItem::SandMine:       return TNRaceItems::DisplayName(ETNRaceItem::SandMine);
 	case ETNTctItem::Frisbee:        return TNRaceItems::DisplayName(ETNRaceItem::Frisbee);
+	case ETNTctItem::Cocobomba:      return NSLOCTEXT("TNTct", "ItemCocobomba", "Cocobomba");
+	case ETNTctItem::Alga:           return NSLOCTEXT("TNTct", "ItemAlga", "Charco de alga");
+	case ETNTctItem::GaviotaLadrona: return NSLOCTEXT("TNTct", "ItemGaviotaLadrona", "Gaviota ladrona");
+	case ETNTctItem::Flotador:       return NSLOCTEXT("TNTct", "ItemFlotador", "Flotador");
+	case ETNTctItem::MedusaTrampolin: return NSLOCTEXT("TNTct", "ItemMedusaTrampolin", "Medusa trampolín");
+	case ETNTctItem::Cohete:         return NSLOCTEXT("TNTct", "ItemCohete", "Cohete de feria");
+	case ETNTctItem::BotasMuelle:    return NSLOCTEXT("TNTct", "ItemBotasMuelle", "Botas de muelle");
+	case ETNTctItem::Aletas:         return NSLOCTEXT("TNTct", "ItemAletas", "Aletas");
+	case ETNTctItem::Cambiazo:       return NSLOCTEXT("TNTct", "ItemCambiazo", "Cambiazo del pulpo");
+	case ETNTctItem::Burbuja:        return NSLOCTEXT("TNTct", "ItemBurbuja", "Burbuja");
+	case ETNTctItem::Puas:           return NSLOCTEXT("TNTct", "ItemPuas", "Púas de erizo");
+	case ETNTctItem::Red:            return NSLOCTEXT("TNTct", "ItemRed", "Red de pesca");
+	case ETNTctItem::Remolino:       return NSLOCTEXT("TNTct", "ItemRemolino", "Remolino de arena");
+	case ETNTctItem::TaponMarea:     return NSLOCTEXT("TNTct", "ItemTaponMarea", "Tapón de marea");
+	case ETNTctItem::Paraguas:       return NSLOCTEXT("TNTct", "ItemParaguas", "Paraguas");
 	default:                         return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
 	}
 }
@@ -205,6 +222,26 @@ FString TNTctItems::MeshPath(ETNTctItem Kind, bool bProjectile)
 
 FVector TNTctItems::MeshScale(ETNTctItem Kind, bool bProjectile, bool bFallback)
 {
+	// Mallas propias en ejecución (TNTctItemMeshes): ya van a su tamaño.
+	switch (Kind)
+	{
+	case ETNTctItem::Cocobomba:      return bProjectile ? FVector(1.3f) : FVector(1.f);
+	case ETNTctItem::Alga:           return FVector(1.f);
+	case ETNTctItem::GaviotaLadrona: return FVector(1.f);
+	case ETNTctItem::Flotador:       return FVector(0.45f);
+	case ETNTctItem::MedusaTrampolin: return FVector(0.25f);
+	case ETNTctItem::Red:            return bProjectile ? FVector(1.4f) : FVector(1.f);
+	case ETNTctItem::Remolino:       return FVector(0.12f);
+	case ETNTctItem::Cohete:
+	case ETNTctItem::BotasMuelle:
+	case ETNTctItem::Aletas:
+	case ETNTctItem::Cambiazo:
+	case ETNTctItem::Burbuja:
+	case ETNTctItem::Puas:
+	case ETNTctItem::TaponMarea:
+	case ETNTctItem::Paraguas:       return FVector(1.f);
+	default: break;
+	}
 	if (bFallback)
 	{
 		// Formas del motor de 100 uu: al tamaño aproximado de la malla IA.
@@ -232,6 +269,10 @@ UStaticMesh* TNTctItems::LoadMesh(ETNTctItem Kind, bool bProjectile)
 	if (!TNTctItemsDetail::CanRender())
 	{
 		return nullptr;
+	}
+	if (UStaticMesh* Own = TNTctItemMeshes::ForKind(Kind))
+	{
+		return Own;
 	}
 	const FString Path = MeshPath(Kind, bProjectile);
 	if (!Path.IsEmpty())
@@ -319,7 +360,7 @@ void TNTctItems::ResolveVisuals(FTN_InventoryItem& Item)
 	}
 	if (UStaticMesh* Mesh = LoadMesh(Kind, false))
 	{
-		const bool bFallback = Mesh->GetPathName().StartsWith(TEXT("/Engine/"));
+		const bool bFallback = Mesh->GetPathName().StartsWith(TEXT("/Engine/BasicShapes/"));
 		Item.EquippedMesh = Mesh;
 		Item.EquippedMeshScale = MeshScale(Kind, false, bFallback);
 	}
@@ -334,6 +375,12 @@ bool TNTctItems::GiveItem(ATortugaCharacter* Turtle, ETNTctItem Kind)
 	if (!Turtle || !Turtle->HasAuthority())
 	{
 		return false;
+	}
+	if (Kind == ETNTctItem::Flotador)
+	{
+		// No va a la mano: se cuelga del caparazón.
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle);
+		return Effects && Effects->ServerGrantFloat();
 	}
 	FTN_InventoryItem Item;
 	UTN_InventoryComponent* Inventory = Turtle->GetInventoryComponent();

@@ -6,6 +6,8 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Game/TN_TctRules.h"
+#include "Materials/MaterialInterface.h"
+#include "ProceduralMeshComponent.h"
 #include "World/TN_TctArena.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -71,6 +73,75 @@ bool FTNTctArenaDianaSurveyTest::RunTest(const FString& Parameters)
 		}
 		AddInfo(FString::Printf(TEXT("Salidas: la más cercana a otra, a %.0f uu"), Closest));
 		TestTrue(TEXT("Salidas separadas (más de 10 m entre dos)"), Closest > 1000.f);
+	}
+
+	GEngine->DestroyWorldContext(World);
+	World->DestroyWorld(false);
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Arena de playa en el terreno (#779)
+// ─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTctArenaSandMaterialTest,
+	"Tortunabo.Tct.Arena.SandMaterial",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNTctArenaSandMaterialTest::RunTest(const FString& Parameters)
+{
+	const FString SandPath = TEXT("/Game/Blueprints/Gameplay/GridMap/M_GridTerrainWet.M_GridTerrainWet");
+	TestEqual(TEXT("La arena de TcT usa la arena de playa del Rally y del Coop"), FString(ATN_TctArena::SandMaterialPath()), SandPath);
+	UMaterialInterface* Sand = LoadObject<UMaterialInterface>(nullptr, *SandPath);
+	if (!TestNotNull(TEXT("El material de arena está en el proyecto"), Sand))
+	{
+		return false;
+	}
+	const UMaterialInterface* ArenaDefault = GetDefault<ATN_TctArena>()->TerrainMaterial;
+	TestEqual(TEXT("ATN_TctArena nace con la arena de playa"), ArenaDefault ? ArenaDefault->GetPathName() : FString(), SandPath);
+	const UMaterialInterface* LoaderDefault = GetDefault<ATN_MapVariantLoader>()->TerrainMaterial;
+	TestTrue(TEXT("El cargador de los demás modos conserva su material"), LoaderDefault && LoaderDefault->GetPathName() != SandPath);
+
+	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, TEXT("TNTctArenaSandWorld"));
+	if (!TestNotNull(TEXT("Mundo de prueba"), World))
+	{
+		return false;
+	}
+	FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
+	Context.SetCurrentWorld(World);
+	World->InitializeActorsForPlay(FURL());
+
+	// Todas las arenas de TcT (también las que llegan con ?Arena=), aunque la arena del nivel traiga otro material.
+	const TCHAR* const Arenas[] = { TEXT("A01_diana"), TEXT("N01_coliseo"), TEXT("N02_anfiteatro"), TEXT("N03_volcan_arena"),
+		TEXT("N04_atolon"), TEXT("N17_fortaleza_estrella"), TEXT("N18_yin_yang"), TEXT("A07_panal_piramide"), TEXT("A08_panal_roto"),
+		TEXT("A09_colmena"), TEXT("A10_ajedrez"), TEXT("A11_zigurat"), TEXT("A12_damas") };
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ATN_TctArena* Arena = World->SpawnActor<ATN_TctArena>(ATN_TctArena::StaticClass(), FTransform::Identity, Params);
+	if (TestNotNull(TEXT("Arena"), Arena))
+	{
+		Arena->TerrainMaterial = const_cast<UMaterialInterface*>(LoaderDefault);
+		int32 Checked = 0;
+		for (const TCHAR* Name : Arenas)
+		{
+			if (!ATN_TctArena::VariantExists(FName(Name)))
+			{
+				AddWarning(FString::Printf(TEXT("Sin la variante %s: se salta."), Name));
+				continue;
+			}
+			Arena->ServerSetArenaVariant(FName(Name));
+			TArray<UProceduralMeshComponent*> Meshes;
+			Arena->GetComponents(Meshes);
+			int32 Sandy = 0;
+			for (const UProceduralMeshComponent* Mesh : Meshes)
+			{
+				Sandy += (Mesh && Mesh->GetMaterial(0) == Sand) ? 1 : 0;
+			}
+			TestTrue(FString::Printf(TEXT("%s tiene terreno"), Name), Meshes.Num() > 0);
+			TestEqual(FString::Printf(TEXT("%s: todo el terreno con arena de playa"), Name), Sandy, Meshes.Num());
+			++Checked;
+		}
+		AddInfo(FString::Printf(TEXT("Arenas comprobadas: %d"), Checked));
 	}
 
 	GEngine->DestroyWorldContext(World);

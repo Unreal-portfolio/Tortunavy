@@ -22,6 +22,7 @@
 #include "World/TN_ConchPickup.h"
 #include "World/TN_InkProjectile.h"
 #include "Game/TN_TctItems.h"
+#include "Game/TN_CoopItems.h"
 #include "World/Beach/TN_RaceItems.h"
 #include "Game/TN_BeachRaceGameState.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -149,9 +150,11 @@ void ATortugaCharacter::ServerTryInteract_Implementation(ATN_InteractableBase* I
 
 	if (!Interactable->CanInteract(this))
 	{
-		// Si falla en un pickup Y tenemos ítem equipado → asumir "inventario lleno"
-		// y usar/lanzar el ítem directamente, sin desperdiciar el input del jugador.
-		if (Cast<ATN_PickupInteractableBase>(Interactable)
+		// Solo si lo que impide cogerlo es el inventario lleno se usa/lanza el ítem de la mano, sin desperdiciar el input.
+		// Cogido por otra hace un instante (bTaken aún no había llegado a este cliente), desactivado o sin ítem: no se
+		// gasta nada (#570).
+		const ATN_PickupInteractableBase* Pickup = Cast<ATN_PickupInteractableBase>(Interactable);
+		if (Pickup && Pickup->IsBlockedOnlyByFullInventory(this)
 			&& InventoryComponent && InventoryComponent->HasEquippedItem())
 		{
 			if (bIsKnockedDown || bIsDead)
@@ -332,6 +335,13 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 	if (EquippedItem.UseType == ETN_ItemUseType::TctItem)
 	{
 		TNTctItems::ServerUse(this, EquippedItem);
+		return;
+	}
+
+	// ── Objetos del cooperativo (charco de pesca, pez globo, arpón...): Game/TN_CoopItems.h ──
+	if (EquippedItem.UseType == ETN_ItemUseType::CoopItem)
+	{
+		TNCoopItems::ServerUse(this, EquippedItem);
 		return;
 	}
 }
@@ -617,7 +627,54 @@ void ATortugaCharacter::ServerDropEquippedItem_Implementation()
 
 FVector ATortugaCharacter::GetItemSpawnLocation() const
 {
-	return GetActorLocation() + (GetActorForwardVector() * 120.0f) + FVector(0.0f, 0.0f, 40.0f);
+	// Delante y algo por encima del centro de la cápsula: así la bola, la tinta y lo que se suelta no nacen en el cuerpo.
+	constexpr float ForwardCm = 120.f;
+	constexpr float UpCm = 40.f;
+	// Entre el centro y ese punto no puede haber nada (#571): pegada a un muro, puerta o valla de menos de ~80 cm el punto
+	// caía al otro lado y la bola o la tinta salían desde allí. Se barre una esfera del tamaño de una bola y, si choca, el
+	// punto se queda en este lado, con margen.
+	constexpr float SweepRadiusCm = 20.f;
+	constexpr float WallMarginCm = 25.f;
+
+	const FVector Start = GetActorLocation();
+	const FVector Desired = Start + GetActorForwardVector() * ForwardCm + FVector(0.f, 0.f, UpCm);
+	const UWorld* World = GetWorld();
+	if (!World)
+	{
+		return Desired;
+	}
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TN_ItemSpawnClearance), false, this);
+	if (const AActor* Carried = CarryComponent ? CarryComponent->GetCarriedTurtle() : nullptr)
+	{
+		Params.AddIgnoredActor(Carried);
+	}
+	// Ni el vehículo en el que va ni lo que lleva enganchado (casco, objetos a la espalda).
+	if (const AActor* Mount = GetAttachParentActor())
+	{
+		Params.AddIgnoredActor(Mount);
+	}
+	TArray<AActor*> AttachedActors;
+	GetAttachedActors(AttachedActors);
+	Params.AddIgnoredActors(AttachedActors);
+	// Solo cuenta lo que hace de pared (el mismo canal que FindGroundBelow): ni otras tortugas ni cuerpos sueltos.
+	FCollisionResponseParams Response;
+	Response.CollisionResponse.SetResponse(ECC_Pawn, ECR_Ignore);
+	Response.CollisionResponse.SetResponse(ECC_PhysicsBody, ECR_Ignore);
+
+	FHitResult Hit;
+	if (!World->SweepSingleByChannel(Hit, Start, Desired, FQuat::Identity, ECC_WorldStatic,
+		FCollisionShape::MakeSphere(SweepRadiusCm), Params, Response))
+	{
+		return Desired;
+	}
+	if (Hit.bStartPenetrating)
+	{
+		return Start;
+	}
+	const FVector Dir = (Desired - Start).GetSafeNormal();
+	const double Clear = FMath::Max(0.0, FVector::Dist(Start, Hit.Location) - WallMarginCm);
+	return Start + Dir * Clear;
 }
 
 FVector ATortugaCharacter::GetItemForwardDirection() const

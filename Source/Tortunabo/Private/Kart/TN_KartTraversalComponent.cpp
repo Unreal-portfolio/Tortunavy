@@ -8,6 +8,8 @@
 #include "EngineUtils.h"
 #include "Rally/TN_RallyLogic.h"
 #include "Vehicles/TN_Buggy.h"
+#include "Vehicles/TN_BuggyData.h"
+#include "Vehicles/TN_RallyTurretLogic.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcTraversalActors.h"
 
@@ -131,7 +133,7 @@ void UTN_KartTraversalComponent::CacheMapActors()
 	}
 }
 
-bool UTN_KartTraversalComponent::FindWaterSurface(const FVector& Location, float& OutSurfaceZ) const
+bool UTN_KartTraversalComponent::FindWaterSurfaceAt(const FVector& Location, float MinDepthCm, float& OutSurfaceZ) const
 {
 	// Pozas de las cascadas (agua por encima del mar).
 	for (const TWeakObjectPtr<ATN_ProcSlideZone>& Weak : Slides)
@@ -153,7 +155,7 @@ bool UTN_KartTraversalComponent::FindWaterSurface(const FVector& Location, float
 		return false;
 	}
 	const float SeaZ = Map->GetSeaLevelWorldZ();
-	if (SeaZ - Map->GetTerrainHeightAt(Location) < MinWaterDepthCm)
+	if (SeaZ - Map->GetTerrainHeightAt(Location) < FMath::Max(MinDepthCm, 0.f))
 	{
 		return false;
 	}
@@ -172,7 +174,7 @@ void UTN_KartTraversalComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	CacheMapActors();
 	const FVector Location = Kart->GetActorLocation();
 	float SurfaceZ = 0.f;
-	const bool bWater = FindWaterSurface(Location, SurfaceZ);
+	const bool bWater = FindWaterSurfaceAt(Location, MinWaterDepthCm, SurfaceZ);
 	const bool bWasFloating = bFloating;
 	const float AboveFloatLine = static_cast<float>(Location.Z) - (SurfaceZ + FloatLineCm);
 	bFloating = bWater && AboveFloatLine < (bFloating ? TNKartTraversalDetail::LeaveWaterAboveCm : TNKartTraversalDetail::EnterWaterAboveCm);
@@ -200,6 +202,17 @@ void UTN_KartTraversalComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	}
 }
 
+float UTN_KartTraversalComponent::GetMaxFloatSpeedCms() const
+{
+	const ATN_Buggy* Kart = GetKart();
+	const UTN_BuggyData* Tuning = Kart ? Kart->GetData() : nullptr;
+	if (!Tuning)
+	{
+		return 0.f;
+	}
+	return TNRallyTurret::BuggyTopSpeedCms * Tuning->WaterSpeedMultiplier * Kart->GetDamageStatScale(Tuning->DamagedTopSpeedScale);
+}
+
 void UTN_KartTraversalComponent::ApplyRaft(float DeltaSeconds, float SurfaceZ)
 {
 	using namespace TNKartTraversalDetail;
@@ -221,9 +234,15 @@ void UTN_KartTraversalComponent::ApplyRaft(float DeltaSeconds, float SurfaceZ)
 
 	// Flotación, resistencia del agua (mucha de lado: la balsa no derrapa) y remo con el acelerador.
 	FVector Accel(0.f, 0.f, TNKart::BuoyancyAccel(SurfaceZ + FloatLineCm - static_cast<float>(Location.Z), static_cast<float>(Velocity.Z), Gravity));
-	Accel -= Right * (SideSpeed * 2.5f) + Forward * (ForwardSpeed * 0.6f);
+	// Resistencia hacia delante baja: el remo llega a la velocidad máxima del agua (con 0,6 se quedaba por debajo).
+	Accel -= Right * (SideSpeed * 2.5f) + Forward * (ForwardSpeed * 0.4f);
 	const bool bLocked = Kart->IsEngineLocked() || Kart->IsRaceBrakeHeld();
-	const float Drive = bLocked ? 0.f : Move->GetThrottleInput() - 0.6f * Move->GetBrakeInput();
+	// Las entradas que aplica Chaos en esta máquina: en el servidor, las de la conductora cliente (#710). Con la marcha atrás
+	// puesta (bReverseAsBrake), Chaos pasa el freno al acelerador: rema hacia atrás.
+	const float Throttle = Kart->GetAppliedThrottle();
+	const float Brake = Kart->GetAppliedBrake();
+	const float Drive = bLocked ? 0.f : (Move->GetTargetGear() < 0 ? -0.6f * FMath::Max(Throttle, Brake) : Throttle - 0.6f * Brake);
+	const float MaxFloatSpeedCms = GetMaxFloatSpeedCms();
 	if ((Drive > 0.f && ForwardSpeed < MaxFloatSpeedCms) || (Drive < 0.f && ForwardSpeed > -0.4f * MaxFloatSpeedCms))
 	{
 		Accel += Forward * (Drive * PaddleAccelCms2);
@@ -245,7 +264,7 @@ void UTN_KartTraversalComponent::ApplyRaft(float DeltaSeconds, float SurfaceZ)
 	// Rumbo con la dirección (menos parado) y la balsa derecha: el agua no la deja volcar.
 	FVector Spin = Chassis->GetPhysicsAngularVelocityInDegrees();
 	const float SpeedFactor = 0.35f + 0.65f * FMath::Clamp(FMath::Abs(ForwardSpeed) / 400.f, 0.f, 1.f);
-	const float TargetYawRate = Move->GetSteeringInput() * FloatYawDegPerSecond * SpeedFactor * (ForwardSpeed < -50.f ? -1.f : 1.f);
+	const float TargetYawRate = Kart->GetAppliedSteering() * FloatYawDegPerSecond * SpeedFactor * (ForwardSpeed < -50.f ? -1.f : 1.f);
 	const FVector Tilt = FVector::CrossProduct(Kart->GetActorUpVector(), FVector::UpVector);
 	Spin.X = FMath::FInterpTo(Spin.X, static_cast<float>(Tilt.X) * 180.f, DeltaSeconds, 3.f);
 	Spin.Y = FMath::FInterpTo(Spin.Y, static_cast<float>(Tilt.Y) * 180.f, DeltaSeconds, 3.f);

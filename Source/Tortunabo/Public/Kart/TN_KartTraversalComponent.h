@@ -58,6 +58,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Karts|Agua")
 	float GetFold01() const { return Fold01; }
 
+	/**
+	 * Cota del agua bajo Location (el mar o la poza de una cascada); false si ahí no hay agua de al menos MinDepthCm. Con 0,
+	 * también la orilla poco honda por la que el kart rueda (#719).
+	 */
+	bool FindWaterSurfaceAt(const FVector& Location, float MinDepthCm, float& OutSurfaceZ) const;
+
 	/** Línea de flotación: el origen del kart flota esto por encima del agua (cm). */
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
 	float FloatLineCm = 15.f;
@@ -66,12 +72,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
 	float MinWaterDepthCm = 70.f;
 
-	/** Empuje del acelerador en el agua (cm/s²) y velocidad máxima flotando (cm/s, unos 30 km/h). */
+	/**
+	 * Empuje del acelerador en el agua (cm/s²). La velocidad máxima flotando es la del agua del buggy (#719): la punta por
+	 * UTN_BuggyData::WaterSpeedMultiplier y por lo que le quite la vida perdida (GetMaxFloatSpeedCms).
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
 	float PaddleAccelCms2 = 900.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
-	float MaxFloatSpeedCms = 850.f;
+	/** Velocidad máxima flotando (cm/s): la mitad de la punta del buggy con el ajuste de serie, menos con daño. */
+	float GetMaxFloatSpeedCms() const;
 
 	/** Giro máximo en el agua (grados por segundo). */
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Agua")
@@ -95,8 +104,6 @@ private:
 	ATN_Buggy* GetKart() const;
 	/** Generador, géiseres y toboganes del nivel (locales en cada máquina; se buscan cuando hay mapa). */
 	void CacheMapActors();
-	/** Cota del agua bajo Location (el mar o la poza de una cascada); false si ahí no hay agua bastante honda. */
-	bool FindWaterSurface(const FVector& Location, float& OutSurfaceZ) const;
 
 	/** Servidor y conductora local. */
 	void ApplyRaft(float DeltaSeconds, float SurfaceZ);
