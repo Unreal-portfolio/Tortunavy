@@ -478,16 +478,17 @@ void ATN_SandCastleLobby::HideMaquette()
 			Zone->SetActorEnableCollision(false);
 			continue;
 		}
+		// Solo lo que es igual en el editor y en el juego empaquetado (#828): el nombre del objeto, su clase y su malla. La
+		// etiqueta del actor solo existe en el editor: con ella, un anfitrión en el editor quitaba la colisión a piezas que
+		// un cliente empaquetado conservaba (el suelo viejo «Rectangle2», con la malla Rectangle_*).
 		const FString ClassName = Actor->GetClass()->GetName();
-		FString Names = Actor->GetName();
-#if WITH_EDITOR
-		Names += TEXT(" ") + Actor->GetActorLabel();
-#endif
+		FString MeshName;
 		if (const AStaticMeshActor* MeshActor = Cast<AStaticMeshActor>(Actor))
 		{
 			const UStaticMeshComponent* Comp = MeshActor->GetStaticMeshComponent();
-			if (Comp && Comp->GetStaticMesh()) { Names += TEXT(" ") + Comp->GetStaticMesh()->GetName(); }
+			if (Comp && Comp->GetStaticMesh()) { MeshName = Comp->GetStaticMesh()->GetName(); }
 		}
+		const FString Names = Actor->GetName() + TEXT(" ") + MeshName;
 		FVector BoundsOrigin, BoundsExtent;
 		Actor->GetActorBounds(false, BoundsOrigin, BoundsExtent);
 		// La muralla de la maqueta (anillo «SandWall» / «Extrude»), las vallas y torres de la zona de salida, los huevos
@@ -495,7 +496,7 @@ void ATN_SandCastleLobby::HideMaquette()
 		const bool bRing = (Names.Contains(TEXT("Extrude")) || Names.Contains(TEXT("SandWall"))) && BoundsExtent.Z > 150.0;
 		const bool bFence = ClassName.Contains(TEXT("BP_Fence")) || ClassName.Contains(TEXT("BP_Tower"));
 		const bool bOldEgg = Actor->IsA<AStaticMeshActor>() && Names.Contains(TEXT("Capsule"));
-		const bool bOldProps = ClassName.Contains(TEXT("ChangingTent")) || ClassName.Contains(TEXT("SM_Palo")) || Names.Contains(TEXT("Rectangle2"));
+		const bool bOldProps = ClassName.Contains(TEXT("ChangingTent")) || ClassName.Contains(TEXT("SM_Palo")) || MeshName.StartsWith(TEXT("Rectangle"));
 		if (bRing || bFence || bOldEgg || bOldProps)
 		{
 			Actor->SetActorHiddenInGame(true);
