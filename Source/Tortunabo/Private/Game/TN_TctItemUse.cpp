@@ -304,8 +304,8 @@ namespace TNTctItemUseDetail
 		const FTransform Theirs(Other->GetActorRotation(), Other->GetActorLocation());
 		TNBeach::RelocateTurtle(Turtle, Theirs);
 		TNBeach::RelocateTurtle(Other, Mine);
-		Turtle->MulticastApplyMareoEffect(TNTctItemTuning::SwapDizzySeconds);
-		Other->MulticastApplyMareoEffect(TNTctItemTuning::SwapDizzySeconds);
+		Turtle->ApplyMareoEffect(TNTctItemTuning::SwapDizzySeconds);
+		Other->ApplyMareoEffect(TNTctItemTuning::SwapDizzySeconds);
 		TNTctItems::PlayCue(Turtle, ETNRaceSound::Zap, 1.4f);
 		TNTctItems::PlayCue(Other, ETNRaceSound::Zap, 1.4f);
 		UE_LOG(LogTortunabo, Log, TEXT("[TcT] %s cambia su sitio con %s."), *GetNameSafe(Turtle), *GetNameSafe(Other));
