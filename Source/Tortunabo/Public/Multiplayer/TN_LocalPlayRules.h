@@ -93,6 +93,15 @@ namespace TNLocalPlay
 	 */
 	TORTUNABO_API bool ShouldSave(bool bLocalMode, bool bPrimary);
 
+	/** ¿Abre el micrófono la tortuga? Solo la de este PC y nunca en la partida local, que no tiene chat de voz (#650). */
+	TORTUNABO_API bool ShouldOpenVoiceCapture(bool bLocalMode, bool bLocallyOwned);
+
+	/**
+	 * ¿Puede el controlador crear su HUD? Solo uno local y con su jugador ya asignado: el de un invitado que entra en una
+	 * partida local hace BeginPlay dentro del Login, antes de SetPlayer, y CreateWidget falla (#650).
+	 */
+	TORTUNABO_API bool CanCreatePlayerWidgets(bool bLocalController, bool bHasLocalPlayer);
+
 	/**
 	 * Mandos que el jugador 1 deja libres al empezar la partida local: todos los que el sistema le había dado menos el que usó
 	 * para elegir «Local» (ChosenPad; INDEX_NONE si fue con el teclado o el ratón). Así cualquier otro mando puede unirse con

@@ -102,6 +102,16 @@ bool TNLocalPlay::ShouldSave(bool bLocalMode, bool bPrimary)
 	return !bLocalMode || bPrimary;
 }
 
+bool TNLocalPlay::ShouldOpenVoiceCapture(bool bLocalMode, bool bLocallyOwned)
+{
+	return bLocallyOwned && !bLocalMode;
+}
+
+bool TNLocalPlay::CanCreatePlayerWidgets(bool bLocalController, bool bHasLocalPlayer)
+{
+	return bLocalController && bHasLocalPlayer;
+}
+
 TArray<int32> TNLocalPlay::PadsToRelease(const TArray<int32>& PrimaryUserPads, int32 ChosenPad)
 {
 	TArray<int32> Out;

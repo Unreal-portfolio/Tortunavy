@@ -16,6 +16,8 @@
 #include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
 #include "UI/TN_ScreenHost.h"
+#include "Multiplayer/TN_LocalPlayRules.h"
+#include "Multiplayer/TN_LocalPlaySubsystem.h"
 
 UProximityVoiceComponent::UProximityVoiceComponent()
 {
@@ -46,12 +48,18 @@ bool UProximityVoiceComponent::IsLocallyOwned() const
 	return false;
 }
 
+bool UProximityVoiceComponent::ShouldCaptureVoice() const
+{
+	// BP_TortugaCharacter trae el componente de serie: en la partida local también existe y no debe abrir el micrófono.
+	return TNLocalPlay::ShouldOpenVoiceCapture(UTN_LocalPlaySubsystem::IsLocalGame(this), IsLocallyOwned());
+}
+
 void UProximityVoiceComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	bIsShuttingDown = false;
 	bRuntimeResourcesCleanedUp = false;
-	if (IsLocallyOwned())
+	if (ShouldCaptureVoice())
 	{
 		OpenCapture();
 	}
@@ -450,7 +458,7 @@ void UProximityVoiceComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 	// El peón pasa a ser de este jugador después de BeginPlay (el controlador que llega por red después que el componente):
 	// se abre el micrófono entonces, una sola vez.
-	if (!bCaptureOpenAttempted && !bIsShuttingDown && IsLocallyOwned())
+	if (!bCaptureOpenAttempted && !bIsShuttingDown && ShouldCaptureVoice())
 	{
 		OpenCapture();
 	}
