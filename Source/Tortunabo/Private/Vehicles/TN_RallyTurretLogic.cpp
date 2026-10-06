@@ -248,7 +248,7 @@ namespace TNRallyTurret
 		{
 			return Out;
 		}
-		Out.LiftCms = FMath::Min(RecoilCms * RecoilLiftRatio * FMath::Abs(Forwardness), MaxRecoilLiftCms);
+		Out.LiftCms = RecoilCms * RecoilLiftRatio * FMath::Abs(Forwardness);
 		Out.LocalPoint = FVector(FMath::Sign(Forwardness) * FMath::Max(HalfLengthCm, 0.f) * 0.9f, 0.f, 0.f);
 		return Out;
 	}

@@ -189,15 +189,11 @@ namespace TNRallyTurret
 	/** Cambio de velocidad del retroceso: opuesto a la dirección del disparo, en el plano horizontal, de RecoilCms. */
 	TORTUNABO_API FVector RecoilVelocity(const FVector& AimWorldDir, float RecoilCms);
 
-	/** Fracción del retroceso que levanta el extremo del buggy hacia el que se dispara. */
-	constexpr float RecoilLiftRatio = 0.8f;
-
 	/**
-	 * Tope del levantamiento (cm/s), el de la concha (250 · 0,8): con el del mortero sin tope (700 · 0,8 = 560 cm/s en el
-	 * morro) el buggy daba la vuelta a 50 km/h, y el bot del Rally volcaba cada vez que gastaba uno (#695). El frenazo
-	 * horizontal del mortero (RecoilVelocity) no cambia.
+	 * Fracción del retroceso que levanta el extremo del buggy hacia el que se dispara. Sin tope (Decisión del 06-10 en #775,
+	 * #695): la torreta afecta al buggy y el mortero (700 · 0,8 = 560 cm/s en el morro) lo frena y le levanta las ruedas.
 	 */
-	constexpr float MaxRecoilLiftCms = 200.f;
+	constexpr float RecoilLiftRatio = 0.8f;
 
 	/** Componente vertical del retroceso, en espacio local del buggy. */
 	struct FRecoilLift
@@ -211,7 +207,7 @@ namespace TNRallyTurret
 	/**
 	 * Levantamiento del retroceso: proporcional a cuánto apunta el disparo hacia delante o hacia atrás (LocalAimDir en
 	 * espacio del buggy). Disparar hacia delante frena (RecoilVelocity) y levanta el morro; hacia atrás, acelera y levanta
-	 * la trasera. Un disparo lateral no levanta. Nunca pasa de MaxRecoilLiftCms.
+	 * la trasera. Un disparo lateral no levanta.
 	 */
 	TORTUNABO_API FRecoilLift RecoilLift(const FVector& LocalAimDir, float RecoilCms, float HalfLengthCm);
 

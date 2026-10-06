@@ -1,16 +1,15 @@
 // Retroceso de la torreta y vuelcos del buggy del Rally con física y sin ventana (#695).
 //  - RecoilNoFlip: cada munición especial disparada hacia delante y hacia atrás, parado y a 50 km/h en llano, como la
 //    dispara el piloto IA (UTN_BuggyTurretComponent::TryFire con su retroceso): el buggy no vuelca en los 3 s siguientes.
-//    Caso negativo: el levantamiento del mortero de antes de #695 (700 · 0,8 = 560 cm/s en el morro) sí lo vuelca.
+//    El mortero solo se mide: su levantamiento ya no tiene tope (700 · 0,8 = 560 cm/s en el morro; Decisión del 06-10 en
+//    #775) y puede volcarlo, que es lo natural.
 // Las carreras de 3 vueltas sin ventana de #695 dieron 22 vuelcos, todos 0,2-0,4 s después de que el bot gastara un
-// mortero (20 disparos): el retroceso del mortero levantaba el morro lo bastante para darle la vuelta.
+// mortero (20 disparos): el retroceso del mortero levanta el morro lo bastante para darle la vuelta.
 // Headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Rally.Measure.Recoil; Quit" -nullrhi -unattended -NoSteam
 
 #include "Misc/AutomationTest.h"
 #include "TN_RallyPhysicsTestKit.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Vehicles/TN_RallyCombatLogic.h"
 #include "Vehicles/TN_RallyTurretLogic.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -21,8 +20,6 @@ namespace TNRallyMeasureRecoil
 
 	constexpr float CruiseKmh = 50.f;
 	constexpr float WatchSeconds = 3.f;
-	/** Levantamiento del mortero antes de #695: RecoilCms 700 por RecoilLiftRatio 0,8, sin tope. */
-	constexpr float LegacyMortarLiftCms = 700.f * 0.8f;
 
 	struct FShot
 	{
@@ -90,19 +87,6 @@ namespace TNRallyMeasureRecoil
 		});
 	}
 
-	/** El retroceso del mortero de antes de #695: el frenazo de 700 cm/s y 560 cm/s hacia arriba en el morro. */
-	FShot LegacyMortarOnFreshGround(float TargetKmh)
-	{
-		return ShotOnFreshGround(TargetKmh, [](ATN_Buggy& Buggy)
-		{
-			const FVector Forward = Buggy.GetActorForwardVector();
-			Buggy.ApplyVelocityImpulse(TNRallyTurret::RecoilVelocity(Forward, TNRallyTurret::SpecFor(ETNRallyAmmo::Mortero).RecoilCms));
-			USkeletalMeshComponent* Chassis = Buggy.GetMesh();
-			const FVector Nose = Buggy.GetActorTransform().TransformPosition(FVector(0.9f * TNRallyCombat::DefaultHalfLengthCm, 0.f, 0.f));
-			Chassis->AddImpulseAtLocation(Buggy.GetActorUpVector() * LegacyMortarLiftCms * Chassis->GetMass(), Nose);
-		});
-	}
-
 	FString Describe(const TCHAR* Label, const FShot& Shot)
 	{
 		return FString::Printf(TEXT("%s: inclinación máxima %.0f grados, %s%s"), Label, Shot.MaxTiltDeg,
@@ -129,13 +113,14 @@ bool FTNRallyMeasureRecoilNoFlipTest::RunTest(const FString& Parameters)
 					bBackward ? TEXT("atrás") : TEXT("delante"), Speed);
 				AddInfo(Describe(*Label, Shot));
 				TestTrue(*FString::Printf(TEXT("%s: llega a la velocidad"), *Label), Shot.bReachedSpeed);
-				TestFalse(*FString::Printf(TEXT("%s: no vuelca"), *Label), Shot.bFlipped);
+				// El mortero puede volcarlo (sin tope, #695): solo se anota la medición.
+				if (Ammo != ETNRallyAmmo::Mortero)
+				{
+					TestFalse(*FString::Printf(TEXT("%s: no vuelca"), *Label), Shot.bFlipped);
+				}
 			}
 		}
 	}
-	const FShot Legacy = LegacyMortarOnFreshGround(CruiseKmh);
-	AddInfo(Describe(TEXT("Mortero con el levantamiento de antes de #695 a 50 km/h"), Legacy));
-	TestTrue(TEXT("caso negativo: el levantamiento de antes de #695 vuelca el buggy"), Legacy.bFlipped);
 	return true;
 }
 
