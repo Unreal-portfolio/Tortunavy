@@ -327,6 +327,13 @@ float ATN_TutorialSearchSpot::GetLootWeight(FName RowName, const FTN_InventoryIt
 	return (RowName == BallId || Row.ItemId == BallId) ? 1.f : 0.f;
 }
 
+bool ATN_TutorialSearchSpot::PickLoot(FTN_InventoryItem& OutItem, const APawn* /*Searcher*/) const
+{
+	// La tabla del coop (ATN_ProcSearchSpot::PickLoot) suma sus objetos con peso propio: aquí saldría la bola solo a veces.
+	return PickCatalogItem(GetLootTable(), [this](FName RowName, const FTN_InventoryItem& Row) { return GetLootWeight(RowName, Row); },
+		OutItem);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ATN_TutorialCatapult
 // ─────────────────────────────────────────────────────────────────────────────

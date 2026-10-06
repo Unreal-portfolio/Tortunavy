@@ -108,6 +108,8 @@ public:
 protected:
 	virtual float GetLuck() const override { return 1.f; }
 	virtual float GetLootWeight(FName RowName, const FTN_InventoryItem& Row) const override;
+	/** Solo el catálogo con GetLootWeight (la bola): sin los objetos del coop que sortea el rebuscable del mapa (#791). */
+	virtual bool PickLoot(FTN_InventoryItem& OutItem, const APawn* Searcher) const override;
 };
 
 /**
