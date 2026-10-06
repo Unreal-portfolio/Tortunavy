@@ -8,6 +8,8 @@
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/TN_TctArena.h"
+#include "World/TN_TctItemPad.h"
+#include "Misc/DateTime.h"
 
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -158,7 +160,34 @@ bool ATN_TctGameMode::SetUpArena()
 	CreateSpawnPoints();
 	CreateItemPads();
 	HoldWater(FloodPlan.BaseZ);
+	// El decorado vivo (#829): la semilla de esta partida y los sitios libres, que cada máquina usa para repartir lo mismo.
+	if (SceneryMatchSeed == 0)
+	{
+		const int64 Ticks = FDateTime::UtcNow().GetTicks();
+		SceneryMatchSeed = static_cast<uint32>(Ticks ^ (Ticks >> 32)) | 1u;
+	}
+	Arena->ServerSetScenery(SceneryMatchSeed, MakeSceneryKeepOut());
 	return true;
+}
+
+TArray<FIntVector> ATN_TctGameMode::MakeSceneryKeepOut() const
+{
+	TArray<FIntVector> Zones;
+	for (const APlayerStart* Start : SpawnPoints)
+	{
+		if (IsValid(Start))
+		{
+			Zones.Add(FIntVector(FMath::RoundToInt(Start->GetActorLocation().X), FMath::RoundToInt(Start->GetActorLocation().Y), FMath::RoundToInt(SceneryKeepOutSpawn)));
+		}
+	}
+	for (const ATN_TctItemPad* Pad : ItemPads)
+	{
+		if (IsValid(Pad))
+		{
+			Zones.Add(FIntVector(FMath::RoundToInt(Pad->GetActorLocation().X), FMath::RoundToInt(Pad->GetActorLocation().Y), FMath::RoundToInt(SceneryKeepOutPad)));
+		}
+	}
+	return Zones;
 }
 
 void ATN_TctGameMode::BuildFloodPlan()

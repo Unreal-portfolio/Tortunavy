@@ -46,3 +46,23 @@ cocobomba, alga, gaviota, flotador, medusa) siguen igual y tienen su rareza en `
   siempre la próxima subida con su cuenta atrás y el tramo («Tramo 2 de 5», el último es la marea final), una cinta con la cuenta
   atrás en los segundos de aviso y la barra de veneno propia.
 - Los tiempos son los de `FTNTctFloodPlan` (#778): empieza a los 25 s, un escalón cada 24 s, 7 s por subida, marea final de 40 s.
+
+## Decorado vivo de las arenas (#829)
+
+Cada arena conserva su forma, alturas y estructuras (la variante de `Scripts/terrain_volumes/Variants`); encima se reparten, con el
+sistema del mapa generado de ProcMap y Coop, la vegetación, las rocas, los troncos y la fauna (`ATN_TctScenery`, `TN_TctSceneryPlan.h`).
+
+- **Reparto**: `TNTctScenery::MakePlan` mide el suelo (trazas cada metro contra la malla de la arena) y reparte con
+  `TNProcMap::PlaceFloraRows` (las mismas especies por bioma y las mismas mallas que el generador), anclas para `ATN_ProcFauna::InitCustom`
+  (animales que huyen de las tortugas y se esconden cuando les llega el agua) y decorado con colisión de `ATN_BeachDecorField`
+  (rocas, troncos, castillos de arena, sacos...). Cada arena tiene su bioma (`PrimaryBiome`: diana y atolón, playa; coliseo, pueblo;
+  volcán-arena, volcánico...) con manchas de otro bioma.
+- **Sin tapar nada**: las salidas y los puntos de objetos (radio de 9 y 7 m) no se llenan; lo que tiene colisión solo va donde sobran 6 m
+  de paso alrededor y el suelo es casi llano (rampas, puentes y bordes quedan libres); la vegetación no crece en rampas ni sobre
+  salidas y puntos de objetos y se atraviesa, como en el mapa generado.
+- **Igual en todas las máquinas** (#828): el servidor fija una vez la semilla de la partida y los sitios libres
+  (`ATN_TctArena::ServerSetScenery`, replicado) y cada máquina reparte lo mismo con la misma función pura, sobre el mismo suelo, sin
+  nada que dependa de la calidad gráfica, los fotogramas ni el orden de carga. La huella de lo que tiene colisión sale en el log de cada
+  máquina (`[TcT] Decorado de «arena»... huella XXXXXXXX`) para compararla.
+- **Rendimiento**: instancias jerárquicas con las distancias de corte del generador, sin colisión en la vegetación, 150 animales como
+  mucho y nada de lo visual en un servidor dedicado.

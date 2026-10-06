@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "World/ProcMap/TN_ProcMapEnums.h"
 #include "TN_ProcFauna.generated.h"
 
 class ATN_ProcMapGenerator;
@@ -50,6 +51,37 @@ public:
 	 * servidor dedicado no hace nada.
 	 */
 	void Init(const ATN_ProcMapGenerator* InGenerator, uint32 InSeed);
+
+	/** Un sitio junto al que viven animales en un mapa que no es el generado (Todos contra Todos, #829). */
+	struct FCustomAnchor
+	{
+		FVector2D P = FVector2D::ZeroVector;
+		/** Orden de reaparición (como el progreso por el camino): cualquier valor repartido de 0 a 14000. */
+		float S = 0.f;
+		/** Grupo de animales: los de la tabla del bioma se reparten por módulos. */
+		int32 Module = 0;
+		ETNProcBiome Biome = ETNProcBiome::Beach;
+		double Width = 800.0;
+	};
+
+	/** El terreno de un mapa que no es el generado: suelo, sitios prohibidos, agua y sitios con animales. */
+	struct FCustomTerrain
+	{
+		/** Cota del suelo bajo un punto del mundo (muy baja si no hay). */
+		TFunction<float(const FVector&)> HeightAt;
+		/** true si en ese punto (mundo, XY) no hay fauna (salidas, puntos de objetos). */
+		TFunction<bool(const FVector2D&)> Blocked;
+		/** Altura del agua ahora (mundo); si falta, WaterZ fijo. */
+		TFunction<float()> WaterZNow;
+		float WaterZ = 0.f;
+		TArray<FCustomAnchor> Anchors;
+	};
+
+	/**
+	 * Como Init, para un mapa de terreno fijo sin generador (#829): los animales salen junto a Terrain.Anchors, el suelo lo da
+	 * Terrain.HeightAt y los de tierra se esconden cuando les llega el agua (Terrain.WaterZNow). En un servidor dedicado no hace nada.
+	 */
+	void InitCustom(const FCustomTerrain& Terrain, uint32 InSeed);
 
 	/** Borra animales, piezas, mallas y efectos. */
 	void ClearFauna();
@@ -188,6 +220,9 @@ private:
 	TArray<TObjectPtr<UStaticMesh>> PartMeshes;
 
 	TWeakObjectPtr<const ATN_ProcMapGenerator> GeneratorRef;
+	/** Mapa propio sin generador (InitCustom). */
+	bool bCustom = false;
+	FCustomTerrain Custom;
 	uint32 FaunaSeed = 0;
 	int32 BuiltForGeneration = INDEX_NONE;
 	bool bPendingBuild = false;
@@ -241,6 +276,8 @@ private:
 	FVector2D ChooseFleeDir(const FTNFaunaAnimal& A, const FVector2D& Away, bool bClimb, float& OutGain) const;
 	bool FindWater(const FTNFaunaAnimal& A, const FVector2D& Away, FVector& OutGoal) const;
 	bool HabitatOk(uint8 InSpecies, float GroundH) const;
+	/** Mapa propio: un animal de tierra al que le ha llegado el agua. */
+	bool IsFloodedLand(const FTNFaunaAnimal& A) const;
 	float GroundAt(const FVector& P) const;
 	float MinViewDistSq(const FVector& P) const;
 	bool NearestThreat(const FVector& P, FVector& OutLoc, float& OutDistSq) const;

@@ -540,6 +540,7 @@ void ATN_ProcFauna::Init(const ATN_ProcMapGenerator* InGenerator, uint32 InSeed)
 {
 	ClearFauna();
 	GeneratorRef = InGenerator;
+	bCustom = false;
 	FaunaSeed = InSeed;
 	const UWorld* World = GetWorld();
 	if (!InGenerator || !World || World->GetNetMode() == NM_DedicatedServer)
@@ -553,6 +554,24 @@ void ATN_ProcFauna::Init(const ATN_ProcMapGenerator* InGenerator, uint32 InSeed)
 	{
 		BuildFauna();
 	}
+}
+
+void ATN_ProcFauna::InitCustom(const FCustomTerrain& Terrain, uint32 InSeed)
+{
+	ClearFauna();
+	GeneratorRef = nullptr;
+	bCustom = true;
+	Custom = Terrain;
+	FaunaSeed = InSeed;
+	const UWorld* World = GetWorld();
+	if (!World || World->GetNetMode() == NM_DedicatedServer || !Custom.HeightAt)
+	{
+		SetActorTickEnabled(false);
+		return;
+	}
+	bPendingBuild = true;
+	SetActorTickEnabled(true);
+	BuildFauna();
 }
 
 void ATN_ProcFauna::ClearFauna()
@@ -588,13 +607,13 @@ void ATN_ProcFauna::BuildFauna()
 	bPendingBuild = false;
 	const ATN_ProcMapGenerator* Gen = GeneratorRef.Get();
 	UWorld* World = GetWorld();
-	if (!Gen || !World || !Gen->IsMapReady() || World->GetNetMode() == NM_DedicatedServer)
+	if (!World || World->GetNetMode() == NM_DedicatedServer || (!bCustom && (!Gen || !Gen->IsMapReady())))
 	{
 		return;
 	}
 	// Aunque no salga fauna, no se reintenta hasta que el generador regenere.
 	bBuilt = true;
-	BuiltForGeneration = Gen->GetBuiltGeneration();
+	BuiltForGeneration = bCustom ? 0 : Gen->GetBuiltGeneration();
 
 	UMaterialInterface* SolidMat = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ProcMap/Materials/M_ProcFoliage.M_ProcFoliage"));
 	if (!SolidMat)
@@ -605,14 +624,15 @@ void ATN_ProcFauna::BuildFauna()
 	UMaterialInterface* GlowMat = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ProcMap/Materials/M_ProcGlow.M_ProcGlow"));
 	if (!GlowMat) { GlowMat = SolidMat; }
 
-	const TNProcMap::FLayout& Layout = Gen->GetLayout();
-	if (!Layout.bValid || Layout.Main.Num() < 2 || Layout.Modules.Num() == 0)
+	static const TNProcMap::FLayout EmptyLayout;
+	const TNProcMap::FLayout& Layout = bCustom ? EmptyLayout : Gen->GetLayout();
+	if (!bCustom && (!Layout.bValid || Layout.Main.Num() < 2 || Layout.Modules.Num() == 0))
 	{
 		return;
 	}
 	const double T0 = FPlatformTime::Seconds();
-	const FTransform GenXf = Gen->GetActorTransform();
-	WaterZ = static_cast<float>(GenXf.TransformPosition(FVector(0.0, 0.0, TNProcMap::SeaLevel + 2.0)).Z);
+	const FTransform GenXf = bCustom ? FTransform::Identity : Gen->GetActorTransform();
+	WaterZ = bCustom ? Custom.WaterZ : static_cast<float>(GenXf.TransformPosition(FVector(0.0, 0.0, TNProcMap::SeaLevel + 2.0)).Z);
 	TNProcMap::FRng Rng(static_cast<uint64>(FaunaSeed) * 0x9E3779B1ull + 0xFA17Aull);
 	SimRng = static_cast<uint32>(Rng.Next() | 1ull);
 
@@ -640,7 +660,21 @@ void ATN_ProcFauna::BuildFauna()
 		An.Module = Sample.Module;
 		An.Biome = Sample.Biome;
 	};
-	for (int32 i = 0; i < Layout.Main.Num(); i += 2)
+	if (bCustom)
+	{
+		// Mapa propio: las anclas ya vienen repartidas (sitios llanos y abiertos de la arena).
+		for (const FCustomAnchor& Source : Custom.Anchors)
+		{
+			FTNFaunaAnchor& An = Anchors.AddDefaulted_GetRef();
+			An.P = Source.P;
+			An.Dir = FVector2D(0.0, 1.0);
+			An.Width = Source.Width;
+			An.S = Source.S;
+			An.Module = Source.Module;
+			An.Biome = Source.Biome;
+		}
+	}
+	for (int32 i = 0; !bCustom && i < Layout.Main.Num(); i += 2)
 	{
 		const TNProcMap::FPathSample& Smp = Layout.Main[i];
 		if ((Smp.Flags & SkipFlags) == 0 && Smp.Module >= 0) { AddAnchor(Smp, static_cast<float>(Smp.S)); }
@@ -665,7 +699,7 @@ void ATN_ProcFauna::BuildFauna()
 
 	// ── Sitios válidos por especie junto al camino (sirven para colocar y para reciclar) ──
 	FTNProcKeepOut Keep;
-	Keep.AddLayout(Layout);
+	if (!bCustom) { Keep.AddLayout(Layout); }
 	FTNFaunaBiomeTable Tables[TNProcMap::NumBiomes];
 	for (int32 b = 0; b < TNProcMap::NumBiomes; ++b) { Tables[b] = TNFaunaBiomeTableOf(TNProcMap::BiomeFromIndex(b)); }
 	TArray<FTNFaunaSpot> SpotsOf[TNFaunaNumSpecies];
@@ -693,14 +727,14 @@ void ATN_ProcFauna::BuildFauna()
 				const double Lateral = bOnPath ? Rng.Range(-0.4, 0.4) * An.Width
 					: (Rng.Chance(0.5) ? 1.0 : -1.0) * (An.Width * 0.5 + Near);
 				const FVector2D MapP = An.P + An.Dir * Rng.Range(-250.0, 250.0) + Across * Lateral;
-				if (Keep.Blocked(MapP)) { continue; }
+				if (bCustom ? (Custom.Blocked && Custom.Blocked(MapP)) : Keep.Blocked(MapP)) { continue; }
 				const FVector WorldP = GenXf.TransformPosition(FVector(MapP.X, MapP.Y, 0.0));
-				const float GroundH = Gen->GetTerrainHeightAt(WorldP);
+				const float GroundH = GroundAt(WorldP);
 				if (!HabitatOk(static_cast<uint8>(SpId), GroundH)) { continue; }
 				if (Sp.Habitat != ETNFaunaHabitat::Water)
 				{
-					const float HX = Gen->GetTerrainHeightAt(WorldP + FVector(80.0, 0.0, 0.0));
-					const float HY = Gen->GetTerrainHeightAt(WorldP + FVector(0.0, 80.0, 0.0));
+					const float HX = GroundAt(WorldP + FVector(80.0, 0.0, 0.0));
+					const float HY = GroundAt(WorldP + FVector(0.0, 80.0, 0.0));
 					const float Grade = FMath::Max(FMath::Abs(HX - GroundH), FMath::Abs(HY - GroundH)) / 80.f;
 					if (Grade > (bClimber ? SteepClimber : SteepPlace)) { continue; }
 				}
@@ -732,14 +766,25 @@ void ATN_ProcFauna::BuildFauna()
 	{
 		if (Layout.Modules.IsValidIndex(Smp.Module)) { RouteModules.AddUnique(Smp.Module); }
 	}
+	if (bCustom)
+	{
+		for (const FTNFaunaAnchor& An : Anchors) { RouteModules.AddUnique(An.Module); }
+	}
+	// El bioma de cada módulo: el de su mapa generado o, en un mapa propio, el de sus anclas.
+	auto ModuleBiome = [&](int32 Mod)
+	{
+		if (!bCustom) { return Layout.Modules[Mod].Biome; }
+		for (const FTNFaunaAnchor& An : Anchors) { if (An.Module == Mod) { return An.Biome; } }
+		return ETNProcBiome::Beach;
+	};
 	int32 Wanted = 0;
-	for (const int32 Mod : RouteModules) { Wanted += Tables[TNProcMap::BiomeIndex(Layout.Modules[Mod].Biome)].PerModule; }
+	for (const int32 Mod : RouteModules) { Wanted += Tables[TNProcMap::BiomeIndex(ModuleBiome(Mod))].PerModule; }
 	const double WantScaled = FMath::Max(1.0, Wanted * static_cast<double>(Density));
 	const double PerModuleScale = FMath::Min(1.0, static_cast<double>(MaxAnimals) / WantScaled) * Density;
 	TArray<int32> Pool;
 	for (const int32 Mod : RouteModules)
 	{
-		const FTNFaunaBiomeTable& Table = Tables[TNProcMap::BiomeIndex(Layout.Modules[Mod].Biome)];
+		const FTNFaunaBiomeTable& Table = Tables[TNProcMap::BiomeIndex(ModuleBiome(Mod))];
 		int32 Left = FMath::RoundToInt32(Table.PerModule * PerModuleScale);
 		for (int32 Guard = 0; Left > 0 && Guard < 24 && Animals.Num() < MaxAnimals; ++Guard)
 		{
@@ -784,7 +829,7 @@ void ATN_ProcFauna::BuildFauna()
 					const double Ang = Rng.Range(0.0, TNProcMap::TwoPi);
 					const double Dist = Sp.GroupSpread * FMath::Sqrt(Rng.Unit());
 					const FVector Probe(Center.Pos.X + FMath::Cos(Ang) * Dist, Center.Pos.Y + FMath::Sin(Ang) * Dist, Center.Pos.Z);
-					const float GroundH = Gen->GetTerrainHeightAt(Probe);
+					const float GroundH = GroundAt(Probe);
 					if (HabitatOk(static_cast<uint8>(SpId), GroundH))
 					{
 						const float SurfaceZ = Sp.Habitat == ETNFaunaHabitat::Water ? WaterZ
@@ -972,7 +1017,7 @@ void ATN_ProcFauna::Tick(float DeltaTime)
 	TRACE_CPUPROFILER_EVENT_SCOPE(TNFauna_Tick);
 	const double TickStart = FPlatformTime::Seconds();
 	const ATN_ProcMapGenerator* Gen = GeneratorRef.Get();
-	if (!Gen)
+	if (!Gen && !bCustom)
 	{
 		ClearFauna();
 		SetActorTickEnabled(false);
@@ -980,14 +1025,14 @@ void ATN_ProcFauna::Tick(float DeltaTime)
 	}
 	if (bPendingBuild)
 	{
-		if (Gen->IsMapReady()) { BuildFauna(); }
+		if (bCustom || Gen->IsMapReady()) { BuildFauna(); }
 		return;
 	}
 	if (!bBuilt)
 	{
 		return;
 	}
-	if (!Gen->IsMapReady() || Gen->GetBuiltGeneration() != BuiltForGeneration)
+	if (!bCustom && (!Gen->IsMapReady() || Gen->GetBuiltGeneration() != BuiltForGeneration))
 	{
 		// El generador ha regenerado sin destruir este actor: se reconstruye cuando el mapa nuevo esté listo.
 		ClearFauna();
@@ -1001,10 +1046,11 @@ void ATN_ProcFauna::Tick(float DeltaTime)
 
 	const float Dt = FMath::Min(DeltaTime, 0.1f);
 	GatherViewsAndThreats();
+	if (bCustom && Custom.WaterZNow) { WaterZ = Custom.WaterZNow(); }
 	ProgressTimer -= Dt;
 	if (ProgressTimer <= 0.f && ViewLocs.Num() > 0)
 	{
-		ViewProgress = Gen->GetPathProgress(ViewLocs[0]);
+		ViewProgress = bCustom ? 0.f : Gen->GetPathProgress(ViewLocs[0]);
 		ProgressTimer = 0.5f;
 	}
 
@@ -1052,6 +1098,8 @@ void ATN_ProcFauna::Tick(float DeltaTime)
 			continue;
 		}
 		++NumAwake;
+		// El agua que sube (TcT): los de tierra se esconden cuando les llega y reaparecen en otro sitio seco.
+		if (bCustom && A.State != static_cast<uint8>(TNFauna::ETNFaunaState::Hidden) && IsFloodedLand(A)) { HideAnimal(A); }
 		SimulateAnimal(A, K, Dt);
 		WriteAnimal(A, K);
 	}
@@ -1884,6 +1932,7 @@ bool ATN_ProcFauna::Respawn(FTNFaunaAnimal& A, FTNFaunaKind& K, bool bFarOnly)
 	{
 		const int32 Idx = First + FMath::Min(Last - First - 1, static_cast<int32>(RandUnit() * (Last - First)));
 		const FTNFaunaSpot& Spot = K.Spots[Idx];
+		if (bCustom && !HabitatOk(A.Species, GroundAt(Spot.Pos))) { continue; }
 		const float ViewSq = MinViewDistSq(Spot.Pos);
 		if (bFarOnly ? ViewSq < FMath::Square(WakeRadius + 600.f) : ViewSq < FMath::Square(TNFaunaSim::RespawnNear)) { continue; }
 		FVector ThreatLoc = FVector::ZeroVector;
@@ -2106,6 +2155,13 @@ bool ATN_ProcFauna::FindWater(const FTNFaunaAnimal& A, const FVector2D& Away, FV
 	return false;
 }
 
+bool ATN_ProcFauna::IsFloodedLand(const FTNFaunaAnimal& A) const
+{
+	using namespace TNFauna;
+	const ETNFaunaHabitat Habitat = TNFaunaSpec(static_cast<ETNFaunaSpecies>(A.Species)).Habitat;
+	return (Habitat == ETNFaunaHabitat::Land || Habitat == ETNFaunaHabitat::Shore) && GroundAt(A.Pos) < WaterZ - 20.f;
+}
+
 bool ATN_ProcFauna::HabitatOk(uint8 InSpecies, float GroundH) const
 {
 	using namespace TNFauna;
@@ -2122,6 +2178,7 @@ bool ATN_ProcFauna::HabitatOk(uint8 InSpecies, float GroundH) const
 float ATN_ProcFauna::GroundAt(const FVector& P) const
 {
 	const ATN_ProcMapGenerator* Gen = GeneratorRef.Get();
+	if (bCustom && Custom.HeightAt) { return Custom.HeightAt(P); }
 	return Gen ? Gen->GetTerrainHeightAt(P) : static_cast<float>(P.Z);
 }
 

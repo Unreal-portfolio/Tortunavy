@@ -145,6 +145,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Arena", meta = (ClampMin = "0.0"))
 	float WadeDepth = 20.f;
 
+	/** Radio (uu) que se deja libre de decorado alrededor de una salida y de un punto de objetos (#829). */
+	UPROPERTY(EditDefaultsOnly, Category = "Tct|Scenery", meta = (ClampMin = "0.0"))
+	float SceneryKeepOutSpawn = 900.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tct|Scenery", meta = (ClampMin = "0.0"))
+	float SceneryKeepOutPad = 700.f;
+
 	/** Segundos de la salida a la primera subida del agua. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "0.0"))
 	float FloodStartDelay = TNTctFloodDefaults::StartDelay;
@@ -207,6 +214,11 @@ private:
 
 	FTNTctFloodPlan FloodPlan;
 	FTNTctArenaBounds ArenaBounds;
+	/** Semilla del decorado vivo de esta partida (#829): la elige el servidor y se replica con la arena. */
+	uint32 SceneryMatchSeed = 0;
+	/** Sitios que no se llenan de decorado: las salidas y los puntos de objetos (X, Y y radio en cm). */
+	TArray<FIntVector> MakeSceneryKeepOut() const;
+
 	TSet<int32> LeftPlayerIds;
 	int32 CurrentRound = 0;
 	int32 StartingPlayers = 0;

@@ -5,8 +5,32 @@
 #include "TN_TctArena.generated.h"
 
 class ATN_TctGameState;
+class ATN_TctScenery;
 class UMaterialInstanceDynamic;
 class UStaticMeshComponent;
+
+/**
+ * Lo que el servidor replica del decorado vivo de la arena (#829), una vez: la variante a la que va, la semilla de la partida y los
+ * sitios que no se llenan (salidas y puntos de objetos: X, Y y radio en cm). Con eso cada máquina reparte exactamente lo mismo
+ * (TNTctScenery::MakePlan) sobre el mismo suelo, sin depender de su calidad gráfica ni de cuándo cargue.
+ */
+USTRUCT()
+struct FTNTctSceneryNet
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName Variant;
+
+	UPROPERTY()
+	int32 Seed = 0;
+
+	UPROPERTY()
+	TArray<FIntVector> KeepOut;
+
+	UPROPERTY()
+	bool bReady = false;
+};
 
 /**
  * La arena de Todos contra Todos (#651): una variante inventada de Scripts/terrain_volumes/Variants (por defecto A01_diana,
@@ -19,6 +43,9 @@ class UStaticMeshComponent;
  * - El agua es veneno (#831): el mar tiene un aspecto tóxico (verde) y, en los 5 s antes de cada subida y mientras sube, una
  *   marca (plano translúcido) enseña a qué altura llegará. Sin zonas de muerte del fondo (bSpawnKillZones apagado): tocar el
  *   agua no mata, intoxica (UTN_TctItemComponent::ServerTickWater).
+ * - Decorado vivo (#829): sobre la forma de la variante se reparten la vegetación, las rocas, los troncos y la fauna del sistema del
+ *   mapa generado (ATN_TctScenery, local en cada máquina). El servidor fija la semilla de la partida y los sitios libres
+ *   (ServerSetScenery) y se replican una vez; lo que tiene colisión sale igual en todas.
  * - El terreno lleva la arena de la playa (SandMaterialPath: M_GridTerrainWet, la del Rally y del Coop, con grano, rizos y
  *   arena mojada) en vez del material genérico del cargador (#779). Solo aquí: el resto de cargadores no cambia.
  * - Servidor: Survey mide el suelo pisable (alturas para los escalones del agua, caja de la arena y sitios de salida lejos de
@@ -37,10 +64,23 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 
 	/** La arena del mundo (la primera), o nullptr. */
 	static ATN_TctArena* Find(const UWorld* World);
+
+	/**
+	 * Servidor (#829): fija la semilla de la partida y los sitios que no se llenan (salidas y puntos de objetos, X, Y y radio en
+	 * cm) y monta el decorado vivo; los clientes lo montan al recibirlo. Después de medir la arena y repartir salidas y puntos.
+	 */
+	void ServerSetScenery(uint32 MatchSeed, const TArray<FIntVector>& KeepOut);
+
+	/** El decorado vivo montado en esta máquina (null si aún no). */
+	ATN_TctScenery* GetScenery() const { return Scenery; }
+
+	/** Cota del terreno de la arena en (X, Y) contra su malla (cualquier pendiente). false si no hay. */
+	bool TraceTerrainHeight(double X, double Y, float& OutZ) const;
 
 	/** Servidor: carga NewVariant (si cambia) y la replica. Antes de BeginPlay, las zonas de muerte salen de ella. */
 	void ServerSetArenaVariant(FName NewVariant);
@@ -94,6 +134,13 @@ protected:
 	UFUNCTION()
 	void OnRep_ArenaVariant();
 
+	/** La semilla y los sitios libres del decorado vivo (#829). */
+	UPROPERTY(ReplicatedUsing = OnRep_Scenery)
+	FTNTctSceneryNet SceneryNet;
+
+	UFUNCTION()
+	void OnRep_Scenery();
+
 	/** El mar que sube. */
 	UPROPERTY(VisibleAnywhere, Category = "Tct")
 	TObjectPtr<UStaticMeshComponent> WaterPlane;
@@ -110,6 +157,15 @@ protected:
 	float WaterPlaneMargin = 40000.f;
 
 private:
+	/** Monta el decorado vivo si ya hay malla y semilla de esta variante (y no está ya montado así); lo rehace si cambian. */
+	void TryBuildScenery();
+	void ClearScenery();
+
+	/** El decorado de esta máquina y la clave con la que se montó (variante, semilla y sitios libres). */
+	UPROPERTY(Transient)
+	TObjectPtr<ATN_TctScenery> Scenery;
+	uint32 SceneryKey = 0;
+
 	/** Pone la arena de playa como material del terreno (y en los trozos ya construidos). */
 	void ApplySandMaterial();
 	/** Pone el aspecto tóxico del agua y prepara la marca del nivel (una vez, en máquinas con pantalla). */

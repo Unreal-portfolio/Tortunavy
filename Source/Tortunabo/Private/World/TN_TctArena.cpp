@@ -3,9 +3,12 @@
 #include "Game/TN_TctGameState.h"
 #include "Game/TN_TctItems.h"
 #include "Game/TN_TctRules.h"
+#include "World/TN_TctScenery.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Dom/JsonObject.h"
+#include "Misc/Crc.h"
+#include "World/ProcMap/TN_ProcMapMath.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -126,6 +129,122 @@ void ATN_TctArena::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ATN_TctArena, ArenaVariant);
+	DOREPLIFETIME(ATN_TctArena, SceneryNet);
+}
+
+void ATN_TctArena::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	ClearScenery();
+	Super::EndPlay(EndPlayReason);
+}
+
+void ATN_TctArena::ClearScenery()
+{
+	if (IsValid(Scenery))
+	{
+		Scenery->Destroy();
+	}
+	Scenery = nullptr;
+	SceneryKey = 0;
+}
+
+void ATN_TctArena::ServerSetScenery(uint32 MatchSeed, const TArray<FIntVector>& KeepOut)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	SceneryNet.Variant = ArenaVariant;
+	SceneryNet.Seed = static_cast<int32>(MatchSeed);
+	SceneryNet.KeepOut = KeepOut;
+	SceneryNet.bReady = true;
+	ForceNetUpdate();
+	TryBuildScenery();
+}
+
+void ATN_TctArena::OnRep_Scenery()
+{
+	TryBuildScenery();
+}
+
+bool ATN_TctArena::TraceTerrainHeight(double X, double Y, float& OutZ) const
+{
+	if (!GroundBox.IsValid)
+	{
+		return false;
+	}
+	// Contra los trozos del terreno de la arena y nada más (no contra el mundo): una tortuga, una pieza de decorado ya montada o un
+	// objeto no cambian lo medido, así que el decorado sale igual aunque se rehaga con la partida en marcha.
+	const FVector Start(X, Y, GroundBox.Max.Z + 500.0);
+	const FVector End(X, Y, GroundBox.Min.Z - 500.0);
+	const FCollisionQueryParams Params(SCENE_QUERY_STAT(TNTctArenaTerrain), true);
+	bool bFound = false;
+	float Highest = 0.f;
+	TArray<UProceduralMeshComponent*> Meshes;
+	GetComponents(Meshes);
+	for (UProceduralMeshComponent* Mesh : Meshes)
+	{
+		FHitResult Hit;
+		if (Mesh && Mesh->IsCollisionEnabled() && Mesh->LineTraceComponent(Hit, Start, End, Params))
+		{
+			Highest = bFound ? FMath::Max(Highest, static_cast<float>(Hit.ImpactPoint.Z)) : static_cast<float>(Hit.ImpactPoint.Z);
+			bFound = true;
+		}
+	}
+	OutZ = Highest;
+	return bFound;
+}
+
+void ATN_TctArena::TryBuildScenery()
+{
+	UWorld* World = GetWorld();
+	if (!World || !SceneryNet.bReady || SceneryNet.Variant != ArenaVariant || Variant != ArenaVariant || !GroundBox.IsValid)
+	{
+		return;
+	}
+	TArray<UProceduralMeshComponent*> Meshes;
+	GetComponents(Meshes);
+	if (Meshes.Num() == 0)
+	{
+		return;
+	}
+	uint32 Key = TNProcMap::HashCell(FCrc::StrCrc32(*ArenaVariant.ToString()), SceneryNet.Seed, SceneryNet.KeepOut.Num());
+	for (const FIntVector& Zone : SceneryNet.KeepOut)
+	{
+		Key = TNProcMap::HashCell(Key, Zone.X ^ (Zone.Z << 16), Zone.Y);
+	}
+	if (Scenery && SceneryKey == Key)
+	{
+		return;
+	}
+	ClearScenery();
+	double ManifestSeed = 0.0;
+	if (const TSharedPtr<FJsonObject> Manifest = ReadManifest())
+	{
+		Manifest->TryGetNumberField(TEXT("seed"), ManifestSeed);
+	}
+	TArray<TNTctScenery::FKeepOut> KeepOuts;
+	for (const FIntVector& Zone : SceneryNet.KeepOut)
+	{
+		TNTctScenery::FKeepOut& Out = KeepOuts.AddDefaulted_GetRef();
+		Out.Center = FVector2D(Zone.X, Zone.Y);
+		Out.Radius = static_cast<float>(Zone.Z);
+	}
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.ObjectFlags |= RF_Transient | RF_DuplicateTransient;
+	Scenery = World->SpawnActor<ATN_TctScenery>(ATN_TctScenery::StaticClass(), FTransform::Identity, Params);
+	if (!Scenery)
+	{
+		return;
+	}
+	SceneryKey = Key;
+	const uint32 Seed = TNTctScenery::MakeSeed(static_cast<uint32>(static_cast<int64>(ManifestSeed)), ArenaVariant, static_cast<uint32>(SceneryNet.Seed));
+	if (!Scenery->Build(this, Seed, KeepOuts))
+	{
+		UE_LOG(LogTortunabo, Warning, TEXT("[TcT] La arena «%s» no tiene suelo medible: sin decorado."), *ArenaVariant.ToString());
+	}
 }
 
 ATN_TctArena* ATN_TctArena::Find(const UWorld* World)
@@ -157,6 +276,7 @@ void ATN_TctArena::BeginPlay()
 	Super::BeginPlay();
 	FitWaterPlane();
 	SetUpToxicLook();
+	TryBuildScenery();
 	// Las mallas de los objetos, ya al cargar la arena (en cada máquina): sin tirones al salir el primero de cada uno.
 	TNTctItems::PreloadMeshes();
 }
@@ -246,6 +366,12 @@ void ATN_TctArena::ServerSetArenaVariant(FName NewVariant)
 	{
 		return;
 	}
+	if (ArenaVariant != NewVariant)
+	{
+		// Otra variante: el decorado de la anterior se va y el servidor fija el de la nueva.
+		ClearScenery();
+		SceneryNet = FTNTctSceneryNet();
+	}
 	ArenaVariant = NewVariant;
 	// La malla es transitoria: el nivel cargado en partida llega sin ella aunque la variante sea la misma. Se construye ya
 	// (el BeginPlay de la base ya no la repite) para que el GameMode pueda medir la arena en StartPlay.
@@ -269,12 +395,14 @@ void ATN_TctArena::OnRep_ArenaVariant()
 		return;
 	}
 	Variant = ArenaVariant;
+	ClearScenery();
 	// Antes de BeginPlay no hace falta: BeginPlay la construye con la variante ya puesta.
 	if (HasActorBegunPlay())
 	{
 		ApplySandMaterial();
 		Recargar();
 		FitWaterPlane();
+		TryBuildScenery();
 	}
 }
 
