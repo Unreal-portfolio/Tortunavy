@@ -35,8 +35,7 @@ public:
 private:
 	ATN_VRRig* GetRig() const;
 	bool IsMenuUp() const;
-	/** @return true si algún widget atendió la tecla (solo vale al pulsarla). */
-	bool SendKey(FSlateApplication& SlateApp, const FKey& Key, bool bDown, bool bRepeat) const;
+	void SendKey(FSlateApplication& SlateApp, const FKey& Key, bool bDown, bool bRepeat) const;
 	void TapKey(FSlateApplication& SlateApp, const FKey& Key) const;
 
 	TWeakObjectPtr<UTN_VRSubsystem> Owner;

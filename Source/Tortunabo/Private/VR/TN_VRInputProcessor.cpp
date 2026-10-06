@@ -1,6 +1,7 @@
 #include "TN_VRInputProcessor.h"
 #include "VR/TN_VRMath.h"
 #include "VR/TN_VRHandMath.h"
+#include "VR/TN_VRMenuClaim.h"
 
 #include "VR/TN_VRMode.h"
 #include "VR/TN_VRRig.h"
@@ -52,14 +53,17 @@ bool FTNVRInputProcessor::IsMenuUp() const
 	return Subsystem && Subsystem->IsMenuMode();
 }
 
-bool FTNVRInputProcessor::SendKey(FSlateApplication& SlateApp, const FKey& Key, bool bDown, bool bRepeat) const
+void FTNVRInputProcessor::SendKey(FSlateApplication& SlateApp, const FKey& Key, bool bDown, bool bRepeat) const
 {
 	const FKeyEvent Event(Key, SlateApp.GetModifierKeys(), UserIndex, bRepeat, 0, 0);
 	if (bDown)
 	{
-		return SlateApp.ProcessKeyDownEvent(Event);
+		SlateApp.ProcessKeyDownEvent(Event);
 	}
-	return SlateApp.ProcessKeyUpEvent(Event);
+	else
+	{
+		SlateApp.ProcessKeyUpEvent(Event);
+	}
 }
 
 void FTNVRInputProcessor::TapKey(FSlateApplication& SlateApp, const FKey& Key) const
@@ -147,7 +151,7 @@ bool FTNVRInputProcessor::HandleKeyDownEvent(FSlateApplication& SlateApp, const 
 		return true;
 	}
 	// X e Y tienen una segunda acción en algunos menús (#648): borrar un carácter del código de sala, refrescar la lista, quitar
-	// una tecla. Se prueba primero la X o la Y del mando; si ningún widget la atiende, cae en aceptar o atrás como siempre.
+	// una tecla. Se prueba primero la X o la Y del mando; si ningún widget la usa de verdad, cae en aceptar o atrás como siempre.
 	const FKey Secondary = TNVRMath::SecondaryMenuKeyFor(Key);
 	if (Secondary.IsValid())
 	{
@@ -158,14 +162,17 @@ bool FTNVRInputProcessor::HandleKeyDownEvent(FSlateApplication& SlateApp, const 
 			SendKey(SlateApp, Secondary, true, InKeyEvent.IsRepeat());
 			return true;
 		}
-		if (!Previous && SendKey(SlateApp, Secondary, true, InKeyEvent.IsRepeat()))
-		{
-			Held.Add(Key, Secondary);
-			return true;
-		}
 		if (!Previous)
 		{
-			// Nadie la atendió: se suelta sin más y sigue con aceptar o atrás.
+			// Que Slate la dé por atendida no basta (la pausa se traga toda tecla): la usa quien la anota con TNVRMenuClaim.
+			const uint32 ClaimsBefore = TNVRMenuClaim::Count();
+			SendKey(SlateApp, Secondary, true, InKeyEvent.IsRepeat());
+			if (TNVRMenuClaim::Count() != ClaimsBefore)
+			{
+				Held.Add(Key, Secondary);
+				return true;
+			}
+			// Nadie la usó: se suelta sin más y sigue con aceptar o atrás.
 			SendKey(SlateApp, Secondary, false, false);
 		}
 	}

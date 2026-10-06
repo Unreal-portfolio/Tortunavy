@@ -12,6 +12,7 @@
 #include "Settings/TN_SettingsSaveGame.h"
 #include "UObject/Package.h"
 #include "VR/TN_VRMath.h"
+#include "VR/TN_VRMenuClaim.h"
 #include "VR/TN_VRMode.h"
 #include "VR/TN_VRInputTriggers.h"
 #include "VR/TN_VRRig.h"
@@ -184,6 +185,13 @@ bool FTNVRMenuKeysTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Y: la Y del mando primero (refrescar, quitar tecla)"), TNVRMath::SecondaryMenuKeyFor(FTNVRKeys::Y) == EKeys::Gamepad_FaceButton_Top);
 	TestFalse(TEXT("A no tiene segunda acción"), TNVRMath::SecondaryMenuKeyFor(FTNVRKeys::A).IsValid());
 	TestFalse(TEXT("B no tiene segunda acción"), TNVRMath::SecondaryMenuKeyFor(FTNVRKeys::B).IsValid());
+
+	// Quien usa de verdad la X o la Y de un menú lo anota: el procesador solo la da por atendida si el contador se mueve (la
+	// pausa se traga toda tecla y sin esto X no aceptaba ni Y iba atrás).
+	const uint32 ClaimsBefore = TNVRMenuClaim::Count();
+	TestEqual(TEXT("Si nadie la usa, el contador no se mueve"), TNVRMenuClaim::Count(), ClaimsBefore);
+	TNVRMenuClaim::Claim();
+	TestEqual(TEXT("Al usarla, el contador sube"), TNVRMenuClaim::Count(), ClaimsBefore + 1);
 
 	// El stick derecho gira la tortuga de la tienda y el probador: sin cruceta mientras lo reservan.
 	TestTrue(TEXT("Stick derecho a la izquierda es una dirección del stick derecho"), TNVRMath::IsRightStickDirection(FTNVRKeys::RightStickLeft));

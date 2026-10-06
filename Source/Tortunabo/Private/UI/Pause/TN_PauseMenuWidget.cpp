@@ -25,6 +25,7 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
+#include "VR/TN_VRMenuClaim.h"
 #include "Voice/ProximityVoiceComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
@@ -948,6 +949,8 @@ FReply UTN_PauseRow::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEven
 	{
 		if (!InKeyEvent.IsRepeat() && bEnabled && OnReset)
 		{
+			// Con gafas, la Y de los Touch llega aquí antes de ir atrás (#648); solo cuenta si de verdad devuelve la tecla.
+			TNVRMenuClaim::Claim();
 			PlaySound(ETNPauseSound::Press);
 			// Lo último: rehace la lista entera.
 			OnReset();
@@ -3754,6 +3757,8 @@ FReply UTN_PauseMenuWidget::NativeOnPreviewKeyDown(const FGeometry& InGeometry, 
 	{
 		return Super::NativeOnPreviewKeyDown(InGeometry, InKeyEvent);
 	}
+	// Esperando una tecla se queda con la que llegue, también la X o la Y de los Touch (#648): que no siga con aceptar o atrás.
+	TNVRMenuClaim::Claim();
 	if (InKeyEvent.IsRepeat())
 	{
 		return FReply::Handled();
