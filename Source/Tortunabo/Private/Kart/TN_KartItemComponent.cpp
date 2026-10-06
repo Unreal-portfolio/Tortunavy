@@ -11,6 +11,7 @@
 #include "Rally/TN_RallyLogic.h"
 #include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_RallyProjectile.h"
+#include "Vehicles/TN_RallyPufferMine.h"
 
 namespace TNKartItemDetail
 {
@@ -19,6 +20,8 @@ namespace TNKartItemDetail
 	constexpr float ShellSpawnUpCm = 60.f;
 	/** Un mismo kart no recibe otro empujón de la estrella en este tiempo (s). */
 	constexpr double StarBumpRepeatSeconds = 1.0;
+	/** Altura sobre el kart desde la que se busca el suelo del charco de detrás (cm): cubre una cuesta que sube detrás. */
+	constexpr float AlgaProbeUpCm = 250.f;
 }
 
 UTN_KartItemComponent::UTN_KartItemComponent()
@@ -155,6 +158,25 @@ bool UTN_KartItemComponent::UseItem(bool bBackward)
 		Kart->GrantShield();
 		StarBumped.Reset();
 		break;
+	// #774: la munición de la torreta del Rally.
+	case ETNKartItem::Mortero:
+		FireMortar();
+		break;
+	case ETNKartItem::Erizos:
+		StartErizos();
+		break;
+	case ETNKartItem::Medusa:
+		if (!Hop())
+		{
+			return false;
+		}
+		break;
+	case ETNKartItem::PezGlobo:
+		DropPuffer();
+		break;
+	case ETNKartItem::Arpon:
+		FireHarpoon();
+		break;
 	default:
 		return false;
 	}
@@ -203,17 +225,11 @@ void UTN_KartItemComponent::DropAlga()
 {
 	ATN_Buggy* Kart = GetKart();
 	UWorld* World = GetWorld();
-	const FVector Behind = Kart->GetActorLocation() - Kart->GetActorForwardVector().GetSafeNormal2D() * TNKart::AlgaBehindCm;
-	FVector Ground = Behind;
-	FHitResult Down;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNKartAlga), false, Kart);
-	if (World->LineTraceSingleByChannel(Down, Behind + FVector(0.f, 0.f, 200.f), Behind - FVector(0.f, 0.f, 1500.f), ECC_WorldStatic, Params))
-	{
-		Ground = Down.ImpactPoint;
-	}
-	FActorSpawnParameters Spawn;
-	Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	World->SpawnActor<ATN_RallyAlgaPuddle>(ATN_RallyAlgaPuddle::StaticClass(), FTransform(Ground), Spawn);
+	const FVector Forward = Kart->GetActorForwardVector().GetSafeNormal2D();
+	const FVector Behind = Kart->GetActorLocation() - Forward * TNKart::AlgaBehindCm;
+	// Al suelo de detrás con su inclinación (#770), buscando desde arriba por si detrás sube; quien lo suelta no lo pisa
+	// al soltarlo (cae a menos de su radio).
+	ATN_RallyAlgaPuddle::SpawnOnGround(World, Behind + FVector(0.f, 0.f, TNKartItemDetail::AlgaProbeUpCm), Forward, Kart);
 }
 
 void UTN_KartItemComponent::SpillInk()
@@ -259,6 +275,7 @@ void UTN_KartItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	if (Kart->HasAuthority())
 	{
 		TickStar(DeltaTime);
+		TickErizos();
 		TickBot(DeltaTime);
 	}
 }
@@ -360,8 +377,142 @@ void UTN_KartItemComponent::TickBot(float DeltaTime)
 			Behind = Distance;
 		}
 	}
-	if (TNKart::ShouldBotUseItem(Item, BotHeldSeconds, Ahead, Behind))
+	// Medusa (#774): bota para esquivar una teledirigida que le persigue o un charco delante.
+	const bool bHopThreat = Item == ETNKartItem::Medusa && TNRallyHazards::HopThreatNear(*Kart);
+	if (TNKart::ShouldBotUseItem(Item, BotHeldSeconds, Ahead, Behind, bHopThreat))
 	{
 		UseItem(false);
 	}
+}
+
+// ── Objetos que reutilizan la munición de la torreta del Rally (#774) ─────────
+
+namespace TNKartItemAmmo
+{
+	/** Desde dónde sale lo que dispara el kart: por delante del morro y a esta altura (cm). */
+	constexpr float MuzzleAheadCm = 320.f;
+	constexpr float MuzzleUpCm = 90.f;
+	/** Altura sobre el blanco a la que apunta el arpón (cm): el centro de la carrocería. */
+	constexpr float HarpoonAimUpCm = 60.f;
+	/** Subida desde la que se busca el suelo de la mina de detrás (cm), por si detrás sube. */
+	constexpr float PufferProbeUpCm = 250.f;
+}
+
+ATN_Buggy* UTN_KartItemComponent::FindKartAtPlace(int32 Place) const
+{
+	const ATN_RallyGameState* RallyState = GetWorld() ? GetWorld()->GetGameState<ATN_RallyGameState>() : nullptr;
+	if (!RallyState || Place <= 0)
+	{
+		return nullptr;
+	}
+	for (const FTNRallyStanding& Entry : RallyState->Standings)
+	{
+		if (Entry.Place == Place && !Entry.bRetired && !Entry.bFinished)
+		{
+			return Cast<ATN_Buggy>(Entry.Vehicle);
+		}
+	}
+	return nullptr;
+}
+
+ATN_Buggy* UTN_KartItemComponent::FindKartAhead() const
+{
+	int32 Place = 1;
+	int32 Karts = 1;
+	GetPlace(Place, Karts);
+	ATN_Buggy* Ahead = FindKartAtPlace(Place - 1);
+	return Ahead != GetKart() ? Ahead : nullptr;
+}
+
+void UTN_KartItemComponent::FireMortar()
+{
+	ATN_Buggy* Kart = GetKart();
+	UWorld* World = GetWorld();
+	const FVector Forward = Kart->GetActorForwardVector().GetSafeNormal2D();
+	const FVector Muzzle = Kart->GetActorLocation() + FVector(0.f, 0.f, TNKartItemAmmo::MuzzleUpCm);
+	// Cae delante del de delante (donde estará al caer); sin nadie delante, a 40 m del propio.
+	FVector Target = Kart->GetActorLocation() + Forward * TNKart::MortarNoTargetCm;
+	float Flight = TNKart::MortarFlightSeconds(TNKart::MortarNoTargetCm);
+	if (const ATN_Buggy* Ahead = FindKartAhead())
+	{
+		Flight = TNKart::MortarFlightSeconds(static_cast<float>(FVector::Dist2D(Ahead->GetActorLocation(), Muzzle)));
+		Target = Ahead->GetActorLocation() + Ahead->GetVelocity() * Flight
+			+ Ahead->GetActorForwardVector().GetSafeNormal2D() * TNKart::MortarLeadCm;
+	}
+	const float GravityZ = World->GetGravityZ() * TNRallyTurret::SpecFor(ETNRallyAmmo::Mortero).GravityScale;
+	ATN_RallyProjectile::Launch(World, ETNRallyAmmo::Mortero, Muzzle, TNKart::MortarLaunchVelocity(Muzzle, Target, GravityZ, Flight), Kart);
+}
+
+void UTN_KartItemComponent::StartErizos()
+{
+	// 3 s de púas (24) sin tener que mantener nada: TickErizos las dispara a la cadencia de la torreta.
+	ErizosBurst = TNRallyTurret::HoldBurst(TNRallyTurret::FBurst(), GetWorld()->GetTimeSeconds(), TNKart::ErizosSeconds,
+		TNKart::ErizosSpikes);
+	TickErizos();
+}
+
+void UTN_KartItemComponent::TickErizos()
+{
+	ATN_Buggy* Kart = GetKart();
+	UWorld* World = GetWorld();
+	if (!Kart || !World || !TNRallyTurret::IsBurstActive(ErizosBurst))
+	{
+		return;
+	}
+	const double Now = World->GetTimeSeconds();
+	// Como los demás objetos (UseItem): con el motor o las armas bloqueados (meta, reaparición, podio), la ráfaga se corta.
+	if (Now > ErizosBurst.HoldUntil || Kart->IsEngineLocked() || Kart->AreWeaponsLocked())
+	{
+		ErizosBurst = TNRallyTurret::FBurst();
+		return;
+	}
+	if (!TNRallyTurret::BurstSpikeDue(ErizosBurst, Now))
+	{
+		return;
+	}
+	ErizosBurst = TNRallyTurret::AfterBurstSpike(ErizosBurst, Now);
+	// Se apunta con el kart: hacia donde mira, un poco hacia arriba.
+	const FVector Dir = Kart->GetActorRotation().RotateVector(FRotator(TNKart::ErizosPitchDeg, 0.f, 0.f).Vector());
+	const FVector Muzzle = Kart->GetActorLocation() + Kart->GetActorForwardVector() * TNKartItemAmmo::MuzzleAheadCm
+		+ FVector(0.f, 0.f, TNKartItemAmmo::MuzzleUpCm);
+	ATN_RallyProjectile::Launch(World, ETNRallyAmmo::Erizos, Muzzle, Dir * TNRallyTurret::ErizosSpeedCms + Kart->GetVelocity(), Kart);
+	Kart->ApplyVelocityImpulse(TNRallyTurret::RecoilVelocity(Dir, TNRallyTurret::ErizosRecoilCms));
+}
+
+bool UTN_KartItemComponent::Hop()
+{
+	ATN_Buggy* Kart = GetKart();
+	if (!TNRallyTurret::CanHop(Kart->IsAirborne()))
+	{
+		return false;
+	}
+	// El mismo bote que la medusa de la torreta: impulso vertical en el servidor.
+	Kart->ApplyVelocityImpulse(FVector::UpVector * TNRallyTurret::JellyfishUpCms);
+	ATN_RallyBurstFX::Broadcast(Kart, ETNRallyBurstKind::BubblePop, Kart->GetActorLocation(), 220.f);
+	return true;
+}
+
+void UTN_KartItemComponent::DropPuffer()
+{
+	ATN_Buggy* Kart = GetKart();
+	const FVector Behind = Kart->GetActorLocation() - Kart->GetActorForwardVector().GetSafeNormal2D() * TNKart::PufferBehindCm;
+	ATN_RallyPufferMine::SpawnOnGround(GetWorld(), Behind + FVector(0.f, 0.f, TNKartItemAmmo::PufferProbeUpCm), Kart);
+}
+
+void UTN_KartItemComponent::FireHarpoon()
+{
+	ATN_Buggy* Kart = GetKart();
+	UWorld* World = GetWorld();
+	const FVector Muzzle = Kart->GetActorLocation() + Kart->GetActorForwardVector() * TNKartItemAmmo::MuzzleAheadCm
+		+ FVector(0.f, 0.f, TNKartItemAmmo::MuzzleUpCm);
+	FVector Dir = Kart->GetActorForwardVector();
+	if (const ATN_Buggy* Ahead = FindKartAhead();
+		Ahead && FVector::Dist(Ahead->GetActorLocation(), Muzzle) <= TNKart::HarpoonRangeCm)
+	{
+		// Se clava en el de delante: donde estará al llegar, contando con que el arpón hereda la velocidad del propio kart.
+		const FVector Aim = Ahead->GetActorLocation() + FVector(0.f, 0.f, TNKartItemAmmo::HarpoonAimUpCm);
+		const float Time = static_cast<float>(FVector::Dist(Aim, Muzzle)) / TNRallyTurret::HarpoonSpeedCms;
+		Dir = (Aim + (Ahead->GetVelocity() - Kart->GetVelocity()) * Time - Muzzle).GetSafeNormal();
+	}
+	ATN_RallyProjectile::Launch(World, ETNRallyAmmo::Arpon, Muzzle, Dir * TNRallyTurret::HarpoonSpeedCms + Kart->GetVelocity(), Kart);
 }

@@ -9,7 +9,9 @@
 #include "Rally/TN_RallyLogic.h"
 #include "Rally/TN_RallyTrack.h"
 #include "Rally/TN_RallyVehicle.h"
+#include "Vehicles/TN_Buggy.h"
 #include "Vehicles/TN_BuggyMath.h"
+#include "Vehicles/TN_RallyProjectile.h"
 
 namespace
 {
@@ -242,7 +244,10 @@ bool ATN_RallyAIController::TryFireSpecial(ITN_RallyVehicle& RallyVehicle, const
 	const float HeldSeconds = static_cast<float>(Time - HeldSpecialSince);
 	const float AheadCm = Ahead ? static_cast<float>(FVector::Dist(Ahead->GetActorLocation(), Location)) : -1.f;
 	const float BehindCm = Behind ? static_cast<float>(FVector::Dist(Behind->GetActorLocation(), Location)) : -1.f;
-	const TNRally::EBotSpecialShot Shot = TNRally::ShouldBotFireSpecial(Special, HeldSeconds, AheadCm, BehindCm);
+	// Medusa (#771): bota si le persigue una teledirigida o tiene un charco delante.
+	const ATN_Buggy* SelfBuggy = Cast<ATN_Buggy>(GetPawn());
+	const bool bHopThreat = Special == ETNRallyAmmo::Medusa && SelfBuggy && TNRallyHazards::HopThreatNear(*SelfBuggy);
+	const TNRally::EBotSpecialShot Shot = TNRally::ShouldBotFireSpecial(Special, HeldSeconds, AheadCm, BehindCm, bHopThreat);
 	// La dificultad (SpecialFireChance) retrasa el momento; guardada demasiado tiempo, la gasta seguro.
 	if (Shot == TNRally::EBotSpecialShot::Hold || (HeldSeconds < TNRally::BotMaxHoldSeconds && FMath::FRand() >= SpecialFireChance))
 	{

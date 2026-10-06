@@ -9,6 +9,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "NiagaraFunctionLibrary.h"
@@ -64,6 +65,14 @@ UTN_BuggyTurretComponent::UTN_BuggyTurretComponent()
 	FireSoundByAmmo.Add(ETNRallyAmmo::Mortero, MorteroFinder.Object);
 	FireSoundByAmmo.Add(ETNRallyAmmo::Tinta, TintaFinder.Object);
 	FireSoundByAmmo.Add(ETNRallyAmmo::Ancla, AnclaFinder.Object);
+	// Ráfaga de erizos (#715): cada púa suena como el coco, el disparo de la torreta más corto.
+	FireSoundByAmmo.Add(ETNRallyAmmo::Erizos, CocoFinder.Object);
+	// Medusa saltarina (#771): el bote suena como la burbuja.
+	FireSoundByAmmo.Add(ETNRallyAmmo::Medusa, BurbujaFinder.Object);
+	// Arpón (#772): suena como el ancla.
+	FireSoundByAmmo.Add(ETNRallyAmmo::Arpon, AnclaFinder.Object);
+	// Pez globo (#773): el lanzamiento suena como el alga.
+	FireSoundByAmmo.Add(ETNRallyAmmo::PezGlobo, AlgaFinder.Object);
 }
 
 void UTN_BuggyTurretComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -132,6 +141,8 @@ void UTN_BuggyTurretComponent::SetAimRelative(const FRotator& RelativeAim)
 void UTN_BuggyTurretComponent::GiveSpecial(ETNRallyAmmo Ammo, int32 Charges)
 {
 	Special = TNRallyTurret::Give(Ammo, Charges);
+	// Una caja nueva sustituye la munición: la ráfaga que quedara a medias se pierde.
+	Burst = TNRallyTurret::FBurst();
 	SyncReplicatedState();
 }
 
@@ -282,6 +293,10 @@ bool UTN_BuggyTurretComponent::TryFire(bool bSpecial, const FVector& WorldDir)
 	}
 	const double Now = World->GetTimeSeconds();
 	const ETNRallyAmmo Ammo = bSpecial ? Special.Ammo : ETNRallyAmmo::Coco;
+	if (TNRallyTurret::IsBurstAmmo(Ammo))
+	{
+		return TryHoldBurst(WorldDir, Now);
+	}
 	if (!CanFireAmmo(Ammo, Now))
 	{
 		return false;
@@ -307,6 +322,19 @@ bool UTN_BuggyTurretComponent::TryFire(bool bSpecial, const FVector& WorldDir)
 
 bool UTN_BuggyTurretComponent::LaunchAmmo(ETNRallyAmmo Ammo, const FVector& Dir, const FVector& Muzzle)
 {
+	if (TNRallyTurret::IsSelfAmmo(Ammo))
+	{
+		// Medusa saltarina (#771): sin proyectil; el bote es un impulso vertical en el servidor, como el del mortero. En el
+		// aire no se puede usar (no se gasta la carga).
+		ATN_Buggy* Self = GetBuggy();
+		if (!TNRallyTurret::CanHop(Self->IsAirborne()))
+		{
+			return false;
+		}
+		Self->ApplyVelocityImpulse(FVector::UpVector * TNRallyTurret::JellyfishUpCms);
+		ATN_RallyBurstFX::Broadcast(Self, ETNRallyBurstKind::BubblePop, Self->GetActorLocation(), 220.f);
+		return true;
+	}
 	if (!TNRallyTurret::IsGroundShell(Ammo))
 	{
 		return SpawnProjectile(Ammo, Dir, Muzzle) != nullptr;
@@ -441,6 +469,7 @@ void UTN_BuggyTurretComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	if (Owner && Owner->HasAuthority())
 	{
 		HeatState = TNRallyTurret::Cool(HeatState, DeltaTime);
+		TickBurst(GetWorld()->GetTimeSeconds());
 		// Replica a saltos de 0,05 o al cambiar el sobrecalentamiento: el HUD no necesita más.
 		if (bOverheated != TNRallyTurret::IsOverheated(HeatState) || FMath::Abs(HeatState.Heat - Heat01) >= 0.05f
 			|| (HeatState.Heat == 0.f && Heat01 != 0.f))
@@ -456,4 +485,75 @@ void UTN_BuggyTurretComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	{
 		Follower->SetRelativeRotation(FRotator(0.f, Aim.Yaw, 0.f));
 	}
+}
+
+// ── Ráfaga de erizos (#715) ───────────────────────────────────────────────────
+
+bool UTN_BuggyTurretComponent::IsHumanTrigger() const
+{
+	const ATN_Buggy* Buggy = GetBuggy();
+	if (!Buggy)
+	{
+		return false;
+	}
+	// Con artillera, el gatillo es suyo; si no, de la conductora sola.
+	const AController* Shooter = Buggy->GetSeatController(ETNRallySeat::Gunner);
+	if (!Shooter)
+	{
+		Shooter = Buggy->GetSeatController(ETNRallySeat::Driver);
+	}
+	return Shooter && Shooter->IsPlayerController();
+}
+
+bool UTN_BuggyTurretComponent::TryHoldBurst(const FVector& WorldDir, double Now)
+{
+	ATN_Buggy* Buggy = GetBuggy();
+	// Una ráfaga empezada solo necesita el gatillo apretado (y la torreta libre); una nueva, todas las comprobaciones.
+	const bool bStarted = TNRallyTurret::IsBurstActive(Burst);
+	if (bStarted ? (Buggy->AreWeaponsLocked() || IsGunnerKnocked()) : !CanFireAmmo(Special.Ammo, Now))
+	{
+		return false;
+	}
+	SetAimRelative(TNRallyTurret::RelativeAimFromWorld(Buggy->GetActorRotation(), WorldDir));
+	Burst = TNRallyTurret::HoldBurst(Burst, Now, TNRallyTurret::BurstHoldSeconds(IsHumanTrigger()));
+	TickBurst(Now);
+	return true;
+}
+
+void UTN_BuggyTurretComponent::TickBurst(double Now)
+{
+	ATN_Buggy* Buggy = GetBuggy();
+	if (!Buggy || !TNRallyTurret::IsBurstActive(Burst))
+	{
+		return;
+	}
+	if (!TNRallyTurret::IsBurstAmmo(Special.Ammo))
+	{
+		Burst = TNRallyTurret::FBurst();
+		return;
+	}
+	if (!TNRallyTurret::BurstSpikeDue(Burst, Now) || Buggy->AreWeaponsLocked() || IsGunnerKnocked())
+	{
+		return;
+	}
+	// Cada púa sale hacia donde apunta ahora la torreta (la artillera sigue apuntando durante la ráfaga).
+	const FRotator Aim(AimPitch, AimYaw, 0.f);
+	const FVector Dir = TNRallyTurret::AimWorldDirection(Buggy->GetActorRotation(), Aim);
+	const FVector Muzzle = TNRallyTurret::MuzzleWorldLocation(GetComponentLocation(), Buggy->GetActorRotation(), Aim,
+		MuzzleDistanceCm, MuzzleSideCm);
+	const ETNRallyAmmo Ammo = Special.Ammo;
+	if (!LaunchAmmo(Ammo, Dir, Muzzle))
+	{
+		return;
+	}
+	Burst = TNRallyTurret::AfterBurstSpike(Burst, Now);
+	LastSpecialShot = Now;
+	if (!TNRallyTurret::IsBurstActive(Burst))
+	{
+		// Última púa: se gasta la carga.
+		Special = TNRallyTurret::AfterSpecialShot(Special);
+	}
+	ApplyRecoil(Ammo, Dir);
+	SyncReplicatedState();
+	MulticastFired(Ammo, Muzzle, Dir);
 }

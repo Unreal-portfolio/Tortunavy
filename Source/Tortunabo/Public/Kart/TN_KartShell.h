@@ -32,6 +32,9 @@ public:
 	/** Servidor: lo que hace una concha al buggy que toca: frenazo y trompo (respeta su escudo y el fantasma). */
 	static bool SpinOut(ATN_Buggy& Victim, const FVector& HitDir);
 
+	/** Servidor: si es una teledirigida que persigue a Buggy (los bots botan con la medusa para esquivarla, #771). */
+	bool IsHomingAt(const ATN_Buggy* Buggy) const { return bHoming && Buggy && Target.Get() == Buggy; }
+
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

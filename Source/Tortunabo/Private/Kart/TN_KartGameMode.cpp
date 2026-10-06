@@ -315,7 +315,7 @@ void ATN_KartGameMode::Logout(AController* Exiting)
 #if !UE_BUILD_SHIPPING
 static FAutoConsoleCommandWithWorldAndArgs GTNKartGiveItemCommand(
 	TEXT("TN.Kart.GiveItem"),
-	TEXT("Karts (servidor o partida sola): da un objeto al kart del jugador local, sin ruleta. TN.Kart.GiveItem Coco|TripleCoco|Concha|ConchaGuiada|Alga|Tinta|Estrella."),
+	TEXT("Karts (servidor o partida sola): da un objeto al kart del jugador local, sin ruleta. TN.Kart.GiveItem Coco|TripleCoco|Concha|ConchaGuiada|Alga|Tinta|Estrella|Mortero|Erizos|Medusa|PezGlobo|Arpon."),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		const APlayerController* Player = World ? World->GetFirstPlayerController() : nullptr;

@@ -337,9 +337,9 @@ bool FTNRallyTurretEffectsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("coco: bamboleo 0,4 s"), CocoWobbleSeconds, 0.4f);
 	TestEqual(TEXT("charco: 6 m"), AlgaPuddleRadiusCm, 600.f);
 	TestEqual(TEXT("charco: 5 s"), AlgaPuddleSeconds, 5.f);
-	TestEqual(TEXT("charco: agarre x0,5"), PuddleGripMultiplier(true), 0.5f);
+	TestEqual(TEXT("charco: agarre x0,35 (#770)"), PuddleGripMultiplier(true), 0.35f);
 	TestEqual(TEXT("fuera del charco: agarre x1"), PuddleGripMultiplier(false), 1.f);
-	TestEqual(TEXT("charco: velocidad máxima x0,6"), PuddleSpeedCapCms(true), PuddleSpeedCapCms(false) * 0.6f, 0.01f);
+	TestEqual(TEXT("charco: velocidad máxima x0,5 (#770)"), PuddleSpeedCapCms(true), PuddleSpeedCapCms(false) * 0.5f, 0.01f);
 	TestEqual(TEXT("burbuja: flota 6 s"), SpecFor(ETNRallyAmmo::Burbuja).LifeSeconds, 6.f);
 	TestEqual(TEXT("burbuja: sin gravedad"), SpecFor(ETNRallyAmmo::Burbuja).GravityScale, 0.f);
 	TestEqual(TEXT("escudo: 4 s"), ShieldSeconds, 4.f);

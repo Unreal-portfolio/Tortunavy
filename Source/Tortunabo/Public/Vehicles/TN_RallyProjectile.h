@@ -43,6 +43,20 @@ public:
 
 	ETNRallyAmmo GetAmmo() const { return Ammo; }
 
+	/**
+	 * Solo servidor: la explosión del mortero en Where (radio TNRallyTurret::MortarRadiusCm) a todos los buggies dentro,
+	 * también al de Shooter. HitBuggy, si lo hay, recibe el golpe en Where (y en la artillera con bGunnerHit); el resto, en
+	 * su centro. La confirmación de impactos dice ReportAmmo. La usan el mortero y el pez globo (#773).
+	 */
+	static void MortarBlastAt(UWorld* World, ATN_Buggy* Shooter, ATN_Buggy* HitBuggy, const FVector& Where, const FVector& Dir,
+		bool bGunnerHit, ETNRallyAmmo ReportAmmo = ETNRallyAmmo::Mortero);
+
+	/**
+	 * Solo servidor: proyectil de InAmmo en Where con Velocity (en mundo, ya con la del buggy si la hereda), con FiredBy de
+	 * dueño (no lo toca al salir). Lo usan los objetos de Karts que reutilizan la munición de la torreta (#774).
+	 */
+	static ATN_RallyProjectile* Launch(UWorld* World, ETNRallyAmmo InAmmo, const FVector& Where, const FVector& Velocity, ATN_Buggy* FiredBy);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Estela opcional que sigue al proyectil (solo en las máquinas con pantalla). */
@@ -52,6 +66,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	/** Fin de la vida sin impacto: el alga deja igualmente su charco en el suelo de debajo (#770). */
+	virtual void LifeSpanExpired() override;
 
 private:
 	UFUNCTION()
@@ -99,7 +115,10 @@ private:
 	FTimerHandle OwnerIgnoreTimer;
 };
 
-/** Charco de alga: 6 m durante 5 s; agarre ×0,5 y velocidad máxima ×0,6 a cualquier buggy dentro (servidor). */
+/**
+ * Charco de alga: 6 m durante 5 s; agarre y velocidad máxima reducidos y un derrape al entrar a cualquier buggy dentro
+ * (servidor). El disco se apoya en el suelo con su inclinación (#770).
+ */
 UCLASS()
 class TORTUNABO_API ATN_RallyAlgaPuddle : public AActor
 {
@@ -107,6 +126,13 @@ class TORTUNABO_API ATN_RallyAlgaPuddle : public AActor
 
 public:
 	ATN_RallyAlgaPuddle();
+
+	/**
+	 * Solo servidor: charco en el suelo bajo Where (#770). Busca solo el escenario (canal de objetos WorldStatic: ni
+	 * buggies ni tortugas) bajo Where y, si ahí no hay suelo (pared, barrera), un poco más atrás en BackDir; ajusta el disco
+	 * al plano del suelo. Dropper (Karts) no lo pisa durante TNRallyTurret::AlgaDropperGraceSeconds. Null sin suelo.
+	 */
+	static ATN_RallyAlgaPuddle* SpawnOnGround(UWorld* World, const FVector& Where, const FVector& BackDir, ATN_Buggy* Dropper = nullptr);
 
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -124,6 +150,9 @@ private:
 	/** Buggies cuyo escudo ya ha anulado este charco. */
 	TSet<TWeakObjectPtr<ATN_Buggy>> Immune;
 	float CheckAccumulator = 0.f;
+
+	/** Quien lo ha soltado en Karts (servidor): no lo pisa al principio. */
+	TWeakObjectPtr<ATN_Buggy> Dropper;
 };
 
 UENUM()
@@ -188,3 +217,10 @@ private:
 	/** Partículas de la ráfaga (vacío en un servidor dedicado). */
 	TSharedPtr<TNRallyParticles::FEmitterSet> Particles;
 };
+
+/** Peligros de la pista que un bot puede saltar con la medusa (#771). */
+namespace TNRallyHazards
+{
+	/** Servidor: una concha teledirigida persigue a Buggy de cerca o tiene un charco de alga justo delante. */
+	TORTUNABO_API bool HopThreatNear(const ATN_Buggy& Buggy);
+}

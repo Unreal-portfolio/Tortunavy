@@ -1,6 +1,7 @@
 #include "Rally/TN_RallyHUDWidget.h"
 
 #include "../UI/Race/TN_RaceUIKit.h"
+#include "../World/Beach/TN_RaceItemArt.h"
 #include "Core/TN_GameModeSpawnUtils.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
@@ -60,6 +61,29 @@ namespace TNRallyHUD
 	FText AmmoName(ETNRallyAmmo Ammo)
 	{
 		return TNRallyHitLog::AmmoName(Ammo);
+	}
+
+	/** Lado del icono de la munición (px). */
+	constexpr float AmmoIconSize = 40.f;
+
+	/** Icono de cada munición (#715), con el arte dibujado en código de la mochila y del HUD (sin assets). */
+	UTexture2D* AmmoIcon(ETNRallyAmmo Ammo)
+	{
+		switch (Ammo)
+		{
+		case ETNRallyAmmo::Alga: return TNHUDArt::SeaIcon();
+		case ETNRallyAmmo::Burbuja: return TNHUDArt::BubbleIcon();
+		case ETNRallyAmmo::Mortero: return TNRaceItemArt::GetIcon(ETNRaceItem::GoldenCoconut);
+		case ETNRallyAmmo::Tinta: return TNHUDArt::StormIcon();
+		case ETNRallyAmmo::Ancla: return TNHUDArt::AnchorIcon();
+		case ETNRallyAmmo::Concha: return TNHUDArt::ShellIcon();
+		case ETNRallyAmmo::ConchaGuiada: return TNHUDArt::ShellIconTier(3);
+		case ETNRallyAmmo::Erizos: return TNRaceItemArt::GetIcon(ETNRaceItem::HomingCrab);
+		case ETNRallyAmmo::Medusa: return TNRaceItemArt::GetIcon(ETNRaceItem::PelicanTaxi);
+		case ETNRallyAmmo::Arpon: return TNHUDArt::RopeRing();
+		case ETNRallyAmmo::PezGlobo: return TNRaceItemArt::GetIcon(ETNRaceItem::SandMine);
+		default: return TNRaceItemArt::GetIcon(ETNRaceItem::Coconut);
+		}
 	}
 
 	FText CrewName(const FTNRallyStanding& Entry)
@@ -247,7 +271,10 @@ void UTN_RallyHUDWidget::BuildTurretPanel()
 	using namespace TNRaceUI;
 	UWidgetTree* Tree = WidgetTree;
 	AmmoText = MakeText(Tree, FText::GetEmpty(), TEXT("Bold"), 28, TNHUDArt::Foam);
-	Place(Canvas, AmmoText, FVector2D(0.f, 1.f), FVector2D(40.f, -84.f));
+	Place(Canvas, AmmoText, FVector2D(0.f, 1.f), FVector2D(TNRallyHUD::AmmoIconSize + 52.f, -84.f));
+	// Icono de la munición a la izquierda del texto (#715).
+	AmmoIcon = MakeImage(Tree, nullptr, FVector2D(TNRallyHUD::AmmoIconSize));
+	Place(Canvas, MakeSize(Tree, AmmoIcon, TNRallyHUD::AmmoIconSize, TNRallyHUD::AmmoIconSize), FVector2D(0.f, 1.f), FVector2D(40.f, -80.f));
 	HeatLabel = MakeText(Tree, NSLOCTEXT("Rally", "TurretHeat", "Torreta"), TEXT("Regular"), 22, TNHUDStyle::TextDim);
 	Place(Canvas, HeatLabel, FVector2D(0.f, 1.f), FVector2D(40.f, -52.f));
 	HeatBar = Make<UProgressBar>(Tree);
@@ -639,6 +666,7 @@ void UTN_RallyHUDWidget::RefreshAmmo(bool bVisible)
 {
 	using namespace TNRallyHUD;
 	Show(AmmoText, bVisible);
+	Show(AmmoIcon, bVisible);
 	if (!bVisible)
 	{
 		return;
@@ -663,6 +691,7 @@ void UTN_RallyHUDWidget::RefreshAmmo(bool bVisible)
 	}
 	AmmoText->SetText(Line);
 	AmmoText->SetColorAndOpacity(FSlateColor(bSpecialSelected ? TNHUDArt::Gold : TNHUDArt::Foam));
+	TNRaceUI::SetImageTexture(AmmoIcon, TNRallyHUD::AmmoIcon(bHasSpecial ? SpecialAmmo : ETNRallyAmmo::Coco));
 }
 
 void UTN_RallyHUDWidget::RefreshHealth(bool bVisible)

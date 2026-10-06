@@ -160,6 +160,10 @@ public:
 	/** Fracción de una estadística con la vida que le queda (#720): 1 con la vida llena, MinScale a 0. */
 	float GetDamageStatScale(float MinScale) const;
 
+	/** Si ninguna rueda toca el suelo (cada máquina lo calcula en su Tick). En el aire no le tocan conchas ni charcos (#771). */
+	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
+	bool IsAirborne() const { return bAirborne; }
+
 	/** Si el motor está cortado (semáforo, salida anticipada, reaparición o fin). */
 	UFUNCTION(BlueprintPure, Category = "Rally|Buggy")
 	bool IsEngineLocked() const;
@@ -207,9 +211,8 @@ public:
 	/** Segundos que le quedan al turbo regalado (0 = ninguno). */
 	float GetTimedBoostSecondsLeft() const;
 
-	/** Freno de mano puesto (el de la conductora o el de la IA) y ninguna rueda en el suelo: para el derrape de los karts. */
+	/** Freno de mano puesto (el de la conductora o el de la IA): para el derrape de los karts, con IsAirborne. */
 	bool IsHandbrakeHeld() const { return bHandbrakeHeld; }
-	bool IsAirborne() const { return bAirborne; }
 
 	/** Sacudida (0..1) para la cámara de la conductora local; en otras máquinas no hace nada. Para impactos y disparos. */
 	UFUNCTION(BlueprintCallable, Category = "Rally|Buggy")
@@ -262,6 +265,10 @@ public:
 	bool TryConsumeShield();
 	/** El charco de alga avisa cada vez que comprueba que el buggy está dentro. */
 	void NotePuddleContact();
+	/** Al entrar en un charco: giro corto de guiñada (#770, TNRallyTurret::PuddleEntrySpinDegPerSecond). */
+	void ApplyPuddleEntrySpin();
+	/** Púa de la ráfaga de erizos (#715): empujón lateral (lejos de PushDir) y bamboleo corto. */
+	void ApplySpikeHit(const FVector& PushDir);
 	/** Impulso de velocidad (cm/s) al chasis en el servidor, con ForceNetUpdate. */
 	void ApplyVelocityImpulse(const FVector& DeltaVelocity);
 
@@ -493,6 +500,7 @@ private:
 	void OnFireCoco(const FInputActionValue& Value);
 	void OnFireCocoReleased(const FInputActionValue& Value);
 	void OnFireSpecial(const FInputActionValue& Value);
+	void OnFireSpecialHeld(const FInputActionValue& Value);
 	void OnFireBackPressed(const FInputActionValue& Value);
 	void OnFireBackReleased(const FInputActionValue& Value);
 	void OnBoostPressed(const FInputActionValue& Value);

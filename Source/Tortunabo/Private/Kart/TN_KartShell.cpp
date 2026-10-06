@@ -214,7 +214,8 @@ bool ATN_KartShell::StepServer(float DeltaSeconds)
 	for (TActorIterator<ATN_Buggy> It(World); It; ++It)
 	{
 		ATN_Buggy* Kart = *It;
-		if ((Kart == Shooter.Get() && Age < ShooterGraceSeconds)
+		// Va por el suelo: un kart en el aire (el bote de la medusa, #771) pasa por encima.
+		if ((Kart == Shooter.Get() && Age < ShooterGraceSeconds) || Kart->IsAirborne()
 			|| FVector::DistSquared(Kart->GetActorLocation(), Next) > FMath::Square(TNKart::ShellHitRadiusCm))
 		{
 			continue;
