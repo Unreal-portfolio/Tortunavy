@@ -460,8 +460,9 @@ void ATN_RaceMine::Explode()
 			// Justo encima: hacia atrás.
 			Away = Back;
 		}
-		// En Supervivencia, la explosión elimina (#735), salvo a quien la lanzó: a ella la lanza como siempre.
-		if (Victim != Thrower && TNSurvivalHits::KillInSurvival(Victim, this))
+		// En Supervivencia, la explosión elimina (#735). A quien la lanzó solo si la ha pisado ella (pasado OwnerGraceSeconds);
+		// si solo la pilla la onda, la lanza como siempre.
+		if ((Victim != Thrower || Victim == Culprit) && TNSurvivalHits::KillInSurvival(Victim, this))
 		{
 			++Stunned;
 			continue;
