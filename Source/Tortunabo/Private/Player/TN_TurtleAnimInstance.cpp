@@ -4,7 +4,10 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_HeadLook.h"
+#include "Player/TN_FlipperSlapComponent.h"
+#include "Player/TN_FlipperSlapRules.h"
 #include "Player/TN_InventoryComponent.h"
+#include "Player/TN_RunGait.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Animation/AnimNodeBase.h"
@@ -478,7 +481,10 @@ namespace TNTurtleAnim
 		Turn(P, B.RLeg, AxisX, -20.f);
 	}
 
-	/** Lleva a otra tortuga en alto. */
+	/**
+	 * Lleva a otra tortuga en alto: solo las aletas arriba (capa de brazos, como lo que lleva en las aletas). Las piernas y
+	 * el resto siguen con la locomoción (parada, andar, correr) y la tortuga anda con la carga encima (#833).
+	 */
 	void PoseCarry(FCompactPose& P, const FBones& B)
 	{
 		Turn(P, B.LArm, AxisY, -80.f);
@@ -487,11 +493,6 @@ namespace TNTurtleAnim
 		Turn(P, B.RArm, AxisZ, -10.f);
 		Turn(P, B.LFore, AxisY, -25.f);
 		Turn(P, B.RFore, AxisY, 25.f);
-		Turn(P, B.Spine, AxisX, 4.f);
-		Turn(P, B.LUp, AxisX, 10.f);
-		Turn(P, B.RUp, AxisX, 10.f);
-		Turn(P, B.LLeg, AxisX, -15.f);
-		Turn(P, B.RLeg, AxisX, -15.f);
 	}
 
 	/** La llevan en alto y patalea. */
@@ -608,6 +609,56 @@ namespace TNTurtleAnim
 			Turn(P, B.RArm, AxisX, K.Elev);
 			Turn(P, B.RFore, AxisX, K.Bend);
 		}
+	}
+
+	/** Un momento del guantazo: cuánto cruza la aleta (+ hacia la izquierda por delante del pecho), altura, codo, giro del tronco y cabeza. */
+	struct FSlapKey
+	{
+		float U;
+		float Across;
+		float Elev;
+		float Bend;
+		float Spine;
+		float Head;
+	};
+
+	/**
+	 * Guantazo con la aleta derecha por fases (U, 0..1; el impacto es en TNFlipperSlap::StrikePhase): la echa atrás y afuera
+	 * mientras el tronco se tuerce a la derecha, la barre por delante del pecho hacia la izquierda con el tronco al revés y
+	 * vuelve. Across 0 es la aleta al frente, negativo hacia afuera y atrás y positivo cruzada (como In del saque de banda).
+	 */
+	FSlapKey SlapKeyAt(float U)
+	{
+		static constexpr FSlapKey Keys[] = {
+			{ 0.00f,  -60.f,  0.f, 12.f,   0.f,  0.f },
+			{ 0.22f, -125.f, 10.f, 28.f,  10.f,  6.f },
+			{ 0.40f,   35.f, 12.f,  5.f, -12.f, -8.f },
+			{ 0.60f,   55.f,  8.f,  8.f, -14.f, -8.f },
+			{ 1.00f,  -40.f,  0.f, 12.f,   0.f,  0.f },
+		};
+		constexpr int32 Num = static_cast<int32>(UE_ARRAY_COUNT(Keys));
+		if (U <= Keys[0].U) { return Keys[0]; }
+		for (int32 k = 1; k < Num; ++k)
+		{
+			if (U <= Keys[k].U)
+			{
+				const FSlapKey& A = Keys[k - 1];
+				const FSlapKey& C = Keys[k];
+				const float X = (U - A.U) / FMath::Max(0.001f, C.U - A.U);
+				const float S = X * X * (3.f - 2.f * X);
+				return FSlapKey{ U, FMath::Lerp(A.Across, C.Across, S), FMath::Lerp(A.Elev, C.Elev, S), FMath::Lerp(A.Bend, C.Bend, S),
+					FMath::Lerp(A.Spine, C.Spine, S), FMath::Lerp(A.Head, C.Head, S) };
+			}
+		}
+		return Keys[Num - 1];
+	}
+
+	/** La aleta derecha del guantazo en el momento K. */
+	void PoseSlapArm(FCompactPose& P, const FBones& B, const FSlapKey& K)
+	{
+		Turn(P, B.RArm, AxisZ, -(90.f + K.Across));
+		Turn(P, B.RArm, AxisX, K.Elev);
+		Turn(P, B.RFore, AxisX, K.Bend);
 	}
 
 	/**
@@ -1002,7 +1053,6 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		Layer(FirstW, [&](FCompactPose& P) { PoseDive(P, B, F); });
 		Layer(SlideMix, [&](FCompactPose& P) { PoseBellySlide(P, B, F); });
 	}
-	Layer(F.CarryW, [&](FCompactPose& P) { PoseCarry(P, B); });
 	Layer(F.CarriedW, [&](FCompactPose& P) { PoseCarried(P, B, F); });
 	Layer(F.DownW, [&](FCompactPose& P) { PoseDown(P, B); });
 	if (F.PrevEmote >= 0 && F.PrevEmote != 9)
@@ -1051,6 +1101,12 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		if (bLeftArm) { BlendChainInto(Output.Pose, Target.Pose, LChain, Weight); }
 		if (bRightArm) { BlendChainInto(Output.Pose, Target.Pose, RChain, Weight); }
 	};
+	// Llevar a otra tortuga en alto: las aletas arriba y el tronco algo atrás, andando o corriendo con la carga (#833).
+	if (F.CarryW >= 0.01f)
+	{
+		ArmLayer(F.CarryW, true, true, [&](FCompactPose& P) { PoseCarry(P, B); });
+		Turn(Output.Pose, B.Spine, AxisX, 4.f * F.CarryW);
+	}
 	if (F.HoldStyle != 0 && F.HoldW >= 0.01f)
 	{
 		const bool bHug = F.HoldStyle == 2;
@@ -1076,6 +1132,14 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		const float BodyShare = (F.bThrowBoth ? 1.f : 0.6f) * F.ThrowW;
 		Turn(Output.Pose, B.Spine, AxisX, Key.Spine * BodyShare);
 		Turn(Output.Pose, B.Head, AxisX, Key.Head * BodyShare);
+	}
+	if (F.SlapW >= 0.01f)
+	{
+		// Guantazo (#832): solo la aleta derecha y el tronco; las piernas siguen andando o corriendo.
+		const FSlapKey Key = SlapKeyAt(F.SlapU);
+		ArmLayer(F.SlapW, false, true, [&](FCompactPose& P) { PoseSlapArm(P, B, Key); });
+		Turn(Output.Pose, B.Spine1, AxisZ, Key.Spine * F.SlapW);
+		Turn(Output.Pose, B.Head, AxisZ, Key.Head * F.SlapW);
 	}
 
 	// 4. Capas encima de lo que haya: inclinación al correr y en las curvas, cansancio y caparazón.
@@ -1164,8 +1228,12 @@ void UTN_TurtleAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// La carrera entra con el sprint (o al pasar un 8 % de la velocidad de andar del nivel: en el lobby es 2 m/s).
 	const UTN_StaminaComponent* StaminaComp = Turtle ? Turtle->GetStaminaComponent() : nullptr;
 	const float WalkRef = StaminaComp ? FMath::Max(100.f, StaminaComp->GetWalkSpeed()) : 450.f;
-	const bool bSprinting = StaminaComp && StaminaComp->IsSprinting() && Speed > WalkRef * 0.6f;
-	const float RunTarget = FMath::Max(bSprinting ? 1.f : 0.f, FMath::Clamp((Speed - WalkRef * 1.08f) / (WalkRef * 0.3f), 0.f, 1.f));
+	// Esprintar sin fuerzas no es correr (#834): con la estamina a 0 y la tecla pulsada va a paso de andar, y así se ve.
+	const float StaminaFraction = StaminaComp
+		? FMath::Clamp(StaminaComp->GetCurrentStamina() / FMath::Max(1.f, StaminaComp->GetEffectiveMaxStamina()), 0.f, 1.f) : 1.f;
+	const bool bSprintRun = StaminaComp && TNRunGait::IsSprintRun(StaminaComp->IsSprinting(), StaminaComp->IsExhausted(), StaminaFraction,
+		StaminaComp->HasUnlimitedStamina(), Speed, WalkRef);
+	const float RunTarget = TNRunGait::RunTarget(bSprintRun, Speed, WalkRef);
 	F.RunW = FMath::FInterpTo(F.RunW, RunTarget, Dt, 7.f);
 	F.SprintW = FMath::FInterpTo(F.SprintW, FMath::Clamp((Speed - WalkRef * 1.3f) / (WalkRef * 0.6f), 0.f, 1.f), Dt, 4.f);
 	F.WalkTime += Dt * FMath::Clamp(Speed / (WalkNaturalUnits * Scale), 0.5f, 4.5f);
@@ -1297,6 +1365,17 @@ Ease(F.CarryW, bCarrying, 8.f);
 	{
 		// Toma de impulso que no acabó en lanzamiento (se cortó): las aletas vuelven.
 		Ease(F.ThrowW, false, 10.f);
+	}
+
+	// Guantazo con la aleta (#832): la fase del golpe la lleva UTN_FlipperSlapComponent en cada máquina. Si el estado de la
+	// tortuga lo impide a mitad de golpe (derribo, caparazón, brazos ajenos...), la aleta suelta sin más.
+	{
+		const UTN_FlipperSlapComponent* Slap = Turtle ? Turtle->GetFlipperSlapComponent() : nullptr;
+		const float SlapPhase = Slap ? Slap->GetSwingPhase() : -1.f;
+		const bool bSlapPose = Turtle && !Turtle->IsKnockedDown() && !Turtle->IsInShell() && !bDive && !bSwim && !bCarrying
+			&& !(Carry && Carry->IsBeingCarried());
+		F.SlapU = SlapPhase;
+		F.SlapW = bSlapPose ? TNFlipperSlap::SwingWeight(SlapPhase) : 0.f;
 	}
 
 	// Emote: entra suave y, al acabar, sale suave con el último.

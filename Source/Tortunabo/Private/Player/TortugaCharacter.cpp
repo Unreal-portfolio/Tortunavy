@@ -19,6 +19,7 @@
 #include "Player/TN_CarriedCamera.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
+#include "Player/TN_FlipperSlapComponent.h"
 #include "Player/TN_HeadLook.h"
 #include "Player/TN_TurtleFaceComponent.h"
 #include "Player/TN_SlopeTiltComponent.h"
@@ -160,6 +161,7 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	WadingComponent = CreateDefaultSubobject<UTN_WadingComponent>(TEXT("WadingComponent"));
 	ShellComponent = CreateDefaultSubobject<UTN_ShellComponent>(TEXT("ShellComponent"));
 	CarryComponent = CreateDefaultSubobject<UTN_CarryComponent>(TEXT("CarryComponent"));
+	FlipperSlap = CreateDefaultSubobject<UTN_FlipperSlapComponent>(TEXT("FlipperSlap"));
 	// La malla se inclina con la pendiente (solo visual; ver UTN_SlopeTiltComponent).
 	SlopeTilt = CreateDefaultSubobject<UTN_SlopeTiltComponent>(TEXT("SlopeTilt"));
 	DizzyBirds = CreateDefaultSubobject<UTN_DizzyBirdsComponent>(TEXT("DizzyBirds"));
@@ -999,6 +1001,13 @@ void ATortugaCharacter::ApplyMareoEffect(float Duration)
 	{
 		return;
 	}
+	// Un mareo corto (el guantazo de la aleta, #832) no acorta uno más largo que ya esté en marcha.
+	const double End = GetWorld()->GetTimeSeconds() + static_cast<double>(Duration);
+	if (End <= MareoEndTime && GetWorldTimerManager().IsTimerActive(MareoTimerHandle))
+	{
+		return;
+	}
+	MareoEndTime = End;
 	bMareo = true;
 	ApplyMareoLocalState(true);
 	const FTimerDelegate EndDelegate = FTimerDelegate::CreateUObject(this, &ATortugaCharacter::EndMareo);
@@ -1366,11 +1375,20 @@ void ATortugaCharacter::TryInteract()
 	}
 
 	// Si tras el scan sigue sin haber interactuable → coger a una tortuga en caparazón
-	// o aturdida si hay una delante; si no, usar ítem equipado (lanzar bola, etc.)
+	// o aturdida si hay una delante; si no, usar ítem equipado (lanzar bola, etc.) o,
+	// sin objeto ni arma en las aletas, dar un guantazo (#832)
 	if (!FocusedInteractable.IsValid())
 	{
 		if (CarryComponent && CarryComponent->TryGrabNearest())
 		{
+			return;
+		}
+
+		if (FlipperSlap && InventoryComponent && !InventoryComponent->HasEquippedItem())
+		{
+			// En VR el servidor decide el cono con la aleta que mandó (fiable: llega antes que el golpe).
+			SendVRAimToServer();
+			FlipperSlap->TrySlap();
 			return;
 		}
 

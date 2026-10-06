@@ -233,7 +233,7 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerGrantUnlimitedStamina(float DurationSeconds);
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentStamina)
 	float CurrentStamina = 100.0f;
 
 	/**
@@ -306,6 +306,14 @@ private:
 	/** @brief OnRep: aplica MovementSpeed/visual al cambiar el estado de sprint. */
 	UFUNCTION()
 	void OnRep_IsSprinting();
+
+	/**
+	 * @brief OnRep (solo el dueño: se replica solo a él): la estamina llega del servidor, que es quien la gasta; vuelve a
+	 *        decidir si esprinta con ella. El dueño no simula la estamina (TickComponent solo corre en el servidor), así que
+	 *        sin esto bIsSprinting se quedaba en true con la tecla pulsada hasta soltarla aunque la estamina llegara a 0 (#834).
+	 */
+	UFUNCTION()
+	void OnRep_CurrentStamina();
 
 	/** @brief OnRep: feedback visual cuando el boost de stamina ilimitada cambia. */
 	UFUNCTION()
