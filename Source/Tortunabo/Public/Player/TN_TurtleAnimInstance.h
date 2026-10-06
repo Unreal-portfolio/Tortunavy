@@ -70,6 +70,9 @@ struct FTNTurtleAnimFrame
 	float ThrowU = -2.f;
 	float ThrowW = 0.f;
 	bool bThrowBoth = false;
+	/** Guantazo con la aleta derecha (#832): fase del golpe (0..1, -1 = ninguno) y su peso (entra y sale deprisa). */
+	float SlapU = -1.f;
+	float SlapW = 0.f;
 	/**
 	 * Lo que lleva en las aletas (UTN_InventoryComponent): cómo (0 = nada, 1 = en la aleta derecha, 2 = abrazado con las
 	 * dos, 3 = por un extremo; como ETNItemHold), su peso, cuánto abre las aletas abrazando (0..1) y la aleta derecha

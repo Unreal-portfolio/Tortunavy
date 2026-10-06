@@ -16,6 +16,7 @@ class UInputAction;
 class UTN_InventoryComponent;
 class UTN_ShellComponent;
 class UTN_CarryComponent;
+class UTN_FlipperSlapComponent;
 class UTN_DizzyBirdsComponent;
 class UTN_TurtleFaceComponent;
 class UTN_SlopeTiltComponent;
@@ -316,6 +317,10 @@ protected:
 	/** Coger y lanzar a otras tortugas (issue #6, fase 2). */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Carry")
 	TObjectPtr<UTN_CarryComponent> CarryComponent;
+
+	/** Guantazo con la aleta: el botón de ataque sin objeto ni arma (#832). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<UTN_FlipperSlapComponent> FlipperSlap;
 
 	/** Pajaritos y estrellitas del mareo sobre la cabeza mientras está noqueada (local y cosmético). */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Knockdown")
@@ -1209,6 +1214,8 @@ protected:
 
 	FTimerHandle BigHeadTimerHandle;
 	FTimerHandle MareoTimerHandle;
+	/** Hora del mundo en que acaba el mareo en marcha (MulticastApplyMareoEffect: uno más corto no lo acorta). */
+	double MareoEndTime = 0.0;
 	FTimerHandle InkEffectTimerHandle;
 
 	void ClearInkEffect();
@@ -1519,6 +1526,9 @@ public:
 
 	/** Componente de coger y lanzar. */
 	UTN_CarryComponent* GetCarryComponent() const { return CarryComponent; }
+
+	/** Componente del guantazo con la aleta. */
+	UTN_FlipperSlapComponent* GetFlipperSlapComponent() const { return FlipperSlap; }
 
 	/**
 	 * Dirección de un lanzamiento (objeto, tinta o compañero) con el giro del mando AimRotation: el rumbo de la cámara y un
