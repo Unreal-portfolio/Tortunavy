@@ -176,6 +176,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Beach")
 	bool IsRoundReady() const;
 
+	/**
+	 * Cliente: ya le han llegado los elementos replicados quietos de la ronda (trampas y estructuras, que bloquean), los de
+	 * su propio reparto (#828). Servidor: siempre. Si alguno no llega en ElementsArrivalTimeoutSeconds (p. ej. ya destruido en
+	 * el servidor), se da por llegada con un aviso.
+	 */
+	bool HasRoundElements() const;
+
 	UFUNCTION(BlueprintPure, Category = "Beach")
 	int32 GetRoundNumber() const { return RoundNet.Round; }
 
@@ -479,6 +486,13 @@ private:
 	/** Ronda que se monta por partes (null si no hay ninguna a medias) y su número (RoundNet.Round). */
 	TSharedPtr<FTNBeachRoundBuild> PendingBuild;
 	int32 PendingRound = 0;
+	/** Cliente: comprueba (cada medio segundo) si ya tiene los elementos quietos de la ronda montada (HasRoundElements). */
+	void UpdateRoundElementsArrival(float DeltaSeconds);
+	static constexpr double ElementsArrivalTimeoutSeconds = 20.0;
+	int32 ElementsCheckedRound = 0;
+	bool bRoundElementsArrived = false;
+	float ElementsCheckClock = 0.f;
+	double ElementsWaitSince = -1.0;
 	/** Tortugas locales paradas por HoldLocalPawnsWhileBuilding y desde cuándo (s del mundo). */
 	TArray<TWeakObjectPtr<ACharacter>> HeldLocalPawns;
 	double HeldSince = 0.0;
