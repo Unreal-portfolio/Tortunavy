@@ -365,6 +365,19 @@ def issues_de_pr(pr: dict, menciones: bool = False) -> set[int]:
     return refs
 
 
+def solo_descartadas(pr: dict, chamber: set[int]) -> bool:
+    """True si la PR enlaza issues y todas están descartadas (`chamber`): no hay trabajo vivo que la justifique."""
+    refs = issues_de_pr(pr)
+    return bool(refs) and refs <= chamber
+
+
+def numeros_chamber() -> set[int]:
+    """Issues descartadas (`chamber`), abiertas o cerradas, sin leer el Project."""
+    salida = gh("issue", "list", "--repo", REPO, "--state", "all", "--label", flujo.ETIQUETA_CHAMBER,
+                "--limit", "1000", "--json", "number")
+    return {i["number"] for i in json.loads(salida)}
+
+
 def es_de(issue: dict, login: str) -> bool:
     return login in {a["login"] for a in issue.get("assignees", {}).get("nodes", [])}
 
@@ -376,6 +389,38 @@ def slug(texto: str) -> str:
 
 def comentar(numero: int, texto: str) -> None:
     gh("issue", "comment", str(numero), "--repo", REPO, "--body", texto + flujo.firma_de_puente(os.environ))
+
+
+def rechazar_descartada(numero: int, issue: dict, retomar: bool = False) -> None:
+    """Corta un comando del ciclo sobre una issue descartada (`chamber`): ninguna rutina la vería después.
+
+    Con `retomar` (solo `coger` y `estado`) la deja pasar si lo lanza un aprobador y hay una **Decisión** de un
+    aprobador posterior al descarte. `--forzar` no basta: es el que las skills usan a diario.
+    """
+    if not flujo.es_chamber(issue):
+        return
+    if not retomar:
+        raise ErrorTablero(flujo.motivo_chamber(numero, issue))
+    datos = json.loads(gh("issue", "view", str(numero), "--repo", REPO, "--json", "comments"))
+    comentarios = [c.get("body") or "" for c in datos.get("comments") or []]
+    if motivo := flujo.motivo_para_no_retomar(numero, quien_lanza(), CONFIG["aprobadores"], comentarios):
+        raise ErrorTablero(motivo)
+
+
+def quien_lanza() -> str:
+    """Quién lanza el comando: quien disparó el puente a mano o, en local, el dueño del `gh`."""
+    return flujo.actor_de_puente(os.environ) or usuario_actual()
+
+
+def retomar_descartada(numero: int, issue: dict) -> None:
+    """Devuelve una issue descartada al ciclo: sin la etiqueta `chamber` y abierta, para que las rutinas la vean."""
+    pasos = flujo.pasos_retomar(issue)
+    if not pasos["quitar_etiqueta"]:
+        return
+    gh("issue", "edit", str(numero), "--repo", REPO, "--remove-label", flujo.ETIQUETA_CHAMBER)
+    if pasos["reabrir"]:
+        gh("issue", "reopen", str(numero), "--repo", REPO)
+    comentar(numero, f"**Retomada**: deja de estar descartada (sin `{flujo.ETIQUETA_CHAMBER}`).")
 
 
 def prs_fusionadas() -> list[dict]:
@@ -424,7 +469,7 @@ def elegir_revisor(proyecto: dict, autor: str) -> str:
         return candidatos[0]
     items = revisiones_del_proyecto() if proyecto.get("parcial") else proyecto["items"]
     carga = {c: 0 for c in candidatos}
-    for issue in items.values():
+    for issue in flujo.sin_chamber(items).values():  # una descartada no es trabajo de nadie
         r = issue["valores"].get("Revisor")
         if issue["valores"].get("Status") == "In review" and r in carga:
             carga[r] += 1

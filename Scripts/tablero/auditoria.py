@@ -57,7 +57,8 @@ ETIQUETA_SIN_REVISION = "sin-revision"
 PREFIJOS_AUTOMATICOS = ("Lista para revisión", "**Editor: funciona**", "**Revisión IA", "Fusionada en",
                         CABECERA_ATENDIDA, "**Rutina",
                         CABECERA, memoria.CABECERA_RESUMEN, memoria.CABECERA_DECISION, "**Sin QA editor**",
-                        "Forma parte del lote", "En el lote #", "Vuelve a Ready sin asignado", "Probada en el editor")
+                        "Forma parte del lote", "En el lote #", "Vuelve a Ready sin asignado", "Probada en el editor",
+                        flujo.CABECERA_CHAMBER)
 
 CONSULTA_ISSUES = """
 query($owner: String!, $repo: String!, $cursor: String, $since: DateTime) {
@@ -149,8 +150,11 @@ def conversacion_de(nodo: dict) -> dict:
 
 
 def accion_peticion(issue: dict) -> str | None:
-    """«poner» o «quitar» la etiqueta `peticion` según la conversación de una issue abierta; None si está bien."""
-    if issue["estado"] != "OPEN":
+    """«poner» o «quitar» la etiqueta `peticion` según la conversación de una issue abierta; None si está bien.
+
+    Una descartada (`chamber`) no lleva `peticion`: nadie va a contestar.
+    """
+    if issue["estado"] != "OPEN" or flujo.es_chamber(issue):
         return None
     pendiente, etiquetada = conversacion_pendiente(issue), ETIQUETA_PETICION in issue["etiquetas"]
     if pendiente == etiquetada:
@@ -304,9 +308,11 @@ def acciones(issue: dict, lista: list[dict]) -> dict:
 
 
 def es_de_trabajo(issue: dict) -> bool:
+    """Issue que se audita: ni objeto, ni lote, ni `sin-revision`, ni descartada (`chamber`), ni de las fijas."""
     etiquetas = issue["etiquetas"]
     return (objetos.ETIQUETA not in etiquetas and lotes.ETIQUETA not in etiquetas
-            and ETIQUETA_SIN_REVISION not in etiquetas and issue["titulo"] not in TITULOS_EXCLUIDOS)
+            and ETIQUETA_SIN_REVISION not in etiquetas and not flujo.es_chamber(issue)
+            and issue["titulo"] not in TITULOS_EXCLUIDOS)
 
 
 def normalizar(nodo: dict, valores: dict, contexto: dict | None = None) -> dict:

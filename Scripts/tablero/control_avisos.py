@@ -1,6 +1,7 @@
-"""Comando `avisos`: lo que ha entrado en dev sin revisión y el resultado de la rutina, por correo al director.
+"""Comandos de notificaciones: `avisos` (lo que ha entrado en dev sin revisión y el resultado de la rutina, por correo
+al director) y `silenciar` (baja del dueño del token en las issues abiertas que toca el puente).
 
-La lógica pura vive en avisos.py; aquí solo se habla con GitHub.
+La lógica pura vive en avisos.py y volcado.py; aquí solo se habla con GitHub.
 """
 
 from __future__ import annotations
@@ -15,8 +16,9 @@ import avisos
 import flujo
 import lotes
 import objetos
+import volcado
 from base import (CONFIG, INTEGRACION, REPO, ErrorTablero, cargar_proyecto, comentar, elegir_revisor, gh, issues_de_pr,
-                  poner_campo)
+                  poner_campo, usuario_actual)
 
 RUTAS_ORGANIZACION = CONFIG["avisos"]["rutas_organizacion"]
 DESTINATARIOS = CONFIG["avisos"]["destinatarios"]
@@ -114,7 +116,8 @@ def reconciliar(proyecto: dict, aplicar: bool) -> list[str]:
     """Issues `sin-revision` abiertas: su código ya está en dev, así que avanzan solo con las dos validaciones."""
     cambios = []
     for numero, issue in sorted(proyecto["items"].items()):
-        if issue["state"] != "OPEN" or avisos.ETIQUETA not in objetos.nombres_etiquetas(issue):
+        if issue["state"] != "OPEN" or avisos.ETIQUETA not in objetos.nombres_etiquetas(issue) \
+                or flujo.es_chamber(issue):
             continue
         actual = issue["valores"].get("Status")
         destino, cerrar = flujo.estado_objetivo(actual, issue["valores"], fusionada=True, en_lote=False)
@@ -194,6 +197,39 @@ def cmd_avisos(args: argparse.Namespace) -> None:
         print(f"Avisos publicados en #{args.publicar}")
 
 
+def cmd_silenciar(_args: argparse.Namespace) -> None:
+    """Da de baja al usuario del token de las notificaciones de las issues abiertas (no de las PR).
+
+    Sin el scope `notifications` no se puede: avisa y termina bien, para no dar por fallido un puente que sí
+    ha reconciliado y volcado el tablero.
+    """
+    try:
+        silenciar_issues_abiertas()
+    except ErrorTablero as exc:
+        if not volcado.falta_scope_de_notificaciones(str(exc)):
+            raise
+        print("::warning::No se silencian las issues: al token le falta el scope `notifications` "
+              "(añádelo al token del secreto TABLERO_TOKEN).")
+
+
+def silenciar_issues_abiertas() -> None:
+    owner, repo = REPO.split("/", 1)
+    nodos, cursor = [], None
+    while True:
+        args = ["api", "graphql", "-f", f"query={volcado.CONSULTA_SUSCRIPCIONES}", "-f", f"owner={owner}", "-f", f"repo={repo}"]
+        if cursor:
+            args += ["-f", f"cursor={cursor}"]
+        datos = json.loads(gh(*args))["data"]["repository"]["issues"]
+        nodos += datos["nodes"]
+        if not datos["pageInfo"]["hasNextPage"]:
+            break
+        cursor = datos["pageInfo"]["endCursor"]
+    pendientes = volcado.a_silenciar(nodos)
+    for nodo in pendientes:
+        gh("api", "graphql", "-f", f"query={volcado.MUTACION_SILENCIAR}", "-f", f"id={nodo['id']}")
+    print(f"Silenciadas {len(pendientes)} issues de {len(nodos)} abiertas para {usuario_actual()}")
+
+
 def anadir_comandos(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("avisos", help="lo que ha entrado en dev sin revisión y el parte de la rutina, por correo al director")
     p.add_argument("--aplicar", action="store_true", help="abrir las issues `sin-revision` y avanzar las validadas")
@@ -201,3 +237,5 @@ def anadir_comandos(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--parte", type=int, metavar="ISSUE", help="issue del parte de la rutina, para adjuntarlo")
     p.add_argument("--horas", type=int, default=26, help="ventana de los pushes y las fusiones (por defecto, 26 h)")
     p.set_defaults(fn=cmd_avisos)
+    sub.add_parser("silenciar", help="darme de baja de las notificaciones de las issues abiertas (no de las PR)"
+                   ).set_defaults(fn=cmd_silenciar)

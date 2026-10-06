@@ -9,7 +9,8 @@ para que un Claude las mezcle, y se cierra sola cuando el par deja de chocar o u
 se fusiona o se cierra. Los binarios de Unreal no se mezclan: esa issue lleva `decision` para que
 un aprobador decida qué versión gana. La localización generada no se mezcla a mano: se regenera, y
 siempre igual (la PR que se fusione en segundo lugar recoge, une los `.po` y compila). Por eso un par
-que choca solo en localización no crea issue, y la que exista se cierra.
+que choca solo en localización no crea issue, y la que exista se cierra. Una PR que solo enlaza issues descartadas
+(`chamber`) no cuenta, y la issue de una colisión en la que está se cierra.
 """
 
 from __future__ import annotations
@@ -128,19 +129,24 @@ def colisiones_abiertas(gh: Gh, repo: str) -> list[dict]:
 
 
 def resueltas(abiertas: list[dict], prs: set[int], vigentes: set[tuple[int, int]],
-              localizacion: frozenset[tuple[int, int]] | set[tuple[int, int]] = frozenset()) -> list[tuple[int, str]]:
+              localizacion: frozenset[tuple[int, int]] | set[tuple[int, int]] = frozenset(),
+              descartadas: frozenset[int] | set[int] = frozenset()) -> list[tuple[int, str]]:
     """Issues `colision` que ya se pueden cerrar, con el motivo.
 
-    Se cierran si alguna PR ya no está abierta, si el par choca solo en localización (`localizacion`)
-    o si ya no choca (no está en `vigentes`, los pares que necesitan issue).
+    Se cierran si alguna PR solo enlaza issues descartadas (`descartadas`), si ya no está abierta, si el par
+    choca solo en localización (`localizacion`) o si ya no choca (no está en `vigentes`, los pares que necesitan
+    issue).
     """
     resultado = []
     for issue in abiertas:
         par = par_de_titulo(issue["title"])
         if par is None:
             continue
+        sin_juego = [n for n in par if n in descartadas]
         fuera = [n for n in par if n not in prs]
-        if fuera:
+        if sin_juego:
+            resultado.append((issue["number"], f"la PR #{sin_juego[0]} solo enlaza issues descartadas (`chamber`)"))
+        elif fuera:
             resultado.append((issue["number"], f"la PR #{fuera[0]} ya no está abierta"))
         elif par in localizacion:
             resultado.append((issue["number"], SOLO_LOCALIZACION))

@@ -19,9 +19,11 @@ CONSULTA_HERMANAS = """
 query($owner: String!, $repo: String!, $num: Int!) {
   repository(owner: $owner, name: $repo) { issue(number: $num) {
     number title
-    subIssues(first: 100) { nodes { number title state comments(last: 30) { nodes { body } } } }
+    subIssues(first: 100) { nodes { number title state labels(first: 20) { nodes { name } }
+      comments(last: 30) { nodes { body } } } }
     parent { number title
-      subIssues(first: 100) { nodes { number title state comments(last: 30) { nodes { body } } } } }
+      subIssues(first: 100) { nodes { number title state labels(first: 20) { nodes { name } }
+        comments(last: 30) { nodes { body } } } } }
   } }
 }
 """
@@ -104,6 +106,12 @@ def cmd_lote_anadir(args: argparse.Namespace) -> None:
             print(f"Aviso: añade «Closes {', '.join(f'#{n}' for n in faltan)}» al cuerpo de la PR #{pr}.")
 
 
+def etiquetas_de_miembros(nodos: list[dict], items: dict[int, dict]) -> dict[int, set[str]]:
+    """Etiquetas de cada miembro, de la dependencia y de su tarjeta: una descartada puede estar fuera del tablero."""
+    return {b["number"]: objetos.nombres_etiquetas(b) | objetos.nombres_etiquetas(items.get(b["number"], {}))
+            for b in nodos}
+
+
 def cmd_lote_estado(args: argparse.Namespace) -> None:
     """Qué miembros faltan. Termina con error si la PR del lote aún no se puede fusionar."""
     datos = json.loads(gh("issue", "view", str(args.numero), "--repo", REPO, "--json", "title,labels,state"))
@@ -115,11 +123,14 @@ def cmd_lote_estado(args: argparse.Namespace) -> None:
     print(f"{datos['title']} (#{args.numero}, {datos['state']}): {len(miembros)} miembros")
     for n, (valores, estado) in sorted(miembros.items()):
         print(f"  #{n} {valores.get('Status') or estado}")
+    etiquetas = etiquetas_de_miembros(nodos, proyecto["items"])
+    if descartadas := lotes.con_decision(etiquetas, flujo.ETIQUETA_CHAMBER):  # cerrada no es lista: no se revisó
+        raise ErrorTablero(f"NO fusionar la PR del lote: {', '.join(f'#{n}' for n in descartadas)} descartada "
+                           f"(`{flujo.ETIQUETA_CHAMBER}`): saca su código y su «Closes» de la PR y quítala del lote.")
     pendientes = lotes.pendientes(miembros)
     if not miembros or pendientes:
         detalle = "; ".join(f"#{n}: {', '.join(f)}" for n, f in pendientes.items()) or "el lote no tiene miembros"
         raise ErrorTablero(f"NO fusionar la PR del lote: {detalle}.")
-    etiquetas = {n: objetos.nombres_etiquetas(proyecto["items"].get(n, {})) for n in miembros}
     if sin_decidir := lotes.con_decision(etiquetas, flujo.ETIQUETA_DECISION):
         raise ErrorTablero(f"NO fusionar la PR del lote: {', '.join(f'#{n}' for n in sin_decidir)} con decisión "
                            "pendiente. Regístrala con `tablero.py decidir <n> --texto \"...\"` y quita la etiqueta.")
@@ -129,8 +140,18 @@ def cmd_lote_estado(args: argparse.Namespace) -> None:
     print("Todos los miembros están en Validada: la PR del lote se puede fusionar.")
 
 
+def linea_hermana(hermana: dict) -> str:
+    """Cabecera de una sub-issue en `resumenes`; las descartadas van marcadas: su memoria no es de un sistema vivo."""
+    estado = f"{hermana['state']}, {flujo.ETIQUETA_CHAMBER}" if flujo.es_chamber(hermana) else hermana["state"]
+    return f"#{hermana['number']} ({estado}) {hermana['title']}"
+
+
 def cmd_resumenes(args: argparse.Namespace) -> None:
-    """Resúmenes de las demás sub-issues del mismo objeto (abiertas y cerradas), para ver fallos parecidos."""
+    """Resúmenes de las demás sub-issues del mismo objeto (abiertas y cerradas), para ver fallos parecidos.
+
+    Las descartadas (`chamber`) se listan marcadas «(…, chamber)»: lo que se aprendió sigue valiendo, pero no son
+    trabajo vivo.
+    """
     owner, nombre = REPO.split("/", 1)
     salida = gh("api", "graphql", "-f", f"query={CONSULTA_HERMANAS}", "-f", f"owner={owner}",
                 "-f", f"repo={nombre}", "-F", f"num={args.numero}")
@@ -139,13 +160,15 @@ def cmd_resumenes(args: argparse.Namespace) -> None:
         raise ErrorTablero(f"La issue #{args.numero} no existe.")
     objeto = issue["parent"] or issue  # si se pide un objeto, sus propias sub-issues
     hermanas = [h for h in objeto["subIssues"]["nodes"] if h["number"] != args.numero]
-    print(f"Objeto #{objeto['number']} {objeto['title']}: {len(hermanas)} sub-issues más")
+    descartadas = sum(flujo.es_chamber(h) for h in hermanas)
+    print(f"Objeto #{objeto['number']} {objeto['title']}: {len(hermanas)} sub-issues más"
+          + (f" ({descartadas} descartadas)" if descartadas else ""))
     con_resumen = 0
     for h in hermanas:
         textos = [c["body"].strip() for c in h["comments"]["nodes"] if memoria.es_resumen(c["body"])]
         if textos:
             con_resumen += 1
-            print(f"\n#{h['number']} ({h['state']}) {h['title']}\n{textos[-1]}")
+            print(f"\n{linea_hermana(h)}\n{textos[-1]}")
     if not con_resumen:
         print("Ninguna tiene aún comentario **Resumen**.")
 

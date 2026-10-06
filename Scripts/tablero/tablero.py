@@ -27,7 +27,15 @@ Uso (desde la raíz del repo):
     uv run python Scripts/tablero/tablero.py bloquear 57 --por 40 [--por 41]
     uv run python Scripts/tablero/tablero.py volcado [--publicar 131]
     uv run python Scripts/tablero/tablero.py avisos [--aplicar] [--publicar 196 --parte 127]
+    uv run python Scripts/tablero/tablero.py chamber 57 58 --motivo "..."   # descartar: etiqueta, comentario y cierre
     uv run python Scripts/tablero/tablero.py puente --comando "estado 42 Ready"
+
+Las issues descartadas (etiqueta `chamber`, cerradas como not planned y en Backlog) quedan fuera de todo: `sync`,
+`auditar`, `colisiones`, `volcado`, `pendiente`, `avisos` y `conversacion` no las procesan, y `coger`, `revision`,
+`ia`, `editor`, `pedir` y `estado` las rechazan, también con `--forzar`. Solo `coger`/`estado` con `--retomar`,
+lanzado en local por un aprobador con una **Decisión** suya posterior al descarte, quita la etiqueta y las reabre;
+el puente no acepta `--retomar`. Una PR que enlaza una descartada sigue a la vista: `sync` avisa y `avisos` la da por
+incidencia si se fusiona con código.
 
 Las tareas y los fallos se agrupan por objeto (issue padre con la etiqueta `objeto`)
 como sub-issues nativas de GitHub. Módulos: base.py (gh, git, proyecto, PR), flujo.py
@@ -63,7 +71,7 @@ import volcado
 from base import (CONFIG, ESTADOS, INTEGRACION, ORDEN_PRIORIDAD, ORDEN_TAMANO, REPO,
                   ErrorTablero, cargar_campos, cargar_issue, cargar_proyecto, comentar, comprobar_campos, elegir_revisor,
                   es_de, esta_fusionada, gh, git, issues_de_pr, item_de_issue, poner_campo, prs_abiertas, prs_fusionadas,
-                  slug, usuario_actual, vaciar_campo)
+                  rechazar_descartada, retomar_descartada, slug, solo_descartadas, usuario_actual, vaciar_campo)
 
 
 def clave_orden(issue: dict) -> tuple:
@@ -130,7 +138,9 @@ def probables_en_editor(issues: list[dict], login: str) -> list[dict]:
 def cmd_pendiente(_args: argparse.Namespace) -> None:
     yo = usuario_actual()
     aprobador = yo in CONFIG["aprobadores"]
-    proyecto = cargar_proyecto()
+    completo = cargar_proyecto()
+    proyecto = {**completo, "items": flujo.sin_chamber(completo["items"])}  # las descartadas no son de nadie
+    chamber = flujo.descartadas(completo["items"])
     abiertas = [i for i in proyecto["items"].values()
                 if i["state"] == "OPEN" and not objetos.es_objeto(i) and not lotes.es_lote(i)]
     por_estado = {e: sorted([i for i in abiertas if i["valores"].get("Status") == e], key=clave_orden) for e in ESTADOS}
@@ -149,9 +159,10 @@ def cmd_pendiente(_args: argparse.Namespace) -> None:
             [linea(i) for i in por_estado["In review"] if i["valores"].get("Revisor") == yo])
     seccion("Revisiones: algo no funciona, fallo comentado en la issue", [linea(i) for i in por_estado["Revisiones"]])
     seccion("Tus PR abiertas", [f"  PR #{p['number']} {p['title']} ({p['reviewDecision'] or 'sin revisar'}, {p['mergeable']})"
-                                for p in prs if p["author"]["login"] == yo])
+                                + marca_descartada(p, chamber) for p in prs if p["author"]["login"] == yo])
     if aprobador:
         seccion("PR de otros por revisar", [f"  PR #{p['number']} de {p['author']['login']}: {p['title']}"
+                                            + marca_descartada(p, chamber)
                                             for p in prs if p["author"]["login"] != yo and not p["isDraft"]])
     todas_abiertas = [i for i in proyecto["items"].values() if i["state"] == "OPEN"]
     seccion("Decisiones pendientes (etiqueta decision)" if aprobador else "Esperan una decisión de SkiTemplar o Mokius",
@@ -168,6 +179,11 @@ def cmd_pendiente(_args: argparse.Namespace) -> None:
         seccion("Nada en Ready: backlog por concretar", [linea(i) for i in por_estado["Backlog"][:8]])
 
 
+def marca_descartada(pr: dict, chamber: set[int]) -> str:
+    """Sufijo de una PR que solo enlaza issues descartadas: no se revisa, se cierra o se le quitan los «Closes»."""
+    return " · solo issues descartadas (`chamber`): ciérrala" if solo_descartadas(pr, chamber) else ""
+
+
 def seccion(titulo: str, lineas: list[str]) -> None:
     print(f"{titulo}:")
     print("\n".join(lineas) if lineas else "  (nada)")
@@ -179,6 +195,7 @@ def cmd_coger(args: argparse.Namespace) -> None:
     issue = proyecto["items"].get(args.numero)
     if issue is None:
         raise ErrorTablero(f"La issue #{args.numero} no está en el tablero. Ejecuta `sync --aplicar` o créala con `nueva`.")
+    rechazar_descartada(args.numero, issue, args.retomar)
     if motivo := bloqueos.motivo_para_no_coger(args.numero, issue):
         raise ErrorTablero(motivo)
     if motivo := motivo_decision(args.numero, issue, args.forzar):
@@ -191,6 +208,7 @@ def cmd_coger(args: argparse.Namespace) -> None:
         raise ErrorTablero("Tienes cambios sin guardar en ficheros versionados. Haz commit o stash antes de cambiar de rama.")
     es_bug = any(n["name"] in ("⚠️bug⚠️", "bug") for n in issue["labels"]["nodes"])
     rama = args.rama or f"{'fix' if es_bug else 'feat'}/{args.numero}-{slug(issue['title'])}"
+    retomar_descartada(args.numero, issue)  # solo llega aquí descartada con un --retomar aceptado
     gh("issue", "edit", str(args.numero), "--repo", REPO, "--add-assignee", "@me")
     poner_campo(proyecto, args.numero, "Status", "In progress")
     git("fetch", "origin", INTEGRACION)
@@ -225,6 +243,9 @@ def cmd_soltar(args: argparse.Namespace) -> None:
 def cmd_estado(args: argparse.Namespace) -> None:
     proyecto = cargar_issue(args.numero)
     issue = proyecto["items"].get(args.numero, {})
+    if args.estado != "Backlog":  # una descartada se queda aparcada en Backlog
+        rechazar_descartada(args.numero, issue, args.retomar)
+        retomar_descartada(args.numero, issue)
     estado = bloqueos.estado_al_aprobar(args.estado, issue)
     poner_campo(proyecto, args.numero, "Status", estado)
     if estado != args.estado:
@@ -242,6 +263,7 @@ def cmd_revision(args: argparse.Namespace) -> None:
     si falla en el editor, no se manda.
     """
     proyecto = cargar_issue(args.numero)
+    rechazar_descartada(args.numero, proyecto["items"].get(args.numero, {}))
     try:
         editor, aviso = flujo.preparar_revision(proyecto["items"].get(args.numero, {}).get("valores", {}))
     except flujo.EnvioRechazado as exc:
@@ -352,7 +374,7 @@ def reconciliar_issues_sueltas(proyecto: dict, cambios: list) -> None:
                              "--json", "number,title,labels"))
     for issue in abiertas:
         n = issue["number"]
-        if n in proyecto["items"] or issue["title"] in auditoria.TITULOS_EXCLUIDOS:
+        if n in proyecto["items"] or issue["title"] in auditoria.TITULOS_EXCLUIDOS or flujo.es_chamber(issue):
             continue
         if objetos.es_objeto(issue) or lotes.es_lote(issue):
             cambios.append((f"#{n} (objeto o lote) entra al tablero sin Status ({issue['title']})",
@@ -360,7 +382,7 @@ def reconciliar_issues_sueltas(proyecto: dict, cambios: list) -> None:
         else:
             cambios.append((f"#{n} entra al tablero en Backlog ({issue['title']})",
                             lambda n=n: poner_campo(proyecto, n, "Status", "Backlog")))
-    for n, issue in proyecto["items"].items():
+    for n, issue in flujo.sin_chamber(proyecto["items"]).items():
         if objetos.es_objeto(issue) or lotes.es_lote(issue):
             if issue["valores"].get("Status"):
                 cambios.append((f"#{n} es un objeto o un lote: se le quita el Status «{issue['valores']['Status']}»",
@@ -371,7 +393,7 @@ def reconciliar_issues_sueltas(proyecto: dict, cambios: list) -> None:
 
 def reconciliar_bloqueos(proyecto: dict, cambios: list) -> None:
     """Bloqueadas cuyas dependencias ya están todas cerradas: pasan a Ready y pierden `bloqueado`."""
-    for n, issue in proyecto["items"].items():
+    for n, issue in flujo.sin_chamber(proyecto["items"]).items():
         if issue["state"] == "OPEN" and bloqueos.desbloquea(issue):
             cerradas = ", ".join(f"#{b['number']}" for b in bloqueos.bloqueantes(issue))
             cambios.append((f"#{n} → Ready (ya están cerradas {cerradas})", lambda n=n: desbloquear(proyecto, n)))
@@ -380,7 +402,8 @@ def reconciliar_bloqueos(proyecto: dict, cambios: list) -> None:
 def reconciliar_lotes(proyecto: dict, cambios: list, avisos: list) -> None:
     """Lotes abiertos: miembros listos → Validada; con la PR del lote en dev y todos cerrados, se cierra el lote."""
     fusionadas, abiertas = prs_fusionadas(), prs_abiertas()
-    for n, issue in proyecto["items"].items():
+    vivas = flujo.sin_chamber(proyecto["items"])
+    for n, issue in vivas.items():
         if issue["state"] != "OPEN" or objetos.es_objeto(issue) or lotes.es_lote(issue) or not lotes.lotes_de(issue):
             continue
         if esta_fusionada(n, fusionadas, abiertas):
@@ -389,7 +412,7 @@ def reconciliar_lotes(proyecto: dict, cambios: list, avisos: list) -> None:
         if destino == "Validada" and issue["valores"].get("Status") != "Validada":
             cambios.append((f"#{n} → Validada (aprobada y probada; espera al resto de su lote)",
                             lambda n=n: poner_campo(proyecto, n, "Status", "Validada")))
-    for n, lote in proyecto["items"].items():
+    for n, lote in vivas.items():
         if lote["state"] != "OPEN" or not lotes.es_lote(lote):
             continue
         miembros = [b for b in (lote.get("blockedBy") or {}).get("nodes", [])]
@@ -446,6 +469,9 @@ def conflictos_con_base(conflictivas: list[dict]) -> dict[int, list[str]]:
 def reconciliar_pr_issue(proyecto: dict, pr: dict, n: int, cambios: list, avisos: list) -> None:
     """Issue que cierra una PR abierta: pasa a In review salvo que falle en el editor o espere una decisión."""
     issue = proyecto["items"].get(n, {})
+    if flujo.es_chamber(issue):  # no se mueve, pero la PR sigue a la vista: no puede entrar en dev sin que se vea
+        avisos.append(f"PR #{pr['number']} enlaza la issue descartada #{n}: quita su «Closes» o cierra la PR")
+        return
     if issue and objetos.es_objeto(issue):
         avisos.append(f"PR #{pr['number']} enlaza el objeto #{n}: debe enlazar una de sus sub-issues")
         return
@@ -474,8 +500,9 @@ def reconciliar_fusiones(proyecto: dict, abiertas: list[dict], cambios: list, av
         for n in issues_de_pr(pr) - ya_vistas:
             ya_vistas.add(n)
             issue = proyecto["items"].get(n)
-            if not issue or objetos.es_objeto(issue) or lotes.es_lote(issue) or issue["state"] != "OPEN":
-                continue  # los objetos y los lotes no llevan Status: solo se mueven las issues de trabajo
+            if not issue or objetos.es_objeto(issue) or lotes.es_lote(issue) or issue["state"] != "OPEN" \
+                    or flujo.es_chamber(issue):
+                continue  # los objetos y los lotes no llevan Status, y las descartadas no se mueven
             actual = issue["valores"].get("Status")
             cierra_en_done = flujo.cierra_por_fusion(actual, issue["valores"], n in con_pr_abierta)
             if not cierra_en_done and not flujo.mueve_por_fusion(actual, n in con_pr_abierta):
@@ -546,6 +573,7 @@ def aplicar_estado(proyecto: dict, numero: int, valores: dict, fusionada: bool, 
 def cmd_ia(args: argparse.Namespace) -> None:
     """Registra la revisión de una IA distinta de la que escribió el cambio."""
     proyecto = cargar_issue(args.numero)
+    rechazar_descartada(args.numero, proyecto["items"].get(args.numero, {}))
     valor = {"aprobada": "Aprobada", "cambios": "Cambios pedidos", "pendiente": "Pendiente"}[args.veredicto]
     poner_campo(proyecto, args.numero, "Revisión IA", valor)
     if args.veredicto == "cambios":
@@ -568,13 +596,19 @@ def cmd_ia(args: argparse.Namespace) -> None:
 
 
 def issue_para_editor(proyecto: dict, numero: int) -> dict:
-    """Issue del tablero; si no está (p. ej. cerrada y fuera del proyecto), la lee de GitHub y la añade."""
+    """Issue del tablero; si no está (p. ej. cerrada y fuera del proyecto), la lee de GitHub y la añade.
+
+    Una descartada (`chamber`) se rechaza antes de tocar nada: reabierta en Revisiones, ninguna rutina la vería.
+    """
     issue = proyecto["items"].get(numero)
     if issue is not None:
+        rechazar_descartada(numero, issue)
         return issue
     datos = json.loads(gh("issue", "view", str(numero), "--repo", REPO, "--json", "state,labels"))
+    issue = {"state": datos["state"], "labels": datos["labels"], "valores": {}}
+    rechazar_descartada(numero, issue)
     item_de_issue(proyecto, numero)
-    return {"state": datos["state"], "labels": datos["labels"], "valores": {}}
+    return issue
 
 
 def cmd_editor(args: argparse.Namespace) -> None:
@@ -618,7 +652,7 @@ def cmd_editor(args: argparse.Namespace) -> None:
 
 def reconciliar_estancadas(proyecto: dict, avisos: list) -> None:
     limite = datetime.now(timezone.utc) - timedelta(days=CONFIG["dias_sin_movimiento"])
-    for n, issue in proyecto["items"].items():
+    for n, issue in flujo.sin_chamber(proyecto["items"]).items():
         if issue["state"] != "OPEN" or issue["valores"].get("Status") != "In progress":
             continue
         actualizada = datetime.fromisoformat(issue["updatedAt"].replace("Z", "+00:00"))
@@ -632,7 +666,7 @@ def reconciliar_estancadas(proyecto: dict, avisos: list) -> None:
 
 
 def avisos_validacion(proyecto: dict, avisos: list) -> None:
-    abiertas = [(n, i) for n, i in proyecto["items"].items() if i["state"] == "OPEN"]
+    abiertas = [(n, i) for n, i in flujo.sin_chamber(proyecto["items"]).items() if i["state"] == "OPEN"]
     sin_ia = [f"#{n}" for n, i in abiertas
               if i["valores"].get("Status") == "In review" and i["valores"].get("Revisión IA") != "Aprobada"]
     sin_editor = [f"#{n}" for n, i in abiertas
@@ -643,12 +677,17 @@ def avisos_validacion(proyecto: dict, avisos: list) -> None:
         avisos.append(f"En QA sin probar en el editor: {', '.join(sin_editor)}")
 
 
+AYUDA_RETOMAR = ("solo aprobadores, en local y con una Decisión posterior al descarte: devuelve al ciclo una issue "
+                 "descartada (`chamber`)")
+
+
 def anadir_comandos_de_flujo(sub: argparse._SubParsersAction) -> None:
     """Comandos que mueven una issue por el ciclo: coger, estado, revisión, validaciones."""
     sub.add_parser("pendiente", help="qué hay para mí ahora").set_defaults(fn=cmd_pendiente)
     p = sub.add_parser("coger", help="asignarme una issue y crear su rama (o entrar en la de su lote con --rama)")
     p.add_argument("numero", type=int)
-    p.add_argument("--forzar", action="store_true")
+    p.add_argument("--forzar", action="store_true", help="coger aunque sea de otro o espere una decisión")
+    p.add_argument("--retomar", action="store_true", help=AYUDA_RETOMAR)
     p.add_argument("--rama", help="rama del lote en la que se hace esta tarjeta (se crea desde dev si no existe)")
     p.set_defaults(fn=cmd_coger)
     p = sub.add_parser("soltar", help="dejar una issue que tenía en curso: sin asignado y de vuelta a Ready")
@@ -658,6 +697,7 @@ def anadir_comandos_de_flujo(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("estado", help="mover una issue de columna")
     p.add_argument("numero", type=int)
     p.add_argument("estado", choices=ESTADOS)
+    p.add_argument("--retomar", action="store_true", help=AYUDA_RETOMAR)
     p.set_defaults(fn=cmd_estado)
     p = sub.add_parser("revision", help="mandar una issue terminada a revisión cruzada")
     p.add_argument("numero", type=int)
@@ -697,39 +737,6 @@ def cmd_volcado(args: argparse.Namespace) -> None:
     print(f"Volcado publicado en #{args.publicar} ({len(texto)} caracteres)")
 
 
-def cmd_silenciar(_args: argparse.Namespace) -> None:
-    """Da de baja al usuario del token de las notificaciones de las issues abiertas (no de las PR).
-
-    Sin el scope `notifications` no se puede: avisa y termina bien, para no dar por fallido un puente que sí
-    ha reconciliado y volcado el tablero.
-    """
-    try:
-        silenciar_issues_abiertas()
-    except ErrorTablero as exc:
-        if not volcado.falta_scope_de_notificaciones(str(exc)):
-            raise
-        print("::warning::No se silencian las issues: al token le falta el scope `notifications` "
-              "(añádelo al token del secreto TABLERO_TOKEN).")
-
-
-def silenciar_issues_abiertas() -> None:
-    owner, repo = REPO.split("/", 1)
-    nodos, cursor = [], None
-    while True:
-        args = ["api", "graphql", "-f", f"query={volcado.CONSULTA_SUSCRIPCIONES}", "-f", f"owner={owner}", "-f", f"repo={repo}"]
-        if cursor:
-            args += ["-f", f"cursor={cursor}"]
-        datos = json.loads(gh(*args))["data"]["repository"]["issues"]
-        nodos += datos["nodes"]
-        if not datos["pageInfo"]["hasNextPage"]:
-            break
-        cursor = datos["pageInfo"]["endCursor"]
-    pendientes = volcado.a_silenciar(nodos)
-    for nodo in pendientes:
-        gh("api", "graphql", "-f", f"query={volcado.MUTACION_SILENCIAR}", "-f", f"id={nodo['id']}")
-    print(f"Silenciadas {len(pendientes)} issues de {len(nodos)} abiertas para {usuario_actual()}")
-
-
 def anadir_comandos_de_alta(sub: argparse._SubParsersAction) -> None:
     """Comandos que crean u organizan issues: nueva, objeto, colgar y sync."""
     p = sub.add_parser("nueva", help="crear issue y colocarla en el tablero")
@@ -759,8 +766,6 @@ def anadir_comandos_de_alta(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("volcado", help="tablero completo en Markdown, para quien no puede leer el Project")
     p.add_argument("--publicar", type=int, metavar="ISSUE", help="sustituir el cuerpo de esa issue por el volcado")
     p.set_defaults(fn=cmd_volcado)
-    sub.add_parser("silenciar", help="darme de baja de las notificaciones de las issues abiertas (no de las PR)"
-                   ).set_defaults(fn=cmd_silenciar)
     p = sub.add_parser("puente", help="ejecutar un comando recibido por el workflow (lista cerrada)")
     p.add_argument("--comando", required=True, help='por ejemplo: estado 42 Ready')
     p.set_defaults(fn=None)
