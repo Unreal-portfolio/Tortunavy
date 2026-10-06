@@ -41,6 +41,7 @@ Lo que no figura en estas fuentes no entra en el juego.
 | 17 | La estamina desaparece de la interfaz. El estado del jugador se leerá de maneras más originales; Claude tiene permiso para idearlas |
 | 18 | Las trincheras y los quads del Excel existen, pero no encajan en C01 por cómo se generó. Por ahora se queda C01 sin ellos |
 | 19 | La programación de los objetos es de Rubi (#846, #847). Claude hace el recorte |
+| 20 | La sombrilla se queda y protege de las gaviotas. Los huevos de salida se quedan |
 
 ## 2. Estadísticas de la tortuga (Excel, hoja Stats)
 
@@ -69,7 +70,7 @@ La columna «Base en el código» indica la clase que se adapta. El daño y el v
 | Cangrejo 3 | Enemigo | Pinza que sale del suelo | 40 | `ATN_BeachBurrowCrab` |
 | Arenas movedizas | Enemigo | Hunde al jugador | Mortal | `ATN_Quicksand` (hoy no mata) |
 | Quad | Enemigo | Rueda gigante horizontal | Instantánea | `ATN_BeachQuadLane` (no encaja en C01) |
-| Tormenta | Enemigo | Ralentiza un 40 % y quita visión | Desgaste 2/s | `ATN_PathStorm` |
+| Tormenta | Enemigo | Ralentiza un 40 % y quita visión | Desgaste 2/s | Se rehace parecida a la tormenta de bañistas de la Carrera (`ATN_BeachStorm` y su patada, que se conservan como base) |
 | Algas | Neutral | Frenan un 25 %; se cortan de un golpe | — | `ATN_BeachSeaweed` |
 | Basura | Neutral | Bloqueo ligero; se rompe de un golpe | — | `ATN_BeachTrashPile` |
 | Plataformas rompibles | Neutral | Ceden en 1,5 s | Caída | `ATN_BreakablePlatform` |
