@@ -246,8 +246,9 @@ bool FTNBeachSummitPrizeWeightsTest::RunTest(const FString& Parameters)
 	constexpr int32 Racers = 4;
 	const float Norms[] = { 0.f, 0.25f, 0.5f, 0.75f, 1.f };
 
-	// Los que hacen remontar: lo mejor de la carrera.
-	const TArray<ETNRaceItem> Comeback = { ETNRaceItem::TripleCoconut3, ETNRaceItem::GoldenCoconut, ETNRaceItem::PelicanTaxi, ETNRaceItem::Sunscreen };
+	// Los que hacen remontar: lo mejor de la carrera (el cohete de feria, de #786, es para las últimas como el pelícano).
+	const TArray<ETNRaceItem> Comeback = { ETNRaceItem::TripleCoconut3, ETNRaceItem::GoldenCoconut, ETNRaceItem::PelicanTaxi, ETNRaceItem::Sunscreen,
+		ETNRaceItem::CoheteFeria };
 
 	auto ComebackShare = [&](float Norm, ETNRaceLootSource Source)
 	{
