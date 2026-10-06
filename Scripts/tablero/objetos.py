@@ -28,9 +28,10 @@ CONSULTA_ISSUE = """
 query($owner: String!, $repo: String!, $num: Int!) {
   repository(owner: $owner, name: $repo) { issue(number: $num) {
     id number title state
-    blockedBy(first: 50) { nodes { number state } }
+    blockedBy(first: 50) { nodes { number state labels(first: 10) { nodes { name } } } }
+    blocking(first: 20) { nodes { number state labels(first: 10) { nodes { name } } } }
     parent { number title }
-    subIssues(first: 100) { nodes { number title state } }
+    subIssues(first: 100) { nodes { number title state labels(first: 10) { nodes { name } } } }
   } }
 }
 """
@@ -114,7 +115,7 @@ def objetos_abiertos(gh: Gh, repo: str) -> list[dict]:
 
 
 def leer_issue(gh: Gh, repo: str, numero: int) -> dict:
-    """Id de nodo, padre y sub-issues de una issue."""
+    """Id de nodo, dependencias (con sus etiquetas), padre y sub-issues de una issue."""
     owner, nombre = repo.split("/", 1)
     salida = gh("api", "graphql", "-f", f"query={CONSULTA_ISSUE}", "-f", f"owner={owner}",
                 "-f", f"repo={nombre}", "-F", f"num={numero}")
