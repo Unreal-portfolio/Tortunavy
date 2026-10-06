@@ -1,9 +1,11 @@
 // Rondas de Todos contra Todos (ATN_TctGameMode): preparación, salida, vigilancia de las caídas, cierre, recuento y campeona.
 
 #include "Game/TN_TctGameMode.h"
+#include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_Log.h"
+#include "Player/TortugaCharacter.h"
 #include "Lobby/TN_LobbyMission.h"
 #include "World/TN_TctArena.h"
 
@@ -214,11 +216,21 @@ void ATN_TctGameMode::WatchFighters()
 		const ACharacter* Character = Cast<ACharacter>(Pawn);
 		Body.HalfHeight = Character && Character->GetCapsuleComponent()
 			? Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : TNTctRoundDetail::DefaultHalfHeight;
-		if (TNTctRules::ShouldEliminate(Body, ArenaBounds, WaterZ))
+		ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOn(Turtle);
+		const ETNTctFall Cause = TNTctRules::FallCause(Body, ArenaBounds, WaterZ);
+		// El flotador salva una vez del agua (#777); el resto de caídas eliminan como siempre.
+		const bool bEliminated = Effects ? Effects->ServerResolveFall(Cause) : Cause != ETNTctFall::None;
+		if (bEliminated)
 		{
 			UE_LOG(LogTortunabo, Log, TEXT("[TcT] '%s' cae (pies a %.0f, agua a %.0f): eliminada."),
 				*PS->GetPlayerName(), Body.Location.Z - Body.HalfHeight, WaterZ);
 			MarkPlayerDead(PC);
+			continue;
+		}
+		if (Effects && Effects->ServerTakeRescue())
+		{
+			RescueFromWater(Turtle, WaterZ);
 		}
 	}
 }

@@ -116,6 +116,102 @@ namespace TNTctItemArtDetail
 			Body(Painter, Bell, 0x4A1A5A, 0xF0B0FF, 0xB060D0, 18.f, 46.f);
 			break;
 		}
+		case ETNTctItem::Cocobomba:
+		{
+			const auto Nut = [](float px, float py) { return Ellipse(px, py, 60.f, 74.f, 38.f, 34.f); };
+			const auto Fuse = [](float px, float py) { return Arc(px, py, 92.f, 40.f, 22.f, Rad(150.f), Rad(250.f), 4.f); };
+			const auto All = [&](float px, float py) { return FMath::Min(Nut(px, py), Fuse(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Nut, 0x2A1608, 0x9A6334, 0x5A3618, 40.f, 108.f);
+			Body(Painter, Fuse, 0x3A3020, 0xEDE0B8, 0xB8A070, 18.f, 50.f);
+			for (int32 Eye = 0; Eye < 3; ++Eye)
+			{
+				const float Ex = 50.f + Eye * 10.f;
+				const float Ey = Eye == 1 ? 52.f : 58.f;
+				Painter.Fill([Ex, Ey](float px, float py) { return Circle(px, py, Ex, Ey, 3.5f); }, Hex(0x1A0E06));
+			}
+			Painter.Fill([](float px, float py) { return Circle(px, py, 74.f, 20.f, 9.f); }, Hex(0xFFE36B));
+			Painter.Fill([](float px, float py) { return Circle(px, py, 74.f, 20.f, 4.f); }, Hex(0xFF7A2A));
+			break;
+		}
+		case ETNTctItem::Alga:
+		{
+			const auto Puddle = [](float px, float py) { return Ellipse(px, py, 64.f, 82.f, 50.f, 26.f); };
+			const auto Strands = [](float px, float py)
+			{
+				const float A = Arc(px, py, 44.f, 70.f, 24.f, Rad(190.f), Rad(300.f), 5.f);
+				const float B = Arc(px, py, 70.f, 64.f, 26.f, Rad(200.f), Rad(320.f), 5.f);
+				const float C = Arc(px, py, 92.f, 72.f, 20.f, Rad(210.f), Rad(330.f), 5.f);
+				return FMath::Min(A, FMath::Min(B, C));
+			};
+			const auto All = [&](float px, float py) { return FMath::Min(Puddle(px, py), Strands(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Puddle, 0x10301A, 0x4E9A3A, 0x2E5A2B, 58.f, 108.f);
+			Body(Painter, Strands, 0x10301A, 0x8AD86A, 0x3B7A33, 30.f, 80.f);
+			break;
+		}
+		case ETNTctItem::GaviotaLadrona:
+		{
+			const auto Gull = [](float px, float py) { return Ellipse(px, py, 58.f, 66.f, 34.f, 20.f); };
+			const auto Head = [](float px, float py) { return Circle(px, py, 92.f, 52.f, 15.f); };
+			const TArray<FVector2f> WingPoly = { { 34.f, 60.f }, { 64.f, 20.f }, { 78.f, 58.f } };
+			const auto Wing = [&WingPoly](float px, float py) { return Polygon(px, py, WingPoly); };
+			const TArray<FVector2f> BeakPoly = { { 102.f, 48.f }, { 122.f, 56.f }, { 102.f, 60.f } };
+			const auto Beak = [&BeakPoly](float px, float py) { return Polygon(px, py, BeakPoly); };
+			const auto All = [&](float px, float py)
+			{
+				return FMath::Min(FMath::Min(Gull(px, py), Head(px, py)), FMath::Min(Wing(px, py), Beak(px, py)));
+			};
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Gull, 0x30343A, 0xFFFFFF, 0xD8DCE2, 46.f, 86.f);
+			Body(Painter, Head, 0x30343A, 0xFFFFFF, 0xE0E4EA, 37.f, 67.f);
+			Body(Painter, Wing, 0x30343A, 0xB8C0CC, 0x7A8492, 20.f, 60.f);
+			Body(Painter, Beak, 0x5A3A08, 0xFFD23F, 0xE8A020, 48.f, 60.f);
+			Painter.Fill([](float px, float py) { return Circle(px, py, 95.f, 48.f, 3.f); }, Hex(0x101418));
+			// Lo que se lleva: un objeto (estrella dorada) colgando del pico.
+			Painter.Fill([](float px, float py) { return Circle(px, py, 108.f, 84.f, 12.f); }, Hex(0x5A3A08));
+			Painter.Fill([](float px, float py) { return Circle(px, py, 108.f, 84.f, 9.f); }, Hex(0xFFCB3D));
+			break;
+		}
+		case ETNTctItem::Flotador:
+		{
+			const auto Ring = [](float px, float py) { return FMath::Abs(Circle(px, py, 64.f, 64.f, 34.f)) - 13.f; };
+			Painter.Sticker(Ring, 6.f);
+			Body(Painter, Ring, 0x5A1010, 0xFF6A52, 0xD9432F, 17.f, 111.f);
+			// Cuatro gajos blancos.
+			for (int32 Band = 0; Band < 4; ++Band)
+			{
+				const float A0 = Rad(20.f + Band * 90.f);
+				const float A1 = Rad(60.f + Band * 90.f);
+				Painter.Fill([A0, A1](float px, float py) { return Arc(px, py, 64.f, 64.f, 34.f, A0, A1, 11.f); }, Hex(0xF5F1E8));
+			}
+			break;
+		}
+		case ETNTctItem::MedusaTrampolin:
+		{
+			const auto Bell = [](float px, float py) { return FMath::Max(Ellipse(px, py, 64.f, 84.f, 46.f, 40.f), py - 84.f); };
+			const auto Arrow = [](float px, float py)
+			{
+				return FMath::Min(Segment(px, py, 64.f, 30.f, 64.f, 8.f, 5.f),
+					FMath::Min(Segment(px, py, 64.f, 8.f, 52.f, 20.f, 5.f), Segment(px, py, 64.f, 8.f, 76.f, 20.f, 5.f)));
+			};
+			const auto Tentacles = [](float px, float py)
+			{
+				float Out = 1.e6f;
+				for (int32 Leg = 0; Leg < 5; ++Leg)
+				{
+					const float X = 34.f + Leg * 15.f;
+					Out = FMath::Min(Out, Segment(px, py, X, 84.f, X + (Leg % 2 == 0 ? 4.f : -4.f), 112.f, 3.5f));
+				}
+				return Out;
+			};
+			const auto All = [&](float px, float py) { return FMath::Min(FMath::Min(Bell(px, py), Arrow(px, py)), Tentacles(px, py)); };
+			Painter.Sticker(All, 6.f);
+			Body(Painter, Tentacles, 0x4A1A5A, 0xF0B0FF, 0xB060D0, 84.f, 114.f);
+			Body(Painter, Bell, 0x5A1048, 0xFF9AD8, 0xD04FA4, 44.f, 84.f);
+			Body(Painter, Arrow, 0x0A1C38, 0xFFE36B, 0xFFB020, 4.f, 34.f);
+			break;
+		}
 		default:
 			return false;
 		}

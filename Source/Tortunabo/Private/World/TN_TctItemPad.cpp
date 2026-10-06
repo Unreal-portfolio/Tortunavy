@@ -1,6 +1,8 @@
 #include "World/TN_TctItemPad.h"
 #include "Core/TN_Log.h"
 #include "Game/TN_TctGameState.h"
+#include "Game/TN_TctItemComponent.h"
+#include "Player/TortugaCharacter.h"
 #include "Game/TN_TctItems.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -56,9 +58,49 @@ void ATN_TctItemPickup::RefreshPrompt()
 		: FText::Format(NSLOCTEXT("TNTct", "PickupItemPrompt", "Coger {0}"), TNTctItems::DisplayName(Item));
 }
 
+bool ATN_TctItemPickup::CanInteract(APawn* Interactor) const
+{
+	if (GetKind() != ETNTctItem::Flotador)
+	{
+		return Super::CanInteract(Interactor);
+	}
+	// El flotador no ocupa la mano: basta con no llevar ya uno.
+	const UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOn(Interactor);
+	return ATN_InteractableBase::CanInteract(Interactor) && !bTaken && Cast<ATortugaCharacter>(Interactor)
+		&& !(Effects && Effects->HasFloat());
+}
+
+void ATN_TctItemPickup::TakeFloat(APawn* Interactor)
+{
+	UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Cast<ATortugaCharacter>(Interactor));
+	if (!Effects || !Effects->ServerGrantFloat())
+	{
+		return;
+	}
+	SetNetDormancy(DORM_Awake);
+	bTaken = true;
+	SetInteractionEnabled(false);
+	SetActorHiddenInGame(true);
+	ForceNetUpdate();
+	TNTctItems::PlayCue(Cast<ATortugaCharacter>(Interactor), ETNRaceSound::BoxOpen, 1.f);
+	// Como el resto de pickups: la destrucción replicada en el siguiente fotograma.
+	GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]() { Destroy(); }));
+	UE_LOG(LogTortunabo, Log, TEXT("[TcT] %s se cuelga el flotador del caparazón."), *GetNameSafe(Interactor));
+}
+
 void ATN_TctItemPickup::Interact(APawn* Interactor)
 {
-	Super::Interact(Interactor);
+	if (GetKind() == ETNTctItem::Flotador)
+	{
+		if (HasAuthority() && CanInteract(Interactor))
+		{
+			TakeFloat(Interactor);
+		}
+	}
+	else
+	{
+		Super::Interact(Interactor);
+	}
 	if (bTaken)
 	{
 		if (ATN_TctItemPad* OwningPad = Pad.Get())

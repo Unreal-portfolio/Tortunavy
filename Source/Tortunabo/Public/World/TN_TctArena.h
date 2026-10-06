@@ -14,6 +14,8 @@ class UStaticMeshComponent;
  * - Replicada: el servidor elige la variante (ServerSetArenaVariant) y cada máquina construye la misma malla desde el disco.
  * - El mar es un plano con el material del mar del mapa procedural; en cada máquina se pone a la altura que da el GameState
  *   (ATN_TctGameState::GetWaterZ), sin replicar la altura.
+ * - El terreno lleva la arena de la playa (SandMaterialPath: M_GridTerrainWet, la del Rally y del Coop, con grano, rizos y
+ *   arena mojada) en vez del material genérico del cargador (#779). Solo aquí: el resto de cargadores no cambia.
  * - Servidor: Survey mide el suelo pisable (alturas para los escalones del agua, caja de la arena y sitios de salida lejos de
  *   los bordes).
  *
@@ -42,6 +44,9 @@ public:
 
 	/** true si existe la carpeta de esa variante con su manifest.json. */
 	static bool VariantExists(FName VariantName);
+
+	/** Material de arena de playa que lleva el terreno de todas las arenas de TcT. */
+	static const TCHAR* SandMaterialPath();
 
 	/**
 	 * Servidor: mide el suelo pisable de la arena con trazas cada SampleSpacing (uu). false si no hay suelo (variante que no se
@@ -84,6 +89,8 @@ protected:
 	float WaterPlaneMargin = 40000.f;
 
 private:
+	/** Pone la arena de playa como material del terreno (y en los trozos ya construidos). */
+	void ApplySandMaterial();
 	/** Lee water_uu del manifest y ajusta el plano del mar a la caja del terreno. */
 	void FitWaterPlane();
 	/** Traza vertical en (X, Y) contra este actor: suelo pisable con su altura. */

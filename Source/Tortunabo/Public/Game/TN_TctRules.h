@@ -8,9 +8,24 @@
  *
  * Una partida es una serie de rondas de supervivencia de 2 a 8 tortugas: gana la ronda la última en pie (caer al agua, a una
  * zona de muerte o fuera del mapa elimina) y la partida, la primera que llega a WinsToWin rondas ganadas. El agua sube por
- * escalones durante la ronda (FTNTctFloodPlan) para que haya un encuentro cada 15-20 s y, al final, todo el mapa se inunda
- * despacio (muerte súbita: aguanta más quien está más alto).
+ * escalones durante la ronda (FTNTctFloodPlan, un escalón cada 24 s) y, al final, todo el mapa se inunda despacio (muerte
+ * súbita: aguanta más quien está más alto).
  */
+
+/**
+ * Ritmo del agua por defecto (#778, director 05-10: «que el agua suba más despacio»). Con una arena de MaxSteps pisos, la
+ * muerte súbita empieza a los StartDelay + MaxSteps × StepSeconds = 25 + 4 × 24 = 121 s y cubre la cima a los 121 + 40 =
+ * 161 s (antes, 15 + 4 × 17 = 83 s y 108 s). El tiempo máximo de la ronda deja que el agua llegue arriba con margen.
+ */
+namespace TNTctFloodDefaults
+{
+	inline constexpr float StartDelay = 25.f;
+	inline constexpr float StepSeconds = 24.f;
+	inline constexpr float RiseSeconds = 7.f;
+	inline constexpr float SuddenDeathRiseSeconds = 40.f;
+	inline constexpr int32 MaxSteps = 4;
+	inline constexpr float RoundTimeLimitSeconds = 180.f;
+}
 
 /** Lo que el GameMode sabe de cada tortuga para decidir. */
 struct FTNTctFighter
@@ -65,10 +80,28 @@ struct FTNTctFloodPlan
 	float BaseZ = 0.f;
 	TArray<float> Levels;
 	float SuddenDeathZ = 0.f;
-	float StartDelay = 15.f;
-	float StepSeconds = 17.f;
-	float RiseSeconds = 4.f;
-	float SuddenDeathRiseSeconds = 25.f;
+	float StartDelay = TNTctFloodDefaults::StartDelay;
+	float StepSeconds = TNTctFloodDefaults::StepSeconds;
+	float RiseSeconds = TNTctFloodDefaults::RiseSeconds;
+	float SuddenDeathRiseSeconds = TNTctFloodDefaults::SuddenDeathRiseSeconds;
+};
+
+/** Por qué cae una tortuga en la ronda (TNTctRules::FallCause). */
+enum class ETNTctFall : uint8
+{
+	None,
+	/** Los pies bajo el agua (lo único de lo que salva el flotador). */
+	Water,
+	/** Por debajo de la arena o lejos de ella en horizontal. */
+	OutOfArena,
+};
+
+/** El flotador de una tortuga (#777): si lo lleva y hasta cuándo flota o está a salvo del agua (hora del servidor, s). */
+struct FTNTctFloatState
+{
+	bool bHasFloat = false;
+	double FloatEnd = -1.0;
+	double SafeUntil = -1.0;
 };
 
 /** Un cuerpo para mirar si sigue dentro de la arena (centro de la cápsula y su media altura). */
@@ -263,6 +296,12 @@ namespace TNTctRules
 		return Plan.StartDelay + static_cast<float>(Step) * Plan.StepSeconds;
 	}
 
+	/** Segundo (desde la salida) en que la muerte súbita termina de cubrir la arena. */
+	inline float FloodTopSeconds(const FTNTctFloodPlan& Plan)
+	{
+		return StepStartSeconds(Plan, Plan.Levels.Num()) + Plan.SuddenDeathRiseSeconds;
+	}
+
 	/** Altura del agua a los Elapsed segundos de la salida (BaseZ antes de empezar a subir). */
 	inline float WaterZAt(const FTNTctFloodPlan& Plan, float Elapsed)
 	{
@@ -285,21 +324,56 @@ namespace TNTctRules
 		return Z;
 	}
 
-	/** true si el cuerpo ya está fuera: los pies en el agua, por debajo de la arena o lejos de ella en horizontal. */
-	inline bool ShouldEliminate(const FTNTctBody& Body, const FTNTctArenaBounds& Bounds, float WaterZ)
+	/** Por qué cae el cuerpo: los pies en el agua, o por debajo de la arena o lejos de ella en horizontal. None si sigue. */
+	inline ETNTctFall FallCause(const FTNTctBody& Body, const FTNTctArenaBounds& Bounds, float WaterZ)
 	{
 		const float FeetZ = Body.Location.Z - Body.HalfHeight;
 		if (FeetZ < WaterZ - Bounds.WadeDepth)
 		{
-			return true;
+			return ETNTctFall::Water;
 		}
 		if (Body.Location.Z < Bounds.Min.Z - Bounds.FallDepth)
 		{
-			return true;
+			return ETNTctFall::OutOfArena;
 		}
 		const double DX = FMath::Max3(Bounds.Min.X - Body.Location.X, 0.0, Body.Location.X - Bounds.Max.X);
 		const double DY = FMath::Max3(Bounds.Min.Y - Body.Location.Y, 0.0, Body.Location.Y - Bounds.Max.Y);
-		return FMath::Sqrt(DX * DX + DY * DY) > static_cast<double>(Bounds.OutMargin);
+		return FMath::Sqrt(DX * DX + DY * DY) > static_cast<double>(Bounds.OutMargin) ? ETNTctFall::OutOfArena : ETNTctFall::None;
+	}
+
+	/** true si el cuerpo ya está fuera: los pies en el agua, por debajo de la arena o lejos de ella en horizontal. */
+	inline bool ShouldEliminate(const FTNTctBody& Body, const FTNTctArenaBounds& Bounds, float WaterZ)
+	{
+		return FallCause(Body, Bounds, WaterZ) != ETNTctFall::None;
+	}
+
+	/**
+	 * La regla del flotador (#777) ante una caída de Cause a la hora Now: true si la tortuga queda eliminada. El agua no
+	 * elimina a quien lleva el flotador: se gasta, flota FloatSeconds (hasta State.FloatEnd) y aún tiene GraceSeconds de
+	 * respiro tras el rescate (hasta State.SafeUntil). Caer fuera de la arena elimina siempre.
+	 */
+	inline bool ResolveFall(ETNTctFall Cause, FTNTctFloatState& State, double Now, float FloatSeconds, float GraceSeconds)
+	{
+		if (Cause == ETNTctFall::None)
+		{
+			return false;
+		}
+		if (Cause != ETNTctFall::Water)
+		{
+			return true;
+		}
+		if (Now < State.SafeUntil)
+		{
+			return false;
+		}
+		if (!State.bHasFloat)
+		{
+			return true;
+		}
+		State.bHasFloat = false;
+		State.FloatEnd = Now + FloatSeconds;
+		State.SafeUntil = State.FloatEnd + GraceSeconds;
+		return false;
 	}
 
 	/**

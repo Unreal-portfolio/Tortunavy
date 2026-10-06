@@ -5,6 +5,8 @@
 #include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctItems.h"
 #include "Core/TN_Log.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_RaceItemComponent.h"
 #include "World/TN_TctArena.h"
@@ -46,7 +48,7 @@ namespace TNTctGameModeItemsDetail
 	}
 
 	FAutoConsoleCommandWithWorldAndArgs CmdItem(TEXT("TN.Tct.Item"),
-		TEXT("Todos contra Todos: da un objeto a la tortuga N. TN.Tct.Item <objeto: KnockoutPistol, AirBlunderbuss, Grapple, Shovel, BeachBall, Anchor, JellyDart, InkPistol, Ball, ConchTrap, BigHead, SandMine, Frisbee o su número> [jugadora = 0]"),
+		TEXT("Todos contra Todos: da un objeto a la tortuga N. TN.Tct.Item <objeto: KnockoutPistol, AirBlunderbuss, Grapple, Shovel, BeachBall, Anchor, JellyDart, InkPistol, Ball, ConchTrap, BigHead, SandMine, Frisbee, Cocobomba, Alga, GaviotaLadrona, Flotador, MedusaTrampolin o su número> [jugadora = 0]"),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 		{
 			const ETNTctItem Kind = Args.Num() > 0 ? ParseKind(Args[0]) : ETNTctItem::None;
@@ -155,6 +157,20 @@ void ATN_TctGameMode::ResetItemsForRound(APawn* Pawn) const
 		Effects->ClearEffects();
 	}
 	UTN_RaceItemComponent::FindOrAddOn(Turtle);
+}
+
+void ATN_TctGameMode::RescueFromWater(ATortugaCharacter* Turtle, float WaterZ) const
+{
+	UCharacterMovementComponent* Movement = Turtle ? Turtle->GetCharacterMovement() : nullptr;
+	FVector Dry;
+	if (!Movement || !Arena || !TNTctItemRules::NearestDryPoint(Arena->GetSpawnCandidates(), Turtle->GetActorLocation(), WaterZ, Dry))
+	{
+		return;
+	}
+	const FVector Target = Dry + FVector(0.0, 0.0, Turtle->GetSimpleCollisionHalfHeight() + 20.0);
+	UTN_TurtleMovementComponent::LaunchFromServer(Turtle, TNTctItemRules::RescueLaunch(Turtle->GetActorLocation(), Target, Movement->GetGravityZ()));
+	TNTctItems::PlayCue(Turtle, ETNRaceSound::Boing, 1.1f);
+	UE_LOG(LogTortunabo, Log, TEXT("[TcT] El flotador lanza a %s a tierra (%.0f, %.0f, %.0f)."), *GetNameSafe(Turtle), Dry.X, Dry.Y, Dry.Z);
 }
 
 void ATN_TctGameMode::DebugGiveItem(int32 PlayerIndex, ETNTctItem Kind)

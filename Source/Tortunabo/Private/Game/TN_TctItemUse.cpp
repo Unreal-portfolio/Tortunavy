@@ -11,7 +11,10 @@
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_RaceItems.h"
 #include "World/TN_InkProjectile.h"
+#include "World/TN_TctAlgaPuddle.h"
 #include "World/TN_TctProjectile.h"
+#include "World/TN_TctJellyPad.h"
+#include "World/TN_TctThiefGull.h"
 
 namespace TNTctItemUseDetail
 {
@@ -215,12 +218,35 @@ namespace TNTctItemUseDetail
 		float Pitch = TNTctItemTuning::BallPitchDeg;
 		if (Kind == ETNTctItem::Anchor) { Pitch = TNTctItemTuning::AnchorPitchDeg; }
 		if (Kind == ETNTctItem::JellyDart) { Pitch = TNTctItemTuning::DartPitchDeg; }
+		if (Kind == ETNTctItem::Cocobomba) { Pitch = TNTctItemTuning::CocoPitchDeg; }
+		if (Kind == ETNTctItem::Alga) { Pitch = TNTctItemTuning::AlgaPitchDeg; }
 		const bool bLaunched = ATN_TctProjectile::ServerLaunch(Turtle, static_cast<uint8>(Kind), TNRaceItems::ThrowDirection(Turtle, Pitch));
 		if (bLaunched)
 		{
 			TNTctItems::PlayCue(Turtle, ETNRaceSound::Throw, Kind == ETNTctItem::Anchor ? 0.6f : 1.1f);
+			if (Kind == ETNTctItem::Cocobomba)
+			{
+				// La mecha encendida.
+				TNTctItems::PlayCue(Turtle, ETNRaceSound::Beep, 1.2f);
+			}
 		}
 		return bLaunched;
+	}
+
+	bool UseAlga(ATortugaCharacter* Turtle)
+	{
+		// Mirando al suelo, el charco se suelta a los pies; si no, se lanza corto.
+		const float AimPitch = FRotator::NormalizeAxis(Turtle->GetTurtleAimRotation().Pitch);
+		if (AimPitch >= TNTctItemTuning::AlgaDropPitchDeg)
+		{
+			return UseProjectile(Turtle, ETNTctItem::Alga);
+		}
+		if (!ATN_TctAlgaPuddle::ServerSpawn(Turtle->GetWorld(), Turtle->GetActorLocation(), Turtle))
+		{
+			return false;
+		}
+		TNTctItems::PlayCue(Turtle, ETNRaceSound::Splat, 0.8f);
+		return true;
 	}
 }
 
@@ -253,7 +279,18 @@ void TNTctItems::ServerUse(ATortugaCharacter* Turtle, const FTN_InventoryItem& I
 	case ETNTctItem::InkPistol:      bUsed = UseInkPistol(Turtle); break;
 	case ETNTctItem::BeachBall:
 	case ETNTctItem::Anchor:
-	case ETNTctItem::JellyDart:      bUsed = UseProjectile(Turtle, Kind); break;
+	case ETNTctItem::JellyDart:
+	case ETNTctItem::Cocobomba:      bUsed = UseProjectile(Turtle, Kind); break;
+	case ETNTctItem::Alga:           bUsed = UseAlga(Turtle); break;
+	case ETNTctItem::GaviotaLadrona: bUsed = ATN_TctThiefGull::ServerLaunch(Turtle); break;
+	case ETNTctItem::MedusaTrampolin: bUsed = ATN_TctJellyPad::ServerPlant(Turtle) != nullptr; break;
+	case ETNTctItem::Flotador:
+	{
+		// Si llega a la mano (no debería: se cuelga del caparazón al cogerlo), usarlo es colgárselo.
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle);
+		bUsed = Effects && Effects->ServerGrantFloat();
+		break;
+	}
 	default: break;
 	}
 	if (!bUsed)

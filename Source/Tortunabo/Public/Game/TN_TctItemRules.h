@@ -19,6 +19,20 @@
  * Reutilizados tal cual: la bola (DT_Items, Throwable), la concha trampa (Conch), la cabezota (BigHead), la mina de arena y el
  * disco volador (objetos de la carrera).
  *
+ * De ataque y control (#714):
+ *  - Cocobomba: coco con mecha que se lanza en parábola; a los 2 s explota (3,5 m) y lanza a las que pilla, más cuanto más
+ *    cerca. El caparazón protege. 2 cargas.
+ *  - Alga: charco de alga que se suelta a los pies (mirando abajo) o se lanza corto; 8 s de charco de 3 m donde se resbala
+ *    (poco agarre: la tortuga sigue derivando hacia donde iba al girar) y el salto se queda corto. 2 cargas.
+ *  - GaviotaLadrona: una gaviota va a por la tortuga más cercana a menos de 20 m, le quita el objeto de la mano y te lo trae;
+ *    si no lleva nada, la marea 2 s. 1 carga.
+ *
+ * De movilidad (#777):
+ *  - Flotador: se lleva en el caparazón (no ocupa la mano) y salva una vez del agua: flotas FloatSeconds y después te lanza
+ *    al punto seco más cercano; se gasta. 1 carga.
+ *  - MedusaTrampolin: se planta delante y dura JellyLifeSeconds; cualquier tortuga que la pisa (también quien la puso) bota
+ *    unos 6 m hacia arriba. 1 carga.
+ *
  * Lógica pura, sin mundo ni red (ítems, cargas, reaparición en los puntos de objetos, reparto de los puntos y cuánto empuja
  * cada golpe): la recorren las pruebas Tortunabo.Tct.Items.*.
  */
@@ -38,6 +52,11 @@ enum class ETNTctItem : uint8
 	BigHead,
 	SandMine,
 	Frisbee,
+	Cocobomba,
+	Alga,
+	GaviotaLadrona,
+	Flotador,
+	MedusaTrampolin,
 	Count
 };
 
@@ -123,8 +142,66 @@ namespace TNTctItemTuning
 
 	inline constexpr float InkPistolSpeed = 1500.f;
 
-	/** Puntos de objetos: reaparición tras cogerlo, primera aparición de la ronda y escalonado entre puntos. */
-	inline constexpr float PadRespawnSeconds = 12.f;
+	inline constexpr float CocoSpeed = 1150.f;
+	inline constexpr float CocoPitchDeg = 30.f;
+	/** Mecha: segundos desde que se lanza hasta que explota. */
+	inline constexpr float CocoFuseSeconds = 2.f;
+	inline constexpr float CocoBlastRadius = 350.f;
+	inline constexpr float CocoPushNear = 1600.f;
+	inline constexpr float CocoPushFar = 600.f;
+	inline constexpr float CocoUpNear = 720.f;
+	inline constexpr float CocoUpFar = 360.f;
+
+	/** Charco de alga: lanzamiento corto, duración, radio (3 m de ancho) y lo que queda del agarre dentro. */
+	inline constexpr float AlgaSpeed = 650.f;
+	inline constexpr float AlgaPitchDeg = 25.f;
+	/** Mirando más abajo que esto, el charco se suelta a los pies. */
+	inline constexpr float AlgaDropPitchDeg = -10.f;
+	inline constexpr float AlgaPuddleSeconds = 8.f;
+	inline constexpr float AlgaPuddleRadius = 150.f;
+	/** Altura por encima y por debajo del charco en la que los pies cuentan como dentro (uu). */
+	inline constexpr float AlgaPuddleReachUp = 60.f;
+	inline constexpr float AlgaPuddleReachDown = 40.f;
+	inline constexpr float AlgaFrictionScale = 0.06f;
+	inline constexpr float AlgaBrakingScale = 0.08f;
+	inline constexpr float AlgaAccelerationScale = 0.35f;
+	inline constexpr float AlgaJumpMultiplier = 0.45f;
+
+	/** Gaviota ladrona: alcance para elegir víctima, velocidad, distancia a la que roba o entrega, mareo y vida máxima. */
+	inline constexpr float ThiefRange = 2000.f;
+	inline constexpr float ThiefSpeed = 1500.f;
+	inline constexpr float ThiefReach = 120.f;
+	inline constexpr float ThiefFlyHeight = 220.f;
+	inline constexpr float ThiefDizzySeconds = 2.f;
+	inline constexpr float ThiefMaxSeconds = 10.f;
+
+	/** Flotador: lo que flota, lo que sube mientras (más que el agua), su tope de velocidad y el respiro tras el rescate. */
+	inline constexpr float FloatSeconds = 4.f;
+	inline constexpr float FloatRiseSpeed = 45.f;
+	inline constexpr float FloatSpeedCap = 160.f;
+	inline constexpr float FloatGraceSeconds = 1.2f;
+	/** Un punto seco está al menos esto por encima del agua (uu). */
+	inline constexpr float FloatDryAbove = 100.f;
+	/** Rescate: velocidad en planta con la que se calcula el vuelo y su duración mínima y máxima (s). */
+	inline constexpr float RescueFlatSpeed = 1000.f;
+	inline constexpr float RescueMinSeconds = 0.8f;
+	inline constexpr float RescueMaxSeconds = 2.5f;
+
+	/** Medusa trampolín: vida, radio, altura del bote, distancia delante a la que se planta y espera entre botes. */
+	inline constexpr float JellyLifeSeconds = 15.f;
+	inline constexpr float JellyRadius = 110.f;
+	inline constexpr float JellyBounceHeight = 600.f;
+	inline constexpr float JellyForward = 170.f;
+	inline constexpr float JellyRearmSeconds = 0.5f;
+	/** Pies a esta altura por encima o por debajo de la base de la medusa: la pisan (uu). */
+	inline constexpr float JellyTouchUp = 70.f;
+	inline constexpr float JellyTouchDown = 40.f;
+
+	/**
+	 * Puntos de objetos: reaparición tras cogerlo (#778: 6 s, antes 12 s; más puntos con objeto a la vez, nunca más de uno
+	 * por punto), primera aparición de la ronda y escalonado entre puntos.
+	 */
+	inline constexpr float PadRespawnSeconds = 6.f;
 	inline constexpr float PadFirstSpawnSeconds = 0.75f;
 	inline constexpr float PadStaggerSeconds = 0.35f;
 	/** Un punto con el agua a menos de esto por debajo ya no saca objetos. */
@@ -249,4 +326,45 @@ namespace TNTctItemRules
 
 	/** Ancla que cae en Center: si Victim está dentro, true y el empujón del derribo (hacia fuera). */
 	TORTUNABO_API bool AnchorSplash(const FVector& Center, const FVector& Victim, FVector& OutImpulse);
+
+	/** Cocobomba que explota en Center: si Victim está en el radio, true y el empujón (más fuerte cuanto más cerca, hacia fuera). */
+	TORTUNABO_API bool CocoBlast(const FVector& Center, const FVector& Victim, FVector& OutVelocity);
+
+	/** Pies en Feet dentro del charco de alga de Center y Radius (en planta y a la altura del suelo). */
+	TORTUNABO_API bool IsInPuddle(const FVector& Center, float Radius, const FVector& Feet);
+
+	/**
+	 * Gaviota ladrona lanzada desde Origin: índice de la víctima entre Candidates (las posiciones de las demás tortugas que se
+	 * pueden molestar), la más cercana a menos de Range. INDEX_NONE si no hay ninguna.
+	 */
+	TORTUNABO_API int32 PickThiefVictim(const FVector& Origin, const TArray<FVector>& Candidates, float Range = TNTctItemTuning::ThiefRange);
+}
+
+/** Agarre de una tortuga en el suelo: lo que el charco de alga cambia de su UCharacterMovementComponent. */
+struct FTNTctGrip
+{
+	float GroundFriction = 8.f;
+	float BrakingDeceleration = 2048.f;
+	float MaxAcceleration = 2048.f;
+};
+
+namespace TNTctItemRules
+{
+	/** El agarre dentro del charco de alga a partir del de siempre: casi sin rozamiento ni frenada y con poca aceleración. */
+	TORTUNABO_API FTNTctGrip SlipperyGrip(const FTNTctGrip& Base);
+
+	/** Velocidad vertical para subir Height (uu) con la gravedad GravityZ (negativa, cm/s²). */
+	TORTUNABO_API float BounceSpeed(float Height, float GravityZ);
+
+	/** Pies en Feet pisando la medusa con la base en Base (en su radio, a su altura y sin ir ya hacia arriba). */
+	TORTUNABO_API bool JellyTouches(const FVector& Base, const FVector& Feet, float VelocityZ);
+
+	/**
+	 * El punto seco más cercano a From entre Candidates (suelo pisable de la arena): al menos FloatDryAbove por encima del
+	 * agua en WaterZ. Si ninguno lo está, el más alto. false sin candidatos.
+	 */
+	TORTUNABO_API bool NearestDryPoint(const TArray<FVector>& Candidates, const FVector& From, float WaterZ, FVector& OutPoint);
+
+	/** Velocidad de lanzamiento para ir de From a To en una parábola con la gravedad GravityZ (negativa, cm/s²). */
+	TORTUNABO_API FVector RescueLaunch(const FVector& From, const FVector& To, float GravityZ);
 }

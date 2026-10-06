@@ -12,6 +12,7 @@ class ATN_CoopPlayerState;
 class ATN_TctArena;
 class ATN_TctGameState;
 class ATN_TctItemPad;
+class ATortugaCharacter;
 
 /**
  * @brief Todos contra Todos (#651, plan maestro §3.4 y F7): rondas de supervivencia de 2 a 8 tortugas en una arena inventada.
@@ -20,7 +21,7 @@ class ATN_TctItemPad;
  * Scripts/terrain_volumes/Variants: A01_diana por defecto, otra con ?Arena=<variante> (P01_plataformas, A02_donut...).
  *  - Ronda: todas salen repartidas por la arena; gana la última en pie. Caer al agua, a una zona de muerte o fuera del mapa
  *    elimina: la tortuga queda como fantasma espectador hasta la ronda siguiente (morir es definitivo dentro de la ronda).
- *  - Presión: el mar sube un piso de la arena cada FloodStepSeconds desde FloodStartDelay (un encuentro cada 15-20 s) y, tras el
+ *  - Presión: el mar sube un piso de la arena cada FloodStepSeconds desde FloodStartDelay (TNTctFloodDefaults) y, tras el
  *    último piso, lo cubre todo despacio (muerte súbita). Con el tiempo de la ronda agotado y dos o más en pie, empate.
  *  - Partida: mejor de N (la primera con WinsToWin rondas ganadas). Cada ronda ganada es una concha entera (RaceShellHalves):
  *    entre rondas, el recuento de la carrera; al final, la pantalla de la campeona con su podio (UTN_RaceScreensSubsystem).
@@ -96,7 +97,7 @@ protected:
 
 	/** Tiempo máximo de una ronda (s); al acabarse con dos o más en pie, empate. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Rounds", meta = (ClampMin = "10.0"))
-	float RoundTimeLimitSeconds = 120.f;
+	float RoundTimeLimitSeconds = TNTctFloodDefaults::RoundTimeLimitSeconds;
 
 	/** Entre ronda y ronda: tiempo con las tortugas ya colocadas antes del 3, 2, 1. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Rounds", meta = (ClampMin = "0.25"))
@@ -140,23 +141,23 @@ protected:
 
 	/** Segundos de la salida a la primera subida del agua. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "0.0"))
-	float FloodStartDelay = 15.f;
+	float FloodStartDelay = TNTctFloodDefaults::StartDelay;
 
-	/** Segundos entre subidas (un encuentro cada 15-20 s). */
+	/** Segundos entre subidas. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "5.0"))
-	float FloodStepSeconds = 17.f;
+	float FloodStepSeconds = TNTctFloodDefaults::StepSeconds;
 
 	/** Lo que tarda cada subida. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "0.5"))
-	float FloodRiseSeconds = 4.f;
+	float FloodRiseSeconds = TNTctFloodDefaults::RiseSeconds;
 
 	/** Lo que tarda la muerte súbita en cubrir la arena entera. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "1.0"))
-	float SuddenDeathRiseSeconds = 25.f;
+	float SuddenDeathRiseSeconds = TNTctFloodDefaults::SuddenDeathRiseSeconds;
 
 	/** Escalones como mucho (sin contar la muerte súbita). */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "1"))
-	int32 FloodMaxSteps = 4;
+	int32 FloodMaxSteps = TNTctFloodDefaults::MaxSteps;
 
 	/** Parte del suelo que queda seca tras el último escalón (la cubre la muerte súbita). */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "0.0", ClampMax = "0.9"))
@@ -246,6 +247,8 @@ private:
 	void StopItemPads();
 	/** Manos vacías y sin lastre para la ronda nueva. */
 	void ResetItemsForRound(APawn* Pawn) const;
+	/** El flotador ha salvado a Turtle del agua y ya no flota: la lanza al punto seco más cercano de la arena. */
+	void RescueFromWater(ATortugaCharacter* Turtle, float WaterZ) const;
 
 	// ── Rondas (TN_TctGameMode_Round.cpp) ──
 	void PrepareRound();
