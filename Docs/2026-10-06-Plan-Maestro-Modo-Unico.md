@@ -11,18 +11,20 @@ Lo que no figura en estas fuentes no entra en el juego.
 ## 0. Resumen
 
 1. **Un solo modo de juego, sin nombre**, porque no hay otro del que distinguirlo. Las tortugas recorren un mapa hecho a mano sobre el terreno del algoritmo Camino, con vida, veneno, hidratación y estamina, enemigos que matan o noquean, y una economía de chapas.
-2. **El terreno de partida es C01** (`C01_camino`, `LVL_Demo01`). Más adelante, diseño entregará el mapa dibujado en papel y se pasará a terreno con el mismo algoritmo. No hay módulos, ni intensidad, ni generación por partida.
-3. **Rama `chamber`.** Todo lo demás queda en ella (copia de `dev` en `61cd791c7`), y sus issues se cierran como «not planned» con la etiqueta `chamber`:
-   - los modos Rally, Karts, Carrera, Todos contra Todos, Coop y Supervivencia procedurales y Clásico;
-   - los mapas procedurales, volumétricos, de países e inventados;
-   - VR, primera persona, tutorial, cofres, conchas de puntos, el fantasma actual y los puzles que no figuran en el Excel.
+2. **El terreno es el D01** (#875): el dibujo de diseño pasado a terreno con el algoritmo Camino. Hasta que esté, se usa C01 (`C01_camino`, `LVL_Demo01`). No hay módulos, ni intensidad, ni generación por partida.
+3. **Líneas de trabajo** (corrección del director, 06-10 por la noche):
+   - **Línea principal** (`dev` → `main`): el modo cooperativo único de este plan. **Objetivo: el martes 2026-10-13 el juego cooperativo está completo, con el loop entero, y entra en `main`.**
+   - **Líneas de modo** (`dev-<modo>`, nacidas de `chamber`): el equipo sigue desarrollando otros modos por su cuenta aunque diseño no los haya aprobado, para tenerlos preparados. Orden: Todos contra Todos (`dev-tct`, el siguiente), Carrera (`dev-carrera`) y Rally (`dev-rally`, con los Karts fusionados en él). Sus issues llevan `modo:tct`, `modo:carrera` o `modo:rally`.
+   - **VR**: aprobada para el futuro (`modo:vr`, sin rama hasta retomarla).
+   - **Descartado** (etiqueta `chamber`, cerrado como «not planned»): Supervivencia y Coop procedurales, Clásico, primera persona, mapas procedurales, volumétricos, de países e inventados, tutorial, cofres, conchas de puntos, el fantasma actual y los puzles que no figuran en el Excel.
+   - La rama `chamber` es el archivo congelado de `dev` antes del recorte (`61cd791c7`).
 4. **Enemigos, obstáculos y objetos: solo los del Excel**, más la chapa.
 
 ## 1. Decisiones del director (2026-10-06)
 
 | # | Decisión |
 |---|---|
-| 1 | Un solo modo, sin nombre. Todos los demás modos van a `chamber` |
+| 1 | Un solo modo, sin nombre, en la línea principal. Los demás modos salen de `dev` (corrección del 06-10 noche: Todos contra Todos, Carrera y Rally siguen en sus ramas `dev-<modo>`; Supervivencia se descarta) |
 | 2 | Terreno con el algoritmo Camino. De momento se usa C01. Diseño entrega un dibujo, Claude lo pasa a terreno y monta el nivel a mano con las cajas manuales: hace de diseñador de nivel con lo disponible |
 | 3 | No hay módulos ni intensidad. Las hojas Intensity e IntensityData del Excel no se aplican |
 | 4 | Enemigos y obstáculos: solo los de EnemyAndObstacleData. Fuera los erizos que ruedan, los lagartos y todo lo demás |
@@ -37,11 +39,14 @@ Lo que no figura en estas fuentes no entra en el juego.
 | 13 | **Lobby.** Se integra el de Álvaro (rama `BLockouts`) y se le aplican los sistemas de Mokius: zona de listos, tienda, probador y playground. Hasta entonces sigue el castillo actual, sin tutorial, sin cofre y sin selector de modo |
 | 14 | Esqueleto: por ahora `TotugaDemo_Rig`. Los emotes se adaptan a él y más adelante se unificarán los esqueletos |
 | 15 | Se conservan el doble salto, el caparazón, el ragdoll, coger y lanzar, nadar, los emotes y las frases rápidas |
-| 16 | VR y primera persona fuera. El modo local (pantalla partida) se queda. El tutorial se va |
+| 16 | VR y primera persona fuera de la línea principal; la primera persona se descarta y la VR queda aprobada para el futuro. El modo local (pantalla partida) se queda. El tutorial se va |
 | 17 | La estamina desaparece de la interfaz. El estado del jugador se leerá de maneras más originales; Claude tiene permiso para idearlas |
 | 18 | Las trincheras y los quads del Excel existen, pero no encajan en C01 por cómo se generó. Por ahora se queda C01 sin ellos |
 | 19 | La programación de los objetos es de Rubi (#846, #847). Claude hace el recorte |
 | 20 | La sombrilla se queda y protege de las gaviotas. Los huevos de salida se quedan |
+| 21 | El mapa del modo es el D01, el dibujo de diseño pasado a terreno con el algoritmo Camino (#875): recorrido de unos 1000 m, cuestas transitables entre mesetas, una sola cueva de 10 m de alto como máximo y muros más altos que en C01 |
+| 22 | Ramas: `main` estable (solo lo validado), `dev` línea principal y casi un clon de `main`, `dev-<modo>` por modo y `dev-<modo>-<n>-<slug>` para su trabajo. Detalle en `CLAUDE.md`, «Ramas» |
+| 23 | Calidad antes que volumen: lotes de 3 issues como mucho y uno abierto por persona, salvo excepción autorizada; las sesiones nocturnas desatendidas, solo bugs y pulido (no es una franja horaria). La refactorización (`refactor`) se salta In review y QA editor y entra directa por PR |
 
 ## 2. Estadísticas de la tortuga (Excel, hoja Stats)
 
@@ -118,16 +123,16 @@ Puntuación (hoja Puntuación): puntos al final de la partida por los muñecos r
 
 ## 5. Hoja de ruta
 
-El campo **Fase** del tablero sigue estas fases. Desde el 06-10, las F0–F8 del plan del 29-09 ya no significan nada. Las horas se estimarán al desglosar cada fase.
+Fecha límite de F0-F8: martes 2026-10-13 (el cooperativo completo entra en `main`). El campo **Fase** del tablero sigue estas fases; las issues de las líneas de modo llevan «Sin fase». Desde el 06-10, las F0–F8 del plan del 29-09 ya no significan nada. Las horas se estimarán al desglosar cada fase.
 
 | Fase | Contenido | Quién | Depende de |
 |---|---|---|---|
-| F0 | Recorte a modo único (lote #852), etiqueta `chamber` y guía (#853) | Claude (SkiTemplar) | — |
+| F0 | Recorte a modo único (lote #852, `refactor`), líneas de modo, etiqueta `chamber` y guía (#853) | Claude (SkiTemplar) | — |
 | F1 | Vitales: vida, veneno e hidratación replicados; daño y muerte o noqueo por enemigo; la estamina sin interfaz | Por asignar | F0 |
 | F2 | Objetos del Excel (#846, #847) y sus miniaturas | Rubi; miniaturas, Claude | F1 |
 | F3 | Economía: chapa física y apilable, máquina expendedora con ranura, airdrop, cajas por el mapa, revivir con 4 chapas | Por asignar | F1 |
 | F4 | Enemigos y obstáculos del Excel con su daño, su veneno y su tipo de muerte | Por asignar | F1 |
-| F5 | Nivel sobre C01, montado a mano con enemigos, cajas, máquinas y la decoración de la Carrera | Claude | F3, F4 |
+| F5 | Nivel sobre D01 (#875), montado a mano con enemigos, cajas, máquinas y la decoración de la Carrera | Claude | F3, F4 |
 | F6 | Lobby de Álvaro con los sistemas de Mokius; tienda de skins pagada con los puntos de final de partida | Por asignar | F0 |
 | F7 | Muerte y espectador: ver la cámara de otro jugador; lectura del estado del jugador sin interfaz clásica | Por asignar | F1 |
 | F8 | Cierre: Steam, localización, rendimiento, emotes sobre `TotugaDemo_Rig`, modo local | Por asignar | — |
