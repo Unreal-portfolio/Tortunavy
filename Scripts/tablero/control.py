@@ -29,9 +29,10 @@ import memoria
 import objetos
 import lotes
 import peticiones
-from base import (INTEGRACION, NUMERO, OWNER, REPO, ErrorTablero, borrar_cache_campos, cargar_issue, cargar_proyecto,
-                  comentar, elegir_revisor, esta_fusionada, gh, issues_de_pr, numeros_chamber, poner_campo, prs_abiertas,
-                  prs_fusionadas, rama_base, solo_descartadas, usuario_actual)
+from base import (CONFIG, INTEGRACION, NUMERO, OWNER, REPO, ErrorTablero, borrar_cache_campos, cargar_issue,
+                  cargar_proyecto, comentar, elegir_revisor, esta_fusionada, gh, issues_de_pr, numeros_chamber,
+                  poner_campo, prs_abiertas, prs_fusionadas, quien_lanza, rama_base, solo_descartadas,
+                  usuario_actual)
 
 
 def cmd_resumen(args: argparse.Namespace) -> None:
@@ -309,8 +310,10 @@ def cmd_chamber(args: argparse.Namespace) -> None:
     Idempotente: lo que ya está hecho no se repite. Una issue ya cerrada (p. ej. completada) no se reabre. Un objeto o
     un lote se cierra sin tocar su Status (no lleva). Nada se propaga solo: se avisa de las PR abiertas que las enlazan
     (`sync` lo repite), de los lotes de los que son miembro, de las issues que dependían de ellas y de sus
-    sub-issues vivas.
+    sub-issues vivas. Solo lo lanza un aprobador: el dueño del `gh` en local o quien dispara el puente a mano.
     """
+    if motivo := flujo.motivo_para_no_descartar(quien_lanza(), CONFIG["aprobadores"]):
+        raise ErrorTablero(motivo)
     try:
         texto = flujo.texto_chamber(args.motivo)
     except ValueError as exc:

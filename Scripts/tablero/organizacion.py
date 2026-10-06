@@ -7,7 +7,8 @@ organización entra primero en `dev` y después se propaga por PR a cada destino
 - Destinos: `main` y las ramas remotas que se llaman exactamente `dev-<modo>` con un modo conocido (`flujo.MODOS`);
   nunca las ramas de trabajo `dev-<modo>-<n>-<slug>`. Se descubren con `git ls-remote --heads origin`.
 - Propagar a un destino: rama `org/propagar-<AAAAMMDD>-<destino>` desde `origin/<destino>` con las rutas copiadas de
-  `origin/dev` y borrado lo que ya no existe en `dev` dentro de ellas, un commit y su PR. Todo con git de bajo nivel
+  `origin/dev` y borrado lo que ya no existe en `dev` dentro de ellas, un commit y su PR. Si ya hay una PR
+  `org/propagar-*` abierta hacia ese destino, de cualquier día, se actualiza su rama y no se abre otra. Todo con git de bajo nivel
   (índice temporal, `commit-tree` y `push` del commit): no se toca el árbol de trabajo ni la rama actual del usuario.
 - Comparar es solo git (`ls-tree` de las cabezas remotas): `sync` lo usa para avisar sin gastar API de GitHub.
 """
@@ -166,14 +167,26 @@ def commit_propagado(destino: str, copiar: dict, borrar: list[str]) -> str:
     return _git("commit-tree", arbol, "-p", f"origin/{destino}", "-m", titulo_pr(destino)).strip()
 
 
+def propagacion_abierta(prs: list[dict], destino: str) -> dict | None:
+    """PR de propagación abierta hacia `destino`, sea del día que sea (la más reciente si hubiera varias)."""
+    candidatas = [pr for pr in prs if es_pr_de_organizacion(pr) and pr.get("baseRefName", destino) == destino]
+    return max(candidatas, key=lambda pr: pr.get("number", 0), default=None)
+
+
 def propagar(destino: str, copiar: dict, borrar: list[str], dia: date) -> str:
-    """Sube la rama de la propagación y abre su PR (o dice cuál la tiene ya abierta). Devuelve la línea del informe."""
-    rama = rama_propagacion(destino, dia)
+    """Sube la rama de la propagación y abre su PR. Devuelve la línea del informe.
+
+    Si ya hay una PR de propagación abierta hacia `destino` (de hoy o de otro día), actualiza su rama en vez de abrir
+    otra: una sola PR de organización pendiente por destino.
+    """
+    abiertas = json.loads(gh("pr", "list", "--repo", REPO, "--base", destino, "--state", "open", "--limit", "100",
+                             "--json", "number,headRefName,baseRefName"))
+    previa = propagacion_abierta(abiertas, destino)
+    rama = previa["headRefName"] if previa else rama_propagacion(destino, dia)
     commit = commit_propagado(destino, copiar, borrar)
     _git("push", "--quiet", "origin", f"+{commit}:refs/heads/{rama}")  # la rama es del tablero, no de una persona
-    abiertas = json.loads(gh("pr", "list", "--repo", REPO, "--head", rama, "--state", "open", "--json", "number"))
-    if abiertas:
-        return f"{destino}: rama {rama} actualizada; su PR #{abiertas[0]['number']} ya estaba abierta"
+    if previa:
+        return f"{destino}: rama {rama} actualizada; su PR #{previa['number']} ya estaba abierta"
     url = gh("pr", "create", "--repo", REPO, "--base", destino, "--head", rama, "--title", titulo_pr(destino),
              "--body", cuerpo_pr(destino, copiar, borrar)).strip().splitlines()[-1]
     return f"{destino}: PR abierta {url}"

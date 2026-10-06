@@ -142,16 +142,40 @@ def _asignados(issue: dict) -> set[str]:
 
 
 def fuera_de_topes(etiquetas_lote: set[str], etiquetas_miembros: Iterable[set[str]]) -> bool:
-    """True si el lote no cuenta para los topes: tiene `excepcion` o todos sus miembros son `refactor`."""
+    """True si el lote no cuenta para los topes: tiene `excepcion` o todos sus miembros son `refactor`.
+
+    Sin miembros conocidos (p. ej. todos cerrados y fuera de lo leído), decide la etiqueta `refactor` del propio lote.
+    """
+    if ETIQUETA_EXCEPCION in etiquetas_lote:
+        return True
     miembros = list(etiquetas_miembros)
-    return ETIQUETA_EXCEPCION in etiquetas_lote or (bool(miembros) and all(ETIQUETA_REFACTOR in e for e in miembros))
+    if not miembros:
+        return ETIQUETA_REFACTOR in etiquetas_lote
+    return all(ETIQUETA_REFACTOR in e for e in miembros)
+
+
+def _etiquetas_conocidas(nodos: list[dict], issues: dict[int, dict]) -> list[set[str]]:
+    """Etiquetas de los miembros que se pueden juzgar: los cargados en `issues` (o con etiquetas en su nodo) y los
+    abiertos (sin cargar cuentan sin etiquetas). Un miembro cerrado que no está cargado no se cuenta como no-refactor:
+    la auditoría solo lee los cerrados recientes, y un lote de refactor perdería la exención al pasar 14 días."""
+    conocidas = []
+    for nodo in nodos:
+        dato = issues.get(nodo["number"])
+        if dato is not None:
+            conocidas.append(objetos.nombres_etiquetas(dato))
+        elif nodo.get("labels") is not None:
+            conocidas.append(objetos.nombres_etiquetas(nodo))
+        elif nodo.get("state") == "OPEN":
+            conocidas.append(set())
+    return conocidas
 
 
 def lotes_abiertos(issues: dict[int, dict]) -> dict[int, dict]:
     """Lotes abiertos entre `issues` (items del Project o nodos de la auditoría, por número).
 
     Para cada uno: sus miembros (todos), las personas de las que es «lote abierto» (autor y asignados de los miembros
-    abiertos) y si está fuera de los topes. Un miembro que no está en `issues` cuenta sin etiquetas ni asignados.
+    abiertos) y si está fuera de los topes. Un miembro abierto que no está en `issues` cuenta sin etiquetas ni
+    asignados; uno cerrado que no está no cuenta para la exención (`_etiquetas_conocidas`).
     """
     resultado = {}
     for numero, lote in issues.items():
@@ -164,7 +188,7 @@ def lotes_abiertos(issues: dict[int, dict]) -> dict[int, dict]:
             personas.add(autor)
         resultado[numero] = {"miembros": [n["number"] for n in nodos], "personas": personas,
                              "fuera": fuera_de_topes(objetos.nombres_etiquetas(lote),
-                                                     [objetos.nombres_etiquetas(d) for d in datos])}
+                                                     _etiquetas_conocidas(nodos, issues))}
     return resultado
 
 

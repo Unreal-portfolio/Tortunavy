@@ -30,7 +30,8 @@ import objetos
 
 # Estados con trabajo en marcha o ya terminado: una fusión antigua no debe arrastrarlos.
 ESTADOS_EN_CURSO = ("In progress", "Revisiones", "Done")
-# Una refactorización no pasa por In review: su PR se fusiona mientras está In progress.
+# Una refactorización no pasa por In review: su PR se fusiona mientras está In progress. Ahí solo la mueve una fusión
+# vigente (`mueve_por_fusion`), no una PR antigua de una etapa anterior o de antes de retomarla.
 ESTADOS_EN_CURSO_REFACTOR = ("Revisiones", "Done")
 RAMA_INTEGRACION = "dev"
 # Archivo congelado de dev antes del recorte: de ahí nacen las líneas de modo.
@@ -138,13 +139,20 @@ def editor_tras_fusion(valores: dict) -> str | None:
     return None if valores.get("Editor") == "Funciona" else "Sin probar"
 
 
-def mueve_por_fusion(estado: str | None, con_pr_abierta: bool, refactor: bool = False) -> bool:
+def mueve_por_fusion(estado: str | None, con_pr_abierta: bool, refactor: bool = False,
+                     cierre_vigente: bool = False) -> bool:
     """Si una PR fusionada puede mover la issue: no si hay trabajo en marcha o una PR abierta.
 
-    Una refactorización se fusiona desde In progress (no pasa por In review): ahí sí la mueve.
+    Una refactorización se fusiona desde In progress (no pasa por In review), y se fusiona por etapas o se retoma
+    tras cerrarse: solo la mueve una fusión vigente (`cierre_vigente`), es decir, la PR fusionada más reciente que la
+    enlaza la cierra con «Closes» en el cuerpo y no hay ninguna PR abierta que la enlace. El tablero no lee cuándo se
+    reabrió ni cuándo pasó a In progress: este es el criterio conservador.
     """
-    en_curso = ESTADOS_EN_CURSO_REFACTOR if refactor else ESTADOS_EN_CURSO
-    return estado not in en_curso and not con_pr_abierta
+    if con_pr_abierta:
+        return False
+    if refactor:
+        return estado not in ESTADOS_EN_CURSO_REFACTOR and cierre_vigente
+    return estado not in ESTADOS_EN_CURSO
 
 
 def cierra_por_fusion(estado: str | None, valores: dict, con_pr_abierta: bool, refactor: bool = False) -> bool:
@@ -267,6 +275,15 @@ def motivo_chamber(numero: int, issue: dict) -> str | None:
         return None
     return (f"#{numero} está descartada (`{ETIQUETA_CHAMBER}`): no entra en el ciclo; "
             "si vuelve al juego lo deciden SkiTemplar o Mokius.")
+
+
+def motivo_para_no_descartar(actor: str, aprobadores) -> str | None:
+    """Por qué `chamber` no se ejecuta (None si se puede): descartar issues lo deciden solo los aprobadores."""
+    aprobadores = list(aprobadores)
+    if actor in aprobadores:
+        return None
+    return (f"Solo un aprobador ({' o '.join(aprobadores)}) puede descartar issues con `{ETIQUETA_CHAMBER}`: "
+            f"{actor or 'quien lo lanza'} no lo es. No se ha tocado nada.")
 
 
 def decision_tras_descarte(comentarios: list[str], aprobadores) -> bool:

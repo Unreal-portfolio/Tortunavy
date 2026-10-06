@@ -662,6 +662,28 @@ def test_auditar_marca_los_lotes_fuera_de_topes_sin_excepcion():
     assert all(p["tipo"] == "organizacion" for p in informe[131] + informe[133])
 
 
+def test_un_lote_de_refactor_sigue_exento_aunque_un_miembro_cerrado_no_este_cargado():
+    lote = _nodo(134, "lote", autor="SkiTemplar", miembros=[12, 13, 14, 15])
+    lote["blockedBy"]["nodes"][-1]["state"] = "CLOSED"  # cerrada hace más de 14 días: la auditoría no la lee
+    nodos = [_nodo(130, "lote", autor="SkiTemplar", miembros=[1]), lote, *(_nodo(n, "refactor") for n in (12, 13, 14))]
+    informe = {i["numero"]: lista for i, lista in control.lotes_auditables(nodos)}
+    assert informe[134] == []
+    assert lotes.lotes_abiertos({n["number"]: n for n in nodos})[134]["fuera"]
+
+
+def test_un_miembro_abierto_sin_cargar_sigue_quitando_la_exencion():
+    lote = _nodo(134, "lote", autor="SkiTemplar", miembros=[12, 13, 14, 15])
+    nodos = [lote, *(_nodo(n, "refactor") for n in (12, 13, 14))]
+    assert not lotes.lotes_abiertos({n["number"]: n for n in nodos})[134]["fuera"]
+
+
+@pytest.mark.parametrize("etiquetas_lote, miembros, fuera", [
+    ({"lote", "refactor"}, [], True), ({"lote"}, [], False), ({"lote", "excepcion"}, [{"tarea"}], True),
+    ({"lote", "refactor"}, [{"tarea"}], False), ({"lote"}, [{"refactor"}, {"refactor"}], True)])
+def test_fuera_de_topes_sin_miembros_conocidos_decide_la_etiqueta_del_lote(etiquetas_lote, miembros, fuera):
+    assert lotes.fuera_de_topes(etiquetas_lote, miembros) is fuera
+
+
 def test_auditar_etiqueta_el_lote_que_incumple_y_desetiqueta_el_que_ya_cumple():
     nodos = [_nodo(130, "lote", miembros=[1, 2, 3, 4]), _nodo(131, "lote", auditoria.ETIQUETA, autor="X", miembros=[5])]
     informe = dict((i["numero"], (i, lista)) for i, lista in control.lotes_auditables(nodos))
@@ -695,6 +717,45 @@ def test_sync_lleva_a_done_una_refactorizacion_fusionada_sin_validar(monkeypatch
     assert [texto for texto, _ in cambios] == [
         "#5 → Done (PR #900 fusionada en dev; refactor: se cierra sin revisión ni prueba)"]
     assert avisos_ == []
+
+
+def _sync_refactor(monkeypatch, fusionadas, abiertas=(), status="In progress"):
+    monkeypatch.setattr(tablero, "prs_fusionadas", lambda: list(fusionadas))
+    monkeypatch.setattr(tablero, "tiene_resumen", lambda n: True)
+    proyecto = {"items": _items(_item(5, status, "refactor", **SIN_VALIDAR))}
+    cambios = []
+    tablero.reconciliar_fusiones(proyecto, list(abiertas), cambios, [])
+    return [texto for texto, _ in cambios]
+
+
+def test_sync_no_cierra_una_refactorizacion_en_curso_por_una_etapa_fusionada_sin_closes(monkeypatch):
+    etapa = _pr(900, "Refs #5: etapa 1", rama="refactor/5-recorte")
+    assert _sync_refactor(monkeypatch, [etapa]) == []
+
+
+def test_sync_no_cierra_una_refactorizacion_por_un_closes_antiguo_tras_una_etapa_mas_reciente(monkeypatch):
+    antigua = _pr(880, "Closes #5", mergedAt="2026-10-01T08:00:00Z")
+    etapa = _pr(900, "Refs #5: etapa 2", rama="refactor/5-recorte", mergedAt="2026-10-06T08:00:00Z")
+    assert _sync_refactor(monkeypatch, [antigua, etapa]) == [], "gh no las devuelve por fecha de fusión"
+
+
+def test_sync_no_cierra_una_refactorizacion_con_una_pr_abierta_que_la_enlaza(monkeypatch):
+    abierta = _pr(901, "Refs #5", rama="refactor/5-x")
+    assert _sync_refactor(monkeypatch, [_pr(880, "Closes #5")], abiertas=[abierta]) == []
+
+
+def test_sync_cierra_una_refactorizacion_cuando_su_ultima_pr_fusionada_la_cierra(monkeypatch):
+    etapa = _pr(880, "Refs #5", rama="refactor/5-recorte", mergedAt="2026-10-01T08:00:00Z")
+    final = _pr(900, "Closes #5", mergedAt="2026-10-06T08:00:00Z")
+    assert _sync_refactor(monkeypatch, [etapa, final]) == [
+        "#5 → Done (PR #900 fusionada en dev; refactor: se cierra sin revisión ni prueba)"]
+
+
+@pytest.mark.parametrize("vigente, mueve", [(True, True), (False, False)])
+def test_mueve_por_fusion_de_una_refactorizacion_en_curso_exige_una_fusion_vigente(vigente, mueve):
+    assert flujo.mueve_por_fusion("In progress", False, refactor=True, cierre_vigente=vigente) is mueve
+    assert not flujo.mueve_por_fusion("In progress", True, refactor=True, cierre_vigente=True)
+    assert not flujo.mueve_por_fusion("Done", False, refactor=True, cierre_vigente=True)
 
 
 def test_aplicar_fusion_de_una_refactorizacion_no_toca_el_editor(monkeypatch):
@@ -954,11 +1015,33 @@ def test_propagar_con_aplicar_abre_la_pr_sin_tocar_el_arbol_del_usuario(repos, m
 
 
 def test_propagar_otra_vez_el_mismo_dia_actualiza_la_rama_sin_otra_pr(repos, monkeypatch, capsys):
-    gh = Gh({"pr list": json.dumps([{"number": 950}])})
+    rama = organizacion.rama_propagacion("main", date.today())
+    gh = Gh({"pr list": json.dumps([{"number": 950, "headRefName": rama, "baseRefName": "main"}])})
     monkeypatch.setattr(organizacion, "gh", gh)
     organizacion.cmd_propagar(_args(aplicar=True))
     assert not any(a[:2] == ("pr", "create") for a in gh.llamadas)
     assert "su PR #950 ya estaba abierta" in capsys.readouterr().out
+
+
+def test_propagar_actualiza_la_pr_abierta_de_otro_dia_sin_abrir_otra(repos, monkeypatch, capsys):
+    vieja = "org/propagar-20261001-main"
+    abiertas = [{"number": 940, "headRefName": vieja, "baseRefName": "main"},
+                {"number": 941, "headRefName": "feat/5-x", "baseRefName": "main"}]
+    gh = Gh({"--head": "[]", "pr list": json.dumps(abiertas), "pr create": "https://x/pull/1\n"})
+    monkeypatch.setattr(organizacion, "gh", gh)
+    organizacion.cmd_propagar(_args(aplicar=True))
+    assert not any(a[:2] == ("pr", "create") for a in gh.llamadas)
+    assert f"rama {vieja} actualizada; su PR #940 ya estaba abierta" in capsys.readouterr().out
+    origen = repos["origen"]
+    assert _g(origen, "show", f"{vieja}:CLAUDE.md") == "guía v2"
+    assert organizacion.rama_propagacion("main", date.today()) not in _g(origen, "branch", "--list")
+
+
+def test_propagacion_abierta_solo_hacia_su_destino():
+    prs = [{"number": 940, "headRefName": "org/propagar-20261001-dev-tct", "baseRefName": "dev-tct"},
+           {"number": 941, "headRefName": "feat/5-x", "baseRefName": "main"}]
+    assert organizacion.propagacion_abierta(prs, "main") is None
+    assert organizacion.propagacion_abierta(prs, "dev-tct")["number"] == 940
 
 
 def test_el_entorno_del_usuario_no_cambia_tras_propagar(repos, monkeypatch):

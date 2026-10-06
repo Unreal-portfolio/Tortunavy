@@ -96,10 +96,10 @@ import organizacion
 import peticiones
 import volcado
 from base import (CONFIG, ESTADOS, INTEGRACION, ORDEN_PRIORIDAD, ORDEN_TAMANO, REPO, ErrorTablero,
-                  cargar_campos, cargar_issue, cargar_proyecto, comentar, comprobar_campos, elegir_revisor,
-                  esta_fusionada, existe_rama_remota, gh, git, issues_de_pr, item_de_issue, poner_campo, prs_abiertas,
-                  prs_fusionadas, rama_base, rechazar_descartada, retomar_descartada, slug, usuario_actual,
-                  vaciar_campo)
+                  cargar_campos, cargar_issue, cargar_proyecto, cierres_de_pr, comentar, comprobar_campos,
+                  elegir_revisor, esta_fusionada, existe_rama_remota, gh, git, issues_de_pr, item_de_issue,
+                  poner_campo, prs_abiertas, prs_fusionadas, rama_base, rechazar_descartada, retomar_descartada,
+                  slug, usuario_actual, vaciar_campo)
 from flujo import RAMA_ARCHIVO
 # clave_orden, con_decision y urgentes_de_organizacion se reexportan: los tests y las skills las usan desde aquí.
 from pendiente import (ETIQUETA_DECISION, clave_orden, con_decision, etiquetas_de, linea_de_pr,  # noqa: F401
@@ -464,7 +464,7 @@ def reconciliar_fusiones(proyecto: dict, abiertas: list[dict], cambios: list, av
     """Issues con la PR fusionada en dev: Done si están revisadas y probadas; si no, el estado dice qué falta."""
     con_pr_abierta = {n for pr in abiertas for n in issues_de_pr(pr)}
     ya_vistas: set[int] = set()  # una issue con varias PR fusionadas se decide por la más reciente
-    for pr in prs_fusionadas():
+    for pr in sorted(prs_fusionadas(), key=lambda p: p.get("mergedAt") or "", reverse=True):
         if not flujo.es_rama_de_linea(pr["baseRefName"], INTEGRACION):
             continue
         for n in issues_de_pr(pr) - ya_vistas:
@@ -477,7 +477,9 @@ def reconciliar_fusiones(proyecto: dict, abiertas: list[dict], cambios: list, av
                 continue  # los objetos y los lotes no llevan Status, y las descartadas no se mueven
             actual, refactor = issue["valores"].get("Status"), flujo.es_refactor(issue)
             cierra_en_done = flujo.cierra_por_fusion(actual, issue["valores"], n in con_pr_abierta, refactor)
-            if not cierra_en_done and not flujo.mueve_por_fusion(actual, n in con_pr_abierta, refactor):
+            # Es la PR fusionada más reciente que la enlaza (ya_vistas); para una refactorización, además, la cierra.
+            vigente = n in cierres_de_pr(pr)
+            if not cierra_en_done and not flujo.mueve_por_fusion(actual, n in con_pr_abierta, refactor, vigente):
                 continue
             valores = valores_tras_fusion(issue["valores"], refactor)
             destino, cerrar = flujo.estado_objetivo(actual, valores, fusionada=True, en_lote=False, refactor=refactor)
@@ -788,7 +790,8 @@ def main() -> int:
 
     try:
         if args.cmd == "puente":
-            args = parser.parse_args(volcado.argumentos_de_puente(args.comando))
+            args = parser.parse_args(volcado.argumentos_de_puente(args.comando, flujo.actor_de_puente(os.environ),
+                                                                  CONFIG["aprobadores"]))
         args.fn(args)
     except (ErrorTablero, objetos.ErrorObjeto, memoria.ErrorMemoria) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

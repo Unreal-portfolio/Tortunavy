@@ -353,13 +353,18 @@ def prs_abiertas() -> list[dict]:
     return json.loads(gh("pr", "list", "--repo", REPO, "--state", "open", "--limit", "100", "--json", campos))
 
 
+def cierres_de_pr(pr: dict) -> set[int]:
+    """Issues que la PR cierra con «Closes #n» (o equivalente) en el cuerpo; sin las que solo lee de la rama."""
+    return {int(n) for n in REF_CIERRE.findall(pr.get("body") or "")}
+
+
 def issues_de_pr(pr: dict, menciones: bool = False) -> set[int]:
     """Issues que cierra la PR (cuerpo y rama); con `menciones`, también las citadas con «Refs #n».
 
     Las menciones solo sirven para enlazar la PR con su lote: una issue citada no avanza ni cuenta como fusionada.
     """
     cuerpo = pr.get("body") or ""
-    refs = {int(n) for n in REF_CIERRE.findall(cuerpo)}
+    refs = cierres_de_pr(pr)
     refs |= {int(n) for n in REF_RAMA.findall(pr.get("headRefName") or "")}
     if menciones:
         refs |= {int(n) for n in REF_MENCION.findall(cuerpo)}

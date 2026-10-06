@@ -593,6 +593,14 @@ def test_el_puente_admite_chamber():
         ["chamber", "12", "13", "--motivo", "fuera del modo único"]
 
 
+def test_el_puente_solo_admite_chamber_de_un_aprobador():
+    aprobadores = ["SkiTemplar", "Mokius"]
+    with pytest.raises(base.ErrorTablero, match="Ruben-Besteiro no lo es"):
+        volcado.argumentos_de_puente("chamber 12 --motivo x", "Ruben-Besteiro", aprobadores)
+    assert volcado.argumentos_de_puente("chamber 12 --motivo x", "Mokius", aprobadores)[0] == "chamber"
+    assert volcado.argumentos_de_puente("estado 12 Ready", "Ruben-Besteiro", aprobadores)[0] == "estado"
+
+
 # --- avisos ---------------------------------------------------------------------------------------
 
 def _fusionada(numero, refs, ficheros=("Source/a.cpp",)):
@@ -661,7 +669,9 @@ class GhDescarte:
         self.comentarios.append((numero, texto))
 
 
-def _descartar(monkeypatch, gh, *numeros, motivo="Fuera del modo único", item=None, prs=(), chamber=()):
+def _descartar(monkeypatch, gh, *numeros, motivo="Fuera del modo único", item=None, prs=(), chamber=(),
+               quien="SkiTemplar"):
+    monkeypatch.setattr(control, "quien_lanza", lambda: quien)
     monkeypatch.setattr(control, "gh", gh)
     monkeypatch.setattr(control, "comentar", gh.comentar)
     monkeypatch.setattr(control, "cargar_issue", lambda n: {"items": {n: item} if item else {}})
@@ -734,6 +744,27 @@ def test_chamber_sin_motivo_no_toca_nada(monkeypatch):
     gh = GhDescarte({"state": "OPEN", "labels": [], "assignees": [], "comments": []})
     with pytest.raises(base.ErrorTablero, match="motivo"):
         _descartar(monkeypatch, gh, 42, motivo="   ")
+    assert gh.escrituras == []
+
+
+@pytest.mark.parametrize("quien", ["Ruben-Besteiro", "desconocido"])
+def test_chamber_de_quien_no_es_aprobador_no_toca_nada(monkeypatch, quien):
+    gh = GhDescarte({"state": "OPEN", "labels": [], "assignees": [], "comments": []})
+    monkeypatch.setattr(control, "cargar_issue", lambda n: pytest.fail("no debe leer la issue"))
+    with pytest.raises(base.ErrorTablero, match=f"Solo un aprobador .*{quien} no lo es"):
+        _descartar(monkeypatch, gh, 42, quien=quien)
+    assert gh.escrituras == [] and gh.comentarios == [] and gh.campos == []
+
+
+def test_chamber_por_el_puente_usa_quien_lo_dispara(monkeypatch):
+    entorno = {"GITHUB_ACTIONS": "true", "GITHUB_EVENT_NAME": "workflow_dispatch",
+               "GITHUB_TRIGGERING_ACTOR": "Ruben-Besteiro"}
+    monkeypatch.setattr(base.os, "environ", entorno)
+    monkeypatch.setattr(base, "usuario_actual", lambda: pytest.fail("en el puente manda quien lo dispara"))
+    gh = GhDescarte({"state": "OPEN", "labels": [], "assignees": [], "comments": []})
+    monkeypatch.setattr(control, "gh", gh)
+    with pytest.raises(base.ErrorTablero, match="Ruben-Besteiro no lo es"):
+        control.cmd_chamber(_args(numeros=[42], motivo="x"))
     assert gh.escrituras == []
 
 

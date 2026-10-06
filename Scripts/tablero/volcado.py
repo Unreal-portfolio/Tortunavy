@@ -25,7 +25,8 @@ MAX_TITULO = 70
 # Una issue de GitHub admite 65 536 caracteres de cuerpo.
 MAX_CUERPO = 60000
 # Subcomandos que el workflow acepta por `workflow_dispatch`: los que mantienen el tablero.
-# Quedan fuera los que crean ramas o dependen del usuario que los lanza (`coger`, `revision`).
+# Quedan fuera los que crean ramas o dependen del usuario que los lanza (`coger`, `revision`). `chamber` solo lo
+# lanza un aprobador: lo comprueban `argumentos_de_puente` y, otra vez, `control.cmd_chamber`.
 PERMITIDOS = ("estado", "campo", "sync", "auditar", "colisiones", "bloquear", "colgar", "resumen", "decidir",
               "editor", "ia", "volcado", "pedir", "atendida", "chamber")
 CABECERA = ("| # | Título | Asignados | Prio. | Tam. | Área | Fase | Revisión IA | Editor | Revisor | PR | Etiquetas "
@@ -35,8 +36,12 @@ SEPARADOR = "|" + "---|" * 13
 ESTADOS_VIVOS = ("In progress", "In review", "Revisiones", "QA editor", "Validada")
 
 
-def argumentos_de_puente(texto: str) -> list[str]:
-    """Trocea el comando recibido por el workflow; lo rechaza si su subcomando no está permitido."""
+def argumentos_de_puente(texto: str, actor: str | None = None, aprobadores=()) -> list[str]:
+    """Trocea el comando recibido por el workflow; lo rechaza si su subcomando no está permitido.
+
+    `actor` es quien disparó el puente (None si no se sabe: lo vuelve a comprobar el comando). Un `chamber` lanzado
+    por alguien que no está en `aprobadores` se rechaza aquí, antes de tocar nada.
+    """
     try:
         partes = shlex.split(texto or "")
     except ValueError as exc:
@@ -47,6 +52,8 @@ def argumentos_de_puente(texto: str) -> list[str]:
         raise ErrorTablero(f"«{partes[0]}» no se puede lanzar por el puente. Permitidos: {', '.join(PERMITIDOS)}")
     if "--retomar" in partes:  # el puente comenta con el token de otro: recuperar una descartada se hace en local
         raise ErrorTablero("«--retomar» no se puede lanzar por el puente: lo hace un aprobador en local.")
+    if partes[0] == "chamber" and actor is not None and (motivo := flujo.motivo_para_no_descartar(actor, aprobadores)):
+        raise ErrorTablero(motivo)
     return partes
 
 
