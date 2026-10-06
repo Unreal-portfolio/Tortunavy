@@ -15,6 +15,7 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Player/TN_ProcAnimInstance.h"
+#include "Player/TN_SecretEmote.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
@@ -42,6 +43,18 @@ void ATortugaCharacter::RequestWheelEmote(uint8 EmoteID)
 	TriggerEmote(static_cast<int32>(EmoteID));
 }
 
+void ATortugaCharacter::PlayHiddenEmote()
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+
+	const int32 Index = TNSecretEmote::HiddenEmoteForTurn(HiddenEmoteTurn++);
+	StartEmoteLocally(Index);
+	ServerSetEmote(Index);
+}
+
 bool ATortugaCharacter::IsValidWheelEmoteId(int32 EmoteID) const
 {
 	if (EmoteID < 0)
@@ -51,10 +64,16 @@ bool ATortugaCharacter::IsValidWheelEmoteId(int32 EmoteID) const
 
 	if (!EmoteWheelDataAsset)
 	{
-		return EmoteID >= 0 && EmoteID <= 9;
+		// Sin catálogo, los diez de siempre menos los ocultos: esos solo salen con el código secreto (#839).
+		return EmoteID <= 9 && !TNSecretEmote::IsHiddenEmote(EmoteID);
 	}
 
 	return EmoteWheelDataAsset->FindEntryById(static_cast<uint8>(EmoteID)) != nullptr;
+}
+
+bool ATortugaCharacter::IsPlayableEmoteId(int32 EmoteID) const
+{
+	return IsValidWheelEmoteId(EmoteID) || TNSecretEmote::IsHiddenEmote(EmoteID);
 }
 
 const FTN_EmoteWheelEntry* ATortugaCharacter::ResolveWheelEmoteEntry(int32 EmoteID) const
@@ -74,7 +93,8 @@ float ATortugaCharacter::GetWheelEmoteCooldown(int32 EmoteID) const
 		return Entry->Cooldown;
 	}
 
-	return 0.f;
+	// Los ocultos (#839) no tienen entrada en el catálogo.
+	return TNSecretEmote::IsHiddenEmote(EmoteID) ? TNSecretEmote::CooldownSeconds : 0.f;
 }
 
 void ATortugaCharacter::PlayWheelEmoteMontage(int32 EmoteID)
@@ -157,7 +177,7 @@ void ATortugaCharacter::ServerSetEmote_Implementation(int32 Index)
 {
 	if (Index >= 0)
 	{
-		if (!IsValidWheelEmoteId(Index))
+		if (!IsPlayableEmoteId(Index))
 		{
 			UE_LOG(LogTortunabo, Warning, TEXT("[Emote] ID inválido %d en %s"), Index, *GetNameSafe(this));
 			ClientRejectEmote(Index);

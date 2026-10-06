@@ -42,6 +42,8 @@
 #include "VR/TN_VRMode.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Engine/LocalPlayer.h"
+#include "Settings/TN_GameSettingsSubsystem.h"
+#include "InputCoreTypes.h"
 
 namespace
 {
@@ -55,6 +57,23 @@ namespace
 
 	// Frecuencia del timer que recalcula la opción apuntada en la rueda radial.
 	constexpr float MPGamePlayerController_RadialWheelUpdateHz = 60.f;
+
+	/** true si el foco del teclado está en un campo de texto (código de sala, chat...): lo que se teclea es del campo (#839). */
+	bool MPGamePlayerController_IsTextInputFocused()
+	{
+		if (!FSlateApplication::IsInitialized())
+		{
+			return false;
+		}
+		const TSharedPtr<SWidget> Focused = FSlateApplication::Get().GetKeyboardFocusedWidget();
+		if (!Focused.IsValid())
+		{
+			return false;
+		}
+		const FName Type = Focused->GetType();
+		return Type == FName(TEXT("SEditableText")) || Type == FName(TEXT("SEditableTextBox"))
+			|| Type == FName(TEXT("SMultiLineEditableText")) || Type == FName(TEXT("SMultiLineEditableTextBox"));
+	}
 }
 
 AMP_GamePlayerController::AMP_GamePlayerController()
@@ -88,6 +107,43 @@ void AMP_GamePlayerController::BeginPlay()
 		CreatePlayerHUD();
 		CreateRadialWidgets();
 		SyncCosmeticsToServer();
+	}
+}
+
+bool AMP_GamePlayerController::InputKey(const FInputKeyEventArgs& Params)
+{
+	FeedSecretEmoteCode(Params);
+	return Super::InputKey(Params);
+}
+
+void AMP_GamePlayerController::FeedSecretEmoteCode(const FInputKeyEventArgs& Params)
+{
+	// Solo teclas del teclado al pulsarlas: ni mando ni ratón, ni las repeticiones al mantener, ni soltar. Mayús, Ctrl, Alt y
+	// Bloq Mayús no cuentan (se escribe «tortunabo» igual con mayúsculas).
+	if (Params.Event != IE_Pressed || Params.Key.IsModifierKey() || Params.Key == EKeys::CapsLock
+		|| Params.Key.GetMenuCategory() != EKeys::NAME_KeyboardCategory)
+	{
+		return;
+	}
+
+	ATortugaCharacter* Turtle = IsLocalController() ? Cast<ATortugaCharacter>(GetPawn()) : nullptr;
+	const UTN_GameSettingsSubsystem* Settings = UTN_GameSettingsSubsystem::Get(this);
+	if (!Turtle || !Turtle->IsLocallyControlled() || (Settings && Settings->IsMenuUp()) || MPGamePlayerController_IsTextInputFocused())
+	{
+		SecretEmoteMatcher.Reset();
+		return;
+	}
+
+	TCHAR Letter = 0;
+	if (!TNSecretEmote::LetterFromKeyName(Params.Key.GetFName().ToString(), Letter))
+	{
+		SecretEmoteMatcher.Reset();
+		return;
+	}
+
+	if (SecretEmoteMatcher.Press(Letter))
+	{
+		Turtle->PlayHiddenEmote();
 	}
 }
 

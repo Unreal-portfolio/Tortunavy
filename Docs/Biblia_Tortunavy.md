@@ -2472,14 +2472,20 @@ Se hacen con la **rueda de emotes** (Q o LT, mantener y soltar; elegir con rató
 | 1 | HAPPIE | Aplauso | Brazos en V cerrada, palmadas a 4 Hz | 3 s | no |
 | 2 | PARACOPTER | Helicóptero | Brazos y piernas giran | bucle | no |
 | 3 | SAX-O | Palmada potente | Ambos brazos, golpe rápido abajo y lento arriba | bucle | no |
-| 4 | *(no está en la rueda: no se puede lanzar)* | Aplaudir | Brazo derecho, palmada; cola girando | 2 s | no |
+| 4 | *(oculto: solo con el código secreto)* | Aplaudir | Brazo derecho, palmada; cola girando | 2 s | no |
 | 5 | RUN | Baile irlandés | Los brazos se juntan por detrás | bucle | **sí** |
 | 6 | SUPERKIRK | Flotar (Superman) | Pose de vuelo | 5 s | **sí** |
-| 7 | *(no está en la rueda: no se puede lanzar)* | Señalar | Un brazo apunta | 1,2 s | no |
+| 7 | *(oculto: solo con el código secreto)* | Señalar | Un brazo apunta | 1,2 s | no |
 | 8 | MISTIK | Modo loco 2 | Caos total con traslaciones | bucle | no |
 | 9 | PATRICK | Fiesta (modo loco) | Caos de rotaciones; clip `Yelling` con rebote | bucle | no |
 | 100 | *(interno)* | Derribo | El «emote» del derribo (`KNOCKDOWN_EMOTE_ID`) | mientras dure | — |
 
+- **Emotes ocultos (#839).** El 4 y el 7 no están en la rueda ni en las teclas directas (`IsValidWheelEmoteId` los rechaza) y no
+  tienen nombre, icono ni texto en ningún menú ni en el tutorial. Solo salen al **escribir `tortunabo` con el teclado** durante la
+  partida (`AMP_GamePlayerController::InputKey` → `TNSecretEmote::FCodeMatcher`, `Player/TN_SecretEmote.h`): sale uno y, la vez
+  siguiente, el otro (`ATortugaCharacter::PlayHiddenEmote`). Cualquier otra tecla reinicia la cuenta (Mayús, Ctrl, Alt y Bloq
+  Mayús no); tampoco cuenta con un menú a la vista (pausa, tienda, ruedas) o un campo de texto con el foco. El servidor los acepta
+  (`IsPlayableEmoteId`) con el enfriamiento de 0,5 s y se replican como cualquier otro emote. Prueba: `Tortunabo.SecretEmote`.
 - Cada emote reproduce la **canción** `/Game/Audio/DanceSounds/<ID>` en bucle mientras dure, en 3D con atenuación de voz
   (círculo interior 300 cm, exterior 2500 cm) [BP].
 - **Reglas del servidor** (`ServerSetEmote`): el ID tiene que existir en el catálogo; se rechaza si la jugadora no está viva, está
