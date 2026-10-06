@@ -53,6 +53,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "World/Beach/TN_BeachTrapStatusComponent.h"
+#include "TN_InkScreen.h"
 
 // ── CVar de debug ─────────────────────────────────────────────────────────────
 // Activar en consola con: TN.Debug.Interaction 1
@@ -1023,7 +1024,13 @@ void ATortugaCharacter::ClearMareoSpeedCap()
 
 void ATortugaCharacter::ApplyInkEffect(float Duration)
 {
-	if (!IsLocallyControlled() || !InkOverlayMaterial || !InkPostProcess) { return; }
+	if (!IsLocallyControlled()) { return; }
+	// El BP trae el DefaultPostProcessMaterial del motor, que no tapa nada: entonces, manchas de tinta en pantalla (#787).
+	if (!InkPostProcess || TNInkScreen::NeedsFallback(InkOverlayMaterial))
+	{
+		TNInkScreen::Show(Cast<APlayerController>(GetController()), Duration);
+		return;
+	}
 
 	// Registrar el material en el PostProcess local y activarlo.
 	// AddOrUpdateBlendable garantiza que no se acumulan entradas duplicadas
