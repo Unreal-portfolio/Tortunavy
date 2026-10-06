@@ -4,15 +4,12 @@
 #include "InputCoreTypes.h"
 
 /**
- * Último aparato con el que ha jugado el jugador: decide si los avisos enseñan la tecla, el botón del mando o, con gafas, el
- * botón de los mandos Touch (#644).
+ * Último aparato con el que ha jugado el jugador: decide si los avisos enseñan la tecla o el botón del mando.
  */
 enum class ETNInputDevice : uint8
 {
 	KeyboardMouse,
 	Gamepad,
-	/** Modo VR (con gafas o simulado): los avisos nombran los botones de los mandos Meta Quest Touch. */
-	VR,
 };
 
 /** Familia del mando, para dibujar sus botones como los lleva impresos. */
@@ -101,8 +98,7 @@ namespace TNInputGlyphs
 	/**
 	 * La tecla que se enseña de una acción con ese aparato: la primera válida de ese aparato (ya reasignada en Ajustes, que
 	 * es lo que devuelve el sistema de entrada) y, si la acción no tiene ninguna, la primera del otro aparato. Los gatillos
-	 * salen como botón. Sin ninguna tecla válida, devuelve una vacía. Los botones de los Touch (FTNVRKeys) solo cuentan para
-	 * el aparato VR: con teclado o mando son «del otro aparato».
+	 * salen como botón. Sin ninguna tecla válida, devuelve una vacía.
 	 */
 	TORTUNABO_API FKey PickKey(const TArray<FKey>& Keys, ETNInputDevice Device);
 

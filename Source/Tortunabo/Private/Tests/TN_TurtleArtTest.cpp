@@ -337,7 +337,7 @@ bool FTNTurtleArtPiecesTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Sin él, vuelve"), HelmetPiece && HelmetPiece->IsVisible());
 	TestTrue(TEXT("Volver a vestirla no duplica las piezas"), PieceOf(Turtle.Body, Helmet) == HelmetPiece);
 
-	// Se esconde con la malla y su dueño la ve como la malla (primera persona).
+	// Se esconde con la malla y su dueño la ve como la malla.
 	Turtle.Body->SetVisibility(false);
 	if (ShellPiece) { ShellPiece->SyncWithBody(); }
 	TestTrue(TEXT("Malla escondida: pieza escondida"), ShellPiece && !ShellPiece->IsVisible());

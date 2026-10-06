@@ -33,8 +33,6 @@
 #include "Materials/MaterialInterface.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Player/MP_GamePlayerController.h"
-#include "VR/TN_VRMath.h"
-#include "VR/TN_VRMode.h"
 
 namespace TNShopUI
 {
@@ -384,8 +382,6 @@ void UTN_CosmeticMenuBase::NativeConstruct()
 		if (MenuMusic) { MenuMusic->PlayTrack(IsA<UTN_BoothWidget>() ? ETNMusicTrack::Booth : ETNMusicTrack::Shop); }
 	}
 	ATN_ShopKeeper::SetRadiosDucked(GetWorld(), true);
-	// Con gafas, el stick derecho es de la tortuga del escaparate y no mueve el foco (#648).
-	TNVR::SetRightStickReserved(true);
 	SetKeyboardFocus();
 }
 
@@ -397,22 +393,7 @@ void UTN_CosmeticMenuBase::NativeDestruct()
 		if (UTN_MusicSynthComponent* MenuMusic = PC->FindComponentByClass<UTN_MusicSynthComponent>()) { MenuMusic->StopMusic(); }
 	}
 	ATN_ShopKeeper::SetRadiosDucked(GetWorld(), false);
-	TNVR::SetRightStickReserved(false);
 	Super::NativeDestruct();
-}
-
-void UTN_CosmeticMenuBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-	Super::NativeTick(MyGeometry, InDeltaTime);
-	// Con gafas, el stick derecho gira la tortuga del escaparate (#648); el ratón sigue girándola arrastrando.
-	if (TNVR::IsHeadset())
-	{
-		const float Degrees = TNVRMath::StickSpinDegrees(TNVR::GetMenuRightStick().X, InDeltaTime);
-		if (Degrees != 0.f)
-		{
-			if (ATN_CosmeticPreview* Stage = Preview.Get()) { Stage->AddSpin(Degrees); }
-		}
-	}
 }
 
 AMP_GamePlayerController* UTN_CosmeticMenuBase::GetTNPC() const

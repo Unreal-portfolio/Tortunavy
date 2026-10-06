@@ -11,7 +11,6 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "InputAction.h"
-#include "VR/TN_VRMode.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del bloque.
 namespace TNInputDeviceDetail
@@ -20,7 +19,7 @@ namespace TNInputDeviceDetail
 	constexpr double FamilyRefreshSeconds = 3.0;
 
 	TAutoConsoleVariable<int32> CVarDevice(TEXT("TN.Input.Device"), 0,
-		TEXT("Aparato de los avisos de botones: 0 el último usado (VR si el modo VR está activo), 1 teclado y ratón, 2 mando, 3 mandos Touch de VR (para probar sin mando)."), ECVF_Cheat);
+		TEXT("Aparato de los avisos de botones: 0 el último usado, 1 teclado y ratón, 2 mando."), ECVF_Cheat);
 	TAutoConsoleVariable<int32> CVarPadFamily(TEXT("TN.Input.PadFamily"), 0,
 		TEXT("Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck, 4 Switch."), ECVF_Cheat);
 
@@ -148,14 +147,7 @@ ETNInputDevice UTN_InputDeviceSubsystem::GetDevice(const APlayerController* PC) 
 	{
 		case 1:  return ETNInputDevice::KeyboardMouse;
 		case 2:  return ETNInputDevice::Gamepad;
-		case 3:  return ETNInputDevice::VR;
 		default: break;
-	}
-	// Con el modo VR (gafas o simulado) los avisos nombran los botones de los mandos Touch, uses lo que uses (#644). Sin VR no
-	// cambia nada.
-	if (TNVR::IsEnabled())
-	{
-		return ETNInputDevice::VR;
 	}
 	const ULocalPlayer* LocalPlayer = PC ? PC->GetLocalPlayer() : nullptr;
 	const int32 UserIndex = LocalPlayer ? LocalPlayer->GetPlatformUserIndex() : 0;

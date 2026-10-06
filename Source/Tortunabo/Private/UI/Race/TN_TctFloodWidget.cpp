@@ -13,7 +13,7 @@
 #include "Game/TN_TctGameState.h"
 #include "Game/TN_TctItemComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del bloque.
 namespace TNTctFloodWidgetDetail
@@ -280,7 +280,7 @@ void UTN_TctHudSubsystem::Tick(float DeltaTime)
 	{
 		Widget = CreateWidget<UTN_TctFloodWidget>(PC, UTN_TctFloodWidget::StaticClass());
 		if (!Widget) { return; }
-		TNVR::AddToFullScreen(Widget, ZOrder);
+		TNScreen::AddToFullScreen(Widget, ZOrder);
 	}
 	Widget->SetView(View);
 }

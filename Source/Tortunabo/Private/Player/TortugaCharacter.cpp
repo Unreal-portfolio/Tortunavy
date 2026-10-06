@@ -26,7 +26,6 @@
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TN_SwimHopRules.h"
 #include "Player/TN_WadingComponent.h"
-#include "VR/TN_VRGrabComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TN_TurtleDustComponent.h"
@@ -168,8 +167,6 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	DizzyBirds->SetupAttachment(RootComponent);
 	// Lengua, caras de cansancio, sudor y boca (se engancha sola a la cabeza de la malla en su primer fotograma).
 	TurtleFace = CreateDefaultSubobject<UTN_TurtleFaceComponent>(TEXT("TurtleFace"));
-	// Coger objetos con física con las aletas en VR (Docs/Modo_VR.md).
-	VRGrabComponent = CreateDefaultSubobject<UTN_VRGrabComponent>(TEXT("VRGrab"));
 
 	// Casco cosmético: adjunto directamente a GetMesh() (SkeletalMeshComponent).
 	// Al estar en el árbol del mesh, recibe el network smoothing del CMC → sin lag.
@@ -577,8 +574,6 @@ void ATortugaCharacter::Tick(float DeltaTime)
 	TickEmote(DeltaTime);          // emote system (overrides leg anim when active)
 	TickLegAnimation(DeltaTime);   // normal locomotion (suppressed during emotes/dive/jump)
 	TickCameraInterp(DeltaTime);   // cinematic camera zoom/FOV interpolation
-	TickVRView(DeltaTime);         // VR con gafas: el giro del mando sigue a la cabeza (TortugaCharacter_VR.cpp)
-	TickFirstPersonView(DeltaTime); // primera persona (con o sin gafas): ojos en la cabeza y cuerpo sin cabeza (TortugaCharacter_FirstPerson.cpp)
 	// La cabeza que sigue a la cámara va en UTN_TurtleAnimInstance (GetViewRelativeToBody y ReplicatedViewYaw).
 	TickFallRules(DeltaTime);      // caída larga → caparazón (servidor)
 	TickShellVisual(DeltaTime);    // encoger/estirar extremidades al entrar/salir del caparazón
@@ -684,12 +679,6 @@ void ATortugaCharacter::TickCameraInterp(float DeltaTime)
 	// Solo aplica en el cliente local que controla este pawn.
 	if (!IsLocallyControlled()) { return; }
 	if (!CameraBoom || !FollowCamera) { return; }
-	// En primera persona (VR o sin gafas) la cámara es otra (TortugaCharacter_VR.cpp, TortugaCharacter_FirstPerson.cpp).
-	if (bVRViewActive || bFirstPersonActive)
-	{
-		CameraCarriedPull = 0.f;
-		return;
-	}
 
 	const bool bSprinting = StaminaComponent && StaminaComponent->IsSprinting();
 
@@ -1384,8 +1373,6 @@ void ATortugaCharacter::TryInteract()
 
 		if (FlipperSlap && InventoryComponent && !InventoryComponent->HasEquippedItem())
 		{
-			// En VR el servidor decide el cono con la aleta que mandó (fiable: llega antes que el golpe).
-			SendVRAimToServer();
 			FlipperSlap->TrySlap();
 			return;
 		}
@@ -1414,8 +1401,6 @@ void ATortugaCharacter::TryInteract()
 		return;
 	}
 
-	// Si el servidor acaba usando el objeto de la mano (recoger con la mano llena), en VR va hacia la aleta.
-	SendVRAimToServer();
 	ServerTryInteract(FocusedInteractable.Get());
 }
 
@@ -1542,8 +1527,6 @@ void ATortugaCharacter::DropEquippedItem()
 
 void ATortugaCharacter::TryUseEquippedItem()
 {
-	// En VR se lanza hacia donde apunta la aleta: el servidor la recibe antes que la acción (los dos son fiables).
-	SendVRAimToServer();
 	ServerUseEquippedItem();
 }
 
@@ -1736,15 +1719,6 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ATortugaCharacter, bHasUmbrellaProtection);
 	// La cabeza que sigue a la cámara (#623). SkipOwner: el dueño usa su propio giro del mando.
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReplicatedViewYaw, COND_SkipOwner);
-	// Modo VR del dueño: la tortuga gira con la cabeza (Docs/Modo_VR.md). SkipOwner: el dueño lo pone él mismo al momento
-	// (SetVRView) y un valor viejo del servidor, al alternar deprisa, pisaría el suyo.
-	DOREPLIFETIME_CONDITION(ATortugaCharacter, bVRPlayer, COND_SkipOwner);
-	// Primera persona sin gafas: igual, la tortuga gira con la cámara (también SkipOwner, por lo mismo).
-	DOREPLIFETIME_CONDITION(ATortugaCharacter, bFirstPersonPlayer, COND_SkipOwner);
-	// Manos VR del dueño (los demás ven los brazos siguiéndolas; el dueño usa las suyas).
-	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandLeft, COND_SkipOwner);
-	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRight, COND_SkipOwner);
-	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandsValid, COND_SkipOwner);
 }
 
 void ATortugaCharacter::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)

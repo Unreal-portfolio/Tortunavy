@@ -51,11 +51,6 @@ bool FTNHitFeedbackPlanTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("...ni dura"), MakePlan(1.f, NoPad).VibrationSeconds, 0.f);
 	TestTrue(TEXT("...pero sí tiembla"), MakePlan(1.f, NoPad).ShakeTrauma > 0.f);
 
-	FToggles VR;
-	VR.bVR = true;
-	TestEqual(TEXT("En VR nunca hay sacudida (marea)"), MakePlan(1.f, VR).ShakeTrauma, 0.f);
-	TestTrue(TEXT("En VR sí vibra"), MakePlan(1.f, VR).VibrationIntensity > 0.f);
-
 	const FPlan None = MakePlan(0.f, All);
 	TestTrue(TEXT("Sin golpe, nada"), None.ShakeTrauma == 0.f && None.VibrationIntensity == 0.f);
 	TestEqual(TEXT("Una fuerza por encima de 1 cuenta como 1"), MakePlan(5.f, All).VibrationIntensity, Hard.VibrationIntensity);

@@ -1549,18 +1549,21 @@ public:
 	 */
 	FVector GetThrowDirection(const FRotator& AimRotation) const;
 
-	/** Los lanzamientos van al punto del centro de la pantalla (si no, en VR, siguen a la aleta con GetThrowDirection). */
+	/** Hacia dónde se lanza o se usa algo: el giro del mando, que es la cámara. Vale en el dueño y en el servidor. */
+	FRotator GetTurtleAimRotation() const;
+
+	/** Los lanzamientos van al punto del centro de la pantalla (si no, siguen al giro del mando con GetThrowDirection). */
 	bool UsesCameraThrowAim() const;
 
 	/**
 	 * Velocidad inicial (dirección) para que un lanzamiento que sale de Origin a Speed (cm/s) caiga en el punto que se ve en
 	 * el centro de la pantalla: el primer sitio que corta el rayo de la cámara (o, sin nada, un punto lejano), con el arco
 	 * justo para llegar. Si no llega, el ángulo de máximo alcance. GravityCmS2 <= 0 usa la del mundo. LinearDamping (1/s) compensa
-	 * el frenado en el aire de lo lanzado (la caja de la concha lo tiene). En VR, GetThrowDirection(AimRotation). Vale en el servidor.
+	 * el frenado en el aire de lo lanzado (la caja de la concha lo tiene). Vale en el servidor.
 	 */
 	FVector GetThrowDirectionToCrosshair(const FVector& Origin, const FRotator& AimRotation, float Speed, float GravityCmS2 = 0.f, float LinearDamping = 0.f) const;
 
-	/** El punto del mundo que se ve en el centro de la pantalla (primer choque del rayo de la cámara, o uno lejano). Falso en VR. */
+	/** El punto del mundo que se ve en el centro de la pantalla (primer choque del rayo de la cámara, o uno lejano). */
 	bool GetCrosshairPoint(FVector& OutPoint) const;
 
 	/** El golpe de brazo de lanzar un objeto, en todas las máquinas (cosmético; lo manda el servidor al lanzarlo). */
@@ -1826,105 +1829,6 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlaySfx(USoundBase* Sound);
 
-	// ── Modo VR (Docs/Modo_VR.md) ─────────────────────────────────────────────
-
-	/**
-	 * Primera persona VR en el jugador local: cámara en la cabeza de la tortuga (con gafas, con el seguimiento de la
-	 * cabeza; simulado, con el ratón; tumbada, en la cabeza del ragdoll), del cuerpo propio se ve todo menos la cabeza (los
-	 * brazos siguen a los mandos) y la tortuga mira hacia donde mira la cabeza, también para los demás. Lo pone ATN_VRRig
-	 * cada fotograma; false la devuelve a la cámara de siempre.
-	 */
-	void SetVRView(bool bOn, bool bHeadset);
-	bool IsVRView() const { return bVRViewActive; }
-
-	/** Origen del seguimiento (a la altura de los ojos, girado por el giro del stick) y cámara VR; nullptr sin VR. */
-	USceneComponent* GetVROrigin() const { return VROrigin; }
-	UCameraComponent* GetVRCamera() const { return VRCamera; }
-
-	/** Giro del stick derecho con gafas (por pasos o suave): gira el origen del seguimiento. */
-	void AddVRYaw(float DeltaYaw);
-
-	/** Cuántos giros de golpe (más de unos grados de una vez: a pasos, al reaparecer) ha dado el origen del seguimiento. */
-	uint32 GetVRTurnSerial() const { return VRTurnSerial; }
-
-	/**
-	 * ¿Ve el jugador local el juego desde esta tortuga? (Es su vista y no hay un cambio de vista en marcha hacia otra.) Con
-	 * otra vista (probador, cámaras de escena, espectador) el cuerpo propio se pinta entero y las manos VR no valen.
-	 */
-	bool IsLocalViewTarget() const;
-
-	/** Hacia dónde apunta la aleta derecha de los mandos (lo pone ATN_VRRig); bValid false = se apunta con la cámara. */
-	void SetLocalVRAim(const FRotator& Aim, bool bValid);
-
-	/**
-	 * Hacia dónde se lanza o se usa algo (compañero, objeto, tinta, objetos de la carrera): en VR, la aleta derecha (en el
-	 * servidor, la última que mandó el dueño); si no, el giro del mando, que es la cámara. Vale en el dueño y en el servidor.
-	 */
-	FRotator GetTurtleAimRotation() const;
-
-	/** ¿Juega en VR el dueño de esta tortuga? (replicado: la tortuga gira con la cabeza, no con el movimiento). */
-	bool IsVRPlayer() const { return bVRPlayer; }
-
-	/** Coger objetos con física con las aletas en VR (lo usa ATN_VRRig). */
-	class UTN_VRGrabComponent* GetVRGrabComponent() const { return VRGrabComponent; }
-
-	/**
-	 * VR: dónde están las manos del dueño (los mandos, en el mundo). Lo pone ATN_VRRig cada fotograma; se manda al servidor
-	 * unas 15 veces por segundo (relativo a la tortuga) para que los demás vean los brazos siguiendo a las manos.
-	 */
-	void SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid);
-
-	/** Manos VR para el IK de los brazos: las del dueño o, en las demás máquinas, las replicadas. false sin VR. */
-	bool GetVRHandTargets(FVector& OutLeft, FVector& OutRight, bool& bOutLeft, bool& bOutRight) const;
-
-	/** ¿Siguen los brazos del cuerpo a las manos VR? Sí, salvo bailando, en el caparazón, tumbada o llevando a otra. */
-	bool AreVRArmsFollowing() const;
-
-	/** Qué tiene cogido un agarre VR: nada, lo que tocó (un objeto o algo con lo que interactuar), un compañero o el
-	 *  objeto que ya llevaba en la aleta. */
-	enum class EVRGrip : uint8 { None, Touched, Partner, HeldItem };
-
-	/**
-	 * VR, al apretar un agarre (Docs/Modo_VR.md, «Coger y lanzar»): coge lo que esté muy cerca de ESA mano (un objeto del
-	 * suelo o algo con lo que interactuar, o un compañero en el caparazón o aturdido). Con bHeldItem, si no hay nada, el
-	 * objeto que ya lleva en la aleta derecha (para lanzarlo o soltarlo al abrir la mano).
-	 */
-	EVRGrip VRGripPressed(bool bRight, const FVector& HandLocation, bool bHeldItem);
-
-	/**
-	 * VR, al soltar el agarre: con impulso (la mano a más de VRThrowSpeed), lanza lo cogido hacia donde va la mano; sin
-	 * él, deja al compañero en el suelo y suelta el objeto de la aleta (lo recién cogido se queda en la aleta).
-	 */
-	void VRGripReleased(EVRGrip Held, const FVector& HandVelocity);
-
-	/** Distancia (cm) de la mano a un objeto para cogerlo en VR (sin VR, la de siempre: la del cuerpo). */
-	UPROPERTY(EditDefaultsOnly, Category = "VR")
-	float VRHandReach = 40.f;
-
-	/** Velocidad de la mano (cm/s) a partir de la cual soltar el agarre lanza lo cogido. */
-	UPROPERTY(EditDefaultsOnly, Category = "VR")
-	float VRThrowSpeed = 250.f;
-
-	// ── Primera persona (Docs/Modo_VR.md, «Primera persona») ──────────────────
-
-	/**
-	 * Cámara en primera persona sin gafas (fila «Cambiar de cámara» de los controles, T y el clic del stick derecho de serie;
-	 * ajuste «Cámara» o consola TN.Camera): en la
-	 * cabeza, también tumbada en el ragdoll; se ve el cuerpo propio sin la cabeza (con la lengua y las gotas de sudor) y
-	 * la tortuga mira hacia donde mira la cámara, también para los demás. En el caparazón, la vista es desde dentro y
-	 * mucho más oscura. En VR la primera persona es la de las gafas (SetVRView) y usa lo mismo.
-	 */
-	bool IsFirstPersonView() const { return bFirstPersonActive || bVRViewActive; }
-
-	/** Cambia entre tercera y primera persona (guarda el ajuste). */
-	void ToggleCameraView();
-
-	/** ¿Quiere el jugador local la primera persona sin gafas? (consola TN.Camera o el ajuste «Cámara»). */
-	bool WantsFirstPersonView() const;
-
-	/** ¿Juega el dueño en primera persona sin gafas? (replicado: vale en todas las máquinas, como IsVRPlayer). */
-	bool IsFirstPersonPlayer() const { return bFirstPersonPlayer; }
-
 	// ── La cabeza que sigue a la cámara (#623, UTN_TurtleAnimInstance) ────────
 
 	/**
@@ -1937,118 +1841,6 @@ public:
 	/** El probador (ATN_ChangingBooth) la tiene dentro: la cabeza mira al frente (su vista no es la de su cámara). Local en cada máquina. */
 	void SetHeadLookSuppressed(bool bSuppressed) { bHeadLookSuppressed = bSuppressed; }
 	bool IsHeadLookSuppressed() const { return bHeadLookSuppressed; }
-
-private:
-	/** Manos VR del dueño relativas a la tortuga, para los demás (IK de los brazos). */
-	UPROPERTY(Replicated)
-	FVector_NetQuantize10 RepVRHandLeft;
-
-	UPROPERTY(Replicated)
-	FVector_NetQuantize10 RepVRHandRight;
-
-	/** Bit 0 mano izquierda con seguimiento, bit 1 la derecha. */
-	UPROPERTY(Replicated)
-	uint8 RepVRHandsValid = 0;
-
-	UFUNCTION(Server, Unreliable)
-	void ServerSetVRHands(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid);
-
-	FVector LocalVRHand[2] = { FVector::ZeroVector, FVector::ZeroVector };
-	bool bLocalVRHandValid[2] = { false, false };
-	double LastVRHandsSent = -1.0;
-
-	/** La interactuable más cercana a una mano VR (a menos de VRHandReach); nullptr si no hay. */
-	class ATN_InteractableBase* FindInteractableNearHand(const FVector& HandLocation);
-
-	/** Coge objetos con física con las aletas (sus RPC van por la conexión del dueño). */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UTN_VRGrabComponent> VRGrabComponent;
-
-	/** Cámara de la primera persona sin gafas (se crea al entrar). */
-	UPROPERTY(Transient)
-	TObjectPtr<UCameraComponent> FirstPersonCamera;
-
-	/** El dueño juega en primera persona sin gafas (replicado: la tortuga gira con la cámara, como en VR). */
-	UPROPERTY(ReplicatedUsing = OnRep_FirstPersonPlayer)
-	bool bFirstPersonPlayer = false;
-
-	UFUNCTION()
-	void OnRep_FirstPersonPlayer();
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetFirstPersonPlayer(bool bOn);
-
-	void SetFirstPersonView(bool bOn);
-
-	/** Cada fotograma en el dueño: la tecla de cambio, la cámara en la cabeza y lo que se ve del cuerpo propio. */
-	void TickFirstPersonView(float DeltaTime);
-
-	/** ¿Se ha pulsado en este fotograma la tecla o el botón de «Cambiar de cámara» (UTN_GameSettingsSubsystem)? */
-	bool WasCameraToggleJustPressed(const APlayerController* PC) const;
-
-	/** Dónde van los ojos: la cabeza (tumbada, la del ragdoll), el centro del caparazón o, con gafas y de pie, la cápsula. */
-	FVector ComputeFirstPersonEye(bool bHeadsetStable) const;
-
-	/** Lo que se ve del cuerpo propio: todo (tercera persona), sin cabeza, o nada (dentro del caparazón). */
-	enum class EFirstPersonBody : uint8 { Full, Headless, Hidden };
-	void ApplyFirstPersonBody(EFirstPersonBody NewBody);
-
-	/** Oscuridad de dentro del caparazón en la cámara activa (0 fuera, 1 dentro). */
-	void ApplyShellDarkness(UCameraComponent* Camera, float Alpha) const;
-
-	bool bFirstPersonActive = false;
-	EFirstPersonBody FirstPersonBody = EFirstPersonBody::Full;
-	/** Ojos respecto de la cápsula, suavizados (así la cabeza no hace temblar la vista). */
-	FVector FirstPersonEyeOffset = FVector::ZeroVector;
-	bool bFirstPersonEyeValid = false;
-	float ShellDarknessAlpha = 0.f;
-
-private:
-	/**
-	 * Ojos de la tortuga respecto del centro de la cápsula (cm). Encima del centro y no delante: la tortuga gira con la
-	 * cabeza y unos ojos adelantados darían vueltas alrededor del centro al mirar a los lados (marea).
-	 */
-	UPROPERTY(EditDefaultsOnly, Category = "VR")
-	FVector VREyeOffset = FVector(0.f, 0.f, 45.f);
-
-	UPROPERTY(Transient)
-	TObjectPtr<USceneComponent> VROrigin;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UCameraComponent> VRCamera;
-
-	UPROPERTY(ReplicatedUsing = OnRep_VRPlayer)
-	bool bVRPlayer = false;
-
-	UFUNCTION()
-	void OnRep_VRPlayer();
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetVRPlayer(bool bOn);
-
-	/** La aleta derecha del dueño, justo antes de usar o lanzar algo (fiable: llega antes que la acción). */
-	UFUNCTION(Server, Reliable)
-	void ServerSetVRAim(FRotator Aim);
-
-	/** Con bVRPlayer, la tortuga gira con el mando (la cabeza) y no hacia donde anda. */
-	void ApplyVRRotationMode();
-
-	/** Con gafas: el giro del mando sigue a la cabeza (el andar y el cuello van con ella). */
-	void TickVRView(float DeltaTime);
-
-	/** Manda al servidor la aleta derecha antes de usar o lanzar (solo clientes en VR). */
-	void SendVRAimToServer();
-
-	bool bVRViewActive = false;
-	bool bVRHeadsetView = false;
-	uint32 VRTurnSerial = 0;
-	float VRYaw = 0.f;
-	float VRLastControlYaw = 0.f;
-	bool bVRControlYawValid = false;
-	FRotator LocalVRAim = FRotator::ZeroRotator;
-	bool bLocalVRAimValid = false;
-	FRotator ServerVRAim = FRotator::ZeroRotator;
-	double ServerVRAimTime = -1.0;
 
 private:
 	bool IsValidWheelEmoteId(int32 EmoteID) const;

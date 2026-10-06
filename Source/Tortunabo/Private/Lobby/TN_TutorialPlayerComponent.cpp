@@ -21,8 +21,7 @@
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"
 #include "Net/UnrealNetwork.h"
-#include "VR/TN_VRControls.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
 
 namespace TNTutorialPlayerDetail
@@ -414,7 +413,6 @@ void UTN_TutorialPlayerComponent::ResetProgress()
 	bWasCarried = false;
 	bWasSwimming = false;
 	bDropKeyWasDown = false;
-	VRGripAge = 100.f;
 	LastEquipped = NAME_None;
 	LastStored = NAME_None;
 }
@@ -482,7 +480,7 @@ void UTN_TutorialPlayerComponent::TickLocal(float DeltaTime)
 	// Las teclas se releen cada segundo (por si se reasignan en Ajustes) y al momento si se cambia de teclado a mando.
 	KeyRefreshTimer -= DeltaTime;
 	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(this);
-	const bool bDeviceChanged = Devices && (Devices->IsUsingGamepad(GetPC()) != bGamepad || Devices->IsUsingVR(GetPC()) != bVRKeys
+	const bool bDeviceChanged = Devices && (Devices->IsUsingGamepad(GetPC()) != bGamepad
 		|| static_cast<uint8>(Devices->GetPadFamily()) != KeyPadFamily);
 	if ((KeyRefreshTimer <= 0.f || bDeviceChanged) && (bInTutorial || Widget))
 	{
@@ -632,11 +630,6 @@ void UTN_TutorialPlayerComponent::TickTasks(float DeltaTime, ATortugaCharacter* 
 	const FName Stored = Inventory ? ItemIdOf(Inventory->GetStoredItem()) : NAME_None;
 	static const FName BallId(TEXT("ThrowableBall"));
 
-	// Con gafas, el agarre derecho es el de soltar: cuánto hace que está apretado.
-	const bool bVRGripDown = TNVR::IsEnabled()
-		&& TNTutorialRules::VRButtonDown(PC->GetInputAnalogKeyState(FTNVRKeys::RightGripAxis), PC->IsInputKeyDown(FTNVRKeys::RightGrip));
-	VRGripAge = bVRGripDown ? 0.f : VRGripAge + DeltaTime;
-
 	switch (static_cast<EStation>(Here))
 	{
 		case EStation::Welcome:
@@ -676,11 +669,6 @@ void UTN_TutorialPlayerComponent::TickTasks(float DeltaTime, ATortugaCharacter* 
 				MarkTask(Here, 1);
 			}
 			bDropKeyWasDown = bDropDown;
-			// Con gafas: soltar con el agarre (abrirlo despacio deja caer lo de la aleta; con impulso, lo lanza).
-			if (TNVR::IsEnabled() && TNTutorialRules::VRDropCounts(LastEquipped != NAME_None, Equipped != NAME_None, Stored != LastStored, VRGripAge))
-			{
-				MarkTask(Here, 1);
-			}
 			break;
 		}
 		case EStation::UseItem:
@@ -785,7 +773,6 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 	APlayerController* PC = GetPC();
 	bGamepad = PC && UTN_GameSettingsSubsystem::IsUsingGamepad(PC);
 	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(this);
-	bVRKeys = PC && Devices && Devices->IsUsingVR(PC);
 	KeyPadFamily = static_cast<uint8>(Devices ? Devices->GetPadFamily() : ETNPadFamily::Xbox);
 	KeyPadKeys.Reset();
 	const int32 Device = bGamepad ? 1 : 0;
@@ -813,22 +800,6 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 		FText Label = FallbackLabel(Key, bGamepad);
 		FKey PadKey;
 		TArray<FKey> Keys;
-		if (bVRKeys)
-		{
-			// Con gafas (#644): el botón de los mandos Touch de cada acción, con su nombre («Gatillo derecho», «A»...). Sin dibujo
-			// de mando (PadKey vacío): sale el nombre. Los sticks y el clic de hablar no se ven como "pulsado" (ejes).
-			const TCHAR* ActionId = Key == EKey::Move ? TEXT("IA_Move") : (Key == EKey::Look ? TEXT("IA_Look") : RowIdOf(Key));
-			const FKey VRKey = ActionId ? TNVRControls::KeyForAction(ActionId) : FKey();
-			if (VRKey.IsValid())
-			{
-				Label = UTN_GameSettingsSubsystem::KeyDisplayName(VRKey);
-				Keys.Add(VRKey);
-			}
-			KeyTexts.Add(K, Label);
-			KeyKeys.Add(K, MoveTemp(Keys));
-			KeyPadKeys.Add(K, FKey());
-			continue;
-		}
 		if (Settings)
 		{
 			if (Key == EKey::Move)
@@ -913,34 +884,6 @@ bool UTN_TutorialPlayerComponent::IsKeyDown(uint8 Key) const
 			return true;
 		}
 	}
-	// Los mandos de las gafas (#645): el stick izquierdo (andar, liberarse de Berta), el gatillo izquierdo (rueda de frases)
-	// y el clic del stick izquierdo (pulsar para hablar). Soltar va por el agarre derecho (TickTasks).
-	if (TNVR::IsEnabled())
-	{
-		switch (static_cast<TNTutorial::EKey>(Key))
-		{
-			case TNTutorial::EKey::Move:
-				if (TNTutorialRules::VRStickMoved(PC->GetInputAnalogKeyState(FTNVRKeys::LeftStickX), PC->GetInputAnalogKeyState(FTNVRKeys::LeftStickY)))
-				{
-					return true;
-				}
-				break;
-			case TNTutorial::EKey::ChatWheel:
-				if (TNTutorialRules::VRButtonDown(PC->GetInputAnalogKeyState(FTNVRKeys::LeftTriggerAxis), PC->IsInputKeyDown(FTNVRKeys::LeftTrigger)))
-				{
-					return true;
-				}
-				break;
-			case TNTutorial::EKey::Talk:
-				if (PC->IsInputKeyDown(FTNVRKeys::LeftStickClick))
-				{
-					return true;
-				}
-				break;
-			default:
-				break;
-		}
-	}
 	if (const TArray<FKey>* Keys = KeyKeys.Find(Key))
 	{
 		for (const FKey& K : *Keys)
@@ -995,7 +938,7 @@ void UTN_TutorialPlayerComponent::EnsureWidget()
 	Widget = CreateWidget<UTN_TutorialWidget>(PC, UTN_TutorialWidget::StaticClass());
 	if (Widget)
 	{
-		TNVR::AddToScreen(Widget, WidgetZOrder);
+		TNScreen::AddToScreen(Widget, WidgetZOrder);
 	}
 }
 

@@ -47,7 +47,7 @@ namespace TNTctItemUseDetail
 
 	/**
 	 * Hacia dónde va el disparo (#707): de la boca al punto que se ve en el centro de la pantalla (la mira), no en paralelo a la
-	 * cámara, que va por detrás y por encima de la tortuga. Sin mira (VR), la dirección de la cámara.
+	 * cámara, que va por detrás y por encima de la tortuga. Sin mira, la dirección de la cámara.
 	 */
 	FVector AimDirection(const ATortugaCharacter* Turtle)
 	{

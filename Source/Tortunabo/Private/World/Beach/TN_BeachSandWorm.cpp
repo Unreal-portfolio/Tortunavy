@@ -26,7 +26,6 @@
 #include "Player/TN_ShellComponent.h"
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TortugaCharacter.h"
-#include "VR/TN_VRMode.h"
 
 /**
  * Escena del gusano de arena (tiempos en segundos de escena, sobre EatSeconds = 3,2; con desfase, la escena entera va un
@@ -1384,12 +1383,7 @@ void ATN_BeachSandWorm::TickCamera(float Tau, float DeltaSeconds)
 	// La tortuga comida de esta máquina: su cámara pasa a ver la escena (una vez).
 	if (!bCameraTaken && !bCameraGaveUp)
 	{
-		// En VR la cámara no se la lleva el gusano: se sigue en primera persona (una cámara ajena marea).
-		if (TNVR::KeepFirstPersonView())
-		{
-			bCameraGaveUp = true;
-		}
-		else if (APlayerController* Taker = FindVictimLocalController(); Taker && Taker->PlayerCameraManager)
+		if (APlayerController* Taker = FindVictimLocalController(); Taker && Taker->PlayerCameraManager)
 		{
 			if (!bSceneCamInit)
 			{

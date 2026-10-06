@@ -6,7 +6,7 @@ class IOnlineSubsystem;
 
 /**
  * Ranura del perfil cosmético por cuenta (#83). Con Steam cada cuenta tiene la suya, <Prefijo>_<SteamID64>; sin Steam
- * (subsistema NULL, Quest, PIE) se usa la de la máquina, <Prefijo>_Local. La primera cuenta que entra en un equipo con
+ * (subsistema NULL, PIE) se usa la de la máquina, <Prefijo>_Local. La primera cuenta que entra en un equipo con
  * un perfil _Local anterior se lo queda (copia) y el _Local se marca como suyo: la segunda cuenta empieza de cero.
  */
 namespace TNCosmeticSlot

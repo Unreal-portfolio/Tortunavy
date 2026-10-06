@@ -67,35 +67,4 @@ bool FTNTutorialCheckpointStationTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTutorialVRInputTest,
-	"Tortunabo.Tutorial.VRInput",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNTutorialVRInputTest::RunTest(const FString& Parameters)
-{
-	using namespace TNTutorialRules;
-
-	// Gatillos y agarres de los Touch (#645): por su valor, con el mismo umbral que el resto de la VR.
-	TestFalse(TEXT("Gatillo sin tocar"), VRButtonDown(0.f, false));
-	TestFalse(TEXT("Gatillo a medias (por debajo del 55 %)"), VRButtonDown(0.4f, false));
-	TestTrue(TEXT("Gatillo a fondo"), VRButtonDown(1.f, false));
-	TestTrue(TEXT("Gatillo justo en el umbral"), VRButtonDown(TNVRMath::AnalogPressThreshold, false));
-	TestTrue(TEXT("Con el clic, aunque el valor no llegue"), VRButtonDown(0.f, true));
-
-	// Stick izquierdo: andar y liberarse de Berta.
-	TestFalse(TEXT("Stick en reposo"), VRStickMoved(0.f, 0.f));
-	TestFalse(TEXT("Stick con un roce dentro de la zona muerta"), VRStickMoved(0.2f, -0.1f));
-	TestTrue(TEXT("Stick hacia delante"), VRStickMoved(0.f, 0.9f));
-	TestTrue(TEXT("Stick hacia la izquierda"), VRStickMoved(-0.8f, 0.f));
-
-	// Soltar con el agarre: el objeto sale de la aleta (sin ir al caparazón) con el agarre apretado hace poco.
-	TestTrue(TEXT("Soltado al abrir el agarre"), VRDropCounts(true, false, false, 0.2f));
-	TestTrue(TEXT("Soltado un instante después (el servidor tarda un viaje)"), VRDropCounts(true, false, false, 1.4f));
-	TestFalse(TEXT("Salió de la aleta sin tocar el agarre: no cuenta"), VRDropCounts(true, false, false, 30.f));
-	TestFalse(TEXT("Lo guardó en el caparazón (X): no es soltar"), VRDropCounts(true, false, true, 0.2f));
-	TestFalse(TEXT("Sigue con el objeto: no hay nada soltado"), VRDropCounts(true, true, false, 0.2f));
-	TestFalse(TEXT("No llevaba nada: no hay nada que soltar"), VRDropCounts(false, false, false, 0.2f));
-	return true;
-}
-
 #endif // WITH_DEV_AUTOMATION_TESTS
