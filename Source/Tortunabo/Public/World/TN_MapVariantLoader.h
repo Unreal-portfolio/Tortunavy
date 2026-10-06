@@ -48,6 +48,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "MapVariant")
 	bool bSpawnPlacements = true;
 
+	/**
+	 * Al empezar la partida, pone una zona de muerte por cada caja de "kill_boxes_uu" del manifest (fondo de los barrancos).
+	 * Todos contra Todos la apaga: ahí el agua es veneno (#831), no una muerte al tocarla.
+	 */
+	UPROPERTY(EditAnywhere, Category = "MapVariant")
+	bool bSpawnKillZones = true;
+
 	/** Campo "description" del manifest de la variante cargada. Solo lectura. */
 	UPROPERTY(VisibleAnywhere, Category = "MapVariant")
 	FString VariantDescription;

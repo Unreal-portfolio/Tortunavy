@@ -9,6 +9,22 @@ class ACharacter;
 class UMaterialInstanceDynamic;
 class UStaticMeshComponent;
 
+/** El veneno del agua de una tortuga (#831) tal como se replica: ver FTNTctPoison. Las horas son del servidor. */
+USTRUCT()
+struct FTNTctPoisonNet
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	float Level0 = 0.f;
+
+	UPROPERTY()
+	float T0 = 0.f;
+
+	UPROPERTY()
+	float Rate = 0.f;
+};
+
 /**
  * Lo que los objetos de Todos contra Todos (#651) dejan en una tortuga y lo que se ve de sus disparos. No viene en la tortuga:
  * el servidor lo añade en ejecución la primera vez que hace falta y se replica solo (componente dinámico replicado, como
@@ -26,6 +42,9 @@ class UStaticMeshComponent;
  *    TNTctRules::ResolveFall). bHasFloat y la hora de fin de la flotación van replicados: cada máquina enseña el flotador
  *    (en el caparazón o, flotando, a la cintura) y, mientras flota, quita la gravedad y frena a la tortuga en su
  *    UTN_StaminaComponent, como el lastre. Al acabar, el GameMode la lanza al punto seco más cercano (ServerTakeRescue).
+ *  - Veneno del agua (#831): el agua de TcT no mata al tocarla; intoxica mientras se está dentro y se recupera fuera. El
+ *    servidor lo decide cada 0,1 s (ServerTickWater) y replica solo los cambios de ritmo (la recta de FTNTctPoison): cada
+ *    máquina calcula el nivel de ahora (GetPoison) para el HUD. Al llegar a 1, queda eliminada.
  */
 UCLASS(ClassGroup = (Custom))
 class TORTUNABO_API UTN_TctItemComponent : public UActorComponent
@@ -77,6 +96,16 @@ public:
 
 	/** Servidor: true una sola vez, cuando acaba de flotar y toca lanzarla al punto seco. */
 	bool ServerTakeRescue();
+
+	/**
+	 * Servidor, cada 0,1 s (#831): la tortuga está (bInWater) o no con los pies en el agua. Sube o baja el veneno; el flotador
+	 * sin estrenar salta al llegar a TNTctPoisonDefaults::FloatTrigger y, mientras flota, a salvo. true si el veneno ha
+	 * llegado al máximo: queda eliminada.
+	 */
+	bool ServerTickWater(bool bInWater);
+
+	/** Nivel de veneno de ahora (0-1), en cualquier máquina. */
+	float GetPoison() const;
 
 	/** Estela de un disparo de Kind (ETNTctItem) de From a To, en todas las máquinas con pantalla. */
 	UFUNCTION(NetMulticast, Unreliable)
@@ -140,6 +169,10 @@ private:
 	/** El flotador que pinta esta máquina. */
 	UPROPERTY(Transient)
 	TObjectPtr<UStaticMeshComponent> FloatLook;
+
+	/** El veneno del agua: la recta replicada (la hora de T0 es la del servidor). */
+	UPROPERTY(Replicated)
+	FTNTctPoisonNet PoisonNet;
 
 	/** Servidor: la regla del flotador. */
 	FTNTctFloatState FloatRule;

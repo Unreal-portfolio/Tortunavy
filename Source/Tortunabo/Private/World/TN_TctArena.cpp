@@ -9,6 +9,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/Paths.h"
 #include "Net/UnrealNetwork.h"
@@ -22,6 +23,13 @@ namespace TNTctArenaDetail
 	/** La arena de la playa del Rally y del Coop (grano triplanar, rizos y arena mojada sobre el color de vértice). */
 	const TCHAR* SandMaterialPath = TEXT("/Game/Blueprints/Gameplay/GridMap/M_GridTerrainWet.M_GridTerrainWet");
 	const TCHAR* PlaneMeshPath = TEXT("/Engine/BasicShapes/Plane.Plane");
+	/** El mar plano y translúcido del mapa procedural (Color y Opacity): la marca del nivel que alcanzará el agua. */
+	const TCHAR* MarkerMaterialPath = TEXT("/Game/ProcMap/Materials/MI_ProcSea.MI_ProcSea");
+	/** Colores tóxicos del mar animado (ShallowColor, DeepColor y FoamColor de M_ProcWaterAnim). */
+	const FLinearColor ToxicShallow(0.42f, 0.82f, 0.12f);
+	const FLinearColor ToxicDeep(0.12f, 0.38f, 0.06f);
+	const FLinearColor ToxicFoam(0.86f, 1.f, 0.42f);
+	const FLinearColor MarkerColor(0.55f, 1.f, 0.1f);
 	/** Lado del plano básico del motor (uu). */
 	constexpr double PlaneSize = 100.0;
 	/** Suelo pisable: normal con Z de al menos esto (unos 40°). */
@@ -38,6 +46,8 @@ ATN_TctArena::ATN_TctArena()
 	using namespace TNTctArenaDetail;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+	// El agua es veneno (#831): sin las zonas de muerte del fondo del manifest, que matarían al tocar el agua.
+	bSpawnKillZones = false;
 	bReplicates = true;
 	bAlwaysRelevant = true;
 	SetReplicatingMovement(false);
@@ -50,10 +60,24 @@ ATN_TctArena::ATN_TctArena()
 	WaterPlane->SetCastShadow(false);
 	WaterPlane->SetGenerateOverlapEvents(false);
 
+	MarkerPlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MarkerPlane"));
+	MarkerPlane->SetupAttachment(RootComponent);
+	MarkerPlane->SetMobility(EComponentMobility::Movable);
+	MarkerPlane->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	MarkerPlane->SetCastShadow(false);
+	MarkerPlane->SetGenerateOverlapEvents(false);
+	MarkerPlane->SetVisibility(false);
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneMesh(PlaneMeshPath);
 	if (PlaneMesh.Succeeded())
 	{
 		WaterPlane->SetStaticMesh(PlaneMesh.Object);
+		MarkerPlane->SetStaticMesh(PlaneMesh.Object);
+	}
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MarkerMat(MarkerMaterialPath);
+	if (MarkerMat.Succeeded())
+	{
+		MarkerPlane->SetMaterial(0, MarkerMat.Object);
 	}
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> SeaMaterial(SeaMaterialPath);
 	if (SeaMaterial.Succeeded())
@@ -129,8 +153,88 @@ void ATN_TctArena::BeginPlay()
 	// La base construye la malla si hace falta y, en el servidor, pone las zonas de muerte del manifest.
 	Super::BeginPlay();
 	FitWaterPlane();
+	SetUpToxicLook();
 	// Las mallas de los objetos, ya al cargar la arena (en cada máquina): sin tirones al salir el primero de cada uno.
 	TNTctItems::PreloadMeshes();
+}
+
+void ATN_TctArena::SetUpToxicLook()
+{
+	using namespace TNTctArenaDetail;
+	if (GetNetMode() == NM_DedicatedServer || !WaterPlane || MarkerMaterial)
+	{
+		return;
+	}
+	// El mar de la arena, tóxico: el mismo mar animado con otros colores (sin tocar el asset: lo comparten el resto de modos).
+	if (UMaterialInterface* Sea = WaterPlane->GetMaterial(0))
+	{
+		if (UMaterialInstanceDynamic* Toxic = UMaterialInstanceDynamic::Create(Sea, this))
+		{
+			Toxic->SetVectorParameterValue(TEXT("ShallowColor"), ToxicShallow);
+			Toxic->SetVectorParameterValue(TEXT("DeepColor"), ToxicDeep);
+			Toxic->SetVectorParameterValue(TEXT("FoamColor"), ToxicFoam);
+			WaterPlane->SetMaterial(0, Toxic);
+		}
+	}
+	if (MarkerPlane && MarkerPlane->GetMaterial(0))
+	{
+		MarkerMaterial = UMaterialInstanceDynamic::Create(MarkerPlane->GetMaterial(0), this);
+		if (MarkerMaterial)
+		{
+			MarkerMaterial->SetVectorParameterValue(TEXT("Color"), MarkerColor);
+			MarkerMaterial->SetScalarParameterValue(TEXT("Opacity"), 0.f);
+			MarkerPlane->SetMaterial(0, MarkerMaterial);
+		}
+	}
+}
+
+void ATN_TctArena::TickMarker(const ATN_TctGameState* State)
+{
+	if (!MarkerPlane)
+	{
+		return;
+	}
+	// La marca se ve en los segundos de aviso y mientras sube el agua; el resto del tiempo, apagada.
+	FTNTctNextRise Next;
+	bool bShow = false;
+	float TargetZ = 0.f;
+	float Pulse = 0.f;
+	if (State && State->GetNextRise(Next))
+	{
+		if (Next.bRising)
+		{
+			bShow = true;
+			TargetZ = Next.RisingTargetZ;
+			Pulse = 0.18f;
+		}
+		else if (Next.bUpcoming && Next.SecondsLeft <= TNTctPoisonDefaults::WarnSeconds)
+		{
+			bShow = true;
+			TargetZ = Next.TargetZ;
+			// Late más deprisa cuanto más cerca: un parpadeo de 1 s que va a 4 Hz al final.
+			const float Hurry = 1.f - FMath::Clamp(Next.SecondsLeft / TNTctPoisonDefaults::WarnSeconds, 0.f, 1.f);
+			Pulse = 0.22f + 0.2f * (0.5f + 0.5f * FMath::Sin(GetWorld()->GetTimeSeconds() * (6.f + 18.f * Hurry)));
+		}
+	}
+	if (MarkerPlane->IsVisible() != bShow)
+	{
+		MarkerPlane->SetVisibility(bShow);
+	}
+	if (!bShow)
+	{
+		return;
+	}
+	FVector Location = MarkerPlane->GetComponentLocation();
+	const FVector WaterLocation = WaterPlane->GetComponentLocation();
+	Location.X = WaterLocation.X;
+	Location.Y = WaterLocation.Y;
+	Location.Z = TargetZ;
+	MarkerPlane->SetWorldLocation(Location);
+	MarkerPlane->SetWorldScale3D(WaterPlane->GetComponentScale());
+	if (MarkerMaterial)
+	{
+		MarkerMaterial->SetScalarParameterValue(TEXT("Opacity"), Pulse);
+	}
 }
 
 void ATN_TctArena::ServerSetArenaVariant(FName NewVariant)
@@ -182,6 +286,7 @@ void ATN_TctArena::Tick(float DeltaSeconds)
 	const ATN_TctGameState* State = World ? World->GetGameState<ATN_TctGameState>() : nullptr;
 	// Nunca por debajo del mar de la variante (antes de que llegue el estado del servidor, el GameState lo da muy abajo).
 	const float WaterZ = FMath::Max(State ? State->GetWaterZ() : BaseWaterZ, BaseWaterZ);
+	TickMarker(State);
 	FVector Location = WaterPlane->GetComponentLocation();
 	if (!FMath::IsNearlyEqual(Location.Z, static_cast<double>(WaterZ), 0.5))
 	{

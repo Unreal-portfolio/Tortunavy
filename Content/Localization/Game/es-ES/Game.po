@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-05 22:46\n"
-"PO-Revision-Date: 2026-10-05 22:46\n"
+"POT-Creation-Date: 2026-10-06 09:21\n"
+"PO-Revision-Date: 2026-10-06 09:21\n"
 "Language-Team: \n"
 "Language: es-ES\n"
 "MIME-Version: 1.0\n"
@@ -6412,92 +6412,92 @@ msgid "Dejando la partida… suelta B para quedarte"
 msgstr "Dejando la partida… suelta B para quedarte"
 
 #. Key:	ShellGain
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1051)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1051)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
 msgctxt "TNHUD,ShellGain"
 msgid "+{0}"
 msgstr "+{0}"
 
 #. Key:	Storm
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1244)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1244)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1250)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1250)
 msgctxt "TNHUD,Storm"
 msgid "¡La tormenta te alcanza! ¡Al agua!   {0}"
 msgstr "¡La tormenta te alcanza! ¡Al agua!   {0}"
 
 #. Key:	Seagull
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1258)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1258)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1264)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1264)
 msgctxt "TNHUD,Seagull"
 msgid "¡Una gaviota te ha marcado! Sal del círculo o métete bajo techo   {0}"
 msgstr "¡Una gaviota te ha marcado! Sal del círculo o métete bajo techo   {0}"
 
 #. Key:	Down
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1271)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1271)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1277)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1277)
 msgctxt "TNHUD,Down"
 msgid "¡Panza arriba!\nUn compañero puede darte la vuelta:  {0} s"
 msgstr "¡Panza arriba!\nUn compañero puede darte la vuelta:  {0} s"
 
 #. Key:	OutTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1330)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1330)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1336)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1336)
 msgctxt "TNHUD,OutTitle"
 msgid "¡Fuera de carrera!"
 msgstr "¡Fuera de carrera!"
 
 #. Key:	OutHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1331)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1331)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1337)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1337)
 msgctxt "TNHUD,OutHint"
 msgid "Anima a los demás hasta que lleguen al agua."
 msgstr "Anima a los demás hasta que lleguen al agua."
 
 #. Key:	PreviewSay
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1530)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1530)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
 msgctxt "TNHUD,PreviewSay"
 msgid "¡Por aquí, que hay conchas!"
 msgstr "¡Por aquí, que hay conchas!"
 
 #. Key:	WheelHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1758)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1758)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
 msgctxt "TNHUD,WheelHint"
 msgid "Apunta con el ratón"
 msgstr "Apunta con el ratón"
 
 #. Key:	WheelHintPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1758)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1758)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
 msgctxt "TNHUD,WheelHintPad"
 msgid "Apunta con el stick"
 msgstr "Apunta con el stick"
 
 #. Key:	Exhausted
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(402)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(402)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(403)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(403)
 msgctxt "TNHUD,Exhausted"
 msgid "¡SIN ALIENTO!"
 msgstr "¡SIN ALIENTO!"
 
 #. Key:	InHand
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(450)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(450)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
 msgctxt "TNHUD,InHand"
 msgid "EN LA ALETA"
 msgstr "EN LA ALETA"
 
 #. Key:	Stored
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(451)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(452)
 msgctxt "TNHUD,Stored"
 msgid "EN EL CAPARAZÓN"
 msgstr "EN EL CAPARAZÓN"
 
 #. Key:	Reviving
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(547)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(547)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(548)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(548)
 msgctxt "TNHUD,Reviving"
 msgid "Dando la vuelta a tu compañero..."
 msgstr "Dando la vuelta a tu compañero..."
@@ -10337,6 +10337,76 @@ msgstr "Siguiente ronda en {0}"
 msgctxt "TNRace,ToSprint"
 msgid "¡Sprint final en {0}!"
 msgstr "¡Sprint final en {0}!"
+
+#. Key:	FloodRisingLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(134)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(134)
+msgctxt "TNTct,FloodRisingLabel"
+msgid "EL AGUA SUBE"
+msgstr "EL AGUA SUBE"
+
+#. Key:	FloodFinalLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(135)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(135)
+msgctxt "TNTct,FloodFinalLabel"
+msgid "MAREA FINAL EN"
+msgstr "MAREA FINAL EN"
+
+#. Key:	FloodTier
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(140)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(140)
+msgctxt "TNTct,FloodTier"
+msgid "TRAMO {0} DE {1}"
+msgstr "TRAMO {0} DE {1}"
+
+#. Key:	FloodTierDone
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(141)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(141)
+msgctxt "TNTct,FloodTierDone"
+msgid "Ya no sube más"
+msgstr "Ya no sube más"
+
+#. Key:	FloodWarnFinal
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(157)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(157)
+msgctxt "TNTct,FloodWarnFinal"
+msgid "¡La marea final llega en {0}!"
+msgstr "¡La marea final llega en {0}!"
+
+#. Key:	FloodWarn
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(158)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(158)
+msgctxt "TNTct,FloodWarn"
+msgid "¡El agua sube en {0}!"
+msgstr "¡El agua sube en {0}!"
+
+#. Key:	FloodWarnFinalSub
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(163)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(163)
+msgctxt "TNTct,FloodWarnFinalSub"
+msgid "Cubrirá todo el mapa: sube a lo más alto"
+msgstr "Cubrirá todo el mapa: sube a lo más alto"
+
+#. Key:	FloodWarnSub
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(164)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(164)
+msgctxt "TNTct,FloodWarnSub"
+msgid "Llegará hasta la marca verde: el agua es veneno"
+msgstr "Llegará hasta la marca verde: el agua es veneno"
+
+#. Key:	FloodNextLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(55)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(55)
+msgctxt "TNTct,FloodNextLabel"
+msgid "PRÓXIMA SUBIDA"
+msgstr "PRÓXIMA SUBIDA"
+
+#. Key:	PoisonLabel
+#. SourceLocation:	Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(91)
+#: Source/Tortunabo/Private/UI/Race/TN_TctFloodWidget.cpp(91)
+msgctxt "TNTct,PoisonLabel"
+msgid "VENENO"
+msgstr "VENENO"
 
 #. Key:	BoothCount
 #. SourceLocation:	Source/Tortunabo/Private/UI/Shop/TN_ShopWidgets.cpp(1063)

@@ -61,7 +61,7 @@ void ATN_MapVariantLoader::BeginPlay()
 	{
 		LoadVariant();
 	}
-	if (HasAuthority())
+	if (HasAuthority() && bSpawnKillZones)
 	{
 		SpawnKillZones();
 	}

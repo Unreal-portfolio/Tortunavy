@@ -27,6 +27,52 @@ namespace TNTctFloodDefaults
 	inline constexpr float RoundTimeLimitSeconds = 180.f;
 }
 
+/**
+ * El agua de TcT es veneno (#831): no mata al tocarla; intoxica mientras se está dentro (los pies bajo la superficie) y se
+ * recupera fuera. Una tortuga limpia aguanta 1 / Rate = 5 s de agua seguidos; al llegar a 1, queda eliminada.
+ */
+namespace TNTctPoisonDefaults
+{
+	/** Nivel (0-1) que sube por segundo dentro del agua. */
+	inline constexpr float Rate = 0.2f;
+	/** Nivel que baja por segundo fuera del agua. */
+	inline constexpr float Recovery = 0.07f;
+	/** Con el flotador sin estrenar, salta al llegar a este nivel (no se gasta por mojarse los pies). */
+	inline constexpr float FloatTrigger = 0.5f;
+	/** Segundos de aviso (cuenta atrás y marca del nivel) antes de cada subida. */
+	inline constexpr float WarnSeconds = 5.f;
+}
+
+/**
+ * Intoxicación de una tortuga como una recta (replicable una vez por cambio): el nivel al hora T0 y lo que sube (+) o baja (-)
+ * por segundo. Cada máquina calcula el nivel de ahora con la hora del servidor (TNTctRules::PoisonLevel), sin réplica por
+ * fotograma.
+ */
+struct FTNTctPoison
+{
+	float Level0 = 0.f;
+	double T0 = 0.0;
+	float Rate = 0.f;
+};
+
+/** Lo que dice el plan del agua en un instante (TNTctRules::NextRise): la próxima subida y si el agua está subiendo. */
+struct FTNTctNextRise
+{
+	/** Hay una subida por venir (si no, el agua ya lo ha cubierto todo o no hay ronda). */
+	bool bUpcoming = false;
+	/** Índice de la subida por venir (Levels.Num() = la muerte súbita). */
+	int32 Step = INDEX_NONE;
+	/** Subidas del plan contando la muerte súbita («tramo Step + 1 de Tiers»). */
+	int32 Tiers = 0;
+	float SecondsLeft = -1.f;
+	/** Altura a la que llegará el agua con esa subida. */
+	float TargetZ = 0.f;
+	bool bSuddenDeath = false;
+	/** El agua está subiendo ahora (entre el inicio y el final de una subida); RisingTargetZ, hasta dónde. */
+	bool bRising = false;
+	float RisingTargetZ = 0.f;
+};
+
 /** Lo que el GameMode sabe de cada tortuga para decidir. */
 struct FTNTctFighter
 {
@@ -300,6 +346,54 @@ namespace TNTctRules
 	inline float FloodTopSeconds(const FTNTctFloodPlan& Plan)
 	{
 		return StepStartSeconds(Plan, Plan.Levels.Num()) + Plan.SuddenDeathRiseSeconds;
+	}
+
+	/** La próxima subida del plan a los Elapsed segundos de la salida y, si el agua sube ahora, hasta dónde (#831). */
+	inline FTNTctNextRise NextRise(const FTNTctFloodPlan& Plan, float Elapsed)
+	{
+		FTNTctNextRise Result;
+		Result.Tiers = Plan.Levels.Num() + 1;
+		for (int32 Step = 0; Step < Result.Tiers; ++Step)
+		{
+			const float Start = StepStartSeconds(Plan, Step);
+			const bool bSuddenDeath = Step == Plan.Levels.Num();
+			const float Target = bSuddenDeath ? Plan.SuddenDeathZ : Plan.Levels[Step];
+			const float Rise = FMath::Max(0.01f, bSuddenDeath ? Plan.SuddenDeathRiseSeconds : Plan.RiseSeconds);
+			if (Elapsed >= Start && Elapsed < Start + Rise)
+			{
+				Result.bRising = true;
+				Result.RisingTargetZ = Target;
+			}
+			if (!Result.bUpcoming && Start > Elapsed)
+			{
+				Result.bUpcoming = true;
+				Result.Step = Step;
+				Result.SecondsLeft = Start - Elapsed;
+				Result.TargetZ = Target;
+				Result.bSuddenDeath = bSuddenDeath;
+			}
+		}
+		return Result;
+	}
+
+	/** Nivel de intoxicación (0-1) a la hora Now. */
+	inline float PoisonLevel(const FTNTctPoison& Poison, double Now)
+	{
+		return FMath::Clamp(Poison.Level0 + Poison.Rate * static_cast<float>(FMath::Max(0.0, Now - Poison.T0)), 0.f, 1.f);
+	}
+
+	/** Cambia lo que sube o baja (por segundo) a partir de Now, conservando el nivel de ahora. */
+	inline void SetPoisonRate(FTNTctPoison& Poison, double Now, float NewRate)
+	{
+		Poison.Level0 = PoisonLevel(Poison, Now);
+		Poison.T0 = Now;
+		Poison.Rate = NewRate;
+	}
+
+	/** Lo que cambia el nivel por segundo: sube dentro del agua (por Scale, p. ej. las aletas) y baja fuera. */
+	inline float PoisonRateFor(bool bPoisoned, float Scale = 1.f)
+	{
+		return bPoisoned ? TNTctPoisonDefaults::Rate * FMath::Max(0.f, Scale) : -TNTctPoisonDefaults::Recovery;
 	}
 
 	/** Altura del agua a los Elapsed segundos de la salida (BaseZ antes de empezar a subir). */

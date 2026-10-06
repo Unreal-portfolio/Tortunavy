@@ -71,6 +71,7 @@ void UTN_TctItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(UTN_TctItemComponent, HeavyEnd);
 	DOREPLIFETIME(UTN_TctItemComponent, bHasFloat);
 	DOREPLIFETIME(UTN_TctItemComponent, FloatEnd);
+	DOREPLIFETIME(UTN_TctItemComponent, PoisonNet);
 }
 
 UTN_TctItemComponent* UTN_TctItemComponent::FindOn(const AActor* Turtle)
@@ -130,6 +131,7 @@ void UTN_TctItemComponent::ClearEffects()
 	FloatEnd = 0.f;
 	FloatRule = FTNTctFloatState();
 	bRescuePending = false;
+	PoisonNet = FTNTctPoisonNet();
 	GetOwner()->ForceNetUpdate();
 	ApplyHeavy();
 	ApplyFloat();
@@ -225,6 +227,53 @@ bool UTN_TctItemComponent::ServerTakeRescue()
 	ApplyFloat();
 	RefreshFloatLook();
 	return true;
+}
+
+float UTN_TctItemComponent::GetPoison() const
+{
+	FTNTctPoison Line;
+	Line.Level0 = PoisonNet.Level0;
+	Line.T0 = PoisonNet.T0;
+	Line.Rate = PoisonNet.Rate;
+	return TNTctRules::PoisonLevel(Line, Now());
+}
+
+bool UTN_TctItemComponent::ServerTickWater(bool bInWater)
+{
+	const AActor* Owner = GetOwner();
+	if (!Owner || !Owner->HasAuthority())
+	{
+		return false;
+	}
+	const double Time = Now();
+	bool bPoisoned = bInWater;
+	if (bInWater)
+	{
+		if (IsFloating() || Time < FloatRule.SafeUntil)
+		{
+			// Flotando o en el respiro tras el rescate: el agua no la toca.
+			bPoisoned = false;
+		}
+		else if (bHasFloat && GetPoison() >= TNTctPoisonDefaults::FloatTrigger)
+		{
+			// El flotador se gasta al verse mal, no por mojarse los pies (la regla es la de siempre: TNTctRules::ResolveFall).
+			bPoisoned = ServerResolveFall(ETNTctFall::Water);
+		}
+	}
+	const float NewRate = TNTctRules::PoisonRateFor(bPoisoned);
+	if (!FMath::IsNearlyEqual(NewRate, PoisonNet.Rate))
+	{
+		FTNTctPoison Line;
+		Line.Level0 = PoisonNet.Level0;
+		Line.T0 = PoisonNet.T0;
+		Line.Rate = PoisonNet.Rate;
+		TNTctRules::SetPoisonRate(Line, Time, NewRate);
+		PoisonNet.Level0 = Line.Level0;
+		PoisonNet.T0 = static_cast<float>(Line.T0);
+		PoisonNet.Rate = Line.Rate;
+		GetOwner()->ForceNetUpdate();
+	}
+	return GetPoison() >= 1.f;
 }
 
 void UTN_TctItemComponent::OnRep_Float()
