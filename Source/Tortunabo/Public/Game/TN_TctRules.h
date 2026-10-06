@@ -376,6 +376,22 @@ namespace TNTctRules
 		return Result;
 	}
 
+	/**
+	 * Hora de salida nueva tras retrasar el agua Seconds (el tapón de marea, #830): el reloj del agua cuenta desde la salida, así
+	 * que retrasar la salida baja el agua lo que había subido en esos segundos y aplaza lo que falta. Nunca en el futuro.
+	 */
+	inline float DelayedFloodStart(float StartServerTime, float Seconds, float Now)
+	{
+		return FMath::Min(StartServerTime + FMath::Max(0.f, Seconds), Now);
+	}
+
+	/** Cuánto va la ronda por el agua (0 = sin empezar a subir, 1 = en la marea final), para dar mejores objetos según avanza (#830). */
+	inline float RoundProgress(const FTNTctFloodPlan& Plan, float Elapsed)
+	{
+		const float Span = FMath::Max(1.f, StepStartSeconds(Plan, Plan.Levels.Num()) - Plan.StartDelay);
+		return FMath::Clamp((Elapsed - Plan.StartDelay) / Span, 0.f, 1.f);
+	}
+
 	/** Nivel de intoxicación (0-1) a la hora Now. */
 	inline float PoisonLevel(const FTNTctPoison& Poison, double Now)
 	{

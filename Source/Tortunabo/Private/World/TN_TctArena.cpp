@@ -39,6 +39,9 @@ namespace TNTctArenaDetail
 	constexpr double NeighbourMaxRise = 60.0;
 	/** Suelo a menos de esto por encima del mar no cuenta (orilla que se moja). */
 	constexpr double ShoreMargin = 50.0;
+	/** Exposición: cuántas muestras hacia fuera se busca un desnivel y cuánto de bajada cuenta como vacío (uu). */
+	constexpr int32 ExposureRings = 6;
+	constexpr double ExposureDrop = 150.0;
 }
 
 ATN_TctArena::ATN_TctArena()
@@ -359,6 +362,8 @@ bool ATN_TctArena::Survey(float SampleSpacing)
 	FitWaterPlane();
 	SurveyHeights.Reset();
 	SpawnCandidates.Reset();
+	SpawnExposure.Reset();
+	HighestZ = 0.f;
 	if (!GroundBox.IsValid || SampleSpacing <= 1.f)
 	{
 		UE_LOG(LogTortunabo, Error, TEXT("[TcT] La arena «%s» no tiene terreno con colisión: no se puede medir."), *ArenaVariant.ToString());
@@ -370,9 +375,14 @@ bool ATN_TctArena::Survey(float SampleSpacing)
 	const double Step = SampleSpacing;
 	const double Near = Step * NeighbourStepFraction;
 	const double MinGroundZ = BaseWaterZ + ShoreMargin;
-	for (double X = GroundBox.Min.X + Step * 0.5; X < GroundBox.Max.X; X += Step)
+	// Cota del suelo pisable de cada muestra por su casilla (para medir lo cerca que está cada sitio del vacío).
+	TMap<FIntPoint, float> Grid;
+	TArray<FIntPoint> CandidateCells;
+	int32 IndexX = 0;
+	for (double X = GroundBox.Min.X + Step * 0.5; X < GroundBox.Max.X; X += Step, ++IndexX)
 	{
-		for (double Y = GroundBox.Min.Y + Step * 0.5; Y < GroundBox.Max.Y; Y += Step)
+		int32 IndexY = 0;
+		for (double Y = GroundBox.Min.Y + Step * 0.5; Y < GroundBox.Max.Y; Y += Step, ++IndexY)
 		{
 			FVector Point;
 			if (!TraceGround(X, Y, TopZ, BottomZ, Point) || Point.Z < MinGroundZ)
@@ -380,6 +390,8 @@ bool ATN_TctArena::Survey(float SampleSpacing)
 				continue;
 			}
 			SurveyHeights.Add(static_cast<float>(Point.Z));
+			Grid.Add(FIntPoint(IndexX, IndexY), static_cast<float>(Point.Z));
+			HighestZ = FMath::Max(HighestZ, static_cast<float>(Point.Z));
 
 			// Sitio de salida: las cuatro vecinas también son suelo pisable a la misma altura (no es un borde ni una rampa).
 			bool bInterior = true;
@@ -396,8 +408,36 @@ bool ATN_TctArena::Survey(float SampleSpacing)
 			if (bInterior)
 			{
 				SpawnCandidates.Add(Point);
+				CandidateCells.Add(FIntPoint(IndexX, IndexY));
 			}
 		}
+	}
+	// Exposición: el primer anillo de muestras (1 = pegado) donde falta suelo o baja más de 1,5 m; sin ninguno, 0.
+	for (int32 Candidate = 0; Candidate < SpawnCandidates.Num(); ++Candidate)
+	{
+		const FIntPoint Cell = CandidateCells[Candidate];
+		const float Z = static_cast<float>(SpawnCandidates[Candidate].Z);
+		float Exposure = 0.f;
+		for (int32 Ring = 1; Ring <= ExposureRings && Exposure == 0.f; ++Ring)
+		{
+			for (int32 Dx = -Ring; Dx <= Ring && Exposure == 0.f; ++Dx)
+			{
+				for (int32 Dy = -Ring; Dy <= Ring; ++Dy)
+				{
+					if (FMath::Max(FMath::Abs(Dx), FMath::Abs(Dy)) != Ring)
+					{
+						continue;
+					}
+					const float* Neighbour = Grid.Find(FIntPoint(Cell.X + Dx, Cell.Y + Dy));
+					if (!Neighbour || *Neighbour < Z - ExposureDrop)
+					{
+						Exposure = 1.f - static_cast<float>(Ring - 1) / static_cast<float>(ExposureRings);
+						break;
+					}
+				}
+			}
+		}
+		SpawnExposure.Add(Exposure);
 	}
 	UE_LOG(LogTortunabo, Log, TEXT("[TcT] Arena «%s» medida: %d muestras de suelo, %d sitios de salida posibles, mar a %.0f uu."),
 		*ArenaVariant.ToString(), SurveyHeights.Num(), SpawnCandidates.Num(), BaseWaterZ);

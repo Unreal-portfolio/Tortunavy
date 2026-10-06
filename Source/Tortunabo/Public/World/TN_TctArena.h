@@ -77,6 +77,15 @@ public:
 	/** Puntos de suelo pisable lejos de los bordes (de la última medición): de aquí salen las salidas y los puntos de objetos. */
 	const TArray<FVector>& GetSpawnCandidates() const { return SpawnCandidates; }
 
+	/**
+	 * Lo cerca del vacío que está cada sitio de GetSpawnCandidates (0-1, mismo orden): 1 con un desnivel de más de 1,5 m
+	 * pegado a él, 0 sin ninguno a menos de 15 m (#830). Los puntos de objetos expuestos dan mejores objetos.
+	 */
+	const TArray<float>& GetSpawnExposure() const { return SpawnExposure; }
+
+	/** La cota del suelo más alto medido (mundo). */
+	float GetTopZ() const { return HighestZ; }
+
 protected:
 	/** Variante elegida por el servidor (la de Variant del nivel hasta que la cambie). */
 	UPROPERTY(ReplicatedUsing = OnRep_ArenaVariant)
@@ -115,6 +124,8 @@ private:
 	TArray<float> SurveyHeights;
 	/** Muestras de suelo pisable con sus cuatro vecinas también pisables y a la misma altura (lejos de los bordes). */
 	TArray<FVector> SpawnCandidates;
+	TArray<float> SpawnExposure;
+	float HighestZ = 0.f;
 	FBox GroundBox = FBox(ForceInit);
 	float BaseWaterZ = 0.f;
 };

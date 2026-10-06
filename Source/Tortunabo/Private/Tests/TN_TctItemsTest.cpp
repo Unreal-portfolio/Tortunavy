@@ -20,10 +20,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNTctItemsCatalogTest,
 bool FTNTctItemsCatalogTest::RunTest(const FString& Parameters)
 {
 	const TArray<ETNTctItem> Kinds = TNTctItemRules::AllKinds();
-	TestEqual(TEXT("Dieciocho objetos"), Kinds.Num(), 18);
+	TestEqual(TEXT("Veintiocho objetos (los 18 de #651, #714 y #777 y los 10 de #830)"), Kinds.Num(), 28);
 	// Sin malla IA de #600: llevan su malla en ejecución (TNTctItemMeshes).
 	const TSet<ETNTctItem> OwnMesh = { ETNTctItem::Cocobomba, ETNTctItem::Alga, ETNTctItem::GaviotaLadrona, ETNTctItem::Flotador,
-		ETNTctItem::MedusaTrampolin };
+		ETNTctItem::MedusaTrampolin, ETNTctItem::Cohete, ETNTctItem::BotasMuelle, ETNTctItem::Aletas, ETNTctItem::Cambiazo,
+		ETNTctItem::Burbuja, ETNTctItem::Puas, ETNTctItem::Red, ETNTctItem::Remolino, ETNTctItem::TaponMarea, ETNTctItem::Paraguas };
 
 	int32 InPool = 0;
 	TSet<FName> Ids;

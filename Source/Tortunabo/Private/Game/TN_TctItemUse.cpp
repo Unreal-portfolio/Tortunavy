@@ -1,6 +1,7 @@
 // Objetos de Todos contra Todos: lo que hace cada uno al usarlo (servidor). El catálogo está en TN_TctItems.cpp.
 
 #include "Game/TN_TctItems.h"
+#include "Game/TN_TctGameMode.h"
 #include "Game/TN_TctItemComponent.h"
 #include "Core/TN_Log.h"
 #include "Engine/DataTable.h"
@@ -15,6 +16,7 @@
 #include "World/TN_TctProjectile.h"
 #include "World/TN_TctJellyPad.h"
 #include "World/TN_TctThiefGull.h"
+#include "World/TN_TctWhirlwind.h"
 
 namespace TNTctItemUseDetail
 {
@@ -238,6 +240,7 @@ namespace TNTctItemUseDetail
 		if (Kind == ETNTctItem::JellyDart) { Pitch = TNTctItemTuning::DartPitchDeg; }
 		if (Kind == ETNTctItem::Cocobomba) { Pitch = TNTctItemTuning::CocoPitchDeg; }
 		if (Kind == ETNTctItem::Alga) { Pitch = TNTctItemTuning::AlgaPitchDeg; }
+		if (Kind == ETNTctItem::Red) { Pitch = TNTctItemTuning::NetPitchDeg; }
 		const bool bLaunched = ATN_TctProjectile::ServerLaunch(Turtle, static_cast<uint8>(Kind), TNRaceItems::ThrowDirection(Turtle, Pitch));
 		if (bLaunched)
 		{
@@ -249,6 +252,76 @@ namespace TNTctItemUseDetail
 			}
 		}
 		return bLaunched;
+	}
+
+	/** Un efecto con hora de fin en quien lo usa (botas, aletas, burbuja, púas, paraguas). */
+	bool UseFx(ATortugaCharacter* Turtle, ETNTctFx Fx, ETNRaceSound Cue, float Pitch)
+	{
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle);
+		if (!Effects)
+		{
+			return false;
+		}
+		Effects->GrantFx(Fx, TNTctItemRules::FxSeconds(Fx));
+		TNTctItems::PlayCue(Turtle, Cue, Pitch);
+		return true;
+	}
+
+	/** El cohete: te lanza hacia donde miras y te quema (casi sin poder andar un momento). */
+	bool UseCohete(ATortugaCharacter* Turtle)
+	{
+		UTN_TurtleMovementComponent::LaunchFromServer(Turtle, TNTctItemRules::CoheteLaunch(AimDirection(Turtle)));
+		if (UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle))
+		{
+			Effects->GrantFx(ETNTctFx::Scorch, TNTctItemRules::FxSeconds(ETNTctFx::Scorch));
+		}
+		TNTctItems::PlayCue(Turtle, ETNRaceSound::Turbo, 0.9f);
+		return true;
+	}
+
+	/** El cambiazo: cambia el sitio con la tortuga más cercana a la que se pueda mover; las dos quedan mareadas un momento. */
+	bool UseCambiazo(ATortugaCharacter* Turtle)
+	{
+		TArray<ATortugaCharacter*> Turtles;
+		TNTctItems::GatherTurtles(Turtle, Turtle, Turtles);
+		TArray<ATortugaCharacter*> Candidates;
+		TArray<FVector> Where;
+		for (ATortugaCharacter* Other : Turtles)
+		{
+			if (TNTctItems::CanAffect(Other, true))
+			{
+				Candidates.Add(Other);
+				Where.Add(Other->GetActorLocation());
+			}
+		}
+		const int32 Pick = TNTctItemRules::PickThiefVictim(Turtle->GetActorLocation(), Where, TNTctItemTuning::SwapRange);
+		if (Pick == INDEX_NONE)
+		{
+			return false;
+		}
+		ATortugaCharacter* Other = Candidates[Pick];
+		const FTransform Mine(Turtle->GetActorRotation(), Turtle->GetActorLocation());
+		const FTransform Theirs(Other->GetActorRotation(), Other->GetActorLocation());
+		TNBeach::RelocateTurtle(Turtle, Theirs);
+		TNBeach::RelocateTurtle(Other, Mine);
+		Turtle->MulticastApplyMareoEffect(TNTctItemTuning::SwapDizzySeconds);
+		Other->MulticastApplyMareoEffect(TNTctItemTuning::SwapDizzySeconds);
+		TNTctItems::PlayCue(Turtle, ETNRaceSound::Zap, 1.4f);
+		TNTctItems::PlayCue(Other, ETNRaceSound::Zap, 1.4f);
+		UE_LOG(LogTortunabo, Log, TEXT("[TcT] %s cambia su sitio con %s."), *GetNameSafe(Turtle), *GetNameSafe(Other));
+		return true;
+	}
+
+	/** El tapón de marea: retrasa el agua para todas. */
+	bool UseTapon(ATortugaCharacter* Turtle)
+	{
+		ATN_TctGameMode* GameMode = Turtle->GetWorld() ? Turtle->GetWorld()->GetAuthGameMode<ATN_TctGameMode>() : nullptr;
+		if (!GameMode || !GameMode->DelayFlood(TNTctItemTuning::PlugDelaySeconds))
+		{
+			return false;
+		}
+		TNTctItems::PlayCue(Turtle, ETNRaceSound::Rumble, 0.8f);
+		return true;
 	}
 
 	bool UseAlga(ATortugaCharacter* Turtle)
@@ -298,7 +371,17 @@ void TNTctItems::ServerUse(ATortugaCharacter* Turtle, const FTN_InventoryItem& I
 	case ETNTctItem::BeachBall:
 	case ETNTctItem::Anchor:
 	case ETNTctItem::JellyDart:
-	case ETNTctItem::Cocobomba:      bUsed = UseProjectile(Turtle, Kind); break;
+	case ETNTctItem::Cocobomba:
+	case ETNTctItem::Red:            bUsed = UseProjectile(Turtle, Kind); break;
+	case ETNTctItem::Cohete:         bUsed = UseCohete(Turtle); break;
+	case ETNTctItem::BotasMuelle:    bUsed = UseFx(Turtle, ETNTctFx::Spring, ETNRaceSound::Boing, 1.3f); break;
+	case ETNTctItem::Aletas:         bUsed = UseFx(Turtle, ETNTctFx::Fins, ETNRaceSound::Splat, 1.2f); break;
+	case ETNTctItem::Burbuja:        bUsed = UseFx(Turtle, ETNTctFx::Bubble, ETNRaceSound::StarUp, 1.f); break;
+	case ETNTctItem::Puas:           bUsed = UseFx(Turtle, ETNTctFx::Spikes, ETNRaceSound::Bonk, 1.6f); break;
+	case ETNTctItem::Paraguas:       bUsed = UseFx(Turtle, ETNTctFx::Glide, ETNRaceSound::Flap, 1.1f); break;
+	case ETNTctItem::Cambiazo:       bUsed = UseCambiazo(Turtle); break;
+	case ETNTctItem::TaponMarea:     bUsed = UseTapon(Turtle); break;
+	case ETNTctItem::Remolino:       bUsed = ATN_TctWhirlwind::ServerPlant(Turtle) != nullptr; break;
 	case ETNTctItem::Alga:           bUsed = UseAlga(Turtle); break;
 	case ETNTctItem::GaviotaLadrona: bUsed = ATN_TctThiefGull::ServerLaunch(Turtle); break;
 	case ETNTctItem::MedusaTrampolin: bUsed = ATN_TctJellyPad::ServerPlant(Turtle) != nullptr; break;

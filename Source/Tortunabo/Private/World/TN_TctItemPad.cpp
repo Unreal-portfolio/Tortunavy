@@ -134,6 +134,105 @@ ATN_TctItemPad::ATN_TctItemPad()
 	}
 	// Disco de 1,6 m y 3 cm de alto, apenas por encima del suelo (el cilindro del motor mide 100 uu, con el centro en medio).
 	Disc->SetRelativeScale3D(FVector(1.6f, 1.6f, 0.03f));
+
+	// Haz de luz: un cilindro fino y translúcido que sube desde el disco mientras hay un objeto (se ve de lejos).
+	Beam = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Beam"));
+	Beam->SetupAttachment(Disc);
+	Beam->SetUsingAbsoluteLocation(true);
+	Beam->SetUsingAbsoluteRotation(true);
+	Beam->SetUsingAbsoluteScale(true);
+	Beam->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Beam->SetCanEverAffectNavigation(false);
+	Beam->SetCastShadow(false);
+	Beam->SetVisibility(false);
+	if (Cylinder.Succeeded())
+	{
+		Beam->SetStaticMesh(Cylinder.Object);
+	}
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BeamMaterial(TEXT("/Game/ProcMap/Materials/MI_ProcSea.MI_ProcSea"));
+	if (BeamMaterial.Succeeded())
+	{
+		Beam->SetMaterial(0, BeamMaterial.Object);
+	}
+}
+
+void ATN_TctItemPad::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATN_TctItemPad, Rarity);
+	DOREPLIFETIME(ATN_TctItemPad, bBeamOn);
+}
+
+float ATN_TctItemPad::BeamHeight(ETNTctRarity InRarity)
+{
+	// Común: se ve de cerca; raro: de lo alto del mismo piso; épico: de toda la arena.
+	return InRarity == ETNTctRarity::Epic ? 3200.f : (InRarity == ETNTctRarity::Rare ? 1600.f : 700.f);
+}
+
+FLinearColor ATN_TctItemPad::RarityColor(ETNTctRarity InRarity)
+{
+	return InRarity == ETNTctRarity::Epic ? FLinearColor(0.85f, 0.3f, 1.f)
+		: (InRarity == ETNTctRarity::Rare ? FLinearColor(0.2f, 0.75f, 1.f) : FLinearColor(1.f, 0.62f, 0.18f));
+}
+
+void ATN_TctItemPad::OnRep_Look()
+{
+	RefreshLook();
+}
+
+void ATN_TctItemPad::RefreshLook()
+{
+	const ETNTctRarity Level = GetRarity();
+	if (Disc)
+	{
+		// Más ancho cuanto más raro.
+		const float Width = Level == ETNTctRarity::Epic ? 2.4f : (Level == ETNTctRarity::Rare ? 2.0f : 1.6f);
+		Disc->SetRelativeScale3D(FVector(Width, Width, 0.03f));
+		if (UMaterialInstanceDynamic* Material = Cast<UMaterialInstanceDynamic>(Disc->GetMaterial(0)))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), RarityColor(Level));
+		}
+	}
+	if (Beam)
+	{
+		const float Height = BeamHeight(Level);
+		Beam->SetVisibility(bBeamOn);
+		// El cilindro del motor mide 100 uu de alto y 100 de ancho: 35 uu de ancho y Height de alto, en coordenadas de mundo (el disco
+		// es plano y escala lo que cuelga de él).
+		Beam->SetWorldScale3D(FVector(0.35f, 0.35f, Height / 100.f));
+		Beam->SetWorldLocation(GetActorLocation() + FVector(0.0, 0.0, Height * 0.5f));
+		if (!Cast<UMaterialInstanceDynamic>(Beam->GetMaterial(0)) && Beam->GetMaterial(0))
+		{
+			if (UMaterialInstanceDynamic* Glow = UMaterialInstanceDynamic::Create(Beam->GetMaterial(0), this))
+			{
+				Beam->SetMaterial(0, Glow);
+			}
+		}
+		if (UMaterialInstanceDynamic* Glow = Cast<UMaterialInstanceDynamic>(Beam->GetMaterial(0)))
+		{
+			Glow->SetVectorParameterValue(TEXT("Color"), RarityColor(Level));
+			Glow->SetScalarParameterValue(TEXT("Opacity"), 0.32f);
+		}
+	}
+}
+
+void ATN_TctItemPad::ServerSetRarity(ETNTctRarity NewRarity)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	Rarity = static_cast<uint8>(NewRarity);
+	ForceNetUpdate();
+	RefreshLook();
+}
+
+float ATN_TctItemPad::RoundProgress() const
+{
+	const UWorld* World = GetWorld();
+	const ATN_TctGameState* State = World ? World->GetGameState<ATN_TctGameState>() : nullptr;
+	const float Elapsed = State ? State->GetFloodElapsed() : -1.f;
+	return Elapsed < 0.f ? 0.f : TNTctRules::RoundProgress(State->Flood.ToPlan(), Elapsed);
 }
 
 void ATN_TctItemPad::BeginPlay()
@@ -143,6 +242,7 @@ void ATN_TctItemPad::BeginPlay()
 	{
 		Material->SetVectorParameterValue(TEXT("Color"), DiscColor);
 	}
+	RefreshLook();
 }
 
 void ATN_TctItemPad::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -200,6 +300,9 @@ void ATN_TctItemPad::ServerUpdate(double Now, float WaterZ)
 	{
 		Current.Reset();
 		Clock.MarkTaken(Now, RespawnSeconds);
+		bBeamOn = false;
+		ForceNetUpdate();
+		RefreshLook();
 	}
 	if (TNTctItemRules::IsPadSubmerged(static_cast<float>(GetActorLocation().Z), WaterZ))
 	{
@@ -226,6 +329,9 @@ void ATN_TctItemPad::NotifyTaken(ATN_TctItemPickup* Pickup)
 	}
 	Current.Reset();
 	Clock.MarkTaken(GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, RespawnSeconds);
+	bBeamOn = false;
+	ForceNetUpdate();
+	RefreshLook();
 }
 
 bool ATN_TctItemPad::SpawnItem()
@@ -239,7 +345,7 @@ bool ATN_TctItemPad::SpawnItem()
 	{
 		Available = TNTctItems::AvailableKinds();
 	}
-	const ETNTctItem Kind = TNTctItemRules::PickPadItem(Available, LastKind, FMath::FRand());
+	const ETNTctItem Kind = TNTctItemRules::PickPadItem(Available, LastKind, FMath::FRand(), GetRarity(), RoundProgress());
 	FTN_InventoryItem Item;
 	if (Kind == ETNTctItem::None || !TNTctItems::MakeItem(Kind, Item))
 	{
@@ -261,6 +367,9 @@ bool ATN_TctItemPad::SpawnItem()
 	Current = Pickup;
 	LastKind = Kind;
 	Clock.MarkSpawned();
+	bBeamOn = true;
+	ForceNetUpdate();
+	RefreshLook();
 	UE_LOG(LogTortunabo, Verbose, TEXT("[TcT] Punto %s: sale %s."), *GetName(), TNTctItemRules::Spec(Kind).Code);
 	return true;
 }
@@ -275,4 +384,10 @@ void ATN_TctItemPad::RemoveCurrent()
 		}
 	}
 	Current.Reset();
+	if (bBeamOn)
+	{
+		bBeamOn = false;
+		ForceNetUpdate();
+		RefreshLook();
+	}
 }

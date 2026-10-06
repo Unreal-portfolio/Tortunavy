@@ -29,4 +29,10 @@ namespace TNTctItemMeshes
 
 	/** Medusa trampolín: cúpula rosa de radio 100 uu y ~45 uu de alto, con los tentáculos recogidos. */
 	UStaticMesh* JellyDome();
+
+	/** Embudo de arena del remolino (#830): 250 uu de alto y 135 de radio arriba. */
+	UStaticMesh* Funnel();
+
+	/** Corona de púas alrededor de la tortuga con las púas de erizo puestas (#830). */
+	UStaticMesh* SpikeRing();
 }

@@ -85,6 +85,12 @@ public:
 	/** Todos los puntos de objetos sacan ya uno nuevo. */
 	void DebugRespawnItems();
 
+	/**
+	 * Servidor, el tapón de marea (#830): retrasa Seconds el reloj del agua (baja lo que haya subido en ese tiempo y aplaza lo que
+	 * falta). false si no hay ronda en juego.
+	 */
+	bool DelayFlood(float Seconds);
+
 protected:
 	virtual void OnWaitingTimeout() override;
 	virtual void UpdateRoundProgressAndMaybeFinish() override;
@@ -182,6 +188,10 @@ protected:
 	/** Ningún punto de objetos a menos de esto de una salida (uu), si caben. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Items", meta = (ClampMin = "0.0"))
 	float ItemPadMinFromSpawn = 700.f;
+
+	/** Separación mínima entre puntos de objetos (uu), si caben (#830). */
+	UPROPERTY(EditDefaultsOnly, Category = "Tct|Items", meta = (ClampMin = "0.0"))
+	float ItemPadMinSpacing = 1500.f;
 
 private:
 	UPROPERTY(Transient)

@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "Misc/App.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TN_TurtleMovementComponent.h"
@@ -72,6 +73,7 @@ void UTN_TctItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(UTN_TctItemComponent, bHasFloat);
 	DOREPLIFETIME(UTN_TctItemComponent, FloatEnd);
 	DOREPLIFETIME(UTN_TctItemComponent, PoisonNet);
+	DOREPLIFETIME(UTN_TctItemComponent, FxState);
 }
 
 UTN_TctItemComponent* UTN_TctItemComponent::FindOn(const AActor* Turtle)
@@ -132,7 +134,10 @@ void UTN_TctItemComponent::ClearEffects()
 	FloatRule = FTNTctFloatState();
 	bRescuePending = false;
 	PoisonNet = FTNTctPoisonNet();
+	FxState = FTNTctFxState();
+	SpikesHitUntil.Reset();
 	GetOwner()->ForceNetUpdate();
+	ApplyFx();
 	ApplyHeavy();
 	ApplyFloat();
 	RefreshFloatLook();
@@ -229,6 +234,174 @@ bool UTN_TctItemComponent::ServerTakeRescue()
 	return true;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Efectos de los objetos nuevos (#830)
+// ─────────────────────────────────────────────────────────────────────────────
+
+float& UTN_TctItemComponent::FxEnd(FTNTctFxState& State, ETNTctFx Fx) const
+{
+	switch (Fx)
+	{
+	case ETNTctFx::Spring: return State.SpringEnd;
+	case ETNTctFx::Fins:   return State.FinsEnd;
+	case ETNTctFx::Bubble: return State.BubbleEnd;
+	case ETNTctFx::Spikes: return State.SpikesEnd;
+	case ETNTctFx::Glide:  return State.GlideEnd;
+	case ETNTctFx::Net:    return State.NetEnd;
+	default:               return State.ScorchEnd;
+	}
+}
+
+float UTN_TctItemComponent::FxEndOf(ETNTctFx Fx) const
+{
+	FTNTctFxState Copy = FxState;
+	return FxEnd(Copy, Fx);
+}
+
+bool UTN_TctItemComponent::IsFxActive(ETNTctFx Fx) const
+{
+	const float End = FxEndOf(Fx);
+	return End > 0.f && Now() < End;
+}
+
+float UTN_TctItemComponent::GetPoisonScale() const
+{
+	return IsFxActive(ETNTctFx::Fins) ? TNTctItemTuning::FinsPoisonScale : 1.f;
+}
+
+void UTN_TctItemComponent::GrantFx(ETNTctFx Fx, float Seconds)
+{
+	if (!GetOwner() || !GetOwner()->HasAuthority() || Seconds <= 0.f || Fx >= ETNTctFx::Count)
+	{
+		return;
+	}
+	float& End = FxEnd(FxState, Fx);
+	End = FMath::Max(End, static_cast<float>(Now() + Seconds));
+	GetOwner()->ForceNetUpdate();
+	ApplyFx();
+}
+
+void UTN_TctItemComponent::OnRep_Fx()
+{
+	ApplyFx();
+}
+
+void UTN_TctItemComponent::ApplyFx()
+{
+	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(GetOwner());
+	UTN_StaminaComponent* Stamina = Turtle ? Turtle->GetStaminaComponent() : nullptr;
+	static const FName Sources[] = { TEXT("TctFxSpring"), TEXT("TctFxFins"), TEXT("TctFxBubble"), TEXT("TctFxSpikes"), TEXT("TctFxGlide"),
+		TEXT("TctFxNet"), TEXT("TctFxScorch") };
+	static_assert(UE_ARRAY_COUNT(Sources) == static_cast<int32>(ETNTctFx::Count), "Un nombre por efecto");
+	for (int32 Index = 0; Index < static_cast<int32>(ETNTctFx::Count); ++Index)
+	{
+		const ETNTctFx Fx = static_cast<ETNTctFx>(Index);
+		const bool bWant = IsFxActive(Fx) && Stamina;
+		if (!Stamina || bWant == bFxApplied[Index])
+		{
+			continue;
+		}
+		bFxApplied[Index] = bWant;
+		if (!bWant)
+		{
+			Stamina->ClearSpeedCap(Sources[Index]);
+			Stamina->ClearJumpLimit(Sources[Index]);
+			Stamina->ClearGravityScaleOverride(Sources[Index]);
+			continue;
+		}
+		const FTNTctFxLimits Limits = TNTctItemRules::FxLimits(Fx);
+		const float NoCap = TNMovementLimits::NoCap;
+		if (Limits.SpeedCap < NoCap)
+		{
+			Stamina->SetSpeedCap(Sources[Index], Limits.SpeedCap);
+		}
+		if (Limits.JumpMultiplier != 1.f || Limits.JumpCap < NoCap)
+		{
+			Stamina->SetJumpLimit(Sources[Index], Limits.JumpCap, Limits.JumpMultiplier);
+		}
+		if (Limits.Gravity < NoCap)
+		{
+			Stamina->SetGravityScaleOverride(Sources[Index], Limits.Gravity);
+		}
+	}
+	RefreshFxLook();
+	RefreshTick();
+}
+
+void UTN_TctItemComponent::RefreshFxLook()
+{
+	AActor* Owner = GetOwner();
+	if (!Owner || !TNTctItemComponentDetail::CanRender())
+	{
+		return;
+	}
+	const bool bBubble = bFxApplied[static_cast<int32>(ETNTctFx::Bubble)];
+	const bool bSpikes = bFxApplied[static_cast<int32>(ETNTctFx::Spikes)];
+	if (bBubble && !BubbleLook)
+	{
+		BubbleLook = NewObject<UStaticMeshComponent>(Owner, NAME_None, RF_Transient);
+		BubbleLook->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")));
+		BubbleLook->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		BubbleLook->SetCastShadow(false);
+		BubbleLook->SetupAttachment(Owner->GetRootComponent());
+		BubbleLook->RegisterComponent();
+		BubbleLook->SetRelativeScale3D(FVector(1.5));
+		if (UMaterialInterface* Sea = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ProcMap/Materials/MI_ProcSea.MI_ProcSea")))
+		{
+			if (UMaterialInstanceDynamic* Glass = UMaterialInstanceDynamic::Create(Sea, BubbleLook))
+			{
+				Glass->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.55f, 0.85f, 1.f));
+				Glass->SetScalarParameterValue(TEXT("Opacity"), 0.3f);
+				BubbleLook->SetMaterial(0, Glass);
+			}
+		}
+	}
+	if (BubbleLook)
+	{
+		BubbleLook->SetVisibility(bBubble);
+	}
+	if (bSpikes && !SpikesLook)
+	{
+		SpikesLook = NewObject<UStaticMeshComponent>(Owner, NAME_None, RF_Transient);
+		SpikesLook->SetStaticMesh(TNTctItemMeshes::SpikeRing());
+		SpikesLook->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SpikesLook->SetCastShadow(false);
+		SpikesLook->SetupAttachment(Owner->GetRootComponent());
+		SpikesLook->RegisterComponent();
+		SpikesLook->SetRelativeLocation(FVector(0.0, 0.0, -10.0));
+	}
+	if (SpikesLook)
+	{
+		SpikesLook->SetVisibility(bSpikes);
+	}
+}
+
+void UTN_TctItemComponent::ServerSpikes()
+{
+	const AActor* Owner = GetOwner();
+	UWorld* World = GetWorld();
+	if (!Owner || !World)
+	{
+		return;
+	}
+	const double Time = Now();
+	TArray<ATortugaCharacter*> Turtles;
+	TNTctItems::GatherTurtles(this, Owner, Turtles);
+	for (ATortugaCharacter* Other : Turtles)
+	{
+		FVector Push;
+		const double* Until = SpikesHitUntil.Find(Other);
+		if ((Until && Time < *Until) || !TNTctItems::CanAffect(Other, true)
+			|| !TNTctItemRules::SpikesPush(Owner->GetActorLocation(), Other->GetActorLocation(), Push))
+		{
+			continue;
+		}
+		UTN_TurtleMovementComponent::LaunchFromServer(Other, Push);
+		TNTctItems::PlayCue(Other, ETNRaceSound::Bonk, 1.4f);
+		SpikesHitUntil.Add(Other, Time + TNTctItemTuning::SpikesRehitSeconds);
+	}
+}
+
 float UTN_TctItemComponent::GetPoison() const
 {
 	FTNTctPoison Line;
@@ -260,7 +433,7 @@ bool UTN_TctItemComponent::ServerTickWater(bool bInWater)
 			bPoisoned = ServerResolveFall(ETNTctFall::Water);
 		}
 	}
-	const float NewRate = TNTctRules::PoisonRateFor(bPoisoned);
+	const float NewRate = TNTctRules::PoisonRateFor(bPoisoned, GetPoisonScale());
 	if (!FMath::IsNearlyEqual(NewRate, PoisonNet.Rate))
 	{
 		FTNTctPoison Line;
@@ -492,7 +665,9 @@ void UTN_TctItemComponent::TickTrails(float DeltaTime)
 
 void UTN_TctItemComponent::RefreshTick()
 {
-	SetComponentTickEnabled(bHeavyApplied || bFloatApplied || bRescuePending || Trails.Num() > 0);
+	bool bAnyFx = false;
+	for (const bool bApplied : bFxApplied) { bAnyFx |= bApplied; }
+	SetComponentTickEnabled(bHeavyApplied || bFloatApplied || bRescuePending || bAnyFx || Trails.Num() > 0);
 }
 
 void UTN_TctItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -503,6 +678,25 @@ void UTN_TctItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	{
 		// Se acaba el lastre a la hora del servidor, en cada máquina (sin esperar otra réplica).
 		ApplyHeavy();
+	}
+	// Los efectos se acaban a la hora del servidor, en cada máquina; las púas, en el servidor, empujan a quien se acerca.
+	bool bFxChanged = false;
+	for (int32 Index = 0; Index < static_cast<int32>(ETNTctFx::Count); ++Index)
+	{
+		bFxChanged |= bFxApplied[Index] != IsFxActive(static_cast<ETNTctFx>(Index));
+	}
+	if (bFxChanged)
+	{
+		ApplyFx();
+	}
+	if (GetOwner() && GetOwner()->HasAuthority() && IsFxActive(ETNTctFx::Spikes))
+	{
+		SpikesClock += DeltaTime;
+		if (SpikesClock >= 0.1f)
+		{
+			SpikesClock = 0.f;
+			ServerSpikes();
+		}
 	}
 	if (bFloatApplied && !IsFloating())
 	{
@@ -529,6 +723,18 @@ void UTN_TctItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (bFloatApplied)
 	{
 		ApplyFloat();
+	}
+	FxState = FTNTctFxState();
+	ApplyFx();
+	if (BubbleLook)
+	{
+		BubbleLook->DestroyComponent();
+		BubbleLook = nullptr;
+	}
+	if (SpikesLook)
+	{
+		SpikesLook->DestroyComponent();
+		SpikesLook = nullptr;
 	}
 	if (FloatLook)
 	{

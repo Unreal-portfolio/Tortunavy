@@ -58,6 +58,10 @@ namespace TNTctProjectileDetail
 		case ETNTctItem::Alga:
 			Out.Radius = 12.f; Out.Gravity = 1.f; Out.Life = 4.f;
 			break;
+		case ETNTctItem::Red:
+			// Lenta de ver y de poco alcance: baja pronto.
+			Out.Radius = 30.f; Out.Gravity = 0.6f; Out.Life = NetLifeSeconds;
+			break;
 		default:
 			break;
 		}
@@ -73,6 +77,7 @@ namespace TNTctProjectileDetail
 		case ETNTctItem::JellyDart: return TNTctItemTuning::DartSpeed;
 		case ETNTctItem::Cocobomba: return TNTctItemTuning::CocoSpeed;
 		case ETNTctItem::Alga:      return TNTctItemTuning::AlgaSpeed;
+		case ETNTctItem::Red:       return TNTctItemTuning::NetSpeed;
 		default:                    return 0.f;
 		}
 	}
@@ -305,6 +310,19 @@ void ATN_TctProjectile::ServerHitTurtle(ATortugaCharacter* Victim)
 	case ETNTctItem::Anchor:
 		ServerAnchorSplash(GetActorLocation());
 		break;
+	case ETNTctItem::Red:
+		// La red clava a quien toca (no la empuja): 2,5 s sin poder andar ni saltar.
+		if (TNTctItems::CanAffect(Victim, false))
+		{
+			if (UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Victim))
+			{
+				Effects->GrantFx(ETNTctFx::Net, NetRootSeconds);
+			}
+			TNTctItems::PlayCue(Victim, ETNRaceSound::Catch, 0.8f);
+			UE_LOG(LogTortunabo, Log, TEXT("[TcT] La red clava a %s."), *GetNameSafe(Victim));
+		}
+		ServerFinish(GetActorLocation());
+		break;
 	case ETNTctItem::JellyDart:
 		if (TNTctItems::CanAffect(Victim, false))
 		{
@@ -433,6 +451,7 @@ void ATN_TctProjectile::OnStop(const FHitResult& ImpactResult)
 		ServerAnchorSplash(GetActorLocation());
 		break;
 	case ETNTctItem::JellyDart:
+	case ETNTctItem::Red:
 		// Clavado en el escenario un momento.
 		ServerFinish(GetActorLocation());
 		break;
