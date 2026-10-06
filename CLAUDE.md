@@ -6,6 +6,8 @@ Juego cooperativo de 1 a 4 tortugas en Unreal Engine 5.6 con C++ (módulo `Sourc
 
 El tablero es solo de desarrollo: código, pulido, bugs y revisión de assets. El diseño ya está decidido (plan maestro y decisiones); se pueden hacer prototipos, pero no tareas de «diseñar X».
 
+**Modo único (decisión del 06-10):** el juego tiene un solo modo, sobre el terreno Camino (C01). Los enemigos, obstáculos y objetos son solo los del Excel de diseño. Todo lo demás (otros modos, mapas procedurales, VR, primera persona, tutorial, cofres, fantasma actual) está en la rama `chamber`. Sus issues están cerradas con la etiqueta `chamber`: no se cogen, no se revisan y no se reabren sin una decisión de SkiTemplar o Mokius.
+
 ## Equipo
 
 | GitHub | Persona | Rol | Revisa su trabajo |
@@ -19,6 +21,7 @@ Las decisiones que no estén escritas las toman SkiTemplar o Mokius. Si te falta
 ## Ramas
 
 - `dev`: la rama de desarrollo hasta el final del juego. Todas las ramas salen de `origin/dev` y todas las PR van hacia `dev`. **Nunca se trabaja sobre `dev`**: toda issue o lote va en su rama y entra por PR, que puede fusionar cualquiera de los tres. Un ruleset de GitHub rechaza el push directo y el forzado.
+- `chamber`: archivo de todo lo descartado el 06-10 (copia de `dev` en `61cd791c7`). No se trabaja en ella ni se fusiona en `dev`. Si algo vuelve al juego, se trae por PR a `dev` con una decisión registrada.
 - `main`: versión estable. Solo SkiTemplar y Mokius, por PR con la aprobación del otro (o su bypass). Aparte de eso, solo le llegan las copias de `.github/` que necesitan los cron.
 - **Ramas por lote, no por tarjeta** (decisión en #282): las tarjetas de un lote se hacen y se prueban en la misma rama, `feat|fix/<primera issue>-<slug>`. La crea `tablero.py coger` con la primera tarjeta; las demás entran en ella con `coger <n> --rama <rama del lote>`. Una issue suelta es un lote de uno: su propia rama.
 - **A `dev` solo entra lo que está en Done**: cada tarjeta se revisa (IA) y se prueba en el editor **en la rama de su lote**; con las dos validaciones pasa a Validada; con todo el lote en Validada, a Done; y solo entonces se pide y se fusiona la PR. Nada se fusiona para probarlo después en `dev`.
@@ -66,7 +69,7 @@ Toda issue de trabajo cumple esto; `nueva` no crea una que no lo cumpla y `audit
 - **Título** de 80 caracteres como mucho: el síntoma o la tarea, sin el detalle. Dentro de un objeto con varias tareas, «Objeto: tarea».
 - **Cuerpo** con el contexto (en un fallo: pasos, esperado y obtenido, mapa y jugadores) y los **criterios de aceptación** como casillas `- [ ]` verificables en el editor o con tests.
 - **Etiqueta de tipo**: `tarea` o `⚠️bug⚠️`.
-- **Objeto** del que cuelga y los campos **Prioridad, Tamaño, Área y Fase** (F0–F8 del plan maestro; «Sin fase» si no es de ninguna).
+- **Objeto** del que cuelga y los campos **Prioridad, Tamaño, Área y Fase** (F0–F8 del plan maestro del modo único; «Sin fase» si no es de ninguna).
 - Un **P0** está en Ready o más allá, nunca en Backlog. Tamaño L solo si no se puede partir en tareas de 1-2 días.
 - Un criterio que cambia mientras se trabaja se corrige en el cuerpo, no en un comentario suelto; si es una decisión de diseño, la registra un aprobador con `decidir`.
 
@@ -85,7 +88,7 @@ Los comentarios automáticos del tablero son de una línea: dicen qué ha pasado
 
 ### Objetos y sub-issues
 
-Las tareas y los fallos se agrupan por **objeto**: un sistema o una pieza del juego (el Rally, el puente tambaleante, el HUD, las catapultas…). Un objeto es una issue padre con la etiqueta `objeto`, sin Status, que se ve en la vista «Objetos»; sus tareas y fallos cuelgan de él como sub-issues. Los sistemas grandes no se desglosan en épicas por fase: la fase va en el campo Fase. Las PR enlazan la sub-issue concreta, nunca el objeto.
+Las tareas y los fallos se agrupan por **objeto**: un sistema o una pieza del juego (el puente tambaleante, el HUD, los vitales…). Un objeto es una issue padre con la etiqueta `objeto`, sin Status, que se ve en la vista «Objetos»; sus tareas y fallos cuelgan de él como sub-issues. Los sistemas grandes no se desglosan en épicas por fase: la fase va en el campo Fase. Las PR enlazan la sub-issue concreta, nunca el objeto.
 
 Cuando el usuario dice «esto no funciona», Claude decide y registra sin preguntar (solo pregunta si duda de verdad a qué objeto pertenece), después de mirar los resúmenes del objeto (`resumenes <n>`):
 
@@ -112,6 +115,7 @@ uv run python Scripts/tablero/tablero.py bloquear <n> --por <m> [--por <k>]   # 
 uv run python Scripts/tablero/tablero.py nueva --titulo "..." --tipo bug|tarea --cuerpo f.md --objeto "<objeto>" --prioridad P1 --tamano S --area Red [--fase F4 --estado Ready]
 uv run python Scripts/tablero/tablero.py objeto "<nombre>" [--area X --descripcion "..." --nuevo] | colgar <hijo> <objeto>
 uv run python Scripts/tablero/tablero.py estado <n> <estado> | campo <n> <campo> <valor>
+uv run python Scripts/tablero/tablero.py chamber <n> [<n> ...] --motivo "..."   # descartada: etiqueta chamber, sin asignado y cerrada como not planned
 uv run python Scripts/tablero/tablero.py sync|auditar|colisiones [--aplicar]
 uv run python Scripts/tablero/tablero.py volcado [--publicar <issue>]   # tablero completo en Markdown
 uv run python Scripts/tablero/tablero.py avisos [--aplicar] [--publicar 196 --parte 127]   # lo que entró en dev sin revisión y el parte, al director
@@ -133,7 +137,7 @@ Las issues #127, #131 y #196 no van al tablero. El puente actúa con el token de
 
 ## Memoria del equipo: las issues
 
-La memoria del equipo son las issues: su cuerpo y sus comentarios **Resumen** («Qué fallaba / Por qué / Cómo se arregló», con `resumen`) y **Decisión** («**Decisión** (fecha, quién): …», con `decidir`, en la issue u objeto afectado). Siempre resumidos: el comando rechaza más de 400 caracteres por campo. No hay otro registro. No hace falta leer todas las issues, sí las relacionadas: las del mismo objeto (`resumenes <n>`) y las abiertas en Revisiones o con `colision` o `revisar-organizacion`. Las decisiones de diseño de fondo están en el plan maestro (§1 y §7).
+La memoria del equipo son las issues: su cuerpo y sus comentarios **Resumen** («Qué fallaba / Por qué / Cómo se arregló», con `resumen`) y **Decisión** («**Decisión** (fecha, quién): …», con `decidir`, en la issue u objeto afectado). Siempre resumidos: el comando rechaza más de 400 caracteres por campo. No hay otro registro. No hace falta leer todas las issues, sí las relacionadas: las del mismo objeto (`resumenes <n>`) y las abiertas en Revisiones o con `colision` o `revisar-organizacion`. Las decisiones de diseño de fondo están en el plan maestro (§1).
 
 ## Skills del proyecto
 
@@ -159,4 +163,4 @@ La memoria del equipo son las issues: su cuerpo y sus comentarios **Resumen** (�
 - Editor: `Build.bat TortunaboEditor Win64 DebugGame "<ruta>\Tortunabo.uproject" -WaitMutex -NoHotReload`. Cierra el editor antes de compilar.
 - Tests de C++: `Automation RunTests Tortunabo` (consola del editor o Session Frontend). Lista de comandos en `Docs/Comandos_Prueba.md`.
 - Tests de Python (terreno y tablero): `uv run pytest` desde la raíz.
-- Plan vigente: `Docs/2026-09-29-Plan-Maestro-Modos-y-Mapas.md`. Desglose de tareas: `Docs/ROADMAP-macro-update.md`. Historial: `Docs/Bitacora.md`.
+- Plan vigente: `Docs/2026-10-06-Plan-Maestro-Modo-Unico.md` (modo único, Excel de diseño y fases F0-F8). Historial: `Docs/Bitacora.md`.

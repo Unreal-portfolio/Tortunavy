@@ -1,5 +1,7 @@
 # Biblia de Tortunavy
 
+> **Aviso (06-10):** desde el 06-10 el juego tiene un solo modo y manda `Docs/2026-10-06-Plan-Maestro-Modo-Unico.md`. Lo que esta biblia cuenta de otros modos, objetos, enemigos, cofres, conchas de puntos, VR, tutorial o el fantasma está en la rama `chamber` y ya no forma parte del juego.
+
 > Documento maestro del juego. Recoge **qué es Tortunavy, cómo se juega cada modo, cómo se pasa de una pantalla a otra, cómo son los
 > mapas, cómo funciona la red, cómo se controla la tortuga, qué hace cada mecánica, cada objeto, cada trampa y cada enemigo, cómo se
 > puntúa, qué se ve en pantalla, qué se puede ajustar y por qué, y cómo suena**. Está pensado para consultarlo como criterio y como
