@@ -3317,6 +3317,10 @@ replica ni se guarda (un objeto en ejecución no tiene nombre de red: llega nulo
 | **Nube de tormenta** (`StormCloud`) | rayo | Una nube negra crece sobre **cada otra tortuga en carrera** (1,1 s de aviso, con sombra y truenos) y les cae un rayo que las **aturde en bola 2,2 s**. Con el protector puesto el rayo cae a su lado sin efecto. Necesita al menos otra víctima. Máximo 2 a la vez. |
 | **Disco volador** (`Frisbee`) | bumerán | Sale hacia delante dibujando un arco (26 m, curvado 7 m), gira y **vuelve a la mano** de quien lo lanzó (2,9 s en total), **derribando 1,9 s** a las tortugas (una vez por pasada) y **mareando 4 s** a los enemigos que toca; no golpea a quien lo lanza. Máximo 6 a la vez. |
 | **Silbato del sargento** (`Whistle`) | (propio) | **Aturde en área a los enemigos**: todos los que estén a menos de 55 m se marean 5 s con pajaritos (`ApplyHitStun`), sin apuntar. Onda de silbato que se expande por el suelo. |
+| **Tabla de surf** (`TablaSurf`, #786) | (propio) | Una ola la lleva **3 s hacia el mar** (×1,75 sobre la de correr: 1400 cm/s), con algo de giro a los lados (45 %), de pie en la tabla y con la ola rompiendo detrás. **Derriba 1,8 s** a las tortugas que encuentra (2,3 m; una vez cada una, empujadas hacia delante y a un lado). **Se acaba contra una pared de frente** (lo que no se puede pisar y está a menos de 53° del rumbo; otra tortuga no cuenta). Si la derriban, la aturden o se mete en el caparazón, se acaba. |
+| **Caña de pescar** (`CanaPescar`, #786) | (propio) | Lanza el anzuelo a **la tortuga de delante más cercana a 25 m o menos** (sin nadie, «nop» y el objeto se queda). Llega en 0,35 s; si engancha, **la remolca por el aire 1,5 s** hacia ella y la deja 3,5 m por delante de donde estará y 1,3 m a su lado (un solo `LaunchFromServer`, tope de 26 m/s). **El protector solar (y el pelícano) la anulan**: el anzuelo rebota y cae. |
+| **Remolino** (`Remolino`, #786) | (propio) | Trampa de agua que se deja **3,2 m detrás** y dura **12 s**. A la que entra (2,6 m) **la hace girar y la atrae al centro 1,5 s** (espiral, 1,6 vueltas por segundo) y la suelta lanzada hacia fuera y **mareada 1 s** (40 % de la velocidad y pajaritos). **Quien lo suelta es inmune 2 s**; la que sale no vuelve a caer en el mismo en 3 s; el protector solar lo atraviesa. Atrapa a una a la vez. Máximo 8. |
+| **Cohete de feria** (`CoheteFeria`, #786) | (propio) | **Acelerón muy fuerte de 2 s** (×2,6: 2080 cm/s, tira hacia delante aunque no se pulse nada) con el **giro muy reducido** (45°/s). Al acabar, **voltereta en el aire** (salto de 9 m/s con el 45 % de la velocidad y una vuelta completa de la malla en 0,85 s). Si la derriban o la aturden antes, sin voltereta. |
 | **Caja de objetos** (`Box`) | caja «?» | No se lleva: es el pickup del suelo. Cubo de juguete de colores con una «?» que flota y gira; al cogerla sale un objeto sorteado **según el puesto de quien la coge**. |
 
 Los usos que no se pueden hacer (aturdida, en el caparazón, en el pico de un enemigo, en brazos, volando en el pelícano,
@@ -3377,6 +3381,10 @@ El puesto sale de lo que ha avanzado cada tortuga en carrera por la playa (`ATN_
 | Nube de tormenta | 0 | 0,2 | 1,3 | 1,0 | 2 |
 | Disco volador | 1,4 | 1,3 | 0,9 | 1,0 | 1 |
 | Silbato del sargento | 1,0 | 1,0 | 0,8 | 0,6 | 1 |
+| Tabla de surf | 0,2 | 1,2 | 1,5 | 1,4 | 1 |
+| Caña de pescar | 0 | 0,9 | 1,6 | 1,2 | 2 |
+| Remolino | 1,6 | 1,0 | 0,3 | 0,8 | 2 |
+| Cohete de feria | 0 | 0,4 | 1,8 | 1,6 | 1 |
 | *Energía sin fin* (`SelfStaminaBoost`) | 1,0 | 1,5 | 1,8 | 2,0 | |
 | *Barra llena* (`SelfStaminaFull`) | 1,4 | 1,2 | 1,0 | 1,6 | |
 | *Bola lanzable* (`Throwable`) | 1,4 | 1,3 | 0,9 | 1,2 | |
@@ -3411,7 +3419,15 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
   (marca `FLAG_Custom_1`; la `FLAG_Custom_0` es la petición de sprint, #250); el servidor simula los movimientos
   marcados con el que él le reconoce (`ResolveOwnerBoostMultiplier`: el de ahora o, recién acabado, el de antes durante un ping más 0,25 s) y
   `UTN_TurtleMovementComponent` lo aplica a la velocidad y la aceleración. Sin corrección al empezar ni al acabar.
-- **Sonidos** sintetizados (`UTN_RaceItemSynthComponent`, 21 sonidos, sin archivos) y efectos puntuales locales
+- **Tabla de surf y cohete de feria** (#786): también van en la predicción, sin campos nuevos: la ola y el cohete tienen un
+  multiplicador propio y exacto (1,75 y 2,6) que manda sobre el turbo y el protector, y `TNRaceItemRules::MoveStyleOf` lo
+  reconoce en el movimiento (`UTN_TurtleMovementComponent::ApplyRaceMoveStyle` cambia el rumbo: la ola hacia el mar, el cohete
+  girando 45°/s). El servidor derriba lo que encuentra la ola, la acaba contra una pared y lanza la voltereta del cohete con
+  `LaunchFromServer`; la voltereta se ve en todas las máquinas con la hora replicada del final del cohete.
+- **Caña y remolino** (#786): `ATN_RaceFishingHook` (actor de objeto: quién pesca, a quién y la fase) remolca con un solo
+  `LaunchFromServer`; `ATN_RaceWhirlpool` deriva de `ATN_BeachEnemy` como el pelícano y reutiliza su sujeción: la espiral es
+  una fórmula del reloj del servidor (la atrapada se replica una vez) y el mareo es `UTN_BeachTrapStatusComponent::ServerSlow`.
+- **Sonidos** sintetizados (`UTN_RaceItemSynthComponent`, 25 sonidos, sin archivos) y efectos puntuales locales
   (`ATN_RaceBurstFX`); nada en servidor dedicado.
 
 ### Archivos
@@ -3429,6 +3445,10 @@ nuevo de `DT_Items` sale con peso 1. Los triples de 2 y de 1 uso nunca salen del
 | `TN_RaceItemSynth.h`, `Private/World/Beach/TN_RaceItemSynth.cpp` | Los sonidos sintetizados |
 | `Private/World/Beach/TN_RaceItemArt.h/.cpp` | Mallas e iconos dibujados en código |
 | `Private/World/Beach/TN_RaceItemCommands.cpp` | Comandos de consola (`Docs/Comandos_Prueba.md`) |
+| `Public/World/Beach/TN_RaceItemRules.h` | Reglas puras de la tabla, la caña, el remolino y el cohete (#786): valores, rumbos, a quién engancha, remolque, espiral (`Tortunabo.Race.Items.*`) |
+| `TN_RaceFishingHook.h/.cpp`, `TN_RaceWhirlpool.h/.cpp` | Caña de pescar y remolino |
+| `Private/World/Beach/TN_RaceRideFX.h/.cpp` | La tabla bajo los pies, la ola, el cohete con su llama y la voltereta |
+| `Private/World/Beach/TN_RaceItemArtExtra.h/.cpp` | Mallas, iconos y piezas de los objetos de la #786 (los llama `TN_RaceItemArt.cpp`) |
 | Cambios mínimos en lo existente | `TN_InventoryTypes.h` (`RaceItem`), `TN_InventoryComponent.*` (resolver malla e icono; `TryReplaceEquippedItem`), `TN_PickupInteractableBase.cpp` (idem), `TortugaCharacter_Interaction.cpp` (rama `RaceItem`), `TortugaCharacter_Knockdown.cpp` y `TN_BeachStun.cpp` (invulnerabilidad), `TN_BeachEnemy.*` (`CanBeHit` y `GetMaxHoldSeconds`, virtual: el seguro de la sujeción es de 6 s y el pelícano taxi lo alarga a 20 s), `TN_StaminaComponent.*` (`GetRaceBoostWalkSpeed`), `TN_TurtleMovementComponent.*` (turbo en `FTNSavedMove_Turtle`), `TN_ProcSearchSpot.*` (`PickLoot` virtual), `TN_BeachLoot.*` y `TN_BeachChest.*` (sorteo por puesto, cajas de objetos) |
 
 ### Probar
@@ -3438,6 +3458,12 @@ velocidad, con la vista más abierta), `Sunscreen` (atravesar un enemigo y otra 
 la deja de pie sin caer al agua; probar cerca de la meta: `TN.Beach.Go acantilado` → «nop»), `SandMine`, `Frisbee`, `Whistle`
 con enemigos cerca y `HomingCrab`. Con anfitrión y cliente: `GullStrike` y `StormCloud` (`TN.Race.ItemUse GullStrike 1`), y
 mirar que las dos ventanas ven lo mismo; `TN.Race.ItemBox 4` y `TN.Race.ItemRank` para ver qué toca en cada puesto.
+
+Los de la #786: `TN.Race.ItemUse TablaSurf` (3 s hacia el mar; contra un castillo de frente se acaba; con otra tortuga
+delante, la derriba), `TN.Race.ItemUse CoheteFeria` (2 s muy deprisa casi sin girar y la voltereta), `TN.Race.ItemUse
+Remolino` (queda detrás; volver a él pasados 2 s: gira, va al centro y sale mareada) y, con anfitrión y cliente,
+`TN.Race.ItemUse CanaPescar 1` con el cliente por detrás del anfitrión a menos de 25 m (y con `TN.Race.Star` en el anfitrión:
+el anzuelo rebota). Las reglas puras, sin editor: `Automation RunTests Tortunabo.Race.Items`.
 
 ### Límites conocidos
 
