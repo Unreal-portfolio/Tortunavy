@@ -28,6 +28,10 @@ class UWorld;
  *  - StormCloud: nube de tormenta que marea a todas las demás (rayo).
  *  - Frisbee: disco volador que va y vuelve (bumerán).
  *  - Whistle: silbato del sargento, aturde a los enemigos de alrededor.
+ *  - TablaSurf: una ola que te lleva 3 s hacia el mar y derriba lo que encuentra (#786).
+ *  - CanaPescar: el anzuelo a la tortuga de delante y el remolque hasta adelantarla (#786).
+ *  - Remolino: trampa de agua que se deja detrás; atrapa, hace girar y marea (#786).
+ *  - CoheteFeria: acelerón muy fuerte con poco giro y voltereta al acabar (#786).
  *  - Box: la caja de objetos del suelo (el «?» de las carreras de karts); nunca se lleva encima: al cogerla sale un objeto
  *    según la posición de quien la coge.
  */
@@ -49,6 +53,10 @@ enum class ETNRaceItem : uint8
 	StormCloud      UMETA(DisplayName = "Nube de tormenta"),
 	Frisbee         UMETA(DisplayName = "Disco volador"),
 	Whistle         UMETA(DisplayName = "Silbato del sargento"),
+	TablaSurf       UMETA(DisplayName = "Tabla de surf"),
+	CanaPescar      UMETA(DisplayName = "Caña de pescar"),
+	Remolino        UMETA(DisplayName = "Remolino"),
+	CoheteFeria     UMETA(DisplayName = "Cohete de feria"),
 	Count           UMETA(Hidden)
 };
 

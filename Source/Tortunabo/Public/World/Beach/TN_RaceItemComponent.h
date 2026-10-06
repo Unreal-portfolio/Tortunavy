@@ -37,7 +37,21 @@ struct FTNRaceEffectState
 	/** La lleva el pelícano taxi. */
 	UPROPERTY()
 	bool bRiding = false;
+
+	/** Hora del servidor en que se acaba la ola de la tabla de surf (0 = sin ola; #786). */
+	UPROPERTY()
+	float SurfEnd = 0.f;
+
+	/** Hora del servidor en que se acaba el cohete de feria (0 = sin cohete; #786). */
+	UPROPERTY()
+	float RocketEnd = 0.f;
+
+	/** El cohete ha acabado con la voltereta en el aire (empieza en RocketEnd y dura TNRaceItemRules::FlipSeconds). */
+	UPROPERTY()
+	bool bRocketFlip = false;
 };
+
+class FTNRaceRideFX;
 
 /**
  * Lo que un objeto de carrera hace a la propia tortuga (Docs/Modo_Carrera.md, «Objetos de carrera»). No viene en la tortuga:
@@ -54,8 +68,11 @@ struct FTNRaceEffectState
  *    ATortugaCharacter::ApplyKnockdown lo miran con TNRaceItems::IsInvulnerable), algo más rápida y, en el servidor, derriba
  *    a las tortugas que toca y marea a los enemigos que toca. Con pantalla: brillo dorado, chispas y una luz que late.
  *  - Vuelo en el pelícano taxi (SetRiding): invulnerable mientras la lleva; no puede usar objetos.
+ *  - Tabla de surf y cohete de feria (#786): multiplicadores propios y exactos (TNRaceItemRules::MoveStyleOf) que viajan en
+ *    la predicción como el turbo; UTN_TurtleMovementComponent cambia con ellos el rumbo (la ola va hacia el mar, el cohete
+ *    gira muy poco). El servidor derriba lo que encuentra la ola, la acaba contra una pared y da la voltereta del cohete.
  *
- * Servidor: GrantBoost, GrantStar y SetRiding. Todas las máquinas: los IsX. Los sonidos van con MulticastCue.
+ * Servidor: GrantBoost, GrantStar, SetRiding, GrantSurf y GrantRocket. Todas las máquinas: los IsX. Los sonidos van con MulticastCue.
  */
 UCLASS(ClassGroup = (Custom))
 class TORTUNABO_API UTN_RaceItemComponent : public UActorComponent
@@ -86,6 +103,15 @@ public:
 	/** Empieza o acaba el vuelo en el pelícano taxi. */
 	void SetRiding(bool bInRiding);
 
+	/**
+	 * Tabla de surf (#786): una ola la lleva Seconds hacia el mar, más rápido que corriendo, derribando a las tortugas que
+	 * encuentra; se acaba antes contra una pared de frente. false si ya va en una ola o con el cohete.
+	 */
+	bool GrantSurf(float Seconds);
+
+	/** Cohete de feria (#786): acelerón muy fuerte con poco giro durante Seconds y voltereta al acabar. false si ya lo lleva o va en una ola. */
+	bool GrantRocket(float Seconds);
+
 	/** Quita todos los efectos ya (se acabó la ronda, la tortuga llega a la meta...). */
 	void CancelEffects();
 
@@ -103,6 +129,11 @@ public:
 	bool IsGoldenBoosting() const;
 	bool HasStar() const;
 	bool IsRiding() const { return Effects.bRiding; }
+	bool IsSurfing() const;
+	bool IsRocketing() const;
+
+	/** Hacia dónde avanza la carrera en el plano (hacia el mar del generador; sin él, +X). Lo usa el rumbo de la ola. */
+	FVector GetCourseForward() const;
 
 	/** Nada la puede aturdir ni derribar: protector solar puesto o vuelo en el pelícano. */
 	bool IsInvulnerable() const { return HasStar() || Effects.bRiding; }
@@ -147,12 +178,37 @@ private:
 	/** Servidor: el protector derriba a las tortugas y marea a los enemigos que toca. */
 	void ServerStarContacts(float DeltaTime);
 
+	/** Servidor: la ola derriba lo que encuentra y se acaba contra una pared; la ola y el cohete se cortan si la derriban o la aturden. */
+	void ServerRideTick();
+
+	/** Servidor: el cohete ha llegado a su hora: voltereta (salto con LaunchFromServer) si sigue de pie. */
+	void ServerFinishRocket();
+
+	/** Servidor: la ola choca de frente con una pared delante de la tortuga. */
+	bool ServerSurfHitsWall() const;
+
+	/** Servidor: tortugas que ya ha derribado la ola de ahora (una vez por ola) y hora a la que empezó. */
+	TSet<TWeakObjectPtr<AActor>> SurfVictims;
+	double SurfStartTime = 0.0;
+
+	/** Servidor: ya se ha decidido el final del cohete de ahora. */
+	bool bRocketEndHandled = true;
+
+	/** Segundos de voltereta que lleva ahora (-1 si no hay). Cualquier máquina. */
+	float GetFlipAge() const;
+
+	/** Tabla, ola, cohete, llama y voltereta (máquinas con pantalla). */
+	TSharedPtr<FTNRaceRideFX> RideFX;
+
 	// ── Visual (máquinas con pantalla) ──
 
 	void EnsureVisuals();
 	void TickVisuals(float DeltaTime, bool bBoost, bool bStar);
 	void StopVisuals();
 	void UpdateFov(float DeltaTime, bool bBoost);
+
+	/** La tabla, la ola, el cohete y la voltereta (máquinas con pantalla). */
+	void TickRideVisuals(float DeltaTime);
 
 	/** Tick necesario mientras haya efectos, emisores vivos o campo de visión por devolver. */
 	void RefreshTickState();

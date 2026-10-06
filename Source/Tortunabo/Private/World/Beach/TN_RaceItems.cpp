@@ -10,6 +10,9 @@
 #include "World/Beach/TN_RaceMine.h"
 #include "World/Beach/TN_RacePelicanTaxi.h"
 #include "World/Beach/TN_RaceStormCloud.h"
+#include "World/Beach/TN_RaceFishingHook.h"
+#include "World/Beach/TN_RaceItemRules.h"
+#include "World/Beach/TN_RaceWhirlpool.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWorm.h"
@@ -74,6 +77,12 @@ namespace TNRaceItemsDetail
 		{ ETNRaceItem::StormCloud,     TEXT("StormCloud"),     TEXT("Nube de tormenta"),     TEXT("nube"),      TEXT("rayo"),      0.f, 0.2f, 1.3f, 1.0f, 2 },
 		{ ETNRaceItem::Frisbee,        TEXT("Frisbee"),        TEXT("Disco volador"),        TEXT("disco"),     TEXT("boomerang"), 1.4f, 1.3f, 0.9f, 1.0f, 1 },
 		{ ETNRaceItem::Whistle,        TEXT("Whistle"),        TEXT("Silbato del sargento"), TEXT("silbato"),   TEXT("sargento"),  1.0f, 1.0f, 0.8f, 0.6f, 1 },
+		// #786. La tabla sale más a medias y al final; la caña, a las de atrás (nunca a la primera: no tiene a nadie delante);
+		// el remolino, a las de delante (se deja detrás); el cohete, a las últimas.
+		{ ETNRaceItem::TablaSurf,      TEXT("TablaSurf"),      TEXT("Tabla de surf"),        TEXT("tabla"),     TEXT("surf"),      0.2f, 1.2f, 1.5f, 1.4f, 1 },
+		{ ETNRaceItem::CanaPescar,     TEXT("CanaPescar"),     TEXT("Caña de pescar"),       TEXT("cana"),      TEXT("pescar"),    0.f,  0.9f, 1.6f, 1.2f, 2 },
+		{ ETNRaceItem::Remolino,       TEXT("Remolino"),       TEXT("Remolino"),             TEXT("whirlpool"), TEXT("trampa"),    1.6f, 1.0f, 0.3f, 0.8f, 2 },
+		{ ETNRaceItem::CoheteFeria,    TEXT("CoheteFeria"),    TEXT("Cohete de feria"),      TEXT("cohete"),    TEXT("rocket"),    0.f,  0.4f, 1.8f, 1.6f, 1 },
 	};
 
 	const FItemInfo* FindInfo(ETNRaceItem Kind)
@@ -218,6 +227,10 @@ FText TNRaceItems::DisplayName(ETNRaceItem Item)
 	case ETNRaceItem::StormCloud:     return NSLOCTEXT("TNRace", "ItemStormCloud", "Nube de tormenta");
 	case ETNRaceItem::Frisbee:        return NSLOCTEXT("TNRace", "ItemFrisbee", "Disco volador");
 	case ETNRaceItem::Whistle:        return NSLOCTEXT("TNRace", "ItemWhistle", "Silbato del sargento");
+	case ETNRaceItem::TablaSurf:      return NSLOCTEXT("TNRace", "ItemTablaSurf", "Tabla de surf");
+	case ETNRaceItem::CanaPescar:     return NSLOCTEXT("TNRace", "ItemCanaPescar", "Caña de pescar");
+	case ETNRaceItem::Remolino:       return NSLOCTEXT("TNRace", "ItemRemolino", "Remolino");
+	case ETNRaceItem::CoheteFeria:    return NSLOCTEXT("TNRace", "ItemCoheteFeria", "Cohete de feria");
 	default:                          return NSLOCTEXT("TNRace", "ItemUnknown", "Objeto");
 	}
 }
@@ -673,6 +686,18 @@ void TNRaceItems::ServerUse(ATortugaCharacter* Turtle, const FTN_InventoryItem& 
 			bUsed = true;
 			break;
 		}
+		case ETNRaceItem::TablaSurf:
+			bUsed = Effects->GrantSurf(TNRaceItemRules::SurfSeconds);
+			break;
+		case ETNRaceItem::CanaPescar:
+			bUsed = ATN_RaceFishingHook::ServerCast(Turtle);
+			break;
+		case ETNRaceItem::Remolino:
+			bUsed = ATN_RaceWhirlpool::ServerDrop(Turtle);
+			break;
+		case ETNRaceItem::CoheteFeria:
+			bUsed = Effects->GrantRocket(TNRaceItemRules::RocketSeconds);
+			break;
 		default:
 			break;
 	}

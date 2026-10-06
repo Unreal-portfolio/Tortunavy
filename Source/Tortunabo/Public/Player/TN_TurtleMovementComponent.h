@@ -557,6 +557,9 @@ private:
 	/** Velocidad del arrastre en este paso: pendiente, rozamiento, freno por velocidad y tope. */
 	void CalcBellySlideVelocity(float DeltaTime);
 
+	/** Tabla de surf y cohete de feria (#786): el rumbo que impone el estilo del multiplicador del movimiento (en Acceleration). */
+	void ApplyRaceMoveStyle(float DeltaTime);
+
 	/**
 	 * Tumbada, tras cada movimiento: si la cabeza o las patas (fuera de la cápsula) se meterían en una pared, aparta a la
 	 * tortuga lo justo, le quita la velocidad contra la pared y, arrastrándose, apunta el rebote.

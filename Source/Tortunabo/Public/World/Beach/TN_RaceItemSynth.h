@@ -60,6 +60,14 @@ enum class ETNRaceSound : uint8
 	Beep        UMETA(DisplayName = "Pitido"),
 	/** Pelícano taxi: cuando te suelta, «¡pop!» de despedida con un trino descendente alegre. */
 	Land        UMETA(DisplayName = "Aterriza"),
+	/** Tabla de surf: la ola que se levanta, rugido de agua que crece y rompe con espuma (#786). */
+	Wave        UMETA(DisplayName = "Ola"),
+	/** Cohete de feria: mecha que chisporrotea y arranque silbante que sube (#786). */
+	Rocket      UMETA(DisplayName = "Cohete"),
+	/** Caña de pescar: carraca del carrete muy rápida con el zumbido del sedal (#786). */
+	Reel        UMETA(DisplayName = "Carrete"),
+	/** Remolino: gorgoteo grave de agua que da vueltas (#786). */
+	Gurgle      UMETA(DisplayName = "Gorgoteo"),
 	Count       UMETA(Hidden)
 };
 
