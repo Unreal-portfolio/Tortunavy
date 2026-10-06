@@ -217,14 +217,15 @@ void ATN_TctGameMode::WatchFighters()
 		Body.HalfHeight = Character && Character->GetCapsuleComponent()
 			? Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : TNTctRoundDetail::DefaultHalfHeight;
 		ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
-		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOn(Turtle);
+		// Siempre con componente (el servidor lo crea si falta): sin él no se cuenta el veneno y el agua no puede eliminar.
+		UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle);
 		const ETNTctFall Cause = TNTctRules::FallCause(Body, ArenaBounds, WaterZ);
 		// El agua es veneno (#831): tocarla no mata, intoxica mientras se está dentro (el flotador salva, #777) y se elimina al
 		// llegar al máximo. Caer fuera de la arena elimina como siempre.
 		bool bEliminated = Cause == ETNTctFall::OutOfArena;
 		if (!bEliminated)
 		{
-			bEliminated = Effects ? Effects->ServerTickWater(Cause == ETNTctFall::Water) : Cause == ETNTctFall::Water;
+			bEliminated = Effects && Effects->ServerTickWater(Cause == ETNTctFall::Water);
 		}
 		if (bEliminated)
 		{
