@@ -57,14 +57,15 @@ ETIQUETA_SIN_REVISION = "sin-revision"
 PREFIJOS_AUTOMATICOS = ("Lista para revisión", "**Editor: funciona**", "**Revisión IA", "Fusionada en",
                         CABECERA_ATENDIDA, "**Rutina",
                         CABECERA, memoria.CABECERA_RESUMEN, memoria.CABECERA_DECISION, "**Sin QA editor**",
-                        "Forma parte del lote", "En el lote #", "Vuelve a Ready sin asignado", "Probada en el editor")
+                        "Forma parte del lote", "En el lote #", "Vuelve a Ready sin asignado", "Probada en el editor",
+                        flujo.CABECERA_CHAMBER)
 
 CONSULTA_ISSUES = """
 query($owner: String!, $repo: String!, $cursor: String, $since: DateTime) {
   repository(owner: $owner, name: $repo) {
     issues(first: 50, after: $cursor, states: [ESTADOS], filterBy: {since: $since}) {
       pageInfo { hasNextPage endCursor }
-      nodes { number title body state stateReason closedAt
+      nodes { number title body state stateReason closedAt author { login }
         labels(first: 20) { nodes { name } }
         assignees(first: 5) { nodes { login } }
         parent { number }
@@ -149,8 +150,11 @@ def conversacion_de(nodo: dict) -> dict:
 
 
 def accion_peticion(issue: dict) -> str | None:
-    """«poner» o «quitar» la etiqueta `peticion` según la conversación de una issue abierta; None si está bien."""
-    if issue["estado"] != "OPEN":
+    """«poner» o «quitar» la etiqueta `peticion` según la conversación de una issue abierta; None si está bien.
+
+    Una descartada (`chamber`) no lleva `peticion`: nadie va a contestar.
+    """
+    if issue["estado"] != "OPEN" or flujo.es_chamber(issue):
         return None
     pendiente, etiquetada = conversacion_pendiente(issue), ETIQUETA_PETICION in issue["etiquetas"]
     if pendiente == etiquetada:
@@ -159,28 +163,32 @@ def accion_peticion(issue: dict) -> str | None:
 
 
 def graves_abierta(issue: dict) -> list[dict]:
-    """Fallos de organización que afectan al trabajo en una issue abierta."""
+    """Fallos de organización que afectan al trabajo en una issue abierta.
+
+    Una refactorización se fusiona sin revisión ni prueba a propósito: no es un fallo.
+    """
     estado = issue["valores"].get("Status")
-    if estado == "Revisiones":
-        return []  # ya está donde debe; el comentario explica el fallo
+    if estado == "Revisiones" or flujo.es_refactor(issue):
+        return []  # ya está donde debe (el comentario explica el fallo) o no necesita las validaciones
     if issue.get("lote_fusionado") and estado not in lotes.LISTOS:
         return [problema(f"la PR #{issue['lote_fusionado']} de su lote se fusionó sin que esta issue estuviera "
                          "validada (revisión IA aprobada y Editor = Funciona)", "grave")]
     if (estado == "QA editor" and issue.get("con_pr") and not issue.get("fusionada")
             and issue["valores"].get("Revisión IA") != "Aprobada"):
         # Sin PR es una tarea solo de prueba (se crea directamente en QA editor); con PR, exige la revisión aprobada.
-        return [problema("está en QA editor sin revisión IA aprobada y su PR no está fusionada en dev", "grave")]
+        return [problema("está en QA editor sin revisión IA aprobada y su PR no está fusionada en su rama base",
+                         "grave")]
     return []
 
 
 def columna_correcta(issue: dict) -> str | None:
     """Columna que le corresponde según la regla, si es otra y el cambio es solo mover la tarjeta."""
     estado = issue["valores"].get("Status")
-    fusionada, en_lote = issue.get("fusionada", False), bool(issue.get("lotes"))
-    if fusionada and not flujo.mueve_por_fusion(estado, con_pr_abierta=False):
+    fusionada, en_lote, refactor = issue.get("fusionada", False), bool(issue.get("lotes")), flujo.es_refactor(issue)
+    if fusionada and not flujo.mueve_por_fusion(estado, con_pr_abierta=False, refactor=refactor):
         return None
-    destino, _ = flujo.estado_objetivo(estado, issue["valores"], fusionada, en_lote)
-    if destino is None and estado == "Validada" and not fusionada:
+    destino, _ = flujo.estado_objetivo(estado, issue["valores"], fusionada, en_lote, refactor=refactor)
+    if destino is None and estado == "Validada" and not fusionada and not refactor:
         return "In review"  # Validada exige revisión IA aprobada y Editor = Funciona (en un lote o suelta)
     return destino if destino and destino != estado and destino != "Done" else None
 
@@ -255,7 +263,8 @@ def problemas_cerrada(issue: dict, ahora: datetime) -> list[dict]:
     lista = []
     completada = issue.get("motivo_cierre") == "COMPLETED"
     # Una `colision` no trae código propio ni se prueba en el editor: se cierra cuando las dos PR se pueden fusionar.
-    probable = "colision" not in issue["etiquetas"]
+    # Una refactorización tampoco se prueba: le basta compilar y pasar los tests.
+    probable = "colision" not in issue["etiquetas"] and not flujo.es_refactor(issue)
     if completada and probable and issue["valores"] and issue["valores"].get("Editor") != "Funciona":
         lista.append(problema("se cerró como completada sin estar probada en el editor (Editor ≠ Funciona)", "grave"))
     if not any(memoria.es_resumen(c) for c in issue["comentarios"]):
@@ -263,7 +272,14 @@ def problemas_cerrada(issue: dict, ahora: datetime) -> list[dict]:
     return lista
 
 
+def problemas_de_lote(motivos: list[str]) -> list[dict]:
+    """Problemas de organización de un lote que incumple los topes (lotes.py) sin la etiqueta `excepcion`."""
+    return [problema(f"incumple los topes de lotes sin `{lotes.ETIQUETA_EXCEPCION}`: {m}; pártelo o pide permiso a "
+                     "SkiTemplar o Mokius (etiqueta `excepcion` y un comentario con el motivo)") for m in motivos]
+
+
 def problemas(issue: dict, ahora: datetime) -> list[dict]:
+
     """Problemas de organización de una issue de trabajo (lista vacía si está en orden)."""
     if issue["estado"] != "OPEN":
         return problemas_cerrada(issue, ahora)
@@ -304,9 +320,11 @@ def acciones(issue: dict, lista: list[dict]) -> dict:
 
 
 def es_de_trabajo(issue: dict) -> bool:
+    """Issue que se audita: ni objeto, ni lote, ni `sin-revision`, ni descartada (`chamber`), ni de las fijas."""
     etiquetas = issue["etiquetas"]
     return (objetos.ETIQUETA not in etiquetas and lotes.ETIQUETA not in etiquetas
-            and ETIQUETA_SIN_REVISION not in etiquetas and issue["titulo"] not in TITULOS_EXCLUIDOS)
+            and ETIQUETA_SIN_REVISION not in etiquetas and not flujo.es_chamber(issue)
+            and issue["titulo"] not in TITULOS_EXCLUIDOS)
 
 
 def normalizar(nodo: dict, valores: dict, contexto: dict | None = None) -> dict:
