@@ -10,17 +10,18 @@ class IInputProcessor;
 class UInputAction;
 
 /**
- * @brief El último aparato con el que se ha jugado (teclado y ratón o mando) y la familia del mando (Xbox, PlayStation o
- * Steam Deck), para que los avisos de botones del HUD, del tutorial y de las ruedas enseñen lo que el jugador tiene en las
+ * @brief El último aparato con el que se ha jugado (teclado y ratón o mando) y la familia del mando (Xbox, PlayStation,
+ * Steam Deck o Switch), para que los avisos de botones del HUD, del tutorial y de las ruedas enseñen lo que el jugador tiene en las
  * manos (#347) y cambien al momento al pasar de uno a otro.
  *
  * Lo decide un preprocesador de entrada de Slate: una tecla o un botón cambian de aparato; los sticks y los gatillos, solo
  * pasado un umbral (la deriva no cuenta); el ratón, solo si se mueve de verdad (TNInputGlyphs). No se usa
  * UInputDeviceSubsystem del motor: el teclado y el primer mando comparten el aparato 0 y, una vez tocado el mando, el teclado
- * no lo devolvía a «teclado». La familia del mando sale de Steam Input con Steam en marcha y, sin él, del nombre del aparato.
+ * no lo devolvía a «teclado». La familia del mando sale de Steam Input con Steam en marcha y, sin él, del nombre del aparato (el de XInput o el
+ * HardwareId del perfil del lector DirectInput, #743).
  *
- * Para probar sin mando: TN.Input.Device 0|1|2 (solo, teclado o mando) y TN.Input.PadFamily 0|1|2|3 (solo, Xbox,
- * PlayStation o Steam Deck).
+ * Para probar sin mando: TN.Input.Device 0|1|2 (solo, teclado o mando) y TN.Input.PadFamily 0|1|2|3|4 (solo, Xbox,
+ * PlayStation, Steam Deck o Switch).
  */
 UCLASS()
 class TORTUNABO_API UTN_InputDeviceSubsystem : public UGameInstanceSubsystem

@@ -1,6 +1,6 @@
 // Reglas de los avisos de botones (UI/TN_InputGlyphs.h, #347) y del teclado de Steam para el código de sala
 // (Multiplayer/TN_SteamGamepadInput.h, #354): qué aparato cuenta como el último usado, qué tecla de una acción se enseña con
-// teclado o con mando (también reasignada), cómo se dibuja cada botón con mando de Xbox, de PlayStation o con la Steam Deck,
+// teclado o con mando (también reasignada), cómo se dibuja cada botón con mando de Xbox, de PlayStation, de Switch o con la Steam Deck,
 // y qué teclado de Steam se prueba antes. Correr desde Session Frontend (categoría "Tortunabo.UI") o headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.UI.InputGlyphs; Quit" -nullrhi -unattended
 
@@ -88,12 +88,17 @@ bool FTNInputGlyphsFamilyTest::RunTest(const FString& Parameters)
 	TNInputGlyphsTest::Same(*this, TEXT("DualShock 3"), FamilyFromSteamInputType(SteamPS3), ETNPadFamily::PlayStation);
 	TNInputGlyphsTest::Same(*this, TEXT("DualSense"), FamilyFromSteamInputType(SteamPS5), ETNPadFamily::PlayStation);
 	TNInputGlyphsTest::Same(*this, TEXT("Steam Deck"), FamilyFromSteamInputType(SteamDeck), ETNPadFamily::SteamDeck);
-	TNInputGlyphsTest::Same(*this, TEXT("Switch Pro: letras como Xbox"), FamilyFromSteamInputType(SteamSwitchPro), ETNPadFamily::Xbox);
+	TNInputGlyphsTest::Same(*this, TEXT("Switch Pro (#743)"), FamilyFromSteamInputType(SteamSwitchPro), ETNPadFamily::Switch);
 	TNInputGlyphsTest::Same(*this, TEXT("Tipo desconocido de un SDK futuro"), FamilyFromSteamInputType(999), ETNPadFamily::Xbox);
 
 	TNInputGlyphsTest::Same(*this, TEXT("Nombre DualSense"), FamilyFromHardwareName(TEXT("DualSense Wireless Controller")), ETNPadFamily::PlayStation);
 	TNInputGlyphsTest::Same(*this, TEXT("Nombre PS4"), FamilyFromHardwareName(TEXT("PS4Controller")), ETNPadFamily::PlayStation);
 	TNInputGlyphsTest::Same(*this, TEXT("XInput"), FamilyFromHardwareName(TEXT("XInputController")), ETNPadFamily::Xbox);
+	// Lo que da el lector DirectInput (#743): clase TNGamepad y el HardwareId de su perfil.
+	TNInputGlyphsTest::Same(*this, TEXT("Lector: DualShock 4"), FamilyFromHardwareName(TEXT("TNGamepad DualShock4")), ETNPadFamily::PlayStation);
+	TNInputGlyphsTest::Same(*this, TEXT("Lector: DualSense Edge"), FamilyFromHardwareName(TEXT("TNGamepad DualSenseEdge")), ETNPadFamily::PlayStation);
+	TNInputGlyphsTest::Same(*this, TEXT("Lector: Switch Pro"), FamilyFromHardwareName(TEXT("TNGamepad SwitchPro")), ETNPadFamily::Switch);
+	TNInputGlyphsTest::Same(*this, TEXT("Lector: genérico como Xbox"), FamilyFromHardwareName(TEXT("TNGamepad GenericGamepad")), ETNPadFamily::Xbox);
 	TNInputGlyphsTest::Same(*this, TEXT("Sin nombre"), FamilyFromHardwareName(FString()), ETNPadFamily::Xbox);
 	return true;
 }
@@ -116,6 +121,15 @@ bool FTNInputGlyphsSpecTest::RunTest(const FString& Parameters)
 	TNInputGlyphsTest::Same(*this, TEXT("Izquierda de PlayStation: cuadrado"), GlyphFor(EKeys::Gamepad_FaceButton_Left, ETNPadFamily::PlayStation).Symbol, ETNGlyphSymbol::Square);
 	TNInputGlyphsTest::Same(*this, TEXT("Arriba de PlayStation: triángulo"), GlyphFor(EKeys::Gamepad_FaceButton_Top, ETNPadFamily::PlayStation).Symbol, ETNGlyphSymbol::Triangle);
 	TestEqual(TEXT("Izquierda de la Deck: X"), GlyphFor(EKeys::Gamepad_FaceButton_Left, ETNPadFamily::SteamDeck).Label.ToString(), FString(TEXT("X")));
+	// Switch (#743): mismo sitio, otra letra.
+	TestEqual(TEXT("Abajo de Switch: B"), GlyphFor(EKeys::Gamepad_FaceButton_Bottom, ETNPadFamily::Switch).Label.ToString(), FString(TEXT("B")));
+	TestEqual(TEXT("Derecha de Switch: A"), GlyphFor(EKeys::Gamepad_FaceButton_Right, ETNPadFamily::Switch).Label.ToString(), FString(TEXT("A")));
+	TestEqual(TEXT("Izquierda de Switch: Y"), GlyphFor(EKeys::Gamepad_FaceButton_Left, ETNPadFamily::Switch).Label.ToString(), FString(TEXT("Y")));
+	TestEqual(TEXT("Arriba de Switch: X"), GlyphFor(EKeys::Gamepad_FaceButton_Top, ETNPadFamily::Switch).Label.ToString(), FString(TEXT("X")));
+	TNInputGlyphsTest::Same(*this, TEXT("Switch: sin símbolo de PlayStation"), GlyphFor(EKeys::Gamepad_FaceButton_Bottom, ETNPadFamily::Switch).Symbol, ETNGlyphSymbol::None);
+	TestEqual(TEXT("ZR de Switch"), GlyphFor(EKeys::Gamepad_RightTriggerAxis, ETNPadFamily::Switch).Label.ToString(), FString(TEXT("ZR")));
+	TestEqual(TEXT("L de Switch"), GlyphFor(EKeys::Gamepad_LeftShoulder, ETNPadFamily::Switch).Label.ToString(), FString(TEXT("L")));
+	TNInputGlyphsTest::Same(*this, TEXT("+ de Switch: menú"), GlyphFor(EKeys::Gamepad_Special_Right, ETNPadFamily::Switch).Shape, ETNGlyphShape::Menu);
 
 	TestEqual(TEXT("LB de Xbox"), GlyphFor(EKeys::Gamepad_LeftShoulder, ETNPadFamily::Xbox).Label.ToString(), FString(TEXT("LB")));
 	TestEqual(TEXT("L1 de PlayStation"), GlyphFor(EKeys::Gamepad_LeftShoulder, ETNPadFamily::PlayStation).Label.ToString(), FString(TEXT("L1")));

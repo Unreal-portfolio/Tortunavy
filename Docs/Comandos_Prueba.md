@@ -498,12 +498,17 @@ reiniciarlo al arrancar sin consola, `Saved/ResetTutorial.txt` (vacío = todas l
 Los avisos (aviso de interacción del HUD, cartel del tutorial, ayuda de las ruedas y del fantasma) enseñan la tecla con teclado
 y ratón y el botón dibujado con mando, según el último aparato tocado (stick y gatillos pasado un 35 %; el ratón, si se mueve
 más de 3 px). La familia del mando sale de Steam Input con Steam y, sin él, del nombre del aparato; por defecto, Xbox. Con
-mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala abre el teclado en pantalla de Steam.
+mando y Steam (Steam Deck o Big Picture), A en las casillas del código de sala abre el teclado en pantalla de Steam. Los mandos
+que no son de Xbox (DualShock 4, DualSense, Switch Pro, genéricos) los lee el lector DirectInput: `Docs/Mandos.md`.
 
 | Comando | Qué hace |
 |---|---|
 | `TN.Input.Device 0\|1\|2` | Aparato de los avisos: 0 el último usado, 1 teclado y ratón, 2 mando. |
-| `TN.Input.PadFamily 0\|1\|2\|3` | Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck. |
+| `TN.Input.PadFamily 0\|1\|2\|3\|4` | Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck, 4 Switch. |
+| `TN.Input.Pads` | Escribe en el registro los ajustes de los mandos (#743), los perfiles, los aparatos de mando del motor y cada mando de DirectInput (en uso, callado porque lo traduce Steam Input, XInput o de Valve). |
+| `TN.Input.Pads.Rescan` | Vuelve a buscar los mandos de DirectInput y a elegir su perfil. |
+| `TN.Input.PadDebug 0\|1` | Botones, ejes y hat en crudo de los mandos de DirectInput (para hacer un perfil de un mando nuevo). |
+| `TN.Input.DirectInput 0\|1\|2` | Lector de mandos que no son de Xbox: 0 apagado, 1 automático (sin los que traduce Steam Input), 2 siempre. |
 | `TN.Input.Press <tecla> [segundos]` | Pulsa (y mantiene) una tecla o un botón como si viniera del aparato, por Slate: `TN.Input.Press Gamepad_DPad_Up` pasa los avisos a mando y `TN.Input.Press ScrollLock`, a teclado. |
 | `TN.Later <segundos> <comando>` | Ejecuta el comando pasado ese tiempo, como escrito en la consola del jugador (para encadenar pruebas en `-ExecCmds`, también `shot showui`). |
 | `tn.HUD.Prompt 1` | Enseña el aviso de interacción sin nada al alcance, con la tecla o el botón de interactuar del aparato de ahora. |

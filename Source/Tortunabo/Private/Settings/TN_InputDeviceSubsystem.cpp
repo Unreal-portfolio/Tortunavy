@@ -21,7 +21,7 @@ namespace TNInputDeviceDetail
 	TAutoConsoleVariable<int32> CVarDevice(TEXT("TN.Input.Device"), 0,
 		TEXT("Aparato de los avisos de botones: 0 el último usado, 1 teclado y ratón, 2 mando (para probar sin mando)."), ECVF_Cheat);
 	TAutoConsoleVariable<int32> CVarPadFamily(TEXT("TN.Input.PadFamily"), 0,
-		TEXT("Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck."), ECVF_Cheat);
+		TEXT("Botones que se dibujan con mando: 0 los del mando conectado, 1 Xbox, 2 PlayStation, 3 Steam Deck, 4 Switch."), ECVF_Cheat);
 
 	/** Lee todo lo que entra por Slate (sin quedarse nada) y apunta el aparato en el subsistema. */
 	class FTracker : public IInputProcessor
@@ -82,7 +82,10 @@ namespace TNInputDeviceDetail
 		}
 	};
 
-	/** Familia por el nombre del último mando que ha visto el motor (sin Steam). */
+	/**
+	 * Familia por el nombre del último mando que ha visto el motor (sin Steam): XInputController (Xbox) o el HardwareId del
+	 * perfil del lector DirectInput (DualShock4, DualSense, SwitchPro, GenericGamepad; TN_GamepadDevice, #743).
+	 */
 	ETNPadFamily FamilyFromEngine()
 	{
 		const UInputDeviceSubsystem* Devices = UInputDeviceSubsystem::Get();
@@ -159,6 +162,7 @@ ETNPadFamily UTN_InputDeviceSubsystem::GetPadFamily() const
 		case 1:  return ETNPadFamily::Xbox;
 		case 2:  return ETNPadFamily::PlayStation;
 		case 3:  return ETNPadFamily::SteamDeck;
+		case 4:  return ETNPadFamily::Switch;
 		default: break;
 	}
 	const double Now = FPlatformTime::Seconds();

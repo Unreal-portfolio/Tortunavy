@@ -258,6 +258,16 @@ void UTN_ButtonGlyphWidget::PaintMenuOrView(FPaintContext& Ctx) const
 	const float Stroke = Ctx.Height * StrokeFraction * 0.7f;
 	const float W = Ctx.Height * 0.2f;
 	const FVector2f C = Ctx.Center;
+	if (ShownFamily == ETNPadFamily::Switch)
+	{
+		// + (menú) y − (vista), como los lleva impresos el mando de Switch.
+		Ctx.Lines({ C + FVector2f(-W, 0.f), C + FVector2f(W, 0.f) }, TNHUDArt::Cream, Stroke);
+		if (Spec.Shape == ETNGlyphShape::Menu)
+		{
+			Ctx.Lines({ C + FVector2f(0.f, -W), C + FVector2f(0.f, W) }, TNHUDArt::Cream, Stroke);
+		}
+		return;
+	}
 	if (Spec.Shape == ETNGlyphShape::Menu)
 	{
 		// Tres rayas (Menú de Xbox, Options de PlayStation).

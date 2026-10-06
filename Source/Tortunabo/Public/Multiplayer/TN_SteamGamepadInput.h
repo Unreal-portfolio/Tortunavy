@@ -41,6 +41,12 @@ namespace TNSteamGamepadInput
 	TORTUNABO_API int32 GetPadInputType();
 
 	/**
+	 * ESteamInputType (como enteros, sin repetir) de los mandos que Steam Input traduce ahora para el juego; vacío sin Steam.
+	 * Con esto el lector de mandos DirectInput (#743) se calla los que ya llegan como mando de Xbox de Steam.
+	 */
+	TORTUNABO_API TArray<int32> GetConnectedPadInputTypes();
+
+	/**
 	 * Qué teclados de Steam probar y en qué orden (regla pura, con prueba). Nada sin Steam o si se usa el teclado; en la
 	 * Steam Deck, primero el flotante (deja ver el campo); en el PC, primero el de Big Picture, que es el que existe ahí.
 	 */

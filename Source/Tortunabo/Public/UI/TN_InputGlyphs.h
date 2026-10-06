@@ -13,12 +13,14 @@ enum class ETNInputDevice : uint8
 /** Familia del mando, para dibujar sus botones como los lleva impresos. */
 enum class ETNPadFamily : uint8
 {
-	/** Xbox y cualquier mando que no se reconozca (es lo que el juego lee por XInput). */
+	/** Xbox y cualquier mando que no se reconozca (lo que llega por XInput y los mandos genéricos de DirectInput). */
 	Xbox,
 	/** DualShock y DualSense: cruz, círculo, cuadrado y triángulo; L1, R1, L2, R2. */
 	PlayStation,
 	/** Steam Deck: A, B, X e Y como el de Xbox, pero L1, R1, L2 y R2. */
 	SteamDeck,
+	/** Switch Pro y Joy-Con: B abajo, A a la derecha, Y a la izquierda y X arriba; L, R, ZL, ZR; + y −. */
+	Switch,
 };
 
 /** Forma del dibujo de un botón (UTN_ButtonGlyphWidget). */
@@ -101,7 +103,10 @@ namespace TNInputGlyphs
 	/** Familia del mando según el tipo de Steam Input (ESteamInputType, como entero: 0 si Steam no lo sabe). */
 	TORTUNABO_API ETNPadFamily FamilyFromSteamInputType(int32 SteamInputType);
 
-	/** Familia según el nombre del aparato que da el motor (DualSense, DualShock, PS4, PS5...): Xbox si no lo reconoce. */
+	/**
+	 * Familia según el nombre del aparato que da el motor (DualSense, DualShock, PS4, PS5... SwitchPro, Nintendo, Joy-Con):
+	 * Xbox si no lo reconoce.
+	 */
 	TORTUNABO_API ETNPadFamily FamilyFromHardwareName(const FString& HardwareName);
 
 	/** Cómo se dibuja Key con esa familia de mando (Shape = None si no es un botón del mando). */
