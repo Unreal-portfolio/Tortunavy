@@ -10,7 +10,6 @@ class STN_EggLoadingScreen;
 class STN_GoBanner;
 class SWidget;
 class UGameViewportClient;
-class UTextureRenderTarget2D;
 struct FWorldContext;
 
 namespace TNEggAudio
@@ -214,18 +213,6 @@ private:
 	TSharedPtr<STN_EggLoadingScreen> Screen;
 	TSharedPtr<SWidget> ScreenInViewport;
 	TWeakObjectPtr<UGameViewportClient> ViewportUsed;
-	/** En VR el huevo va en el panel de la interfaz del mundo (Docs/Modo_VR.md); true mientras está allí. */
-	bool bScreenOnVRPanel = false;
-
-	/**
-	 * Con gafas, mientras el huevo está cerrado: una capa de carga de las gafas con el huevo dibujado (la pinta el
-	 * compositor, así sigue ahí aunque el juego se pare a cargar un mapa).
-	 */
-	void UpdateVRSplash();
-	bool bVRSplashShown = false;
-	UPROPERTY(Transient)
-	TObjectPtr<UTextureRenderTarget2D> VRSplashTarget;
-
 	/** «¡ADELANTE!» sin huevo (rondas siguientes), el viewport donde está y si ya sonó su entrada. */
 	TSharedPtr<STN_GoBanner> GoBanner;
 	TWeakObjectPtr<UGameViewportClient> GoBannerViewport;

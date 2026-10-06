@@ -55,9 +55,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Spectator")
 	void SpectatePreviousPlayer();
 
-	/** @brief true mientras está abierta la rueda de emotes o la de frases (el modo VR las maneja con el stick, no con el puntero). */
-	bool IsRadialWheelOpen() const { return ActiveWheelType != ETN_RadialWheelType::None; }
-
 	/** @brief Abre el widget de cosméticos. Disponible sólo en el lobby HQ. */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	void OpenCosmeticsMenu();

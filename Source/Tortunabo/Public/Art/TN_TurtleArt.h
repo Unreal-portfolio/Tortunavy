@@ -111,7 +111,7 @@ namespace TNTurtleArt
 
 /**
  * Pieza de arte pegada a un hueso de la tortuga (TNTurtleArt::ApplyPieces). Transitoria: no se guarda ni se replica; cada
- * máquina la pone igual. Se ve cuando se ve su malla y su dueño la ve como ve la malla (primera persona en VR).
+ * máquina la pone igual. Se ve cuando se ve su malla y su dueño la ve como ve la malla.
  */
 UCLASS(ClassGroup = (Tortunavy), meta = (BlueprintSpawnableComponent = false))
 class TORTUNABO_API UTN_TurtlePieceComponent : public UStaticMeshComponent

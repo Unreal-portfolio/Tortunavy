@@ -5,7 +5,7 @@
 #include "../HUD/TN_HUDStyle.h"
 #include "Core/TN_LocText.h"
 #include "Core/TN_Log.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/Button.h"
@@ -285,7 +285,7 @@ UTN_CreditsWidget* UTN_CreditsWidget::OpenOver(APlayerController* PC, UUserWidge
 		if (Menu->GetVisibility() != ESlateVisibility::Collapsed) { Screen->HiddenMenuVisibility = Menu->GetVisibility(); }
 		Menu->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	TNVR::AddToScreen(Screen, TNCreditsUI::ScreenZOrder);
+	TNScreen::AddToScreen(Screen, TNCreditsUI::ScreenZOrder);
 	Screen->FocusList();
 	return Screen;
 }
@@ -643,7 +643,7 @@ namespace TNCreditsDebug
 	bool ClickMenuButton(UWorld* World)
 	{
 		TArray<UUserWidget*> Menus;
-		UWidgetBlueprintLibrary::GetAllWidgetsOfClass(World, Menus, UUserWidget::StaticClass(), !TNVR::IsEnabled());
+		UWidgetBlueprintLibrary::GetAllWidgetsOfClass(World, Menus, UUserWidget::StaticClass(), true);
 		for (UUserWidget* Menu : Menus)
 		{
 			if (UButton* Button = Menu && Menu->WidgetTree ? Cast<UButton>(Menu->WidgetTree->FindWidget(TEXT("CreditsButton"))) : nullptr)

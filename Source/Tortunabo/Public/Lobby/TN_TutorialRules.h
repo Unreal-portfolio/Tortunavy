@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "VR/TN_VRMath.h"
 
 /**
  * Reglas del recorrido del tutorial que decide el servidor, como lógica pura (sin mundo ni controladores). Las usan
@@ -49,37 +48,5 @@ namespace TNTutorialRules
 	inline bool ShouldResetProgress(bool bWasInside, int32 TargetStation)
 	{
 		return bWasInside && TargetStation == 0;
-	}
-
-	// ── Mandos de las gafas (#645): las tareas del tutorial que miran un botón también cuentan con los Touch ─────────────
-
-	/**
-	 * @brief ¿Está pulsado un gatillo o un agarre de los Touch? Con OpenXR solo dan su valor (no un «clic» fiable): cuenta a
-	 *        partir del mismo umbral que el resto de la VR (TNVRMath::AnalogPressThreshold), o con el clic si lo hay.
-	 */
-	inline bool VRButtonDown(float Axis, bool bClick)
-	{
-		return bClick || Axis >= TNVRMath::AnalogPressThreshold;
-	}
-
-	/** @brief ¿Se mueve el stick izquierdo de los Touch (andar, liberarse de Berta)? Mismo umbral que el stick del mando. */
-	inline bool VRStickMoved(float X, float Y, float Threshold = 0.3f)
-	{
-		return FMath::Abs(X) > Threshold || FMath::Abs(Y) > Threshold;
-	}
-
-	/**
-	 * @brief ¿Cuenta como «soltar» (estación de las ranuras) lo que ha pasado con las gafas? El objeto de la aleta ha dejado de
-	 *        estar en ella sin pasar al caparazón, con el agarre derecho apretado hace poco: abrirlo despacio lo deja caer y
-	 *        abrirlo con impulso lo lanza (ATortugaCharacter::VRGripReleased).
-	 * @param bHadItem          Llevaba un objeto en la aleta el fotograma anterior.
-	 * @param bHasItem          Lo lleva ahora.
-	 * @param bStoredChanged    Lo guardado en el caparazón ha cambiado (el objeto se ha guardado, no soltado).
-	 * @param SecondsSinceGrip  Segundos desde que el agarre derecho estaba apretado (0 si lo está).
-	 * @param WindowSeconds     Margen: el servidor tarda un viaje en quitarle el objeto.
-	 */
-	inline bool VRDropCounts(bool bHadItem, bool bHasItem, bool bStoredChanged, float SecondsSinceGrip, float WindowSeconds = 1.5f)
-	{
-		return bHadItem && !bHasItem && !bStoredChanged && SecondsSinceGrip <= WindowSeconds;
 	}
 }

@@ -7,7 +7,7 @@ class APlayerController;
 /**
  * Respuesta a los golpes de la tortuga (#350): una sacudida corta de cámara y una vibración del mando proporcional al
  * golpe, solo en la máquina del jugador que lo recibe. El servidor decide el golpe (ATortugaCharacter::NotifyHitFeedback)
- * y el cliente lo nota con sus ajustes: «Temblor de cámara» y «Vibración del mando». En VR no hay sacudida (marea).
+ * y el cliente lo nota con sus ajustes: «Temblor de cámara» y «Vibración del mando».
  */
 namespace TNHitFeedback
 {
@@ -16,7 +16,6 @@ namespace TNHitFeedback
 	{
 		bool bCameraShake = true;
 		bool bVibration = true;
-		bool bVR = false;
 	};
 
 	/** Lo que se hace con un golpe: trauma del temblor de cámara (0..1) y vibración (intensidad 0..1 y segundos). */

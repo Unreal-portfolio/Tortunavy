@@ -92,7 +92,7 @@ void UTN_CarryComponent::RequestThrow()
 	// Ya tomando impulso: el servidor tampoco aceptaría otro lanzamiento hasta soltarla.
 	if (GetThrowWindupAlpha() >= 0.f) { return; }
 	const ATortugaCharacter* Self = GetTurtle();
-	// Hacia donde mira la cámara; en VR, hacia donde apunta la aleta derecha.
+	// Hacia donde mira la cámara.
 	const FRotator Aim = Self ? Self->GetTurtleAimRotation() : FRotator::ZeroRotator;
 	// Las aletas se echan atrás al momento en esta máquina (el servidor la suelta al acabar la toma de impulso).
 	BeginLocalThrowWindup();
@@ -262,7 +262,7 @@ void UTN_CarryComponent::ThrowCarried(const FRotator& AimRotation)
 	const float Speed = ThrowSpeed * (bCarriedStruggling ? StruggleThrowMultiplier : 1.f);
 	const FVector Flat = FRotator(0.f, AimRotation.Yaw, 0.f).Vector();
 	const FVector Start = Self->GetActorLocation() + Flat * 70.f + FVector(0.f, 0.f, CarryHeight + 20.f);
-	// Al punto del centro de la pantalla (en VR, hacia la aleta).
+	// Al punto del centro de la pantalla.
 	// Dentro del caparazón la caja frena un poco en el aire: se compensa para que llegue al punto.
 	const UTN_ShellComponent* CarriedShell = Carried->GetShellComponent();
 	const float Damping = CarriedShell && CarriedShell->IsInShell() ? ATN_ShellBody::BoxLinearDamping : 0.f;
@@ -292,9 +292,7 @@ void UTN_CarryComponent::ThrowWithDive(const FVector& DiveDir, const FVector& Di
 	{
 		Flat = Self->GetActorForwardVector();
 	}
-	// Con gafas (#649), hacia donde apunta la aleta derecha y no hacia la cabeza ni el rumbo del panzazo (el servidor tiene la
-	// última aleta que mandó el dueño: TryDive la manda al lanzarse); el impulso del panzazo se suma igual.
-	const FRotator Aim = Self->IsVRPlayer() ? Self->GetTurtleAimRotation() : FRotator(Self->GetControlRotation().Pitch, Flat.Rotation().Yaw, 0.f);
+	const FRotator Aim(Self->GetControlRotation().Pitch, Flat.Rotation().Yaw, 0.f);
 	const float Speed = ThrowSpeed * (bCarriedStruggling ? StruggleThrowMultiplier : 1.f);
 	FVector Velocity = Self->GetThrowDirection(Aim) * Speed
 		+ FVector(DiveVelocity.X, DiveVelocity.Y, 0.0) * DiveThrowCarryFactor

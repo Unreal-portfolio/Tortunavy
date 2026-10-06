@@ -57,8 +57,7 @@
 #include "Sound/SoundMix.h"
 #include "Sound/SoundWaveProcedural.h"
 #include "UObject/UObjectHash.h"
-#include "VR/TN_VRControls.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
@@ -144,8 +143,6 @@ namespace TNGameSettingsDetail
 	/** Filas de controles del propio juego (no están en IMC_Player). */
 	const TCHAR* const TalkId = TEXT("Talk");
 	const TCHAR* const PauseId = TEXT("Pause");
-	/** «Cambiar de cámara» (tercera o primera persona sin gafas; la lee ATortugaCharacter cada fotograma). */
-	const TCHAR* const CameraId = TEXT("Camera");
 
 	/**
 	 * Lo que había en el proceso antes del primer subsistema: en PIE con varios jugadores hay un subsistema por jugador y
@@ -190,10 +187,6 @@ namespace TNGameSettingsDetail
 		S.WeatherEffects = FMath::Clamp(S.WeatherEffects, 0.f, 1.f);
 		S.Brightness = FMath::Clamp(S.Brightness, 0.f, 1.f);
 		S.UIScale = FMath::Clamp(S.UIScale, MinUIScale, MaxUIScale);
-		S.VRMode = static_cast<uint8>(FMath::Clamp<int32>(S.VRMode, 0, 2));
-		S.VRTurn = static_cast<uint8>(FMath::Clamp<int32>(S.VRTurn, 0, 2));
-		S.VRVignette = static_cast<uint8>(FMath::Clamp<int32>(S.VRVignette, 0, 2));
-		S.CameraView = static_cast<uint8>(FMath::Clamp<int32>(S.CameraView, 0, 1));
 		// Un idioma que ya no está en la lista (se quitó de la configuración): sin elegir, que toca el del sistema.
 		if (!S.Language.IsEmpty() && TNLanguage::IndexOf(S.Language) == INDEX_NONE)
 		{
@@ -209,12 +202,6 @@ namespace TNGameSettingsDetail
 		FixKey(S.PushToTalkPadKey, Defaults.PushToTalkPadKey);
 		FixKey(S.PauseKey, Defaults.PauseKey);
 		FixKey(S.PausePadKey, Defaults.PausePadKey);
-		FixKey(S.CameraKey, Defaults.CameraKey);
-		FixKey(S.CameraPadKey, Defaults.CameraPadKey);
-		// «Cambiar de cámara» nunca va con la tecla de hablar (con pulsar para hablar, hablar cambiaría la cámara): si
-		// coinciden, la cámara se queda sin ella (se le pone otra en Controles).
-		if (!S.CameraKey.IsNone() && S.CameraKey == S.PushToTalkKey) { S.CameraKey = NAME_None; }
-		if (!S.CameraPadKey.IsNone() && S.CameraPadKey == S.PushToTalkPadKey) { S.CameraPadKey = NAME_None; }
 		for (auto It = S.KeyOverrides.CreateIterator(); It; ++It)
 		{
 			if (!It.Value().IsNone() && !FKey(It.Value()).IsValid()) { It.RemoveCurrent(); }
@@ -258,7 +245,7 @@ namespace TNGameSettingsDetail
 
 	bool IsGameRow(const FTNKeyBinding& Row)
 	{
-		return Row.Id == TalkId || Row.Id == PauseId || Row.Id == CameraId;
+		return Row.Id == TalkId || Row.Id == PauseId;
 	}
 
 	/** Tecla que forma fila (teclas, botones y gatillos); los ejes (stick, ratón, rueda) no se cambian. */
@@ -544,7 +531,6 @@ void UTN_GameSettingsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	CreateSoundClasses();
 	OriginalMapping = LoadObject<UInputMappingContext>(nullptr, TNGameSettingsDetail::PlayerMappingPath);
 	BuildDefaultBindings();
-	FreeCameraKeyConflicts();
 	RebuildRemappedMapping(PrimaryInput, Settings);
 	// El idioma va lo primero: antes de que salga ningún menú, ni siquiera el de carga.
 	SystemLanguage = TNLanguage::FindSystemLanguage();
@@ -966,11 +952,6 @@ void UTN_GameSettingsSubsystem::ResetGroup(ETNSettingsGroup Group)
 		// Idioma sin elegir (el del sistema, o el español) y el ojo de pez de serie.
 		Target.Language = Defaults.Language;
 		Target.bFisheye = Defaults.bFisheye;
-		Target.VRMode = Defaults.VRMode;
-		Target.VRTurn = Defaults.VRTurn;
-		Target.VRVignette = Defaults.VRVignette;
-		Target.bVRHaptics = Defaults.bVRHaptics;
-		Target.CameraView = Defaults.CameraView;
 		break;
 	default:
 		// Gráficos: el brillo y el contador; la calidad se elige con «Calidad recomendada» (UGameUserSettings).
@@ -1117,9 +1098,8 @@ void UTN_GameSettingsSubsystem::UpdateFisheye(APlayerController* PC, float Delta
 		return;
 	}
 
-	// Se enciende y se apaga poco a poco (así no salta al cambiar el ajuste). En VR nunca: deformar la imagen con gafas marea.
-	FisheyeAmount = TNVR::IsEnabled() ? 0.f
-		: FMath::FInterpConstantTo(FisheyeAmount, Settings.bFisheye ? 1.f : 0.f, DeltaTime, 1.f / FisheyeFadeSeconds);
+	// Se enciende y se apaga poco a poco (así no salta al cambiar el ajuste).
+	FisheyeAmount = FMath::FInterpConstantTo(FisheyeAmount, Settings.bFisheye ? 1.f : 0.f, DeltaTime, 1.f / FisheyeFadeSeconds);
 
 	float D = 0.f;
 	float S = 0.f;
@@ -1495,8 +1475,6 @@ void UTN_GameSettingsSubsystem::UpdateLocalVoice(APlayerController* PC)
 		const FKey Key(Settings.PushToTalkKey);
 		const FKey PadKey(Settings.PushToTalkPadKey);
 		bTalkKeyDown = (Key.IsValid() && PC->IsInputKeyDown(Key)) || (PadKey.IsValid() && PC->IsInputKeyDown(PadKey));
-		// En VR, pulsando el stick izquierdo (Docs/Modo_VR.md).
-		bTalkKeyDown = bTalkKeyDown || (TNVR::IsEnabled() && FTNVRKeys::LeftStickClick.IsValid() && PC->IsInputKeyDown(FTNVRKeys::LeftStickClick));
 	}
 	bTransmitAllowed = !Settings.bMicMuted && (!Settings.bPushToTalk || bTalkKeyDown);
 
@@ -1557,9 +1535,8 @@ void UTN_GameSettingsSubsystem::UpdateCamera(APlayerController* PC, FTNPlayerInp
 		}
 	}
 
-	// Temblor de cámara: los modificadores que tiemblan, apagados (o encendidos otra vez los que se apagaron aquí). En VR,
-	// siempre apagados: mover la vista sin mover la cabeza marea.
-	if (!Own.bCameraShake || TNVR::IsEnabled())
+	// Temblor de cámara: los modificadores que tiemblan, apagados (o encendidos otra vez los que se apagaron aquí).
+	if (!Own.bCameraShake)
 	{
 		Camera->ForEachCameraModifier([&State](UCameraModifier* Modifier)
 		{
@@ -1585,7 +1562,7 @@ void UTN_GameSettingsSubsystem::UpdateFpsCounter(APlayerController* PC)
 {
 	if (!Settings.bShowFps)
 	{
-		if (FpsWidget && TNVR::IsOnScreen(FpsWidget)) { FpsWidget->RemoveFromParent(); }
+		if (FpsWidget && TNScreen::IsOnScreen(FpsWidget)) { FpsWidget->RemoveFromParent(); }
 		return;
 	}
 	if (!FpsWidget)
@@ -1593,9 +1570,9 @@ void UTN_GameSettingsSubsystem::UpdateFpsCounter(APlayerController* PC)
 		FpsWidget = CreateWidget<UTN_FpsCounterWidget>(GetGameInstance(), UTN_FpsCounterWidget::StaticClass());
 	}
 	// Tras un viaje el mundo quita todos los widgets: se vuelve a poner.
-	if (FpsWidget && !TNVR::IsOnScreen(FpsWidget))
+	if (FpsWidget && !TNScreen::IsOnScreen(FpsWidget))
 	{
-		TNVR::AddToFullScreen(FpsWidget, TNGameSettingsDetail::FpsZOrder);
+		TNScreen::AddToFullScreen(FpsWidget, TNGameSettingsDetail::FpsZOrder);
 	}
 }
 
@@ -1604,16 +1581,16 @@ void UTN_GameSettingsSubsystem::UpdateTalkers(APlayerController* PC)
 	// Solo en la partida (lobby incluido: los controladores que reciben voz), no en el menú principal.
 	if (!Settings.bShowTalkers || !Cast<ITN_VoiceListener>(PC))
 	{
-		if (TalkersWidget && TNVR::IsOnScreen(TalkersWidget)) { TalkersWidget->RemoveFromParent(); }
+		if (TalkersWidget && TNScreen::IsOnScreen(TalkersWidget)) { TalkersWidget->RemoveFromParent(); }
 		return;
 	}
 	if (!TalkersWidget)
 	{
 		TalkersWidget = CreateWidget<UTN_TalkersWidget>(GetGameInstance(), UTN_TalkersWidget::StaticClass());
 	}
-	if (TalkersWidget && !TNVR::IsOnScreen(TalkersWidget))
+	if (TalkersWidget && !TNScreen::IsOnScreen(TalkersWidget))
 	{
-		TNVR::AddToFullScreen(TalkersWidget, TNGameSettingsDetail::TalkersZOrder);
+		TNScreen::AddToFullScreen(TalkersWidget, TNGameSettingsDetail::TalkersZOrder);
 	}
 }
 
@@ -1651,15 +1628,6 @@ FText UTN_GameSettingsSubsystem::KeyDisplayName(const FKey& Key)
 	if (!Key.IsValid())
 	{
 		return NSLOCTEXT("TNSettings", "NoKey", "—");
-	}
-	// Los botones de los mandos Touch de las gafas (OculusTouch_*): «Gatillo derecho», «A», «Stick izquierdo»... (#644).
-	if (FTNVRKeys::IsVRKey(Key))
-	{
-		const FText VRName = TNVRControls::KeyName(Key);
-		if (!VRName.IsEmpty())
-		{
-			return VRName;
-		}
 	}
 	// Los nombres de las teclas del juego, por su nombre de tecla. Una entrada por texto: las que se llaman igual comparten clave.
 	// Estático local (no de archivo): los NSLOCTEXT se crean con el sistema de localización ya en marcha.
@@ -1845,15 +1813,8 @@ void UTN_GameSettingsSubsystem::BuildDefaultBindings()
 		UE_LOG(LogTortunabo, Warning, TEXT("[Ajustes] No se pudo cargar IMC_Player: no se pueden cambiar las teclas."));
 	}
 
-	// Las del propio juego: cambiar de cámara (en «Jugando», detrás de las de IMC_Player), hablar (con pulsar para hablar)
-	// y el menú de pausa.
+	// Las del propio juego: hablar (con pulsar para hablar) y el menú de pausa.
 	const FTNGameSettings Defaults;
-	FTNKeyBinding& Camera = DefaultBindings.AddDefaulted_GetRef();
-	Camera.Id = CameraId;
-	Camera.Label = NSLOCTEXT("TNSettings", "CameraRow", "Cambiar de cámara");
-	Camera.Defaults[0] = FKey(Defaults.CameraKey);
-	Camera.Defaults[1] = FKey(Defaults.CameraPadKey);
-	Camera.Order = 15000;
 	FTNKeyBinding& Talk = DefaultBindings.AddDefaulted_GetRef();
 	Talk.Id = TalkId;
 	Talk.Label = NSLOCTEXT("TNSettings", "TalkRow", "Hablar (pulsar para hablar)");
@@ -1915,7 +1876,6 @@ FKey UTN_GameSettingsSubsystem::GetBindingKey(const FTNGameSettings& Own, const 
 	const int32 Slot = FMath::Clamp(Device, 0, 1);
 	if (Row.Id == TalkId) { return FKey(Slot == 0 ? Own.PushToTalkKey : Own.PushToTalkPadKey); }
 	if (Row.Id == PauseId) { return FKey(Slot == 0 ? Own.PauseKey : Own.PausePadKey); }
-	if (Row.Id == CameraId) { return FKey(Slot == 0 ? Own.CameraKey : Own.CameraPadKey); }
 	if (const FName* Override = Own.KeyOverrides.Find(OverrideName(Row.Id, Slot)))
 	{
 		return FKey(*Override);
@@ -1936,11 +1896,6 @@ void UTN_GameSettingsSubsystem::SetBindingKey(FTNGameSettings& Own, const FTNKey
 	if (Row.Id == PauseId)
 	{
 		(Slot == 0 ? Own.PauseKey : Own.PausePadKey) = NewName;
-		return;
-	}
-	if (Row.Id == CameraId)
-	{
-		(Slot == 0 ? Own.CameraKey : Own.CameraPadKey) = NewName;
 		return;
 	}
 	const FString OverrideKey = OverrideName(Row.Id, Slot);
@@ -2089,8 +2044,6 @@ void UTN_GameSettingsSubsystem::ResetAllKeyBindings()
 	Target.PushToTalkPadKey = Defaults.PushToTalkPadKey;
 	Target.PauseKey = Defaults.PauseKey;
 	Target.PausePadKey = Defaults.PausePadKey;
-	Target.CameraKey = Defaults.CameraKey;
-	Target.CameraPadKey = Defaults.CameraPadKey;
 	OnKeyBindingsChanged();
 }
 
@@ -2099,43 +2052,7 @@ bool UTN_GameSettingsSubsystem::HasCustomKeys() const
 	const FTNGameSettings Defaults;
 	const FTNGameSettings& Target = GetEditedSettings();
 	return Target.KeyOverrides.Num() > 0 || Target.PushToTalkKey != Defaults.PushToTalkKey || Target.PushToTalkPadKey != Defaults.PushToTalkPadKey
-		|| Target.PauseKey != Defaults.PauseKey || Target.PausePadKey != Defaults.PausePadKey
-		|| Target.CameraKey != Defaults.CameraKey || Target.CameraPadKey != Defaults.CameraPadKey;
-}
-
-FKey UTN_GameSettingsSubsystem::GetCameraToggleKey(bool bGamepad) const
-{
-	return FKey(bGamepad ? Settings.CameraPadKey : Settings.CameraKey);
-}
-
-void UTN_GameSettingsSubsystem::FreeCameraKeyConflicts()
-{
-	using namespace TNGameSettingsDetail;
-	const FTNKeyBinding* Camera = FindDefaultBinding(CameraId);
-	if (!Camera)
-	{
-		return;
-	}
-	for (int32 Device = 0; Device < 2; ++Device)
-	{
-		const FKey Key = GetBindingKey(Settings, *Camera, Device);
-		if (!Key.IsValid())
-		{
-			continue;
-		}
-		for (const FTNKeyBinding& Other : DefaultBindings)
-		{
-			if (Other.Id != Camera->Id && SamePhysicalKey(GetBindingKey(Settings, Other, Device), Key))
-			{
-				// Ajustes de antes de que existiera esta fila: otra ya iba con esa tecla, y esa manda. La cámara se queda sin
-				// ella en ese aparato (se le pone otra en Controles).
-				SetBindingKey(Settings, *Camera, Device, FKey());
-				UE_LOG(LogTortunabo, Log, TEXT("[Ajustes] Controles: %s ya es de %s; «Cambiar de cámara» se queda sin tecla en el %s."),
-					*Key.ToString(), *Other.Id, Device == 0 ? TEXT("teclado") : TEXT("mando"));
-				break;
-			}
-		}
-	}
+		|| Target.PauseKey != Defaults.PauseKey || Target.PausePadKey != Defaults.PausePadKey;
 }
 
 void UTN_GameSettingsSubsystem::OnKeyBindingsChanged()
@@ -2366,8 +2283,6 @@ void UTN_GameSettingsSubsystem::EnsurePauseInput(APlayerController* PC, FTNPlaye
 		if (Key.IsValid()) { Keys.AddUnique(Key); }
 	}
 	if (GIsEditor) { Keys.AddUnique(EKeys::Tab); }
-	// El botón de menú del mando izquierdo de las gafas (si el motor tiene los mandos de Meta; sin OpenXR no existe).
-	if (FTNVRKeys::Menu.IsValid()) { Keys.AddUnique(FTNVRKeys::Menu); }
 	TWeakObjectPtr<APlayerController> WeakPC(GamePC);
 	for (const FKey& Key : Keys)
 	{
@@ -2439,7 +2354,7 @@ void UTN_GameSettingsSubsystem::OpenPauseMenu(APlayerController* PC)
 	}
 	PauseMenu = Menu;
 	// A toda la pantalla, por encima de las vistas de la pantalla partida.
-	TNVR::AddToFullScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
+	TNScreen::AddToFullScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
 	Menu->TakeInput();
 	// Partida local: la partida se para para todos mientras está abierto.
 	if (UTN_LocalPlaySubsystem::IsLocalGame(PC))
@@ -2482,7 +2397,7 @@ void UTN_GameSettingsSubsystem::OpenMainMenuSettings(APlayerController* PC)
 		return;
 	}
 	PauseMenu = Menu;
-	TNVR::AddToFullScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
+	TNScreen::AddToFullScreen(Menu, TNGameSettingsDetail::PauseMenuZOrder);
 	Menu->TakeInput();
 	UE_LOG(LogTortunabo, Log, TEXT("[Pausa] Ajustes abiertos desde el menú principal."));
 }
@@ -2500,7 +2415,7 @@ void UTN_GameSettingsSubsystem::ClosePauseMenu()
 
 bool UTN_GameSettingsSubsystem::IsPauseMenuOpen() const
 {
-	return PauseMenu && TNVR::IsOnScreen(PauseMenu);
+	return PauseMenu && TNScreen::IsOnScreen(PauseMenu);
 }
 
 APlayerController* UTN_GameSettingsSubsystem::GetPauseMenuOwner() const

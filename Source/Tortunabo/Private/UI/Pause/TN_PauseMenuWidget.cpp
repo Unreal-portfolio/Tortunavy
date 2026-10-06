@@ -24,7 +24,6 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
-#include "VR/TN_VRMenuClaim.h"
 #include "Voice/ProximityVoiceComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
@@ -67,8 +66,7 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "Styling/SlateTypes.h"
-#include "VR/TN_VRControls.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 #include "World/ProcMap/TN_SandStormRules.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
@@ -969,8 +967,6 @@ FReply UTN_PauseRow::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEven
 	{
 		if (!InKeyEvent.IsRepeat() && bEnabled && OnReset)
 		{
-			// Con gafas, la Y de los Touch llega aquí antes de ir atrás (#648); solo cuenta si de verdad devuelve la tecla.
-			TNVRMenuClaim::Claim();
 			PlaySound(ETNPauseSound::Press);
 			// Lo último: rehace la lista entera.
 			OnReset();
@@ -2699,65 +2695,6 @@ void UTN_PauseMenuWidget::FillGameTab()
 			{
 				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([bOn](FTNGameSettings& D) { D.bShowTalkers = bOn; }); }
 			});
-
-		// Cámara (Docs/Modo_VR.md, «Primera persona»): la tortuga la mira cada fotograma, se aplica en el acto.
-		// Solo para el jugador 1: la tortuga mira sus ajustes (GetSettings).
-		if (UTN_PauseRow* Row = AddListRow(SettingsList))
-		{
-			const TArray<FText> Views = { NSLOCTEXT("TNPause", "CameraThird", "Tercera persona"), NSLOCTEXT("TNPause", "CameraFirst", "Primera persona") };
-			Row->SetupChoice(NSLOCTEXT("TNPause", "CameraView", "Cámara"), Views, FMath::Clamp<int32>(Data.CameraView, 0, 1), [WeakSettings](int32 Choice)
-			{
-				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([Choice](FTNGameSettings& D) { D.CameraView = static_cast<uint8>(Choice); }); }
-			});
-			// Con las teclas de ahora de «Cambiar de cámara» (T y el clic del stick derecho de serie; se cambian en Controles).
-			Row->SetDescription(FText::Format(NSLOCTEXT("TNPause", "CameraViewDesc",
-				"Primera persona: la vista va en la cabeza de tu tortuga (también tumbada) y al mirar abajo ves tu cuerpo, tus aletas y tu lengua. Dentro del caparazón se ve desde dentro, a oscuras. También se cambia jugando con {0} o, con el mando, con {1} (en Controles, «Cambiar de cámara»)."),
-				TNPauseUI::KeyName(Settings->GetCameraToggleKey(false)), TNPauseUI::KeyName(Settings->GetCameraToggleKey(true))));
-		}
-
-		// Modo VR (Docs/Modo_VR.md): se aplica en el acto (UTN_VRSubsystem lo mira cada fotograma).
-		AddListHeader(SettingsList, NSLOCTEXT("TNPause", "HeadVR", "REALIDAD VIRTUAL"));
-		if (UTN_PauseRow* Row = AddListRow(SettingsList))
-		{
-			const TArray<FText> Modes = { NSLOCTEXT("TNPause", "VRModeAuto", "Automático"), NSLOCTEXT("TNPause", "VRModeOff", "Desactivado"),
-				NSLOCTEXT("TNPause", "VRModeSim", "Simulado sin gafas") };
-			Row->SetupChoice(NSLOCTEXT("TNPause", "VRMode", "Modo VR"), Modes, FMath::Clamp<int32>(Data.VRMode, 0, 2), [WeakSettings](int32 Choice)
-			{
-				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([Choice](FTNGameSettings& D) { D.VRMode = static_cast<uint8>(Choice); }); }
-			});
-			Row->SetDescription(NSLOCTEXT("TNPause", "VRModeDesc",
-				"Automático: en primera persona con las gafas si el juego arranca con ellas (-vr o «VR Preview»). Desactivado: con gafas, la pantalla plana de siempre. Simulado: el modo VR sin gafas, con el ratón como aleta, para probarlo en el PC."));
-		}
-		if (UTN_PauseRow* Row = AddListRow(SettingsList))
-		{
-			const TArray<FText> Turns = { NSLOCTEXT("TNPause", "VRTurn30", "Por pasos de 30°"), NSLOCTEXT("TNPause", "VRTurn45", "Por pasos de 45°"),
-				NSLOCTEXT("TNPause", "VRTurnSmooth", "Suave") };
-			Row->SetupChoice(NSLOCTEXT("TNPause", "VRTurn", "Giro en VR"), Turns, FMath::Clamp<int32>(Data.VRTurn, 0, 2), [WeakSettings](int32 Choice)
-			{
-				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([Choice](FTNGameSettings& D) { D.VRTurn = static_cast<uint8>(Choice); }); }
-			});
-			Row->SetDescription(NSLOCTEXT("TNPause", "VRTurnDesc",
-				"Cómo gira la tortuga con el stick derecho. A pasos marea mucho menos; suave, para quien ya está acostumbrado."));
-		}
-		// Viñeta de confort y vibración de los mandos Touch (#647): el rig las lee cada fotograma (TN.VR.ComfortVignette y
-		// TN.VR.Haptics, por consola, mandan sobre ellas).
-		if (UTN_PauseRow* Row = AddListRow(SettingsList))
-		{
-			const TArray<FText> Strengths = { NSLOCTEXT("TNPause", "VRVignetteOff", "Apagada"), NSLOCTEXT("TNPause", "VRVignetteNormal", "Normal"),
-				NSLOCTEXT("TNPause", "VRVignetteStrong", "Fuerte") };
-			Row->SetupChoice(NSLOCTEXT("TNPause", "VRVignette", "Viñeta de confort"), Strengths, FMath::Clamp<int32>(Data.VRVignette, 0, 2), [WeakSettings](int32 Choice)
-			{
-				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([Choice](FTNGameSettings& D) { D.VRVignette = static_cast<uint8>(Choice); }); }
-			});
-			Row->SetDescription(NSLOCTEXT("TNPause", "VRVignetteDesc",
-				"Oscurece los bordes de la vista al andar deprisa, caer, salir lanzado o girar suave, y marea menos. Fuerte los oscurece el doble."));
-		}
-		AddToggleRow(NSLOCTEXT("TNPause", "VRHaptics", "Vibración de los mandos VR"),
-			NSLOCTEXT("TNPause", "VRHapticsDesc", "Los mandos Touch vibran al coger, soltar y lanzar, al tocar una pared y al pulsar en los menús."),
-			Data.bVRHaptics, [WeakSettings](bool bOn)
-			{
-				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([bOn](FTNGameSettings& D) { D.bVRHaptics = bOn; }); }
-			});
 	}
 
 	if (UTN_PauseRow* Row = AddListRow(SettingsList))
@@ -2768,7 +2705,7 @@ void UTN_PauseMenuWidget::FillGameTab()
 			if (UTN_PauseMenuWidget* Menu = WeakThis.Get()) { Menu->ShowTab(ETNPauseTab::Game); }
 		}, nullptr, NSLOCTEXT("TNPause", "ResetAction", "Restablecer"));
 		Row->SetDescription(bGuest ? NSLOCTEXT("TNLocal", "ResetGameGuestDesc", "Temblor de cámara encendido y campo de visión de siempre (solo los tuyos).")
-			: NSLOCTEXT("TNPause", "ResetGameDesc", "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla», el idioma de tu sistema, la cámara en tercera persona y el modo VR automático con giro a pasos de 30°, viñeta normal y vibración encendida."));
+			: NSLOCTEXT("TNPause", "ResetGameDesc", "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla» y el idioma de tu sistema."));
 	}
 	if (UTN_PauseRow* Row = AddListRow(SettingsList))
 	{
@@ -2831,10 +2768,6 @@ void UTN_PauseMenuWidget::FillControlsList()
 		}
 		FText Description = Binding.bEditable[1] ? ChangeHelp
 			: FText::Format(NSLOCTEXT("TNPause", "KeyRowPadFixed", "{0} Con el mando va con {1}."), ChangeHelp, TNPauseUI::KeyName(Binding.FixedKeys[1]));
-		if (Binding.Id == TEXT("Camera"))
-		{
-			Description = FText::Format(NSLOCTEXT("TNPause", "CameraKeyRowDesc", "Tercera o primera persona, sin gafas (como Ajustes > Juego > Cámara). {0}"), ChangeHelp);
-		}
 		AddKeyBindRow(ControlsList, Binding.Id, Description);
 		++Actions;
 	}
@@ -2898,14 +2831,6 @@ void UTN_PauseMenuWidget::FillControlsList()
 		NSLOCTEXT("TNPause", "SpectateZoomPad", "Gatillos"), NSLOCTEXT("TNPause", "SpectateZoomDesc", "Con la cámara libre."));
 	AddInfo(NSLOCTEXT("TNPause", "MenuNav", "Moverse por los menús"), NSLOCTEXT("TNPause", "MenuNavKeys", "Flechas · WASD · Intro · Esc"),
 		NSLOCTEXT("TNPause", "MenuNavPad", "Stick · cruceta · A · B"), FText::GetEmpty());
-
-	// Los mandos Touch de las gafas (#647), solo lectura: no se reasignan (Docs/Modo_VR.md, «Controles»).
-	AddListHeader(ControlsList, NSLOCTEXT("TNPause", "HeadVRControls", "REALIDAD VIRTUAL (MANDOS TOUCH)"));
-	AddListNote(ControlsList, NSLOCTEXT("TNPause", "VRControlsNote", "Solo para ver: los botones de los mandos Touch no se cambian."));
-	for (const TNVRControls::FGuideLine& Line : TNVRControls::GetGuide())
-	{
-		AddInfo(Line.Label, Line.Buttons, FText::GetEmpty(), FText::GetEmpty());
-	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3015,15 +2940,6 @@ void UTN_PauseMenuWidget::FillRoomList()
 			{
 				Row->SetupButton(ETNPauseRowStyle::List, NSLOCTEXT("TNPause", "RoomInvite", "Invitar a amigos de Steam"), [WeakThis, WeakGameInstance]()
 				{
-					// Con gafas la ventana de Steam no se ve (#648): se avisa en vez de abrirla.
-					if (TNVR::IsHeadset())
-					{
-						if (UTN_PauseMenuWidget* Menu = WeakThis.Get())
-						{
-							Menu->ShowNotice(NSLOCTEXT("TNPause", "RoomInviteVR", "Con las gafas puestas no se ve la ventana de Steam: quítatelas un momento para invitar a tus amigos."), 7.f);
-						}
-						return;
-					}
 					if (UMP_GameInstance* RoomOwner = WeakGameInstance.Get()) { RoomOwner->InviteFriends(); }
 				}, nullptr, NSLOCTEXT("TNPause", "RoomInviteAction", "Abrir Steam"));
 				Row->SetDescription(NSLOCTEXT("TNPause", "RoomInviteDesc", "La lista de amigos de Steam, para invitarles (la invitación también vale en las salas privadas)."));
@@ -3149,7 +3065,7 @@ void UTN_PauseMenuWidget::CloseMenu()
 	}
 	bLeaving = true;
 	if (UTN_GameSettingsSubsystem* Settings = GetSettings()) { Settings->ClosePauseMenu(); }
-	if (TNVR::IsOnScreen(this)) { RemoveFromParent(); }
+	if (TNScreen::IsOnScreen(this)) { RemoveFromParent(); }
 }
 
 void UTN_PauseMenuWidget::ReturnToLobby()
@@ -3441,9 +3357,8 @@ void UTN_PauseMenuWidget::TakeInput()
 	bInputTaken = true;
 
 	// Lo que ya había en pantalla (para saber al cerrar si ha salido otro menú que quiere el cursor).
-	// En VR los menús no están en el viewport sino dentro del panel de la interfaz (no son de primer nivel).
 	TArray<UUserWidget*> Found;
-	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Found, UUserWidget::StaticClass(), !TNVR::IsEnabled());
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Found, UUserWidget::StaticClass(), true);
 	for (UUserWidget* Widget : Found) { WidgetsAtOpen.Add(Widget); }
 
 	// Suelta lo que estuviera pulsado (correr, andar) y deja la tortuga quieta: ni se mueve ni gira la cámara.
@@ -3488,12 +3403,12 @@ void UTN_PauseMenuWidget::ReleaseInput()
 	// Si mientras tanto ha salido otro menú que se puede pulsar (p. ej. el campeón de la carrera), se le deja el cursor.
 	bool bOtherMenu = false;
 	TArray<UUserWidget*> Found;
-	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Found, UUserWidget::StaticClass(), !TNVR::IsEnabled());
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Found, UUserWidget::StaticClass(), true);
 	for (UUserWidget* Widget : Found)
 	{
 		// Solo cuenta lo que se ve, se puede pulsar y no estaba al abrir (no el contador de FPS ni el recuento).
 		const ESlateVisibility Shown = Widget ? Widget->GetVisibility() : ESlateVisibility::Collapsed;
-		if (!Widget || Widget == this || !TNVR::IsOnScreen(Widget)
+		if (!Widget || Widget == this || !TNScreen::IsOnScreen(Widget)
 			|| (Shown != ESlateVisibility::Visible && Shown != ESlateVisibility::SelfHitTestInvisible)
 			|| WidgetsAtOpen.ContainsByPredicate([Widget](const TWeakObjectPtr<UUserWidget>& Old) { return Old.Get() == Widget; }))
 		{
@@ -3822,8 +3737,6 @@ FReply UTN_PauseMenuWidget::NativeOnPreviewKeyDown(const FGeometry& InGeometry, 
 	{
 		return Super::NativeOnPreviewKeyDown(InGeometry, InKeyEvent);
 	}
-	// Esperando una tecla se queda con la que llegue, también la X o la Y de los Touch (#648): que no siga con aceptar o atrás.
-	TNVRMenuClaim::Claim();
 	if (InKeyEvent.IsRepeat())
 	{
 		return FReply::Handled();

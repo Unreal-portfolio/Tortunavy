@@ -1,5 +1,4 @@
 #include "UI/TN_InputGlyphs.h"
-#include "VR/TN_VRMode.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto del bloque.
 namespace TNInputGlyphsDetail
@@ -141,9 +140,7 @@ FKey TNInputGlyphs::PickKey(const TArray<FKey>& Keys, ETNInputDevice Device)
 		{
 			continue;
 		}
-		// Los botones de los Touch son «mando» para el motor, pero un aviso con mando no debe enseñar el gatillo de las gafas
-		// (y con gafas, no el A del mando): cada aparato lee los suyos.
-		const ETNInputDevice KeyDevice = FTNVRKeys::IsVRKey(Key) ? ETNInputDevice::VR : DeviceOfKey(Key);
+		const ETNInputDevice KeyDevice = DeviceOfKey(Key);
 		if (KeyDevice == Device)
 		{
 			return AsButton(Key);

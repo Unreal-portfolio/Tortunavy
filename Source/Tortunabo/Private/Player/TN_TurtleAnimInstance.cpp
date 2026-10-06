@@ -58,9 +58,6 @@ namespace TNTurtleAnim
 		FCompactPoseBoneIndex LFore = FCompactPoseBoneIndex(INDEX_NONE);
 		FCompactPoseBoneIndex RArm = FCompactPoseBoneIndex(INDEX_NONE);
 		FCompactPoseBoneIndex RFore = FCompactPoseBoneIndex(INDEX_NONE);
-		/** Manos (muñecas): el IK de los brazos en VR las lleva a los mandos. */
-		FCompactPoseBoneIndex LHand = FCompactPoseBoneIndex(INDEX_NONE);
-		FCompactPoseBoneIndex RHand = FCompactPoseBoneIndex(INDEX_NONE);
 		FCompactPoseBoneIndex LUp = FCompactPoseBoneIndex(INDEX_NONE);
 		FCompactPoseBoneIndex LLeg = FCompactPoseBoneIndex(INDEX_NONE);
 		FCompactPoseBoneIndex LFoot = FCompactPoseBoneIndex(INDEX_NONE);
@@ -90,8 +87,6 @@ namespace TNTurtleAnim
 		Out.LFore = FindBone(Bones, TEXT("LeftForeArm"));
 		Out.RArm = FindBone(Bones, TEXT("RightArm"));
 		Out.RFore = FindBone(Bones, TEXT("RightForeArm"));
-		Out.LHand = FindBone(Bones, TEXT("LeftHand"));
-		Out.RHand = FindBone(Bones, TEXT("RightHand"));
 		Out.LUp = FindBone(Bones, TEXT("LeftUpLeg"));
 		Out.LLeg = FindBone(Bones, TEXT("LeftLeg"));
 		Out.LFoot = FindBone(Bones, TEXT("LeftFoot"));
@@ -110,55 +105,6 @@ namespace TNTurtleAnim
 			T = T * Pose[P];
 		}
 		return T;
-	}
-
-	/**
-	 * IK de dos huesos (brazo y antebrazo): la mano llega a Target (espacio de la malla) o, si no alcanza, se estira
-	 * hacia él. El codo se dobla en el plano en el que ya estaba (con el brazo recto, hacia abajo y atrás). Solo gira el
-	 * brazo y el antebrazo; la mano sigue al antebrazo. Weight mezcla con la pose que hay.
-	 */
-	void ReachArm(FCompactPose& Pose, FCompactPoseBoneIndex Upper, FCompactPoseBoneIndex Lower, FCompactPoseBoneIndex Hand,
-		const FVector& Target, float Weight)
-	{
-		if (!Upper.IsValid() || !Lower.IsValid() || !Hand.IsValid() || Weight < 0.01f) { return; }
-		const FCompactPoseBoneIndex UpperParent = Pose.GetParentBoneIndex(Upper);
-		const FTransform ParentCS = UpperParent.IsValid() ? ComponentSpace(Pose, UpperParent) : FTransform::Identity;
-		const FTransform UpperCS = Pose[Upper] * ParentCS;
-		const FTransform LowerCS = Pose[Lower] * UpperCS;
-		const FTransform HandCS = Pose[Hand] * LowerCS;
-		const FVector A = UpperCS.GetLocation();
-		const FVector Elbow = LowerCS.GetLocation();
-		const FVector Wrist = HandCS.GetLocation();
-		const double L1 = (Elbow - A).Size();
-		const double L2 = (Wrist - Elbow).Size();
-		const FVector ToTarget = Target - A;
-		double Reach = ToTarget.Size();
-		if (L1 < 1e-3 || L2 < 1e-3 || Reach < 1e-3) { return; }
-		const FVector Dir = ToTarget / Reach;
-		Reach = FMath::Clamp(Reach, FMath::Abs(L1 - L2) + 0.01, (L1 + L2) * 0.999);
-		// Plano del codo: el doblez de ahora; con el brazo recto, abajo (-Z de la malla) y atrás (-Y).
-		FVector Bend = (Elbow - A) - Dir * FVector::DotProduct(Elbow - A, Dir);
-		if (Bend.SizeSquared() < 1e-4)
-		{
-			const FVector Down(0.0, -0.5, -1.0);
-			Bend = Down - Dir * FVector::DotProduct(Down, Dir);
-		}
-		Bend = Bend.GetSafeNormal();
-		const double CosA = FMath::Clamp((L1 * L1 + Reach * Reach - L2 * L2) / (2.0 * L1 * Reach), -1.0, 1.0);
-		const double SinA = FMath::Sqrt(FMath::Max(0.0, 1.0 - CosA * CosA));
-		const FVector NewElbow = A + (Dir * CosA + Bend * SinA) * L1;
-		const FVector NewWrist = A + Dir * Reach;
-		// Giros en el espacio de la malla que llevan cada hueso a su nueva dirección, y de vuelta a locales.
-		const FQuat UpperDelta = FQuat::FindBetweenNormals((Elbow - A).GetSafeNormal(), (NewElbow - A).GetSafeNormal());
-		const FQuat UpperRot = UpperDelta * UpperCS.GetRotation();
-		const FVector LowerDirAfter = UpperDelta.RotateVector(Wrist - Elbow).GetSafeNormal();
-		const FQuat LowerDelta = FQuat::FindBetweenNormals(LowerDirAfter, (NewWrist - NewElbow).GetSafeNormal());
-		const FQuat LowerRot = LowerDelta * UpperDelta * LowerCS.GetRotation();
-		const FQuat UpperLocal = ParentCS.GetRotation().Inverse() * UpperRot;
-		const FQuat LowerLocal = UpperRot.Inverse() * LowerRot;
-		const float W = FMath::Clamp(Weight, 0.f, 1.f);
-		Pose[Upper].SetRotation(FQuat::Slerp(Pose[Upper].GetRotation(), UpperLocal, W).GetNormalized());
-		Pose[Lower].SetRotation(FQuat::Slerp(Pose[Lower].GetRotation(), LowerLocal, W).GetNormalized());
 	}
 
 	/** Lleva la articulación de un hueso (con sus hijos) hacia un punto del espacio de la malla. */
@@ -1246,10 +1192,6 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 
 	// 4b. La cabeza sigue a la cámara (#623): el cuello y la cabeza, encima de todo lo anterior.
 	PoseLook(Output.Pose, B, F.LookYaw, F.LookPitch);
-
-	// 5. VR: las manos del cuerpo van a los mandos (el que coge es la mano, no el cuerpo).
-	ReachArm(Output.Pose, B.LArm, B.LFore, B.LHand, F.VRHandL, F.VRArmLW);
-	ReachArm(Output.Pose, B.RArm, B.RFore, B.RHand, F.VRHandR, F.VRArmRW);
 	return true;
 }
 
@@ -1367,31 +1309,6 @@ Ease(F.CarryW, bCarrying, 8.f);
 	Ease(F.CarriedW, Carry && Carry->IsBeingCarried(), 8.f);
 	Ease(F.DownW, Turtle && Turtle->IsKnockedDown(), 6.f);
 	Ease(F.TiredW, Stamina && Stamina->IsExhausted(), 4.f);
-
-	// VR: las manos del cuerpo siguen a los mandos, salvo bailando, en el caparazón, tumbada o llevando a otra tortuga.
-	{
-		FVector HandL = FVector::ZeroVector;
-		FVector HandR = FVector::ZeroVector;
-		bool bHandL = false;
-		bool bHandR = false;
-		const USkeletalMeshComponent* SkelComp = GetSkelMeshComponent();
-		const bool bArms = Turtle && SkelComp && Turtle->AreVRArmsFollowing() && Turtle->GetVRHandTargets(HandL, HandR, bHandL, bHandR);
-		Ease(F.VRArmLW, bArms && bHandL, 10.f);
-		Ease(F.VRArmRW, bArms && bHandR, 10.f);
-		if (bArms)
-		{
-			// Las del dueño, tal cual (sin retraso en las gafas); las de los demás llegan a saltos (15 por segundo): suaves.
-			const FTransform& ToWorld = SkelComp->GetComponentTransform();
-			const bool bSmooth = !Turtle->IsLocallyControlled();
-			auto Follow = [&](FVector& Current, const FVector& World, float Weight)
-			{
-				const FVector Target = ToWorld.InverseTransformPosition(World);
-				Current = bSmooth && Weight > 0.05f ? FMath::VInterpTo(Current, Target, Dt, 18.f) : Target;
-			};
-			if (bHandL) { Follow(F.VRHandL, HandL, F.VRArmLW); }
-			if (bHandR) { Follow(F.VRHandR, HandR, F.VRArmRW); }
-		}
-	}
 
 	// Lanzamiento como un saque de banda: con la E, mientras la lleva en alto, las dos aletas toman impulso detrás de la
 	// cabeza (lo marca UTN_CarryComponent) y, al soltarla (con la E o con el panzazo), acompañan hacia delante y abajo. Un
@@ -1569,8 +1486,8 @@ Ease(F.CarryW, bCarrying, 8.f);
 	}
 
 	// La cabeza sigue a la cámara (#623): solo en los jugadores, en tercera persona y con la cabeza libre (ni ragdoll ni
-	// levantándose, ni en el caparazón, el panzazo, un emote, una celebración o la zambullida; ni en primera persona o VR,
-	// donde manda el visor, ni dentro del probador). Lo replicado basta para decidirlo igual en todas las máquinas.
+	// levantándose, ni en el caparazón, el panzazo, un emote, una celebración o la zambullida, ni dentro del probador). Lo
+	// replicado basta para decidirlo igual en todas las máquinas.
 	{
 		const USkeletalMeshComponent* LookMesh = GetSkelMeshComponent();
 		const bool bLookAllowed = Turtle && Turtle->IsPlayerControlled()
@@ -1578,7 +1495,6 @@ Ease(F.CarryW, bCarrying, 8.f);
 			&& GetUpDuration <= 0.f && !Turtle->IsInShell() && !bDive && BellyGetUpElapsed < 0.f
 			&& Emote < 0 && F.Emote < 0 && F.PrevEmote < 0
 			&& WantedCelebration == ETNTurtleCelebration::None && F.CelebrationW < 0.01f && !bCliffDive
-			&& !Turtle->IsFirstPersonView() && !Turtle->IsFirstPersonPlayer() && !Turtle->IsVRPlayer()
 			&& !Turtle->IsHeadLookSuppressed();
 		UpdateHeadLook(Turtle, Dt, bLookAllowed);
 	}

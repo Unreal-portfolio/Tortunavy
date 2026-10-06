@@ -1,5 +1,4 @@
 ﻿#include "Player/TN_InventoryComponent.h"
-#include "VR/TN_VRMode.h"
 #include "Player/TN_InventoryDecisions.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
@@ -586,21 +585,6 @@ void UTN_InventoryComponent::PlaceShownItem(USkeletalMeshComponent* Body, float 
 	}
 	if (!bVisible)
 	{
-		return;
-	}
-
-	// Primera persona VR (Docs/Modo_VR.md): en esta máquina el objeto va en la aleta derecha de los mandos, delante de los
-	// ojos; los demás lo siguen viendo en la aleta de la tortuga.
-	const ATortugaCharacter* VRTurtle = Cast<ATortugaCharacter>(GetOwner());
-	if (USceneComponent* VRHand = VRTurtle && VRTurtle->IsVRView() ? TNVR::GetHand(VRTurtle, true) : nullptr)
-	{
-		if (EquippedVisualMesh->GetAttachParent() != VRHand)
-		{
-			EquippedVisualMesh->AttachToComponent(VRHand, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			ShownBone = NAME_None;
-		}
-		EquippedVisualMesh->SetRelativeTransform(FTransform(ShownRotation, FVector(11.0, 0.0, -1.5), ShownScale * static_cast<double>(Grow)));
-		bShownPlaced = true;
 		return;
 	}
 

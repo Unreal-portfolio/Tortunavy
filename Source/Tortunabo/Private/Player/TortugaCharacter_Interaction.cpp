@@ -70,16 +70,6 @@ void ATortugaCharacter::UpdateFocusedInteractable()
 		ATN_InteractableBase* Interactable = Cast<ATN_InteractableBase>(Result.GetActor());
 		if (!Interactable || !Interactable->CanInteract(this)) { continue; }
 
-		// Con gafas los objetos del suelo se cogen con la mano: solo cuentan los que están al alcance de una aleta. En el modo
-		// simulado las aletas van quietas delante de la cámara (no llegan al suelo): se coge con E por cercanía, como siempre.
-		if (bVRViewActive && bVRHeadsetView && (bLocalVRHandValid[0] || bLocalVRHandValid[1]) && Cast<ATN_PickupInteractableBase>(Interactable))
-		{
-			const FVector Point = Interactable->GetInteractionPointFor(this);
-			const bool bNearHand = (bLocalVRHandValid[0] && FVector::DistSquared(LocalVRHand[0], Point) <= FMath::Square(VRHandReach + 15.f))
-				|| (bLocalVRHandValid[1] && FVector::DistSquared(LocalVRHand[1], Point) <= FMath::Square(VRHandReach + 15.f));
-			if (!bNearHand) { continue; }
-		}
-
 		// Misma medida que la validación del servidor (ServerTryInteract): el aviso solo sale cuando pulsar funciona.
 		// El solapamiento encuentra cualquier colisión del actor (paredes del probador, mostrador), que puede estar
 		// mucho más cerca que su punto de interacción.
@@ -401,9 +391,14 @@ FVector ATortugaCharacter::GetThrowDirection(const FRotator& AimRotation) const
 	return FRotator(Pitch, AimRotation.Yaw, 0.f).Vector();
 }
 
+FRotator ATortugaCharacter::GetTurtleAimRotation() const
+{
+	return Controller ? Controller->GetControlRotation() : GetActorRotation();
+}
+
 bool ATortugaCharacter::UsesCameraThrowAim() const
 {
-	return FollowCamera && !bVRViewActive && !bVRPlayer;
+	return FollowCamera != nullptr;
 }
 
 bool ATortugaCharacter::GetCrosshairPoint(FVector& OutPoint) const
@@ -473,8 +468,8 @@ void ATortugaCharacter::HandleUseThrowable(const FTN_InventoryItem& EquippedItem
 {
 	const FVector SpawnLocation = GetItemSpawnLocation();
 
-	// ── Dirección de lanzamiento: hacia donde mira la cámara (en VR, la aleta), con el arco bajo de todos los lanzamientos ──
-	// y al punto del centro de la pantalla (en VR, hacia la aleta).
+	// ── Dirección de lanzamiento: hacia donde mira la cámara, con el arco bajo de todos los lanzamientos ──
+	// y al punto del centro de la pantalla.
 	const float ThrowSpeedCmS = FMath::Max(EquippedItem.ThrowableData.ThrowSpeed, 0.0f);
 	const FVector ArcedDirection = GetThrowDirectionToCrosshair(SpawnLocation, GetTurtleAimRotation(), ThrowSpeedCmS);
 

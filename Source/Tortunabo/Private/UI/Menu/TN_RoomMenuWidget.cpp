@@ -8,7 +8,6 @@
 #include "Multiplayer/MP_GameInstance.h"
 #include "Multiplayer/TN_RoomNames.h"
 #include "Multiplayer/TN_SteamGamepadInput.h"
-#include "VR/TN_VRMenuClaim.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
@@ -498,8 +497,6 @@ FReply UTN_RoomCodeField::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 	}
 	if (IsKey(Key, { EKeys::Delete, EKeys::Gamepad_FaceButton_Left }))
 	{
-		// Con gafas, la X de los Touch llega aquí antes de aceptar (#648).
-		TNVRMenuClaim::Claim();
 		Erase(false);
 		return FReply::Handled();
 	}
@@ -1430,8 +1427,6 @@ FReply UTN_RoomMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FK
 	}
 	if (Page == ETNRoomMenuPage::Join && IsKey(Key, { EKeys::F5, EKeys::Gamepad_FaceButton_Top }))
 	{
-		// Con gafas, la Y de los Touch llega aquí antes de ir atrás (#648).
-		TNVRMenuClaim::Claim();
 		if (!InKeyEvent.IsRepeat())
 		{
 			PlayUISound(ETNPauseSound::Press, 0.f);

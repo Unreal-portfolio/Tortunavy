@@ -27,7 +27,7 @@ struct FTNSteamKeyboardRequest
 /**
  * Steam para jugar solo con mando (#347, #354): si Steam está en marcha, si el juego corre en una Steam Deck, de qué tipo es
  * el mando (Steam Input con la emulación de mando que usa el juego) y el teclado en pantalla para escribir. Sin Steam (con
- * -NoSteam, en el editor o en Meta Quest), todo responde «no» y quien lo llama sigue como sin Steam.
+ * -NoSteam o en el editor), todo responde «no» y quien lo llama sigue como sin Steam.
  */
 namespace TNSteamGamepadInput
 {

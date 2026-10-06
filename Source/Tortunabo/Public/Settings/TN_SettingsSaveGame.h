@@ -115,16 +115,6 @@ struct FTNGameSettings
 	UPROPERTY()
 	FName PausePadKey = TEXT("Gamepad_Special_Right");
 
-	/**
-	 * Tecla y botón de «Cambiar de cámara» (tercera o primera persona sin gafas; Docs/Modo_VR.md, «Primera persona»): T y el
-	 * clic del stick derecho de serie, que no usa ninguna otra fila. Nunca la de hablar: si coincidieran, esta se queda sin.
-	 */
-	UPROPERTY()
-	FName CameraKey = TEXT("T");
-
-	UPROPERTY()
-	FName CameraPadKey = TEXT("Gamepad_RightThumbstick");
-
 	// ── Juego y accesibilidad ────────────────────────────────────────────────
 
 	/** Temblor de cámara (golpes, quads de la carrera, tormenta...). */
@@ -177,37 +167,6 @@ struct FTNGameSettings
 	/** Silenciar el juego cuando la ventana no está activa. */
 	UPROPERTY()
 	bool bMuteInBackground = false;
-
-	/**
-	 * Modo VR (Docs/Modo_VR.md): 0 automático (primera persona con gafas si el juego arranca con ellas), 1 desactivado
-	 * (con gafas, la pantalla plana de siempre), 2 simulado sin gafas (primera persona, aletas e interfaz en el mundo con el
-	 * ratón, para probar el modo en el PC). La variable de consola TN.VR y -vrsim / -novr mandan sobre él.
-	 */
-	UPROPERTY()
-	uint8 VRMode = 0;
-
-	/** Giro con el stick derecho en VR: 0 a pasos de 30°, 1 a pasos de 45°, 2 suave. */
-	UPROPERTY()
-	uint8 VRTurn = 0;
-
-	/**
-	 * Viñeta de confort en VR (#647): 0 apagada, 1 la de serie, 2 el doble (TNVRHands::ComfortVignette). Es la misma fuerza que
-	 * TN.VR.ComfortVignette, que manda sobre el ajuste si se toca por consola. Valor de serie 1: un guardado de antes no trae el
-	 * campo y se queda con el de serie (sin paso de migración, como bFisheye).
-	 */
-	UPROPERTY()
-	uint8 VRVignette = 1;
-
-	/** Vibración de los mandos Touch en VR (#647); TN.VR.Haptics, por consola, manda sobre el ajuste. Encendida de serie. */
-	UPROPERTY()
-	bool bVRHaptics = true;
-
-	/**
-	 * Cámara sin gafas (Docs/Modo_VR.md, «Primera persona»): 0 tercera persona (la de siempre), 1 primera persona (en la
-	 * cabeza, viendo el cuerpo propio sin la cabeza). Se cambia también con CameraKey / CameraPadKey; TN.Camera manda.
-	 */
-	UPROPERTY()
-	uint8 CameraView = 0;
 
 	// ── Pantalla (lo que no guarda UGameUserSettings) ────────────────────────
 

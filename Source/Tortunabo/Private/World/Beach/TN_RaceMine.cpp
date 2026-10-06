@@ -218,7 +218,7 @@ bool ATN_RaceMine::ServerThrow(ATortugaCharacter* Turtle, const FVector& Directi
 		}
 	}
 	const FVector Start = Turtle->GetActorLocation() + Flat * SpawnForward + FVector(0.0, 0.0, SpawnUp);
-	// Al punto del centro de la pantalla, con la gravedad de la mina (en VR se queda la dirección de la aleta, los 28° fijos).
+	// Al punto del centro de la pantalla, con la gravedad de la mina.
 	if (Turtle->UsesCameraThrowAim())
 	{
 		Aim = Turtle->GetThrowDirectionToCrosshair(Start, Turtle->GetTurtleAimRotation(), static_cast<float>(ThrowSpeed), static_cast<float>(TNRaceMineFlight::GravityCm));

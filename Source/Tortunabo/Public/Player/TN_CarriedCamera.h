@@ -5,7 +5,7 @@
 /**
  * Cámara de tercera persona mientras un ave se lleva a la tortuga por el aire (ATortugaCharacter::TickCameraInterp,
  * ATN_BeachEnemy::IsTurtleCarriedThroughAir): se aleja (más brazo y algo más alta) para ver adónde la lleva y, al soltarla,
- * vuelve a su sitio sin saltos. En primera persona y en VR no cambia nada. Cuentas puras.
+ * vuelve a su sitio sin saltos. Cuentas puras.
  */
 namespace TNCarriedCamera
 {

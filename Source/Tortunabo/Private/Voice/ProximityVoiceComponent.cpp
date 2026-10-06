@@ -15,7 +15,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 
 UProximityVoiceComponent::UProximityVoiceComponent()
 {
@@ -344,7 +344,7 @@ void UProximityVoiceComponent::CreateVoiceIndicatorHUD()
 	VoiceIndicatorWidgetInstance = CreateWidget<UUserWidget>(PC, WidgetClass);
 	if (VoiceIndicatorWidgetInstance)
 	{
-		TNVR::AddToScreen(VoiceIndicatorWidgetInstance, 10);
+		TNScreen::AddToScreen(VoiceIndicatorWidgetInstance, 10);
 	}
 }
 
