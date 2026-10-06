@@ -2,7 +2,6 @@
 #include "Core/TN_Log.h"
 #include "Lobby/TN_HQGameMode.h"
 #include "Lobby/TN_LobbyReadyZone.h"
-#include "Lobby/TN_TreasureChest.h"
 #include "Components/BoxComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -83,9 +82,9 @@ namespace TNCastleDetail
 	/** Pila de huevos: centro del montículo de dos alturas en la plaza. */
 	const FVector2D EggsCenter(0.0, 700.0);
 	/**
-	 * Cofre del tesoro (ATN_TreasureChest) en la azotea de la torre del homenaje: lo más al centro posible sin tocar el
-	 * torreón (que ocupa el sur de la azotea), sobre una tarima redonda y mirando a la plaza (+Y). Entre la tarima y el
-	 * torreón queda paso de un rellano al otro, y entre la tarima y las almenas del norte, una franja de medio metro.
+	 * Tarima redonda de decoración en la azotea de la torre del homenaje: lo más al centro posible sin tocar el torreón
+	 * (que ocupa el sur de la azotea). Entre la tarima y el torreón queda paso de un rellano al otro, y entre la tarima y
+	 * las almenas del norte, una franja de medio metro.
 	 */
 	const FVector2D TreasureSpot(0.0, CutY + 200.0);
 	constexpr double TreasureDaisR = 125.0;
@@ -404,48 +403,7 @@ void ATN_SandCastleLobby::BeginPlay()
 		return;
 	}
 	HideMaquette();
-	SpawnTreasureChest();
 	UE_LOG(LogTortunabo, Log, TEXT("[Castillo] Lobby de castillo de arena en %s."), *GetActorLocation().ToString());
-}
-
-void ATN_SandCastleLobby::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	// Si se quita el castillo, el cofre se va con él; al cambiar de nivel o cerrar se va solo, con el mundo.
-	if (EndPlayReason == EEndPlayReason::Destroyed && HasAuthority())
-	{
-		if (ATN_TreasureChest* Chest = TreasureChest.Get())
-		{
-			Chest->Destroy();
-		}
-	}
-	TreasureChest.Reset();
-	Super::EndPlay(EndPlayReason);
-}
-
-void ATN_SandCastleLobby::SpawnTreasureChest()
-{
-	using namespace TNCastleDetail;
-	UWorld* World = GetWorld();
-	if (!World || !HasAuthority() || TreasureChest.IsValid())
-	{
-		return;
-	}
-	// En la tarima de la azotea, mirando a la plaza (el +X del cofre, al +Y del castillo).
-	const FTransform Xf = GetActorTransform();
-	const FVector Where = Xf.TransformPosition(FVector(TreasureSpot.X, TreasureSpot.Y, KeepRoofZ + TreasureDaisH));
-	const FRotator Facing = Xf.TransformRotation(FRotator(0.f, 90.f, 0.f).Quaternion()).Rotator();
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	TreasureChest = World->SpawnActor<ATN_TreasureChest>(ATN_TreasureChest::StaticClass(), Where, Facing, SpawnParams);
-	if (const ATN_TreasureChest* Chest = TreasureChest.Get())
-	{
-		UE_LOG(LogTortunabo, Log, TEXT("[Castillo] Cofre del tesoro en la azotea de la torre del homenaje: %s."), *Chest->GetActorLocation().ToString());
-	}
-	else
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[Castillo] No se ha podido crear el cofre del tesoro."));
-	}
 }
 
 void ATN_SandCastleLobby::BuildAll(bool bForce)
@@ -720,7 +678,7 @@ void ATN_SandCastleLobby::BuildCastle()
 	{
 		const FVector KeepC(0.0, CutY, 0.0);
 		constexpr int32 KSeg = 40;
-		// La torre con su paso por dentro (sin el torreón, la tarima del cofre ni las escaleras, que son piezas aparte).
+		// La torre con su paso por dentro (sin el torreón, la tarima ni las escaleras, que son piezas aparte).
 		const int32 KeepPiece = Log.Begin(TN_ART("Lobby.Castle.Keep"), TNArt::PiecePivot(KeepC), { &B, &Decor });
 		for (int32 k = 0; k < KSeg; ++k)
 		{
@@ -777,8 +735,7 @@ void ATN_SandCastleLobby::BuildCastle()
 			TNArt::FPieceScope TurretPiece(Log, TN_ART("Lobby.Castle.KeepTurret"), TNArt::PiecePivot(FVector(0.0, CutY - 170.0, KeepRoofZ)), { &B, &Decor });
 			AddTower(B, Decor, FVector2D(0.0, CutY - 170.0), 150.0, 430.0, Col(0xFF6A52), 0, KeepRoofZ);
 		}
-		// Tarima del cofre del tesoro, delante del torreón: arena con un reborde oscuro y conchas alrededor. El cofre lo
-		// pone el servidor encima (SpawnTreasureChest); la tarima lo sube un poco para que asome por las almenas.
+		// Tarima de decoración delante del torreón: arena con un reborde oscuro y conchas alrededor.
 		{
 			TNArt::FPieceScope DaisPiece(Log, TN_ART("Lobby.Castle.TreasureDais"), TNArt::PiecePivot(FVector(TreasureSpot.X, TreasureSpot.Y, KeepRoofZ)), { &B, &Decor });
 			const double DaisTopZ = KeepRoofZ + TreasureDaisH;

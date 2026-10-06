@@ -35,7 +35,6 @@
 #include "Multiplayer/TN_SaveGameIO.h"
 #include "Settings/TN_GameplayAssetSettings.h"
 #include "Multiplayer/TN_RoomNames.h"
-#include "Multiplayer/TN_TutorialSaveGame.h"
 #include "UI/HUD/TN_LoadingScreenWidget.h"
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
 #include "Voice/ProximityVoiceComponent.h"
@@ -145,7 +144,6 @@ void UMP_GameInstance::Init()
 	GetTimerManager().SetTimer(RoomTickHandle, FTimerDelegate::CreateUObject(this, &UMP_GameInstance::RoomTick), 1.f, true);
 
 	LoadCosmeticProfile();
-	LoadTutorialProfile();
 }
 
 void UMP_GameInstance::EnsureSteamAppIdFile()
@@ -204,7 +202,6 @@ void UMP_GameInstance::Shutdown()
 	PostLoginHandle.Reset();
 	GetTimerManager().ClearTimer(RoomTickHandle);
 	SaveCosmeticProfile();
-	SaveTutorialProfile();
 
 	IOnlineSessionPtr Sessions = GetSessionInterface();
 	if (Sessions.IsValid() && InviteAcceptedDelegateHandle.IsValid())
@@ -952,11 +949,6 @@ void UMP_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	FString ConnectInfo;
 	if (Sessions.IsValid() && Sessions->GetResolvedConnectString(SessionName, ConnectInfo) && !ConnectInfo.IsEmpty())
 	{
-		// Primera partida de esta máquina: se dice al entrar y el servidor la pone ya en el tutorial (Docs/Tutorial.md).
-		if (!HasCompletedTutorial())
-		{
-			ConnectInfo += FString::Printf(TEXT("?%s=1"), TutorialJoinOption());
-		}
 		// Ya se está dentro de la sesión: falta la conexión (hasta que cargue el mapa, otro «Crear» o «Unirse» sigue sobrando).
 		RoomOp.bTravelling = true;
 		RoomOpStartTime = FPlatformTime::Seconds();
@@ -1569,144 +1561,6 @@ static FAutoConsoleCommandWithWorldAndArgs GTNShopAddShellsCommand(
 		GI->AddRaceScore(Args.Num() > 0 ? FMath::Max(1, FCString::Atoi(*Args[0])) : 5000);
 	}));
 #endif
-
-// ── Tutorial state ────────────────────────────────────────────────────────────
-
-bool UMP_GameInstance::HasCompletedTutorial() const
-{
-	return TutorialProfile && TutorialProfile->bHasCompletedTutorial;
-}
-
-void UMP_GameInstance::SetTutorialCompleted()
-{
-	if (!TutorialProfile)
-	{
-		return;
-	}
-	TutorialProfile->bHasCompletedTutorial = true;
-	TutorialProfile->TimesCompleted = FMath::Max(0, TutorialProfile->TimesCompleted) + 1;
-	SaveTutorialProfile();
-	UE_LOG(LogTortunabo, Log, TEXT("[GameInstance] Tutorial marcado como completado y guardado (%s)."), *GetTutorialSlotName());
-}
-
-void UMP_GameInstance::ResetTutorialProgress()
-{
-	if (!TutorialProfile)
-	{
-		TutorialProfile = Cast<UTN_TutorialSaveGame>(UGameplayStatics::CreateSaveGameObject(UTN_TutorialSaveGame::StaticClass()));
-		if (TutorialProfile)
-		{
-			TutorialProfile->StampCurrentVersion();
-		}
-	}
-	if (!TutorialProfile)
-	{
-		return;
-	}
-	TutorialProfile->bHasCompletedTutorial = false;
-	SaveTutorialProfile();
-	UE_LOG(LogTortunabo, Log, TEXT("[Tutorial] Estado reiniciado (%s): la próxima vez que llegues a un lobby empiezas en el tutorial."), *GetTutorialSlotName());
-}
-
-FString UMP_GameInstance::GetTutorialSlotName() const
-{
-	// En el editor cada ventana de PIE es una «máquina»: su propia ranura (la primera ventana, la de siempre).
-	const FWorldContext* Context = GetWorldContext();
-	const int32 PIEInstance = (Context && Context->WorldType == EWorldType::PIE) ? Context->PIEInstance : INDEX_NONE;
-	return PIEInstance > 0 ? FString::Printf(TEXT("TutorialState_0_PIE%d"), PIEInstance) : FString(TEXT("TutorialState_0"));
-}
-
-void UMP_GameInstance::LoadTutorialProfile()
-{
-	const FString Slot = GetTutorialSlotName();
-	const TNSaveGameIO::FLoadResult Loaded = TNSaveGameIO::LoadOrQuarantine(Slot, 0, UTN_TutorialSaveGame::StaticClass(),
-		[](const USaveGame& Save) { return CastChecked<UTN_TutorialSaveGame>(&Save)->IsIntact(); },
-		TEXT("Tutorial"));
-	bTutorialSaveBlocked = Loaded.bSaveBlocked;
-	TutorialProfile = Cast<UTN_TutorialSaveGame>(Loaded.Loaded);
-
-	if (TutorialProfile)
-	{
-		const TNSaveLogic::EMigration Migration =
-			TNSaveLogic::DecideMigration(TutorialProfile->SaveVersion, TNSaveLogic::TUTORIAL_SAVE_VERSION);
-		if (Migration == TNSaveLogic::EMigration::Upgrade)
-		{
-			// v0 → v1: sin cambios de datos salvo el contador, que nunca es negativo.
-			UE_LOG(LogTortunabo, Log, TEXT("[SaveGame] Tutorial '%s' migrado de v%d a v%d."),
-				*Slot, TutorialProfile->SaveVersion, TNSaveLogic::TUTORIAL_SAVE_VERSION);
-			TutorialProfile->TimesCompleted = FMath::Max(0, TutorialProfile->TimesCompleted);
-			TutorialProfile->StampCurrentVersion();
-			SaveTutorialProfile();
-		}
-		else if (Migration == TNSaveLogic::EMigration::FromNewerBuild)
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("[SaveGame] Tutorial '%s' guardado por una versión más nueva (v%d)."),
-				*Slot, TutorialProfile->SaveVersion);
-		}
-	}
-	else
-	{
-		TutorialProfile = Cast<UTN_TutorialSaveGame>(UGameplayStatics::CreateSaveGameObject(UTN_TutorialSaveGame::StaticClass()));
-		if (TutorialProfile)
-		{
-			TutorialProfile->StampCurrentVersion();
-		}
-	}
-
-#if !UE_BUILD_SHIPPING
-	// Solo para probar, nunca en Shipping (Docs/Tutorial.md): con Saved/ResetTutorial.txt, cada vez que arranca el juego (o cada PIE) el tutorial vuelve
-	// a estar por hacer. Vacío = todas las ventanas; con números, solo esas (0 = la primera ventana o el juego suelto,
-	// 1 = «Cliente 1», 2 = «Cliente 2»...). Se deja el archivo: para volver a lo normal, se borra.
-	const FString ResetFile = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("ResetTutorial.txt"));
-	if (TutorialProfile && FPaths::FileExists(ResetFile))
-	{
-		FString Contents;
-		FFileHelper::LoadFileToString(Contents, *ResetFile);
-		TArray<FString> Tokens;
-		Contents.ParseIntoArrayWS(Tokens, TEXT(",;"));
-		const FWorldContext* Context = GetWorldContext();
-		const int32 Window = (Context && Context->WorldType == EWorldType::PIE) ? FMath::Max(0, Context->PIEInstance) : 0;
-		bool bAll = true;
-		bool bMine = false;
-		for (const FString& Token : Tokens)
-		{
-			if (Token.IsNumeric())
-			{
-				bAll = false;
-				bMine |= FCString::Atoi(*Token) == Window;
-			}
-		}
-		if (bAll || bMine)
-		{
-			TutorialProfile->bHasCompletedTutorial = false;
-			SaveTutorialProfile();
-			UE_LOG(LogTortunabo, Warning, TEXT("[Tutorial] %s existe: tutorial reiniciado para la ventana %d (%s). Bórralo para volver a lo normal."),
-				*ResetFile, Window, *Slot);
-		}
-		else
-		{
-			UE_LOG(LogTortunabo, Log, TEXT("[Tutorial] %s no nombra la ventana %d: su tutorial no se toca."), *ResetFile, Window);
-		}
-	}
-#endif
-	UE_LOG(LogTortunabo, Log, TEXT("[Tutorial] Guardado %s: %s."), *Slot,
-		TutorialProfile && TutorialProfile->bHasCompletedTutorial ? TEXT("tutorial hecho") : TEXT("tutorial por hacer"));
-}
-
-void UMP_GameInstance::SaveTutorialProfile() const
-{
-	if (!TutorialProfile)
-	{
-		return;
-	}
-	if (bTutorialSaveBlocked)
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[SaveGame] Tutorial sin guardar: el fichero dañado no se pudo apartar y no se pisa."));
-		return;
-	}
-	TutorialProfile->bWriteComplete = true;
-	TNSaveGameIO::SaveChecked(TutorialProfile, GetTutorialSlotName(), 0, TEXT("Tutorial"));
-}
 
 void UMP_GameInstance::RefreshLoadingText(const FString& Reason) const
 {

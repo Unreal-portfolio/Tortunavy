@@ -324,7 +324,7 @@ void ATortugaCharacter::BeginPlay()
 	CacheDefaultSkelMeshMaterials();
 
 	// Piezas de Arte de la tortuga (caparazón, casco de serie, ojos, lengua) aunque no llegue a vestirse con los cosméticos
-	// de un jugador (las tortugas de práctica del tutorial no tienen PlayerState). Al vestirse se vuelven a poner.
+	// de un jugador (p. ej. una tortuga sin PlayerState). Al vestirse se vuelven a poner.
 	TNTurtleArt::ApplyPieces(GetMesh(), HelmetMeshComp && HelmetMeshComp->GetStaticMesh());
 
 	StartCosmeticRetryTimer();

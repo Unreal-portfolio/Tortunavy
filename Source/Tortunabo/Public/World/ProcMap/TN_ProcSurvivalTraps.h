@@ -8,8 +8,6 @@
 class UDecalComponent;
 class UMaterialInstanceDynamic;
 class ATN_QuadActor;
-class ATN_PressurePlate;
-class ATN_ProcSabotageGate;
 
 /**
  * Trampas de Supervivencia que dependen de la forma del terreno (#517). Las coloca el generador sobre los mapas del
@@ -109,26 +107,4 @@ private:
 
 	void SpawnQuad();
 	float ServerTime() const;
-};
-
-/**
- * Cerrojo de un atajo: la compuerta (ATN_ProcSabotageGate) corta la rama hasta que todas sus placas
- * (ATN_PressurePlate en modo Latched) se han pisado alguna vez; basta un jugador. Solo existe en el servidor.
- */
-UCLASS()
-class TORTUNABO_API ATN_ProcShortcutLock : public AActor
-{
-	GENERATED_BODY()
-
-public:
-	ATN_ProcShortcutLock();
-
-	void Setup(const TArray<ATN_PressurePlate*>& InPlates, ATN_ProcSabotageGate* InGate);
-
-private:
-	TArray<TWeakObjectPtr<ATN_PressurePlate>> Plates;
-	TWeakObjectPtr<ATN_ProcSabotageGate> Gate;
-	bool bOpened = false;
-
-	void OnPlateChanged(ATN_PressurePlate* Plate, bool bOccupied);
 };

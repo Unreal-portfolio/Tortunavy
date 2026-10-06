@@ -42,17 +42,12 @@ class TORTUNABO_API AMP_GamePlayerController : public APlayerController, public 
 public:
 	AMP_GamePlayerController();
 
-	/** @brief Entra en modo espectador: posee un SpectatorPawn y comienza a observar al siguiente vivo. */
+	/**
+	 * @brief Servidor: entra en modo espectador (deja de controlar la tortuga) con la cámara en su propia tortuga, en su
+	 *        cuerpo o, si desaparece, en su última posición.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "Spectator")
 	void EnterSpectateMode();
-
-	/** @brief Cambia el target del espectador al siguiente jugador vivo y no eliminado. */
-	UFUNCTION(BlueprintCallable, Category = "Spectator")
-	void SpectateNextPlayer();
-
-	/** @brief Cambia el target del espectador al anterior jugador vivo y no eliminado. */
-	UFUNCTION(BlueprintCallable, Category = "Spectator")
-	void SpectatePreviousPlayer();
 
 	/** @brief Abre el widget de cosméticos. Disponible sólo en el lobby HQ. */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
@@ -386,12 +381,6 @@ private:
 
 	/** @brief Crea los widgets de las ruedas radiales (Emote + QuickChat) sin añadirlos al viewport. */
 	void CreateRadialWidgets();
-
-	/** @brief Cambia el target del espectador en la dirección dada (+1 / -1). */
-	void SpectateByDirection(int32 Direction);
-
-	/** @brief Recopila los PlayerState candidatos a espectar (vivos, no eliminados) a partir del GameState dado. */
-	TArray<APlayerState*> BuildSpectateCandidates(AGameStateBase* GS) const;
 
 	/** @brief Resuelve los SoftObjectPtr de InputAction a TObjectPtr cargados. */
 	void CacheRadialInputAssets();

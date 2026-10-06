@@ -1,4 +1,4 @@
-// Guardados locales (cosméticos y tutorial): versión, migración y fichero dañado apartado en vez de sobrescrito.
+// Guardados locales (cosméticos y ajustes): versión, migración y fichero dañado apartado en vez de sobrescrito.
 // Reglas puras de TN_SaveGameDecisions.h y E/S real de TNSaveGameIO sobre ranuras de prueba (Saved/SaveGames).
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.SaveGame; Quit" -nullrhi -unattended
 

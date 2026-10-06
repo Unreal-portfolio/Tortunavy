@@ -10,7 +10,7 @@ class UWorld;
 
 /**
  * Piezas comunes de las trampas de la playa (ATN_BeachBarbedWire, ATN_BeachSeaweed, ATN_BeachWobblyPlatform,
- * ATN_BeachSpadeRamp, ATN_BeachShellGate...): reloj del servidor suavizado para animar igual en todas las máquinas,
+ * ATN_BeachSpadeRamp...): reloj del servidor suavizado para animar igual en todas las máquinas,
  * estallidos de partículas low-poly (chispas, astillas, arena) y texto emergente de dibujos («¡AY!»). Lo visual es local
  * de cada máquina y no existe en un servidor dedicado. Implementación: Private/World/Beach/TN_BeachTrapCommon.cpp.
  */

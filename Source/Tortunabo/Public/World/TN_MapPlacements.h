@@ -18,26 +18,20 @@ namespace TNMapPlacements
 	/** Qué crea el cargador para una entrada. */
 	enum class ESpawn : uint8
 	{
-		/** ATN_BeachElement::SpawnElement (trampas, enemigos, lanzadores, cofres): servidor, replicado. */
+		/** ATN_BeachElement::SpawnElement (trampas, enemigos y lanzadores): servidor, replicado. */
 		BeachElement,
 		/** Pieza de ATN_BeachDecorField (decorado de la categoría Decor, también la pasarela): local en cada máquina. */
 		Decor,
 		/** Mata o palmera instanciada (mallas de flora del mapa procedural): local, sin colisión. */
 		Vegetation,
-		/** ATN_ProcGeyser: local en cada máquina (así lo quiere la clase). */
-		Geyser,
 		SearchSpot,
 		ScoreShell,
 		/** Charco de pesca (ATN_FishingPool): servidor, replicado. */
 		FishingPool,
-		/** Puzles: throw_chain, plate_balance, breakable_chain, shell_gauntlet y wobbly_run. */
-		ThrowWall,
+		/** Puzles: plate_balance, breakable_chain y wobbly_run. */
 		PlateBalance,
 		BreakableChain,
-		ShellGauntlet,
 		WobblyRun,
-		/** Puzle cuyas piezas son otras entradas del bloque (catapult_gap: su catapulta y su trampolín). */
-		Linked,
 		/** Sin pieza en el juego todavía (puzles pendientes, kinds desconocidos): se registra en el log y se salta. */
 		Unsupported
 	};
@@ -66,9 +60,6 @@ namespace TNMapPlacements
 		double ProgressM = -1.0;
 		/** Polilínea del camino bajo la huella (path_uu); vacía en lo puntual. */
 		TArray<FVector> Path;
-		/** Punto donde cae lo que lanza el géiser (target_uu). */
-		bool bHasTarget = false;
-		FVector Target = FVector::ZeroVector;
 		/** Parámetros numéricos del puzle (params), con su valor por defecto del catálogo si faltan. */
 		TMap<FString, double> Params;
 

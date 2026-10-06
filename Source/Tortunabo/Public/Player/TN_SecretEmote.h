@@ -9,7 +9,7 @@
  * las prueba Tortunabo.SecretEmote.
  *
  * No salen en la rueda (el catálogo DA_EmoteWheelCatalog no los lleva), ni en las teclas directas (IsValidWheelEmoteId los
- * rechaza), ni en menús, tutorial o textos: no tienen nombre ni icono.
+ * rechaza), ni en menús o textos: no tienen nombre ni icono.
  */
 namespace TNSecretEmote
 {

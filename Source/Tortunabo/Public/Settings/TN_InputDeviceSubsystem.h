@@ -11,7 +11,7 @@ class UInputAction;
 
 /**
  * @brief El último aparato con el que se ha jugado (teclado y ratón o mando) y la familia del mando (Xbox, PlayStation,
- * Steam Deck o Switch), para que los avisos de botones del HUD, del tutorial y de las ruedas enseñen lo que el jugador tiene en las
+ * Steam Deck o Switch), para que los avisos de botones del HUD y de las ruedas enseñen lo que el jugador tiene en las
  * manos (#347) y cambien al momento al pasar de uno a otro.
  *
  * Lo decide un preprocesador de entrada de Slate: una tecla o un botón cambian de aparato; los sticks y los gatillos, solo

@@ -8,14 +8,12 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_DizzyBirdsComponent.h"
-#include "Player/TN_ShellComponent.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "TN_BeachTrapKit.h"
 
 /**
- * Kit de las piezas «de montar» de la playa (ATN_BeachClamTrap, ATN_BeachMovingPlatform, ATN_BeachCatapult y
- * ATN_BeachTrampoline): hacia dónde queda el mar, si la carrera está en marcha, quién puede subirse, lanzar a una tortuga
- * como bola de caparazón, el mareo de los pajaritos y el vaivén determinista con el reloj del servidor.
+ * Kit de las piezas «de montar» de la playa (ATN_BeachClamTrap y ATN_BeachTrampoline): quién puede subirse, el mareo de
+ * los pajaritos y dónde quedan los pies de quien monta.
  */
 namespace TNBeachRideKit
 {
@@ -39,50 +37,6 @@ namespace TNBeachRideKit
 	}
 
 	/**
-	 * Servidor: lanza a la tortuga como bola de caparazón con física (vuela, rebota y rueda; la caja se replica sola, sin
-	 * predicción del movimiento) y sale sola del caparazón cuando la bola se para. Suelta antes a quien lleve. No aturde.
-	 */
-	inline bool LaunchAsBall(ATortugaCharacter* Turtle, const FVector& Velocity)
-	{
-		// Ni a la que recoloca la tormenta o la red de seguridad (lo suyo manda: nada la relanza en cadena).
-		if (!Turtle || !Turtle->HasAuthority() || Turtle->IsDead() || Turtle->IsKnockedDown() || TNBeach::IsTurtleRelocating(Turtle))
-		{
-			return false;
-		}
-		UTN_ShellComponent* Shell = Turtle->GetShellComponent();
-		if (!Shell)
-		{
-			return false;
-		}
-		if (UTN_CarryComponent* Carry = Turtle->GetCarryComponent())
-		{
-			if (Carry->GetCarrier() != nullptr)
-			{
-				return false;
-			}
-			if (Carry->IsCarrying())
-			{
-				Carry->ForceRelease(false);
-			}
-		}
-		if (!Shell->IsInShell())
-		{
-			// Sin cuerpo aquí: StartBody lo crea tumbado donde está el actor, con la velocidad pedida.
-			Shell->ForceEnterShell(false, false);
-		}
-		// Lanzada: no se sale en el aire; ForceExitShell (al pararse la bola o caer al agua) la desbloquea.
-		Shell->SetExitLocked(true);
-		Shell->StartBody(Velocity, true, true);
-		if (!Shell->GetBody())
-		{
-			// Sin caja (no se ha podido crear): no se queda metida en el caparazón, bloqueada y sin moverse.
-			Shell->ForceExitShell();
-			return false;
-		}
-		return true;
-	}
-
-	/**
 	 * Pajaritos del mareo en esta máquina (cosmético). Al apagarlos, los deja si la tortuga sigue aturdida o derribada:
 	 * esos estados también los encienden.
 	 */
@@ -102,44 +56,6 @@ namespace TNBeachRideKit
 			}
 		}
 		Birds->SetDizzy(bOn);
-	}
-
-	/** Media vuelta suave de 0 a 1 (arranca y frena sin tirones). */
-	inline double EaseInOut(double U)
-	{
-		const double C = FMath::Clamp(U, 0.0, 1.0);
-		return 0.5 - 0.5 * FMath::Cos(C * TNPlaygroundKit::KitPi);
-	}
-
-	/**
-	 * Vaivén determinista (0 = un extremo, 1 = el otro) a la hora Time: espera DwellA en 0, va en Travel, espera DwellB en
-	 * 1 y vuelve en Travel. Mismo resultado en todas las máquinas con la misma hora del servidor.
-	 */
-	inline double ShuttleAlpha(double Time, double DwellA, double Travel, double DwellB)
-	{
-		const double Leg = FMath::Max(0.05, Travel);
-		const double Period = FMath::Max(0.1, DwellA + DwellB + 2.0 * Leg);
-		double Phase = FMath::Fmod(Time, Period);
-		if (Phase < 0.0)
-		{
-			Phase += Period;
-		}
-		if (Phase < DwellA)
-		{
-			return 0.0;
-		}
-		Phase -= DwellA;
-		if (Phase < Leg)
-		{
-			return EaseInOut(Phase / Leg);
-		}
-		Phase -= Leg;
-		if (Phase < DwellB)
-		{
-			return 1.0;
-		}
-		Phase -= DwellB;
-		return 1.0 - EaseInOut(Phase / Leg);
 	}
 
 	/** Pies de un personaje en el espacio de Xf (centro de la cápsula menos su semialtura). */

@@ -12,7 +12,7 @@
  * dirección resaltada y los botones de menú y vista. En el estilo Tortunavy (azul marino con el filo crema) y pintado en
  * código (NativePaint), sin texturas: vale para cualquier botón que se reasigne en Ajustes.
  *
- * Lo usan el aviso de interacción del HUD y el cartel del tutorial; con teclado siguen enseñando su tecla dibujada.
+ * Lo usa el aviso de interacción del HUD; con teclado siguen enseñando su tecla dibujada.
  */
 UCLASS()
 class TORTUNABO_API UTN_ButtonGlyphWidget : public UUserWidget

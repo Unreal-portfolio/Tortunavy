@@ -12,6 +12,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/TN_ShellComponent.h"
 #include "ProceduralMeshComponent.h"
 #include "TN_BeachRideKit.h"
 #include "TN_BeachTrapKit.h"

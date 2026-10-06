@@ -88,7 +88,7 @@ namespace TNLocalPlay
 	TORTUNABO_API bool CanLeave(bool bLocalMode, bool bInLobby, bool bPrimary);
 
 	/**
-	 * ¿Se guarda lo que cambia este jugador (ajustes, controles, cosméticos, puntos de la tienda, tutorial)? En red, siempre;
+	 * ¿Se guarda lo que cambia este jugador (ajustes, controles, cosméticos y puntos de la tienda)? En red, siempre;
 	 * en local, solo lo del jugador 1: lo de los invitados dura la partida.
 	 */
 	TORTUNABO_API bool ShouldSave(bool bLocalMode, bool bPrimary);

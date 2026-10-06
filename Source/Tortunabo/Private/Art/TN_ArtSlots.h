@@ -4,7 +4,7 @@
 
 /**
  * Tabla de todas las piezas de arte sustituibles (Docs/Arte_Assets.md). Se escribe en TN_ArtSlots_<Parte>.inl (Lobby:
- * castillo; LobbyValley: valle y tutorial; LobbyPlayground: parque y puestos; ProcMap; Beach; Turtle: piezas pegadas a la
+ * castillo; LobbyValley: valle; LobbyPlayground: parque y puestos; ProcMap; Beach; Turtle: piezas pegadas a la
  * tortuga), una pieza por
  * TN_ART_SLOT(...). La leen TN.Art.Slots, los tests
  * (Tortunabo.Art.*) y Scripts/arte/rellenar_catalogos.py (que mete cada pieza vacía en su catálogo y genera la lista del

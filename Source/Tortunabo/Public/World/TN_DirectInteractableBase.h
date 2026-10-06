@@ -7,7 +7,7 @@
 /**
  * @brief Variante de TN_InteractableBase para interacciones DIRECTAS con efecto único + cooldown.
  *        Provee CooldownSeconds anti-spam y un BP event OnDirectInteraction para implementar el efecto.
- *        Casos de uso: estaciones de cosméticos, sombrilla, tótem manual, entry del tutorial.
+ *        Casos de uso: estaciones de cosméticos, sombrilla y tótem manual.
  */
 UCLASS()
 class TORTUNABO_API ATN_DirectInteractableBase : public ATN_InteractableBase

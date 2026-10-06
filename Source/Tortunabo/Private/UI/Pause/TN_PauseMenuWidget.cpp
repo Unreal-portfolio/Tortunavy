@@ -8,7 +8,6 @@
 #include "Audio/TN_ScoreShellSynthComponent.h"
 #include "Game/TN_RunGameMode.h"
 #include "Lobby/TN_HQGameMode.h"
-#include "Lobby/TN_TutorialPlayerComponent.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Engine/LocalPlayer.h"
@@ -1405,55 +1404,6 @@ void UTN_PauseMenuWidget::BuildHomeButtons()
 		CreditsRow->SetDescription(NSLOCTEXT("TNCredits", "ButtonDesc", "Quién ha hecho Tortunavy y las licencias de lo que usa: arte, fuentes y motor."));
 		TNPauseUI::AddV(HomeColumn, CreditsRow, FMargin(0.f, 0.f, 0.f, 12.f), HAlign_Center);
 		HomeRows.Add(CreditsRow);
-	}
-
-	// Tutorial de la primera partida (Docs/Tutorial.md): saltarlo, con confirmación. Solo mientras se está en él.
-	const UTN_TutorialPlayerComponent* TutorialComp = UTN_TutorialPlayerComponent::FindFor(GetOwningPlayer());
-	if (TutorialComp && TutorialComp->IsInTutorial())
-	{
-		AddBig(NSLOCTEXT("TNTutorial", "PauseSkip", "Saltar el tutorial"), TNPauseArt::EMenuIcon::Lobby,
-			NSLOCTEXT("TNTutorial", "PauseSkipDesc", "Bajas directamente al lobby del castillo y no vuelve a salir en las siguientes partidas."),
-			[WeakThis]()
-			{
-				UTN_PauseMenuWidget* Menu = WeakThis.Get();
-				if (!Menu)
-				{
-					return;
-				}
-				Menu->AskConfirm(NSLOCTEXT("TNTutorial", "PauseSkipTitle", "¿Saltar el tutorial?"),
-					NSLOCTEXT("TNTutorial", "PauseSkipText", "Vuelves al lobby y el tutorial queda hecho en este ordenador. Las teclas siempre están en Controles."),
-					NSLOCTEXT("TNTutorial", "PauseSkipYes", "Saltar"), [WeakThis]()
-					{
-						UTN_PauseMenuWidget* SkipMenu = WeakThis.Get();
-						if (!SkipMenu)
-						{
-							return;
-						}
-						if (UTN_TutorialPlayerComponent* Comp = UTN_TutorialPlayerComponent::FindFor(SkipMenu->GetOwningPlayer()))
-						{
-							Comp->RequestSkip();
-						}
-						SkipMenu->CloseMenu();
-					});
-			});
-	}
-
-	// Partida local, en el lobby: el tutorial no sale solo, se hace desde aquí (y se salta con «Saltar el tutorial»).
-	if (IsLocalGame() && IsInLobby() && TutorialComp && !TutorialComp->IsInTutorial())
-	{
-		AddBig(NSLOCTEXT("TNLocal", "PauseTutorial", "Hacer el tutorial"), TNPauseArt::EMenuIcon::Controls,
-			NSLOCTEXT("TNLocal", "PauseTutorialDesc", "Subes a las islas del cielo y aprendes todo lo que hace una tortuga. Se salta desde este menú."),
-			[WeakThis]()
-			{
-				UTN_PauseMenuWidget* Menu = WeakThis.Get();
-				UTN_TutorialPlayerComponent* Comp = Menu ? UTN_TutorialPlayerComponent::FindFor(Menu->GetOwningPlayer()) : nullptr;
-				if (!Menu)
-				{
-					return;
-				}
-				Menu->CloseMenu();
-				if (Comp) { Comp->RequestStart(true); }
-			});
 	}
 
 	// Un invitado de la partida local: solo lo suyo; en el lobby, puede dejar de jugar (su vista desaparece).

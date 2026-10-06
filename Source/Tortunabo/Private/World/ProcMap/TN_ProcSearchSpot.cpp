@@ -103,8 +103,6 @@ namespace TNSearchSynthDSP
 	constexpr uint8 KindRummage = 0;
 	constexpr uint8 KindPuff = 1;
 	constexpr uint8 KindPof = 2;
-	constexpr uint8 KindLidCreak = 3;
-	constexpr uint8 KindLidThump = 4;
 
 	struct FSfxEvent
 	{
@@ -188,12 +186,9 @@ namespace TNSearchSynthDSP
 		/** Pasos bajos de un polo: siseo (agudo) y retumbo (grave). */
 		float HissLp = 0.f;
 		float RumbleLp = 0.f;
-		/** Resonador de la chinita (y el grave de la madera de la tapa). */
+		/** Resonador de la chinita. */
 		float Res1 = 0.f;
 		float Res2 = 0.f;
-		/** Segundo resonador (el agudo de la madera de la tapa). */
-		float ResB1 = 0.f;
-		float ResB2 = 0.f;
 		float ClickAt = -1.f;
 		float ClickHz = 2600.f;
 		/** Centro del paso banda de los granos de arena. */
@@ -300,15 +295,6 @@ namespace TNSearchSynthDSP
 			case KindPuff:
 				Voice.Duration = 0.85f;
 				break;
-			case KindLidCreak:
-				// Cada crujido, de un largo distinto.
-				Voice.Duration = 0.4f + 0.2f * Voice.Jitter;
-				break;
-			case KindLidThump:
-				// El golpe arranca con un impulso en la primera muestra.
-				Voice.Duration = 0.42f;
-				Voice.ClickAt = 0.f;
-				break;
 			default:
 				Voice.Duration = 0.62f;
 				break;
@@ -400,83 +386,6 @@ namespace TNSearchSynthDSP
 				}
 				break;
 			}
-			case KindLidCreak:
-			{
-				// Crujido de madera: roce a tirones (impulsos irregulares cuya frecuencia sube y vuelve a bajar) por dos
-				// resonancias de tabla, una grave y otra aguda (resonadores de dos polos normalizados como el de la chinita).
-				const float X = FMath::Clamp(T / FMath::Max(0.05f, Voice.Duration), 0.f, 1.f);
-				const float Env = FMath::Min(1.f, T / 0.02f) * std::pow(1.f - X, 0.7f);
-				const float RubHz = Voice.Pitch * (45.f + 150.f * std::pow(FMath::Max(0.f, std::sin(SfxPi * X)), 1.5f)) * (0.85f + 0.3f * Voice.Jitter);
-				const float Wa = SfxTwoPi * FMath::Min(540.f * Voice.Pitch, Rate * 0.4f) * Dt;
-				const float Ra = std::exp(-Dt / 0.009f);
-				const float Ca = 2.f * Ra * std::cos(Wa);
-				const float Na = std::sin(Wa);
-				const float Wb = SfxTwoPi * FMath::Min(1380.f * Voice.Pitch, Rate * 0.4f) * Dt;
-				const float Rb = std::exp(-Dt / 0.005f);
-				const float Cb = 2.f * Rb * std::cos(Wb);
-				const float Nb = std::sin(Wb);
-				for (int32 i = 0; i < Count; ++i)
-				{
-					float Excite = 0.f;
-					Voice.PhaseA += RubHz * Dt;
-					if (Voice.PhaseA >= 1.f)
-					{
-						// Un tirón, de fuerza al azar; el siguiente llega algo tarde (el roce no es regular).
-						Excite = 0.55f + 0.45f * SfxUnit(Voice.NoiseState);
-						Voice.PhaseA = -0.35f * SfxUnit(Voice.NoiseState);
-					}
-					const float In = Excite + 0.004f * SfxNoise(Voice.NoiseState);
-					const float Ya = In + Ca * Voice.Res1 - Ra * Ra * Voice.Res2;
-					Voice.Res2 = Voice.Res1;
-					Voice.Res1 = Ya;
-					const float Yb = In + Cb * Voice.ResB1 - Rb * Rb * Voice.ResB2;
-					Voice.ResB2 = Voice.ResB1;
-					Voice.ResB1 = Yb;
-					MixBuf[i] += (0.6f * Ya * Na + 0.4f * Yb * Nb) * Env * Voice.Gain;
-				}
-				break;
-			}
-			case KindLidThump:
-			{
-				// ¡Clonc!: golpe grave cuya altura cae, la caja de madera que resuena (dos modos excitados por un impulso
-				// y una pizca de ruido) y el tintineo corto de los herrajes.
-				const float BodyHz = 128.f * Voice.Pitch * (1.f + 0.7f * std::exp(-T / 0.012f));
-				const float BodyEnv = std::exp(-T / 0.075f);
-				const float GritEnv = T < 0.006f ? 1.f : 0.f;
-				const float Wa = SfxTwoPi * FMath::Min(360.f * Voice.Pitch, Rate * 0.4f) * Dt;
-				const float Ra = std::exp(-Dt / 0.04f);
-				const float Ca = 2.f * Ra * std::cos(Wa);
-				const float Na = std::sin(Wa);
-				const float Wb = SfxTwoPi * FMath::Min(880.f * Voice.Pitch, Rate * 0.4f) * Dt;
-				const float Rb = std::exp(-Dt / 0.02f);
-				const float Cb = 2.f * Rb * std::cos(Wb);
-				const float Nb = std::sin(Wb);
-				const float TinkEnv = std::exp(-T / 0.06f);
-				const float TinkHz = 2650.f * Voice.Pitch;
-				for (int32 i = 0; i < Count; ++i)
-				{
-					float Excite = 0.06f * GritEnv * SfxNoise(Voice.NoiseState);
-					if (Voice.ClickAt >= 0.f)
-					{
-						Excite += 1.f;
-						Voice.ClickAt = -1.f;
-					}
-					Voice.PhaseA += BodyHz * Dt;
-					Voice.PhaseA -= std::floor(Voice.PhaseA);
-					const float Body = std::sin(SfxTwoPi * Voice.PhaseA) * BodyEnv;
-					const float Ya = Excite + Ca * Voice.Res1 - Ra * Ra * Voice.Res2;
-					Voice.Res2 = Voice.Res1;
-					Voice.Res1 = Ya;
-					const float Yb = Excite + Cb * Voice.ResB1 - Rb * Rb * Voice.ResB2;
-					Voice.ResB2 = Voice.ResB1;
-					Voice.ResB1 = Yb;
-					Voice.PhaseC += TinkHz * Dt;
-					Voice.PhaseC -= std::floor(Voice.PhaseC);
-					const float Tink = std::sin(SfxTwoPi * Voice.PhaseC) * TinkEnv;
-					MixBuf[i] += (0.6f * Body + 0.75f * Ya * Na + 0.45f * Yb * Nb + 0.1f * Tink) * Voice.Gain;
-				}
-				break;
-			}
 			default:
 			{
 				// ¡Pof!: golpe sordo, polvo que se posa (ruido por un paso bajo que va bajando) y un «buuu» bajito
@@ -553,8 +462,6 @@ namespace TNSearchSynthDSP
 static_assert(static_cast<uint8>(ETNSearchSound::Rummage) == TNSearchSynthDSP::KindRummage, "ETNSearchSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNSearchSound::Puff) == TNSearchSynthDSP::KindPuff, "ETNSearchSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNSearchSound::Pof) == TNSearchSynthDSP::KindPof, "ETNSearchSound y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNSearchSound::LidCreak) == TNSearchSynthDSP::KindLidCreak, "ETNSearchSound y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNSearchSound::LidThump) == TNSearchSynthDSP::KindLidThump, "ETNSearchSound y el motor DSP deben coincidir");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTN_SearchSynthComponent
@@ -753,7 +660,7 @@ const UDataTable* ATN_ProcSearchSpot::GetLootTable() const
 void ATN_ProcSearchSpot::BeginPlay()
 {
 	Super::BeginPlay();
-	// El catálogo, ya ahora (el sitio nace al montar el mapa): la primera búsqueda o el primer cofre no cargan nada del
+	// El catálogo, ya ahora (el sitio nace al montar el mapa): la primera búsqueda no carga nada del
 	// disco. El de serie, DT_Items, ya lo precarga UTN_GameplayPreloadSubsystem y aquí solo se resuelve.
 	if (HasAuthority() && !LootTable.IsNull())
 	{

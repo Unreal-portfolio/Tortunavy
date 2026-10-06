@@ -42,7 +42,6 @@ PENDING = (
     # Materiales de LVL_ProcGenDemo, que ya no existe (M_GridTerrain y M_GridTerrainWet sí se usan).
     ("/Game/Blueprints/Gameplay/GridMap/M", CLEANUP_ISSUE),
     ("/Game/Blueprints/Gameplay/Chunks/BP_Chunk_Medium_Personaliced", CLEANUP_ISSUE),
-    ("/Game/Blueprints/Gameplay/Interaction/BP_CollectionZone", CLEANUP_ISSUE),
     ("/Game/ProcMap/Materials/MI_ProcSlideWater", CLEANUP_ISSUE),
     ("/Game/Maps/LVL_LevelMetrics", CLEANUP_ISSUE),
     # Redirectores de assets movidos (Fix Up Redirectors).

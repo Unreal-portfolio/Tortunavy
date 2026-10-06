@@ -106,7 +106,7 @@ def test_el_generador_es_determinista(site):
 
 
 def test_lo_manual_no_se_toca_y_cuenta_como_restriccion(site):
-    manual = [replace(P("mi_puzle", "puzzle", "throw_chain", 0, 260.0, length=24.0), source="manual")]
+    manual = [replace(P("mi_puzle", "puzzle", "plate_balance", 0, 260.0, length=26.0), source="manual")]
     result = generate(site, 652, manual=manual)
     assert result.manual == manual and all(p.source == "auto" for p in result.auto)
     assert "mi_puzle" not in {p.id for p in result.auto}
@@ -128,13 +128,13 @@ def test_el_atajo_lleva_mas_peligro_por_metro_que_la_ruta_larga(site):
 
 # -- casos negativos: cada regla salta ---------------------------------------------------------------------
 def test_puzles_demasiado_juntos(site):
-    items = [P("a", "puzzle", "throw_chain", 0, 260.0, length=24.0),
-             P("b", "puzzle", "shell_gauntlet", 0, 260.0 + PUZZLE_GAP_M - 30.0, length=34.0)]
+    items = [P("a", "puzzle", "plate_balance", 0, 260.0, length=26.0),
+             P("b", "puzzle", "wobbly_run", 0, 260.0 + PUZZLE_GAP_M - 30.0, length=28.0)]
     assert "separacion_puzles" in _rules(site, items)
 
 
 def test_enemigo_en_la_calma_de_un_puzle(site):
-    items = [P("a", "puzzle", "throw_chain", 0, 260.0, length=24.0),
+    items = [P("a", "puzzle", "plate_balance", 0, 260.0, length=26.0),
              P("e", "enemy", "Lizard", 0, 280.0)]
     assert "calma_puzle" in _rules(site, items)
 
@@ -150,8 +150,8 @@ def test_nada_junto_a_la_meta(site):
 
 
 @pytest.mark.parametrize("item", [
-    P("t", "puzzle", "throw_chain", 0, 190.0, length=24.0),        # túnel
-    P("w", "puzzle", "throw_chain", 0, 640.0, length=24.0),        # río
+    P("t", "puzzle", "wobbly_run", 0, 190.0, length=28.0),         # túnel
+    P("w", "puzzle", "wobbly_run", 0, 640.0, length=28.0),         # río
     P("g", "enemy", "GullZone", 0, 400.0),                          # gaviotas fuera del agua
     P("l", "enemy", "Lizard", 0, 640.0),                            # lagarto en el río
     P("q", "enemy", "Lizard", 0, 400.0, q=9.0),                     # fuera del camino
@@ -182,7 +182,7 @@ def test_atajo_sin_peligro_con_sitio_libre(site):
 
 def test_pico_sin_calma_despues(site):
     s0 = 5 * TRAMO_M                    # pico: un puzle de intensidad 4 en el tramo 5
-    items = [P("a", "puzzle", "throw_chain", 0, s0 + 10.0, length=24.0),
+    items = [P("a", "puzzle", "breakable_chain", 0, s0 + 10.0, length=26.0),
              P("e1", "enemy", "GiantCrab", 0, s0 + TRAMO_M + 45.0),
              P("e2", "enemy", "SandFleas", 0, s0 + TRAMO_M + 25.0)]
     assert "curva" in _rules(site, items)
@@ -196,8 +196,8 @@ def test_enemigos_amontonados(site):
 
 
 def test_dos_puzles_seguidos_del_mismo_tipo(site):
-    items = [P("a", "puzzle", "throw_chain", 0, 330.0, length=24.0),
-             P("b", "puzzle", "throw_chain", 0, 520.0, length=24.0)]
+    items = [P("a", "puzzle", "plate_balance", 0, 330.0, length=26.0),
+             P("b", "puzzle", "plate_balance", 0, 520.0, length=26.0)]
     assert "secuencia" in _rules(site, items)
 
 
@@ -217,16 +217,13 @@ def test_el_bloque_va_y_vuelve_y_respeta_el_resto_del_manifest(site):
     assert projected.line == 0 and projected.s == pytest.approx(749.0, abs=1.5) and projected.q == pytest.approx(1.0, abs=0.1)
 
 
-def test_los_tramos_llevan_su_polilinea_y_el_geiser_su_destino(site):
+def test_los_tramos_llevan_su_polilinea(site):
     ln = site.line(0)
-    puzzle = to_json(site, Placement("pz", "puzzle", "throw_chain", 0, 300.0, length=24.0))
+    puzzle = to_json(site, Placement("pz", "puzzle", "plate_balance", 0, 300.0, length=24.0))
     path = np.asarray(puzzle["path_uu"]) / 100.0
     assert len(path) == 13
     assert np.allclose(path[0], ln.at(288.0), atol=0.01) and np.allclose(path[-1], ln.at(312.0), atol=0.01)
     assert "path_uu" not in to_json(site, Placement("en", "enemy", "SeaUrchin", 0, 300.0))
-    assert "target_uu" not in to_json(site, Placement("tr", "mechanic", "Trampoline", 0, 300.0))
-    geyser = to_json(site, Placement("gy", "mechanic", "Geyser", 0, 300.0))
-    assert np.allclose(np.asarray(geyser["target_uu"]) / 100.0, ln.at(314.0), atol=0.01)
 
 
 def test_el_avance_ordena_los_lazos_entre_los_puntos_del_principal(site):
@@ -268,9 +265,8 @@ def test_c01_se_coloca_sin_violaciones(c01):
     result = generate(site, 652)
     assert result.violations == []
     count = {c: sum(p.category == c for p in result.auto) for c in ("puzzle", "mechanic")}
-    assert count["puzzle"] >= 3 and count["mechanic"] >= 2
+    assert count["puzzle"] >= 2 and count["mechanic"] >= 1
     assert sum(p.category in HOSTILE for p in result.auto) >= 10
-    assert any(p.kind == "catapult_gap" for p in result.auto)
 
 
 def test_c01_el_bloque_del_manifest_cumple_las_reglas(c01):

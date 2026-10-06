@@ -1,7 +1,7 @@
 // Capturas de prueba de la tienda y del probador (TN.Shop.UIShots), fuera de Shipping: abre la tienda en las pestañas
 // de cascos y de ojos y el probador, y saca capturas con la interfaz.
 //   UnrealEditor-Win64-DebugGame.exe <uproject> /Game/Maps/Lobby/LVL_Lobby -game -RenderOffScreen -ResX=1600 -ResY=900
-//     -NoSteam -ExecCmds="TN.Tutorial.Skip, TN.Shop.UIShots C:/ruta"
+//     -NoSteam -ExecCmds="TN.Shop.UIShots C:/ruta"
 
 #if !UE_BUILD_SHIPPING
 

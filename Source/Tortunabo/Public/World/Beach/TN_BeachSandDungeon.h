@@ -13,7 +13,7 @@ class UStaticMeshComponent;
  * cuatro torres con banderas y un zócalo de 50 cm (el suelo de dentro). El recorrido:
  *
  * 1. Entrada por el arco de la muralla -X (con rampita desde la arena) a la sala de las columnas (planta baja).
- * 2. Puerta de conchas (ATN_BeachShellGate desnuda, con su interruptor en la sala) al pasillo de las algas: 3,6 m de
+ * 2. Hueco de paso al pasillo de las algas: 3,6 m de
  *    ancho, techado con lucernarios, con unas algas que enredan (ATN_BeachSeaweed) y, con bSpawnEnemiesInside, un erizo
  *    pequeño (y un cangrejo pequeño en la sala de las columnas).
  * 3. Escalera de arena de 8 peldaños de 40 cm al piso de arriba (+3,2 m): la sala de las ventanas, con muretes de 70 cm
@@ -25,7 +25,7 @@ class UStaticMeshComponent;
  * puesto), como los de las fortalezas.
  *
  * Todo son bloques de arena de molde (con marcas de cubo) con colisión convexa que también para la cámara. Las piezas
- * de dentro (puerta, algas, enemigos) las crea el servidor con ATN_BeachElement::SpawnElement al empezar y las destruye
+ * de dentro (algas, enemigos) las crea el servidor con ATN_BeachElement::SpawnElement al empezar y las destruye
  * con el castillo. El terreno no se aplana: conviene colocarlo en una zona llana (el zócalo tapa ±50 cm).
  */
 UCLASS()
@@ -61,18 +61,16 @@ protected:
 	TObjectPtr<UProceduralMeshComponent> CastleCollision;
 
 private:
-	/** Servidor: puerta de conchas, algas y enemigos de dentro, y la catapulta y el cofre de la terraza. */
+	/** Servidor: algas y enemigos de dentro, y la catapulta y el cofre de la terraza. */
 	void SpawnChildren();
 
 	/** Dónde van las piezas de dentro (espacio del actor), calculado en ApplySpec. */
-	FVector GateAt = FVector::ZeroVector;
 	FVector SeaweedAt = FVector::ZeroVector;
 	FVector UrchinAt = FVector::ZeroVector;
 	FVector CrabAt = FVector::ZeroVector;
 	/** Catapulta potenciada y cofre de cima en la terraza de arriba (espacio del actor; el cofre mira a +X como la catapulta). */
 	FVector CatapultAt = FVector::ZeroVector;
 	FVector ChestAt = FVector::ZeroVector;
-	double GateWidth = 320.0;
 	double CorridorWidth = 360.0;
 	double CorridorLength = 1500.0;
 	double RoomAShort = 2000.0;

@@ -1,5 +1,5 @@
-"""Partes de la colocación (#652) que no deciden el ritmo: la catapulta que salta un meandro, las
-mecánicas de tránsito, el botín y el decorado. Reciben el Planner de placement.py."""
+"""Partes de la colocación (#652) que no deciden el ritmo: las mecánicas de tránsito, el botín y el
+decorado. Reciben el Planner de placement.py."""
 
 from __future__ import annotations
 
@@ -16,15 +16,11 @@ from .placement_catalog import (
     LOOT,
     MECHANIC,
     PUZZLE,
-    PUZZLE_GAP_M,
-    PUZZLES,
     VEGETATION,
     VEGETATION_BY_BIOME,
 )
 from .placement_rules import Placement, footprint_points
 
-CATAPULT_RANGE_M = (22.0, 40.0)    # distancia en planta entre la catapulta y el aterrizaje
-CATAPULT_SAVING = 3.0              # el camino a pie es al menos tantas veces el salto
 MECHANIC_GAP_M = 70.0
 RISE_M = 1.8                       # subida en 10 m a partir de la cual un trampolín ayuda
 SEARCH_SPOTS = 10
@@ -34,64 +30,6 @@ SHELL_EVERY_M = (55.0, 70.0)       # principal, lazos
 
 def _yaw(a, b) -> float:
     return math.degrees(math.atan2(b[1] - a[1], b[0] - a[0]))
-
-
-# -- catapulta ----------------------------------------------------------------------------------------
-def _catapult_candidates(pl) -> list[tuple[int, float]]:
-    out = []
-    for ln in pl.site.lines:
-        for s in np.arange(4.0, ln.length - 4.0, 3.0):
-            p = pl._puzzle("catapult_gap", ln.id, float(s))
-            if pl.fits(p, margin=6.0):
-                out.append((ln.id, float(s)))
-    return out
-
-
-def place_catapult_gap(pl) -> None:
-    """Catapulta en un meandro: el aterrizaje está a 22-40 m en planta y a más del triple a pie, más
-    adelante en el recorrido. El camino a pie sigue siendo la vía larga (long_way)."""
-    if "catapult_gap" not in PUZZLES:
-        return
-    site = pl.site
-    cand = _catapult_candidates(pl)
-    if len(cand) < 2:
-        return
-    xy = np.array([site.line(lid).point(s) for lid, s in cand])
-    z = np.array([float(np.interp(s, site.line(lid).arc, site.line(lid).z)) for lid, s in cand])
-    d_start = site.geodesic_from([(0, 0.0)])[0]
-    nodes = np.array([site.node(lid, s) for lid, s in cand])
-    pairs = cKDTree(xy).query_pairs(CATAPULT_RANGE_M[1], output_type="ndarray")
-    best, best_gain = None, 0.0
-    geo = {}
-    for a, b in pairs:
-        if d_start[nodes[a]] > d_start[nodes[b]]:
-            a, b = b, a
-        flat = float(np.hypot(*(xy[a] - xy[b])))
-        if flat < CATAPULT_RANGE_M[0] or not -8.0 <= z[b] - z[a] <= 1.5:
-            continue
-        if a not in geo:
-            geo[a] = site.geodesic_from([cand[a]])[0]
-        walk = float(geo[a][nodes[b]])
-        gain = walk - flat + float(pl.rng.uniform(0.0, 5.0))
-        if walk >= max(80.0, CATAPULT_SAVING * flat) and gain > best_gain:
-            if pl.d_puzzle[nodes[a]] >= PUZZLE_GAP_M and pl.d_puzzle[nodes[b]] >= PUZZLE_GAP_M:
-                best, best_gain = (a, b), gain
-    if best is None:
-        return
-    (la, sa), (lb, sb) = cand[best[0]], cand[best[1]]
-    landing = site.line(lb).at(sb)
-    puzzle = pl._puzzle("catapult_gap", la, sa, landing_m=[round(v, 2) for v in landing], landing_line=lb,
-                        landing_s=round(sb, 1))
-    if not pl.puzzle_ok(puzzle):
-        return
-    puzzle = pl.add(puzzle)
-    if puzzle is None:
-        return
-    yaw = _yaw(xy[best[0]], xy[best[1]]) - site.line(la).yaw_deg(sa)
-    pl.add(Placement(pl.make_id(MECHANIC, "Catapult", la, sa), MECHANIC, "Catapult", la, sa, 0.0, 0.0, yaw,
-                     params={"puzzle_id": puzzle.id}))
-    pl.add(Placement(pl.make_id(MECHANIC, "Trampoline", lb, sb), MECHANIC, "Trampoline", lb, sb, 0.0, 0.0, 0.0,
-                     params={"puzzle_id": puzzle.id, "landing": True}))
 
 
 # -- mecánicas -----------------------------------------------------------------------------------------
@@ -124,27 +62,14 @@ def _mechanic(pl, kind: str, line: int, s: float, q: float = 0.0, length: float 
 
 def place_mechanics(pl) -> None:
     site = pl.site
-    # Agua: ferri en el tramo de río más largo, pasarela a la entrada de otro y un géiser.
+    # Agua: pasarela a la entrada del tramo de río más largo en el que quepa.
     runs = sorted(((ln.id, a, b) for ln in site.lines for a, b in _runs(ln.water, ln.arc, 20.0)),
                   key=lambda r: r[2] - r[1], reverse=True)
-    water_kinds = ["MovingPlatform", "Boardwalk", "Geyser"]
     for lid, a, b in runs:
-        if not water_kinds:
+        length = min(20.0, b - a - 4.0)
+        if any(_mechanic(pl, "Boardwalk", lid, float(s), length=length, extent=length) is not None
+               for s in np.arange(a + 4.0, b - 4.0, 3.0)):
             break
-        kind = water_kinds[0]
-        grid = np.arange(a + 4.0, b - 4.0, 3.0)
-        order = grid[np.argsort(np.abs(grid - 0.5 * (a + b)))] if kind != "Boardwalk" else grid
-        for s in order:
-            length = min(20.0, b - a - 4.0) if kind != "Geyser" else 0.0
-            if _mechanic(pl, kind, lid, float(s), length=length, extent=length) is not None:
-                water_kinds.pop(0)
-                break
-    # Géiser en la playa si no ha cabido en el agua.
-    if "Geyser" in water_kinds:
-        beach = [(ln.id, float(s)) for ln in site.lines for s in ln.arc[(ln.biome == 3) & ~ln.water][::4]]
-        for k in pl.rng.permutation(len(beach)):
-            if _mechanic(pl, "Geyser", *beach[k]) is not None:
-                break
     # Subidas: trampolín (o pala rampa en las dunas) al pie, a un lado del camino.
     rises = []
     for ln in site.lines:
@@ -233,4 +158,4 @@ def place_decor(pl) -> None:
                    refresh=False)
 
 
-__all__ = ["place_catapult_gap", "place_decor", "place_loot", "place_mechanics"]
+__all__ = ["place_decor", "place_loot", "place_mechanics"]

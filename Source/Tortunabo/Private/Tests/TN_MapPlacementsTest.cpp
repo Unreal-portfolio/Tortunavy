@@ -77,7 +77,9 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Alambre de obstáculo → elemento replicado"), SpawnOf(TEXT("obstacle"), TEXT("BarbedWire"), Element) == ESpawn::BeachElement);
 	TestTrue(TEXT("Alambre como decorado → sin pieza"), SpawnOf(TEXT("decor"), TEXT("BarbedWire"), Element) == ESpawn::Unsupported);
 	TestTrue(TEXT("Pasarela de mecánica → decorado local"), SpawnOf(TEXT("mechanic"), TEXT("Boardwalk"), Element) == ESpawn::Decor);
-	TestTrue(TEXT("Cofre de botín → elemento"), SpawnOf(TEXT("loot"), TEXT("TreasureChest"), Element) == ESpawn::BeachElement);
+	TestTrue(TEXT("Rebuscable de botín → su actor"), SpawnOf(TEXT("loot"), TEXT("SearchSpot"), Element) == ESpawn::SearchSpot);
+	TestTrue(TEXT("Géiser (fuera del juego) → sin pieza"), SpawnOf(TEXT("mechanic"), TEXT("Geyser"), Element) == ESpawn::Unsupported);
+	TestTrue(TEXT("Muro de lanzamiento (fuera del juego) → sin pieza"), SpawnOf(TEXT("puzzle"), TEXT("throw_chain"), Element) == ESpawn::Unsupported);
 	TestTrue(TEXT("Charco de pesca → su actor"), SpawnOf(TEXT("loot"), TEXT("FishingPool"), Element) == ESpawn::FishingPool);
 	TestEqual(TEXT("Charco de pesca: nombre en el registro"), FString(SpawnName(ESpawn::FishingPool)), FString(TEXT("FishingPool")));
 	TestTrue(TEXT("Puzle pendiente → sin pieza"), SpawnOf(TEXT("puzzle"), TEXT("think_room"), Element) == ESpawn::Unsupported);
@@ -104,7 +106,7 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Se lee"), ParseBlock(*Fixture, Parsed) && Parsed.bHasBlock);
 	TestEqual(TEXT("Una sin location_uu, inválida"), Parsed.Invalid, 1);
 	TestEqual(TEXT("Una suprimida"), Parsed.Suppressed, 1);
-	TestEqual(TEXT("23 automáticas y 1 manual"), Parsed.Placements.Num(), 24);
+	TestEqual(TEXT("18 automáticas y 1 manual"), Parsed.Placements.Num(), 19);
 	TestEqual(TEXT("Dos sin pieza (puzle pendiente y kind desconocido)"), CountSpawn(Parsed, ESpawn::Unsupported), 2);
 	const FPlacement* Manual = Parsed.Placements.FindByPredicate([](const FPlacement& P) { return P.Source == TEXT("manual"); });
 	TestTrue(TEXT("La manual, con id inventado y su elemento"), Manual && Manual->Id == TEXT("manual-0") && Manual->Element == ETNBeachElement::DragCrab);
@@ -114,7 +116,7 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	Stale->GetObjectField(TEXT("placements"))->SetBoolField(TEXT("stale"), true);
 	FParseResult StaleParsed;
 	ParseBlock(*Stale, StaleParsed);
-	TestTrue(TEXT("Desfasado: solo la manual"), StaleParsed.bStale && StaleParsed.Placements.Num() == 1 && StaleParsed.SkippedStale == 25);
+	TestTrue(TEXT("Desfasado: solo la manual"), StaleParsed.bStale && StaleParsed.Placements.Num() == 1 && StaleParsed.SkippedStale == 20);
 
 	// Sin bloque no es un error; un bloque que no es un objeto, sí.
 	FJsonObject Empty;
@@ -129,7 +131,7 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	{
 		FParseResult C01Parsed;
 		TestTrue(TEXT("C01 se lee"), ParseBlock(*C01, C01Parsed) && C01Parsed.bHasBlock && !C01Parsed.bStale);
-		TestEqual(TEXT("C01: 269 colocaciones"), C01Parsed.Placements.Num(), 269);
+		TestEqual(TEXT("C01: 262 colocaciones"), C01Parsed.Placements.Num(), 262);
 		TestEqual(TEXT("C01: ninguna sin pieza"), CountSpawn(C01Parsed, ESpawn::Unsupported), 0);
 		TestEqual(TEXT("C01: ninguna inválida"), C01Parsed.Invalid, 0);
 		const int32 WithoutProgress = C01Parsed.Placements.FilterByPredicate([](const FPlacement& P) { return P.ProgressM < 0.0; }).Num();
@@ -177,17 +179,12 @@ bool FTNMapPlacementsSpawnTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Erizo"), Stats.Actors(TEXT("TN_BeachSeaUrchin")), 1);
 	TestEqual(TEXT("Alambre"), Stats.Actors(TEXT("TN_BeachBarbedWire")), 1);
 	TestEqual(TEXT("Trampolines (mecánica y el del camino que se rompe)"), Stats.Actors(TEXT("TN_BeachTrampoline")), 2);
-	TestEqual(TEXT("Catapulta"), Stats.Actors(TEXT("TN_BeachCatapult")), 1);
-	TestEqual(TEXT("Puertas de conchas"), Stats.Actors(TEXT("TN_BeachShellGate")), 3);
 	TestEqual(TEXT("Plataformas tambaleantes"), Stats.Actors(TEXT("TN_BeachWobblyPlatform")), 5);
 	TestEqual(TEXT("Cangrejo arrastrador (manual)"), Stats.Actors(TEXT("TN_BeachDragCrab")), 1);
 	TestEqual(TEXT("Cangrejo tapado por el nivel"), Stats.Actors(TEXT("TN_BeachGiantCrab")), 0);
 	// Resto de piezas.
-	TestEqual(TEXT("Géiser"), Stats.Actors(TEXT("TN_ProcGeyser")), 1);
 	TestEqual(TEXT("Conchas de puntos"), Stats.Actors(TEXT("TN_ScorePickup")), 2);
 	TestEqual(TEXT("Rebuscable"), Stats.Actors(TEXT("TN_ProcSearchSpot")), 1);
-	TestEqual(TEXT("Muro de lanzamiento"), Stats.Actors(TEXT("TN_ProcThrowWall")), 1);
-	TestEqual(TEXT("Interruptor del muro"), Stats.Actors(TEXT("TN_ProcSwitch")), 1);
 	TestEqual(TEXT("Placas"), Stats.Actors(TEXT("TN_PressurePlate")), 3);
 	TestEqual(TEXT("Gestor de las placas"), Stats.Actors(TEXT("TN_PressurePlateGroupManager")), 1);
 	TestEqual(TEXT("Plataformas que se rompen"), Stats.Actors(TEXT("TN_BreakablePlatform")), 6);
@@ -238,8 +235,7 @@ bool FTNMapPlacementsClientTest::RunTest(const FString& Parameters)
 	{
 		Actors += Pair.Value;
 	}
-	TestEqual(TEXT("Cliente: solo el géiser como actor"), Actors, 1);
-	TestEqual(TEXT("Cliente: el géiser"), Stats.Actors(TEXT("TN_ProcGeyser")), 1);
+	TestEqual(TEXT("Cliente: ningún actor"), Actors, 0);
 	TestEqual(TEXT("Cliente: el decorado igual que el servidor"), Stats.DecorItems, 3);
 	TestEqual(TEXT("Cliente: la vegetación"), Stats.VegetationInstances, 3);
 	DestroyGameWorld(World);
@@ -286,7 +282,6 @@ bool FTNMapPlacementsC01Test::RunTest(const FString& Parameters)
 	TestEqual(TEXT("C01: 109 piezas de decorado"), Stats.DecorItems, 109);
 	TestEqual(TEXT("C01: 49 matas"), Stats.VegetationInstances, 49);
 	TestEqual(TEXT("C01: 75 conchas"), Stats.Actors(TEXT("TN_ScorePickup")), 75);
-	TestEqual(TEXT("C01: 2 muros de lanzamiento"), Stats.Actors(TEXT("TN_ProcThrowWall")), 2);
 	TestEqual(TEXT("C01: 8 plataformas que se rompen"), Stats.Actors(TEXT("TN_BreakablePlatform")), 8);
 	TestEqual(TEXT("C01: 8 alambres"), Stats.Actors(TEXT("TN_BeachBarbedWire")), 8);
 	// La cota sale del terreno, no del manifest: casi todas las trazas dan con él (alguna del río puede quedar fuera).

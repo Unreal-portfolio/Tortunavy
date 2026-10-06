@@ -1,7 +1,7 @@
 """Catálogo de lo que coloca terrain_path.placement (#652) y las cifras de las reglas de diseño.
 
-Puzles: plantillas de Docs/Catalogo-Puzzles-2026-09-29.md (§3 Coop y §4 parkour); las que dependen de
-piezas de C++ pendientes llevan status "pendiente" y solo se colocan con --incluir-pendientes.
+Puzles: las placas de presión y las plataformas del Excel (Docs/2026-10-06-Plan-Maestro-Modo-Unico.md); una
+plantilla cuyas piezas de C++ falten lleva status "pendiente" y solo se coloca con --incluir-pendientes.
 Enemigos, peligros, mecánicas y botín: Docs/superpowers/specs/modos/01-Coop.md (§4 y §5), con el
 nombre del enumerado ETNBeachElement o de la clase de mundo que los crea.
 """
@@ -52,10 +52,6 @@ class PuzzleSpec:
 
 
 PUZZLES: dict[str, PuzzleSpec] = {p.kind: p for p in (
-    PuzzleSpec("throw_chain", "grupo", 24.0, 4.0, 2, "mvp", "ATN_ProcThrowWall + ATN_ProcSwitch",
-               {"walls": 1, "wall_height_m": 4.8, "ramp_run_m": 7.5, "effect_s": 8}),
-    PuzzleSpec("shell_gauntlet", "grupo", 34.0, 3.0, 2, "mvp", "3 ATN_BeachShellGate",
-               {"gates": 3, "spacing_m": 10, "open_hold_s": 3, "final_door": False}),
     PuzzleSpec("plate_balance", "grupo", 26.0, 6.0, 1, "mvp",
                "ATN_PressurePlate x3-5 + ATN_PressurePlateGroupManager + ATN_PuzzleDoor (N4, M1)",
                {"plates": 3, "spacing_m": 6, "hold_s": 2, "ball_counts_double": True, "latch": False}),
@@ -63,14 +59,6 @@ PUZZLES: dict[str, PuzzleSpec] = {p.kind: p for p in (
                {"platforms": 6, "gap_m": 2.5, "long_gap_m": 4.5}),
     PuzzleSpec("breakable_chain", "parkour", 26.0, 3.5, 2, "mvp", "6-10 ATN_BreakablePlatform + ATN_BeachTrampoline",
                {"platforms": 8, "respawn_s": 6, "trampoline": True}),
-    PuzzleSpec("catapult_gap", "parkour", 8.0, 3.0, 1, "mvp", "ATN_BeachCatapult + ATN_BeachTrampoline",
-               {"long_way": True, "landing": "trampoline"}),
-    PuzzleSpec("basket_hold", "grupo", 30.0, 5.0, 2, "pendiente", "N1 + N4 + N2",
-               {"lever_hold_s": 8, "lever_to_door_m": 20, "basket_height_m": 3, "latch": True}),
-    PuzzleSpec("geyser_aim", "grupo", 30.0, 6.0, 2, "pendiente", "ATN_ProcGeyser (M3) + N1 + N6",
-               {"aim_positions": 3, "target_height_m": 8, "cycle_s": 4.2, "lever_distance_m": 10}),
-    PuzzleSpec("think_room", "grupo", 30.0, 7.0, 3, "pendiente", "N3 + N4 + N5",
-               {"variant": "code", "steps": 3, "plates": 4, "buttons": 2}),
 )}
 GROUP_KINDS = tuple(k for k, p in PUZZLES.items() if p.mode == "grupo")
 PARKOUR_ON_ROUTES = ("wobbly_run", "breakable_chain")
@@ -111,10 +99,7 @@ MECHANIC_INTENSITY = 0.5
 MECHANICS = {
     "Trampoline": "ETNBeachElement::Trampoline",
     "SpadeRamp": "ETNBeachElement::SpadeRamp",
-    "Catapult": "ETNBeachElement::Catapult",
-    "MovingPlatform": "ETNBeachElement::MovingPlatform",
     "Boardwalk": "ETNBeachElement::Boardwalk",
-    "Geyser": "ATN_ProcGeyser",
 }
 LOOT_CLASSES = {
     "SearchSpot": "ATN_BeachSearchSpot",

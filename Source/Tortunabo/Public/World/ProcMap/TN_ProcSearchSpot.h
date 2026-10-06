@@ -30,10 +30,6 @@ enum class ETNSearchSound : uint8
 	Puff,
 	/** ¡Pof! Golpe sordo, polvo y un «buuu» bajito: no había nada. */
 	Pof,
-	/** Crujido de madera a tirones: la tapa de un cofre que se entreabre (ATN_TreasureChest). */
-	LidCreak,
-	/** ¡Clonc!: la tapa de un cofre que cae sobre la caja, con el tintineo de los herrajes. */
-	LidThump,
 };
 
 /** Resultado de rebuscar un decorado. */
@@ -146,7 +142,7 @@ struct FTNSearchSpotState
 
 	/**
 	 * Búsquedas completadas (da la vuelta al pasar de 255). Cada resultado nuevo la cambia: así se distingue también el
-	 * segundo, el tercero... de los sitios que se rebuscan más de una vez (el cofre del lobby).
+	 * segundo, el tercero... de los sitios que se rebuscan más de una vez (el charco de pesca).
 	 */
 	UPROPERTY()
 	uint8 SearchCount = 0;
@@ -156,8 +152,7 @@ struct FTNSearchSpotState
  * Efectos de sonido de rebuscar, sintetizados en tiempo real (sin archivos de audio): puñados de arena y piedrecitas
  * (granos de fricción por un paso banda, siseo, retumbo de roca y a veces el clic de una chinita), el «¡puf!» de premio
  * (aire que se cierra, «pop» grave y dos notas de campanita) y el «¡pof!» de vacío (golpe sordo, polvo y un «buuu»
- * que baja). Para el cofre del lobby, además, el crujido de la tapa al entreabrirse (roce a tirones por dos resonancias
- * de madera) y su «¡clonc!» al cerrarse (golpe grave, caja que resuena y tintineo de herrajes).
+ * que baja).
  *
  * Mismo patrón que UTN_PlaygroundSynthComponent: un ISoundGenerator en el hilo de render de audio sin UObjects,
  * asignaciones ni bloqueos, una cola de disparos sin bloqueos desde el hilo de juego, mono y espacializado con la
@@ -234,7 +229,7 @@ private:
  * Subclases: con bRepeatable se puede rebuscar otra vez tras RepeatCooldown s de respiro (MaxLootLying limita lo que
  * queda sin recoger), y los ganchos protegidos (GetLuck, GetLootOrigin, GetRummageOrigin, FindLanding,
  * OnSearchStateChanged, WantsFrameTick) cambian la suerte, de dónde sale y dónde cae el objeto y los efectos propios. Lo
- * usa el cofre del tesoro de la torre del homenaje del lobby (ATN_TreasureChest).
+ * usa el charco de pesca (ATN_FishingPool).
  *
  * Pruebas: tn.Search.Luck (forzar la suerte), tn.Search.Seconds (duración), tn.Search.Show (balizas de los buscables) y
  * TN.Debug.Interaction (registro del servidor). Ver Docs/Botin_Decorados.md.
@@ -316,7 +311,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Search", meta = (ClampMin = "0.0"))
 	float ReachSlack = 85.f;
 
-	/** Se puede rebuscar más de una vez (el cofre del lobby); los decorados del mapa, una sola vez para todo el grupo. */
+	/** Se puede rebuscar más de una vez (el charco de pesca); los decorados del mapa, una sola vez para todo el grupo. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Search")
 	bool bRepeatable = false;
 

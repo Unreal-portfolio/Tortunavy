@@ -10,8 +10,8 @@ class UProceduralMeshComponent;
 class USceneComponent;
 
 /**
- * Piezas sustituibles dentro de una malla combinada (Docs/Arte_Assets.md, tipo «Pieza»): el castillo, el valle, el
- * recorrido del tutorial o las estructuras del mapa procedural meten muchas piezas en unos pocos buffers que suben como
+ * Piezas sustituibles dentro de una malla combinada (Docs/Arte_Assets.md, tipo «Pieza»): el castillo, el valle o las
+ * estructuras del mapa procedural meten muchas piezas en unos pocos buffers que suben como
  * secciones de un UProceduralMeshComponent. Mientras se construyen, cada pieza se marca con un FPieceScope (nombre, pivote
  * y los buffers en los que escribe); al subir la sección, UploadSection quita las piezas que tienen sustituto y
  * SpawnPieceArt pone su malla de arte en cada pivote, como instancias hijas del componente.

@@ -44,7 +44,7 @@ protected:
 	int32 DeadPlayerId = -1;
 
 	/**
-	 * Huevo de la reaparición (el del fantasma: TNCastleKit) que flota sobre el cuerpo mientras Mesh no lleve una malla
+	 * Huevo de la reaparición (el de TNCastleKit) que flota sobre el cuerpo mientras Mesh no lleve una malla
 	 * del proyecto. Escala respecto al huevo de 2,4 m de la salida.
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Rescue|Art", meta = (ClampMin = "0.05", ClampMax = "1.0"))

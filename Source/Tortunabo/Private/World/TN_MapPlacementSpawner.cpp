@@ -4,9 +4,7 @@
 #include "Settings/TN_GameplayAssetSettings.h"
 #include "World/Beach/TN_BeachDecorField.h"
 #include "World/Beach/TN_BeachElement.h"
-#include "World/ProcMap/TN_ProcPuzzleActors.h"
 #include "World/ProcMap/TN_ProcSearchSpot.h"
-#include "World/ProcMap/TN_ProcTraversalActors.h"
 #include "World/TN_BreakablePlatform.h"
 #include "World/TN_FishingPool.h"
 #include "World/TN_InteractableBase.h"
@@ -36,9 +34,7 @@ namespace TNMapPlacementSpawnerDetail
 	/** Piezas de juego que, puestas a mano en el nivel, reservan su sitio. */
 	bool IsGameplayPiece(const AActor* Actor)
 	{
-		return Actor->IsA<ATN_BeachElement>() || Actor->IsA<ATN_ProcThrowWall>()
-			|| Actor->IsA<ATN_ProcSabotageGate>() || Actor->IsA<ATN_ProcGeyser>() || Actor->IsA<ATN_PressurePlate>()
-			|| Actor->IsA<ATN_BreakablePlatform>() || Actor->IsA<ATN_InteractableBase>() || Actor->IsA<ATN_ScorePickup>()
+		return Actor->IsA<ATN_BeachElement>() || Actor->IsA<ATN_PressurePlate>() || Actor->IsA<ATN_BreakablePlatform>() || Actor->IsA<ATN_InteractableBase>() || Actor->IsA<ATN_ScorePickup>()
 			|| Actor->IsA<APlayerStart>();
 	}
 
@@ -247,11 +243,6 @@ bool ATN_MapPlacementSpawner::SpawnOne(const TNMapPlacements::FPlacement& P, boo
 	case ESpawn::Vegetation:
 		if (bLocal) { QueueVegetation(P); }
 		return bLocal;
-	case ESpawn::Geyser:
-		return bLocal && SpawnGeyser(P);
-	case ESpawn::Linked:
-		// catapult_gap: su catapulta y su trampolín son entradas propias del bloque.
-		return true;
 	default:
 		break;
 	}
@@ -281,17 +272,11 @@ bool ATN_MapPlacementSpawner::SpawnOne(const TNMapPlacements::FPlacement& P, boo
 		bOk = SpawnClass(UTN_GameplayAssetSettings::GetScorePickupClass(), Grounded(P.Location) + FVector(0.0, 0.0, TNScoreShells::Hover),
 			P.YawDeg) != nullptr;
 		break;
-	case ESpawn::ThrowWall:
-		bOk = SpawnThrowWall(P);
-		break;
 	case ESpawn::PlateBalance:
 		bOk = SpawnPlateBalance(P);
 		break;
 	case ESpawn::BreakableChain:
 		bOk = SpawnBreakableChain(P);
-		break;
-	case ESpawn::ShellGauntlet:
-		bOk = SpawnElementRow(P, ETNBeachElement::ShellGate, FMath::Clamp(FMath::RoundToInt(P.Param(TEXT("gates"), 3.0)), 1, 6), 0.0);
 		break;
 	case ESpawn::WobblyRun:
 		bOk = SpawnElementRow(P, ETNBeachElement::WobblyPlatform, FMath::Clamp(FMath::RoundToInt(P.Param(TEXT("platforms"), 6.0)), 2, 10), 0.0);

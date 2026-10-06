@@ -1,10 +1,10 @@
-// Puzles del bloque "placements" (#652): las piezas existentes del catálogo (Docs/Catalogo-Puzzles-2026-09-29.md) repartidas
-// por la huella del puzle a lo largo del camino (path_uu), con su cota ajustada al terreno. Solo en el servidor.
+// Puzles del bloque "placements" (#652): placas de presión, plataformas que se rompen y plataformas tambaleantes
+// (Docs/2026-10-06-Plan-Maestro-Modo-Unico.md) repartidas por la huella del puzle a lo largo del camino (path_uu), con su
+// cota ajustada al terreno. Solo en el servidor.
 
 #include "World/TN_MapPlacementSpawner.h"
 
 #include "Core/TN_Log.h"
-#include "World/ProcMap/TN_ProcPuzzleActors.h"
 #include "World/TN_BreakablePlatform.h"
 #include "World/TN_PressurePlate.h"
 
@@ -15,12 +15,6 @@ namespace TNMapPlacementPuzzles
 	/** Blueprints de las placas (con su malla y su sonido); sin ellos, la clase nativa. */
 	const TCHAR* PlateClassPath = TEXT("/Game/Blueprints/Gameplay/Interaction/BP_PressurePlate.BP_PressurePlate_C");
 	const TCHAR* PlateManagerClassPath = TEXT("/Game/Blueprints/Gameplay/Interaction/BP_PressurePlateGroupManager.BP_PressurePlateGroupManager_C");
-
-	/** Muro de lanzamiento: largo del bloque (cm) y ancho por defecto si la entrada no trae width_m. */
-	constexpr float WallLength = 1200.f;
-	constexpr double DefaultWallWidthM = 10.0;
-	/** Entre dos muros encadenados (throw_chain con walls = 2), de centro a centro (cm). */
-	constexpr double WallChainGap = 2400.0;
 
 	/** Plataformas que se rompen: zigzag a los lados del eje, altura sobre el suelo y escala del cubo de serie. */
 	constexpr double ZigzagCm = 120.0;
@@ -39,40 +33,6 @@ namespace TNMapPlacementPuzzles
 	{
 		return P.LengthCm > 1.0 ? FMath::Clamp(0.5 + OffsetCm / P.LengthCm, 0.0, 1.0) : 0.5;
 	}
-}
-
-bool ATN_MapPlacementSpawner::SpawnThrowWall(const TNMapPlacements::FPlacement& P)
-{
-	using namespace TNMapPlacementPuzzles;
-	const int32 Walls = FMath::Clamp(FMath::RoundToInt(P.Param(TEXT("walls"), 1.0)), 1, 2);
-	const float Height = static_cast<float>(P.Param(TEXT("wall_height_m"), 4.8) * 100.0);
-	const float Width = static_cast<float>(P.Param(TEXT("width_m"), DefaultWallWidthM) * 100.0);
-	const float EffectSeconds = static_cast<float>(P.Param(TEXT("effect_s"), 8.0));
-	bool bOk = true;
-	for (int32 w = 0; w < Walls; ++w)
-	{
-		// En una huella corta, los dos muros a un cuarto y tres cuartos del largo en vez de amontonarse en los extremos.
-		const double Gap = P.LengthCm > 1.0 ? FMath::Min(WallChainGap, P.LengthCm * 0.5) : WallChainGap;
-		const double Offset = Walls == 1 ? 0.0 : (w - 0.5) * Gap;
-		double Yaw = P.YawDeg;
-		const FVector At = Grounded(TNMapPlacements::PointAlong(P, AlphaAt(P, Offset), Yaw)) - FVector(0.0, 0.0, 20.0);
-		ATN_ProcThrowWall* Wall = Cast<ATN_ProcThrowWall>(SpawnClass(ATN_ProcThrowWall::StaticClass(), At, Yaw));
-		if (!Wall)
-		{
-			bOk = false;
-			continue;
-		}
-		Wall->Setup(Width, Height, WallLength);
-		ATN_ProcSwitch* Switch = Cast<ATN_ProcSwitch>(SpawnClass(ATN_ProcSwitch::StaticClass(),
-			Wall->GetSwitchLocation() + FVector(0.0, 0.0, 10.0), Yaw));
-		if (!Switch)
-		{
-			bOk = false;
-			continue;
-		}
-		Switch->SetTarget(Wall, EffectSeconds);
-	}
-	return bOk;
 }
 
 bool ATN_MapPlacementSpawner::SpawnPlateBalance(const TNMapPlacements::FPlacement& P)

@@ -46,7 +46,7 @@ from .placement_catalog import (
 )
 from .placement_site import Site
 
-WATER_MECHANICS = frozenset({"MovingPlatform", "Boardwalk", "Geyser"})
+WATER_MECHANICS = frozenset({"Boardwalk"})
 
 
 @dataclass(frozen=True)
@@ -67,11 +67,6 @@ class Placement:
     @property
     def footprint(self) -> tuple[float, float]:
         return self.s - 0.5 * self.length, self.s + 0.5 * self.length
-
-    @property
-    def linked(self) -> str | None:
-        """Puzle al que pertenece una pieza (la catapulta y el trampolín de catapult_gap)."""
-        return self.params.get("puzzle_id")
 
 
 @dataclass(frozen=True)

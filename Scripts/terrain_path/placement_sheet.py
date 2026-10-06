@@ -104,10 +104,6 @@ def _draw_placements(draw, site: Site, placements, show_discs: bool) -> None:
                           stroke_fill=(255, 255, 255))
             else:
                 draw.ellipse([x - r, y - r, x + r, y + r], fill=color)
-    landing = [p for p in placements if p.category == PUZZLE and "landing_m" in p.params]
-    for p in landing:
-        a, b = _px(site.line(p.line).at(p.s)[:2]), _px(p.params["landing_m"][:2])
-        draw.line([a, b], fill=COLORS[MECHANIC], width=2)
 
 
 def _draw_curve(img: Image.Image, site: Site, placements, top: int) -> None:

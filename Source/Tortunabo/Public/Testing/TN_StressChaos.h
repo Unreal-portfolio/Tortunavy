@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include <atomic>
 #include "Subsystems/WorldSubsystem.h"
 #include "Testing/TN_StressChaosPlan.h"
 #include "Testing/TN_TestLogSink.h"
@@ -9,22 +8,10 @@
 
 class AActor;
 class APlayerController;
-class ATN_BeachCatapult;
 class ULocalPlayer;
 class ATortugaCharacter;
 class FJsonObject;
 class UDataTable;
-
-/** Sumidero del registro del caos: lo de FTNTestLogSink más los disparos de catapulta («[Playa] Catapulta … dispara»). */
-class FTNChaosLogSink : public FTNTestLogSink
-{
-public:
-	virtual void Serialize(const TCHAR* Message, ELogVerbosity::Type Verbosity, const FName& Category) override;
-	int32 GetCatapultFires() const { return CatapultFires.load(); }
-
-private:
-	std::atomic<int32> CatapultFires { 0 };
-};
 
 /**
  * Escenario de estrés «caos» (TN.Stress caos [segundos por fase=20], o -TNStress=caos [-TNStressSeconds=<por fase>]
@@ -33,8 +20,7 @@ private:
  * - En el anfitrión (o en una partida sin red), cuatro tortugas locales (las que faltan entran como jugadores extra, con la
  *   pantalla partida apagada para que la GPU pinte una sola vista, como en el PC de cada jugador) juegan solas por los mismos
  *   caminos que la entrada real: Move, ToggleShell, TryInteract (coger y lanzar a la compañera) y TryUseEquippedItem, que
- *   acaban en los RPC de servidor de siempre. Nada de teletransportes para las acciones: solo, si una tortuga no llega al
- *   cazo de una catapulta en 3 s, se la deja caer en el cazo (se cuenta en el informe como «ayuda»).
+ *   acaban en los RPC de servidor de siempre. Nada de teletransportes para las acciones.
  * - En un cliente (-TNStress=caos en un mundo NM_Client), su tortuga juega igual (sin crear nada): su entrada viaja por red y
  *   las correcciones del servidor se cuentan en su propio informe.
  *
@@ -64,8 +50,6 @@ private:
 	/** Contadores de acciones de una fase (o de todo el caos). */
 	struct FActions
 	{
-		int32 CatapultRides = 0;
-		int32 CatapultAssists = 0;
 		int32 Grabs = 0;
 		int32 Throws = 0;
 		int32 BallEntries = 0;
@@ -86,13 +70,11 @@ private:
 		float ItemClock = 0.f;
 		FVector2D MoveInput = FVector2D::ZeroVector;
 		float WanderYaw = 0.f;
-		TWeakObjectPtr<ATN_BeachCatapult> Catapult;
 		TWeakObjectPtr<ATortugaCharacter> Partner;
 		/** Cebo de coger y lanzar: se queda en su bola hasta que la cogen (lo pone el portador). */
 		bool bBait = false;
 		bool bWasInShell = false;
 		bool bWasCarrying = false;
-		bool bAssisted = false;
 		/** Espacia las pulsaciones del caparazón (InputShell). */
 		TNChaos::FShellGate Shell;
 	};
@@ -127,8 +109,6 @@ private:
 		int32 NetSamples = 0;
 		int32 CorrectionsAtStart = 0;
 		int32 Corrections = 0;
-		int32 CatapultFiresAtStart = 0;
-		int32 CatapultFires = 0;
 		int32 Created = 0;
 		FActions Actions;
 		TArray<TPair<FString, int32>> TopTicking;
@@ -147,7 +127,6 @@ private:
 	FVector TurtlesCenter() const;
 	double GroundAt(const FVector& At, double Fallback) const;
 	FVector PickSpot(const FVector& Center, float MinRadius, float MaxRadius);
-	int32 SpawnCatapults(int32 Count);
 	int32 SpawnEnemies(int32 Crabs, int32 Gulls, int32 Tanks);
 
 	// ── Tortugas (TN_StressChaosDriver.cpp) ──
@@ -157,7 +136,6 @@ private:
 	void BeginTask(FDriver& Driver, ATortugaCharacter* Turtle);
 	void EndTask(FDriver& Driver, ATortugaCharacter* Turtle);
 	bool TickWander(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
-	bool TickCatapult(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
 	bool TickCarry(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
 	bool TickBall(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
 	bool TickItems(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
@@ -165,7 +143,6 @@ private:
 	void TrackTransitions(FDriver& Driver, ATortugaCharacter* Turtle);
 	bool GiveBurstItem(ATortugaCharacter* Turtle);
 	FDriver* FindFreePartner(const FDriver& For);
-	ATN_BeachCatapult* PickCatapult(const FDriver& Driver, const ATortugaCharacter* Turtle) const;
 	FActions& CurrentActions();
 
 	/** Entrada de la tortuga: las mismas funciones que llaman los Input Actions (amigo de ATortugaCharacter). */
@@ -201,9 +178,8 @@ private:
 	FRandomStream Stream;
 	TArray<FDriver> Drivers;
 	TArray<TWeakObjectPtr<AActor>> Spawned;
-	TArray<TWeakObjectPtr<ATN_BeachCatapult>> Catapults;
 	FActions Totals;
-	FTNChaosLogSink Sink;
+	FTNTestLogSink Sink;
 	bool bSinkAttached = false;
 	int32 SavedNetShowCorrections = 0;
 	int32 SavedMaxFps = 0;

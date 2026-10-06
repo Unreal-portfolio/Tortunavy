@@ -31,7 +31,7 @@ namespace TNSaveGameIO
 	 * @brief Lee Slot esperando ExpectedClass. Si el fichero existe pero no se puede leer
 	 * (truncado, otra clase), lo copia a <Slot>_corrupto_<fecha>, borra el original y avisa en el log.
 	 * @param IsIntact  Comprueba el objeto ya leído (p. ej. la marca de fin); false = fichero truncado.
-	 * @param What      Nombre legible para el log («perfil cosmético», «tutorial»).
+	 * @param What      Nombre legible para el log («perfil cosmético», «ajustes»).
 	 */
 	FLoadResult LoadOrQuarantine(const FString& Slot, int32 UserIndex, const UClass* ExpectedClass,
 		TFunctionRef<bool(const USaveGame&)> IsIntact, const TCHAR* What);

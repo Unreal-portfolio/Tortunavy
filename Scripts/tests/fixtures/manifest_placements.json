@@ -57,45 +57,6 @@
     "source": "auto"
    },
    {
-    "id": "t-mechanic-Catapult-3",
-    "category": "mechanic",
-    "kind": "Catapult",
-    "location_uu": [
-     9000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 0.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {
-     "puzzle_id": "t-puzzle-catapult_gap-18"
-    },
-    "source": "auto"
-   },
-   {
-    "id": "t-mechanic-Geyser-4",
-    "category": "mechanic",
-    "kind": "Geyser",
-    "location_uu": [
-     12000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 0.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {},
-    "source": "auto",
-    "target_uu": [
-     13400.0,
-     0.0,
-     0.0
-    ]
-   },
-   {
     "id": "t-mechanic-Boardwalk-5",
     "category": "mechanic",
     "kind": "Boardwalk",
@@ -177,44 +138,6 @@
     "source": "auto"
    },
    {
-    "id": "t-puzzle-throw_chain-13",
-    "category": "puzzle",
-    "kind": "throw_chain",
-    "location_uu": [
-     39000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 24.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {
-     "walls": 1,
-     "wall_height_m": 4.8,
-     "ramp_run_m": 7.5,
-     "effect_s": 8
-    },
-    "source": "auto",
-    "path_uu": [
-     [
-      37800.0,
-      0.0,
-      0.0
-     ],
-     [
-      39000.0,
-      300.0,
-      0.0
-     ],
-     [
-      40200.0,
-      0.0,
-      0.0
-     ]
-    ]
-   },
-   {
     "id": "t-puzzle-plate_balance-14",
     "category": "puzzle",
     "kind": "plate_balance",
@@ -274,26 +197,6 @@
     ]
    },
    {
-    "id": "t-puzzle-shell_gauntlet-16",
-    "category": "puzzle",
-    "kind": "shell_gauntlet",
-    "location_uu": [
-     48000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 34.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {
-     "gates": 3,
-     "spacing_m": 10,
-     "open_hold_s": 3
-    },
-    "source": "auto"
-   },
-   {
     "id": "t-puzzle-wobbly_run-17",
     "category": "puzzle",
     "kind": "wobbly_run",
@@ -310,25 +213,6 @@
      "platforms": 5,
      "gap_m": 2.5,
      "long_gap_m": 4.5
-    },
-    "source": "auto"
-   },
-   {
-    "id": "t-puzzle-catapult_gap-18",
-    "category": "puzzle",
-    "kind": "catapult_gap",
-    "location_uu": [
-     54000.0,
-     0.0,
-     0.0
-    ],
-    "yaw_deg": 0.0,
-    "length_m": 8.0,
-    "extent_uu": 0.0,
-    "size_scale": 1.0,
-    "params": {
-     "long_way": true,
-     "landing": "trampoline"
     },
     "source": "auto"
    },
