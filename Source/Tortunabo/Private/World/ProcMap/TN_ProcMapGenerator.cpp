@@ -196,6 +196,7 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 	}
 	const double T1 = FPlatformTime::Seconds();
 	PlanSurvivalTraps();
+	PlanCoopIntensity();
 
 	BuildTerrain();
 	const double T2 = FPlatformTime::Seconds();
@@ -223,6 +224,8 @@ void ATN_ProcMapGenerator::BuildFromNetConfig()
 			{
 				SpawnHazards();
 				SpawnSurvivalTraps();
+				SpawnIntensityEnemies();
+				SpawnIntensityAllies();
 				SpawnShelters();
 				// Después de los peligros: las conchas del plan no pisan lo que estos han puesto (HazardSpots).
 				SpawnShells();

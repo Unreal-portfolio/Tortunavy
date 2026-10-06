@@ -8,6 +8,7 @@
 #include "World/ProcMap/TN_ProcMapTypes.h"
 #include "World/ProcMap/TN_ProcMapTerrainDetail.h"
 #include "World/ProcMap/TN_SurvivalTrapPlacement.h"
+#include "World/ProcMap/TN_CoopIntensity.h"
 #include "TN_ProcMapGenerator.generated.h"
 
 class UProceduralMeshComponent;
@@ -73,6 +74,10 @@ struct TORTUNABO_API FTNProcMapNetConfig
 	/** Se incrementa en cada (re)generación, p. ej. entre rondas. 0 = sin mapa. */
 	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
 	int32 Generation = 0;
+
+	/** Coop: ronda (desde 1) con la que se lee la tabla de intensidad (#788). 0 = la primera. */
+	UPROPERTY(BlueprintReadOnly, Category = "ProcMap")
+	int32 CoopRound = 0;
 };
 
 /**
@@ -115,6 +120,15 @@ public:
 
 	/** Servidor: genera el mapa de Supervivencia con esta semilla y dificultad 1–5 (un nivel de la partida, #274). */
 	void ServerGenerateSurvival(int32 InSeed, int32 InSurvivalDifficulty);
+
+	/**
+	 * Servidor: ronda del coop (desde 1) para la tabla de intensidad (#788). La pone el GameMode antes de ServerGenerate;
+	 * viaja en la réplica con la semilla, así todas las máquinas hacen el mismo plan.
+	 */
+	void SetCoopRound(int32 InRound) { NetConfig.CoopRound = FMath::Max(0, InRound); }
+
+	/** Coop: plan de la tabla de intensidad del mapa actual (un elemento por tramo; vacío fuera del coop o sin tabla). */
+	const TArray<TNCoopIntensity::FTramoPlan>& GetIntensityPlan() const { return IntensityPlan; }
 
 	/** Genera con los parámetros de edición. Botón en el panel Details. */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "ProcMap")
@@ -299,6 +313,25 @@ private:
 	void SpawnSurvivalTraps();
 	/** Refugios de los búnkeres (#689): un ATN_BeachShelterVolume local en cada formación Bunker, en todas las máquinas. */
 	void SpawnShelters();
+	/**
+	 * Coop (#788): plan de la tabla de intensidad para la ronda de NetConfig (en todas las máquinas, tras el layout). Fuera
+	 * del coop, o sin tabla, lo deja vacío y todo se coloca como antes.
+	 */
+	void PlanCoopIntensity();
+	/** Paso de recorrido de una muestra de camino (en una rama, el de la muestra del principal de la que sale). */
+	int32 RouteStepOfSample(int32 BranchIndex, int32 PathIndex) const;
+	/** Tramo (desde 0) del plan de intensidad de una muestra de camino; INDEX_NONE sin plan. */
+	int32 IntensityTramoOfSample(int32 BranchIndex, int32 PathIndex) const;
+	/** Si un peligro por bioma de esta clase y dificultad mínima (0-2) va en la muestra donde lo ha puesto PlanHazards. */
+	bool IntensityAllowsHazard(int32 BranchIndex, int32 PathIndex, const UClass* Class, int32 MinDifficulty) const;
+	/** Servidor: enemigos de los módulos de diseño del plan, repartidos por su tramo del camino principal (#788). */
+	void SpawnIntensityEnemies();
+	/** Servidor: anélidos poliquetos (#792) al borde del camino en los tramos Fácil y Medio del plan. */
+	void SpawnIntensityAllies();
+	/** Muestras del camino principal del tramo Tramo donde se puede poner algo (sin las especiales: salida, puentes...). */
+	void CollectTramoSamples(int32 Tramo, TArray<int32>& OutSamples) const;
+	/** Punto del mapa a un lado del camino en la muestra Sample (Side en -1..1 del medio ancho); false si cae al agua o en un desnivel. */
+	bool PathSideSpot(int32 Sample, double Side, FVector2D& OutPoint, double& OutGround) const;
 	/** Marcadores de las trampas del plan (Debug Draw), también en el editor. */
 	void DrawSurvivalTrapPlan() const;
 	/**
@@ -454,6 +487,9 @@ private:
 
 	/** Lo que SpawnHazards ha puesto en el servidor (x, y y radio en el mapa): las conchas del plan no lo pisan. */
 	TArray<FVector> HazardSpots;
+
+	/** Coop: plan de la tabla de intensidad del mapa actual (#788). */
+	TArray<TNCoopIntensity::FTramoPlan> IntensityPlan;
 
 	/** Conchas especiales del mapa actual y resumen para el registro y TNShells (solo servidor). */
 	TArray<FTNShellSpot> SpecialShellSpots;

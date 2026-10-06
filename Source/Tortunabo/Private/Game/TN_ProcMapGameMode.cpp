@@ -20,6 +20,7 @@
 #include "World/TN_PuzzleScoreSubsystem.h"
 #include "World/TN_ScorePickup.h"
 #include "Core/TN_CoopScore.h"
+#include "World/ProcMap/TN_SandStorm.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -36,6 +37,9 @@ namespace TNProcMapGameModeDetail
 {
 	TAutoConsoleVariable<int32> CVarProcStartStyle(TEXT("TN.Proc.StartStyle"), -1,
 		TEXT("Salida del mapa procedural: -1 = lo del lobby (por defecto), 0 = puerta doble, 1 = huevos. Vale desde la siguiente generación del mapa."));
+
+	TAutoConsoleVariable<int32> CVarCoopIntensityRound(TEXT("TN.Coop.IntensityRound"), 0,
+		TEXT("Coop (#788): ronda (1-5) con la que se lee la tabla de intensidad (Content/Data/Coop/IntensityTable.json). 0 = la ronda de la partida. Vale desde la siguiente generación del mapa."));
 
 	/** Con estructura de salida, un PlayerStart está ocupado si hay otro peón a menos de esto (los sitios de la sala distan ~2 m). */
 	constexpr double StructureStartTakenRadius = 80.0;
@@ -73,6 +77,7 @@ ATN_ProcMapGameMode::ATN_ProcMapGameMode()
 	GameStateClass = ATN_ProcMapGameState::StaticClass();
 	GeneratorClass = ATN_ProcMapGenerator::StaticClass();
 	PathStormClass = ATN_PathStorm::StaticClass();
+	SandStormClass = ATN_SandStorm::StaticClass();
 
 	// Los mismos Blueprints que BP_RunGameMode: así la clase C++ ya sirve como
 	// GameMode Override de LVL_ProcMap aunque no exista un BP propio.
@@ -233,6 +238,10 @@ void ATN_ProcMapGameMode::GenerateRoundMap()
 	// para que TN.Proc.StartStyle valga sin reiniciar.
 	ResolveStartStyle();
 	Generator->SetStartStructureStyle(StartStyle);
+
+	// Coop (#788): la ronda con la que el generador lee la tabla de intensidad (TN.Coop.IntensityRound la fuerza).
+	const int32 ForcedIntensityRound = TNProcMapGameModeDetail::CVarCoopIntensityRound.GetValueOnGameThread();
+	Generator->SetCoopRound(ForcedIntensityRound > 0 ? ForcedIntensityRound : CurrentRound);
 
 	const int32 BaseSeed = UrlSeed != 0 ? UrlSeed : FixedSeed;
 	for (int32 Attempt = 0; Attempt < 3; ++Attempt)
@@ -406,6 +415,7 @@ void ATN_ProcMapGameMode::BeginRoundPlay()
 
 	bRoundActive = true;
 	StartStormIfNeeded();
+	StartSandStormIfNeeded();
 
 	// La salida se abre con el «¡ADELANTE!» de la pantalla de carga: gira la puerta 2 o se rompen los huevos.
 	GetWorldTimerManager().ClearTimer(StartStructureOpenHandle);
@@ -676,6 +686,32 @@ void ATN_ProcMapGameMode::StartStormIfNeeded()
 		const float Speed = WalkSpeed > 0.f ? FMath::Min(Profile.StormSpeed, WalkSpeed) : Profile.StormSpeed;
 		Storm->StartStorm(Generator, Speed, Profile.StormGraceSeconds);
 	}
+}
+
+void ATN_ProcMapGameMode::StartSandStormIfNeeded()
+{
+	if (Mode != ETNProcGameMode::Coop || !SandStormClass || !Generator)
+	{
+		if (SandStorm) { SandStorm->StopCycle(); }
+		return;
+	}
+	if (!SandStorm)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SandStorm = GetWorld()->SpawnActor<ATN_SandStorm>(SandStormClass, FTransform::Identity, Params);
+	}
+	if (SandStorm)
+	{
+		// La semilla del mapa: con TN.Proc o una semilla fija, las tormentas llegan siempre igual.
+		SandStorm->StartCycle(Generator->GetNetConfig().Seed ^ 0x790);
+	}
+}
+
+void ATN_ProcMapGameMode::StopStorms()
+{
+	if (Storm) { Storm->StopStorm(); }
+	if (SandStorm) { SandStorm->StopCycle(); }
 }
 
 float ATN_ProcMapGameMode::GetTurtleWalkSpeed() const
@@ -1062,10 +1098,7 @@ void ATN_ProcMapGameMode::UpdateRoundProgressAndMaybeFinish()
 			bRoundActive = false;
 			bMatchOver = true;
 			GetWorldTimerManager().ClearTimer(RoundTimeLimitHandle);
-			if (Storm)
-			{
-				Storm->StopStorm();
-			}
+			StopStorms();
 			SyncGameState();
 		}
 		return;
@@ -1176,10 +1209,7 @@ void ATN_ProcMapGameMode::EndRound(const TArray<APlayerController*>& Winners, co
 		GetWorldTimerManager().ClearTimer(Pending.Value);
 	}
 	PendingRespawns.Reset();
-	if (Storm)
-	{
-		Storm->StopStorm();
-	}
+	StopStorms();
 
 	for (APlayerController* Winner : Winners)
 	{
@@ -1333,10 +1363,7 @@ void ATN_ProcMapGameMode::EnterFinalResults()
 	bMatchOver = true;
 	bRoundActive = false;
 	GetWorldTimerManager().ClearTimer(RoundTimeLimitHandle);
-	if (Storm)
-	{
-		Storm->StopStorm();
-	}
+	StopStorms();
 
 	// Coop: la puntuación final con su desglose, antes de Results (el anfitrión la guarda en su perfil al entrar).
 	if (Mode == ETNProcGameMode::Coop)
