@@ -88,12 +88,15 @@ public:
 	void RemoveBigHeadEffect();
 
 	/**
-	 * Aplica el efecto de mareo (ralentización + feedback visual) en todas las máquinas.
-	 * Llamado automáticamente desde RemoveBigHeadEffect.
-	 * También disponible para otros sistemas que quieran causar mareo (#2).
+	 * Servidor: marea a la tortuga Duration segundos (tope de velocidad MareoSpeedCap). Lo llaman RemoveBigHeadEffect, el
+	 * dardo de medusa y las trampas de la playa (#2). El estado va replicado (bMareo) y el tope, predicho en el movimiento
+	 * (TNMovementLimits::PredictedCapMareoBit): empieza y acaba en el mismo movimiento en el dueño y en el servidor (#574).
+	 * Otra vez mareada mientras dura: la cuenta vuelve a empezar.
 	 */
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastApplyMareoEffect(float Duration);
+	void ApplyMareoEffect(float Duration);
+
+	/** Está mareada (replicado a todos). */
+	bool IsMareoActive() const { return bMareo; }
 
 	/** Devuelve true si el efecto Big Head está activo en este momento. */
 	bool HasBigHeadActive() const { return bBigHead; }
@@ -355,6 +358,15 @@ protected:
 	/** Impulso hacia delante del salto desde el agua. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swim", meta = (ClampMin = "0.0"))
 	float SwimHopForward = 250.f;
+
+public:
+	/** El estado de la tortuga permite el brinco desde el agua (ni derribada, ni muerta, ni en el caparazón). */
+	bool CanSwimHopNow() const;
+
+	/** Velocidad del brinco desde el agua con la orientación de ahora (TNSwimHop::HopVelocity). */
+	FVector GetSwimHopVelocity() const;
+
+protected:
 
 	// ── Caídas ───────────────────────────────────────────────────────────────
 
@@ -785,14 +797,6 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerPerformAirDash();
 
-	// ── Salto desde el agua (mismo patrón que el air dash: local + servidor) ──
-	float LastSwimHopTime = -10.f;
-	bool CanSwimHop() const;
-	void PerformSwimHop();
-
-	UFUNCTION(Server, Reliable)
-	void ServerSwimHop();
-
 	void Move(const FInputActionValue& Value);
 	void OnMoveReleased();
 	void Look(const FInputActionValue& Value);
@@ -1197,11 +1201,18 @@ protected:
 	float MareoSpeedCap = 250.f;
 
 	/**
-	 * Evento de mareo disparado en el cliente local (usa para camera shake, VFX, audio).
-	 * Duration = MareoDurationSeconds del servidor.
+	 * Mareada: el servidor lo pone en ApplyMareoEffect y lo quita al acabar (EndMareo). Antes iba en una multicast no fiable:
+	 * si se perdía, el dueño andaba a 450 mientras el servidor lo simulaba a 250 y lo corregía durante 3 s (#574).
 	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "BigHead|Mareo")
-	void OnMareoEffect(float Duration);
+	UPROPERTY(ReplicatedUsing = OnRep_Mareo)
+	bool bMareo = false;
+
+	UFUNCTION()
+	void OnRep_Mareo();
+
+	/** El tope del mareo en esta máquina, una vez por cambio. */
+	void ApplyMareoLocalState(bool bOn);
+	bool bMareoApplied = false;
 
 	/**
 	 * Llamado en TODAS las máquinas (servidor + clientes) tras aplicar el visual
@@ -1218,10 +1229,8 @@ protected:
 
 	void ClearInkEffect();
 
-	/** Llamado cuando expira el timer de mareo — restaura el speed cap de stamina.
-	 *  Usa CreateUObject (no lambda): el binding es weak, así que si el objeto ya
-	 *  se destruyó el timer no ejecuta nada (no depende de un clear explícito en EndPlay). */
-	void ClearMareoSpeedCap();
+	/** Servidor: acaba el mareo (temporizador de ApplyMareoEffect, con CreateUObject: si el actor ya no está, no hace nada). */
+	void EndMareo();
 
 	/** Rotación relativa del mesh al spawnear (guardada en BeginPlay para restaurarla). */
 	FRotator MeshDefaultRelativeRotation = FRotator::ZeroRotator;

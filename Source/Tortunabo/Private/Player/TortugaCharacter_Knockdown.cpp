@@ -636,6 +636,11 @@ void ATortugaCharacter::SetDeadVisual(bool bDead)
 	{
 		ShellComponent->ForceExitShell();
 	}
+	// Igual con el mareo: acaba al morir, con su temporizador (#574).
+	if (bDead)
+	{
+		EndMareo();
+	}
 
 	bIsDead = bDead;
 	// DualMax round 2 — Codex CRITICAL: garantizar entrega del UPROPERTY replicado

@@ -267,7 +267,7 @@ void ATN_TctProjectile::ServerHitTurtle(ATortugaCharacter* Victim)
 	case ETNTctItem::JellyDart:
 		if (TNTctItems::CanAffect(Victim, false))
 		{
-			Victim->MulticastApplyMareoEffect(DartDizzySeconds);
+			Victim->ApplyMareoEffect(DartDizzySeconds);
 			TNTctItems::PlayCue(Victim, ETNRaceSound::Zap, 1.3f);
 			UE_LOG(LogTortunabo, Log, TEXT("[TcT] El dardo de medusa marea a %s."), *GetNameSafe(Victim));
 		}

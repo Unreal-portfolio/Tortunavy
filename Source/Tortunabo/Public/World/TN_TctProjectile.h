@@ -36,7 +36,7 @@ struct FTNTctShotData
  *  - Balón: rebota en el escenario y empuja a quien toca (LaunchFromServer, sin corrección); al empujar, rebota hacia atrás
  *    y el servidor manda su posición y velocidad nuevas a todas (MulticastResync). Puede empujar varias veces.
  *  - Ancla: parábola pesada; al tocar a una tortuga o el suelo, derriba a las del círculo y las lastra (UTN_TctItemComponent).
- *  - Dardo: rápido y casi recto; marea a la primera tortuga que toca (MulticastApplyMareoEffect). Se clava en el escenario.
+ *  - Dardo: rápido y casi recto; marea a la primera tortuga que toca (ATortugaCharacter::ApplyMareoEffect). Se clava en el escenario.
  * Quien lo lanza no se golpea a sí misma en los primeros instantes. Se acaba solo (vida máxima) o al caer al agua de la arena.
  */
 UCLASS()
