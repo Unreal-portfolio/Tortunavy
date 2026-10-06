@@ -57,7 +57,7 @@ void ATN_MapVariantLoader::BeginPlay()
 	// PIE/standalone duplican el actor del nivel con sus componentes ya construidos en el
 	// editor; si por lo que sea no hay ninguno (actor colocado por codigo, p. ej.), se construye
 	// ahora para que la variante tambien funcione lanzando la partida directamente.
-	if (ChunkMeshes.Num() == 0)
+	if (ChunkMeshes.Num() == 0 || BuiltVariant != Variant)
 	{
 		LoadVariant();
 	}
@@ -73,6 +73,12 @@ void ATN_MapVariantLoader::BeginPlay()
 
 void ATN_MapVariantLoader::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	DestroyManifestActors();
+	Super::EndPlay(EndPlayReason);
+}
+
+void ATN_MapVariantLoader::DestroyManifestActors()
+{
 	for (const TWeakObjectPtr<ATN_DeathZoneVolume>& Zone : SpawnedKillZones)
 	{
 		if (Zone.IsValid())
@@ -86,7 +92,6 @@ void ATN_MapVariantLoader::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		PlacementSpawner->Destroy();
 	}
 	PlacementSpawner = nullptr;
-	Super::EndPlay(EndPlayReason);
 }
 
 void ATN_MapVariantLoader::SpawnPlacements()
@@ -217,6 +222,20 @@ void ATN_MapVariantLoader::SpawnKillZones()
 void ATN_MapVariantLoader::Recargar()
 {
 	LoadVariant();
+	// En partida, las zonas de muerte y los placements (decorado con colisión) tienen que ser también los de la variante
+	// nueva: si no, un cliente se quedaba con los de la que montó en su BeginPlay (#828).
+	if (HasActorBegunPlay())
+	{
+		DestroyManifestActors();
+		if (HasAuthority())
+		{
+			SpawnKillZones();
+		}
+		if (bSpawnPlacements)
+		{
+			SpawnPlacements();
+		}
+	}
 }
 
 FString ATN_MapVariantLoader::VariantsDir()

@@ -314,12 +314,12 @@ bool FTNArtApplyInWorldTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("y su visibilidad lógica"), Comp->IsVisible());
 	TestFalse(TEXT("pero no se dibuja"), Comp->bRenderInMainPass || Comp->bRenderInDepthPass || Comp->CastShadow);
 
-	// Colisión de arte: pasa a la hija.
+	// bUseArtCollision ya no cambia la colisión (#828): sigue la generada, igual en todas las máquinas con o sin arte.
 	TNArt::SetCatalogsForTest({ MakeCatalog(Slot, Sphere, Adjust, true) });
 	TNArt::ApplyToComponent(Comp, Slot);
 	Art = ArtChildOf(Comp);
-	TestTrue(TEXT("bUseArtCollision: choca la de arte"), Art && Art->GetCollisionEnabled() == ECollisionEnabled::QueryAndPhysics);
-	TestEqual(TEXT("bUseArtCollision: el generado no"), Comp->GetCollisionEnabled(), ECollisionEnabled::NoCollision);
+	TestTrue(TEXT("bUseArtCollision: la de arte no choca"), Art && Art->GetCollisionEnabled() == ECollisionEnabled::NoCollision);
+	TestEqual(TEXT("bUseArtCollision: el generado sigue chocando"), Comp->GetCollisionEnabled(), ECollisionEnabled::QueryAndPhysics);
 
 	// Se quita el sustituto: todo como antes.
 	TNArt::SetCatalogsForTest({ MakeCatalog(Slot, nullptr) });

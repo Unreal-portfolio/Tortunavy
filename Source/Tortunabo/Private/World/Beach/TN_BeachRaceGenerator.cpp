@@ -22,6 +22,8 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
@@ -171,8 +173,12 @@ void ATN_BeachRaceGenerator::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	const float Dt = FMath::Min(DeltaSeconds, 0.1f);
-	// La ronda a medias sigue montándose (unos milisegundos por fotograma).
-	if (PendingBuild.IsValid()) { TickRoundBuild(false); }
+	// La ronda a medias sigue montándose (unos milisegundos por fotograma). Si ya se corre, de una vez: lo que falta en esta
+	// máquina (asientos, decorado) es colisión que el anfitrión ya tiene (#828).
+	const bool bRacing = IsRaceRunning();
+	if (PendingBuild.IsValid()) { TickRoundBuild(bRacing); }
+	UpdateRoundElementsArrival(Dt);
+	HoldLocalPawnsWhileBuilding(bRacing);
 	TickAutoGenerate(Dt);
 	TickTurtles(Dt);
 	if (bEggsAnimating) { bEggsAnimating = UpdateStartEggs(); }
@@ -188,6 +194,115 @@ void ATN_BeachRaceGenerator::Tick(float DeltaSeconds)
 			if (bShow && FootprintMesh->GetNumSections() == 0 && Layout.Items.Num() > 0) { BuildFootprints(); }
 			FootprintMesh->SetHiddenInGame(!bShow);
 		}
+	}
+}
+
+bool ATN_BeachRaceGenerator::IsRaceRunning() const
+{
+	const UWorld* World = GetWorld();
+	const ATN_BeachRaceGameState* BeachState = World ? World->GetGameState<ATN_BeachRaceGameState>() : nullptr;
+	return BeachState && BeachState->RacePhase == ETNBeachRacePhase::Racing;
+}
+
+void ATN_BeachRaceGenerator::HoldLocalPawnsWhileBuilding(bool bRacing)
+{
+	UWorld* World = GetWorld();
+	if (!World || !World->IsGameWorld()) { return; }
+	// Esperando la salida, el GameMode ya tiene a todas paradas (FreezePlayers): aquí solo lo que queda en plena carrera.
+	const bool bBuilding = PendingBuild.IsValid() || (RoundNet.Round > 0 && !RoundNet.bCleared && AppliedRound != RoundNet.Round)
+		|| (RoundNet.Round > 0 && !RoundNet.bCleared && !HasRoundElements());
+	if (bRacing && bBuilding)
+	{
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			const APlayerController* PC = It->Get();
+			ACharacter* Character = PC && PC->IsLocalController() ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
+			UCharacterMovementComponent* Move = Character ? Character->GetCharacterMovement() : nullptr;
+			if (!Move || Move->MovementMode == MOVE_None) { continue; }
+			Move->StopMovementImmediately();
+			Move->DisableMovement();
+			if (HeldLocalPawns.Num() == 0)
+			{
+				HeldSince = World->GetTimeSeconds();
+				UE_LOG(LogTortunabo, Warning, TEXT("[Playa] Ronda %d en marcha y aún a medio montar en esta máquina: las tortugas locales esperan quietas."),
+					RoundNet.Round);
+			}
+			HeldLocalPawns.AddUnique(Character);
+		}
+		return;
+	}
+	if (HeldLocalPawns.Num() == 0) { return; }
+	// Solo se sueltan las que se pararon aquí (y siguen paradas): las del GameMode las suelta él.
+	for (const TWeakObjectPtr<ACharacter>& Held : HeldLocalPawns)
+	{
+		UCharacterMovementComponent* Move = Held.IsValid() ? Held->GetCharacterMovement() : nullptr;
+		if (Move && Move->MovementMode == MOVE_None) { Move->SetMovementMode(MOVE_Falling); }
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Playa] Ronda %d montada en esta máquina: las tortugas locales siguen (%.1f s paradas)."), RoundNet.Round,
+		World->GetTimeSeconds() - HeldSince);
+	HeldLocalPawns.Reset();
+}
+
+bool ATN_BeachRaceGenerator::HasRoundElements() const
+{
+	return HasAuthority() || (ElementsCheckedRound == RoundNet.Round && bRoundElementsArrived);
+}
+
+void ATN_BeachRaceGenerator::UpdateRoundElementsArrival(float DeltaSeconds)
+{
+	UWorld* World = GetWorld();
+	if (HasAuthority() || !World || !World->IsGameWorld() || RoundNet.Round <= 0 || RoundNet.bCleared || !IsRoundReady())
+	{
+		return;
+	}
+	if (ElementsCheckedRound != RoundNet.Round)
+	{
+		ElementsCheckedRound = RoundNet.Round;
+		bRoundElementsArrived = false;
+		ElementsCheckClock = 0.f;
+		ElementsWaitSince = World->GetTimeSeconds();
+	}
+	if (bRoundElementsArrived)
+	{
+		return;
+	}
+	ElementsCheckClock -= DeltaSeconds;
+	if (ElementsCheckClock > 0.f)
+	{
+		return;
+	}
+	ElementsCheckClock = 0.5f;
+	// Los quietos del reparto de esta máquina (el mismo que el del servidor) que tienen clase: los crea el servidor y son
+	// siempre relevantes (ATN_BeachElement::ApplyRoundNetProfile). Cada uno, por su elemento y su semilla.
+	TMap<uint64, int32> Expected;
+	for (const TNBeachLayout::FItem& Item : Layout.Items)
+	{
+		if (TNBeach::CategoryOf(Item.Element) != ETNBeachCategory::Trap) { continue; }
+		const UClass* Class = FindObject<UClass>(nullptr, *FString::Printf(TEXT("/Script/Tortunabo.%s"), TNBeach::ClassNameOf(Item.Element)));
+		if (!Class || !Class->IsChildOf(ATN_BeachElement::StaticClass())) { continue; }
+		++Expected.FindOrAdd((static_cast<uint64>(Item.Element) << 32) | static_cast<uint32>(Item.Spec.Seed));
+	}
+	for (TActorIterator<ATN_BeachElement> It(World); It; ++It)
+	{
+		const FTNBeachElementSpec& Spec = It->GetSpec();
+		if (int32* Left = Expected.Find((static_cast<uint64>(Spec.Element) << 32) | static_cast<uint32>(Spec.Seed)))
+		{
+			if (--(*Left) <= 0) { Expected.Remove((static_cast<uint64>(Spec.Element) << 32) | static_cast<uint32>(Spec.Seed)); }
+		}
+	}
+	int32 Missing = 0;
+	for (const TPair<uint64, int32>& Left : Expected) { Missing += Left.Value; }
+	const double Waited = World->GetTimeSeconds() - ElementsWaitSince;
+	if (Missing == 0)
+	{
+		bRoundElementsArrived = true;
+		UE_LOG(LogTortunabo, Log, TEXT("[Playa] ronda %d: este cliente ya tiene sus trampas y estructuras (%.1f s después de montarla)."), RoundNet.Round, Waited);
+	}
+	else if (Waited > ElementsArrivalTimeoutSeconds)
+	{
+		bRoundElementsArrived = true;
+		UE_LOG(LogTortunabo, Warning, TEXT("[Playa] ronda %d: a este cliente le faltan %d trampas o estructuras tras %.0f s: se sigue sin ellas."), RoundNet.Round,
+			Missing, Waited);
 	}
 }
 

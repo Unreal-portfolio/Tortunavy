@@ -77,12 +77,11 @@ float ATN_BeachElement::GetNetRelevanceDistance() const
 
 void ATN_BeachElement::ApplyRoundNetProfile()
 {
-	// Antes: bAlwaysRelevant en todos (el generador) y 1600 m de corte: con ~1500 actores replicados por ronda, el
-	// servidor los miraba todos para cada cliente y cada cliente los tenía todos (y sus mallas) desde la salida. Ahora
-	// cada cliente tiene los que están a su alcance (260-450 m; la niebla empieza a los 300 m), salvo las estructuras
-	// enormes (WantsAlwaysRelevant). Nada del GameMode ni de las pantallas depende de ver elementos lejanos (el servidor
-	// los tiene todos; el recuento va por el PlayerState).
-	bAlwaysRelevant = WantsAlwaysRelevant();
+	// Lo quieto (trampas, estructuras: bloquean) lo tiene cada cliente desde que aparece (#828): por distancia, un elemento
+	// le llegaba al acercarse y, mientras, el servidor ya chocaba con él (muro invisible). Duerme nada más llegar
+	// (WantsNetDormancy), así que no cuesta red ni tiempo del servidor. Los enemigos se mueven y no duermen: esos, por
+	// distancia (200-300 m, más que lo que se recorre mientras llegan).
+	bAlwaysRelevant = WantsAlwaysRelevant() || WantsNetDormancy();
 	const float Relevance = GetNetRelevanceDistance();
 	SetNetCullDistanceSquared(Relevance * Relevance);
 	if (!WantsNetDormancy()) { return; }

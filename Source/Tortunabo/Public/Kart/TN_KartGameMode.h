@@ -54,7 +54,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Mapa")
 	int32 FixedSeed = 0;
 
-	/** Tope de espera a que todas tengan el mapa y el suelo (s): luego se sientan las que estén. */
+	/**
+	 * Tope de espera a que todas tengan el mapa y el suelo (s): luego se sientan las que lo tengan y empieza; las demás se
+	 * sientan en cuanto lo tengan en su máquina (#828).
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Karts|Mapa")
 	float PlayersReadyTimeoutSeconds = 40.f;
 
@@ -65,7 +68,12 @@ private:
 	ATN_ProcMapGenerator* EnsureGenerator();
 	/** Todas las tortugas esperadas están conectadas y tienen el mapa y el suelo en su máquina (y el servidor también). */
 	bool AreAllPlayersReady() const;
-	/** Sienta a las que esperaban (ATN_RallyGameMode::HandleStartingNewPlayer) y deja entrar a las siguientes sin espera. */
+	/** Esta tortuga tiene la pista y el suelo de la generación actual en su máquina (el anfitrión, los del servidor). */
+	bool IsPlayerTrackReady(const APlayerController* Player) const;
+	/**
+	 * Sienta (ATN_RallyGameMode::HandleStartingNewPlayer) a las que esperaban y ya tienen el mapa en su máquina; las demás
+	 * siguen esperando. Desde la primera vez, la partida ha empezado.
+	 */
 	void ReleaseWaitingPlayers(const TCHAR* Why);
 
 	UPROPERTY(Transient)

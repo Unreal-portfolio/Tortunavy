@@ -32,8 +32,8 @@ struct TORTUNABO_API FTNArtOverride
 	FTransform Adjust;
 
 	/**
-	 * Falso (lo normal): la pieza conserva la colisión generada, invisible, y el juego no cambia. Cierto: choca la malla
-	 * final con su propia colisión (la tiene que traer) y la generada se quita; cambia cómo se juega, pruébalo.
+	 * Ya no se usa (#828): la pieza conserva siempre la colisión generada, invisible, para que todas las máquinas choquen
+	 * con lo mismo aunque una vea otro arte (TN.Art.Enabled, una malla que no carga). Si está marcada, se avisa en el log.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arte")
 	bool bUseArtCollision = false;

@@ -22,7 +22,7 @@ struct FTNArtOverride;
  *
  * Cada pieza visible que el código genera tiene un nombre estable. Si algún catálogo de UTN_ArtSettings le da una malla, se
  * dibuja esa (con sus materiales y su ajuste); si no, la generada, exactamente como antes. Lo funcional no cambia: la
- * colisión generada se queda (invisible) salvo que la pieza pida bUseArtCollision, y los activadores, volúmenes, animaciones
+ * colisión generada se queda siempre (invisible; bUseArtCollision ya no se usa, #828), y los activadores, volúmenes, animaciones
  * por código e interacción siguen en sus componentes. Es solo visual y cada máquina lo resuelve igual (los catálogos se
  * cocinan), así que no hay nada que replicar.
  *
@@ -89,8 +89,8 @@ namespace TNArt
 
 	/**
 	 * Componente suelto, con su malla ya puesta. Con sustituto, el componente deja de dibujarse (conserva malla, colisión,
-	 * transformación y visibilidad lógica) y una hija UTN_ArtMeshComponent dibuja la malla de arte con el ajuste; con
-	 * bUseArtCollision, la colisión pasa a la hija. Sin sustituto, no toca nada (y deshace lo de una construcción anterior).
+	 * transformación y visibilidad lógica) y una hija UTN_ArtMeshComponent dibuja la malla de arte con el ajuste, sin colisión.
+	 * Sin sustituto, no toca nada (y deshace lo de una construcción anterior).
 	 * Solo en mundos de juego o con componentes transitorios: un componente guardado con el nivel no se modifica en el editor.
 	 */
 	TORTUNABO_API void ApplyToComponent(UStaticMeshComponent* Comp, FName Slot);

@@ -334,6 +334,30 @@ generador pasa esos tests en las dos configuraciones antes de actualizar una hue
 | `TN.Lobby.Castle 0` / `TN.Lobby.Valley 0` | Esconde el castillo o el valle del lobby (al recargarlo). |
 | `TN.Storm.Cough 1` / `TN.Storm.Cough 2` | Carraspeos sueltos (`1`) o tos fuerte (`2`) de la tormenta sin tormenta; `0` la apaga. |
 
+## Huella del mapa: anfitrión y clientes con el mismo mapa (#828)
+
+Lo que ve el anfitrión tiene que ser exactamente lo que ven todos, en cualquier modo. `TN.Map.Fingerprint` escribe en el log
+la huella de todo lo que bloquea en esa máquina (terreno, estructuras, rocas y decorado con colisión, posiciones redondeadas a
+1 cm), con una línea por clase de actor. No cuenta lo que se mueve solo (tortugas, karts, enemigos con movimiento replicado,
+física) ni los disparadores que solo solapan.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Map.Fingerprint` | `[Huella] <mapa> · anfitrión\|cliente: mapa <hash> · generado en cada máquina <hash> · replicado <hash> · N piezas en M clases`, y debajo `[Huella]   <hash> <clase> · N piezas`. |
+| `TN.Map.Fingerprint 40` | Lo mismo dentro de 40 s (sirve en `-ExecCmds` al arrancar: aguanta el viaje al mapa). |
+| `TN.Map.Fingerprint all` | Cuenta también lo visual sin colisión (puede cambiar con la calidad gráfica: ahí no tiene por qué coincidir). |
+
+Para comparar en vivo, con el mapa ya montado y quietos (en la carrera, durante la cuenta de la salida), en la consola del
+anfitrión y de cada cliente: `TN.Map.Fingerprint`. La línea `mapa` y la de `generado en cada máquina` deben coincidir; si no,
+la clase cuya línea cambia es la que diverge. Una clase de algo que se mueve (una plataforma o un puente que se balancea) puede
+salir distinta solo por el momento: se repite la medida.
+
+Tests (`Automation RunTests Tortunabo.Map.Fingerprint`): cada mapa se monta dos veces en condiciones distintas y compara las
+huellas: Coop, Supervivencia y Karts (calidad Épica frente a Baja y tras generar otro mapa), la playa de la carrera (de una
+vez frente a por partes con 0,5 ms por fotograma y tras otra ronda), el Rally (con un actor replicado más en la salida), las
+variantes del disco de Rally y Todos contra Todos (directa frente a montada tras la del nivel) y el lobby (orden distinto).
+`Tortunabo.Map.Fingerprint.Detects` comprueba que la huella ve una caja movida 2 cm y no un disparador.
+
 ## Karts en el mapa del cooperativo
 
 Se elige como los demás modos: «Karts» en el menú al crear sala, en la sala o con el General Galápago (pestaña

@@ -54,6 +54,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Survival", meta = (ClampMin = "1.0"))
 	float LevelReadyTimeoutSeconds = 10.f;
 
+	/**
+	 * Espera máxima a que cada cliente diga que tiene el mapa del nivel (#828). Pasado el tope salen igual, pero quien no lo
+	 * tenga sigue quieto en su máquina hasta tenerlo (ATN_ProcMapGenerator::FreezeLocalPawnUntilReady).
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Survival", meta = (ClampMin = "1.0"))
+	float ClientLevelReadyTimeoutSeconds = 30.f;
+
 	virtual void OnWaitingTimeout() override;
 
 	/** Quien no estaba al empezar, o se fue, no puede ganar: espera como espectador (#345). */
@@ -101,6 +108,8 @@ private:
 	/** Espera a que el suelo de la salida del mapa tenga colisión (o LevelReadyTimeoutSeconds) y suelta a los vivos. */
 	void BeginLevelWhenReady();
 	void PollLevelReady();
+	/** Clientes que aún no han dicho tener la generación Generation del mapa (sus nombres en OutWaiting). */
+	int32 CountClientsWithoutMap(int32 Generation, FString& OutWaiting) const;
 
 	/** Lleva a los vivos a la salida del mapa del nivel, con el pawn que tenían o uno nuevo. */
 	void SendSurvivorsToLevelStart();
