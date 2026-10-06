@@ -164,6 +164,11 @@ void UTN_StaminaComponent::OnRep_IsSprinting()
 	ApplyMovementSpeed();
 }
 
+void UTN_StaminaComponent::OnRep_CurrentStamina()
+{
+	RecomputeSprintState();
+}
+
 void UTN_StaminaComponent::SyncStaminaShared()
 {
 	const float Fraction = FMath::Clamp(CurrentStamina / FMath::Max(1.f, MaxStamina), 0.f, 1.f);

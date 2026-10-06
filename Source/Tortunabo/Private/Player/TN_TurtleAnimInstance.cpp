@@ -5,6 +5,7 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_HeadLook.h"
 #include "Player/TN_InventoryComponent.h"
+#include "Player/TN_RunGait.h"
 #include "Player/TN_ShellComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Animation/AnimNodeBase.h"
@@ -1164,8 +1165,12 @@ void UTN_TurtleAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// La carrera entra con el sprint (o al pasar un 8 % de la velocidad de andar del nivel: en el lobby es 2 m/s).
 	const UTN_StaminaComponent* StaminaComp = Turtle ? Turtle->GetStaminaComponent() : nullptr;
 	const float WalkRef = StaminaComp ? FMath::Max(100.f, StaminaComp->GetWalkSpeed()) : 450.f;
-	const bool bSprinting = StaminaComp && StaminaComp->IsSprinting() && Speed > WalkRef * 0.6f;
-	const float RunTarget = FMath::Max(bSprinting ? 1.f : 0.f, FMath::Clamp((Speed - WalkRef * 1.08f) / (WalkRef * 0.3f), 0.f, 1.f));
+	// Esprintar sin fuerzas no es correr (#834): con la estamina a 0 y la tecla pulsada va a paso de andar, y así se ve.
+	const float StaminaFraction = StaminaComp
+		? FMath::Clamp(StaminaComp->GetCurrentStamina() / FMath::Max(1.f, StaminaComp->GetEffectiveMaxStamina()), 0.f, 1.f) : 1.f;
+	const bool bSprintRun = StaminaComp && TNRunGait::IsSprintRun(StaminaComp->IsSprinting(), StaminaComp->IsExhausted(), StaminaFraction,
+		StaminaComp->HasUnlimitedStamina(), Speed, WalkRef);
+	const float RunTarget = TNRunGait::RunTarget(bSprintRun, Speed, WalkRef);
 	F.RunW = FMath::FInterpTo(F.RunW, RunTarget, Dt, 7.f);
 	F.SprintW = FMath::FInterpTo(F.SprintW, FMath::Clamp((Speed - WalkRef * 1.3f) / (WalkRef * 0.6f), 0.f, 1.f), Dt, 4.f);
 	F.WalkTime += Dt * FMath::Clamp(Speed / (WalkNaturalUnits * Scale), 0.5f, 4.5f);
