@@ -20,7 +20,6 @@ class APlayerState;
 class AGameStateBase;
 class ATN_ShopKeeper;
 class ATN_ChangingBooth;
-class ATN_GeneralBriefing;
 class UTN_AmbientSoundscapeComponent;
 
 /**
@@ -101,10 +100,6 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientOpenShop(ATN_ShopKeeper* Shop);
 
-	/** @brief Client RPC: abre la sesión informativa del general del cuartel (UTN_BriefingWidget). */
-	UFUNCTION(Client, Reliable)
-	void ClientOpenBriefing(ATN_GeneralBriefing* General);
-
 	/** @brief Client RPC: el probador se ha cerrado contigo dentro: la cámara se aparta y sale el selector (UTN_BoothWidget). */
 	UFUNCTION(Client, Reliable)
 	void ClientOpenBooth(ATN_ChangingBooth* Booth);
@@ -141,24 +136,6 @@ public:
 	UFUNCTION(Exec)
 	void TNWheel(int32 Type, float X, float Y);
 
-	/**
-	 * @brief Consola (pruebas de la tormenta en el mapa procedural): lleva a tu tortuga a un sitio y pone la tormenta
-	 *        encima, inofensiva. Where: un bioma (Selva, Playa, Desierto, Volcan, Agua, Rocas, Manglar, Pueblo), Geiser
-	 *        o Cascada (cada vez el siguiente del mapa) u Off (tormenta normal otra vez). Ahead: cm entre el frente y
-	 *        la tortuga (positivo = llega por detrás; negativo = ya estás dentro).
-	 */
-	UFUNCTION(Exec)
-	void TNStorm(const FString& Where, float Ahead = 900.f);
-
-	/**
-	 * @brief Consola (pruebas de las conchas de puntos): «TNShells 1|25|50|100 [N]» suelta N conchas (hasta 20) de ese
-	 *        valor en fila delante de tu tortuga, para cogerlas corriendo y ver el estallido y el contador; «TNShells
-	 *        Especial» te lleva cada vez a la siguiente concha especial (50 o 100) del mapa procedural; «TNShells Lista»
-	 *        dice cuántas hay de cada tamaño y dónde van las especiales.
-	 */
-	UFUNCTION(Exec)
-	void TNShells(const FString& What, int32 Count = 1);
-
 	/** @brief Consola (pruebas del lobby): abre la tienda del tendero más cercano sin ir hasta él. */
 	UFUNCTION(Exec)
 	void TNShop();
@@ -194,17 +171,6 @@ public:
 
 	/** @brief Versión sin RPC para el listen-server (los Client RPCs no se ejecutan en el host). */
 	void ForceRestoreInput();
-
-	/**
-	 * @brief El cliente avisa de que ya construyó el mapa procedural de esa generación.
-	 * @note Lo llama ATN_ProcMapGenerator en el cliente; el servidor lo apunta (GetReportedProcMapGeneration) y lo
-	 *       reenvía a ATN_ProcMapGameMode para arrancar la ronda cuando todos lo tienen.
-	 */
-	UFUNCTION(Server, Reliable)
-	void ServerReportProcMapReady(int32 Generation);
-
-	/** Servidor: la generación del mapa procedural más alta que este cliente ha dicho tener construida (0 = ninguna). */
-	int32 GetReportedProcMapGeneration() const { return ReportedProcMapGeneration; }
 
 	/**
 	 * @brief Recibe audio de voz filtrado por proximidad desde el servidor.
@@ -322,9 +288,6 @@ protected:
 	TSoftObjectPtr<UInputAction> ReturnToMenuAction;
 
 private:
-	/** Servidor: lo último de ServerReportProcMapReady (Supervivencia espera a que todos tengan el nivel, #828). */
-	int32 ReportedProcMapGeneration = 0;
-
 	UPROPERTY()
 	TObjectPtr<UUserWidget> VoiceIndicatorWidget;
 
@@ -484,14 +447,6 @@ private:
 	/** @brief Server RPC: valida ID, aplica rate limit y escribe el QuickChat en el GameState. */
 	UFUNCTION(Server, Reliable)
 	void ServerSendQuickChat(uint8 MessageID);
-
-	/** Servidor: el trabajo de TNStorm (mueve la tortuga y el frente de la tormenta). */
-	UFUNCTION(Server, Reliable)
-	void ServerStormTest(const FString& Where, float Ahead);
-
-	/** Servidor: el trabajo de TNShells (suelta conchas o lleva a una especial). */
-	UFUNCTION(Server, Reliable)
-	void ServerShellsTest(const FString& What, int32 Count);
 
 	/** Servidor: el trabajo de TNBooth. */
 	UFUNCTION(Server, Reliable)

@@ -6,13 +6,12 @@ generador (terrain_path.placement), la CLI (--comprobar) y los tests. Reglas:
 - posicion: dentro del camino, fuera de túneles, tableros, arcos y escalones; el agua solo para lo
   que vive en ella; huella del puzle dentro del camino y con su anchura mínima; decorado lejos del eje.
 - alcanzable: se llega desde la salida y se sigue hasta la meta (grafo del camino).
-- exclusion: nada de juego en uniones, cruces, salida, meta ni junto a un nido (reaparición).
+- exclusion: nada de juego en uniones, cruces, salida ni meta.
 - separacion_puzles: puzles separados PUZZLE_GAP_M por el camino.
 - calma_puzle: sin enemigos ni obstáculos junto a un puzle.
 - hostiles_separados: enemigos y obstáculos sin amontonar.
 - curva: tramos de TRAMO_M; tras un pico, calma; el primero y el último del principal, tranquilos.
 - densidad: en cada bifurcación, la ruta corta lleva más peligro por metro que la larga.
-- nidos: reaparición cada NEST_GAP_MAX_M como mucho y una antes de cada puzle de grupo del principal.
 - secuencia: dos puzles seguidos del principal no son del mismo tipo.
 """
 
@@ -34,9 +33,6 @@ from .placement_catalog import (
     HOSTILE,
     HOSTILE_GAP_M,
     MECHANIC,
-    NEST,
-    NEST_BEFORE_PUZZLE_M,
-    NEST_GAP_MAX_M,
     PEAK_MIN,
     PUZZLE,
     PUZZLE_CALM_M,
@@ -89,16 +85,12 @@ def _by_category(placements, *cats) -> list[Placement]:
     return [p for p in placements if p.category in cats]
 
 
-def exclusion_discs(site: Site, placements) -> list[tuple[str, np.ndarray, float, str | None]]:
-    """(motivo, centro xy, radio, id del nido) de cada zona en la que no va nada de juego."""
-    discs = [("salida", np.array(site.start[:2]), EXCLUDE_M["start"], None),
-             ("meta", np.array(site.end[:2]), EXCLUDE_M["end"], None)]
-    discs += [("union", np.array(j), EXCLUDE_M["junction"], None) for j in site.junctions]
-    discs += [("cruce", np.array(c), EXCLUDE_M["crossing"], None) for c in site.crossings]
-    for n in _by_category(placements, NEST):
-        if n.line in {ln.id for ln in site.lines}:
-            x, y, _ = site.line(n.line).at(n.s, n.q)
-            discs.append(("nido", np.array([x, y]), EXCLUDE_M["nest"], n.id))
+def exclusion_discs(site: Site) -> list[tuple[str, np.ndarray, float]]:
+    """(motivo, centro xy, radio) de cada zona en la que no va nada de juego."""
+    discs = [("salida", np.array(site.start[:2]), EXCLUDE_M["start"]),
+             ("meta", np.array(site.end[:2]), EXCLUDE_M["end"])]
+    discs += [("union", np.array(j), EXCLUDE_M["junction"]) for j in site.junctions]
+    discs += [("cruce", np.array(c), EXCLUDE_M["crossing"]) for c in site.crossings]
     return discs
 
 
@@ -127,7 +119,7 @@ def position_problem(site: Site, p: Placement) -> str | None:
     if s0 < -0.01 or s1 > ln.length + 0.01:
         return "la huella se sale de la línea"
     win = ln.window(s0, s1)
-    if p.category in GAMEPLAY or p.category == NEST:
+    if p.category in GAMEPLAY:
         if ln.blocked[win].any():
             return "en un túnel, tablero, arco o escalón"
         wet = bool(ln.water[win].any())
@@ -135,7 +127,7 @@ def position_problem(site: Site, p: Placement) -> str | None:
             return "en el agua" if wet else "fuera del agua, donde vive"
         if p.category == MECHANIC and wet and p.kind not in WATER_MECHANICS:
             return "mecánica en el agua"
-        if p.category in (PUZZLE, NEST) and wet:
+        if p.category == PUZZLE and wet:
             return "en el agua"
     if p.category == PUZZLE and p.kind in PUZZLES:
         need = PUZZLES[p.kind].min_half_width_m
@@ -162,15 +154,13 @@ def check_reachable(site: Site, placements) -> list[Violation]:
 
 
 def check_exclusions(site: Site, placements) -> list[Violation]:
-    discs = exclusion_discs(site, placements)
+    discs = exclusion_discs(site)
     out = []
     for p in placements:
         if p.category not in GAMEPLAY or p.line not in {ln.id for ln in site.lines}:
             continue
         pts = footprint_points(site, p)
-        for why, c, r, nest_id in discs:
-            if nest_id == p.id:
-                continue
+        for why, c, r in discs:
             if float(np.min(np.hypot(*(pts - c).T))) < r - 0.01:
                 out.append(Violation("exclusion", f"{p.id}: a menos de {r:.0f} m de {why}", (p.id,)))
                 break
@@ -259,11 +249,11 @@ def free_hostile_mask(site: Site, placements) -> np.ndarray:
     """Muestras donde podría ir un enemigo u obstáculo: abiertas, fuera de exclusiones y de la calma
     de los puzles. Se usa para no exigir peligro a una ruta corta sin sitio."""
     free = np.ones(site.node_count, dtype=bool)
-    discs = exclusion_discs(site, placements)
+    discs = exclusion_discs(site)
     for ln in site.lines:
         base = site.node(ln.id, 0.0)
         mask = ~ln.blocked
-        for _why, c, r, _nid in discs:
+        for _why, c, r in discs:
             mask &= np.hypot(*(ln.points - c).T) >= r
         free[base:base + len(ln.arc)] = mask
     puzzles = _by_category(placements, PUZZLE)
@@ -303,23 +293,6 @@ def check_density(site: Site, placements) -> list[Violation]:
     return out
 
 
-def check_nests(site: Site, placements) -> list[Violation]:
-    main = site.main
-    nests = sorted(p.s for p in placements if p.category == NEST and p.line == 0)
-    stops = [0.0] + nests + [main.length]
-    out = []
-    for a, b in zip(stops, stops[1:]):
-        if b - a > NEST_GAP_MAX_M:
-            out.append(Violation("nidos", f"{b - a:.0f} m sin nido entre s = {a:.0f} y s = {b:.0f}"))
-    lo, hi = NEST_BEFORE_PUZZLE_M
-    for p in placements:
-        if p.category == PUZZLE and p.line == 0 and PUZZLES.get(p.kind) and PUZZLES[p.kind].mode == "grupo":
-            front = p.footprint[0]
-            if not any(lo <= front - n <= hi for n in nests):
-                out.append(Violation("nidos", f"{p.id}: sin nido entre {lo:.0f} y {hi:.0f} m antes", (p.id,)))
-    return out
-
-
 def check_sequence(site: Site, placements) -> list[Violation]:
     main_puzzles = sorted((p for p in placements if p.category == PUZZLE and p.line == 0), key=lambda p: p.s)
     return [Violation("secuencia", f"{a.id} y {b.id} son seguidos y del mismo tipo", (a.id, b.id))
@@ -327,7 +300,7 @@ def check_sequence(site: Site, placements) -> list[Violation]:
 
 
 CHECKS = (check_positions, check_reachable, check_exclusions, check_puzzle_gap, check_calm, check_hostile_gap,
-          check_curve, check_density, check_nests, check_sequence)
+          check_curve, check_density, check_sequence)
 
 
 def validate(site: Site, placements) -> list[Violation]:

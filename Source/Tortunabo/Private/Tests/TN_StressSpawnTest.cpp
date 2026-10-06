@@ -1,4 +1,4 @@
-// Estrés: enemigos y cajas se crean repartidos en varios fotogramas con el presupuesto del generador de la playa (#79).
+// Estrés: los enemigos se crean repartidos en varios fotogramas con un presupuesto por fotograma (#79).
 // Se testea la regla de TN_StressScenarios.h que usa UTN_StressSubsystem::SpawnPending.
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Stress; Quit" -nullrhi -unattended
 
@@ -15,9 +15,8 @@ bool FTNStressSpawnBudgetTest::RunTest(const FString& Parameters)
 {
 	using namespace TNStress;
 
-	TestTrue(TEXT("Cangrejos, gaviotas, tanques y cajas: repartidos"),
-		IsSpreadGroup(EGroup::Crabs) && IsSpreadGroup(EGroup::Gulls) && IsSpreadGroup(EGroup::Tanks) && IsSpreadGroup(EGroup::Items));
-	TestFalse(TEXT("Lanzables: ya se reponen de 25 en 25"), IsSpreadGroup(EGroup::Throwables));
+	TestTrue(TEXT("Cangrejos, gaviotas y tanques: repartidos"),
+		IsSpreadGroup(EGroup::Crabs) && IsSpreadGroup(EGroup::Gulls) && IsSpreadGroup(EGroup::Tanks));
 	TestFalse(TEXT("Referencia: nada que crear"), IsSpreadGroup(EGroup::Baseline));
 
 	TestTrue(TEXT("El primero del fotograma siempre (aunque el presupuesto ya no dé)"), ShouldSpawnMore(10, 0, 50.0));

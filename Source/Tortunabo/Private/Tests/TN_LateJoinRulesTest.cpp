@@ -1,9 +1,8 @@
 // Reglas puras de entrada tardía y reconexión (TN_LateJoinRules.h, #345). Sin mundo ni actores. Headless:
-//   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Survival.LateJoin+Tortunabo.Net.Reconnect; Quit" -nullrhi -unattended
+//   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Net.LateJoin+Tortunabo.Net.Reconnect; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
 #include "Game/TN_LateJoinRules.h"
-#include "Game/TN_SurvivalRules.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -21,11 +20,11 @@ namespace
 	}
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNSurvivalLateJoinTest,
-	"Tortunabo.Survival.LateJoin",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNLateJoinSpectateTest,
+	"Tortunabo.Net.LateJoin",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
-bool FTNSurvivalLateJoinTest::RunTest(const FString& Parameters)
+bool FTNLateJoinSpectateTest::RunTest(const FString& Parameters)
 {
 	// Antes de empezar se entra a jugar como siempre.
 	const FTNJoinDecision Staging = TNLateJoinLogic::DecideJoin(MakeJoin(ETNLateJoinPolicy::SpectateUntilMatchEnds, false));
@@ -41,20 +40,6 @@ bool FTNSurvivalLateJoinTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Vuelve vivo: espectador"), Back.Role == ETNJoinRole::Spectate && Back.bSitsOut);
 	TestFalse(TEXT("Vuelve: conserva sus puntos"), Back.bResetRaceState);
 
-	// Con el que entra tarde fuera de los jugadores, la última viva gana; si contara como viva, la partida seguiría.
-	FTNSurvivalPlayer LastAlive;
-	LastAlive.Id = 1;
-	FTNSurvivalPlayer Fallen;
-	Fallen.Id = 2;
-	Fallen.bAlive = false;
-	Fallen.LevelDied = 2;
-	FTNSurvivalPlayer Joiner;
-	Joiner.Id = 3;
-	const TArray<FTNSurvivalPlayer> InMatch = { LastAlive, Fallen };
-	const FTNSurvivalDecision Outcome = TNSurvivalLogic::DecideLevelOutcome(InMatch, 2);
-	TestEqual(TEXT("Gana la última de las que empezaron"), Outcome.WinnerId, 1);
-	const FTNSurvivalDecision IfCounted = TNSurvivalLogic::DecideLevelOutcome({ LastAlive, Fallen, Joiner }, 2);
-	TestTrue(TEXT("Contarle le dejaría seguir y ganar"), IfCounted.Outcome == ETNSurvivalOutcome::Continue);
 	return true;
 }
 

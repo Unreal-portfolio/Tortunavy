@@ -6,7 +6,7 @@
 
 namespace TNPreloadDetail
 {
-	/** Las mismas rutas que TNBeachLoot::CatalogPath y TNRaceItems::CatalogPath, y que el material de la tienda. */
+	/** La ruta de DT_Items y la del material de la tienda. */
 	const TCHAR* const ItemCatalogPath = TEXT("/Game/Blueprints/Gameplay/Items/DT_Items.DT_Items");
 	const TCHAR* const PreviewMaterialPath = TEXT("/Game/UI/Shop/M_UI_Preview.M_UI_Preview");
 

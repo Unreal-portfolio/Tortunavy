@@ -8,9 +8,7 @@
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachEnemy.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/ProcMap/TN_ProcMapAmbientFX.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -66,8 +64,6 @@ namespace TNShellImpactFX
 		/** Dos emisores por timbre: [2 * timbre] la nube y [2 * timbre + 1] los trocitos. */
 		FSlot Slots[NumSounds * 2];
 		TNTurtleSurface::FNameCache NameCache;
-		TWeakObjectPtr<ATN_ProcMapGenerator> Generator;
-		double NextGeneratorLookup = 0.0;
 		/** Velocidad de la caja al empezar el fotograma (antes de la física de este fotograma) y si estaba en el agua. */
 		FVector PrevVelocity = FVector::ZeroVector;
 		bool bWasInWater = false;
@@ -409,16 +405,6 @@ namespace TNShellImpactFX
 		FVector Normal = InHit.ImpactNormal.IsNearlyZero() ? FVector(InHit.Normal) : FVector(InHit.ImpactNormal);
 		Normal = Normal.GetSafeNormal();
 
-		// El generador de la playa: terreno (arena), acantilado (roca), bosquecillo (madera) y taludes fuertes (roca).
-		if (InOther->IsA<ATN_BeachRaceGenerator>())
-		{
-			FString CompName = InOtherComp ? InOtherComp->GetName() : FString();
-			CompName.ToLowerInline();
-			if (CompName.Contains(TEXT("cliff"))) { return ETNShellImpactSound::Rock; }
-			if (CompName.Contains(TEXT("grove"))) { return ETNShellImpactSound::Wood; }
-			if (!Normal.IsNearlyZero() && FMath::Abs(Normal.Z) < 0.55f) { return ETNShellImpactSound::Rock; }
-			return ETNShellImpactSound::Sand;
-		}
 		// Castillos de arena y fortalezas.
 		if (NameHasAny(ClassName, { TEXT("fortress"), TEXT("sanddungeon") }))
 		{
@@ -435,15 +421,9 @@ namespace TNShellImpactFX
 			return ETNShellImpactSound::Junk;
 		}
 
-		// Fuera de la playa (mapa procedural, lobby): la misma superficie que los pasos y el polvo.
-		const double Now = InWorld ? InWorld->GetTimeSeconds() : 0.0;
-		if (!S.Generator.IsValid() && Now >= S.NextGeneratorLookup)
-		{
-			S.NextGeneratorLookup = Now + 2.0;
-			S.Generator = TNTurtleSurface::FindGenerator(InWorld);
-		}
+		// Lo demás: la misma superficie que los pasos y el polvo.
 		float Weights[TNTurtleSurface::Num];
-		TNTurtleSurface::Resolve(&InHit, FVector(InHit.ImpactPoint), S.Generator.Get(), &S.NameCache, Weights);
+		TNTurtleSurface::Resolve(&InHit, &S.NameCache, Weights);
 		switch (TNTurtleSurface::Dominant(Weights))
 		{
 		case TNTurtleSurface::Rock: return ETNShellImpactSound::Rock;

@@ -2,8 +2,6 @@
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Audio/TN_AmbienceDataAsset.h"
 #include "Audio/TN_AmbientSynthComponent.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
-#include "World/ProcMap/TN_PathStorm.h"
 #include "World/Beach/TN_BeachStorm.h"
 #include "Components/AudioComponent.h"
 #include "Sound/SoundBase.h"
@@ -66,74 +64,6 @@ namespace
 	float TNAmbienceSaturate(float X)
 	{
 		return FMath::Clamp(X, 0.f, 1.f);
-	}
-
-	/**
-	 * Pesos de bioma alrededor de MapPos: el punto (doble peso) y seis más en un anillo de radio Radius, sobre el campo
-	 * suave de pesos del layout (el mismo que usa la tormenta). Suman 1; sin datos, todo al genérico.
-	 */
-	void TNAmbienceBiomeWeights(const TNProcMap::FLayout& Layout, const FVector2D& MapPos, double Radius, float OutW[TNAmbSlots])
-	{
-		double Sample[TNProcMap::NumBiomes];
-		double Acc[TNProcMap::NumBiomes] = {};
-		double Total = 0.0;
-		for (int32 k = 0; k <= 6; ++k)
-		{
-			const double Angle = TNProcMap::TwoPi * static_cast<double>(k) / 6.0;
-			const FVector2D Point = k == 6 ? MapPos : MapPos + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * Radius;
-			const double Weight = k == 6 ? 2.0 : 1.0;
-			Layout.BiomeWeightsAt(Point, Sample);
-			for (int32 b = 0; b < TNProcMap::NumBiomes; ++b)
-			{
-				Acc[b] += Sample[b] * Weight;
-				Total += Sample[b] * Weight;
-			}
-		}
-		for (int32 s = 0; s < TNAmbSlots; ++s) { OutW[s] = 0.f; }
-		if (Total <= 1e-6)
-		{
-			OutW[TNAmbGenericSlot] = 1.f;
-			return;
-		}
-		for (int32 b = 0; b < TNProcMap::NumBiomes; ++b) { OutW[b] = static_cast<float>(Acc[b] / Total); }
-	}
-
-	/** Agua alrededor (terreno bajo el nivel del mar) en anillos de 15, 40 y 80 m; los cercanos pesan más. */
-	float TNAmbienceWaterAround(const ATN_ProcMapGenerator& Gen, const FTransform& MapXf, const FVector& View)
-	{
-		static const float Radii[3] = { 1500.f, 4000.f, 8000.f };
-		static const float RingWeight[3] = { 1.f, 0.7f, 0.4f };
-		float Wet = 0.f;
-		float Sum = 0.f;
-		for (int32 r = 0; r < 3; ++r)
-		{
-			for (int32 k = 0; k < 8; ++k)
-			{
-				const double Angle = TNProcMap::TwoPi * (static_cast<double>(k) + 0.5 * r) / 8.0;
-				const FVector Probe = View + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.0) * Radii[r];
-				const float GroundZ = Gen.GetTerrainHeightAt(Probe);
-				const double MapZ = MapXf.InverseTransformPosition(FVector(Probe.X, Probe.Y, GroundZ)).Z;
-				if (MapZ < TNProcMap::SeaLevel - 25.0) { Wet += RingWeight[r]; }
-				Sum += RingWeight[r];
-			}
-		}
-		return Sum > 0.f ? Wet / Sum : 0.f;
-	}
-
-	/** Cercanía al río (0..1): se oye desde ~30 m de su orilla. */
-	float TNAmbienceRiverNear(const TNProcMap::FLayout& Layout, const FVector2D& MapPos)
-	{
-		const TArray<FVector2D>& River = Layout.River;
-		if (River.Num() < 2) { return 0.f; }
-		double Best = TNumericLimits<double>::Max();
-		for (int32 i = 0; i + 1 < River.Num(); ++i)
-		{
-			double T = 0.0;
-			const double Dist = TNProcMap::DistPointSegment(MapPos, River[i], River[i + 1], T);
-			const double HalfWidth = 0.5 * (Layout.RiverWidth.IsValidIndex(i) ? Layout.RiverWidth[i] : 800.0);
-			Best = FMath::Min(Best, Dist - HalfWidth);
-		}
-		return TNAmbienceSaturate(1.f - static_cast<float>(Best) / 3000.f);
 	}
 
 	/**
@@ -386,80 +316,31 @@ void UTN_AmbientSoundscapeComponent::UpdateMix(float DeltaTime)
 	FVector View = FVector::ZeroVector;
 	if (!World || !AmbientSynth || !GetViewLocation(View)) { return; }
 
-	// Generador y tormenta: se buscan cada 2 s mientras falten (el mapa puede llegar después que el jugador).
+	// La tormenta de bañistas: se busca cada 2 s mientras falte (puede llegar después que el jugador).
 	LookupTimer -= DeltaTime;
-	if ((!Generator.IsValid() || !Storm.IsValid()) && LookupTimer <= 0.f)
+	if (!BeachStorm.IsValid() && LookupTimer <= 0.f)
 	{
 		LookupTimer = 2.f;
-		if (!Generator.IsValid())
-		{
-			for (TActorIterator<ATN_ProcMapGenerator> It(World); It; ++It) { Generator = *It; break; }
-		}
-		if (!Storm.IsValid())
-		{
-			for (TActorIterator<ATN_PathStorm> It(World); It; ++It) { Storm = *It; break; }
-		}
-		// La de la carrera en la playa (no hay generador ahí): se busca sola, la crea el GameMode en cada ronda.
-		if (!BeachStorm.IsValid() && !Generator.IsValid())
-		{
-			BeachStorm = ATN_BeachStorm::FindStorm(World);
-		}
+		BeachStorm = ATN_BeachStorm::FindStorm(World);
 	}
-	const ATN_ProcMapGenerator* Gen = Generator.Get();
-	const bool bMap = Gen && Gen->IsMapReady() && Gen->GetLayout().bValid;
 
 	float BiomeW[TNAmbSlots] = {};
 	FTNAmbienceContext Ctx;
-	if (bMap)
-	{
-		const TNProcMap::FLayout& Layout = Gen->GetLayout();
-		const FTransform MapXf = Gen->GetActorTransform();
-		const FVector MapView = MapXf.InverseTransformPosition(View);
-		const FVector2D MapPos(MapView.X, MapView.Y);
-		const double MapScale = FMath::Max(0.01, static_cast<double>(MapXf.GetScale3D().X));
-		TNAmbienceBiomeWeights(Layout, MapPos, static_cast<double>(BlendRadius) / MapScale, BiomeW);
-
-		const float GroundWorldZ = Gen->GetTerrainHeightAt(View);
-		const double GroundMapZ = MapXf.InverseTransformPosition(FVector(View.X, View.Y, GroundWorldZ)).Z;
-		Ctx.HeightAboveSea = static_cast<float>(MapView.Z - TNProcMap::SeaLevel);
-		Ctx.HeightAboveGround = static_cast<float>(MapView.Z - GroundMapZ);
-		Ctx.bUnderwater = MapView.Z < TNProcMap::SeaLevel - 40.0 && GroundMapZ < MapView.Z;
-		Ctx.WaterNear = TNAmbienceWaterAround(*Gen, MapXf, View);
-		// Mar abierto al norte de la costa: rompientes grandes desde ~120 m antes de la orilla.
-		Ctx.SeaNear = TNAmbienceSaturate(1.f - static_cast<float>(Layout.CoastY(MapPos.X) - MapPos.Y) / 12000.f);
-		Ctx.RiverNear = TNAmbienceRiverNear(Layout, MapPos);
-
-		// Tormenta: dentro si la cámara va por detrás del frente (el mismo criterio que la cuenta atrás, sin su margen
-		// de juego); cerca, en los 70 m por delante del frente.
-		if (const ATN_PathStorm* StormActor = Storm.Get())
-		{
-			if (StormActor->IsStormActive())
-			{
-				const float Progress = Gen->GetPathProgress(View);
-				const float Front = StormActor->GetFrontProgress();
-				Ctx.StormInside = Progress < Front - 400.f ? 1.f : 0.f;
-				Ctx.StormNear = TNAmbienceSaturate(1.f - (Progress - Front) / 7000.f);
-			}
-		}
-	}
-	else if (bPlayWithoutGenerator)
+	if (bPlayWithoutGenerator)
 	{
 		BiomeW[TNAmbGenericSlot] = 1.f;
 	}
-	if (!bMap)
+	// La tormenta de bañistas (viento, silbido y truenos; es su único ruido): dentro si la cámara va por detrás del frente
+	// (con un margen de 4 m) y cerca en los 70 m por delante. El frente y su eje salen del propio actor, con el reloj del
+	// servidor, en cualquier máquina.
+	if (const ATN_BeachStorm* BeachStormActor = BeachStorm.Get())
 	{
-		// Sin mapa procedural, la tormenta de bañistas de la playa suena como la del camino (mismo viento, silbido y truenos;
-		// es su único ruido): dentro si la cámara va por detrás del frente (con el mismo margen de 4 m) y cerca en los 70 m
-		// por delante. El frente y su eje salen del propio actor, con el reloj del servidor, en cualquier máquina.
-		if (const ATN_BeachStorm* BeachStormActor = BeachStorm.Get())
+		if (BeachStormActor->IsStormActive())
 		{
-			if (BeachStormActor->IsStormActive())
-			{
-				const float Ahead = static_cast<float>(BeachStormActor->GetActorTransform().InverseTransformPositionNoScale(View).X)
-					- BeachStormActor->GetFrontDistance();
-				Ctx.StormInside = Ahead < -400.f ? 1.f : 0.f;
-				Ctx.StormNear = TNAmbienceSaturate(1.f - Ahead / 7000.f);
-			}
+			const float Ahead = static_cast<float>(BeachStormActor->GetActorTransform().InverseTransformPositionNoScale(View).X)
+				- BeachStormActor->GetFrontDistance();
+			Ctx.StormInside = Ahead < -400.f ? 1.f : 0.f;
+			Ctx.StormNear = TNAmbienceSaturate(1.f - Ahead / 7000.f);
 		}
 	}
 
@@ -494,13 +375,12 @@ void UTN_AmbientSoundscapeComponent::UpdateMix(float DeltaTime)
 
 	// Contexto de la cámara sobre la mezcla.
 	const float Night = TNAmbienceSaturate(NightAmount);
-	const float Exposure = bMap
-		? TNAmbienceSaturate((Ctx.HeightAboveSea - 1500.f) / 5000.f) * 0.7f + TNAmbienceSaturate((Ctx.HeightAboveGround - 500.f) / 2500.f) * 0.6f
-		: 0.f;
+	const float Exposure = TNAmbienceSaturate((Ctx.HeightAboveSea - 1500.f) / 5000.f) * 0.7f
+		+ TNAmbienceSaturate((Ctx.HeightAboveGround - 500.f) / 2500.f) * 0.6f;
 	const float StormIn = Ctx.StormInside;
 	const float StormNear = Ctx.StormNear;
 	const float Enc = Ctx.Enclosure;
-	const float HighAbove = bMap ? 1.f - 0.6f * TNAmbienceSaturate((Ctx.HeightAboveSea - 800.f) / 6000.f) : 1.f;
+	const float HighAbove = 1.f - 0.6f * TNAmbienceSaturate((Ctx.HeightAboveSea - 800.f) / 6000.f);
 	const float Fauna = (1.f - 0.85f * StormIn) * (1.f - 0.35f * StormNear) * (1.f - 0.85f * Enc);
 
 	FTNAmbientMix Final = Mix;
@@ -591,7 +471,6 @@ void UTN_AmbientSoundscapeComponent::UpdateMix(float DeltaTime)
 	LastHeight = Ctx.HeightAboveSea;
 	LastStorm = Final.Storm;
 	LastEnclosure = Enc;
-	bLastHasMap = bMap;
 	if (GTNAmbienceDebug != 0 && GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(static_cast<uint64>(GetUniqueID()) + 0x7A3B10000ull, FMath::Max(0.3f, UpdateInterval + 0.1f),
@@ -605,7 +484,7 @@ FString UTN_AmbientSoundscapeComponent::GetDebugString() const
 		TEXT("selva"), TEXT("playa"), TEXT("desierto"), TEXT("volcán"), TEXT("agua"), TEXT("roca"), TEXT("manglar"), TEXT("humana"), TEXT("genérico") };
 	static const TCHAR* LayerNames[TNAmbLayers] = {
 		TEXT("viento"), TEXT("oleaje"), TEXT("agua"), TEXT("aves"), TEXT("cigarras"), TEXT("grillos"), TEXT("ranas"), TEXT("lava"), TEXT("campanas") };
-	FString Out = bLastHasMap ? TEXT("Ambiente (mapa):") : TEXT("Ambiente (sin mapa):");
+	FString Out = TEXT("Ambiente:");
 	for (int32 s = 0; s < TNAmbSlots; ++s)
 	{
 		if (LastBiomeW[s] >= 0.01f) { Out += FString::Printf(TEXT(" %s %.0f%%"), SlotNames[s], 100.f * LastBiomeW[s]); }

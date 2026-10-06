@@ -11,15 +11,13 @@
 //   TN.Beach.Storm.Info                  frente, velocidad, a qué velocidad va y distancia a la última tortuga.
 //   TN.Beach.Storm.Here [jugador] [m]    pone el frente 4 m (o m) por delante de tu tortuga o de la del jugador N (índice en
 //                                        PlayerArray): la deja dentro y le llega la patada.
-//   TN.Beach.Lizard <huidizo|generoso|mordedor>  un lagarto de ese carácter 22 m delante de ti.
 //   TN.Beach.StunNearest [s]             marea al enemigo más cercano a tu tortuga (3 s por defecto; los quads no).
 //   TN.Beach.Enemy.Stats                 enemigos del mundo, cuántos van despacio por estar lejos y cuántos se apartan.
 //   TN.Beach.Enemy.Debug 1               (CVar) radios, oído, recorridos y estados en el servidor.
-// Para crear enemigos sueltos: TN.Beach.Place GiantCrab (SeaUrchin, Lizard, QuadLane, GullZone), del generador.
+// Para crear enemigos sueltos: TN.Beach.Place GiantCrab (SeaUrchin, QuadLane, GullZone).
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include "World/Beach/TN_BeachGullZone.h"
-#include "World/Beach/TN_BeachLizard.h"
 #include "World/Beach/TN_BeachQuadLane.h"
 #include "World/Beach/TN_BeachStorm.h"
 #include "CollisionQueryParams.h"
@@ -238,51 +236,6 @@ namespace TNBeachEnemyConsole
 		Storm->DebugSetFront(static_cast<float>(Local.X) + Inside);
 	}
 
-	void LizardHere(const TArray<FString>& Args, UWorld* InWorld)
-	{
-		UWorld* World = AuthorityWorld(InWorld);
-		const APawn* Pawn = LocalPawn(InWorld);
-		if (!World || !Pawn)
-		{
-			return;
-		}
-		ETNBeachLizardTemper Temper = ETNBeachLizardTemper::Shy;
-		const FString Kind = Args.Num() > 0 ? Args[0].ToLower() : FString(TEXT("huidizo"));
-		if (Kind.StartsWith(TEXT("gen")))
-		{
-			Temper = ETNBeachLizardTemper::Generous;
-		}
-		else if (Kind.StartsWith(TEXT("mor")) || Kind.StartsWith(TEXT("bit")))
-		{
-			Temper = ETNBeachLizardTemper::Biter;
-		}
-		// 22 m delante (lo bastante lejos para que no huya ni muerda al aparecer), apoyado en el suelo.
-		const FRotator Facing(0.f, Pawn->GetActorRotation().Yaw, 0.f);
-		FVector At = Pawn->GetActorLocation() + Facing.Vector() * 2200.0;
-		FHitResult Hit;
-		FCollisionQueryParams Params(SCENE_QUERY_STAT(TNBeachLizardHere), false);
-		if (World->LineTraceSingleByObjectType(Hit, At + FVector(0.0, 0.0, 3000.0), At - FVector(0.0, 0.0, 6000.0), FCollisionObjectQueryParams(ECC_WorldStatic), Params))
-		{
-			At.Z = Hit.ImpactPoint.Z;
-		}
-		else
-		{
-			At.Z -= 90.0;
-		}
-		FTNBeachElementSpec LizardSpec;
-		LizardSpec.Element = ETNBeachElement::Lizard;
-		LizardSpec.Seed = ATN_BeachLizard::FindSeedForTemper(Temper, FMath::Rand());
-		LizardSpec.SizeScale = 1.f;
-		// Mirando hacia la tortuga.
-		ATN_BeachElement* Spawned = ATN_BeachElement::SpawnElement(World, FTransform(FRotator(0.f, Facing.Yaw + 180.f, 0.f), At), LizardSpec);
-		if (Spawned)
-		{
-			Spawned->Tags.AddUnique(FName(TEXT("TNBeachDebug")));
-		}
-		UE_LOG(LogTortunabo, Log, TEXT("[Playa] TN.Beach.Lizard: lagarto %s (semilla %d) %s."), ATN_BeachLizard::TemperName(Temper), LizardSpec.Seed,
-			Spawned ? TEXT("delante") : TEXT("no se ha podido crear"));
-	}
-
 	void StunNearest(const TArray<FString>& Args, UWorld* InWorld)
 	{
 		UWorld* World = AuthorityWorld(InWorld);
@@ -364,10 +317,6 @@ namespace TNBeachEnemyConsole
 	static FAutoConsoleCommandWithWorldAndArgs CmdBeachStormHere(TEXT("TN.Beach.Storm.Here"),
 		TEXT("Pone el frente de la tormenta por delante de una tortuga para ver la patada: TN.Beach.Storm.Here [jugador = la tuya] [metros = 4] (en el anfitrión)."),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&StormHere), ECVF_Cheat);
-
-	static FAutoConsoleCommandWithWorldAndArgs CmdBeachLizard(TEXT("TN.Beach.Lizard"),
-		TEXT("Un lagarto delante de tu tortuga: TN.Beach.Lizard <huidizo|generoso|mordedor> (en el anfitrión; TN.Beach.Place clear lo quita)."),
-		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&LizardHere), ECVF_Cheat);
 
 	static FAutoConsoleCommandWithWorldAndArgs CmdBeachStunNearest(TEXT("TN.Beach.StunNearest"),
 		TEXT("Marea al enemigo de la playa más cercano a tu tortuga: TN.Beach.StunNearest [segundos=3] (en el anfitrión; los quads no)."),

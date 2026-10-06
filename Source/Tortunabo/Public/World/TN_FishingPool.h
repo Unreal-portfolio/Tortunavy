@@ -10,8 +10,8 @@ class UWorld;
 /**
  * Charco de pesca (GDD oficial, hoja de enemigos: «Charco de Pesca», aliado, punto de interacción estático e infinito, «se
  * puede pescar para conseguir objetos»). Es un rebuscable (ATN_ProcSearchSpot) repetible con las reglas del charco:
- *  - Mantener E TNCoopItemTuning::FishSeconds pesca y siempre sale un objeto, de la tabla del modo (TNCoopItems::RollModeLoot:
- *    la del coop; en la carrera de la playa, la de la carrera). Lo decide el servidor.
+ *  - Mantener E TNCoopItemTuning::FishSeconds pesca y siempre sale un objeto, de la tabla del coop (TNCoopItems::RollLoot).
+ *    Lo decide el servidor.
  *  - Regla fija de reutilización: cadencia por charco. Tras cada captura, TNCoopItemTuning::FishCooldownSeconds de respiro
  *    para todo el grupo (sin aviso ni anillo mientras dura) y como mucho FishMaxLootLying objetos sin recoger a la vez.
  *  - Anillo de interacción, aro de progreso, sonido y «¡puf!» del rebuscable; la malla (agua, orilla, piedras y una caña

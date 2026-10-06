@@ -263,7 +263,7 @@ void ATN_ScorePickup::BeginPlay()
 	if (HasAuthority())
 	{
 		CollectSphere->OnComponentBeginOverlap.AddDynamic(this, &ATN_ScorePickup::OnSphereOverlap);
-		// Quien ya estaba dentro al aparecer (TNShells, reaparición) no da evento de entrada: se mira en el siguiente
+		// Quien ya estaba dentro al aparecer (reaparición) no da evento de entrada: se mira en el siguiente
 		// fotograma.
 		GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
 		{

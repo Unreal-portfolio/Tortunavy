@@ -97,7 +97,7 @@ void ATN_StormVolume::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// AddUnique: BP_StormVolume y la instancia de LVL_Run traen el enlace serializado de cuando se hacía en el
+	// AddUnique: BP_StormVolume y sus instancias en los niveles traen el enlace serializado de cuando se hacía en el
 	// constructor; un AddDynamic lo duplicaba (ensure de ScriptDelegates.h y cada overlap contado dos veces).
 	TriggerBox->OnComponentBeginOverlap.AddUniqueDynamic(this, &ATN_StormVolume::OnBoxBeginOverlap);
 	TriggerBox->OnComponentEndOverlap.AddUniqueDynamic(this, &ATN_StormVolume::OnBoxEndOverlap);

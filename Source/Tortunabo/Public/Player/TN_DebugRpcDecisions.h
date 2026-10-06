@@ -4,7 +4,7 @@
 #include "Engine/EngineBaseTypes.h"
 
 /**
- * Lógica pura de los RPC de pruebas (TNStorm, TNBooth): decide si el servidor
+ * Lógica pura de los RPC de pruebas (TNBooth): decide si el servidor
  * atiende la llamada. Sin UWorld ni controlador, para que el test cubra la regla
  * que usa AMP_GamePlayerController en producción.
  *

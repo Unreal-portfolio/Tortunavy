@@ -1,5 +1,4 @@
 #include "World/Beach/TN_BeachSeaUrchin.h"
-#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
 #include "World/Beach/TN_BeachStun.h"
@@ -105,8 +104,8 @@ void ATN_BeachSeaUrchin::RollToward(const FVector& Goal, float MoveSpeed, float 
 	}
 	const FVector Dir = Flat / Dist;
 	FVector Next = SimLoc + Dir * FMath::Min(Dist, static_cast<double>(MoveSpeed * DeltaSeconds));
-	// Sin meterse en otro enemigo ni en lo grande del reparto (lo rodea rodando).
-	Next = ResolveStep(Next, GetBodyRadius(), true);
+	// Sin meterse en otro enemigo.
+	Next = ResolveStep(Next, GetBodyRadius());
 	FVector FromHome = Next - Home;
 	FromHome.Z = 0.0;
 	if (FromHome.Size() > LeashRadius)
@@ -129,10 +128,6 @@ void ATN_BeachSeaUrchin::RollToward(const FVector& Goal, float MoveSpeed, float 
 
 bool ATN_BeachSeaUrchin::CheckPricks()
 {
-	if (!IsRaceLive(this))
-	{
-		return false;
-	}
 	TArray<ATortugaCharacter*> Turtles;
 	GatherTurtles(this, Turtles);
 	const FVector Center = SimLoc + FVector(0.0, 0.0, RollRadius);
@@ -152,12 +147,8 @@ bool ATN_BeachSeaUrchin::CheckPricks()
 		Away.Z = 0.0;
 		Away = Away.IsNearlyZero() ? FRotator(0.f, SimYaw, 0.f).Vector() : Away.GetSafeNormal();
 		// Pinchazo: derribo con ragdoll y mareo, despedida hacia fuera y dando una vuelta hacia atrás.
-		// En Supervivencia, el pinchazo elimina (#732).
 		const FVector Tumble = FVector::CrossProduct(FVector::UpVector, Away) * TNBeachUrchin::PushSpin;
-		if (!TNSurvivalHits::KillInSurvival(Turtle, this))
-		{
-			KnockDownTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinKnockSeconds, Away * TNBeachUrchin::PushSpeed + FVector(0.0, 0.0, TNBeachUrchin::PushUp), Tumble);
-		}
+		KnockDownTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinKnockSeconds, Away * TNBeachUrchin::PushSpeed + FVector(0.0, 0.0, TNBeachUrchin::PushUp), Tumble);
 		IgnoreTurtle(Turtle, UTN_CombatTuning::Get().SeaUrchinIgnoreSeconds);
 		MulticastPrick(Turtle, (At + Center) * 0.5);
 		ServerSetState(TNBeachUrchin::ToByte(TNBeachUrchin::EState::Recoil), At);
@@ -186,37 +177,25 @@ void ATN_BeachSeaUrchin::ServerTick(float DeltaSeconds)
 		return;
 	}
 	const EState State = static_cast<EState>(GetMoverState());
-	const bool bLive = IsRaceLive(this);
 	switch (State)
 	{
 	case EState::Idle:
 	case EState::Wander:
 	{
-		if (bLive)
+		if (ATortugaCharacter* Seen = FindTarget(SimLoc, DetectRadius, Home, LeashRadius * 1.15f))
 		{
-			if (ATortugaCharacter* Seen = FindTarget(SimLoc, DetectRadius, Home, LeashRadius * 1.15f))
-			{
-				Target = Seen;
-				ServerSetState(ToByte(EState::Roll));
-				break;
-			}
+			Target = Seen;
+			ServerSetState(ToByte(EState::Roll));
+			break;
 		}
 		if (State == EState::Idle)
 		{
 			if (StateLeft <= 0.f)
 			{
-				// Paseo a otro punto de su zona (nunca dentro de lo grande del reparto).
-				for (int32 Try = 0; Try < 6; ++Try)
-				{
-					const float Angle = ServerRng.FRandRange(0.f, 2.f * PI);
-					const float Dist = GetFootprintRadius() * TNBeachUrchin::WanderReach * FMath::Sqrt(ServerRng.FRandRange(0.2f, 1.f));
-					WanderGoal = Home + FVector(FMath::Cos(Angle) * Dist, FMath::Sin(Angle) * Dist, 0.f);
-					if (!IsInsideObstacle(WanderGoal, GetBodyRadius()))
-					{
-						break;
-					}
-					WanderGoal = Home;
-				}
+				// Paseo a otro punto de su zona.
+				const float Angle = ServerRng.FRandRange(0.f, 2.f * PI);
+				const float Dist = GetFootprintRadius() * TNBeachUrchin::WanderReach * FMath::Sqrt(ServerRng.FRandRange(0.2f, 1.f));
+				WanderGoal = Home + FVector(FMath::Cos(Angle) * Dist, FMath::Sin(Angle) * Dist, 0.f);
 				ServerSetState(ToByte(EState::Wander), WanderGoal);
 			}
 		}
@@ -234,9 +213,9 @@ void ATN_BeachSeaUrchin::ServerTick(float DeltaSeconds)
 	case EState::Roll:
 	{
 		ATortugaCharacter* Victim = Target.Get();
-		if (!bLive || !IsTargetable(Victim) || FVector::Dist2D(Victim->GetActorLocation(), Home) > LeashRadius * 1.15f)
+		if (!IsTargetable(Victim) || FVector::Dist2D(Victim->GetActorLocation(), Home) > LeashRadius * 1.15f)
 		{
-			Target = bLive ? FindTarget(SimLoc, DetectRadius, Home, LeashRadius * 1.15f) : nullptr;
+			Target = FindTarget(SimLoc, DetectRadius, Home, LeashRadius * 1.15f);
 			if (!Target.IsValid())
 			{
 				StateLeft = ServerRng.FRandRange(TNBeachUrchin::RestMin, TNBeachUrchin::RestMax);

@@ -147,7 +147,6 @@ namespace TNMapPlacementsDetail
 	TNMapPlacements::ESpawn LootSpawn(const FString& Kind, ETNBeachElement& OutElement)
 	{
 		using TNMapPlacements::ESpawn;
-		if (Kind == TEXT("ItemBox")) { return ESpawn::ItemBox; }
 		if (Kind == TEXT("SearchSpot")) { return ESpawn::SearchSpot; }
 		if (Kind == TEXT("ScoreShell")) { return ESpawn::ScoreShell; }
 		if (Kind == TEXT("FishingPool")) { return ESpawn::FishingPool; }
@@ -179,7 +178,6 @@ TNMapPlacements::ESpawn TNMapPlacements::SpawnOf(const FString& Category, const 
 {
 	using namespace TNMapPlacementsDetail;
 	if (Category == TEXT("puzzle")) { return PuzzleSpawn(Kind); }
-	if (Category == TEXT("nest")) { return Kind == TEXT("EggNest") ? ESpawn::EggNest : ESpawn::Unsupported; }
 	if (Category == TEXT("loot")) { return LootSpawn(Kind, OutElement); }
 	if (Category == TEXT("vegetation"))
 	{
@@ -214,9 +212,7 @@ const TCHAR* TNMapPlacements::SpawnName(ESpawn Spawn)
 	case ESpawn::BeachElement:   return TEXT("BeachElement");
 	case ESpawn::Decor:          return TEXT("Decor");
 	case ESpawn::Vegetation:     return TEXT("Vegetation");
-	case ESpawn::EggNest:        return TEXT("EggNest");
 	case ESpawn::Geyser:         return TEXT("Geyser");
-	case ESpawn::ItemBox:        return TEXT("ItemBox");
 	case ESpawn::SearchSpot:     return TEXT("SearchSpot");
 	case ESpawn::ScoreShell:     return TEXT("ScoreShell");
 	case ESpawn::FishingPool:    return TEXT("FishingPool");
@@ -300,24 +296,4 @@ FVector TNMapPlacements::PointAlong(const FPlacement& P, double Alpha, double& O
 		Remaining -= Segment;
 	}
 	return P.Path.Last();
-}
-
-double TNMapPlacements::AdvanceOf(const FParseResult& Parsed, const FPlacement& P)
-{
-	if (P.ProgressM >= 0.0)
-	{
-		return P.ProgressM;
-	}
-	const FPlacement* Nearest = nullptr;
-	double BestDistSq = TNumericLimits<double>::Max();
-	for (const FPlacement& Other : Parsed.Placements)
-	{
-		const double DistSq = FVector::DistSquared2D(Other.Location, P.Location);
-		if (Other.ProgressM >= 0.0 && DistSq < BestDistSq)
-		{
-			BestDistSq = DistSq;
-			Nearest = &Other;
-		}
-	}
-	return Nearest ? Nearest->ProgressM : P.S;
 }

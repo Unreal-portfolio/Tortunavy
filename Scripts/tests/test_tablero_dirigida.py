@@ -261,14 +261,14 @@ def test_coger_sigue_rechazando_bloqueantes_abiertas(monkeypatch, cache):
     gh = GhFalso(_issue(Status="Ready", bloqueantes=[(40, "OPEN"), (41, "CLOSED")]))
     _usar(monkeypatch, gh)
     with pytest.raises(base.ErrorTablero, match="depende de #40, que siguen abiertas"):
-        tablero.cmd_coger(_args(numero=42, forzar=False, retomar=False, rama=None))
+        tablero.cmd_coger(_args(numero=42, forzar=False, rama=None))
     assert gh.ediciones == [] and len(gh.llamadas) == 1
 
 
 def test_estado_ready_con_bloqueantes_abiertas_va_a_bloqueada(monkeypatch, cache, capsys):
     gh = GhFalso(_issue(Status="Backlog", bloqueantes=[(40, "OPEN")]))
     _usar(monkeypatch, gh)
-    tablero.cmd_estado(_args(numero=42, estado="Ready", retomar=False))
+    tablero.cmd_estado(_args(numero=42, estado="Ready"))
     assert gh.ediciones == [("PVTI_42", "F_Status", "O_Bloqueada")]
     assert "Bloqueada" in capsys.readouterr().out
 

@@ -14,7 +14,7 @@
 #include "TimerManager.h"
 #include "World/Beach/TN_RaceBurstFX.h"
 #include "World/Beach/TN_RaceItemSynth.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_ItemRuntime.h"
 
 namespace TNFlipperSlapDetail
 {
@@ -82,14 +82,14 @@ bool UTN_FlipperSlapComponent::CanSlap(const ATortugaCharacter* Turtle)
 	{
 		return false;
 	}
-	// Lo demás que impide actuar (la sujeta un enemigo o un gusano, la recolocan, vuela en el pelícano, lleva o la llevan, la
-	// carrera parada) es lo mismo que para usar un objeto.
-	return TNRaceItems::CanUseNow(Turtle);
+	// Lo demás que impide actuar (la sujeta un enemigo o un gusano, la recolocan, lleva o la llevan) es lo mismo que para
+	// usar un objeto.
+	return TNItemRuntime::CanUseNow(Turtle);
 }
 
 bool UTN_FlipperSlapComponent::CanBeSlapped(const ATortugaCharacter* Turtle)
 {
-	if (!IsValid(Turtle) || Turtle->IsDead() || Turtle->IsKnockedDown() || Turtle->IsInShell() || !TNRaceItems::CanBeHurt(Turtle))
+	if (!IsValid(Turtle) || Turtle->IsDead() || Turtle->IsKnockedDown() || Turtle->IsInShell() || !TNItemRuntime::CanBeHurt(Turtle))
 	{
 		return false;
 	}

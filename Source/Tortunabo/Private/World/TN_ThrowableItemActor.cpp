@@ -1,7 +1,6 @@
 ﻿#include "World/TN_ThrowableItemActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/TN_Log.h"
-#include "Game/TN_SurvivalHits.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TortugaCharacter.h"
@@ -364,12 +363,6 @@ void ATN_ThrowableItemActor::OnMeshHit(UPrimitiveComponent* HitComponent, AActor
 			// Antes que el derribo: la sacudida y la vibración van con la velocidad del impacto, no con el empujón (#350).
 			HitPlayer->NotifyHitFeedback(TNHitFeedback::StrengthFromImpulse(CurrentSpeed));
 			// En Supervivencia, la bola elimina (#735).
-			if (TNSurvivalHits::KillInSurvival(HitPlayer, this))
-			{
-				UE_LOG(LogTortunabo, Log, TEXT("[ThrowableItem] Hit %s at %.0f cm/s → eliminada (Supervivencia)"),
-					*GetNameSafe(HitPlayer), CurrentSpeed);
-				return;
-			}
 			HitPlayer->ApplyKnockdown(KnockbackDuration);
 			UE_LOG(LogTortunabo, Log, TEXT("[ThrowableItem] Hit %s at %.0f cm/s → KNOCKDOWN (threshold=%.0f)"),
 				*GetNameSafe(HitPlayer), CurrentSpeed, MinKnockdownSpeed);

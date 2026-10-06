@@ -21,7 +21,7 @@ enum class ETNRoomMenuPage : uint8
 {
 	/** Sin pantalla: solo el aviso de arriba, si hay (el menú del Blueprint se ve y se pulsa). */
 	Closed,
-	/** Crear partida: modo, pública o privada, plazas, nombre y código. */
+	/** Crear partida: pública o privada, plazas, nombre y código. */
 	Create,
 	/** Unirse: con un código o de la lista de salas públicas. */
 	Join,
@@ -116,8 +116,8 @@ private:
 
 /**
  * @brief Pantallas de salas del menú principal (Docs/Salas.md), montadas en código con el estilo del menú de pausa: «Crear
- *        partida» (modo, pública o privada, 4, 6 u 8 plazas, nombre al azar con «otro nombre» y el código de la privada, que
- *        se puede copiar) y «Unirse» (código de sala y lista de salas públicas con su nombre en tu idioma, modo, «3/4» y si
+ *        partida» (pública o privada, 4, 6 u 8 plazas, nombre al azar con «otro nombre» y el código de la privada, que
+ *        se puede copiar) y «Unirse» (código de sala y lista de salas públicas con su nombre en tu idioma, anfitrión, «3/4» y si
  *        está cerrada; actualizar y entrar).
  *
  * La crea y la enseña UMP_MainMenuWidget (sus botones «Crear partida» y «Unirse» abren cada pantalla y, mientras está
@@ -178,13 +178,6 @@ private:
 	TObjectPtr<UTextBlock> ToastText;
 
 	// Crear partida
-	UPROPERTY(Transient)
-	TObjectPtr<UTN_PauseRow> ModeRow;
-
-	/** Todos contra Todos (#651): arena, solo con el modo elegido. */
-	UPROPERTY(Transient)
-	TObjectPtr<UTN_PauseRow> TctArenaRow;
-
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_PauseRow> VisibilityRow;
 

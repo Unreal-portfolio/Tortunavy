@@ -21,10 +21,7 @@
 #include "World/TN_ThrowableItemActor.h"
 #include "World/TN_ConchPickup.h"
 #include "World/TN_InkProjectile.h"
-#include "Game/TN_TctItems.h"
 #include "Game/TN_CoopItems.h"
-#include "World/Beach/TN_RaceItems.h"
-#include "Game/TN_BeachRaceGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Game/TN_RunGameMode.h"
 #include "GameFramework/PlayerController.h"
@@ -257,14 +254,6 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 		return;
 	}
 
-	// En la carrera, los objetos de DT_Items siguen la regla de los de carrera (que ya la aplica TNRaceItems::ServerUse
-	// con su «nop»): nada desde el pelícano, el pico de la gaviota, el gusano, el aturdimiento o con la carrera parada.
-	if (EquippedItem.UseType != ETN_ItemUseType::RaceItem && GetWorld()
-		&& GetWorld()->GetGameState<ATN_BeachRaceGameState>() && !TNRaceItems::CanUseNow(this))
-	{
-		return;
-	}
-
 	if (EquippedItem.UseType == ETN_ItemUseType::SelfStaminaBoost)
 	{
 		HandleUseSelfStaminaBoost(EquippedItem);
@@ -311,20 +300,6 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 	if (EquippedItem.UseType == ETN_ItemUseType::Totem)
 	{
 		HandleUseTotem(EquippedItem);
-		return;
-	}
-
-	// ── Objetos de la carrera de la playa (turbo, pelícano taxi, protector solar...): World/Beach/TN_RaceItems.h ──
-	if (EquippedItem.UseType == ETN_ItemUseType::RaceItem)
-	{
-		TNRaceItems::ServerUse(this, EquippedItem);
-		return;
-	}
-
-	// ── Objetos de combate de Todos contra Todos (pistola de noqueo, garfio, pala...): Game/TN_TctItems.h ──
-	if (EquippedItem.UseType == ETN_ItemUseType::TctItem)
-	{
-		TNTctItems::ServerUse(this, EquippedItem);
 		return;
 	}
 
@@ -581,8 +556,6 @@ void ATortugaCharacter::HandleUseTotem(const FTN_InventoryItem& EquippedItem)
 void ATortugaCharacter::ServerDropEquippedItem_Implementation()
 {
 	if (bIsKnockedDown || bIsDead) { return; }
-	// En la carrera no se suelta nada en el aire (pelícano, gaviota...): el pickup quedaría fuera del alcance.
-	if (GetWorld() && GetWorld()->GetGameState<ATN_BeachRaceGameState>() && !TNRaceItems::CanUseNow(this)) { return; }
 	if (!InventoryComponent || !InventoryComponent->HasEquippedItem()) { return; }
 
 	// Validar ANTES de consumir. La versión anterior extraía el ítem del inventario

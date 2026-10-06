@@ -30,7 +30,7 @@
 #include "TimerManager.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Game/TN_RunGameMode.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_ItemRuntime.h"
 
 // ── Knockdown ─────────────────────────────────────────────────────────────────
 
@@ -40,8 +40,8 @@ void ATortugaCharacter::ApplyKnockdown(float Duration, FVector ImpulseOverride)
 	{
 		return;
 	}
-	// Con el protector solar puesto o volando en el pelícano taxi (objetos de la carrera) nada la derriba.
-	if (TNRaceItems::IsInvulnerable(this))
+	// Protegida por el pez globo, nada la derriba.
+	if (TNItemRuntime::IsInvulnerable(this))
 	{
 		return;
 	}

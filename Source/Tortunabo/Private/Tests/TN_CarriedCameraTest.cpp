@@ -7,7 +7,6 @@
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachDragCrab.h"
 #include "World/Beach/TN_BeachGullZone.h"
-#include "World/Beach/TN_BeachLizard.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -100,7 +99,6 @@ bool FTNCarriedCameraWhoTest::RunTest(const FString& Parameters)
 {
 	TestTrue(TEXT("La zona de gaviotas se la lleva por el aire"), GetDefault<ATN_BeachGullZone>()->CarriesHeldTurtleThroughAir());
 	TestFalse(TEXT("El cangrejo que arrastra, no"), GetDefault<ATN_BeachDragCrab>()->CarriesHeldTurtleThroughAir());
-	TestFalse(TEXT("El lagarto que la tiene en la boca, no"), GetDefault<ATN_BeachLizard>()->CarriesHeldTurtleThroughAir());
 	TestFalse(TEXT("Sin tortuga, nadie la lleva"), ATN_BeachEnemy::IsTurtleCarriedThroughAir(nullptr));
 	return true;
 }

@@ -1,7 +1,6 @@
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachSandWormSynth.h"
 #include "World/Beach/TN_BeachStunComponent.h"
 #include "TN_BeachEnemyKit.h"
@@ -322,16 +321,6 @@ namespace TNSandWorm
 			}
 		}
 		UWorld* World = Char->GetWorld();
-		TActorIterator<ATN_BeachRaceGenerator> Generator(World);
-		if (Generator)
-		{
-			// Si el generador dice que hay algo muy por encima de los pies (dentro de una roca), mejor la traza.
-			const float SandZ = Generator->GetGroundHeightAt(Feet);
-			if (SandZ < Feet.Z + 150.f)
-			{
-				return FVector(Feet.X, Feet.Y, SandZ);
-			}
-		}
 		float TraceZ = 0.f;
 		if (ATN_BeachEnemy::TraceGround(World, Feet, TraceZ, nullptr, 200.f, 8000.f))
 		{

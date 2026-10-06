@@ -100,11 +100,7 @@ private:
  * (misma semilla y mismo origen de tiempos) en su hilo; en PIE se pinta un fotograma con el huevo cerrado antes de que
  * el LoadMap congele el viewport. En el viaje sin cortes el hilo de juego sigue vivo y el huevo se anima todo el rato.
  *
- * Mapa procedural (GameState ATN_ProcMapGameState, o uno cooperativo con el GameMode ATN_ProcMapGameMode): con el mapa
- * listo en esta máquina el huevo sigue cerrado («Preparando la salida», «Esperando a las demás tortugas») hasta que
- * empieza la ronda (MatchFlowState == InProgress o bRoundInProgress; como mucho 40 s) y entonces se rompe con
- * «¡ADELANTE!» y una frase de ánimo en lugar del «¡PUM!». En las rondas siguientes (el mapa se regenera sin viajar y no
- * hay huevo) sale el mismo rótulo solo, encima del juego (STN_GoBanner), cada vez que la ronda vuelve a InProgress.
+ * Con el mapa listo en esta máquina (tortugas locales y paquetes en segundo plano), el huevo se rompe con el «¡PUM!».
  *
  * Pruebas por consola: TN.Loading.Test (se cierra y se rompe a los 3 s), TN.Loading.Test.Close (se cierra y espera;
  * TN.Loading.Test.Hold hace lo mismo), TN.Loading.Test.Break (rompe el que esté a la vista), TN.Loading.Test.Open (lo
@@ -199,13 +195,8 @@ private:
 	void TickBreakSounds();
 	UTN_EggSynthComponent* EnsureSynth();
 
-	/** Mapa procedural: con el mapa ya listo, el huevo espera a la ronda (o la rompe con «¡ADELANTE!»). */
-	void TickRoundGate(UWorld* World, double Now);
-	/** Texto de la espera a la ronda («Preparando la salida», «Esperando a las demás tortugas»). */
-	void ShowRoundWaitStatus(const UWorld* World);
-	/** Mira si la ronda del mapa procedural acaba de empezar (rondas siguientes: «¡ADELANTE!» sin huevo). */
-	void UpdateRoundWatch(UWorld* World);
-	void HandleRoundStarted();
+	/** Rompe el huevo en cuanto el mapa está listo en esta máquina (o se acaba su espera). */
+	void TickWorldReady(UWorld* World, double Now);
 	/** Sonido de entrada y retirada de «¡ADELANTE!» sin huevo. */
 	void TickGoBanner(double Now);
 	void RemoveGoBanner();
@@ -217,10 +208,6 @@ private:
 	TSharedPtr<STN_GoBanner> GoBanner;
 	TWeakObjectPtr<UGameViewportClient> GoBannerViewport;
 	bool bGoBannerCuePlayed = false;
-
-	/** Mundo cuya ronda se vigila y si su ronda estaba en juego en el fotograma anterior. */
-	TWeakObjectPtr<UWorld> RoundWatchWorld;
-	bool bRoundWasLive = false;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_EggSynthComponent> Synth;
@@ -255,8 +242,6 @@ private:
 	bool bHold = false;
 	/** Momento (FPlatformTime) en que el mapa terminó de cargar; < 0 mientras sigue viajando. */
 	double LoadDoneTime = -1.0;
-	/** Momento en que el mapa quedó listo en esta máquina (o se agotó su espera); desde aquí cuenta la de la ronda. */
-	double WorldReadyTime = -1.0;
 	/** Rotura programada (pruebas); < 0 = ninguna. Con bBreakAtWithGo, con «¡ADELANTE!». */
 	double BreakAtTime = -1.0;
 	bool bBreakAtWithGo = false;

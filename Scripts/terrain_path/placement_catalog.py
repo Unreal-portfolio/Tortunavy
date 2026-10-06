@@ -12,16 +12,16 @@ from dataclasses import dataclass, field
 
 # Categorías
 PUZZLE, MECHANIC, ENEMY, OBSTACLE = "puzzle", "mechanic", "enemy", "obstacle"
-NEST, LOOT, DECOR, VEGETATION = "nest", "loot", "decor", "vegetation"
+LOOT, DECOR, VEGETATION = "loot", "decor", "vegetation"
 GAMEPLAY = frozenset({PUZZLE, MECHANIC, ENEMY, OBSTACLE})
 HOSTILE = frozenset({ENEMY, OBSTACLE})
-CATEGORIES = (PUZZLE, MECHANIC, ENEMY, OBSTACLE, NEST, LOOT, DECOR, VEGETATION)
+CATEGORIES = (PUZZLE, MECHANIC, ENEMY, OBSTACLE, LOOT, DECOR, VEGETATION)
 
 # -- Reglas (m salvo indicación) ------------------------------------------------------------------
 PUZZLE_GAP_M = 90.0          # entre centros de dos puzles, por el camino
 PUZZLE_CALM_M = 25.0         # sin enemigos ni obstáculos a esta distancia de la huella de un puzle
 HOSTILE_GAP_M = 14.0         # entre dos enemigos u obstáculos, por el camino
-EXCLUDE_M = {"start": 40.0, "end": 50.0, "junction": 12.0, "crossing": 15.0, "nest": 12.0}
+EXCLUDE_M = {"start": 40.0, "end": 50.0, "junction": 12.0, "crossing": 15.0}
 TRAMO_M = 50.0               # tramo de la curva de intensidad
 PEAK_MIN = 4.0               # intensidad de un tramo a partir de la cual es un pico
 CALM_MAX = 2.0               # intensidad máxima del tramo que sigue a un pico (y del primero)
@@ -30,8 +30,6 @@ BASE_OBSTACLE_PER_100M = 0.7
 ROUTE_FACTOR = (0.4, 2.5)    # límites del factor de densidad por longitud relativa de la ruta
 DENSITY_TOL = 0.15           # diferencia relativa de longitud por debajo de la cual no se exige orden
 SHORT_MIN_FREE_M = 30.0      # una ruta corta con al menos esto libre lleva algún peligro
-NEST_GAP_MAX_M = 200.0       # entre nidos consecutivos del principal (la salida y la meta cuentan)
-NEST_BEFORE_PUZZLE_M = (10.0, 80.0)   # nido antes de cada puzle de grupo del principal
 DECOR_AXIS_MIN_M = 4.0       # ningún decorado a menos de esto del eje (D-10)
 DECOR_STEP_M = 6.0
 PARKOUR_DANGER = 2.0         # un parkour cuenta como dos peligros en la densidad de su ruta
@@ -119,13 +117,10 @@ MECHANICS = {
     "Geyser": "ATN_ProcGeyser",
 }
 LOOT_CLASSES = {
-    "ItemBox": "ATN_RaceItemBox",
-    "TreasureChest": "ETNBeachElement::TreasureChest",
     "SearchSpot": "ATN_BeachSearchSpot",
     "FishingPool": "ATN_FishingPool",
     "ScoreShell": "BP_ScorePickup",
 }
-NEST_CLASS = "ATN_ProcEggNest"
 
 DECOR_BY_BIOME = (
     ("Rock", "RockCluster", "MossyLog", "ShipSailWreck", "Driftwood", "Sandbags", "TankTrap", "AmmoCrate"),
@@ -147,8 +142,6 @@ def class_of(category: str, kind: str) -> str:
         return MECHANICS.get(kind, kind)
     if category == LOOT:
         return LOOT_CLASSES.get(kind, kind)
-    if category == NEST:
-        return NEST_CLASS
     if category == DECOR:
         return f"ETNBeachElement::{kind}"
     return "ATN_BeachDecorField"

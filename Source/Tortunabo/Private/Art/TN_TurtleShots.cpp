@@ -1,8 +1,8 @@
 // Fotos de prueba de la tortuga (TN.Art.TurtleShots), fuera de Shipping: comprueba sin abrir el editor que el jugador y
-// todas sus copias (tendero, general, escaparate de cosméticos y podio) llevan la misma malla y las piezas de arte de la
+// todas sus copias (tendero y escaparate de cosméticos) llevan la misma malla y las piezas de arte de la
 // tortuga (Docs/Arte_Assets.md, «La tortuga»). Saca fotos sin interfaz del jugador (de frente, de espaldas y con la
-// pataleta del podio en dos momentos, para ver que las piezas siguen la animación), del tendero y del general, guarda lo
-// que dibujan el escaparate y el podio, lista las piezas (TN.Art.Slots Turtle) y cierra el juego.
+// pataleta del podio en dos momentos, para ver que las piezas siguen la animación) y del tendero, guarda lo
+// que dibuja el escaparate, lista las piezas (TN.Art.Slots Turtle) y cierra el juego.
 //   UnrealEditor-Win64-DebugGame.exe <uproject> /Game/Maps/Lobby/LVL_Lobby -game -RenderOffScreen -ResX=1600 -ResY=900
 //     -NoSteam -UseFixedTimeStep -FPS=30 -ExecCmds="TN.Art.TurtleShots C:/ruta"
 // También en el PIE, desde la consola del juego (el editor se cierra al acabar).
@@ -26,14 +26,12 @@
 #include "HAL/IConsoleManager.h"
 #include "ImageUtils.h"
 #include "Lobby/TN_CosmeticPreview.h"
-#include "Lobby/TN_GeneralBriefing.h"
 #include "Lobby/TN_ShopKeeper.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "TextureResource.h"
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TortugaCharacter.h"
-#include "UI/Race/TN_RacePodiumStage.h"
 #include "UnrealClient.h"
 
 namespace TNTurtleShotsDetail
@@ -85,7 +83,7 @@ namespace TNTurtleShotsDetail
 	}
 
 	/**
-	 * Esconde (o vuelve a enseñar) lo que rodea a la tortuga de un actor (el puesto del tendero, la tienda del general):
+	 * Esconde (o vuelve a enseñar) lo que rodea a la tortuga de un actor (el puesto del tendero):
 	 * todo lo que dibuja el actor salvo la malla de la tortuga y lo que lleva enganchado (sombrero, piezas de arte).
 	 */
 	void Isolate(AActor* Owner, const USkeletalMeshComponent* Body, bool bHide)
@@ -170,7 +168,7 @@ namespace TNTurtleShotsDetail
 			const ATortugaCharacter* P = Pawn();
 			Frame(Cam, P, P ? P->GetMesh() : nullptr, 150.f, 20.f);
 		});
-		// El tendero y el general, sin su puesto ni su tienda delante.
+		// El tendero, sin su puesto delante.
 		auto NpcShot = [&Steps, &WorldShot, Ctx](const TCHAR* Name, TFunction<AActor*(UWorld*)> Find)
 		{
 			auto BodyOf = [](AActor* Npc) { return Npc ? Npc->FindComponentByClass<USkeletalMeshComponent>() : nullptr; };
@@ -188,7 +186,6 @@ namespace TNTurtleShotsDetail
 			});
 		};
 		NpcShot(TEXT("tendero"), [](UWorld* World) -> AActor* { return FirstActor<ATN_ShopKeeper>(World); });
-		NpcShot(TEXT("general"), [](UWorld* World) -> AActor* { return FirstActor<ATN_GeneralBriefing>(World); });
 
 		// La pataleta del podio en el jugador, en dos momentos de su bucle: las piezas tienen que ir con los huesos.
 		Steps.Add([Pawn]()
@@ -237,32 +234,11 @@ namespace TNTurtleShotsDetail
 			return 1;
 		});
 
-		// Podio de la carrera: tres tortugas de serie con sus poses.
-		Steps.Add([Ctx]()
-		{
-			if (ATN_RacePodiumStage* Podium = ATN_RacePodiumStage::Get(Ctx()->World.Get()))
-			{
-				Podium->SetPodium({ FTN_TurtleLook(), FTN_TurtleLook(), FTN_TurtleLook() });
-				Podium->SetLive(true);
-			}
-			return 40;
-		});
-		Steps.Add([Ctx, Path]()
-		{
-			if (ATN_RacePodiumStage* Podium = ATN_RacePodiumStage::Get(Ctx()->World.Get()))
-			{
-				SaveTarget(Podium->GetRenderTarget(), Path(TEXT("podio")));
-				Podium->SetLive(false);
-			}
-			return 1;
-		});
-
 		// Qué malla lleva cada tortuga, a qué escala y con cuántas piezas de Arte: todas deberían llevar la del personaje.
 		Steps.Add([Ctx, Pawn]()
 		{
 			UWorld* World = Ctx()->World.Get();
-			const AActor* Owners[] = { Pawn(), FirstActor<ATN_ShopKeeper>(World), FirstActor<ATN_GeneralBriefing>(World),
-				FirstActor<ATN_CosmeticPreview>(World), FirstActor<ATN_RacePodiumStage>(World) };
+			const AActor* Owners[] = { Pawn(), FirstActor<ATN_ShopKeeper>(World), FirstActor<ATN_CosmeticPreview>(World) };
 			UE_LOG(LogTortunabo, Display, TEXT("[Arte] TN.Art.TurtleShots: malla del personaje %s"), *GetNameSafe(TNTurtleArt::GetMesh()));
 			for (const AActor* Owner : Owners)
 			{
@@ -284,7 +260,7 @@ namespace TNTurtleShotsDetail
 
 static FAutoConsoleCommand GTNArtTurtleShotsCommand(
 	TEXT("TN.Art.TurtleShots"),
-	TEXT("Pruebas: TN.Art.TurtleShots [carpeta] [espera = 10]: fotos sin interfaz del jugador, el tendero, el general, el escaparate de cosméticos y el podio, para ver la malla y las piezas de arte de la tortuga; lista las piezas (TN.Art.Slots Turtle) y cierra el juego."),
+	TEXT("Pruebas: TN.Art.TurtleShots [carpeta] [espera = 10]: fotos sin interfaz del jugador, el tendero y el escaparate de cosméticos, para ver la malla y las piezas de arte de la tortuga; lista las piezas (TN.Art.Slots Turtle) y cierra el juego."),
 	FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
 	{
 		using namespace TNTurtleShotsDetail;

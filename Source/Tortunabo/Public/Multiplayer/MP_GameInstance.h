@@ -5,9 +5,7 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
 #include "Engine/EngineBaseTypes.h"
-#include "World/ProcMap/TN_ProcMapEnums.h"
 #include "Core/TN_CosmeticsTypes.h"
-#include "Core/TN_MatchStartTypes.h"
 #include "Multiplayer/TN_RoomTypes.h"
 #include "MP_GameInstance.generated.h"
 
@@ -83,14 +81,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Multiplayer")
 	void HostSession();
 
-	/**
-	 * @brief Crear partida con el modo elegido: Cooperativo (lobby del castillo y mapa procedural) o Carrera (todos contra
-	 *        todos en la playa), con la última configuración de sala de esta ejecución (HostRoom).
-	 * @note  Solo Coop y Race: cualquier otro valor cuenta como Coop. Unirse no toca el modo (lo decide el anfitrión).
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Multiplayer")
-	void HostSessionWithMode(ETNProcGameMode Mode);
-
 	/** @brief Busca salas públicas y se une a la primera en la que se pueda entrar (abierta y con sitio). */
 	UFUNCTION(BlueprintCallable, Category = "Multiplayer")
 	void FindAndJoinSession();
@@ -98,8 +88,8 @@ public:
 	// ── Salas públicas y privadas (Docs/Salas.md) ───────────────────────────
 
 	/**
-	 * @brief Crea una sala: modo, pública o privada, plazas (4, 6 u 8), nombre y código. Guarda el modo en SelectedProcMode,
-	 *        empieza de cero las listas de expulsados y de miembros, y crea la sesión (HostSession) y viaja al lobby.
+	 * @brief Crea una sala: pública o privada, plazas (4, 6 u 8), nombre y código. Empieza de cero las listas de
+	 *        expulsados y de miembros, y crea la sesión (HostSession) y viaja al lobby.
 	 */
 	void HostRoom(const FTNRoomConfig& Config);
 
@@ -431,34 +421,6 @@ public:
 	int32 PendingTravelPlayerCount = 0;
 
 	/**
-	 * Modo de la partida. Lo elige el anfitrión en el menú principal (HostSessionWithMode: Coop o Race); en el lobby
-	 * viejo (LVL_HQ), también ATN_ProcModeSelector. Vive en la GameInstance del host para sobrevivir a los viajes y
-	 * ATN_HQGameMode lo lee al salir del lobby: Race → LVL_BeachRace (carrera en la playa); Classic → LVL_Run de
-	 * siempre (ChunkManager); el resto → LVL_ProcMap. «Cambiar de modo» al acabar la carrera lo pasa a Coop. Por
-	 * defecto, el cooperativo del mapa procedural (el lobby del castillo no tiene selector).
-	 */
-	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
-	ETNProcGameMode SelectedProcMode = ETNProcGameMode::Coop;
-
-	/** Dificultad elegida en el lobby para el mapa procedural. */
-	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
-	ETNProcDifficulty SelectedProcDifficulty = ETNProcDifficulty::Normal;
-
-	/**
-	 * Todos contra Todos: arena de Scripts/terrain_volumes/Variants (?Arena=) que eligió el anfitrión. ATN_HQGameMode la
-	 * lee al viajar (TNLobbyMission::TctTravelURL); si ya no está entre las opciones, la primera.
-	 */
-	UPROPERTY(BlueprintReadWrite, Category = "Multiplayer|ProcMap")
-	FName SelectedTctArena = FName(TEXT("A01_diana"));
-
-	/**
-	 * Cómo se pusieron listos en el lobby (sala de la puerta doble o huevos): así empieza la partida en el mapa
-	 * procedural. Lo guarda ATN_HQGameMode antes de viajar y lo lee ATN_ProcMapGameMode.
-	 */
-	UPROPERTY(Transient)
-	ETNMatchStartStyle PendingStartStyle = ETNMatchStartStyle::Gate;
-
-	/**
 	 * Lobby del que salió la partida (ruta del paquete, sin el prefijo de PIE): lo apunta ATN_HQGameMode al empezar y
 	 * ATN_RunGameMode (y el mapa procedural) vuelve ahí al acabar la ronda, sea cual sea su LobbyMapPath.
 	 */
@@ -705,7 +667,6 @@ private:
 
 	/** Lo último anunciado en la sesión (para actualizarla solo si cambia). */
 	int32 AdvertisedPlayers = INDEX_NONE;
-	int32 AdvertisedMode = INDEX_NONE;
 	int32 AdvertisedLocked = INDEX_NONE;
 
 	/** Aviso que verá el menú principal al volver a él. */

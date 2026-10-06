@@ -98,13 +98,6 @@ struct FTNTurtleAnimFrame
 	float CelebrationTime = 0.f;
 	float CelebrationW = 0.f;
 	/**
-	 * Zambullida de cabeza desde el acantilado de la meta (modo carrera): peso, segundos en el aire y giro del cuerpo
-	 * hacia delante (grados: 90 = tumbada en horizontal, 180 = cabeza abajo en vertical).
-	 */
-	float CliffDiveW = 0.f;
-	float CliffDiveTime = 0.f;
-	float CliffDivePitch = 0.f;
-	/**
 	 * La cabeza que sigue a la cámara en tercera persona (#623, TNHeadLook): guiñada (+ a su derecha) y cabeceo (+ arriba)
 	 * en grados, ya con sus topes, suavizados y multiplicados por su peso. Se reparten entre el cuello y la cabeza.
 	 */
@@ -178,9 +171,6 @@ public:
 	/** Segundos que lleva la celebración en curso (para acompasar la cara y los efectos con su bucle). */
 	float GetCelebrationTime() const { return Frame.CelebrationTime; }
 
-	/** true mientras se zambulle de cabeza desde el acantilado de la meta (modo carrera). */
-	bool IsCliffDiving() const { return bCliffDive; }
-
 	/** Ciclos por segundo de la brazada del nado (PoseSwim). */
 	static constexpr float SwimStrokeHz = 0.85f;
 
@@ -243,14 +233,6 @@ private:
 
 	/** Celebración pedida con SetCelebration (la del proxy cambia cuando la anterior ya ha salido). */
 	ETNTurtleCelebration WantedCelebration = ETNTurtleCelebration::None;
-
-	/** Zambullida del acantilado: activa, cayendo en el fotograma anterior y segundos desde que empezó la caída. */
-	bool bCliffDive = false;
-	bool bWasFallingForDive = false;
-	float FallElapsed = 0.f;
-	/** Generador de la playa que dice dónde está el borde del acantilado y cuándo volver a buscarlo. */
-	TWeakObjectPtr<AActor> CliffZoneSource;
-	double NextCliffZoneLookup = 0.0;
 
 	/**
 	 * La cabeza que sigue a la cámara: giro (muelle crítico hacia TNHeadLook::Target, con su velocidad) y peso, que se funde

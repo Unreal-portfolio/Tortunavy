@@ -4,8 +4,6 @@
 #include "Settings/TN_GameplayAssetSettings.h"
 #include "World/Beach/TN_BeachDecorField.h"
 #include "World/Beach/TN_BeachElement.h"
-#include "World/Beach/TN_RaceItemBox.h"
-#include "World/ProcMap/TN_ProcEggNest.h"
 #include "World/ProcMap/TN_ProcPuzzleActors.h"
 #include "World/ProcMap/TN_ProcSearchSpot.h"
 #include "World/ProcMap/TN_ProcTraversalActors.h"
@@ -38,7 +36,7 @@ namespace TNMapPlacementSpawnerDetail
 	/** Piezas de juego que, puestas a mano en el nivel, reservan su sitio. */
 	bool IsGameplayPiece(const AActor* Actor)
 	{
-		return Actor->IsA<ATN_BeachElement>() || Actor->IsA<ATN_ProcEggNest>() || Actor->IsA<ATN_ProcThrowWall>()
+		return Actor->IsA<ATN_BeachElement>() || Actor->IsA<ATN_ProcThrowWall>()
 			|| Actor->IsA<ATN_ProcSabotageGate>() || Actor->IsA<ATN_ProcGeyser>() || Actor->IsA<ATN_PressurePlate>()
 			|| Actor->IsA<ATN_BreakablePlatform>() || Actor->IsA<ATN_InteractableBase>() || Actor->IsA<ATN_ScorePickup>()
 			|| Actor->IsA<APlayerStart>();
@@ -204,24 +202,6 @@ void ATN_MapPlacementSpawner::Populate(const TNMapPlacements::FParseResult& Pars
 	bPopulated = true;
 	CollectLevelActors(bServer);
 
-	// Los nidos, en el orden del recorrido por su avance (progress_m, comparable entre el principal y los lazos): el modo
-	// reaparece en el nido alcanzado de orden más alto, así que un nido de un lazo va entre los del principal que lo
-	// rodean y no detrás de todos ellos.
-	TArray<const TNMapPlacements::FPlacement*> Nests;
-	TMap<const TNMapPlacements::FPlacement*, double> NestAdvanceM;
-	for (const TNMapPlacements::FPlacement& P : Parsed.Placements)
-	{
-		if (P.Spawn == ESpawn::EggNest)
-		{
-			Nests.Add(&P);
-			NestAdvanceM.Add(&P, TNMapPlacements::AdvanceOf(Parsed, P));
-		}
-	}
-	Nests.StableSort([&NestAdvanceM](const TNMapPlacements::FPlacement& A, const TNMapPlacements::FPlacement& B)
-	{
-		return NestAdvanceM.FindChecked(&A) < NestAdvanceM.FindChecked(&B);
-	});
-
 	for (const TNMapPlacements::FPlacement& P : Parsed.Placements)
 	{
 		if (P.Spawn == ESpawn::Unsupported)
@@ -235,19 +215,6 @@ void ATN_MapPlacementSpawner::Populate(const TNMapPlacements::FParseResult& Pars
 		{
 			++Stats.SkippedByLevel;
 			UE_LOG(LogTortunabo, Log, TEXT("[MapPlacements] '%s': hay algo puesto a mano en el nivel en su sitio, no se coloca."), *P.Id);
-			continue;
-		}
-		if (P.Spawn == ESpawn::EggNest)
-		{
-			if (bServer)
-			{
-				if (ATN_ProcEggNest* Nest = Cast<ATN_ProcEggNest>(SpawnClass(ATN_ProcEggNest::StaticClass(), Grounded(P.Location), P.YawDeg)))
-				{
-					Nest->InitNest(Nests.IndexOfByKey(&P), static_cast<float>(NestAdvanceM.FindChecked(&P) * 100.0));
-					++Stats.PlacedBySpawn.FindOrAdd(FName(TNMapPlacements::SpawnName(P.Spawn)));
-				}
-				else { ++Stats.Failed; }
-			}
 			continue;
 		}
 		if (SpawnOne(P, bServer, bLocal))
@@ -297,9 +264,6 @@ bool ATN_MapPlacementSpawner::SpawnOne(const TNMapPlacements::FPlacement& P, boo
 	{
 	case ESpawn::BeachElement:
 		bOk = SpawnBeachElement(P.Element, Grounded(P.Location), P.YawDeg, P.Id, P.SizeScale, P.ExtentCm) != nullptr;
-		break;
-	case ESpawn::ItemBox:
-		bOk = SpawnClass(ATN_RaceItemBox::StaticClass(), Grounded(P.Location) + FVector(0.0, 0.0, 3.0), P.YawDeg) != nullptr;
 		break;
 	case ESpawn::SearchSpot:
 		if (ATN_ProcSearchSpot* Spot = Cast<ATN_ProcSearchSpot>(SpawnClass(ATN_ProcSearchSpot::StaticClass(), Grounded(P.Location), P.YawDeg)))

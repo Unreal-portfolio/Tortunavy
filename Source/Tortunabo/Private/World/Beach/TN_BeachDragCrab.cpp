@@ -9,7 +9,6 @@
 #include "TN_BeachEnemyMeshes.h"
 #include "TN_BeachTrapKit.h"
 #include "World/Beach/TN_BeachCreatureRules.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachTrapStatusComponent.h"
 #include "World/TN_DeathZoneVolume.h"
 
@@ -122,12 +121,7 @@ void ATN_BeachDragCrab::WalkToward(const FVector& Goal, float Speed, float Delta
 		return;
 	}
 	Dir /= Dist;
-	const FVector Steered = SteerAroundObstacles(SimLoc, Dir, BodyRadius, BodyRadius + Speed * 0.6f, DeltaSeconds);
-	if (!Steered.IsNearlyZero())
-	{
-		Dir = Steered;
-	}
-	FVector Next = ResolveStep(SimLoc + Dir * FMath::Min(Dist, static_cast<double>(Speed * DeltaSeconds)), BodyRadius, true);
+	FVector Next = ResolveStep(SimLoc + Dir * FMath::Min(Dist, static_cast<double>(Speed * DeltaSeconds)), BodyRadius);
 	float Z = static_cast<float>(SimLoc.Z);
 	if (GroundHeightAt(Next, Z))
 	{
@@ -138,11 +132,7 @@ void ATN_BeachDragCrab::WalkToward(const FVector& Goal, float Speed, float Delta
 
 FVector ATN_BeachDragCrab::DragDirectionFor(const ATortugaCharacter* Victim) const
 {
-	// Hacia atrás en el recorrido: contra el mar en la carrera; hacia su sitio fuera de ella.
-	if (const ATN_BeachRaceGenerator* Gen = FindGenerator())
-	{
-		return -Gen->GetSeaDirection().GetSafeNormal2D();
-	}
+	// Hacia su sitio.
 	FVector ToHome = Home - SimLoc;
 	ToHome.Z = 0.0;
 	if (ToHome.SizeSquared() > FMath::Square(100.0))
@@ -176,7 +166,6 @@ void ATN_BeachDragCrab::ServerTick(float DeltaSeconds)
 	}
 	const EState State = static_cast<EState>(GetMoverState());
 	const bool bStunned = IsHitStunned();
-	const bool bLive = IsRaceLive(this);
 	switch (State)
 	{
 	case EState::Roam:
@@ -193,7 +182,7 @@ void ATN_BeachDragCrab::ServerTick(float DeltaSeconds)
 			RoamGoal = Home + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * ServerRng.FRandRange(50.f, 400.f);
 		}
 		WalkToward(RoamGoal, RoamSpeed, DeltaSeconds);
-		if (ATortugaCharacter* Found = bLive ? FindTarget(SimLoc, DetectRange, Home, Leash) : nullptr)
+		if (ATortugaCharacter* Found = FindTarget(SimLoc, DetectRange, Home, Leash))
 		{
 			Target = Found;
 			ServerSetState(ToByte(EState::Chase), Found->GetActorLocation());
@@ -203,7 +192,7 @@ void ATN_BeachDragCrab::ServerTick(float DeltaSeconds)
 	case EState::Chase:
 	{
 		ATortugaCharacter* Victim = Target.Get();
-		if (bStunned || !bLive || !IsTargetable(Victim) || FVector::Dist2D(SimLoc, Victim->GetActorLocation()) > DetectRange * 1.6f
+		if (bStunned || !IsTargetable(Victim) || FVector::Dist2D(SimLoc, Victim->GetActorLocation()) > DetectRange * 1.6f
 			|| FVector::Dist2D(SimLoc, Home) > Leash)
 		{
 			Target.Reset();
@@ -248,7 +237,7 @@ void ATN_BeachDragCrab::ServerTick(float DeltaSeconds)
 			ReleaseDrag(static_cast<uint8>(End));
 			break;
 		}
-		Next = ResolveStep(Next, BodyRadius, true);
+		Next = ResolveStep(Next, BodyRadius);
 		float Z = static_cast<float>(SimLoc.Z);
 		if (GroundHeightAt(Next, Z))
 		{

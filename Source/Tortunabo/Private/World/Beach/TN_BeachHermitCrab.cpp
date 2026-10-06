@@ -1,5 +1,4 @@
 #include "World/Beach/TN_BeachHermitCrab.h"
-#include "Game/TN_SurvivalHits.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachCritterSynth.h"
 #include "World/Beach/TN_BeachStun.h"
@@ -507,11 +506,7 @@ void ATN_BeachHermitCrab::CheckRollHits(const FVector& From, const FVector& To, 
 		Push = Push.GetClampedToMaxSize2D(TNBeachHermit::PushMax);
 		Push.Z = TNBeachHermit::PushUp;
 		const FVector Tumble = FVector::CrossProduct(FVector::UpVector, Push.GetSafeNormal2D()) * TNBeachHermit::PushSpin;
-		// En Supervivencia, la bola elimina (#732).
-		if (!TNSurvivalHits::KillInSurvival(Turtle, this))
-		{
-			KnockDownTurtle(Turtle, UTN_CombatTuning::Get().HermitCrabKnockSeconds, Push, Tumble);
-		}
+		KnockDownTurtle(Turtle, UTN_CombatTuning::Get().HermitCrabKnockSeconds, Push, Tumble);
 		IgnoreTurtle(Turtle, UTN_CombatTuning::Get().HermitCrabIgnoreSeconds);
 		HitsThisRoll = static_cast<uint8>(FMath::Min(255, HitsThisRoll + 1));
 		MulticastStrike(Turtle, (At + Hit) * 0.5, HitsThisRoll);
@@ -536,7 +531,7 @@ void ATN_BeachHermitCrab::ServerTick(float DeltaSeconds)
 	switch (State)
 	{
 	case EState::Wait:
-		if (bStunned || Age < TNBeachHermit::ReArmTime || !IsRaceLive(this))
+		if (bStunned || Age < TNBeachHermit::ReArmTime)
 		{
 			break;
 		}
@@ -588,10 +583,7 @@ void ATN_BeachHermitCrab::ServerTick(float DeltaSeconds)
 			EnterDizzy(Ground, DownYaw);
 			break;
 		}
-		if (IsRaceLive(this))
-		{
-			CheckRollHits(bPrevBallValid ? PrevBallCenter : Center, Center, Speed);
-		}
+		CheckRollHits(bPrevBallValid ? PrevBallCenter : Center, Center, Speed);
 		PrevBallCenter = Center;
 		bPrevBallValid = true;
 		if (Age >= PathDuration)

@@ -288,7 +288,8 @@ private:
 	float AttackRadius = 3800.f;
 	float CircleRadius = 3800.f;
 
-	/** Hacia la salida de la carrera (al revés del mar del generador; sin él, -X): hacia donde se la lleva. */
+	/** Hacia dónde se lleva en el pico a la tortuga que coge (en planta; se normaliza al empezar). Sin dirección, -X. */
+	UPROPERTY(EditAnywhere, Category = "Gaviota")
 	FVector CourseBack = FVector(-1.0, 0.0, 0.0);
 
 	// Servidor.
@@ -369,9 +370,8 @@ private:
 
 	/**
 	 * Vuelo con la tortuga en el pico: cuánto dura (s), cuánto la sube y cuánto la lleva hacia la salida (cm), y cuándo acaba
-	 * el ataque que la coge. En Supervivencia (TNBeach::FlagSurvival, #733), un segundo, poco alto y en el sitio.
+	 * el ataque que la coge.
 	 */
-	bool IsSurvivalGull() const { return (Spec.Flags & TNBeach::FlagSurvival) != 0; }
 	float CarrySeconds() const;
 	float CarryRise() const;
 	float CarryDistance() const;

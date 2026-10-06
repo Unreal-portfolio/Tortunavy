@@ -1,4 +1,4 @@
-// RPC de pruebas (TNStorm, TNBooth): solo el anfitrión y nunca en Shipping.
+// RPC de pruebas (TNBooth): solo el anfitrión y nunca en Shipping.
 // Se testea la función de TN_DebugRpcDecisions.h que usa AMP_GamePlayerController.
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.DebugRpc; Quit" -nullrhi -unattended
 

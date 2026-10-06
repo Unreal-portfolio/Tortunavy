@@ -1,9 +1,7 @@
 #include "Multiplayer/TN_RichPresenceSubsystem.h"
-#include "Core/TN_CoopGameState.h"
 #include "Core/TN_Log.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
-#include "Game/TN_ProcMapGameState.h"
 #include "GameFramework/GameStateBase.h"
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "Interfaces/OnlinePresenceInterface.h"
@@ -42,19 +40,8 @@ TOptional<FTNPresenceState> UTN_RichPresenceSubsystem::ReadState() const
 		return {};
 	}
 
-	const ATN_ProcMapGameState* ProcState = Cast<ATN_ProcMapGameState>(GameState);
 	FTNPresenceState State;
-	State.Mode = TNRichPresence::ModeFor(GameState->GameModeClass, ProcState ? ProcState->ProcMode : ETNProcGameMode::Coop);
-	if (ProcState)
-	{
-		// En el mapa procedural la ronda es el nivel del Coop y la ronda de la Carrera y del 2 contra 2.
-		State.Level = ProcState->CurrentRound;
-		State.Round = ProcState->CurrentRound;
-	}
-	else if (const ATN_CoopGameState* CoopState = Cast<ATN_CoopGameState>(GameState))
-	{
-		State.Level = CoopState->CurrentLevel;
-	}
+	State.Mode = TNRichPresence::ModeFor(GameState->GameModeClass);
 
 	if (State.Mode == ETNPresenceMode::Lobby)
 	{

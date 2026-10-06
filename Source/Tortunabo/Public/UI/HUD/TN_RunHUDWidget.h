@@ -8,8 +8,6 @@
 #include "TN_RunHUDWidget.generated.h"
 
 class ATN_CoopPlayerState;
-class ATN_PathStorm;
-class ATN_ProcMapGenerator;
 class UBorder;
 class UCanvasPanel;
 class UImage;
@@ -58,14 +56,11 @@ struct FTNShellFlight
  * @brief HUD de la tortuga en partida, estilo Tortunavy (boceto para el equipo de arte), hecho en código.
  *
  * Tortugas que salen del nido y tienen que llegar al mar:
- *  - Distintivo: la cara cartoon de la tortuga (TN_HUDFaces.h) según cómo va: feliz, caparazón cerrado si se mete
- *    dentro, mareada si queda eliminada y con ojos de estrella al llegar, sobre un disco de mar con su salvavidas
- *    (M_UI_TurtleBadge, Scripts/build_ui_assets.py). La estamina no se ve en la interfaz. Debajo, una cinta con el
- *    nombre que no lo tapa. Cuando la tortuga habla por la voz de proximidad, la cara rebota y sale un bocadillo con
- *    barras de volumen.
- *  - Pista de la playa al mar (mapa procedural): del nido con la tortuguita asomando a la ola con la bandera de
- *    meta; tu cara avanza por la arena, los compañeros son caparazones de colores y la nube de tormenta te persigue
- *    oscureciendo la arena que ya se ha tragado.
+ *  - Distintivo: la cara cartoon de la tortuga (TN_HUDFaces.h) según cómo va: feliz, cansada, jadeando con la lengua
+ *    fuera, caparazón cerrado si se mete dentro, mareada si queda panza arriba y con ojos de estrella al llegar. La
+ *    rodea un salvavidas grueso que es la energía (sin número): del verde al rojo según se vacía
+ *    (M_UI_TurtleBadge, Scripts/build_ui_assets.py). Debajo, una cinta con el nombre que no lo tapa. Cuando la
+ *    tortuga habla por la voz de proximidad, la cara rebota y sale un bocadillo con barras de volumen.
  *  - Puntos en una concha; inventario en dos burbujas iguales: el aro de cuerda marca la que está en la aleta y
  *    rueda a la otra al cambiar. Avisos de tormenta, panza arriba y reanimación en carteles azul marino con ola.
  *  - Al coger una concha, iconos de su tamaño salen de donde estaba en pantalla, dan un saltito y vuelan en arco al
@@ -74,7 +69,7 @@ struct FTNShellFlight
  *    puntuación real (RaceScore): lo que sube sin concha (la llegada) sale de la tortuga, y si baja se ajusta solo.
  * Hereda toda la lógica de UTN_PlayerHUDWidget creando los widgets que esa clase enlaza por nombre (los que ella
  * rellena y aquí no se ven quedan ocultos y se leen en el Tick).
- * Vista previa de estados en consola: tn.HUD.Face y tn.HUD.Talk.
+ * Vista previa de estados en consola: tn.HUD.Energy, tn.HUD.Face y tn.HUD.Talk.
  */
 UCLASS()
 class TORTUNABO_API UTN_RunHUDWidget : public UTN_PlayerHUDWidget
@@ -92,7 +87,6 @@ private:
 	void BuildTree();
 	void TickBadge(float DeltaTime);
 	void TickInventory(float DeltaTime);
-	void TickTrack(float DeltaTime);
 	void TickScore(float DeltaTime);
 	void TickAlerts(float DeltaTime);
 
@@ -111,6 +105,7 @@ private:
 
 	UPROPERTY(Transient) TObjectPtr<UCanvasPanel> Canvas;
 	UPROPERTY(Transient) TObjectPtr<UImage> Badge;
+	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> BadgeMID;
 	UPROPERTY(Transient) TObjectPtr<UImage> FaceImage;
 	UPROPERTY(Transient) TObjectPtr<UWidget> TalkBubble;
 	UPROPERTY(Transient) TArray<TObjectPtr<UImage>> TalkBars;
@@ -119,12 +114,6 @@ private:
 	UPROPERTY(Transient) TArray<TObjectPtr<UImage>> ItemImages;
 	UPROPERTY(Transient) TArray<TObjectPtr<UTextBlock>> SlotTags;
 	UPROPERTY(Transient) TObjectPtr<UImage> RopeImage;
-
-	UPROPERTY(Transient) TObjectPtr<UOverlay> TrackRoot;
-	UPROPERTY(Transient) TObjectPtr<UImage> StormShade;
-	UPROPERTY(Transient) TObjectPtr<UImage> StormMarker;
-	UPROPERTY(Transient) TObjectPtr<UImage> MiniFace;
-	UPROPERTY(Transient) TArray<TObjectPtr<UImage>> MateMarkers;
 
 	UPROPERTY(Transient) TObjectPtr<UOverlay> ScoreRoot;
 	UPROPERTY(Transient) TObjectPtr<UBorder> StormBanner;
@@ -145,20 +134,16 @@ private:
 	/** Aro de progreso alrededor de la tecla en las interacciones de mantener (rebuscar un decorado). */
 	UPROPERTY(Transient) TObjectPtr<UTN_HoldRingWidget> HoldRing;
 
-	TWeakObjectPtr<ATN_ProcMapGenerator> Generator;
-	TWeakObjectPtr<ATN_PathStorm> Storm;
 	TWeakObjectPtr<UObject> LastEquippedIcon;
 	TWeakObjectPtr<UObject> LastStoredIcon;
 	float Time = 0.f;
+	float ShownEnergy = 1.f;
 	/** Cara mostrada (ETNTurtleFace de TN_HUDFaces.h) y el rebote al cambiar. */
 	uint8 ShownFace = 0;
 	float FacePop = 0.f;
 	/** Hueco del inventario que está en la aleta (0 izquierda, 1 derecha) y posición animada del aro de cuerda. */
 	int32 EquippedSide = 0;
 	float RopeX = 0.f;
-	float ShownProgress = 0.f;
-	float ShownStorm = 0.f;
-	float LookupTimer = 0.f;
 	float PromptPop = 0.f;
 	float PromptKeyTimer = 0.f;
 	/** Aparato y familia del mando con los que se pintó la tecla del aviso: si cambian, se repinta al momento. */
@@ -214,12 +199,12 @@ private:
 /**
  * @brief Cartel de estado, resultados, tripulación y mensajes de la partida en el estilo Tortunavy, hechos en código.
  * Hereda la lógica de UTN_CoopFlowHUDWidget creando los widgets que esa clase enlaza por nombre.
- *  - Durante la carrera el cartel de estado no se ve (el objetivo ya lo cuenta la pista); si te eliminan sale un
+ *  - Durante la partida el cartel de estado no se ve; si te eliminan sale un
  *    cartel con la cara mareada y en los resultados la cara va con ojos de estrella si llegaste o mareada si no.
- *  - Tripulación (a la izquierda): la cara de cada compañero según cómo va (caparazón, eliminación, llegada), en un
- *    aro de su color (el mismo que su caparazón en la pista) y con su nombre. Las frases del chat rápido salen en un
- *    bocadillo junto a la cara de quien las dice (las tuyas, junto a tu distintivo) en vez de en un chat global, y
- *    cuando alguien habla por la voz de proximidad le sale un bocadillo con barras de volumen.
+ *  - Tripulación (a la izquierda): la cara de cada compañero según cómo va (su energía, caparazón, panza arriba,
+ *    llegada), en un aro de su color y con su nombre. Las frases del chat
+ *    rápido salen en un bocadillo junto a la cara de quien las dice (las tuyas, junto a tu distintivo) en vez de en
+ *    un chat global, y cuando alguien habla por la voz de proximidad le sale un bocadillo con barras de volumen.
  */
 UCLASS()
 class TORTUNABO_API UTN_RunFlowHUDWidget : public UTN_CoopFlowHUDWidget

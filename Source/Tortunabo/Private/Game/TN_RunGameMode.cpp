@@ -13,7 +13,6 @@
 #include "Player/TN_InventoryComponent.h"
 #include "World/TN_DeathZoneVolume.h"
 #include "World/TN_StormVolume.h"
-#include "World/TN_ChunkManager.h"
 #include "World/TN_CollectionZone.h"
 #include "GameFramework/SpectatorPawn.h"
 #include "GameFramework/Pawn.h"
@@ -50,7 +49,7 @@ void ATN_RunGameMode::BeginPlay()
 		UE_LOG(LogTortunabo, Error, TEXT("[RunGameMode] ════════════════════════════════════════════════════════"));
 		UE_LOG(LogTortunabo, Error, TEXT("[RunGameMode] ¡USANDO CLASE C++ BASE! No hay BP GameMode."));
 		UE_LOG(LogTortunabo, Error, TEXT("[RunGameMode] Esto causa: sin tortuga visible, sin input, sin HUD."));
-		UE_LOG(LogTortunabo, Error, TEXT("[RunGameMode] FIX: En LVL_Run → WorldSettings → GameMode Override"));
+		UE_LOG(LogTortunabo, Error, TEXT("[RunGameMode] FIX: En LVL_Demo01 → WorldSettings → GameMode Override"));
 		UE_LOG(LogTortunabo, Error, TEXT("[RunGameMode]       → seleccionar BP_RunGameMode."));
 		UE_LOG(LogTortunabo, Error, TEXT("[RunGameMode] ════════════════════════════════════════════════════════"));
 	}
@@ -423,7 +422,7 @@ AActor* ATN_RunGameMode::ChoosePlayerStart_Implementation(AController* Player)
 		return Super::ChoosePlayerStart_Implementation(Player);
 	}
 
-	// LVL_Run trae cuatro PlayerStart y caben ocho jugadores: los que sobran salen en sitios nuevos junto a los del mapa.
+	// Si el mapa trae menos PlayerStart que jugadores (caben ocho), los que sobran salen en sitios nuevos junto a los del mapa.
 	if (AActor* Start = TN_PickSpreadPlayerStart(GetWorld(), PlayerStarts, Player, DefaultPawnClass, TEXT("Run")))
 	{
 		return Start;
@@ -792,7 +791,7 @@ void ATN_RunGameMode::EnterDBNO(APlayerController* PlayerController)
 		return;  // Already dead, already DBNO, or invalid
 	}
 
-	// Sin reanimación (Supervivencia): nadie puede levantarle, así que muere ya.
+	// Sin reanimación (bAllowRevive apagado): nadie puede levantarle, así que muere ya.
 	if (!bAllowRevive)
 	{
 		MarkPlayerDead(PlayerController);

@@ -5,9 +5,11 @@ Se ejecuta DENTRO del editor de Unreal:
 
 Crea en /Game/UI/HUD:
   - M_UI_TurtleBadge: distintivo del jugador. En el centro, un disco de mar con una ola que se mueve (la cara
-    cartoon de la tortuga va encima, en otro widget: TN_HUDFaces.h); alrededor, un salvavidas grueso verde, siempre
-    lleno (la estamina no se ve en la interfaz, #851), con cuatro vueltas de cuerda y un filo azul marino de
-    pegatina. Sin parámetros.
+    cartoon de la tortuga va encima, en otro widget: TN_HUDFaces.h); alrededor, un salvavidas grueso que es el
+    medidor de energía: el tramo que queda toma el color de la energía (verde, amarillo, naranja y rojo al final),
+    lo gastado es un surco oscuro (se vacía en sentido horario), la zona bloqueada por el peso se ve en marrón
+    rayado y todo late en rojo al quedarse sin aliento; cuatro vueltas de cuerda y un filo azul marino de pegatina.
+    Parámetros: Energy, Weight, Exhausted.
   - M_UI_RadialWheel: rueda radial de emotes y frases (UTN_RunRadialWheelWidget): salvavidas azul marino con gajos
     alternos, divisorias de espuma y bordes crema; el gajo apuntado se ilumina en azul mar con un filo coral que
     late. El centro queda hueco para la cara. Parámetros: Slices, Selected (-1 = ninguno), OffsetDeg (gajo 0).
@@ -38,7 +40,13 @@ PALETTE = {
     "SEA_DEEP": lin(0x0C2C57),
     "FOAM": lin(0xD6F5F2),
     "NAVY": lin(0x0F2340),
+    "GROOVE": lin(0x0B1B33),
     "GREEN": lin(0x3DDC62),
+    "YELLOW": lin(0xFFD23F),
+    "ORANGE": lin(0xFF8A3D),
+    "RED": lin(0xFF3B30),
+    "BLOCKED": lin(0x6B4423),
+    "ALARM": lin(0xFF2B1C),
     "ROPE_LIGHT": lin(0xE6C48C),
     "ROPE_DARK": lin(0x8C5A2E),
 }
@@ -60,15 +68,26 @@ Col = lerp(Col, @FOAM@, smoothstep(0.011, 0.0, abs(P.y - WaveY)) * 0.8);
 Col *= lerp(1.0, 0.7, smoothstep(DiscR - 0.06, DiscR, R));
 Col = lerp(Col, @NAVY@, smoothstep(DiscR - AA, DiscR, R));
 
-// Salvavidas verde y lleno, con gajos alternos y volumen de tubo.
+// Salvavidas de energía: el tramo que queda, del color de la energía (verde, amarillo, naranja y rojo al final),
+// con gajos alternos y volumen de tubo; lo gastado es un surco oscuro y lo bloqueado por el peso, marrón rayado.
 float T = saturate((R - RingIn) / (Edge - RingIn));
+float3 EnergyCol = lerp(@RED@, @ORANGE@, saturate((Energy - 0.1) / 0.15));
+EnergyCol = lerp(EnergyCol, @YELLOW@, saturate((Energy - 0.25) / 0.15));
+EnergyCol = lerp(EnergyCol, @GREEN@, saturate((Energy - 0.4) / 0.2));
 float Seg = floor(A01 * 8.0);
 float Stripe = fmod(Seg, 2.0) < 1.0 ? 1.0 : 0.78;
-float3 RingCol = @GREEN@ * Stripe;
+float Lit = smoothstep(A01 - 0.004, A01 + 0.004, Energy);
+float3 Groove = @GROOVE@ * lerp(0.85, 1.0, Stripe);
+float Blocked = step(1.0 - Weight, A01) * step(0.001, Weight);
+float Hatch = step(0.5, frac((P.x + P.y) * 36.0));
+Groove = lerp(Groove, @BLOCKED@ * lerp(0.75, 1.1, Hatch), Blocked);
+float3 RingCol = lerp(Groove, EnergyCol * Stripe, Lit);
 float Tube = sin(T * 3.14159);
 RingCol *= 0.58 + 0.42 * Tube;
 float Light = saturate(dot(P / max(R, 1e-4), float2(-0.55, -0.83)));
-RingCol += 0.3 * Light * smoothstep(0.2, 0.0, abs(T - 0.3));
+RingCol += 0.3 * Light * smoothstep(0.2, 0.0, abs(T - 0.3)) * Lit;
+float Pulse = Exhausted * (0.5 + 0.5 * sin(TimeS * 11.0));
+RingCol = lerp(RingCol, @ALARM@, Pulse * 0.5);
 float WrapArc = abs(frac((A01 - 0.125) * 4.0 + 0.5) - 0.5) * 0.25 * 6.2831853 * R;
 float3 RopeCol = lerp(@ROPE_DARK@, @ROPE_LIGHT@, step(0.5, frac(T * 3.0 + WrapArc * 30.0)));
 RingCol = lerp(RingCol, RopeCol, smoothstep(0.015, 0.01, WrapArc));
@@ -190,7 +209,8 @@ def build_custom_ui_material(name, hlsl, scalars, description):
 
 
 def main():
-    badge = build_custom_ui_material("M_UI_TurtleBadge", fill(BADGE_HLSL, PALETTE), [], "TurtleBadge")
+    badge = build_custom_ui_material("M_UI_TurtleBadge", fill(BADGE_HLSL, PALETTE),
+                                     [("Energy", 1.0), ("Weight", 0.0), ("Exhausted", 0.0)], "TurtleBadge")
     unreal.log(f"[UI] Material del distintivo: {badge.get_path_name()}")
     wheel = build_custom_ui_material("M_UI_RadialWheel", fill(WHEEL_HLSL, WHEEL_PALETTE),
                                      [("Slices", 8.0), ("Selected", -1.0), ("OffsetDeg", 90.0)], "RadialWheel")

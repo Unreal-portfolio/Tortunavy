@@ -2,7 +2,7 @@
 
 Con una semilla, recorre el grafo del camino (principal, lazos que son rodeos y lazos que son
 atajos) y coloca, por este orden: una catapulta que salta un meandro, puzles de grupo (en el
-principal si caben; si no, en un rodeo), parkour en los atajos, nidos de reaparición, mecánicas,
+principal si caben; si no, en un rodeo), parkour en los atajos, mecánicas,
 enemigos y obstáculos (densidad inversa a la longitud de la ruta, con calma tras cada puzle o pico),
 botín y decorado. Lo colocado a
 mano (bloque "manual" del manifest) es intocable: cuenta como restricción y nunca se mueve ni se
@@ -22,15 +22,11 @@ from .placement_catalog import (
     BASE_OBSTACLE_PER_100M,
     DENSITY_TOL,
     ENEMY,
-    EXCLUDE_M,
     GAMEPLAY,
     GROUP_KINDS,
     HAZARDS,
     HOSTILE,
     HOSTILE_GAP_M,
-    NEST,
-    NEST_BEFORE_PUZZLE_M,
-    NEST_GAP_MAX_M,
     OBSTACLE,
     PARKOUR_ON_ROUTES,
     PUZZLE,
@@ -52,7 +48,7 @@ from .placement_rules import (
 )
 from .placement_site import Site
 
-PREFIX = {"puzzle": "pz", "mechanic": "mec", "enemy": "en", "obstacle": "ob", "nest": "nido", "loot": "bot",
+PREFIX = {"puzzle": "pz", "mechanic": "mec", "enemy": "en", "obstacle": "ob", "loot": "bot",
           "decor": "dec", "vegetation": "veg"}
 GROUP_EVERY_M = 220.0          # un puzle de grupo por cada tantos metros de principal (2 a 5)
 GROUP_ON_COVERED = 15.0        # penalización (m de avance) de un tramo del principal con alternativa
@@ -89,7 +85,7 @@ class Planner:
 
     def _refresh(self) -> None:
         site, items = self.site, self.items
-        self.discs = exclusion_discs(site, items)
+        self.discs = exclusion_discs(site)
         n = site.node_count
         puzzles = [p for p in items if p.category == PUZZLE]
         hostiles = [p for p in items if p.category in HOSTILE]
@@ -114,7 +110,7 @@ class Planner:
         p = replace(p, id=pid)
         self._ids.add(pid)
         self.auto.append(p)
-        if refresh and (p.category in (PUZZLE, NEST) or p.category in HOSTILE):
+        if refresh and (p.category == PUZZLE or p.category in HOSTILE):
             self._refresh()
         return p
 
@@ -123,11 +119,9 @@ class Planner:
         self._refresh()
 
     # -- comprobaciones locales -----------------------------------------------------------------
-    def clear_of_exclusions(self, p: Placement, ignore_nests: bool = False) -> bool:
+    def clear_of_exclusions(self, p: Placement) -> bool:
         pts = footprint_points(self.site, p)
-        for why, c, r, _nid in self.discs:
-            if ignore_nests and why == "nido":
-                continue
+        for _why, c, r in self.discs:
             if float(np.min(np.hypot(*(pts - c).T))) < r:
                 return False
         return True
@@ -137,7 +131,7 @@ class Planner:
         site = self.site
         mine = footprint_points(site, p)
         for o in self.items:
-            if o.category not in GAMEPLAY and o.category != NEST or o.id == p.id or o.id == p.linked:
+            if o.category not in GAMEPLAY or o.id == p.id or o.id == p.linked:
                 continue
             if p.linked and o.linked == p.linked:
                 continue
@@ -223,7 +217,7 @@ class Planner:
             if kind in neighbours:
                 continue
             p = self._puzzle(kind, line, s)
-            if self.puzzle_ok(p) and (line != 0 or self.nest_spot_before(p) is not None):
+            if self.puzzle_ok(p):
                 self.add(p)
                 return True
         return False
@@ -247,56 +241,6 @@ class Planner:
     def place_catapult_gap(self) -> None:
         extras.place_catapult_gap(self)
 
-    # -- nidos ------------------------------------------------------------------------------------
-    def nest_ok(self, s: float) -> Placement | None:
-        """Nido del principal en s: suelo abierto y seco, lejos de la salida y la meta y a más de
-        EXCLUDE_M["nest"] de toda pieza de juego (una unión no le estorba: no es un sitio de paso)."""
-        n = Placement(self.make_id(NEST, "EggNest", 0, s), NEST, "EggNest", 0, float(s))
-        if position_problem(self.site, n) is not None:
-            return None
-        pt = np.array(self.site.main.at(s)[:2])
-        for why, c, r, _nid in self.discs:
-            if why in ("salida", "meta") and float(np.hypot(*(pt - c))) < r:
-                return None
-        for o in self.items:
-            if o.category in GAMEPLAY and o.line in {ln.id for ln in self.site.lines}:
-                if float(np.min(np.hypot(*(footprint_points(self.site, o) - pt).T))) < EXCLUDE_M["nest"] + 1.0:
-                    return None
-        return n
-
-    def nest_spot_before(self, p: Placement) -> Placement | None:
-        lo, hi = NEST_BEFORE_PUZZLE_M
-        front = p.footprint[0]
-        for d in np.arange(max(lo, EXCLUDE_M["nest"] + 2.0), hi, 2.0):
-            n = self.nest_ok(front - float(d))
-            if n is not None:
-                return n
-        return None
-
-    def place_nests(self) -> None:
-        for p in sorted(self._main_puzzles(), key=lambda p: p.s):
-            if PUZZLES.get(p.kind) and PUZZLES[p.kind].mode == "grupo":
-                n = self.nest_spot_before(p)
-                if n is not None:
-                    self.add(n)
-        main = self.site.main
-        hopeless: set[tuple[float, float]] = set()
-        for _ in range(30):
-            stops = [0.0] + sorted(p.s for p in self.items if p.category == NEST and p.line == 0) + [main.length]
-            gaps = [(a, b) for a, b in zip(stops, stops[1:]) if b - a > NEST_GAP_MAX_M and (a, b) not in hopeless]
-            if not gaps:
-                return
-            a, b = gaps[0]
-            target = a + min(0.8 * NEST_GAP_MAX_M, 0.5 * (b - a))
-            grid = np.arange(a + 20.0, b - 20.0, 2.0)
-            for s in grid[np.argsort(np.abs(grid - target))]:
-                n = self.nest_ok(float(s))
-                if n is not None:
-                    self.add(n)
-                    break
-            else:
-                hopeless.add((a, b))
-
     # -- enemigos y obstáculos ---------------------------------------------------------------------
     def route_factor(self, line_id: int) -> np.ndarray:
         """Factor de densidad por muestra: >1 en atajos (la ruta corta), <1 en rodeos."""
@@ -318,7 +262,7 @@ class Planner:
         ln = self.site.line(line_id)
         base = self.site.node(line_id, 0.0)
         free = ~ln.blocked & self.calm_ok[base:base + len(ln.arc)]
-        for _why, c, r, _nid in self.discs:
+        for _why, c, r in self.discs:
             free &= np.hypot(*(ln.points - c).T) >= r
         return free
 
@@ -420,7 +364,6 @@ class Planner:
         self.place_catapult_gap()
         self.place_group_puzzles()
         self.place_route_parkour()
-        self.place_nests()
         extras.place_mechanics(self)
         self.place_hostiles()
         self.repair_density()

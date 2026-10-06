@@ -2,8 +2,7 @@
 #include "Core/TN_Log.h"
 #include "World/TN_PickupInteractableBase.h"
 #include "Player/TortugaCharacter.h"
-#include "World/Beach/TN_BeachEnemy.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_CoopItemComponent.h"
 #include "Core/ITN_EnemyTargetInterface.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -138,8 +137,8 @@ void ATN_ConchPickup::OnSphereBeginOverlap(UPrimitiveComponent* /*OverlappedComp
 
 	// ── Modo trampa ───────────────────────────────────────────────────────────
 	if (bTrapUsed) { return; }
-	// Ni a las muertas, ni con el protector solar o en el pelícano, ni con la carrera parada (recuento, «¡TIEMPO!»).
-	if (Character->IsDead() || TNRaceItems::IsInvulnerable(Character) || !ATN_BeachEnemy::IsRaceLive(this)) { return; }
+	// Ni a las muertas, ni a las protegidas por el pez globo.
+	if (Character->IsDead() || UTN_CoopItemComponent::IsTurtleProtected(Character)) { return; }
 	bTrapUsed = true;
 
 	UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement();

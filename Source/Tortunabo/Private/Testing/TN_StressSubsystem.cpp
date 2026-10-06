@@ -19,13 +19,7 @@
 #include "Testing/TN_MonkeySubsystem.h"
 #include "Testing/TN_StressChaos.h"
 #include "World/Beach/TN_BeachElement.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachTypes.h"
-#include "World/Beach/TN_RaceFrisbee.h"
-#include "World/Beach/TN_RaceHomingCrab.h"
-#include "World/Beach/TN_RaceItemActor.h"
-#include "World/Beach/TN_RaceItemBox.h"
-#include "World/Beach/TN_RaceMine.h"
 
 namespace TNStressDetail
 {
@@ -96,7 +90,7 @@ namespace TNStressDetail
 		TNStress::FScenario Scenario;
 		if (Args.Num() < 1 || !TNStress::Parse(Args[0], Scenario))
 		{
-			UE_LOG(LogTortunabo, Display, TEXT("[Estrés] Uso: TN.Stress <light|heavy|race8|control> [segundos=60] | TN.Stress caos [segundos por fase=20] | TN.Stress stop. light = 50 enemigos, 100 lanzables, 20 cajas; heavy = 200/500/100; race8 = 8 tortugas."));
+			UE_LOG(LogTortunabo, Display, TEXT("[Estrés] Uso: TN.Stress <light|heavy|tortugas8|control> [segundos=60] | TN.Stress caos [segundos por fase=20] | TN.Stress stop. light = 50 enemigos, 100 lanzables, 20 cajas; heavy = 200/500/100; tortugas8 = 8 tortugas."));
 			return;
 		}
 		const float Total = Args.IsValidIndex(1) ? FMath::Clamp(FCString::Atof(*Args[1]), 6.f, 600.f) : 60.f;
@@ -104,7 +98,7 @@ namespace TNStressDetail
 	}
 
 	static FAutoConsoleCommandWithWorldAndArgs CmdStress(TEXT("TN.Stress"),
-		TEXT("Prueba de estrés: TN.Stress <light|heavy|race8|control> [segundos=60] | TN.Stress caos [segundos por fase=20] | TN.Stress stop. Informe en Saved/Stress/."),
+		TEXT("Prueba de estrés: TN.Stress <light|heavy|tortugas8|control> [segundos=60] | TN.Stress caos [segundos por fase=20] | TN.Stress stop. Informe en Saved/Stress/."),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunCommand), ECVF_Cheat);
 }
 
@@ -206,8 +200,8 @@ bool UTN_StressSubsystem::StartSession(const TNStress::FScenario& InScenario, fl
 			Monkey->StartSession(Config);
 		}
 	}
-	UE_LOG(LogTortunabo, Log, TEXT("[Estrés] %s: %d enemigos, %d lanzables, %d cajas, %d tortugas; %d fases en %.0f s (espera %.0f s)."), *Scenario.Name, Scenario.Enemies,
-		Scenario.Throwables, Scenario.Items, Scenario.Turtles, Phases.Num(), TotalSeconds, WarmupSeconds);
+	UE_LOG(LogTortunabo, Log, TEXT("[Estrés] %s: %d enemigos, %d tortugas; %d fases en %.0f s (espera %.0f s)."), *Scenario.Name, Scenario.Enemies,
+		Scenario.Turtles, Phases.Num(), TotalSeconds, WarmupSeconds);
 	return true;
 #endif
 }
@@ -222,10 +216,6 @@ void UTN_StressSubsystem::StopSession(const TCHAR* Reason)
 
 double UTN_StressSubsystem::GroundAt(const FVector& At, double Fallback) const
 {
-	if (const ATN_BeachRaceGenerator* Generator = ATN_BeachRaceGenerator::Find(this))
-	{
-		return static_cast<double>(Generator->GetGroundHeightAt(At));
-	}
 	UWorld* World = GetWorld();
 	FHitResult Hit;
 	if (World && World->LineTraceSingleByChannel(Hit, At + FVector(0.0, 0.0, 3000.0), At - FVector(0.0, 0.0, 6000.0), ECC_WorldStatic))
@@ -273,53 +263,6 @@ bool UTN_StressSubsystem::SpawnEnemy(TNStress::EGroup Group, int32 Index)
 	return Element != nullptr;
 }
 
-int32 UTN_StressSubsystem::SpawnThrowables(int32 Count)
-{
-	UWorld* World = GetWorld();
-	TArray<ATortugaCharacter*> Turtles;
-	for (TActorIterator<ATortugaCharacter> It(World); It; ++It)
-	{
-		Turtles.Add(*It);
-	}
-	if (Turtles.Num() == 0)
-	{
-		return 0;
-	}
-	int32 Made = 0;
-	for (int32 Index = 0; Index < Count; ++Index)
-	{
-		ATortugaCharacter* Thrower = Turtles[Index % Turtles.Num()];
-		const double Yaw = Stream.FRandRange(0.f, 2.f * UE_PI);
-		const FVector Direction(FMath::Cos(Yaw), FMath::Sin(Yaw), 0.15);
-		const int32 Before = ATN_RaceItemActor::CountOf(World, ATN_RaceItemActor::StaticClass());
-		bool bOk = false;
-		switch (Index % 3)
-		{
-			case 0:  bOk = ATN_RaceMine::ServerThrow(Thrower, Direction.GetSafeNormal()); break;
-			case 1:  bOk = ATN_RaceFrisbee::ServerThrow(Thrower, Direction.GetSafeNormal()); break;
-			default: bOk = ATN_RaceHomingCrab::ServerLaunch(Thrower); break;
-		}
-		if (bOk || ATN_RaceItemActor::CountOf(World, ATN_RaceItemActor::StaticClass()) > Before)
-		{
-			++Made;
-		}
-	}
-	return Made;
-}
-
-bool UTN_StressSubsystem::SpawnItemBox()
-{
-	const FVector At = PickSpot(800.f, 12000.f) + FVector(0.0, 0.0, 3.0);
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ATN_RaceItemBox* Box = GetWorld()->SpawnActor<ATN_RaceItemBox>(ATN_RaceItemBox::StaticClass(), At, FRotator(0.0, Stream.FRandRange(0.f, 360.f), 0.0), Params);
-	if (Box)
-	{
-		Spawned.Add(Box);
-	}
-	return Box != nullptr;
-}
-
 void UTN_StressSubsystem::SpawnPending(FPhaseData& Phase)
 {
 	if (Phase.PendingSpawn <= 0)
@@ -330,7 +273,7 @@ void UTN_StressSubsystem::SpawnPending(FPhaseData& Phase)
 	int32 MadeThisFrame = 0;
 	while (TNStress::ShouldSpawnMore(Phase.PendingSpawn, MadeThisFrame, (FPlatformTime::Seconds() - Start) * 1000.0))
 	{
-		const bool bMade = Phase.Plan.Group == TNStress::EGroup::Items ? SpawnItemBox() : SpawnEnemy(Phase.Plan.Group, Phase.Attempted);
+		const bool bMade = SpawnEnemy(Phase.Plan.Group, Phase.Attempted);
 		Phase.Spawned += bMade ? 1 : 0;
 		++Phase.Attempted;
 		--Phase.PendingSpawn;
@@ -343,12 +286,6 @@ void UTN_StressSubsystem::SpawnPending(FPhaseData& Phase)
 		UE_LOG(LogTortunabo, Log, TEXT("[Estrés] «%s»: %d de %d creados en %d fotogramas (máx. %.1f ms de creación en uno)."),
 			TNStress::GroupName(Phase.Plan.Group), Phase.Spawned, Phase.Plan.Count, Phase.SpawnFrames, Phase.SpawnMaxFrameMs);
 	}
-}
-
-int32 UTN_StressSubsystem::SpawnGroup(TNStress::EGroup Group, int32 Count)
-{
-	// Enemigos y cajas van repartidos (SpawnPending); de golpe solo quedan los lanzables.
-	return Group == TNStress::EGroup::Throwables ? SpawnThrowables(Count) : 0;
 }
 
 void UTN_StressSubsystem::BeginPhase(int32 Index)
@@ -367,16 +304,12 @@ void UTN_StressSubsystem::BeginPhase(int32 Index)
 	}
 	if (TNStress::IsSpreadGroup(Phase.Plan.Group))
 	{
-		// Repartidos en varios fotogramas, como el generador de la playa (SpawnPending en cada Tick).
+		// Repartidos en varios fotogramas (SpawnPending en cada Tick).
 		Phase.PendingSpawn = Phase.Plan.Count;
 		UE_LOG(LogTortunabo, Log, TEXT("[Estrés] Fase %d/%d «%s»: %d por crear (%.0f ms por fotograma)."), Index + 1, Phases.Num(),
 			TNStress::GroupName(Phase.Plan.Group), Phase.Plan.Count, TNStress::SPAWN_BUDGET_MS);
 		SpawnPending(Phase);
-		return;
 	}
-	Phase.Spawned = SpawnGroup(Phase.Plan.Group, Phase.Plan.Count);
-	UE_LOG(LogTortunabo, Log, TEXT("[Estrés] Fase %d/%d «%s»: %d de %d creados."), Index + 1, Phases.Num(), TNStress::GroupName(Phase.Plan.Group), Phase.Spawned,
-		Phase.Plan.Count);
 }
 
 void UTN_StressSubsystem::SampleFrame(FPhaseData& Phase)
@@ -504,17 +437,6 @@ void UTN_StressSubsystem::Tick(float DeltaTime)
 	FPhaseData& Phase = Phases[CurrentPhase];
 	SampleFrame(Phase);
 	SpawnPending(Phase);
-	if (Phase.Plan.Group == TNStress::EGroup::Throwables && Now - LastRefill >= 0.5)
-	{
-		// Cada clase de lanzable tiene un tope en el mundo: se reponen los que caducan hasta llegar a lo pedido.
-		LastRefill = Now;
-		const int32 Alive = ATN_RaceItemActor::CountOf(GetWorld(), ATN_RaceItemActor::StaticClass());
-		Phase.PeakAlive = FMath::Max(Phase.PeakAlive, Alive);
-		if (Alive < Phase.Plan.Count)
-		{
-			Phase.Spawned += SpawnThrowables(FMath::Min(Phase.Plan.Count - Alive, 25));
-		}
-	}
 	if (Now - LastNetSample >= 1.0)
 	{
 		LastNetSample = Now;
@@ -534,8 +456,6 @@ TSharedRef<FJsonObject> UTN_StressSubsystem::BuildReport(const TCHAR* Reason) co
 	Root->SetStringField(TEXT("end_reason"), Reason);
 	Root->SetBoolField(TEXT("rendering"), FApp::CanEverRender());
 	Root->SetNumberField(TEXT("enemies_requested"), Scenario.Enemies);
-	Root->SetNumberField(TEXT("throwables_requested"), Scenario.Throwables);
-	Root->SetNumberField(TEXT("race_items_requested"), Scenario.Items);
 	Root->SetNumberField(TEXT("turtles"), Scenario.Turtles);
 	Root->SetNumberField(TEXT("measured_seconds"), TotalSeconds);
 	Root->SetNumberField(TEXT("memory_start_mb"), MemoryStartMB);
@@ -558,7 +478,6 @@ TSharedRef<FJsonObject> UTN_StressSubsystem::BuildReport(const TCHAR* Reason) co
 		Item->SetStringField(TEXT("group"), TNStress::GroupName(Phase.Plan.Group));
 		Item->SetNumberField(TEXT("requested"), Phase.Plan.Count);
 		Item->SetNumberField(TEXT("spawned"), Phase.Spawned);
-		Item->SetNumberField(TEXT("peak_alive_throwables"), Phase.PeakAlive);
 		Item->SetNumberField(TEXT("frames"), Frame.Frames);
 		Item->SetNumberField(TEXT("frame_avg_ms"), Frame.Average);
 		Item->SetNumberField(TEXT("frame_p50_ms"), Frame.P50);
@@ -605,7 +524,7 @@ TSharedRef<FJsonObject> UTN_StressSubsystem::BuildReport(const TCHAR* Reason) co
 			const double NetDelta = (Phase.NetSamples > 0 ? Phase.NetOutKBsSum / Phase.NetSamples : 0.0) - (Prev.NetSamples > 0 ? Prev.NetOutKBsSum / Prev.NetSamples : 0.0);
 			TSharedRef<FJsonObject> Cost = MakeShared<FJsonObject>();
 			Cost->SetStringField(TEXT("group"), TNStress::GroupName(Phase.Plan.Group));
-			const int32 Entities = Phase.Plan.Group == TNStress::EGroup::Throwables ? FMath::Max(1, Phase.PeakAlive) : Phase.Spawned;
+			const int32 Entities = Phase.Spawned;
 			Cost->SetNumberField(TEXT("spawned"), Phase.Spawned);
 			Cost->SetNumberField(TEXT("entities_alive"), Entities);
 			Cost->SetNumberField(TEXT("delta_frame_avg_ms"), DeltaMs);

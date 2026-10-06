@@ -6,8 +6,8 @@
 class UObject;
 
 /**
- * Aspecto de cada objeto de siempre (las filas de DT_Items) dibujado en código, con el estilo de los objetos de la carrera y
- * de Todos contra Todos (issue #787). Sale del uso de la fila (UseType), como en los sorteos de los modos, y del ItemId en la
+ * Aspecto de cada objeto de siempre (las filas de DT_Items) dibujado en código, con el estilo de los objetos del
+ * cooperativo (issue #787). Sale del uso de la fila (UseType), como en los sorteos de los modos, y del ItemId en la
  * fila sin uso. Inventario completo en Docs/Objetos_DT_Items.md.
  */
 enum class ETNCatalogLook : uint8
@@ -33,17 +33,17 @@ enum class ETNCatalogLook : uint8
 };
 
 /**
- * El icono de la mochila es siempre una pegatina pintada en ejecución (128x128, como TNRaceItemArt y TNTctItemArt). La malla
+ * El icono de la mochila es siempre una pegatina pintada en ejecución (128x128, como los del cooperativo). La malla
  * solo se cambia si la fila trae una de relleno del motor (/Engine/BasicShapes...): las del proyecto se conservan, y la de un
  * lanzable también, porque el proyectil la manda a las demás máquinas por un multicast y una malla construida en ejecución
  * no viaja por la red. No se toca DT_Items.uasset.
  *
- * Cada máquina lo pone por su cuenta: TNRaceItems::ResolveVisuals lo llama desde el inventario (al recibir el objeto en el
- * servidor y al replicarse en los clientes) y desde los pickups, igual que con los objetos de carrera.
+ * Cada máquina lo pone por su cuenta: TNItemRuntime::ResolveVisuals lo llama desde el inventario (al recibir el objeto en el
+ * servidor y al replicarse en los clientes) y desde los pickups.
  */
 namespace TNCatalogItemVisuals
 {
-	/** El aspecto de un objeto de DT_Items (None si es de carrera, de Todos contra Todos o una fila sin uso desconocida). */
+	/** El aspecto de un objeto de DT_Items (None si es del cooperativo o una fila sin uso desconocida). */
 	TORTUNABO_API ETNCatalogLook LookOf(const FTN_InventoryItem& Item);
 
 	/** Nombre para el registro y las claves de caché («StaminaBoost», «Ball»...). */

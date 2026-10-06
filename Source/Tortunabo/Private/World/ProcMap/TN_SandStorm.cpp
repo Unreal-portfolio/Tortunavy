@@ -1,7 +1,6 @@
 #include "World/ProcMap/TN_SandStorm.h"
 
 #include "World/ProcMap/TN_SandStormRules.h"
-#include "World/ProcMap/TN_PathStorm.h"
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
 #include "World/Beach/TN_BeachShelterVolume.h"
 #include "Player/TN_StaminaComponent.h"
@@ -253,15 +252,6 @@ void ATN_SandStorm::ClearSpeedCaps()
 	AppliedCaps.Reset();
 }
 
-bool ATN_SandStorm::PathStormOwnsFog(const FVector& ViewLocation) const
-{
-	for (TActorIterator<ATN_PathStorm> It(GetWorld()); It; ++It)
-	{
-		if (It->IsLocationInside(ViewLocation)) { return true; }
-	}
-	return false;
-}
-
 void ATN_SandStorm::ApplyLocalLook(float Intensity, float Gust)
 {
 	UWorld* World = GetWorld();
@@ -270,7 +260,6 @@ void ATN_SandStorm::ApplyLocalLook(float Intensity, float Gust)
 		return;
 	}
 	APlayerController* PC = World->GetFirstPlayerController();
-	const FVector View = (PC && PC->PlayerCameraManager) ? PC->PlayerCameraManager->GetCameraLocation() : FVector::ZeroVector;
 	const UTN_GameSettingsSubsystem* Settings = UTN_GameSettingsSubsystem::Get(this);
 	float Weight = TNSandStorm::VisualWeight(Intensity, Settings ? Settings->GetWeatherEffects() : 1.f);
 	if (PC && PC->GetPawn() && ATN_BeachShelterVolume::IsSheltered(PC->GetPawn()))
@@ -278,10 +267,9 @@ void ATN_SandStorm::ApplyLocalLook(float Intensity, float Gust)
 		Weight *= TNSandStormDetail::ShelteredVisual;
 	}
 
-	// Niebla: se cierra con la tormenta y vuelve exactamente a como estaba. Si el jugador está dentro de la tormenta de
-	// bañistas, la niebla es suya (la restaura ella a su estado original): esta no la toca.
+	// Niebla: se cierra con la tormenta y vuelve exactamente a como estaba.
 	UExponentialHeightFogComponent* F = Fog.Get();
-	if (F && Weight > 0.001f && !PathStormOwnsFog(View))
+	if (F && Weight > 0.001f)
 	{
 		if (!bFogCached)
 		{

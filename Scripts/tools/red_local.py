@@ -34,11 +34,11 @@ PROJECT = ROOT / "Tortunabo.uproject"
 DEFAULT_ENGINE = Path(os.environ.get("UE_ROOT", r"C:\Program Files\Epic Games\UE_5.6"))
 # El editor en DebugGame: el de Development carga una DLL vieja del juego (Docs/Comandos_Prueba.md).
 EDITOR_EXE = Path("Engine/Binaries/Win64/UnrealEditor-Win64-DebugGame.exe")
-DEFAULT_MAP = "/Game/Maps/Run/LVL_BeachRace"
+DEFAULT_MAP = "/Game/Maps/Run/LVL_Demo01"
 DEFAULT_PORT = 7777
 MAX_CLIENTS = 7
 RENDER_MODES = ("ninguno", "servidor", "todos")
-STRESS_SCENARIOS = ("light", "heavy", "race8", "control")
+STRESS_SCENARIOS = ("light", "heavy", "tortugas8", "control")
 
 # IpNetDriver en vez de SteamSockets y subsistema NULL: varias instancias en un mismo PC sin Steam.
 NET_ARGS = (

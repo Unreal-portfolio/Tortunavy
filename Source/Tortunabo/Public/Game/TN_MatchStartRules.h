@@ -3,8 +3,7 @@
 #include "CoreMinimal.h"
 
 /**
- * Regla del arranque de la partida de ATN_RunGameMode (y de sus hijos: Supervivencia, mapa procedural y carrera
- * de la playa) como funciones PURAS, igual que TN_SurvivalRules.h: sin mundo ni actores, para que los tests
+ * Regla del arranque de la partida de ATN_RunGameMode como funciones PURAS: sin mundo ni actores, para que los tests
  * (Tortunabo.MatchStart) prueben exactamente lo que corre en juego.
  *
  * La partida empieza una sola vez. En un servidor que abre el mapa directamente (-game, PIE o el host de un viaje

@@ -1,5 +1,4 @@
-// Anélido poliqueto (#792): alcance de 3 m, una sola caza, estamina llena y solo en tramos Fácil y Medio de la tabla de
-// intensidad. Correr desde Session Frontend (categoría "Tortunabo.ProcMap.Annelid") o headless:
+// Anélido poliqueto (#792): alcance de 3 m, una sola caza y estamina llena. Correr desde Session Frontend (categoría "Tortunabo.ProcMap.Annelid") o headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.ProcMap.Annelid; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
@@ -10,7 +9,6 @@
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_StaminaComponent.h"
 #include "UObject/UnrealType.h"
-#include "World/ProcMap/TN_CoopIntensity.h"
 #include "World/ProcMap/TN_ProcAnnelid.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -76,35 +74,6 @@ bool FTNAnnelidRulesTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Fuera mientras se consume"), EmergeHeight01(EMERGE_SECONDS + HOLD_SECONDS * 0.5f), 1.f);
 	TestEqual(TEXT("Escondido otra vez al final"), EmergeHeight01(EMERGE_SECONDS + HOLD_SECONDS + SINK_SECONDS), 0.f);
 	TestTrue(TEXT("El actor dura hasta que acaba la animación"), LIFE_AFTER_HUNT > EMERGE_SECONDS + HOLD_SECONDS + SINK_SECONDS);
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNAnnelidTramosTest,
-	"Tortunabo.ProcMap.Annelid.SoloFacilYMedio",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNAnnelidTramosTest::RunTest(const FString& Parameters)
-{
-	using namespace TNCoopIntensity;
-	TestTrue(TEXT("Fácil"), AllowsAnnelid(EDifficulty::Easy));
-	TestTrue(TEXT("Medio"), AllowsAnnelid(EDifficulty::Medium));
-	TestFalse(TEXT("Difícil, no"), AllowsAnnelid(EDifficulty::Hard));
-	TestFalse(TEXT("Puzle, no"), AllowsAnnelid(EDifficulty::Puzzle));
-
-	const FTable* Table = GetDefaultTable();
-	if (!TestNotNull(TEXT("Tabla de intensidad versionada"), Table))
-	{
-		return false;
-	}
-	// Ronda 1: Fácil, Fácil, Medio, Puzle, Fácil. Ronda 5: Medio, Difícil, Puzle, Difícil, Difícil.
-	const TArray<FTramoPlan> Round1 = PlanRound(*Table, 1, 11u);
-	const TArray<FTramoPlan> Round5 = PlanRound(*Table, 5, 11u);
-	int32 InRound1 = 0;
-	int32 InRound5 = 0;
-	for (const FTramoPlan& T : Round1) { InRound1 += AllowsAnnelid(T.Difficulty) ? ANNELIDS_PER_TRAMO : 0; }
-	for (const FTramoPlan& T : Round5) { InRound5 += AllowsAnnelid(T.Difficulty) ? ANNELIDS_PER_TRAMO : 0; }
-	TestEqual(TEXT("Ronda 1: en cuatro tramos (no en el de puzle)"), InRound1, 4 * ANNELIDS_PER_TRAMO);
-	TestEqual(TEXT("Ronda 5: solo en el primer tramo (Medio)"), InRound5, ANNELIDS_PER_TRAMO);
 	return true;
 }
 

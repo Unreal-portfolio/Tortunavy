@@ -11,17 +11,13 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Game/TN_TctItemComponent.h"
-#include "Game/TN_TctItemRules.h"
+#include "Game/TN_ItemRuntime.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_TurtleMovementComponent.h"
 #include "TimerManager.h"
 #include "World/TN_FishingPool.h"
-#include "Game/TN_BeachRaceGameState.h"
-#include "Game/TN_TctItems.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Player/TortugaCharacter.h"
-#include "World/Beach/TN_RaceItems.h"
 #include "World/TN_CoopThrownItem.h"
 #include "World/TN_PickupInteractableBase.h"
 
@@ -168,14 +164,11 @@ namespace TNCoopItemsDetail
 				break;
 			}
 		}
-		if (UTN_TctItemComponent* Effects = UTN_TctItemComponent::FindOrAddOn(Turtle))
-		{
-			// El cable del garfio de Todos contra Todos (cosmético, en todas las máquinas).
-			Effects->MulticastShot(static_cast<uint8>(ETNTctItem::Grapple), Start, RopeEnd);
-		}
+		// El cable del arpón (cosmético, en todas las máquinas).
+		TNItemRuntime::ShowHarpoonRope(Turtle, Start, RopeEnd);
 		if (bDone)
 		{
-			TNTctItems::PlayCue(Turtle, ETNRaceSound::Catch, 0.9f);
+			TNItemRuntime::PlayCue(Turtle, ETNRaceSound::Catch, 0.9f);
 		}
 		return bDone;
 	}
@@ -198,14 +191,14 @@ namespace TNCoopItemsDetail
 			{
 				return false;
 			}
-			TNTctItems::PlayCue(Turtle, ETNRaceSound::Throw, 1.3f);
+			TNItemRuntime::PlayCue(Turtle, ETNRaceSound::Throw, 1.3f);
 			return true;
 		case ETNCoopItem::SlipperyPeel:
 			if (!ATN_CoopThrownItem::ServerThrow(Turtle, static_cast<uint8>(Kind), TNCoopItemTuning::PeelRange))
 			{
 				return false;
 			}
-			TNTctItems::PlayCue(Turtle, ETNRaceSound::Throw, 1.1f);
+			TNItemRuntime::PlayCue(Turtle, ETNRaceSound::Throw, 1.1f);
 			return true;
 		case ETNCoopItem::None:
 		default:
@@ -372,17 +365,6 @@ bool TNCoopItems::RollLoot(const UDataTable* Catalog, TFunctionRef<float(FName, 
 	return false;
 }
 
-bool TNCoopItems::RollModeLoot(const APawn* Picker, const UDataTable* Catalog, TFunctionRef<float(FName, const FTN_InventoryItem&)> CatalogWeight,
-	FTN_InventoryItem& OutItem)
-{
-	const UWorld* World = Picker ? Picker->GetWorld() : nullptr;
-	if (World && World->GetGameState<ATN_BeachRaceGameState>())
-	{
-		return TNRaceItems::RollLoot(Picker, ETNRaceLootSource::Search, Catalog, OutItem);
-	}
-	return RollLoot(Catalog, CatalogWeight, FMath::FRand(), OutItem);
-}
-
 void TNCoopItems::ServerUse(ATortugaCharacter* Turtle, const FTN_InventoryItem& Item)
 {
 	if (!Turtle || !Turtle->HasAuthority())
@@ -394,9 +376,9 @@ void TNCoopItems::ServerUse(ATortugaCharacter* Turtle, const FTN_InventoryItem& 
 	{
 		return;
 	}
-	if (!TNRaceItems::CanUseNow(Turtle) || !TNCoopItemsDetail::UseKind(Turtle, Kind, Item))
+	if (!TNItemRuntime::CanUseNow(Turtle) || !TNCoopItemsDetail::UseKind(Turtle, Kind, Item))
 	{
-		TNTctItems::PlayCue(Turtle, ETNRaceSound::Nope);
+		TNItemRuntime::PlayCue(Turtle, ETNRaceSound::Nope);
 		UE_LOG(LogTortunabo, Log, TEXT("[Coop] %s no puede usar %s ahora."), *GetNameSafe(Turtle), TNCoopItemRules::Spec(Kind).Code);
 		return;
 	}

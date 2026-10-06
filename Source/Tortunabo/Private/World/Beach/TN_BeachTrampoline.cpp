@@ -440,7 +440,6 @@ void ATN_BeachTrampoline::ApplySpec()
 	Variant = static_cast<int32>(Seed % 4u);
 	bBoosted = (Spec.Flags & TNBeach::FlagBoosted) != 0;
 	BreathPhase = static_cast<float>(TNPlaygroundKit::KitTwoPi * TNBeachTrapKit::Hash01(2, 2, Seed));
-	Frame->SetRelativeRotation(FRotator(0.0, TNBeachRideKit::LaunchYawInActor(this), 0.0));
 
 	TNBeachTrapKit::FBuffers Body;
 	TNBeachTrapKit::FBuffers Decor;

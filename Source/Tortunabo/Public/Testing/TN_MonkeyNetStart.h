@@ -56,7 +56,7 @@ namespace TNMonkey
 
 	/**
 	 * ¿Es la dirección de un servidor y no un mapa? IPv4 con o sin puerto, «localhost[:puerto]» o «steam.<id>». Los mapas
-	 * («LVL_BeachRace», «/Game/Maps/...», con «?listen») no lo son.
+	 * («LVL_Demo01», «/Game/Maps/...», con «?listen») no lo son.
 	 */
 	inline bool LooksLikeServerAddress(const FString& Token)
 	{

@@ -107,8 +107,8 @@ float ATN_FishingPool::GetLuck() const
 	return LootChance;
 }
 
-bool ATN_FishingPool::PickLoot(FTN_InventoryItem& OutItem, const APawn* Searcher) const
+bool ATN_FishingPool::PickLoot(FTN_InventoryItem& OutItem, const APawn* /*Searcher*/) const
 {
-	return TNCoopItems::RollModeLoot(Searcher, GetLootTable(), [this](FName RowName, const FTN_InventoryItem& Row) { return GetLootWeight(RowName, Row); },
-		OutItem);
+	return TNCoopItems::RollLoot(GetLootTable(), [this](FName RowName, const FTN_InventoryItem& Row) { return GetLootWeight(RowName, Row); },
+		FMath::FRand(), OutItem);
 }

@@ -2,7 +2,6 @@
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
 #include "World/Beach/TN_BeachGullTuning.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachStorm.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "TN_BeachEnemyKit.h"
@@ -145,12 +144,6 @@ namespace TNBeachGull
 	/** Al soltarla: empujón de la bola hacia la salida (cm/s); el aturdimiento tras caer, en UTN_CombatTuning. */
 	constexpr float ReleaseLaunch = 350.f;
 	constexpr float DiveEndHit = StrikeTime + CarryTime + 2.4f;
-	/**
-	 * Supervivencia (#733): la suelta 1 s después de cogerla, a la altura que lleva entonces (CarryHeight sube despacio: ~2 m)
-	 * y donde la cogió, sin morir por la caída. El ataque acaba como en la playa, 2,4 s después de soltarla.
-	 */
-	constexpr float SurvivalCarryTime = 1.f;
-	constexpr float SurvivalCarryHeight = 700.f;
 	constexpr float DiveEndMiss = StrikeTime + PeckHold + 2.9f;
 	/** Del hueso de la espalda de la tortuga (Spine2) a la superficie del caparazón que muerde el pico (cm). */
 	constexpr float ShellBack = 35.f;
@@ -339,14 +332,11 @@ void ATN_BeachGullZone::ApplySpec()
 void ATN_BeachGullZone::BeginPlay()
 {
 	Super::BeginPlay();
-	// Hacia la salida: al revés de hacia donde está el mar según el generador (sin él, -X).
-	if (const ATN_BeachRaceGenerator* Gen = FindGenerator())
+	// Hacia donde se la lleva: la dirección editable de la zona, en planta (sin ella, -X).
+	CourseBack = CourseBack.GetSafeNormal2D();
+	if (CourseBack.IsNearlyZero())
 	{
-		const FVector Sea = Gen->GetSeaDirection().GetSafeNormal2D();
-		if (!Sea.IsNearlyZero())
-		{
-			CourseBack = -Sea;
-		}
+		CourseBack = FVector(-1.0, 0.0, 0.0);
 	}
 	if (HasAuthority())
 	{
@@ -754,17 +744,17 @@ float ATN_BeachGullZone::GripDropFor(const ATortugaCharacter* Turtle) const
 
 float ATN_BeachGullZone::CarrySeconds() const
 {
-	return IsSurvivalGull() ? TNBeachGull::SurvivalCarryTime : TNBeachGull::CarryTime;
+	return TNBeachGull::CarryTime;
 }
 
 float ATN_BeachGullZone::CarryRise() const
 {
-	return IsSurvivalGull() ? TNBeachGull::SurvivalCarryHeight : TNBeachGull::CarryHeight;
+	return TNBeachGull::CarryHeight;
 }
 
 float ATN_BeachGullZone::CarryDistance() const
 {
-	return IsSurvivalGull() ? 0.f : TNBeachGull::CarryBack;
+	return TNBeachGull::CarryBack;
 }
 
 float ATN_BeachGullZone::DiveEndHitTime() const
@@ -1031,7 +1021,7 @@ void ATN_BeachGullZone::ServerTick(float DeltaSeconds)
 		UE_LOG(LogTortunabo, Log, TEXT("[Playa] %s: agarre de prueba a %s (quedan %d)."), *GetName(), *GetNameSafe(Target), DebugGrabsLeft);
 		return;
 	}
-	if (Now < NextAttackTime || !IsRaceLive(this) || Birds.Num() == 0 || IsHitStunned())
+	if (Now < NextAttackTime || Birds.Num() == 0 || IsHitStunned())
 	{
 		return;
 	}
@@ -1112,38 +1102,35 @@ void ATN_BeachGullZone::ServerPoop(float Tau, float DeltaSeconds)
 		Attack.bLocked = 1;
 		const FVector Impact = Attack.Aim;
 		TArray<ATortugaCharacter*> Hit;
-		if (IsRaceLive(this))
+		TArray<ATortugaCharacter*> Turtles;
+		GatherTurtles(this, Turtles);
+		for (ATortugaCharacter* Turtle : Turtles)
 		{
-			TArray<ATortugaCharacter*> Turtles;
-			GatherTurtles(this, Turtles);
-			for (ATortugaCharacter* Turtle : Turtles)
+			if (!CanBeHit(Turtle) || Turtle->HasUmbrellaProtection())
 			{
-				if (!CanBeHit(Turtle) || Turtle->HasUmbrellaProtection())
-				{
-					continue;
-				}
-				const FVector At = Turtle->GetActorLocation();
-				// A cubierto (bajo una sombrilla, en el castillo) la mancha cae encima, no en ella.
-				if (!TNBeachGullTuning::IsInsideHit(FVector::Dist2D(At, Impact), SplatRadius, SizeK, TNBeachGullTuning::SplatPad)
-					|| FMath::Abs(At.Z - Impact.Z) > 300.0)
-				{
-					continue;
-				}
-				// Tirada en plancha en el momento justo: le pasa por encima.
-				if (TNBeach::IsDodgingByBellyDive(Turtle))
-				{
-					UE_LOG(LogTortunabo, Log, TEXT("[Playa] %s esquiva la cagada de %s en plancha."), *GetNameSafe(Turtle), *GetName());
-					continue;
-				}
-				// El pegote la tumba de espaldas: derribo con ragdoll y mareo, un empujoncito hacia fuera.
-				FVector Away = At - Impact;
-				Away.Z = 0.0;
-				Away = Away.IsNearlyZero() ? Turtle->GetActorForwardVector() * -1.0 : Away.GetSafeNormal();
-				const FVector Spin = FVector::CrossProduct(FVector::UpVector, Away) * 200.0;
-				KnockDownTurtle(Turtle, UTN_CombatTuning::Get().GullZonePoopKnockSeconds, Away * PoopPush + FVector(0.0, 0.0, 120.0), Spin);
-				IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GullZonePoopIgnoreSeconds);
-				Hit.Add(Turtle);
+				continue;
 			}
+			const FVector At = Turtle->GetActorLocation();
+			// A cubierto (bajo una sombrilla, en el castillo) la mancha cae encima, no en ella.
+			if (!TNBeachGullTuning::IsInsideHit(FVector::Dist2D(At, Impact), SplatRadius, SizeK, TNBeachGullTuning::SplatPad)
+				|| FMath::Abs(At.Z - Impact.Z) > 300.0)
+			{
+				continue;
+			}
+			// Tirada en plancha en el momento justo: le pasa por encima.
+			if (TNBeach::IsDodgingByBellyDive(Turtle))
+			{
+				UE_LOG(LogTortunabo, Log, TEXT("[Playa] %s esquiva la cagada de %s en plancha."), *GetNameSafe(Turtle), *GetName());
+				continue;
+			}
+			// El pegote la tumba de espaldas: derribo con ragdoll y mareo, un empujoncito hacia fuera.
+			FVector Away = At - Impact;
+			Away.Z = 0.0;
+			Away = Away.IsNearlyZero() ? Turtle->GetActorForwardVector() * -1.0 : Away.GetSafeNormal();
+			const FVector Spin = FVector::CrossProduct(FVector::UpVector, Away) * 200.0;
+			KnockDownTurtle(Turtle, UTN_CombatTuning::Get().GullZonePoopKnockSeconds, Away * PoopPush + FVector(0.0, 0.0, 120.0), Spin);
+			IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GullZonePoopIgnoreSeconds);
+			Hit.Add(Turtle);
 		}
 		Attack.Result = Hit.Num() > 0 ? 1 : 2;
 		// Las manchas como estado (OnRep_ShellStains): las ve también quien entra o reconecta mientras siguen frescas.
@@ -1203,35 +1190,32 @@ void ATN_BeachGullZone::ServerDive(float Tau, float DeltaSeconds)
 		Attack.bLocked = 1;
 		// La coge si está bajo el pico, de pie (ni en pleno panzazo, que la esquiva, ni en bola ni en brazos de otra).
 		ATortugaCharacter* Caught = nullptr;
-		if (IsRaceLive(this))
+		const FVector Point = Attack.Aim;
+		float Best = GrabRadius * SizeK + TNBeachGullTuning::GrabPad;
+		TArray<ATortugaCharacter*> Turtles;
+		GatherTurtles(this, Turtles);
+		for (ATortugaCharacter* Turtle : Turtles)
 		{
-			const FVector Point = Attack.Aim;
-			float Best = GrabRadius * SizeK + TNBeachGullTuning::GrabPad;
-			TArray<ATortugaCharacter*> Turtles;
-			GatherTurtles(this, Turtles);
-			for (ATortugaCharacter* Turtle : Turtles)
+			if (!IsTargetable(Turtle) || Turtle->HasUmbrellaProtection() || Turtle->IsBellyPoseActive() || Turtle->IsInShell())
 			{
-				if (!IsTargetable(Turtle) || Turtle->HasUmbrellaProtection() || Turtle->IsBellyPoseActive() || Turtle->IsInShell())
-				{
-					continue;
-				}
-				// Junto al frente de la tormenta no se la lleva (el vuelo la metería dentro): pica en la arena.
-				if (IsNearStormFront(Turtle->GetActorLocation()))
-				{
-					continue;
-				}
-				const UTN_CarryComponent* Carry = Turtle->GetCarryComponent();
-				if (Carry && Carry->IsBeingCarried())
-				{
-					continue;
-				}
-				const FVector At = Turtle->GetActorLocation();
-				const float Dist = static_cast<float>(FVector::Dist2D(At, Point));
-				if (Dist < Best && FMath::Abs(At.Z - Point.Z) < 350.0)
-				{
-					Best = Dist;
-					Caught = Turtle;
-				}
+				continue;
+			}
+			// Junto al frente de la tormenta no se la lleva (el vuelo la metería dentro): pica en la arena.
+			if (IsNearStormFront(Turtle->GetActorLocation()))
+			{
+				continue;
+			}
+			const UTN_CarryComponent* Carry = Turtle->GetCarryComponent();
+			if (Carry && Carry->IsBeingCarried())
+			{
+				continue;
+			}
+			const FVector At = Turtle->GetActorLocation();
+			const float Dist = static_cast<float>(FVector::Dist2D(At, Point));
+			if (Dist < Best && FMath::Abs(At.Z - Point.Z) < 350.0)
+			{
+				Best = Dist;
+				Caught = Turtle;
 			}
 		}
 		if (Caught)
@@ -1320,13 +1304,7 @@ void ATN_BeachGullZone::ReleaseCarried()
 		GroundHeightAt(Carried->GetActorLocation(), GroundZ);
 		const float Height = FMath::Max(0.f, static_cast<float>(Carried->GetActorLocation().Z) - GroundZ);
 		const float FallSeconds = FMath::Sqrt(2.f * Height / UTN_CombatTuning::Get().GullZoneGravity);
-		// En Supervivencia cae en el sitio y la caída no la elimina (#733): fuera del camino podría haber vacío.
-		const bool bSurvival = IsSurvivalGull();
-		if (bSurvival)
-		{
-			Carried->SetFallImmuneUntilLanded();
-		}
-		const FVector Push = bSurvival ? FVector::ZeroVector : CourseBack * ReleaseLaunch;
+		const FVector Push = CourseBack * ReleaseLaunch;
 		StunTurtle(Carried, FallSeconds + UTN_CombatTuning::Get().GullZoneAfterDropStunSeconds, Push + FVector(0.0, 0.0, -50.0));
 	}
 	ForceNetUpdate();

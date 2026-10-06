@@ -48,7 +48,7 @@ def test_ocho_instancias_por_defecto_con_ipnetdriver():
 
 def test_servidor_listen_con_puerto_y_registro_propio():
     args = server_args(plan(port=7800))
-    assert args[1] == "/Game/Maps/Run/LVL_BeachRace?listen"
+    assert args[1] == "/Game/Maps/Run/LVL_Demo01?listen"
     assert "-port=7800" in args
     assert f"-abslog={(LOGS / 'servidor.log').as_posix()}" in args
 
@@ -141,12 +141,12 @@ def test_mostrar_no_lanza_y_valida(capsys):
 SERVER_LOG = """[2026.10.02-10.00.00:000][  0]LogNet: GameNetDriver IpNetDriver_0 IpNetDriver listening on port 7777
 [2026.10.02-10.00.05:000][ 10]LogNet: Join succeeded: DESKTOP-1
 [2026.10.02-10.00.07:000][ 20]LogNet: Join succeeded: DESKTOP-2
-[2026.10.02-10.01.20:000][900]LogTortunabo: [Estrés] Terminado (tiempo cumplido). Informe guardado: C:/p/Saved/Stress/heavy.json
+[2026.10.02-10.01.20:000][900]LogTortunabo: [Estrés] Terminado (tiempo cumplido). Informe guardado: C:/p/Saved/Stress/heavy.json
 [2026.10.02-10.01.21:000][901]LogExit: Exiting.
 """
 
-CLIENT_LOG = """[2026.10.02-10.00.05:000][  5]LogNet: Welcomed by server (Level: /Game/Maps/Run/LVL_BeachRace, Game: /Script/Tortunabo.X)
-[2026.10.02-10.00.25:000][100]LogTortunabo: Display: [Informe] línea de órdenes: informe de bug en C:/p/Saved/BugReports/2026-10-02_10-00-25 (LVL_BeachRace, Client, abc).
+CLIENT_LOG = """[2026.10.02-10.00.05:000][  5]LogNet: Welcomed by server (Level: /Game/Maps/Run/LVL_Demo01, Game: /Script/Tortunabo.X)
+[2026.10.02-10.00.25:000][100]LogTortunabo: Display: [Informe] línea de órdenes: informe de bug en C:/p/Saved/BugReports/2026-10-02_10-00-25 (LVL_Demo01, Client, abc).
 [2026.10.02-10.01.15:000][800]LogTortunabo: [Monkey] Sesión terminada (tiempo cumplido): sin fallos. Informe guardado: C:/tmp/red/monkey_cliente1.json
 """
 
@@ -157,7 +157,7 @@ def test_resumen_de_registros():
     assert server["joins"] == ["DESKTOP-1", "DESKTOP-2"]
     assert server["stress_report"] == "C:/p/Saved/Stress/heavy.json"
     client = summarize_client_log(CLIENT_LOG)
-    assert client["welcomed"] and client["level"] == "/Game/Maps/Run/LVL_BeachRace"
+    assert client["welcomed"] and client["level"] == "/Game/Maps/Run/LVL_Demo01"
     assert client["monkey"]["verdict"] == "sin fallos"
     assert client["monkey"]["report"] == "C:/tmp/red/monkey_cliente1.json"
     assert client["bug_report"] == "C:/p/Saved/BugReports/2026-10-02_10-00-25"

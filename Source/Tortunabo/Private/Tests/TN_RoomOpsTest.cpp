@@ -124,34 +124,19 @@ bool FTNRoomOpTimeoutTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRoomModeSchemaTest,
-	"Tortunabo.Rooms.ModeSchema",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNRoomSchemaTest,
+	"Tortunabo.Rooms.Schema",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
-bool FTNRoomModeSchemaTest::RunTest(const FString& Parameters)
+bool FTNRoomSchemaTest::RunTest(const FString& Parameters)
 {
 	using namespace TNRoomKeys;
-	// La numeración que anuncian las salas no se mueve: un cambio aquí rompe la lista con otras versiones.
-	TestEqual(TEXT("Coop = 0"), static_cast<int32>(ETNProcGameMode::Coop), 0);
-	TestEqual(TEXT("Race = 1"), static_cast<int32>(ETNProcGameMode::Race), 1);
-	TestEqual(TEXT("TwoVsTwo = 2"), static_cast<int32>(ETNProcGameMode::TwoVsTwo), 2);
-	TestEqual(TEXT("Classic = 3"), static_cast<int32>(ETNProcGameMode::Classic), 3);
-	TestEqual(TEXT("Survival = 4"), static_cast<int32>(ETNProcGameMode::Survival), 4);
-	TestEqual(TEXT("Karts = 5"), static_cast<int32>(ETNProcGameMode::Karts), 5);
-	TestEqual(TEXT("FreeForAll = 6"), static_cast<int32>(ETNProcGameMode::FreeForAll), 6);
-	TestEqual(TEXT("Rally = 7"), static_cast<int32>(ETNProcGameMode::Rally), 7);
-
-	// Esquema vigente: cada número es su modo.
-	TestTrue(TEXT("Esquema vigente: 5 es Karts"), DecodeMode(true, 5, ModeSchemaVersion) == ETNProcGameMode::Karts);
-	TestTrue(TEXT("Esquema vigente: 6 es Todos contra Todos"), DecodeMode(true, 6, ModeSchemaVersion) == ETNProcGameMode::FreeForAll);
-	TestTrue(TEXT("Esquema vigente: 7 es Rally"), DecodeMode(true, 7, ModeSchemaVersion) == ETNProcGameMode::Rally);
-	// Sala de una versión sin esquema: la parte común vale; lo demás no se interpreta (sale cooperativo).
-	TestTrue(TEXT("Sin esquema: 4 sigue siendo Supervivencia"), DecodeMode(true, 4, 1) == ETNProcGameMode::Survival);
-	TestTrue(TEXT("Sin esquema: un 5 no se lee como Karts"), DecodeMode(true, 5, 1) == ETNProcGameMode::Coop);
-	// Datos rotos o ausentes.
-	TestTrue(TEXT("Sin modo: cooperativo"), DecodeMode(false, 3, ModeSchemaVersion) == ETNProcGameMode::Coop);
-	TestTrue(TEXT("Negativo: cooperativo"), DecodeMode(true, -1, ModeSchemaVersion) == ETNProcGameMode::Coop);
-	TestTrue(TEXT("Fuera de rango: cooperativo"), DecodeMode(true, static_cast<int32>(ETNProcGameMode::Count), ModeSchemaVersion) == ETNProcGameMode::Coop);
+	// Modo único: las salas de las compilaciones con selector de modo (versión 2 o sin clave) no se listan ni se encuentran.
+	TestEqual(TEXT("Versión de las salas del modo único"), SchemaVersion, 3);
+	TestTrue(TEXT("Misma versión: se lista"), IsCurrentSchema(true, SchemaVersion));
+	TestFalse(TEXT("Versión 2 (con modo en la sala): no se lista"), IsCurrentSchema(true, 2));
+	TestFalse(TEXT("Sin clave (compilaciones más antiguas): no se lista"), IsCurrentSchema(false, 0));
+	TestFalse(TEXT("Versión futura: no se lista"), IsCurrentSchema(true, SchemaVersion + 1));
 	return true;
 }
 

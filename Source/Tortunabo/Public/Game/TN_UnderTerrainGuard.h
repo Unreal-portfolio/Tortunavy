@@ -9,10 +9,9 @@ struct FHitResult;
 
 /**
  * Red de seguridad bajo el terreno (GDD §9, #633): 10 veces por segundo, en el servidor, comprueba si una tortuga se ha
- * hundido bajo el terreno y la recoloca en la superficie. Lo común lo comparten la carrera de la playa
- * (ATN_BeachRaceGameMode::GuardUnderSand, que conoce la arena de su generador) y el resto de modos
- * (UTN_UnderTerrainGuardComponent, que la busca con trazas): qué mueve de verdad a la tortuga (BodyProbe) y cuándo una
- * mirada bajo el terreno cuenta (RegisterLook: dos seguidas, o una muy honda).
+ * hundido bajo el terreno y la recoloca en la superficie (UTN_UnderTerrainGuardComponent, que la busca con trazas): qué
+ * mueve de verdad a la tortuga (BodyProbe) y cuándo una mirada bajo el terreno cuenta (RegisterLook: dos seguidas, o una
+ * muy honda).
  */
 namespace TNUnderTerrain
 {
@@ -62,8 +61,7 @@ struct FTNUnderTerrainWatch
 };
 
 /**
- * @brief Red de seguridad bajo el terreno para los modos sin generador de arena: Coop (ATN_ProcMapGameMode) y Clásico
- * (ATN_RunGameMode). La lleva ATN_RunGameMode; la carrera de la playa la apaga porque tiene la suya.
+ * @brief Red de seguridad bajo el terreno del modo único. La lleva ATN_RunGameMode.
  *
  * Una tortuga está bajo el terreno si lo primero que la para bajando desde SurfaceSearchUp por encima de su punto más bajo
  * queda más de Margin por encima y, además, está dentro de esa geometría: mirando hacia arriba desde ella no hay otra cara
@@ -87,7 +85,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/** Enciende o apaga la red (antes de BeginPlay; la carrera de la playa la apaga en su constructor). */
+	/** Enciende o apaga la red (antes de BeginPlay; las pruebas la apagan para medirla a mano). */
 	void SetGuardEnabled(bool bInEnabled) { bGuardEnabled = bInEnabled; }
 
 	UFUNCTION(BlueprintPure, Category = "Safety")

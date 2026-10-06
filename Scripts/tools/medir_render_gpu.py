@@ -35,7 +35,7 @@ UPROJECT = ROOT / "Tortunabo.uproject"
 EDITOR_EXE = Path(r"C:\Program Files\Epic Games\UE_5.6\Engine\Binaries\Win64\UnrealEditor-Win64-DebugGame-Cmd.exe")
 PACKAGED_ROOT = ROOT / "Saved" / "Packages" / "dev-2026-10-02" / "Windows"
 PACKAGED_EXE = PACKAGED_ROOT / "Tortunabo.exe"
-MAP = "/Game/Maps/Run/LVL_BeachRace"
+MAP = "/Game/Maps/Run/LVL_Demo01"
 SETTLE_SECONDS = 1.5  # igual que TNStressDetail::SettleSeconds: se descarta el arranque de cada fase
 TIMED = ["FrameTime", "GameThreadTime", "RenderThreadTime", "RHIThreadTime", "GPUTime"]
 COUNTS = ["RHI/DrawCalls", "RHI/PrimitivesDrawn"]
@@ -230,7 +230,7 @@ def main() -> int:
     sub = parser.add_subparsers(dest="mode", required=True)
     r = sub.add_parser("run")
     r.add_argument("--build", choices=["debuggame", "development"], required=True)
-    r.add_argument("--scenario", default="heavy", help="light|heavy|race8|control|none")
+    r.add_argument("--scenario", default="heavy", help="light|heavy|tortugas8|control|none")
     r.add_argument("--seconds", type=int, default=60)
     r.add_argument("--warmup", type=int, default=10)
     r.add_argument("--frames", type=int, default=20000, help="fotogramas de captura; deben cubrir carga + calentamiento + medida")

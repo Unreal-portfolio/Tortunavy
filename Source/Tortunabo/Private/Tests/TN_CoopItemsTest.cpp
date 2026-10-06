@@ -8,7 +8,7 @@
 #include "Engine/World.h"
 #include "Game/TN_CoopItemComponent.h"
 #include "GameFramework/Character.h"
-#include "World/Beach/TN_RaceItems.h"
+#include "Game/TN_ItemRuntime.h"
 #include "World/TN_FishingPool.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -80,8 +80,6 @@ bool FTNCoopItemsLootTableTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Fila normal: 15"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::Throwable, 1.f), 15.f);
 	TestEqual(TEXT("Tótem a 0,3: 4,5"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::Totem, 0.3f), 4.5f, 1.e-4f);
 	TestEqual(TEXT("Sin uso: fuera"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::None, 1.f), 0.f);
-	TestEqual(TEXT("De carrera: fuera"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::RaceItem, 1.f), 0.f);
-	TestEqual(TEXT("De TcT: fuera"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::TctItem, 1.f), 0.f);
 	TestEqual(TEXT("Del coop: fuera (salen por su peso)"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::CoopItem, 1.f), 0.f);
 	TestEqual(TEXT("Peso negativo: fuera"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::Throwable, -1.f), 0.f);
 
@@ -199,15 +197,15 @@ bool FTNCoopItemsPufferWorldTest::RunTest(const FString& Parameters)
 	ACharacter* Turtle = World->SpawnActor<ACharacter>(ACharacter::StaticClass(), FTransform(FVector(0.0, 0.0, 100.0)), Params);
 	if (TestNotNull(TEXT("Personaje"), Turtle))
 	{
-		TestFalse(TEXT("Sin pez globo se le puede derribar"), TNRaceItems::IsInvulnerable(Turtle));
+		TestFalse(TEXT("Sin pez globo se le puede derribar"), TNItemRuntime::IsInvulnerable(Turtle));
 		UTN_CoopItemComponent* Effects = UTN_CoopItemComponent::FindOrAddOn(Turtle);
 		if (TestNotNull(TEXT("El servidor le añade el componente"), Effects))
 		{
 			TestTrue(TEXT("Come el pez globo"), Effects->GrantPuffer());
-			TestTrue(TEXT("Protegida: nada la derriba ni la aturde"), TNRaceItems::IsInvulnerable(Turtle));
+			TestTrue(TEXT("Protegida: nada la derriba ni la aturde"), TNItemRuntime::IsInvulnerable(Turtle));
 			TestFalse(TEXT("Otro mientras dura: no se apila"), Effects->GrantPuffer());
 			Effects->ClearEffects();
-			TestFalse(TEXT("Sin efectos vuelve a ser vulnerable"), TNRaceItems::IsInvulnerable(Turtle));
+			TestFalse(TEXT("Sin efectos vuelve a ser vulnerable"), TNItemRuntime::IsInvulnerable(Turtle));
 		}
 	}
 	TNCoopItemsTestDetail::DestroyWorld(World);

@@ -13,8 +13,8 @@ class UMaterialInterface;
 class UPCGGraphInterface;
 
 /**
- * Configuración editable del mapa procedural: perfil de generación por modo y
- * dificultad, y un DataAsset por bioma con colores, vegetación y peligros.
+ * Configuración editable de los biomas (valle del lobby y recorrido del tutorial): un DataAsset por bioma con colores,
+ * vegetación y peligros.
  * Todo tiene valores por defecto razonables: sin assets asignados el mapa sale
  * en greybox con formas básicas del motor.
  */
@@ -43,126 +43,6 @@ enum class ETNProcScatterZone : uint8
 	Walls       UMETA(DisplayName = "Muros del borde"),
 	/** Bajo el nivel del agua poco profunda (raíces de manglar, juncos). */
 	Shallows    UMETA(DisplayName = "Aguas someras")
-};
-
-/** Parámetros de generación para un modo y una dificultad. */
-USTRUCT(BlueprintType)
-struct TORTUNABO_API FTNProcMapProfile
-{
-	GENERATED_BODY()
-
-	/** Módulos por lado (3x3, 6x6, 8x8...). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid", meta = (ClampMin = "1", ClampMax = "10"))
-	int32 GridSize = 6;
-
-	/** Lado nominal de un módulo (cm). 40000 = 400 m. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid", meta = (ClampMin = "8000.0"))
-	float ModuleSize = 40000.f;
-
-	/** Fracción de módulos por los que pasa el camino principal. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "0.1", ClampMax = "1.0"))
-	float Coverage = 0.78f;
-
-	/** Longitud del camino dentro de un módulo respecto a la línea recta entre portales. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "1.0", ClampMax = "3.0"))
-	float Sinuosity = 1.8f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "300.0"))
-	float PathWidthMin = 400.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "300.0"))
-	float PathWidthMax = 3500.f;
-
-	/** Probabilidad de pasos estrechos. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "0.0", ClampMax = "0.5"))
-	float NarrowChance = 0.22f;
-
-	/** Cruces colosales (puente o cueva) sobre módulos ya recorridos. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "0", ClampMax = "8"))
-	int32 NumCrossings = 2;
-
-	/** Bifurcaciones que vuelven a unirse (exploración / alternativas). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "0", ClampMax = "32"))
-	int32 NumBranches = 12;
-
-	/** Carriles paralelos con puzle de lanzamiento y sabotaje (2vs2). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "0", ClampMax = "8"))
-	int32 NumLanes = 0;
-
-	/** Módulos máximos que abarca una rama. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camino", meta = (ClampMin = "1", ClampMax = "3"))
-	int32 BranchMaxModules = 3;
-
-	/** Huecos de salto por km de camino. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Saltos", meta = (ClampMin = "0.0"))
-	float GapsPerKm = 3.f;
-
-	/** Hueco mínimo/máximo (cm). La tortuga salta 2 m corriendo y 4 m con dive. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Saltos", meta = (ClampMin = "50.0"))
-	float GapMin = 130.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Saltos", meta = (ClampMin = "50.0"))
-	float GapMax = 390.f;
-
-	/** Altura del tablero/mesa de los cruces colosales sobre el suelo (cm). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colosal", meta = (ClampMin = "1500.0"))
-	float ColossalHeightMin = 4000.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colosal", meta = (ClampMin = "1500.0"))
-	float ColossalHeightMax = 5500.f;
-
-	/** Qué son los módulos por los que no pasa el camino. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mapa")
-	ETNProcEmptyModuleMode EmptyModuleMode = ETNProcEmptyModuleMode::Mixed;
-
-	/** Regiones de bioma (0 = automático según el tamaño). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mapa", meta = (ClampMin = "0", ClampMax = "8"))
-	int32 NumBiomeRegions = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mapa")
-	bool bRiver = false;
-
-	/** Una pila de huevos de respawn cada N cruces de módulo. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Respawn", meta = (ClampMin = "1", ClampMax = "10"))
-	int32 EggNestEveryNPortals = 2;
-
-	/** Multiplicador de densidad de peligros y enemigos. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Peligros", meta = (ClampMin = "0.0"))
-	float HazardDensity = 1.f;
-
-	/** 0 = fácil, 1 = difícil: huecos, isletas, peligros mínimos. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Peligros", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float Difficulty01 = 0.5f;
-
-	/**
-	 * Tormenta que persigue al grupo por el camino (solo Coop). Velocidad en cm/s; 0 = sin tormenta. En partida
-	 * nunca pasa de la velocidad de andar de la tortuga.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tormenta", meta = (ClampMin = "0.0"))
-	float StormSpeed = 180.f;
-
-	/** Segundos de gracia antes de que la tormenta empiece a avanzar. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tormenta", meta = (ClampMin = "0.0"))
-	float StormGraceSeconds = 60.f;
-
-	/** Convierte a los parámetros de la lógica pura. */
-	TNProcMap::FGenParams ToGenParams(uint32 Seed) const;
-};
-
-/** Perfil asociado a un modo y una dificultad. */
-USTRUCT(BlueprintType)
-struct TORTUNABO_API FTNProcModeProfile
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perfil")
-	ETNProcGameMode Mode = ETNProcGameMode::Coop;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perfil")
-	ETNProcDifficulty Difficulty = ETNProcDifficulty::Normal;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perfil")
-	FTNProcMapProfile Profile;
 };
 
 /** Una capa de vegetación / props instanciados. */
@@ -319,14 +199,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Biomas")
 	TArray<TObjectPtr<UTN_ProcBiomeDataAsset>> Biomes;
 
-	/** Perfiles por modo y dificultad. Si falta alguno se usa el de código (TN_MakeDefaultProcProfile). */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Perfiles")
-	TArray<FTNProcModeProfile> Profiles;
-
-	/** Rellena Profiles con los 9 perfiles por defecto (Coop/Carrera/2vs2 × Fácil/Normal/Difícil) para editarlos. */
-	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Perfiles")
-	void FillDefaultProfiles();
-
 	// ── Terreno ─────────────────────────────────────────────────────────────
 
 	/** Separación de vértices del terreno (cm). Menos = más detalle y más coste. */
@@ -424,13 +296,7 @@ public:
 
 	/** Busca el asset del bioma (nullptr si no hay). */
 	const UTN_ProcBiomeDataAsset* FindBiome(ETNProcBiome Biome) const;
-
-	/** Perfil del modo/dificultad; si no está configurado, uno por defecto coherente. */
-	FTNProcMapProfile ResolveProfile(ETNProcGameMode Mode, ETNProcDifficulty Difficulty) const;
 };
-
-/** Perfiles por defecto (sin DataAsset): Coop 3/6/8, Carrera 2/3/4, 2vs2 2/3/4 con carriles. */
-TORTUNABO_API FTNProcMapProfile TN_MakeDefaultProcProfile(ETNProcGameMode Mode, ETNProcDifficulty Difficulty);
 
 /** Colores de greybox por bioma cuando no hay DataAsset. */
 TORTUNABO_API void TN_DefaultBiomeColors(ETNProcBiome Biome, FLinearColor& OutGround, FLinearColor& OutPath, FLinearColor& OutRock, FLinearColor& OutBed);

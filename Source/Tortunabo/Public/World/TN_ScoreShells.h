@@ -32,7 +32,7 @@ namespace TNScoreShells
 	}
 
 	/**
-	 * Tamaño que corresponde a un valor (un Blueprint con ScoreValue propio o la prueba TNShells): hasta 5, pequeña;
+	 * Tamaño que corresponde a un valor (un Blueprint con ScoreValue propio): hasta 5, pequeña;
 	 * hasta 37, normal; hasta 75, grande; más, reina.
 	 */
 	constexpr ETier TierForValue(int32 Value)

@@ -223,8 +223,8 @@ void ATN_ButtonInteractable::ResolveMoveTargetByTag()
 		}
 
 		// 5. Fallback global: UTN_LevelTargetSubsystem. Permite a botones DENTRO
-		//    de un BP_Chunk runtime referenciar actores DEL NIVEL (LVL_Run) que
-		//    el editor de chunk no podía ver al editar (chunk se spawnea después).
+		//    de un actor creado en partida referenciar actores DEL NIVEL que
+		//    el editor no podía ver al editar (el actor se crea después).
 		//    Patrón canónico Epic: WorldSubsystem singleton + componente
 		//    UTN_RegisterAsTargetComponent que los actores del nivel exponen.
 		//    O(1) lookup, sin TActorIterator masivo, sin actor manager en nivel.

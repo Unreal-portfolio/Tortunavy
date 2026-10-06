@@ -10,7 +10,6 @@
 class AActor;
 class APlayerController;
 class ATN_BeachCatapult;
-class ATN_PathStorm;
 class ULocalPlayer;
 class ATortugaCharacter;
 class FJsonObject;
@@ -215,8 +214,6 @@ private:
 	int32 SavedMaxSplitscreenPlayers = 0;
 	/** Jugadores locales que ha creado el escenario (Finish los quita). */
 	TArray<TWeakObjectPtr<ULocalPlayer>> CreatedLocalPlayers;
-	/** Tormentas del cooperativo paradas mientras se mide y su frente al pararlas (Finish las reanuda ahí). */
-	TArray<TPair<TWeakObjectPtr<ATN_PathStorm>, float>> StoppedStorms;
 	float SavedNetCorrectionLifetime = 4.f;
 	bool bHighQoSApplied = false;
 	/** Objetos de DT_Items que se lanzan (Throwable e InkThrower), cargados al empezar. */

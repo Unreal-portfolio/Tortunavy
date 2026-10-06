@@ -6,13 +6,13 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
-#include "Game/TN_TctItems.h"
+#include "Game/TN_ItemRuntime.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/App.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TN_DizzyBirdsComponent.h"
 #include "Player/TN_StaminaComponent.h"
 #include "Player/TortugaCharacter.h"
-#include "World/Beach/TN_RaceItems.h"
 
 namespace TNCoopItemComponentDetail
 {
@@ -27,6 +27,11 @@ namespace TNCoopItemComponentDetail
 	{
 		return !IsRunningDedicatedServer() && FApp::CanEverRender();
 	}
+
+	/** Cable del arpón: grosor (escala del cilindro del motor), segundos que tarda en desaparecer y color. */
+	constexpr float RopeWidth = 0.035f;
+	constexpr float RopeLife = 0.45f;
+	const FLinearColor RopeColor(0.45f, 0.32f, 0.2f);
 }
 
 UTN_CoopItemComponent::UTN_CoopItemComponent()
@@ -77,7 +82,7 @@ bool UTN_CoopItemComponent::IsTurtleProtected(const AActor* Turtle)
 
 double UTN_CoopItemComponent::Now() const
 {
-	return TNRaceItems::ServerNow(GetWorld());
+	return TNItemRuntime::ServerNow(GetWorld());
 }
 
 FTNPufferState UTN_CoopItemComponent::PufferState() const
@@ -167,7 +172,7 @@ void UTN_CoopItemComponent::ApplyEffects()
 		if (Turtle && Turtle->HasAuthority())
 		{
 			// Sonido de empezar y de acabar, una vez para todas las máquinas.
-			TNTctItems::PlayCue(Turtle, bProtected ? ETNRaceSound::StarUp : ETNRaceSound::StarDown, bProtected ? 0.8f : 0.7f);
+			TNItemRuntime::PlayCue(Turtle, bProtected ? ETNRaceSound::StarUp : ETNRaceSound::StarDown, bProtected ? 0.8f : 0.7f);
 		}
 		if (CanRender() && Turtle)
 		{
@@ -189,7 +194,12 @@ void UTN_CoopItemComponent::ApplyEffects()
 		bProtectShown = bProtected;
 		PulseClock = 0.f;
 	}
-	SetComponentTickEnabled(bProtected || bDizzy || bDizzyApplied || bProtectShown);
+	RefreshTick();
+}
+
+void UTN_CoopItemComponent::RefreshTick()
+{
+	SetComponentTickEnabled(IsProtected() || IsDizzy() || bDizzyApplied || bProtectShown || Ropes.Num() > 0);
 }
 
 void UTN_CoopItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -205,8 +215,89 @@ void UTN_CoopItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 		const float Left = static_cast<float>(Effects.ProtectEnd - Now());
 		Spikes->SetVisibility(Left > 1.f || FMath::Fmod(PulseClock, 0.2f) < 0.12f);
 	}
+	TickRopes(DeltaTime);
 	// Se acaba la protección o el mareo a la hora del servidor, en cada máquina (sin esperar otra réplica).
 	ApplyEffects();
+}
+
+UTN_RaceItemSynthComponent* UTN_CoopItemComponent::GetSfx()
+{
+	AActor* Owner = GetOwner();
+	if (!Owner || Owner->GetNetMode() == NM_DedicatedServer)
+	{
+		return nullptr;
+	}
+	if (!Sfx)
+	{
+		Sfx = UTN_RaceItemSynthComponent::AttachTo(Owner, Owner->GetActorLocation(), 1800.f, 14000.f);
+	}
+	return Sfx;
+}
+
+void UTN_CoopItemComponent::MulticastCue_Implementation(ETNRaceSound Sound, float Pitch)
+{
+	if (UTN_RaceItemSynthComponent* Synth = GetSfx())
+	{
+		Synth->Play(Sound, Pitch, 1.f);
+	}
+}
+
+void UTN_CoopItemComponent::MulticastRope_Implementation(FVector_NetQuantize From, FVector_NetQuantize To)
+{
+	using namespace TNCoopItemComponentDetail;
+	AActor* Owner = GetOwner();
+	UStaticMesh* Cylinder = CanRender() ? LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")) : nullptr;
+	const FVector Start(From);
+	const FVector End(To);
+	const double Length = FVector::Dist(Start, End);
+	if (!Owner || !Cylinder || Length < 1.0)
+	{
+		return;
+	}
+	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(Owner, NAME_None, RF_Transient);
+	Mesh->SetStaticMesh(Cylinder);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Mesh->SetCastShadow(false);
+	Mesh->SetUsingAbsoluteLocation(true);
+	Mesh->SetUsingAbsoluteRotation(true);
+	Mesh->SetUsingAbsoluteScale(true);
+	Mesh->RegisterComponent();
+	// El cilindro del motor mide 100 uu y va a lo largo de Z: se tumba en la dirección del cable.
+	const FVector Dir = (End - Start) / Length;
+	Mesh->SetWorldLocationAndRotation((Start + End) * 0.5, FRotationMatrix::MakeFromZ(Dir).Rotator());
+	Mesh->SetWorldScale3D(FVector(RopeWidth, RopeWidth, Length / 100.0));
+	if (UMaterialInstanceDynamic* Material = Mesh->CreateDynamicMaterialInstance(0))
+	{
+		Material->SetVectorParameterValue(TEXT("Color"), RopeColor);
+	}
+	FRope Rope;
+	Rope.Mesh = Mesh;
+	Ropes.Add(Rope);
+	RefreshTick();
+}
+
+void UTN_CoopItemComponent::TickRopes(float DeltaTime)
+{
+	using namespace TNCoopItemComponentDetail;
+	for (int32 Index = Ropes.Num() - 1; Index >= 0; --Index)
+	{
+		FRope& Rope = Ropes[Index];
+		Rope.Age += DeltaTime;
+		UStaticMeshComponent* Mesh = Rope.Mesh.Get();
+		if (!Mesh || Rope.Age >= RopeLife)
+		{
+			if (Mesh)
+			{
+				Mesh->DestroyComponent();
+			}
+			Ropes.RemoveAtSwap(Index);
+			continue;
+		}
+		// Se adelgaza hasta desaparecer.
+		const float Left = 1.f - Rope.Age / RopeLife;
+		const FVector Scale = Mesh->GetComponentScale();
+		Mesh->SetWorldScale3D(FVector(RopeWidth * Left, RopeWidth * Left, Scale.Z));
+	}
 }
 
 void UTN_CoopItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -228,5 +319,13 @@ void UTN_CoopItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		Spikes->DestroyComponent();
 		Spikes = nullptr;
 	}
+	for (const FRope& Rope : Ropes)
+	{
+		if (UStaticMeshComponent* Mesh = Rope.Mesh.Get())
+		{
+			Mesh->DestroyComponent();
+		}
+	}
+	Ropes.Reset();
 	Super::EndPlay(EndPlayReason);
 }

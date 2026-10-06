@@ -19,7 +19,6 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "HAL/IConsoleManager.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 
 #if !UE_BUILD_SHIPPING
 static TAutoConsoleVariable<int32> CVarTNHeadLookLog(TEXT("TN.HeadLook.Log"), 0,
@@ -825,16 +824,6 @@ namespace TNTurtleAnim
 	/** Unidades de la malla que baja la cadera para sentarse si la postura de referencia no da una altura razonable. */
 	constexpr float SitDropFallback = 18.f;
 
-	/** Zambullida: segundos tras empezar a caer en los que aún puede empezar y giro del cuerpo (grados) mínimo y máximo. */
-	constexpr float CliffDiveStartWindow = 0.35f;
-	/**
-	 * Pasada esa ventana, también empieza si cae deprisa (cm/s) dentro de la zona: la caída que pasa por el vacío sobre el
-	 * agua (p. ej. lanzada desde más atrás) entra igualmente de cabeza. Un salto que vuelve a la repisa no llega a tanto.
-	 */
-	constexpr float CliffDiveLateFallSpeed = 1000.f;
-	constexpr float CliffDiveMinPitch = 40.f;
-	constexpr float CliffDiveMaxPitch = 165.f;
-
 	/**
 	 * Trofeo: los dos brazos arriba con las manos juntas sobre la cabeza sujetando la concha (el podio la pone entre las
 	 * manos), dos saltitos por vuelta en los que estira los brazos para subirla, el pecho fuera, la cabeza mirándola y
@@ -953,55 +942,6 @@ namespace TNTurtleAnim
 		}
 	}
 
-	/**
-	 * Zambullida de cabeza desde el acantilado de la meta: cuerpo estirado con los brazos por encima de la cabeza y las
-	 * manos juntas (por delante al girar), la cabeza entre los brazos y las piernas juntas y estiradas hacia atrás con
-	 * las puntas de los pies. Al final, todo el cuerpo gira hacia delante sobre la cadera (CliffDivePitch): -X lleva la
-	 * cabeza hacia +Y (delante) y hacia abajo.
-	 */
-	void PoseCliffDive(FCompactPose& P, const FBones& B, const FTNTurtleAnimFrame& F)
-	{
-		const float T = F.CliffDiveTime;
-		const float Flutter = 2.f * FMath::Sin(T * 23.f);
-		Turn(P, B.LArm, AxisY, -104.f + Flutter);
-		Turn(P, B.RArm, AxisY, 104.f - Flutter);
-		Turn(P, B.LArm, AxisZ, 6.f);
-		Turn(P, B.RArm, AxisZ, -6.f);
-		Turn(P, B.Neck, AxisX, -6.f);
-		Turn(P, B.Head, AxisX, -8.f);
-		Turn(P, B.LUp, AxisY, 4.f);
-		Turn(P, B.RUp, AxisY, -4.f);
-		Turn(P, B.LUp, AxisX, -6.f + 3.f * FMath::Sin(T * 17.f));
-		Turn(P, B.RUp, AxisX, -6.f - 3.f * FMath::Sin(T * 17.f));
-		Turn(P, B.LFoot, AxisX, -55.f);
-		Turn(P, B.RFoot, AxisX, -55.f);
-		Turn(P, B.Hips, AxisX, -F.CliffDivePitch);
-	}
-
-	/**
-	 * Si WorldLocation está en la zona del borde del acantilado de la meta: lo dice el generador de la playa
-	 * (ATN_BeachRaceGenerator::IsCliffJumpZone, modo carrera), que se busca una vez y se guarda con un puntero débil.
-	 * Fuera de la playa no hay generador (se vuelve a buscar cada 5 s) y nunca hay zambullida.
-	 */
-	bool IsCliffJumpZone(UWorld* World, TWeakObjectPtr<AActor>& Cache, double& NextLookup, const FVector& WorldLocation)
-	{
-		if (!World) { return false; }
-		ATN_BeachRaceGenerator* Generator = Cast<ATN_BeachRaceGenerator>(Cache.Get());
-		if (!Generator)
-		{
-			const double Now = World->GetTimeSeconds();
-			if (Now < NextLookup) { return false; }
-			NextLookup = Now + 5.0;
-			for (TActorIterator<ATN_BeachRaceGenerator> It(World); It; ++It)
-			{
-				Generator = *It;
-				break;
-			}
-			Cache = Generator;
-			if (!Generator) { return false; }
-		}
-		return Generator->IsCliffJumpZone(WorldLocation);
-	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1085,7 +1025,6 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		Layer(F.EmoteW, [&](FCompactPose& P) { PoseEmote(P, B, F); });
 	}
 	// Modo carrera: zambullida de cabeza desde el acantilado de la meta y celebraciones del podio.
-	Layer(F.CliffDiveW, [&](FCompactPose& P) { PoseCliffDive(P, B, F); });
 	Layer(F.CelebrationW, [&](FCompactPose& P) { PoseCelebration(P, B, F); });
 
 	// 3b. Levantarse del derribo: parte de la pose en la que quedó el ragdoll y llega a la de pie, pasando por un
@@ -1409,34 +1348,6 @@ Ease(F.CarryW, bCarrying, 8.f);
 	Ease(F.CelebrationW, F.Celebration != ETNTurtleCelebration::None && F.Celebration == WantedCelebration, 6.f);
 	F.CelebrationTime += Dt;
 
-	// Zambullida de cabeza desde el acantilado de la meta (modo carrera): al despegar o empezar a caer en la zona del
-	// borde (la dice el generador de la playa), hasta aterrizar o tocar el agua. Cosmética y local en cada máquina, a
-	// partir del movimiento replicado (sin RPC).
-	const bool bFallingNow = Move && Move->IsFalling() && !bSwim;
-	FallElapsed = (bFallingNow && bWasFallingForDive) ? FallElapsed + Dt : 0.f;
-	const bool bCanCliffDive = bFallingNow && !bDive && Turtle && !Turtle->IsInShell() && !Turtle->IsKnockedDown()
-		&& !(Carry && Carry->IsBeingCarried());
-	if (!bCanCliffDive)
-	{
-		bCliffDive = false;
-	}
-	else if (!bCliffDive && (FallElapsed <= CliffDiveStartWindow || Velocity.Z < -CliffDiveLateFallSpeed)
-		&& IsCliffJumpZone(GetWorld(), CliffZoneSource, NextCliffZoneLookup, Turtle->GetActorLocation()))
-	{
-		bCliffDive = true;
-		F.CliffDiveTime = 0.f;
-		F.CliffDivePitch = CliffDiveMinPitch;
-	}
-	bWasFallingForDive = bFallingNow;
-	Ease(F.CliffDiveW, bCliffDive, bCliffDive ? 9.f : 14.f);
-	if (bCliffDive)
-	{
-		// El cuerpo sigue la trayectoria: tumbado en lo alto del salto y casi vertical, cabeza abajo, al caer deprisa.
-		F.CliffDiveTime += Dt;
-		const float Along = 90.f + FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(-Velocity.Z), FMath::Max(150.f, Speed)));
-		F.CliffDivePitch = FMath::FInterpTo(F.CliffDivePitch, FMath::Clamp(Along, CliffDiveMinPitch, CliffDiveMaxPitch), Dt, 4.f);
-	}
-
 	// Lo que lleva en las aletas (UTN_InventoryComponent): los brazos lo sujetan andando, corriendo o saltando; abrazado
 	// (grande), también nadando, en el panzazo o con un emote. Con las aletas en otra cosa, el objeto solo las sigue. Si
 	// cambia la forma de sujetarlo, la de antes sale antes de que entre la nueva.
@@ -1444,7 +1355,7 @@ Ease(F.CarryW, bCarrying, 8.f);
 		const UTN_InventoryComponent* Inventory = Turtle ? Turtle->GetInventoryComponent() : nullptr;
 		const uint8 WantHold = Inventory ? static_cast<uint8>(Inventory->GetShownHold()) : 0;
 		const bool bHandsFree = Turtle && !Turtle->IsKnockedDown() && !Turtle->IsInShell() && !bCarrying
-			&& !(Carry && Carry->IsBeingCarried()) && GetUpDuration <= 0.f && !bCliffDive;
+			&& !(Carry && Carry->IsBeingCarried()) && GetUpDuration <= 0.f;
 		const bool bArmsFree = bHandsFree && !bDive && !bSwim && Emote < 0;
 		const bool bHugStyle = WantHold == static_cast<uint8>(ETNItemHold::Hug);
 		const bool bWantHold = WantHold != 0 && (bHugStyle ? bHandsFree : bArmsFree);
@@ -1494,7 +1405,7 @@ Ease(F.CarryW, bCarrying, 8.f);
 			&& !Turtle->IsKnockedDown() && !Turtle->IsDead() && !(LookMesh && LookMesh->IsSimulatingPhysics())
 			&& GetUpDuration <= 0.f && !Turtle->IsInShell() && !bDive && BellyGetUpElapsed < 0.f
 			&& Emote < 0 && F.Emote < 0 && F.PrevEmote < 0
-			&& WantedCelebration == ETNTurtleCelebration::None && F.CelebrationW < 0.01f && !bCliffDive
+			&& WantedCelebration == ETNTurtleCelebration::None && F.CelebrationW < 0.01f
 			&& !Turtle->IsHeadLookSuppressed();
 		UpdateHeadLook(Turtle, Dt, bLookAllowed);
 	}

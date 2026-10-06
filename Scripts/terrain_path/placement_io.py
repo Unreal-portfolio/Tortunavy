@@ -17,8 +17,7 @@ polilínea del camino bajo su huella cada PATH_STEP_M (el cargador reparte las p
 el géiser lleva target_uu, el punto del camino donde cae (GEYSER_REACH_M más adelante).
 Lo automático lleva también progress_m, su avance por el recorrido en metros del principal: la distancia
 por el camino a la salida entre la suma de las distancias a la salida y a la meta, por la longitud del
-principal. En el principal sin atajos es s_m; en un lazo, lo que equivale en el principal. El cargador
-ordena los nidos por él (el orden de reaparición) y les da ese avance.
+principal. En el principal sin atajos es s_m; en un lazo, lo que equivale en el principal.
 """
 
 from __future__ import annotations

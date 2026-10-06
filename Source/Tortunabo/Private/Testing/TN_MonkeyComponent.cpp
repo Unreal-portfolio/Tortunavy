@@ -11,7 +11,6 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
-#include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/Beach/TN_BeachStun.h"
 
 namespace TNMonkeyDetail
@@ -306,9 +305,8 @@ void UTN_MonkeyComponent::Watch(const ATortugaCharacter* Turtle, float DeltaTime
 	const double FeetZ = Location.Z - (Turtle->GetCapsuleComponent() ? Turtle->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 0.0);
 	Stats.MinZ = FMath::Min(Stats.MinZ, FeetZ);
 
-	// Profundidad bajo la arena del generador (sin generador: 70 m por debajo de donde empezó cuenta como caída perdida).
-	const ATN_BeachRaceGenerator* Generator = ATN_BeachRaceGenerator::Find(this);
-	const double Depth = Generator ? static_cast<double>(Generator->GetGroundHeightAt(Location)) - FeetZ : (StartZ - FeetZ) - 7000.0;
+	// Profundidad: 70 m por debajo de donde empezó cuenta como caída perdida.
+	const double Depth = (StartZ - FeetZ) - 7000.0;
 	Stats.MaxDepthUnderGround = FMath::Max(Stats.MaxDepthUnderGround, Depth);
 
 	DepthClock = Depth > UnderTerrainDepth ? DepthClock + Dt : 0.f;

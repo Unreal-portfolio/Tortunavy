@@ -16,9 +16,9 @@ bool FTNMonkeyNetStartAddressTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Con puerto también"), LooksLikeServerAddress(TEXT("192.168.1.20:7777")));
 	TestTrue(TEXT("localhost"), LooksLikeServerAddress(TEXT("localhost:7777")));
 	TestTrue(TEXT("Steam"), LooksLikeServerAddress(TEXT("steam.76561198000000000")));
-	TestFalse(TEXT("Un mapa corto no"), LooksLikeServerAddress(TEXT("LVL_BeachRace")));
-	TestFalse(TEXT("Un mapa con ruta no"), LooksLikeServerAddress(TEXT("/Game/Maps/Run/LVL_BeachRace")));
-	TestFalse(TEXT("Un mapa con ?listen no"), LooksLikeServerAddress(TEXT("LVL_BeachRace?listen")));
+	TestFalse(TEXT("Un mapa corto no"), LooksLikeServerAddress(TEXT("LVL_Demo01")));
+	TestFalse(TEXT("Un mapa con ruta no"), LooksLikeServerAddress(TEXT("/Game/Maps/Run/LVL_Demo01")));
+	TestFalse(TEXT("Un mapa con ?listen no"), LooksLikeServerAddress(TEXT("LVL_Demo01?listen")));
 	TestFalse(TEXT("Octeto fuera de rango"), LooksLikeServerAddress(TEXT("300.0.0.1")));
 	TestFalse(TEXT("Tres octetos no"), LooksLikeServerAddress(TEXT("10.0.1")));
 	TestFalse(TEXT("Puerto no numérico"), LooksLikeServerAddress(TEXT("127.0.0.1:abc")));
@@ -37,9 +37,9 @@ bool FTNMonkeyNetStartFilterTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Sin mapa ni dirección: vacío"), FirstUrlToken(TEXT("-game -nullrhi")), FString());
 
 	TestTrue(TEXT("Cliente por dirección: espera al mundo de cliente"), ResolveNetFilter(TEXT(""), TEXT("127.0.0.1")) == ENetFilter::Client);
-	TestTrue(TEXT("Servidor con mapa: cualquiera"), ResolveNetFilter(TEXT(""), TEXT("LVL_BeachRace?listen")) == ENetFilter::Any);
+	TestTrue(TEXT("Servidor con mapa: cualquiera"), ResolveNetFilter(TEXT(""), TEXT("LVL_Demo01?listen")) == ENetFilter::Any);
 	TestTrue(TEXT("-TNMonkeyNet manda sobre la dirección"), ResolveNetFilter(TEXT("any"), TEXT("127.0.0.1")) == ENetFilter::Any);
-	TestTrue(TEXT("-TNMonkeyNet=server"), ResolveNetFilter(TEXT("Server"), TEXT("LVL_BeachRace")) == ENetFilter::Server);
+	TestTrue(TEXT("-TNMonkeyNet=server"), ResolveNetFilter(TEXT("Server"), TEXT("LVL_Demo01")) == ENetFilter::Server);
 	TestTrue(TEXT("Valor no válido: se deduce"), ResolveNetFilter(TEXT("cliente"), TEXT("127.0.0.1")) == ENetFilter::Client);
 
 	TestFalse(TEXT("Cliente: no en el menú (Standalone)"), ShouldStartIn(ENetFilter::Client, NM_Standalone));

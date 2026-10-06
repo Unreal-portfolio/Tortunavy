@@ -13,7 +13,7 @@ class UDataTable;
  * inventario de cada uno, su malla y su icono, el apilado en el inventario, la tabla de botín del coop y lo que hacen al
  * usarlos (servidor).
  *
- * Como los de la carrera y los de Todos contra Todos: UseType CoopItem, el objeto y su cuenta en el ItemId («Coop_<Code>_<n>»),
+ * UseType CoopItem, el objeto y su cuenta en el ItemId («Coop_<Code>_<n>»),
  * sin filas en DT_Items; cada máquina pone malla e icono por el ItemId (ResolveVisuals), así que no se replica ni se guarda
  * ningún asset. El icono lleva pintada la cuenta (apilados o usos que quedan) cuando pasa de uno.
  *
@@ -58,13 +58,6 @@ namespace TNCoopItems
 	 * DT_Items (1 por defecto); Catalog nulo = solo los objetos de código. false si no sale nada.
 	 */
 	TORTUNABO_API bool RollLoot(const UDataTable* Catalog, TFunctionRef<float(FName, const FTN_InventoryItem&)> CatalogWeight, float Roll,
-		FTN_InventoryItem& OutItem);
-
-	/**
-	 * Servidor: la tabla del modo en el que está Picker: en la carrera de la playa, la de la carrera (por su puesto, como un
-	 * rebuscable); en el resto, la del coop (RollLoot con FMath::FRand).
-	 */
-	TORTUNABO_API bool RollModeLoot(const APawn* Picker, const UDataTable* Catalog, TFunctionRef<float(FName, const FTN_InventoryItem&)> CatalogWeight,
 		FTN_InventoryItem& OutItem);
 
 	/**

@@ -1,5 +1,4 @@
 #include "Player/MP_GamePlayerController.h"
-#include "Settings/TN_GameplayAssetSettings.h"
 #include "Core/TN_Log.h"
 #include "Blueprint/UserWidget.h"
 #include "EnhancedInputComponent.h"
@@ -9,14 +8,9 @@
 #include "UI/HUD/TN_CoopFlowHUDWidget.h"
 #include "UI/HUD/TN_RunHUDWidget.h"
 #include "UI/Shop/TN_ShopWidgets.h"
-#include "UI/Briefing/TN_BriefingWidget.h"
 #include "Lobby/TN_ChangingBooth.h"
 #include "Lobby/TN_ShopKeeper.h"
 #include "Audio/TN_AmbientSoundscape.h"
-#include "World/ProcMap/TN_PathStorm.h"
-#include "World/ProcMap/TN_ProcMapGenerator.h"
-#include "World/TN_ScorePickup.h"
-#include "World/TN_ScoreShells.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -33,7 +27,6 @@
 #include "Player/TN_CosmeticsSync.h"
 #include "Player/TN_DebugRpcDecisions.h"
 #include "TN_GhostInternal.h"
-#include "Game/TN_ProcMapGameMode.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "Engine/Engine.h"
@@ -379,15 +372,6 @@ void AMP_GamePlayerController::ForceRestoreInput()
 {
 	ResetIgnoreInputFlags();
 	ApplyGameplayInputMode();
-}
-
-void AMP_GamePlayerController::ServerReportProcMapReady_Implementation(int32 Generation)
-{
-	ReportedProcMapGeneration = FMath::Max(ReportedProcMapGeneration, Generation);
-	if (ATN_ProcMapGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<ATN_ProcMapGameMode>() : nullptr)
-	{
-		GM->NotifyClientMapReady(this, Generation);
-	}
 }
 
 void AMP_GamePlayerController::SendVoiceToOwningClient(const TArray<uint8>& CompressedData, int32 SenderSampleRate,
@@ -1093,25 +1077,6 @@ void AMP_GamePlayerController::ClientOpenShop_Implementation(ATN_ShopKeeper* Sho
 	SetIgnoreLookInput(true);
 }
 
-void AMP_GamePlayerController::ClientOpenBriefing_Implementation(ATN_GeneralBriefing* General)
-{
-	if (!IsLocalController()) { return; }
-	CloseShopUI();
-	UTN_BriefingWidget* Widget = CreateWidget<UTN_BriefingWidget>(this, UTN_BriefingWidget::StaticClass());
-	if (!Widget) { return; }
-	Widget->SetGeneral(General);
-	TNScreen::AddToScreen(Widget, MPGamePlayerController_ZOrderCosmetics);
-	ShopUIWidget = Widget;
-	// Como la tienda: solo la interfaz (Escape cierra) y la tortuga quieta mientras escucha.
-	FInputModeUIOnly Mode;
-	Mode.SetWidgetToFocus(Widget->TakeWidget());
-	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	SetInputMode(Mode);
-	SetShowMouseCursor(true);
-	SetIgnoreMoveInput(true);
-	SetIgnoreLookInput(true);
-}
-
 void AMP_GamePlayerController::ClientOpenBooth_Implementation(ATN_ChangingBooth* Booth)
 {
 	if (!IsLocalController()) { return; }
@@ -1462,13 +1427,13 @@ void AMP_GamePlayerController::ServerSendQuickChat_Implementation(uint8 MessageI
 	GS->AddQuickChatEntry(SenderId, MessageID, Now);
 }
 
-// ── Pruebas de la tormenta (TNStorm) ──────────────────────────────────────────
+// ── RPC de pruebas: solo el anfitrión ─────────────────────────────────────────
 
 namespace
 {
 	/**
 	 * Guard de los RPC de pruebas: fuera de Shipping y solo para el anfitrión.
-	 * Un invitado con un cliente modificado no puede parar ni mover la tormenta de todos.
+	 * Un invitado con un cliente modificado no puede ejecutar comandos de pruebas en el anfitrión.
 	 */
 	bool TNIsHostDebugCallAllowed(AMP_GamePlayerController* PC, const TCHAR* Command)
 	{
@@ -1487,222 +1452,11 @@ namespace
 
 void AMP_GamePlayerController::ServerExecRPC_Implementation(const FString& Msg)
 {
-	// Sin esto, un invitado con `ServerExec TN.Ghost.Become 1` (o TN.Race.*, TN.Tutorial.Station) lo ejecutaba en el anfitrión.
+	// Sin esto, un invitado con `ServerExec TN.Ghost.Become 1` (o TN.Tutorial.Station) lo ejecutaba en el anfitrión.
 	if (TNIsHostDebugCallAllowed(this, TEXT("ServerExec")))
 	{
 		Super::ServerExecRPC_Implementation(Msg);
 	}
-}
-
-void AMP_GamePlayerController::TNStorm(const FString& Where, float Ahead)
-{
-	ServerStormTest(Where, Ahead);
-}
-
-void AMP_GamePlayerController::ServerStormTest_Implementation(const FString& Where, float Ahead)
-{
-#if UE_BUILD_SHIPPING
-	// Mueve la tormenta de todos: solo en las builds de desarrollo.
-	TNIsHostDebugCallAllowed(this, TEXT("TNStorm"));
-#else
-	if (!TNIsHostDebugCallAllowed(this, TEXT("TNStorm")))
-	{
-		ClientMessage(TEXT("TNStorm: solo el anfitrión."));
-		return;
-	}
-	UWorld* World = GetWorld();
-	ATN_ProcMapGenerator* Gen = nullptr;
-	ATN_PathStorm* Storm = nullptr;
-	for (TActorIterator<ATN_ProcMapGenerator> It(World); It; ++It) { Gen = *It; break; }
-	for (TActorIterator<ATN_PathStorm> It(World); It; ++It) { Storm = *It; break; }
-	APawn* MyPawn = GetPawn();
-	if (!Gen || !Storm || !MyPawn || !Gen->IsMapReady())
-	{
-		ClientMessage(TEXT("TNStorm: solo en el mapa procedural, con el mapa listo y la tortuga viva."));
-		return;
-	}
-	const FString Key = Where.ToLower();
-	if (Key == TEXT("off") || Key == TEXT("apagar"))
-	{
-		Storm->DebugPlaceFront(-3000.f, false);
-		Storm->StopStorm();
-		ClientMessage(TEXT("TNStorm: tormenta parada y otra vez peligrosa."));
-		return;
-	}
-
-	const TNProcMap::FLayout& L = Gen->GetLayout();
-	const FTransform MapXf = Gen->GetActorTransform();
-	FVector Spot = FVector::ZeroVector;
-	FVector Facing = FVector::ForwardVector;
-	bool bFound = false;
-
-	static const TMap<FString, ETNProcBiome> BiomeNames = {
-		{ TEXT("selva"), ETNProcBiome::Jungle }, { TEXT("jungle"), ETNProcBiome::Jungle },
-		{ TEXT("playa"), ETNProcBiome::Beach }, { TEXT("beach"), ETNProcBiome::Beach },
-		{ TEXT("desierto"), ETNProcBiome::Desert }, { TEXT("desert"), ETNProcBiome::Desert },
-		{ TEXT("volcan"), ETNProcBiome::Volcanic }, { TEXT("volcán"), ETNProcBiome::Volcanic }, { TEXT("volcanic"), ETNProcBiome::Volcanic },
-		{ TEXT("agua"), ETNProcBiome::Water }, { TEXT("water"), ETNProcBiome::Water },
-		{ TEXT("rocas"), ETNProcBiome::Rocky }, { TEXT("rocky"), ETNProcBiome::Rocky }, { TEXT("acantilados"), ETNProcBiome::Rocky },
-		{ TEXT("manglar"), ETNProcBiome::Mangrove }, { TEXT("mangrove"), ETNProcBiome::Mangrove },
-		{ TEXT("pueblo"), ETNProcBiome::Human }, { TEXT("human"), ETNProcBiome::Human }, { TEXT("humana"), ETNProcBiome::Human },
-	};
-	if (const ETNProcBiome* Biome = BiomeNames.Find(Key))
-	{
-		// El tramo más largo del camino principal en ese bioma: su muestra del medio.
-		int32 BestFrom = INDEX_NONE, BestLen = 0;
-		for (int32 i = 0; i < L.Main.Num();)
-		{
-			if (L.Main[i].Biome != *Biome) { ++i; continue; }
-			int32 j = i;
-			while (j < L.Main.Num() && L.Main[j].Biome == *Biome) { ++j; }
-			if (j - i > BestLen) { BestLen = j - i; BestFrom = i; }
-			i = j;
-		}
-		if (BestFrom != INDEX_NONE)
-		{
-			const TNProcMap::FPathSample& S = L.Main[BestFrom + BestLen / 2];
-			Spot = MapXf.TransformPosition(FVector(S.P.X, S.P.Y, S.Z + 110.0));
-			Facing = MapXf.TransformVectorNoScale(FVector(S.Dir.X, S.Dir.Y, 0.0));
-			bFound = true;
-		}
-	}
-	else if (Key.StartsWith(TEXT("gey")) || Key.StartsWith(TEXT("gei")) || Key.StartsWith(TEXT("géi")) || Key.StartsWith(TEXT("casc")) || Key.StartsWith(TEXT("water")))
-	{
-		// Cada vez el siguiente géiser (o cascada) del mapa.
-		const bool bGeyser = !Key.StartsWith(TEXT("casc")) && !Key.StartsWith(TEXT("water"));
-		static int32 NextGeyser = 0;
-		static int32 NextFall = 0;
-		TArray<const TNProcMap::FFeature*> Found;
-		for (const TNProcMap::FFeature& F : L.Features)
-		{
-			if (F.Type == (bGeyser ? TNProcMap::EFeature::Geyser : TNProcMap::EFeature::SlideZone)) { Found.Add(&F); }
-		}
-		if (Found.Num() > 0)
-		{
-			int32& Next = bGeyser ? NextGeyser : NextFall;
-			const TNProcMap::FFeature& F = *Found[Next++ % Found.Num()];
-			if (bGeyser)
-			{
-				const FVector Base = MapXf.TransformPosition(F.Location);
-				FVector PathDir;
-				Gen->GetPathLocationAtProgress(Gen->GetPathProgress(Base), PathDir);
-				Facing = PathDir.GetSafeNormal2D();
-				Spot = Base - Facing * 320.f + FVector(0.f, 0.f, 120.f);
-			}
-			else
-			{
-				const TArray<TNProcMap::FPathSample>& Samples = F.BranchIndex == INDEX_NONE ? L.Main : L.Branches[F.BranchIndex].Samples;
-				if (Samples.IsValidIndex(F.PathIndex))
-				{
-					const TNProcMap::FPathSample& Lip = Samples[FMath::Max(0, F.PathIndex - 2)];
-					Spot = MapXf.TransformPosition(FVector(Lip.P.X, Lip.P.Y, Lip.Z + 110.0));
-					Facing = MapXf.TransformVectorNoScale(FVector(Lip.Dir.X, Lip.Dir.Y, 0.0));
-				}
-			}
-			bFound = !Spot.IsZero();
-		}
-	}
-	if (!bFound)
-	{
-		ClientMessage(FString::Printf(TEXT("TNStorm: no hay '%s' en este mapa."), *Where));
-		return;
-	}
-
-	if (ACharacter* Char = Cast<ACharacter>(MyPawn)) { Char->GetCharacterMovement()->StopMovementImmediately(); }
-	MyPawn->TeleportTo(Spot, Facing.Rotation(), false, true);
-	ClientSetRotation(Facing.Rotation());
-	const float Progress = Gen->GetPathProgress(Spot);
-	Storm->DebugPlaceFront(Progress - Ahead, true);
-	ClientMessage(FString::Printf(TEXT("TNStorm: %s (progreso %.0f), frente a %.0f cm."), *Where, Progress, Ahead));
-#endif
-}
-
-// ── Pruebas de las conchas de puntos (TNShells) ─────────────────────────────────
-
-void AMP_GamePlayerController::TNShells(const FString& What, int32 Count)
-{
-	ServerShellsTest(What, Count);
-}
-
-void AMP_GamePlayerController::ServerShellsTest_Implementation(const FString& What, int32 Count)
-{
-#if UE_BUILD_SHIPPING
-	// Suelta puntos que van a la tienda: solo en las builds de desarrollo.
-	ClientMessage(TEXT("TNShells: solo en las builds de desarrollo."));
-#else
-	if (!TNIsHostDebugCallAllowed(this, TEXT("TNShells")))
-	{
-		ClientMessage(TEXT("TNShells: solo el anfitrión."));
-		return;
-	}
-	UWorld* World = GetWorld();
-	APawn* MyPawn = GetPawn();
-	if (!World || !MyPawn)
-	{
-		ClientMessage(TEXT("TNShells: hace falta una tortuga viva."));
-		return;
-	}
-	ATN_ProcMapGenerator* Gen = nullptr;
-	for (TActorIterator<ATN_ProcMapGenerator> It(World); It; ++It) { Gen = *It; break; }
-	const FString Key = What.ToLower();
-
-	if (Key.StartsWith(TEXT("list")))
-	{
-		ClientMessage(Gen && !Gen->GetShellSummary().IsEmpty() ? FString(TEXT("TNShells: ")) + Gen->GetShellSummary()
-			: FString(TEXT("TNShells: no hay conchas del mapa procedural en este nivel.")));
-		return;
-	}
-
-	if (Key.StartsWith(TEXT("esp")) || Key.StartsWith(TEXT("spe")))
-	{
-		const TArray<FTNShellSpot>* Spots = Gen ? &Gen->GetSpecialShellSpots() : nullptr;
-		if (!Spots || Spots->Num() == 0)
-		{
-			ClientMessage(TEXT("TNShells: este mapa no tiene conchas especiales (o no es el mapa procedural)."));
-			return;
-		}
-		// Cada vez la siguiente, en orden por el camino.
-		static int32 NextSpecial = 0;
-		const int32 Index = NextSpecial++ % Spots->Num();
-		const FTNShellSpot& Spot = (*Spots)[Index];
-		const FVector Facing = Spot.Facing.GetSafeNormal2D().IsNearlyZero() ? FVector::ForwardVector : Spot.Facing.GetSafeNormal2D();
-		if (ACharacter* MovingChar = Cast<ACharacter>(MyPawn)) { MovingChar->GetCharacterMovement()->StopMovementImmediately(); }
-		MyPawn->TeleportTo(Spot.Stand, Facing.Rotation(), false, true);
-		ClientSetRotation(Facing.Rotation());
-		ClientMessage(FString::Printf(TEXT("TNShells: especial %d de %d, de %d en %s (a %.0f m)."), Index + 1, Spots->Num(), Spot.Value, *Spot.Where,
-			FVector::Dist(Spot.Stand, Spot.Shell) / 100.0));
-		return;
-	}
-
-	const int32 Value = FCString::Atoi(*What);
-	if (Value <= 0)
-	{
-		ClientMessage(TEXT("TNShells: 1|25|50|100 [cantidad] suelta conchas delante; Especial lleva a la siguiente especial; Lista las cuenta."));
-		return;
-	}
-	UClass* ShellClass = UTN_GameplayAssetSettings::GetScorePickupClass();
-	// En fila delante de la tortuga, a la altura de siempre sobre sus pies, para cogerlas de una carrera.
-	const int32 Number = FMath::Clamp(Count, 1, 20);
-	const FVector Forward = MyPawn->GetActorForwardVector().GetSafeNormal2D();
-	const ACharacter* Char = Cast<ACharacter>(MyPawn);
-	const float HalfHeight = Char ? Char->GetSimpleCollisionHalfHeight() : 70.f;
-	const FVector Feet = MyPawn->GetActorLocation() - FVector(0.f, 0.f, HalfHeight);
-	for (int32 i = 0; i < Number; ++i)
-	{
-		const FTransform Where(Forward.Rotation(), Feet + Forward * (260.f + 170.f * i) + FVector(0.f, 0.f, TNScoreShells::Hover));
-		ATN_ScorePickup* Shell = World->SpawnActorDeferred<ATN_ScorePickup>(ShellClass, Where, nullptr, nullptr,
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-		if (!Shell)
-		{
-			continue;
-		}
-		Shell->SetScoreValue(Value);
-		Shell->FinishSpawning(Where);
-		// Que no se queden para siempre si nadie las coge.
-		Shell->SetLifeSpan(300.f);
-	}
-	ClientMessage(FString::Printf(TEXT("TNShells: %d conchas de %d delante de ti."), Number, Value));
-#endif
 }
 
 // ── Pruebas del lobby (TNShop, TNBooth) ────────────────────────────────────────

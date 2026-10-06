@@ -2,7 +2,7 @@
 
 #include "ActiveSound.h"
 #include "Audio.h"
-#include "Audio/TN_RaceMusicComponent.h"
+#include "Audio/TN_MusicSynthComponent.h"
 #include "AudioDevice.h"
 #include "AudioDeviceManager.h"
 #include "AudioThread.h"
@@ -11,7 +11,6 @@
 #include "Core/TN_Log.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
-#include "Game/TN_BeachRaceGameState.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManager.h"
@@ -325,14 +324,7 @@ void UTN_AudioCensusSubsystem::CompleteSample(const FAudioSnapshot& InSnapshot)
 	using namespace TNAudioCensusLocal;
 	FRow Row;
 	Row.Seconds = World->GetRealTimeSeconds() - StartSeconds;
-	if (const ATN_BeachRaceGameState* Race = World->GetGameState<ATN_BeachRaceGameState>())
-	{
-		Row.Phase = FString::Printf(TEXT("R%d %s"), Race->CurrentRound, *StaticEnum<ETNBeachRacePhase>()->GetNameStringByValue(static_cast<int64>(Race->RacePhase)));
-	}
-	else
-	{
-		Row.Phase = World->GetMapName();
-	}
+	Row.Phase = World->GetMapName();
 
 	// Dispositivo: sonidos activos, con y sin voz, por etiqueta.
 	TMap<uint64, const FAudioSnapshot::FSound*> ById;
@@ -394,7 +386,7 @@ void UTN_AudioCensusSubsystem::CompleteSample(const FAudioSnapshot& InSnapshot)
 	APlayerController* LocalPC = World->GetFirstPlayerController();
 	if (LocalPC && LocalPC->IsLocalController())
 	{
-		Row.MusicState = StateOf(LocalPC->FindComponentByClass<UTN_RaceMusicComponent>());
+		Row.MusicState = StateOf(LocalPC->FindComponentByClass<UTN_MusicSynthComponent>());
 		const APawn* Pawn = LocalPC->GetPawn();
 		Row.FoleyState = StateOf(Pawn ? Pawn->FindComponentByClass<UTN_TurtleFoleyComponent>() : nullptr);
 	}

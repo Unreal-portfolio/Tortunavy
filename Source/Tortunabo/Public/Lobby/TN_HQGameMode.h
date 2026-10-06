@@ -11,7 +11,7 @@ class ATN_TutorialCourse;
 struct FUniqueNetIdRepl;
 
 /**
- * @brief GameMode del lobby HQ (LVL_HQ). Gestiona ready-up, countdown y travel al mapa Run.
+ * @brief GameMode del lobby HQ (LVL_HQ). Gestiona ready-up, countdown y travel a LVL_Demo01.
  *
  * Responsabilidades:
  *  - Spawn de jugadores. Hasta ocho: si los PlayerStart del mapa (cuatro) se acaban, los siguientes salen en sitios nuevos
@@ -22,7 +22,7 @@ struct FUniqueNetIdRepl;
  *    con ?TNTut=1 en la URL.
  *  - Lectura del estado ready (ATN_LobbyReadyZone) y countdown cuando todos los conectados están listos.
  *  - Reseteo del countdown si alguien sale de la zona o se desconecta.
- *  - Seamless Travel hacia LVL_Run con persistencia de PendingTravelPlayerCount en GameInstance.
+ *  - Seamless Travel hacia LVL_Demo01 con persistencia de PendingTravelPlayerCount en GameInstance.
  */
 UCLASS()
 class TORTUNABO_API ATN_HQGameMode : public AGameMode
@@ -110,20 +110,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
 	float CinematicDelaySeconds = 2.0f;
 
+	/** Nivel de la partida (modo único): LVL_Demo01, que lleva BP_RunGameMode como GameMode Override. */
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
-	FString MatchMapPath = TEXT("/Game/Maps/Run/LVL_Run");
-
-	/** Nivel del mapa procedural (Coop y 2vs2; también la Carrera si aún no existe la playa). */
-	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
-	FString ProcMapPath = TEXT("/Game/Maps/Run/LVL_ProcMap");
-
-	/** Nivel de la carrera en la playa (modo Carrera elegido en el menú principal; ATN_BeachRaceGameMode). */
-	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
-	FString BeachRaceMapPath = TEXT("/Game/Maps/Run/LVL_BeachRace");
-
-	/** Nivel de Todos contra Todos (ATN_TctGameMode, alias «Tct»; la arena es una variante inventada, #651). */
-	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
-	FString TctMapPath = TEXT("/Game/Maps/Run/LVL_Tct");
+	FString MatchMapPath = TEXT("/Game/Maps/Run/LVL_Demo01");
 
 private:
 	/** El recorrido del tutorial de este lobby. */

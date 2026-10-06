@@ -87,7 +87,7 @@ bool FTNBugReportMarkdownTest::RunTest(const FString& Parameters)
 	Context.Date = TEXT("2026-10-02 09:05:07");
 	Context.Commit = TEXT("42c4a85dc (dev)");
 	Context.Build = TEXT("DebugGame");
-	Context.Map = TEXT("LVL_BeachRace");
+	Context.Map = TEXT("LVL_Demo01");
 	Context.Mode = TEXT("TN_BeachRaceGameMode");
 	Context.NetMode = TEXT("Client");
 	Context.Network = TEXT("4 jugadores · ping 150 ms | x");
@@ -105,7 +105,7 @@ bool FTNBugReportMarkdownTest::RunTest(const FString& Parameters)
 	}
 	TestTrue(TEXT("Criterio como casilla"), Markdown.Contains(TEXT("- [ ] ")));
 	TestTrue(TEXT("Commit en la tabla"), Markdown.Contains(TEXT("| Commit | 42c4a85dc (dev) |")));
-	TestTrue(TEXT("Mapa en la tabla"), Markdown.Contains(TEXT("| Mapa | LVL_BeachRace |")));
+	TestTrue(TEXT("Mapa en la tabla"), Markdown.Contains(TEXT("| Mapa | LVL_Demo01 |")));
 	TestTrue(TEXT("Semillas juntas"), Markdown.Contains(TEXT("| Semilla | TN_ProcMapGameState.MapSeed=7, TN.Monkey=9 |")));
 	TestTrue(TEXT("Posición"), Markdown.Contains(TEXT("| Posición (m) | 1.0, 2.0, 3.0 |")));
 	TestTrue(TEXT("Una barra en un valor no rompe la tabla"), Markdown.Contains(TEXT("| Red | Client · 4 jugadores · ping 150 ms / x |")));
