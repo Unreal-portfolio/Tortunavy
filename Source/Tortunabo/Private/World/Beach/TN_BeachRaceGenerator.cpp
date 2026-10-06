@@ -33,6 +33,8 @@
 #include "UObject/UObjectGlobals.h"
 #include "../ProcMap/TN_ProcMapAmbientFX.h"
 #include "World/Beach/TN_BeachTankTrap.h"
+#include "TN_BeachCastlePrizes.h"
+#include "TN_BeachDecorKit.h"
 
 namespace TNBeachRace
 {
@@ -361,7 +363,11 @@ void ATN_BeachRaceGenerator::SpawnRoundElement(int32 Index, TArray<int8>& HasCla
 	if (!World || !Layout.Items.IsValidIndex(Index)) { return; }
 	const TNBeachLayout::FItem& Item = Layout.Items[Index];
 	// El decorado no es un actor: lo monta cada máquina en su ATN_BeachDecorField (instanciado y sin replicar).
-	if (TNBeach::CategoryOf(Item.Element) == ETNBeachCategory::Decor) { return; }
+	if (TNBeach::CategoryOf(Item.Element) == ETNBeachCategory::Decor)
+	{
+		SpawnCastlePrizes(Item);
+		return;
+	}
 	const int32 Kind = static_cast<int32>(Item.Element);
 	if (!HasClass.IsValidIndex(Kind)) { return; }
 	const TCHAR* ClassName = TNBeach::ClassNameOf(Item.Element);
@@ -390,6 +396,29 @@ void ATN_BeachRaceGenerator::SpawnRoundElement(int32 Index, TArray<int8>& HasCla
 	RoundElements.Add(Element);
 	if (ElementByItem.Num() != Layout.Items.Num()) { ElementByItem.SetNum(Layout.Items.Num()); }
 	ElementByItem[Index] = Element;
+}
+
+void ATN_BeachRaceGenerator::SpawnCastlePrizes(const TNBeachLayout::FItem& Item)
+{
+	UWorld* World = GetWorld();
+	if (!World || !TNBeachDecorKit::HasFixedYaw(Item)) { return; }
+	// El castillo enorme es decorado instanciado: su patio se calcula con la misma colocación que el campo de decorado
+	// (giro fijo, hundimiento y tamaño de su ejemplar) y los premios son actores replicados, como los de una fortaleza.
+	const TNBeachDecorKit::FRecipe Recipe = TNBeachDecorKit::Single(Item.Element, TNBeachDecorKit::VariantOf(Item.Element, Item.Spec.Seed));
+	const FTransform Body = TNBeachDecorKit::ItemBodyPlacement(Recipe.Info, Item, TNBeachDecorKit::ClampSize(Item.Spec.SizeScale))
+		* TNBeachDecorKit::ItemPlacement(Layout, Item) * GetActorTransform();
+	TArray<ATN_BeachElement*> Prizes;
+	TNBeachCastlePrizes::SpawnHugeCastle(World, Body, Item.Spec.Seed, Prizes);
+	for (ATN_BeachElement* Prize : Prizes)
+	{
+		if (!World->IsGameWorld())
+		{
+			// Ronda de prueba del editor: no se guarda con el nivel y se construye ya (en el editor no hay BeginPlay).
+			Prize->SetFlags(RF_Transient);
+			if (UFunction* Build = Prize->FindFunction(TEXT("OnRep_Spec"))) { Prize->ProcessEvent(Build, nullptr); }
+		}
+		RoundElements.Add(Prize);
+	}
 }
 
 FString ATN_BeachRaceGenerator::DescribeMissing(const TMap<FString, int32>& MissingByClass)

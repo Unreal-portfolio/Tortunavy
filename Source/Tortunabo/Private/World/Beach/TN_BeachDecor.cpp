@@ -224,9 +224,32 @@ FTransform TNBeachDecorKit::BodyPlacement(const TNBeachProp::FPropInfo& Info, in
 	return FTransform(Tilt * TNBeachProp::YawQ(Yaw), FVector(0.0, 0.0, -Sink), FVector(static_cast<double>(Size)));
 }
 
+bool TNBeachDecorKit::HasFixedYaw(const TNBeachLayout::FItem& Item)
+{
+	return Item.Element == ETNBeachElement::SandCastleHuge && Item.Role == TNBeachLayout::EItemRole::Castle;
+}
+
+double TNBeachDecorKit::FixedYawOf(const TNBeachLayout::FItem& Item)
+{
+	return 180.0 + static_cast<double>(static_cast<uint32>(Item.Spec.Seed) % 25u) - 12.0;
+}
+
+FTransform TNBeachDecorKit::ItemBodyPlacement(const TNBeachProp::FPropInfo& Info, const TNBeachLayout::FItem& Item, float Size)
+{
+	if (!HasFixedYaw(Item))
+	{
+		return BodyPlacement(Info, Item.Spec.Seed, Size);
+	}
+	// Sin giro al azar (la inclinación y el hundimiento, los mismos que siempre): la puerta mira donde dice el reparto.
+	TNBeachProp::FPropInfo Fixed = Info;
+	Fixed.bFreeYaw = false;
+	Fixed.YawJitter = 0.f;
+	return BodyPlacement(Fixed, Item.Spec.Seed, Size);
+}
+
 FTransform TNBeachDecorKit::ItemPlacement(const TNBeachLayout::FRoundLayout& Layout, const TNBeachLayout::FItem& Item)
 {
-	const FQuat Yaw = FRotator(0.0, Item.Yaw, 0.0).Quaternion();
+	const FQuat Yaw = FRotator(0.0, HasFixedYaw(Item) ? FixedYawOf(Item) : Item.Yaw, 0.0).Quaternion();
 	if (!TNBeachLayout::IsLitter(Item))
 	{
 		return FTransform(Yaw, FVector(Item.Pos.X, Item.Pos.Y, TNBeachLayout::PlacementZ(Item)));

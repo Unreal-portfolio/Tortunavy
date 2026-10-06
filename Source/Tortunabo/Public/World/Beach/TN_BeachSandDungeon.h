@@ -20,6 +20,10 @@ class UStaticMeshComponent;
  *    que hay que saltar o rodear y ventanas a la playa y al mar (se puede saltar por ellas: ~4 m de caída).
  * 4. Salida por la puerta alta de la muralla +X a una rampa de arena que baja a la playa.
  *
+ * Premio arriba (#741): en la terraza del piso de arriba, una catapulta potenciada (TNBeach::FlagBoosted) que lanza hacia
+ * el mar por encima de la muralla +X y un cofre de cima (TNBeach::FlagSummitPrize: lo mejor de la carrera para cualquier
+ * puesto), como los de las fortalezas.
+ *
  * Todo son bloques de arena de molde (con marcas de cubo) con colisión convexa que también para la cámara. Las piezas
  * de dentro (puerta, algas, enemigos) las crea el servidor con ATN_BeachElement::SpawnElement al empezar y las destruye
  * con el castillo. El terreno no se aplana: conviene colocarlo en una zona llana (el zócalo tapa ±50 cm).
@@ -57,7 +61,7 @@ protected:
 	TObjectPtr<UProceduralMeshComponent> CastleCollision;
 
 private:
-	/** Servidor: puerta de conchas, algas y enemigos de dentro. */
+	/** Servidor: puerta de conchas, algas y enemigos de dentro, y la catapulta y el cofre de la terraza. */
 	void SpawnChildren();
 
 	/** Dónde van las piezas de dentro (espacio del actor), calculado en ApplySpec. */
@@ -65,6 +69,9 @@ private:
 	FVector SeaweedAt = FVector::ZeroVector;
 	FVector UrchinAt = FVector::ZeroVector;
 	FVector CrabAt = FVector::ZeroVector;
+	/** Catapulta potenciada y cofre de cima en la terraza de arriba (espacio del actor; el cofre mira a +X como la catapulta). */
+	FVector CatapultAt = FVector::ZeroVector;
+	FVector ChestAt = FVector::ZeroVector;
 	double GateWidth = 320.0;
 	double CorridorWidth = 360.0;
 	double CorridorLength = 1500.0;

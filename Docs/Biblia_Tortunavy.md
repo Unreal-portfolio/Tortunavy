@@ -4028,6 +4028,7 @@ en medio, una «mota» de terrazas macizas de arena de molde, cada una más alta
   `Summit`: la tabla de las últimas), y
   **conchas de puntos**: 100 + 50 (mediana), 100 + 50 + 50 (grande), 100 + 100 + 50 + 50 (colosal) en las esquinas de la cima, más
   una de 50 al final de cada atajo de las terrazas de en medio (grande 2, colosal 3).
+  El castillo enorme (patio, con la puerta a quien llega) y el castillo con salas (terraza de arriba) llevan también catapulta potenciada y cofre de cima (#741).
 - **Caída del lanzador**: el reparto reserva una franja de 16 m de ancho entre 40 y 100 m del centro hacia su +X: la catapulta
   potenciada cae a 80–90 m (±6 m) y aún rebota. (El trampolín, que ya no sale en las cimas, caía a ~38–47 m andando y ~44–53 m esprintando.)
 - **Guardias**: en cada fortaleza, 2, 3 o 5 enemigos alrededor (cangrejos, erizos, lagartos y algún tanque) sobre todo por delante.
@@ -4052,7 +4053,7 @@ Dos actores: `ATN_BeachChest` es el elemento del reparto (solo servidor, no se r
   reina de 100: 200 o 250 puntos) que saltan en parábolas altas y caen en corona a 1–3 m del borde, dejando libre el frente de
   quien lo abrió. Los objetos se sortean **por el puesto** de quien abre (`TNRaceItems::RollLoot`, fuente `Chest`): energía sin fin
   ×2, barra llena ×1,6, pelícano taxi ×1,6, coco dorado ×2, protector solar ×1,4 y triple coco ×1,4; concha trampa y silbato ×0,6; la
-  cabezota y el tótem, nunca (pesos completos en el §29.5). El cofre de la **cima de una fortaleza** (`TNBeach::FlagSummitPrize`,
+  cabezota y el tótem, nunca (pesos completos en el §29.5). El cofre de la **cima de un castillo** (fortaleza, castillo enorme o con salas; `TNBeach::FlagSummitPrize`,
   fuente `Summit`, #741) sortea con la tabla de las últimas para cualquier puesto: hasta la primera puede sacar el pelícano taxi,
   el protector solar, el triple coco o el coco dorado (~63 % de los pesos de los objetos de carrera con 4 tortugas).
 - **Después**: una vez por ronda; queda abierto y vacío, con brillo dorado apagado; la columna se estrecha y se va en 0,8 s.

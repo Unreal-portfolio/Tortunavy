@@ -6,6 +6,7 @@
 #include "ProceduralMeshComponent.h"
 #include "UObject/UObjectGlobals.h"
 #include "TN_BeachTrapKit.h"
+#include "TN_BeachCastlePrizes.h"
 
 /**
  * Planta del castillo (espacio del actor, cm; X = sentido de la carrera). Murallas de fuera de OuterWall de grueso; dentro:
@@ -443,6 +444,14 @@ void ATN_BeachSandDungeon::ApplySpec()
 	SeaweedAt = FVector(Plan.XAw + 0.5 * CorridorLength, CorrY, FloorZ);
 	UrchinAt = FVector(Plan.XS0 - 170.0, CorrY, FloorZ);
 	CrabAt = FVector(0.5 * (Plan.IX0 + Plan.XA), 0.5 * (Plan.IY0 + Plan.IY1), FloorZ);
+	// Premio de arriba, en la terraza (suelo macizo a UpZ entre el muro de dentro y la sala de las ventanas; su borde sobre el
+	// pasillo lleva un pretil de 60 cm). La catapulta a lo largo de X, a media terraza y con su brazo (de -4,3 a +4,7 m de su
+	// pie, el más corto) entre el muro de dentro y la sala de las ventanas, que se le abre delante: lanza por encima de la
+	// muralla +X, a más de 25 m. El cofre, en el cuarto de -Y, lejos del cartel de la catapulta.
+	const double TerraceY0 = Plan.IY0;
+	const double TerraceY1 = Plan.YC0 - 60.0;
+	CatapultAt = FVector(Plan.XAw + 600.0, 0.5 * (TerraceY0 + TerraceY1), Plan.UpZ);
+	ChestAt = FVector(Plan.XAw + 450.0, TerraceY0 + 450.0, Plan.UpZ);
 	UE_LOG(LogTortunabo, Verbose, TEXT("[Playa] Castillo con salas %s: %.0f x %.0f cm, pasillo de %.0f, %d cascos."), *GetName(), 2.0 * Plan.HX, 2.0 * Plan.HY,
 		CorridorLength, Hulls.Num());
 }
@@ -496,6 +505,14 @@ void ATN_BeachSandDungeon::SpawnChildren()
 		&& FindObject<UClass>(nullptr, *FString::Printf(TEXT("/Script/Tortunabo.%s"), TNBeach::ClassNameOf(ETNBeachElement::GiantCrab))))
 	{
 		SpawnChild(ETNBeachElement::GiantCrab, CrabAt, 0.4f, 0.f, 17u);
+	}
+	// Arriba, en la terraza: la catapulta potenciada y el cofre de cima (si no existen sus clases, no se crean y se avisa).
+	TArray<ATN_BeachElement*> Prizes;
+	TNBeachCastlePrizes::SpawnSummit(World, FTransform(ActorXf.GetRotation(), ActorXf.TransformPosition(CatapultAt)), TNBeachCastlePrizes::CatapultSeedOf(Spec.Seed),
+		FTransform(ActorXf.GetRotation(), ActorXf.TransformPosition(ChestAt)), TNBeachCastlePrizes::ChestSeedOf(Spec.Seed), Prizes);
+	for (ATN_BeachElement* Prize : Prizes)
+	{
+		SpawnedPieces.Add(Prize);
 	}
 	UE_LOG(LogTortunabo, Verbose, TEXT("[Playa] Castillo con salas %s: %d piezas dentro."), *GetName(), SpawnedPieces.Num());
 }

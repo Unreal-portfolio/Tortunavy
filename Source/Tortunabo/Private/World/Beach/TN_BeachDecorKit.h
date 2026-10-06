@@ -59,6 +59,18 @@ namespace TNBeachDecorKit
 	 */
 	FTransform BodyPlacement(const TNBeachProp::FPropInfo& Info, int32 Seed, float Size);
 
+	/**
+	 * Si el ejemplar del reparto no gira al azar: el castillo enorme de la pasada de castillos (EItemRole::Castle) lleva
+	 * dentro una catapulta y un cofre (#741), que van con su patio, y su puerta mira hacia quien llega (FixedYawOf).
+	 */
+	bool HasFixedYaw(const TNBeachLayout::FItem& Item);
+
+	/** Giro (grados) del castillo con HasFixedYaw: 180° ± 12° según su semilla (el reparto no lo sabe: así su huella no cambia). */
+	double FixedYawOf(const TNBeachLayout::FItem& Item);
+
+	/** BodyPlacement de un ejemplar del reparto: como BodyPlacement, pero sin el giro al azar si HasFixedYaw. */
+	FTransform ItemBodyPlacement(const TNBeachProp::FPropInfo& Info, const TNBeachLayout::FItem& Item, float Size);
+
 	/** Inclinación máxima (grados) del decorado suelto que sigue la cuesta: más, y quedaría de canto. */
 	constexpr double LitterMaxTilt = 30.0;
 
