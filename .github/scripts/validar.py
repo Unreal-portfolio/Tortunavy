@@ -12,8 +12,14 @@ Errores (paran la fusión):
   - scripts de Python con errores de sintaxis;
   - JSON mal formado (Tortunabo.uproject, manifiestos, .json de Scripts y Tools);
   - la misma clave de localización (NSLOCTEXT) con dos textos distintos;
-  - traducciones (.po) con marcadores, plurales o saltos de línea rotos (Tools/Localization/po_tool.py check).
-Avisos (no paran): archivos de más de 10 MB.
+  - traducciones (.po) con marcadores, plurales o saltos de línea rotos (Tools/Localization/po_tool.py check);
+  - un texto visible que no se puede traducir: una línea nueva de Source/ que crea un FText desde un literal con letras
+    (FText::FromString(TEXT("Hola")), FText::FromName, también dentro de un Printf o de un «? :»). Lo que de verdad no se
+    traduce (nombres de tecla, siglas, cifras) se marca a propósito con INVTEXT("…") o FText::AsCultureInvariant(…).
+Avisos (no paran): archivos de más de 10 MB; claves NSLOCTEXT nuevas o cambiadas que aún no están en Game.manifest (falta
+recogerlas y traducirlas, Docs/Localizacion.md).
+
+Con --todos, la comprobación de textos revisa todo Source/ y no solo las líneas nuevas.
 """
 import argparse
 import json
@@ -33,6 +39,12 @@ CONFLICT = re.compile(r"^(<<<<<<< |>>>>>>> )", re.M)
 NSLOCTEXT = re.compile(r'NSLOCTEXT\s*\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)', re.S)
 LOCTEXT_NS = re.compile(r'#define\s+LOCTEXT_NAMESPACE\s+"([^"]*)"')
 LOCTEXT = re.compile(r'(?<![A-Z_])LOCTEXT\s*\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)', re.S)
+FTEXT_FROM = re.compile(r"FText::From(?:String|Name)\s*\(")
+STRING_LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
+# Lo que no es texto dentro de un literal: formatos de Printf (%d, %.1f, %s), argumentos de FText::Format ({0}) y escapes.
+FORMAT_SPEC = re.compile(r"%[-+ 0#]*\d*(?:\.\d+)?(?:hh|h|ll|l|z)?[a-zA-Z]|\{[^{}]*\}|\\[nrt]")
+LETTER = re.compile(r"[^\W\d_]")
+MANIFEST = os.path.join("Content", "Localization", "Game", "Game.manifest")
 
 errors, warnings = [], []
 
@@ -68,14 +80,20 @@ def read_text(path):
         return f.read()
 
 
-def changed_files(base):
-    """(estado, ruta, blob) de lo que cambia entre base y HEAD; lista vacía si no hay base utilizable."""
+def resolve_base(base):
+    """El commit con el que comparar: la base dada si existe; si no, el padre de HEAD; None si tampoco hay."""
     if not base or set(base) == {"0"} or git("cat-file", "-e", f"{base}^{{commit}}").returncode != 0:
         head_parent = git("rev-parse", "--verify", "HEAD~1")
-        if head_parent.returncode != 0:
-            print("Sin base con la que comparar: se omiten las comprobaciones de los cambios.")
-            return []
-        base = head_parent.stdout.strip()
+        return head_parent.stdout.strip() if head_parent.returncode == 0 else None
+    return base
+
+
+def changed_files(base):
+    """(estado, ruta, blob) de lo que cambia entre base y HEAD; lista vacía si no hay base utilizable."""
+    base = resolve_base(base)
+    if base is None:
+        print("Sin base con la que comparar: se omiten las comprobaciones de los cambios.")
+        return []
     raw = git("diff", "--raw", "--no-renames", "-z", base, "HEAD")
     if raw.returncode != 0:
         warn(f"No se pudo comparar con {base}: {raw.stderr.strip()}")
@@ -178,6 +196,144 @@ def check_loc_keys():
     print(f"Claves de localización revisadas: {len(seen)}.")
 
 
+def strip_line_comment(line):
+    """La línea sin su comentario «//» (respeta las comillas: «"http://…"» no es un comentario)."""
+    in_str, esc = False, False
+    for i, ch in enumerate(line):
+        if esc:
+            esc = False
+        elif ch == "\\":
+            esc = True
+        elif ch == '"':
+            in_str = not in_str
+        elif not in_str and line.startswith("//", i):
+            return line[:i]
+    return line
+
+
+def call_argument(line, start):
+    """El texto entre el «(» de la posición start y su «)» (hasta el final de la línea si la llamada sigue en otra)."""
+    depth, in_str, esc = 0, False, False
+    for i in range(start, len(line)):
+        ch = line[i]
+        if esc:
+            esc = False
+        elif ch == "\\":
+            esc = True
+        elif ch == '"':
+            in_str = not in_str
+        elif not in_str and ch == "(":
+            depth += 1
+        elif not in_str and ch == ")":
+            depth -= 1
+            if depth == 0:
+                return line[start + 1:i]
+    return line[start + 1:]
+
+
+def untranslatable_literals(line):
+    """Literales con letras que acaban en un FText sin pasar por la localización (FText::FromString o FromName)."""
+    code = strip_line_comment(line)
+    found = []
+    for m in FTEXT_FROM.finditer(code):
+        for lit in STRING_LITERAL.findall(call_argument(code, m.end() - 1)):
+            if LETTER.search(FORMAT_SPEC.sub("", lit)):
+                found.append(lit)
+    return found
+
+
+def parse_added_lines(diff_text):
+    """(ruta, línea, texto) de las líneas añadidas en un «git diff -U0»."""
+    out, path, line_no = [], None, 0
+    for raw in diff_text.splitlines():
+        if raw.startswith("+++ "):
+            path = raw[6:] if raw.startswith("+++ b/") else None
+        elif raw.startswith("@@"):
+            m = re.search(r"\+(\d+)", raw)
+            line_no = int(m.group(1)) if m else 0
+        elif raw.startswith("+") and path:
+            out.append((path, line_no, raw[1:]))
+            line_no += 1
+    return out
+
+
+def added_source_lines(base):
+    base = resolve_base(base)
+    if base is None:
+        return []
+    diff = git("diff", "-U0", "--no-color", "--no-renames", base, "HEAD", "--", "Source")
+    return [(p, n, t) for p, n, t in parse_added_lines(diff.stdout) if p.endswith((".h", ".cpp"))]
+
+
+def all_source_lines():
+    out = []
+    for path in tracked("Source"):
+        if path.endswith((".h", ".cpp")):
+            text = read_text(path).decode("utf-8-sig", errors="replace")
+            out += [(path, i, line) for i, line in enumerate(text.splitlines(), 1)]
+    return out
+
+
+def is_test_source(path):
+    return "/Tests/" in path
+
+
+def load_manifest_keys(path=None):
+    """{(espacio, clave): texto} de Game.manifest (UTF-16 con BOM); None si no existe."""
+    full = path or os.path.join(ROOT, MANIFEST)
+    if not os.path.isfile(full):
+        return None
+    with open(full, "rb") as f:
+        data = f.read()
+    utf16 = data.startswith(bytes([0xFF, 0xFE])) or data.startswith(bytes([0xFE, 0xFF]))
+    root = json.loads(data.decode("utf-16") if utf16 else data.decode("utf-8-sig"))
+    keys = {}
+
+    def walk(node, namespace):
+        for child in node.get("Children", []):
+            for key in child.get("Keys", []):
+                keys[(namespace, key.get("Key", ""))] = child.get("Source", {}).get("Text", "")
+        for sub_node in node.get("Subnamespaces", []):
+            walk(sub_node, sub_node.get("Namespace", ""))
+
+    walk(root, root.get("Namespace", ""))
+    return keys
+
+
+def unescape_cpp(text):
+    return re.sub(r'\\(["\\])', r"\1", text)
+
+
+def ungathered_keys(lines, manifest):
+    """{ruta: ["Espacio,Clave", ...]} de los NSLOCTEXT de esas líneas que no están en el manifiesto o cambiaron de texto."""
+    pending = {}
+    for path, _, text in lines:
+        for m in NSLOCTEXT.finditer(text):
+            namespace, key, source = m.group(1), m.group(2), unescape_cpp(unquote(m.group(3)))
+            if manifest.get((namespace, key)) != source:
+                pending.setdefault(path, []).append(f"{namespace},{key}")
+    return pending
+
+
+def check_texts(base, everything=False):
+    lines = [l for l in (all_source_lines() if everything else added_source_lines(base)) if not is_test_source(l[0])]
+    bad = 0
+    for path, line_no, text in lines:
+        for lit in untranslatable_literals(text):
+            bad += 1
+            error(f"Texto visible que no se puede traducir: «{lit}». Ponlo con NSLOCTEXT(\"Espacio\", \"Clave\", \"{lit}\"); "
+                  f"si de verdad no se traduce (tecla, sigla, cifra), con INVTEXT o FText::AsCultureInvariant "
+                  f"(Docs/Localizacion.md)", path, line_no)
+    manifest = load_manifest_keys()
+    pending = ungathered_keys(lines, manifest) if manifest is not None and not everything else {}
+    for path, keys in pending.items():
+        shown = ", ".join(keys[:5]) + ("…" if len(keys) > 5 else "")
+        warn(f"{len(keys)} textos nuevos o cambiados sin recoger ({shown}): hay que recogerlos y traducirlos "
+             "(Scripts/localization_gather_export.bat y Tools/Localization/po_tool.py)", path)
+    print(f"Líneas de código revisadas: {len(lines)}; textos que no se pueden traducir: {bad}; "
+          f"archivos con textos sin recoger: {len(pending)}.")
+
+
 def check_po():
     tool = os.path.join(ROOT, "Tools", "Localization", "po_tool.py")
     loc_dir = os.path.join(ROOT, "Content", "Localization", "Game")
@@ -199,6 +355,7 @@ def check_po():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", default="", help="commit con el que comparar (la base de la pull request)")
+    parser.add_argument("--todos", action="store_true", help="revisa los textos de todo Source/, no solo las líneas nuevas")
     args = parser.parse_args()
 
     print("== Cambios"); check_changes(args.base)
@@ -206,6 +363,7 @@ def main():
     print("== Python"); check_python()
     print("== JSON"); check_json()
     print("== Claves de localización"); check_loc_keys()
+    print("== Textos que no se pueden traducir"); check_texts(args.base, args.todos)
     print("== Traducciones"); check_po()
 
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
