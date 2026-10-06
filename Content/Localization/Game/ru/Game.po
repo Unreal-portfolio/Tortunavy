@@ -2261,92 +2261,92 @@ msgid "Entrando en «{0}»..."
 msgstr "Заходим в «{0}»…"
 
 #. Key:	BuildMismatchStatus
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1861)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1861)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1893)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1893)
 msgctxt "TNRooms,BuildMismatchStatus"
 msgid "Versiones incompatibles con el servidor."
 msgstr "Версия несовместима с сервером."
 
 #. Key:	BuildMismatch
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1865)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1865)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1897)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1897)
 msgctxt "TNRooms,BuildMismatch"
 msgid "Tu versión del juego no es la misma que la del anfitrión. Poneos los dos en la misma versión y volved a intentarlo."
 msgstr "Твоя версия игры не совпадает с версией хоста. Поставьте одну и ту же версию и попробуйте снова."
 
 #. Key:	ConnectFailed
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1923)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1923)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1955)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1955)
 msgctxt "TNRooms,ConnectFailed"
 msgid "No se ha podido conectar con la sala: puede que el anfitrión se haya ido."
 msgstr "Не удалось подключиться к комнате: возможно, хост вышел."
 
 #. Key:	HostLeft
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1924)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1924)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1956)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(1956)
 msgctxt "TNRooms,HostLeft"
 msgid "Se ha acabado la partida: el anfitrión se ha ido o se ha perdido la conexión."
 msgstr "Игра окончена: хост вышел или пропало соединение."
 
 #. Key:	ListStale
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2054)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2054)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2086)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2086)
 msgctxt "TNRooms,ListStale"
 msgid "Esa sala ya no está en la lista: actualízala."
 msgstr "Этой комнаты уже нет в списке: обнови его."
 
 #. Key:	ListLocked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2062)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2062)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2094)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2094)
 msgctxt "TNRooms,ListLocked"
 msgid "«{0}» está cerrada: el anfitrión no deja entrar a nadie más."
 msgstr "Комната «{0}» закрыта: хост больше никого не пускает."
 
 #. Key:	ListFull
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2068)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2068)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2100)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2100)
 msgctxt "TNRooms,ListFull"
 msgid "«{0}» está llena ({1}/{2})."
 msgstr "Комната «{0}» заполнена ({1}/{2})."
 
 #. Key:	CodeIncomplete
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2086)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2086)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2118)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2118)
 msgctxt "TNRooms,CodeIncomplete"
 msgid "El código tiene 5 letras y números (nunca lleva O, 0, I, 1 ni L)."
 msgstr "В коде 5 букв и цифр (букв O, I, L и цифр 0 и 1 в нём не бывает)."
 
 #. Key:	CodeSearching
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2089)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2089)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2121)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2121)
 msgctxt "TNRooms,CodeSearching"
 msgid "Buscando la sala {0}..."
 msgstr "Ищем комнату {0}…"
 
 #. Key:	Locked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2346)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2346)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2378)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2378)
 msgctxt "TNRooms,Locked"
 msgid "Sala cerrada: no entra nadie más (los que ya estaban pueden volver)."
 msgstr "Комната закрыта: новые игроки не войдут (кто уже был, может вернуться)."
 
 #. Key:	Unlocked
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2347)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2347)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2379)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2379)
 msgctxt "TNRooms,Unlocked"
 msgid "Sala abierta: puede entrar gente otra vez."
 msgstr "Комната открыта: снова можно заходить."
 
 #. Key:	KickReason
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2385)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2385)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2417)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2417)
 msgctxt "TNRooms,KickReason"
 msgid "El anfitrión te ha expulsado de la sala."
 msgstr "Хост выгнал тебя из комнаты."
 
 #. Key:	KickedNotice
-#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2402)
-#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2402)
+#. SourceLocation:	Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2434)
+#: Source/Tortunabo/Private/Multiplayer/MP_GameInstance.cpp(2434)
 msgctxt "TNRooms,KickedNotice"
 msgid "El anfitrión te ha expulsado de la sala «{0}»."
 msgstr "Хост выгнал тебя из комнаты «{0}»."
@@ -6279,162 +6279,162 @@ msgid "No se han podido cargar los créditos."
 msgstr "Не удалось загрузить титры."
 
 #. Key:	QuickChatFallback
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(289)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(289)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(315)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(315)
 msgctxt "TNHUD,QuickChatFallback"
 msgid "Mensaje #{0}"
 msgstr "Сообщение №{0}"
 
 #. Key:	ResultsRankEliminated
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(344)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(344)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(370)
 msgctxt "TNHUD,ResultsRankEliminated"
 msgid "Eliminado"
 msgstr "Вне игры"
 
 #. Key:	ResultsRankPlace
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(348)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(348)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(374)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(374)
 msgctxt "TNHUD,ResultsRankPlace"
 msgid "Puesto: #{0}"
 msgstr "Место: №{0}"
 
 #. Key:	ResultsTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(360)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(360)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(386)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(386)
 msgctxt "TNHUD,ResultsTime"
 msgid "Tiempo: {0}s"
 msgstr "Время: {0} с"
 
 #. Key:	ResultsSpectatorHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(368)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(368)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(394)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(394)
 msgctxt "TNHUD,ResultsSpectatorHint"
 msgid "Scroll para cambiar de jugador"
 msgstr "Прокрути колесо, чтобы сменить игрока"
 
 #. Key:	ScoreboardRank
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(493)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(493)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(520)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(520)
 msgctxt "TNHUD,ScoreboardRank"
 msgid "{0}º"
 msgstr "{0}-е"
 
 #. Key:	ScoreboardTime
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(500)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(500)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(527)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(527)
 msgctxt "TNHUD,ScoreboardTime"
 msgid "{0}s"
 msgstr "{0} с"
 
 #. Key:	ReturningToLobby
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(523)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(523)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(550)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(550)
 msgctxt "TNHUD,ReturningToLobby"
 msgid "Volviendo al lobby en: {0}"
 msgstr "Возвращение в лобби через: {0}"
 
 #. Key:	ResultsTitleEliminated
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(530)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(530)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(557)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(557)
 msgctxt "TNHUD,ResultsTitleEliminated"
 msgid "¡Eliminado!"
 msgstr "Вылет!"
 
 #. Key:	ResultsTitleFirst
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(535)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(535)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
 msgctxt "TNHUD,ResultsTitleFirst"
 msgid "¡Primero!"
 msgstr "Первое место!"
 
 #. Key:	ResultsTitleSecond
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(536)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(536)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(563)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(563)
 msgctxt "TNHUD,ResultsTitleSecond"
 msgid "Segundo"
 msgstr "Второе место"
 
 #. Key:	ResultsTitleThird
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(537)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(537)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(564)
 msgctxt "TNHUD,ResultsTitleThird"
 msgid "Tercero"
 msgstr "Третье место"
 
 #. Key:	ResultsTitlePlace
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(540)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(540)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(567)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(567)
 msgctxt "TNHUD,ResultsTitlePlace"
 msgid "Puesto #{0}"
 msgstr "Место №{0}"
 
 #. Key:	FlowWaiting
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(554)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(554)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(581)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(581)
 msgctxt "TNHUD,FlowWaiting"
 msgid "Sala: {0}/{1} | Zona: {2}/{3}"
 msgstr "Комната: {0}/{1} | Зона: {2}/{3}"
 
 #. Key:	FlowCountdown
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(558)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(558)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(585)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(585)
 msgctxt "TNHUD,FlowCountdown"
 msgid "¡Todos listos! Empieza en: {0}"
 msgstr "Все готовы! Старт через: {0}"
 
 #. Key:	FlowPreparing
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(560)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(560)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(587)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(587)
 msgctxt "TNHUD,FlowPreparing"
 msgid "Preparando..."
 msgstr "Подготовка…"
 
 #. Key:	FlowInProgress
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(562)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(589)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(589)
 msgctxt "TNHUD,FlowInProgress"
 msgid "Carrera en curso. Meta: {0}/{1}"
 msgstr "Гонка идёт. Финиш: {0}/{1}"
 
 #. Key:	FlowWaitingHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(576)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(576)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(603)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(603)
 msgctxt "TNHUD,FlowWaitingHint"
 msgid "El contador arranca cuando todos los jugadores conectados estén en la zona."
 msgstr "Отсчёт начнётся, когда все подключённые игроки окажутся в зоне."
 
 #. Key:	FlowCountdownDetail
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(578)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(578)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(605)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(605)
 msgctxt "TNHUD,FlowCountdownDetail"
 msgid "Conectados: {0}/{1} | Zona: {2}/{3}"
 msgstr "Подключено: {0}/{1} | Зона: {2}/{3}"
 
 #. Key:	FlowCinematicHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(582)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(582)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(609)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(609)
 msgctxt "TNHUD,FlowCinematicHint"
 msgid "Mantente preparado para el viaje al mapa de carrera."
 msgstr "Приготовься к путешествию на карту гонки."
 
 #. Key:	FlowDeathZone
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(590)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(590)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(617)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(617)
 msgctxt "TNHUD,FlowDeathZone"
 msgid "Peligro: sal de la zona de muerte ({0}s)"
 msgstr "Опасно: выйди из зоны смерти ({0} с)"
 
 #. Key:	FlowFinishHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(595)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(595)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(622)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(622)
 msgctxt "TNHUD,FlowFinishHint"
 msgid "Cruza la meta para pasar a espectador."
 msgstr "Пересеки финиш, чтобы стать зрителем."
 
 #. Key:	ChatLine
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(633)
-#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(633)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(660)
+#: Source/Tortunabo/Private/UI/HUD/TN_CoopFlowHUDWidget.cpp(660)
 msgctxt "TNHUD,ChatLine"
 msgid "{0}: {1}"
 msgstr "{0}: {1}"
@@ -6593,6 +6593,62 @@ msgctxt "TNLocal,Leaving"
 msgid "Dejando la partida… suelta B para quedarte"
 msgstr "Выходим из игры… отпусти B, чтобы остаться"
 
+#. Key:	CoopScoreDolls
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(14)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(14)
+msgctxt "TNHUD,CoopScoreDolls"
+msgid "Muñecos tortuga: {0}/{1}  +{2}"
+msgstr "Фигурки черепашек: {0}/{1}  +{2}"
+
+#. Key:	CoopScoreShells
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(16)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(16)
+msgctxt "TNHUD,CoopScoreShells"
+msgid "Conchas del nivel: {0}/{1}  +{2}"
+msgstr "Ракушки уровня: {0}/{1}  +{2}"
+
+#. Key:	CoopScoreFinished
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(19)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(19)
+msgctxt "TNHUD,CoopScoreFinished"
+msgid "Llegada a la meta  +{0}"
+msgstr "Финиш достигнут  +{0}"
+
+#. Key:	CoopScoreNotFinished
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(20)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(20)
+msgctxt "TNHUD,CoopScoreNotFinished"
+msgid "Sin llegar a la meta  +{0}"
+msgstr "Финиш не достигнут  +{0}"
+
+#. Key:	CoopScorePuzzle
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(22)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(22)
+msgctxt "TNHUD,CoopScorePuzzle"
+msgid "Eficiencia de puzle: {0}  +{1}"
+msgstr "Эффективность в головоломках: {0}  +{1}"
+
+#. Key:	CoopScoreNoPuzzle
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(24)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(24)
+msgctxt "TNHUD,CoopScoreNoPuzzle"
+msgid "Sin puzles en el nivel  +{0}"
+msgstr "На уровне нет головоломок  +{0}"
+
+#. Key:	CoopScoreTotal
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(25)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(25)
+msgctxt "TNHUD,CoopScoreTotal"
+msgid "Puntuación final: {0}"
+msgstr "Итоговый счёт: {0}"
+
+#. Key:	EndTitleJumper
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(35)
+#: Source/Tortunabo/Private/UI/HUD/TN_ResultsTexts.cpp(35)
+msgctxt "TNHUD,EndTitleJumper"
+msgid "Saltarín: {0} ({1} {1}|plural(one=salto,other=saltos))"
+msgstr "Попрыгунья: {0} ({1} {1}|plural(one=прыжок,few=прыжка,many=прыжков,other=прыжка))"
+
 #. Key:	ShellGain
 #. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
 #: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1057)
@@ -6636,22 +6692,22 @@ msgid "Anima a los demás hasta que lleguen al agua."
 msgstr "Болей за остальных, пока они не доберутся до воды."
 
 #. Key:	PreviewSay
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1536)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1540)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1540)
 msgctxt "TNHUD,PreviewSay"
 msgid "¡Por aquí, que hay conchas!"
 msgstr "Сюда, тут ракушки!"
 
 #. Key:	WheelHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
 msgctxt "TNHUD,WheelHint"
 msgid "Apunta con el ratón"
 msgstr "Наводи мышью"
 
 #. Key:	WheelHintPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1764)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1768)
 msgctxt "TNHUD,WheelHintPad"
 msgid "Apunta con el stick"
 msgstr "Наводи стиком"
@@ -11732,8 +11788,8 @@ msgid "¡TAXI!"
 msgstr "ТАКСИ!"
 
 #. Key:	ProcSwitchPrompt
-#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(225)
-#: Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(225)
+#. SourceLocation:	Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(226)
+#: Source/Tortunabo/Private/World/ProcMap/TN_ProcPuzzleActors.cpp(226)
 msgctxt "Tortunabo,ProcSwitchPrompt"
 msgid "Pulsar"
 msgstr "Нажать"

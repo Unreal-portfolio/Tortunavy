@@ -3,6 +3,7 @@
 #include "Player/TortugaCharacter.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_Log.h"
+#include "World/TN_PuzzleScoreSubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -220,6 +221,9 @@ void ATN_PressurePlateGroupManager::BeginPlay()
 
 	if (!HasAuthority()) { return; }
 
+	// Cuenta para la eficiencia de puzle de la puntuación final del Coop (#789).
+	UTN_PuzzleScoreSubsystem::Register(this);
+
 	for (ATN_PressurePlate* Plate : ManagedPlates)
 	{
 		if (Plate)
@@ -246,9 +250,11 @@ void ATN_PressurePlateGroupManager::EndPlay(const EEndPlayReason::Type EndPlayRe
 	Super::EndPlay(EndPlayReason);
 }
 
-void ATN_PressurePlateGroupManager::OnOccupancyChanged(ATN_PressurePlate* /*Plate*/, bool /*bOccupied*/)
+void ATN_PressurePlateGroupManager::OnOccupancyChanged(ATN_PressurePlate* /*Plate*/, bool bOccupied)
 {
 	if (!HasAuthority() || bTriggered) { return; }
+	// La primera placa pisada pone en marcha el reloj de la eficiencia de puzle (#789).
+	if (bOccupied) { UTN_PuzzleScoreSubsystem::NotifyProgress(this); }
 	EvaluateAndHandleCondition();
 }
 
@@ -293,6 +299,7 @@ void ATN_PressurePlateGroupManager::OnHoldTimerExpired()
 	}
 
 	bTriggered = bOneShot;
+	UTN_PuzzleScoreSubsystem::NotifySolved(this);
 	ApplyTriggerActions();
 	MulticastNotifyConditionChange(true);
 }

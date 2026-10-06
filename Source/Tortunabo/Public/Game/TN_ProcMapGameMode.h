@@ -172,6 +172,14 @@ private:
 	/** Coop: pila más lejana alcanzada por cualquiera del equipo. */
 	int32 TeamBestNest = -1;
 
+	/**
+	 * Coop: muñecos tortuga y puntos de concha puestos en la partida (suma de los mapas de cada ronda) y última generación
+	 * del mapa contada.
+	 */
+	int32 MatchTurtleDollsTotal = 0;
+	int32 MatchShellPointsTotal = 0;
+	int32 CollectiblesCountedGeneration = 0;
+
 	TMap<TWeakObjectPtr<APlayerController>, FTimerHandle> PendingRespawns;
 	/** Jugadores con el movimiento bloqueado a la espera de la ronda, con el pawn que tenían. */
 	TMap<TWeakObjectPtr<APlayerController>, TWeakObjectPtr<APawn>> FrozenControllers;
@@ -201,6 +209,10 @@ private:
 	void FreezeWaitingPlayers();
 	void UnfreezeAllPlayers();
 	void StartStormIfNeeded();
+	/** Coop: suma al total de la partida los muñecos y las conchas del mapa de esta ronda (una vez por generación). */
+	void CountRoundCollectibles();
+	/** Coop, al entrar en Results: la puntuación final de cada jugadora (TNCoopScore::Compute) en su PlayerState. */
+	void ComputeCoopScores();
 
 	/** Velocidad de andar (cm/s) de la tortuga más lenta en juego, o la del peón por defecto; 0 si no se sabe. */
 	float GetTurtleWalkSpeed() const;

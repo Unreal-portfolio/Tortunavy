@@ -2,6 +2,7 @@
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_LocText.h"
+#include "UI/HUD/TN_ResultsTexts.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
@@ -169,6 +170,31 @@ void UTN_CoopFlowHUDWidget::RefreshTexts()
 	if (bResultsVisible)
 	{
 		RefreshResultsCountdown(GameState);
+		RefreshResultsExtras(GameState);
+	}
+}
+
+void UTN_CoopFlowHUDWidget::RefreshResultsExtras(const ATN_CoopGameState* GameState)
+{
+	if (EndTitleText)
+	{
+		const FText Title = GameState ? TNResultsTexts::JumperTitle(GameState->JumperTitle) : FText::GetEmpty();
+		if (!Title.EqualTo(EndTitleText->GetText()))
+		{
+			EndTitleText->SetText(Title);
+		}
+		EndTitleText->SetVisibility(Title.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
+	}
+	const APlayerController* PC = GetOwningPlayer();
+	const ATN_CoopPlayerState* PS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
+	if (CoopScoreText)
+	{
+		const FText Breakdown = PS ? TNResultsTexts::CoopScoreBreakdown(PS->CoopScore) : FText::GetEmpty();
+		if (!Breakdown.EqualTo(CoopScoreText->GetText()))
+		{
+			CoopScoreText->SetText(Breakdown);
+		}
+		CoopScoreText->SetVisibility(Breakdown.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
 	}
 }
 
@@ -371,6 +397,7 @@ void UTN_CoopFlowHUDWidget::ShowResultsPanel(const ATN_CoopGameState* GameState)
 
 	// ── Initial countdown ────────────────────────────────────────────────────
 	RefreshResultsCountdown(GameState);
+	RefreshResultsExtras(GameState);
 
 	// ── Scoreboard global ────────────────────────────────────────────────────
 	RefreshScoreboard(GameState);

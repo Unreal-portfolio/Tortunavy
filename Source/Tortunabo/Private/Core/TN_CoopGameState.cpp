@@ -80,9 +80,45 @@ void ATN_CoopGameState::BroadcastFlowStateChange()
 	// Must be called by game modes on the server after setting MatchFlowState.
 	// OnRep does NOT fire on the authoritative machine, so we broadcast manually.
 	// Al salir de Results, resetear el acumulador para el siguiente ciclo.
-	PersistedScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedScoreThisRace, MatchFlowState == ETNMatchFlowState::Results);
+	const bool bResults = MatchFlowState == ETNMatchFlowState::Results;
+	PersistedScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedScoreThisRace, bResults);
+	PersistedDollsThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedDollsThisRace, bResults);
+	PersistedCoopScoreThisRace = TNScoreLogic::PersistedAfterFlowChange(PersistedCoopScoreThisRace, bResults);
+	if (bResults && HasAuthority())
+	{
+		AwardEndTitles();
+	}
 	PersistLocalPlayerScoreIfResults();
 	OnMatchFlowStateChanged.Broadcast(MatchFlowState);
+}
+
+void ATN_CoopGameState::AwardEndTitles()
+{
+	TArray<const ATN_CoopPlayerState*> Players;
+	for (const APlayerState* PS : PlayerArray)
+	{
+		if (const ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(PS))
+		{
+			Players.Add(TNPS);
+		}
+	}
+	// Orden de la sala: quien entró antes (PlayerId menor) gana los empates.
+	Players.StableSort([](const ATN_CoopPlayerState& A, const ATN_CoopPlayerState& B) { return A.GetPlayerId() < B.GetPlayerId(); });
+	TArray<TNEndTitles::FEntry> Jumps;
+	for (const ATN_CoopPlayerState* TNPS : Players)
+	{
+		Jumps.Add({ TNPS->GetPlayerId(), TNPS->JumpCount });
+	}
+	const int32 Top = TNEndTitles::PickTop(Jumps);
+	JumperTitle = FTN_EndTitle();
+	if (Players.IsValidIndex(Top))
+	{
+		JumperTitle.PlayerId = Players[Top]->GetPlayerId();
+		JumperTitle.PlayerName = Players[Top]->GetPlayerName();
+		JumperTitle.Count = Players[Top]->JumpCount;
+		UE_LOG(LogTortunabo, Log, TEXT("[CoopGameState] Saltarín: %s (%d saltos)."), *JumperTitle.PlayerName, JumperTitle.Count);
+	}
+	ForceNetUpdate();
 }
 
 void ATN_CoopGameState::PersistLocalPlayerScoreIfResults()
@@ -118,6 +154,21 @@ void ATN_CoopGameState::PersistLocalPlayerScoreIfResults()
 					UE_LOG(LogTortunabo, Log, TEXT("[CoopGameState] Persisted RaceScore delta=%d (total=%d) for local player '%s'"),
 						Delta, PersistedScoreThisRace, *PS->GetPlayerName());
 				}
+				// Muñecos tortuga (#797): al contador del perfil, por diferencia igual que los puntos.
+				const int32 DollDelta = TNScoreLogic::ComputePersistDelta(TNPS->TurtleDollsCollected, PersistedDollsThisRace);
+				if (DollDelta > 0)
+				{
+					GI->AddTurtleDolls(DollDelta);
+					PersistedDollsThisRace = TNPS->TurtleDollsCollected;
+				}
+				// Puntuación final del Coop (#789): aparte de las conchas, por diferencia igual que los puntos.
+				const int32 CoopDelta = TNPS->CoopScore.bValid
+					? TNScoreLogic::ComputePersistDelta(TNPS->CoopScore.Total, PersistedCoopScoreThisRace) : 0;
+				if (CoopDelta > 0)
+				{
+					GI->AddCoopScore(CoopDelta);
+					PersistedCoopScoreThisRace = TNPS->CoopScore.Total;
+				}
 			}
 			break;
 		}
@@ -129,6 +180,7 @@ void ATN_CoopGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ATN_CoopGameState, MatchFlowState);
+	DOREPLIFETIME(ATN_CoopGameState, JumperTitle);
 	DOREPLIFETIME(ATN_CoopGameState, ReadyPlayers);
 	DOREPLIFETIME(ATN_CoopGameState, ConnectedPlayers);
 	DOREPLIFETIME(ATN_CoopGameState, PlayersInStartZone);

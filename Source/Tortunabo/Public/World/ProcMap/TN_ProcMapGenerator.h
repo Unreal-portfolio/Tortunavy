@@ -307,6 +307,11 @@ private:
 	 * SpawnHazards: no pisan lo que este ha puesto (HazardSpots). No en el modo de solo terreno.
 	 */
 	void SpawnShells();
+	/**
+	 * Servidor, solo en el Coop (#797): los muñecos tortuga del plan puro (TNProcMap::PlanTurtleDolls), sin pisar los
+	 * peligros ni las conchas (Occupied: x, y y radio en el mapa). Lo llama SpawnShells al acabar.
+	 */
+	void SpawnTurtleDolls(const TArray<FVector>& Occupied);
 	void RunBiomePCG();
 	void BuildProgressIndex();
 	void DrawDebug() const;
