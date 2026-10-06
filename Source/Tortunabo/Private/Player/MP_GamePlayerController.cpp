@@ -39,6 +39,8 @@
 #include "GameFramework/GameStateBase.h"
 #include "Engine/Engine.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Slate/SObjectWidget.h"
+#include "UI/Menu/TN_RoomMenuWidget.h"
 #include "VR/TN_VRMode.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Engine/LocalPlayer.h"
@@ -58,21 +60,40 @@ namespace
 	// Frecuencia del timer que recalcula la opción apuntada en la rueda radial.
 	constexpr float MPGamePlayerController_RadialWheelUpdateHz = 60.f;
 
-	/** true si el foco del teclado está en un campo de texto (código de sala, chat...): lo que se teclea es del campo (#839). */
+	/**
+	 * true si el foco del teclado está en un campo de texto (código de sala, chat...): lo que se teclea es del campo (#839).
+	 * Se mira el widget con el foco y sus padres: el foco puede estar en el texto de dentro de una caja (SEditableTextBox,
+	 * SMultiLineEditableTextBox) o en el campo propio del código de sala (UTN_RoomCodeField, un widget de UMG).
+	 */
 	bool MPGamePlayerController_IsTextInputFocused()
 	{
 		if (!FSlateApplication::IsInitialized())
 		{
 			return false;
 		}
-		const TSharedPtr<SWidget> Focused = FSlateApplication::Get().GetKeyboardFocusedWidget();
-		if (!Focused.IsValid())
+		static const FName EditableTypes[] = { FName(TEXT("SEditableText")), FName(TEXT("SEditableTextBox")),
+			FName(TEXT("SMultiLineEditableText")), FName(TEXT("SMultiLineEditableTextBox")) };
+		static const FName ObjectWidgetType(TEXT("SObjectWidget"));
+		for (TSharedPtr<SWidget> Widget = FSlateApplication::Get().GetKeyboardFocusedWidget(); Widget.IsValid(); Widget = Widget->GetParentWidget())
 		{
-			return false;
+			const FName Type = Widget->GetType();
+			for (const FName& Editable : EditableTypes)
+			{
+				if (Type == Editable)
+				{
+					return true;
+				}
+			}
+			if (Type == ObjectWidgetType)
+			{
+				const UUserWidget* Owner = StaticCastSharedPtr<SObjectWidget>(Widget)->GetWidgetObject();
+				if (Owner && Owner->IsA<UTN_RoomCodeField>())
+				{
+					return true;
+				}
+			}
 		}
-		const FName Type = Focused->GetType();
-		return Type == FName(TEXT("SEditableText")) || Type == FName(TEXT("SEditableTextBox"))
-			|| Type == FName(TEXT("SMultiLineEditableText")) || Type == FName(TEXT("SMultiLineEditableTextBox"));
+		return false;
 	}
 }
 
