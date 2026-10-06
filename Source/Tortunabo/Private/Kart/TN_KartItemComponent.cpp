@@ -4,6 +4,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Controller.h"
+#include "Kart/TN_KartBuggy.h"
 #include "Kart/TN_KartShell.h"
 #include "Net/UnrealNetwork.h"
 #include "Rally/TN_RallyGameState.h"
@@ -274,7 +275,9 @@ void UTN_KartItemComponent::ApplyPush()
 	}
 	const FVector Forward = Kart->GetActorForwardVector();
 	const float Speed = static_cast<float>(FVector::DotProduct(Kart->GetVelocity(), Forward));
-	const float Top = bBoost ? TNKart::BoostTopSpeedCms : TNKart::StarTopSpeedCms;
+	// Sus velocidades tope son las del kart de serie: con la conducción de los karts (#742) siguen a su punta.
+	const ATN_KartBuggy* KartBuggy = Cast<ATN_KartBuggy>(Kart);
+	const float Top = (bBoost ? TNKart::BoostTopSpeedCms : TNKart::StarTopSpeedCms) * (KartBuggy ? KartBuggy->GetKartSpeedScale() : 1.f);
 	if (Speed >= Top)
 	{
 		return;

@@ -214,9 +214,10 @@ namespace TNBuggy
 	/**
 	 * Curva de par: X = fracción de MaxRPM, Y = fracción del par máximo (su máximo es 1, porque Chaos la normaliza).
 	 * Plana a 1 desde el 10 % hasta el 55 % (todo el arranque hasta 60 km/h; el ralentí de Chaos ya está en el 35 %) y,
-	 * desde el 80 %, el mismo par absoluto que la curva antigua con LegacyMaxTorque: la punta no cambia.
+	 * desde el 80 %, el mismo par absoluto que la curva antigua con LegacyMaxTorque: la punta no cambia. TopEndScale (1 en el
+	 * Rally) multiplica ese par de la parte alta: la punta la fija ahí, así que los karts de #742 lo suben para correr más.
 	 */
-	TORTUNABO_API TArray<FCurveKey> TorqueCurveKeys(float MaxTorque);
+	TORTUNABO_API TArray<FCurveKey> TorqueCurveKeys(float MaxTorque, float TopEndScale = 1.f);
 
 	/** Curva antigua (OffroadCar_TorqueCurve de TP_VehicleAdvBP, interpolada lineal) para comparar en los tests. */
 	TORTUNABO_API TConstArrayView<FCurveKey> LegacyTorqueCurveKeys();

@@ -352,12 +352,48 @@ void ATN_BuggyGunnerPawn::RequestFire(bool bSpecial)
 	// La dirección en mundo es la que ve esta máquina (la de la mira): con ping, el servidor tiene el buggy girado de otra
 	// manera y con solo el apuntado relativo el disparo salía desviado (#333).
 	const FRotator Aim = TNRallyTurret::ClampAim(LocalAim);
-	const FVector WorldDir = Buggy ? TNRallyTurret::AimWorldDirection(Buggy->GetActorRotation(), Aim) : FVector::ZeroVector;
+	const UTN_BuggyTurretComponent* Turret = Buggy ? Buggy->GetTurret() : nullptr;
+	const bool bFireSpecial = bSpecial || (Turret && TNRallyTurret::IsSpecial(Turret->GetSelectedAmmo()));
+	const ETNRallyAmmo Ammo = Turret && bFireSpecial && Turret->GetSpecialAmmo() != ETNRallyAmmo::None ? Turret->GetSpecialAmmo() : ETNRallyAmmo::Coco;
+	const FVector WorldDir = Buggy ? ComputeShotDirection(Aim, Ammo) : FVector::ZeroVector;
 	if (!HasAuthority())
 	{
 		SpawnLocalTracer(bSpecial, Aim, WorldDir);
 	}
 	ServerFire(bSpecial, static_cast<float>(LocalAim.Yaw), static_cast<float>(LocalAim.Pitch), WorldDir);
+}
+
+FVector ATN_BuggyGunnerPawn::ComputeShotDirection(const FRotator& Aim, ETNRallyAmmo Ammo) const
+{
+	const FRotator BuggyRotation = Buggy->GetActorRotation();
+	const FVector AxisDir = TNRallyTurret::AimWorldDirection(BuggyRotation, Aim);
+	const UTN_BuggyTurretComponent* Turret = Buggy->GetTurret();
+	UWorld* World = GetWorld();
+	if (!Turret || !World || !Camera || (VRSeat && VRSeat->IsVRView()))
+	{
+		return AxisDir;
+	}
+	// Lo que cubre la mira es lo que ve el centro de la pantalla: el rayo de la cámara hasta lo primero que el proyectil toca.
+	const FVector CameraLocation = Camera->GetComponentLocation();
+	const FVector CameraForward = Camera->GetForwardVector();
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(TNGunnerAim), false, this);
+	Params.AddIgnoredActor(Buggy);
+	FCollisionObjectQueryParams Objects(ECC_WorldStatic);
+	Objects.AddObjectTypesToQuery(ECC_Vehicle);
+	FHitResult Hit;
+	const FVector Target = World->LineTraceSingleByObjectType(Hit, CameraLocation, CameraLocation + CameraForward * AimTraceRangeCm, Objects, Params)
+		? FVector(Hit.ImpactPoint)
+		: CameraLocation + CameraForward * AimDefaultRangeCm;
+	const FVector Muzzle = TNRallyTurret::MuzzleWorldLocation(Turret->GetComponentLocation(), BuggyRotation, Aim,
+		UTN_BuggyTurretComponent::MuzzleDistanceCm, UTN_BuggyTurretComponent::MuzzleSideCm);
+	const TNRallyTurret::FAmmoSpec Spec = TNRallyTurret::SpecFor(Ammo);
+	// Las conchas corren pegadas al suelo y la burbuja flota: ni caída ni velocidad heredada que compensar.
+	const bool bFlies = !TNRallyTurret::IsGroundShell(Ammo);
+	const FVector Inherited = Ammo == ETNRallyAmmo::Burbuja ? FVector::ZeroVector : FVector(Buggy->GetVelocity());
+	const FVector Corrected = TNRallyTurret::AimedShotDirection(Muzzle, Target, CameraForward, bFlies ? Inherited : FVector::ZeroVector,
+		Spec.SpeedCms, bFlies ? -World->GetGravityZ() * Spec.GravityScale : 0.f);
+	// El servidor limita el cabeceo del cañón: sale la dirección que esa limitación deja, la misma que la suya.
+	return TNRallyTurret::AimWorldDirection(BuggyRotation, TNRallyTurret::RelativeAimFromWorld(BuggyRotation, Corrected));
 }
 
 void ATN_BuggyGunnerPawn::SpawnLocalTracer(bool bSpecial, const FRotator& Aim, const FVector& WorldDir) const
@@ -380,9 +416,9 @@ void ATN_BuggyGunnerPawn::SpawnLocalTracer(bool bSpecial, const FRotator& Aim, c
 	const TNRallyTurret::FAmmoSpec Spec = TNRallyTurret::SpecFor(Ammo);
 	const FVector Muzzle = TNRallyTurret::MuzzleWorldLocation(Turret->GetComponentLocation(), Buggy->GetActorRotation(), Aim,
 		UTN_BuggyTurretComponent::MuzzleDistanceCm, UTN_BuggyTurretComponent::MuzzleSideCm);
-	// Como el proyectil del servidor: hereda la velocidad del buggy salvo la burbuja.
-	const FVector Inherited = Ammo == ETNRallyAmmo::Burbuja ? FVector::ZeroVector : Buggy->GetVelocity();
-	const ATN_RallyTracerFX* Tracer = ATN_RallyTracerFX::Spawn(World, Ammo, Muzzle, WorldDir * Spec.SpeedCms + Inherited,
+	// Como el proyectil del servidor: hereda la velocidad del buggy salvo la burbuja, y sale hacia WorldDir (#717).
+	const FVector Inherited = Ammo == ETNRallyAmmo::Burbuja ? FVector::ZeroVector : FVector(Buggy->GetVelocity());
+	const ATN_RallyTracerFX* Tracer = ATN_RallyTracerFX::Spawn(World, Ammo, Muzzle, TNRallyTurret::ShotVelocity(WorldDir, Inherited, Spec.SpeedCms),
 		World->GetGravityZ() * Spec.GravityScale);
 	UE_LOG(LogTNBuggy, Verbose, TEXT("%s: trazador local de %s %s"), *Buggy->GetName(), *UEnum::GetValueAsString(Ammo),
 		Tracer ? TEXT("creado") : TEXT("sin crear (máquina sin pantalla)"));
@@ -439,11 +475,14 @@ void ATN_BuggyGunnerPawn::ServerFire_Implementation(bool bSpecial, float Yaw, fl
 	UTN_BuggyTurretComponent* Turret = Buggy->GetTurret();
 	Turret->SetAimRelative(FRotator(Pitch, Yaw, 0.f));
 	const FVector ServerDir = Turret->GetAimWorldDirection();
-	const FVector Dir = TNRallyTurret::ResolveClientFireDirection(ServerDir, WorldDir);
+	// La del cliente sale de la cámara (hacia donde cubre la mira, #717): se aparta del eje del cañón más que antes.
+	const FVector Dir = TNRallyTurret::ResolveClientFireDirection(ServerDir, WorldDir, TNRallyTurret::MaxCameraAimErrorDeg);
 	UE_LOG(LogTNBuggy, Verbose, TEXT("%s: dirección del cliente a %.1f° de la del servidor (%s)"), *Buggy->GetName(),
 		FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector::DotProduct(ServerDir, FVector(WorldDir).GetSafeNormal()), -1.0, 1.0))),
 		Dir.Equals(ServerDir) ? TEXT("manda la del servidor") : TEXT("manda la del cliente"));
 	const bool bFired = bSpecial ? Turret->TryFire(true, Dir) : Turret->TryFireSelected(Dir);
+	// TryFire pone el cañón en la dirección del disparo: vuelve al apuntado de la artillera para que los demás lo vean donde lo lleva.
+	Turret->SetAimRelative(FRotator(Pitch, Yaw, 0.f));
 	UE_LOG(LogTNBuggy, Verbose, TEXT("%s: la artillera %s pide disparo %s: %s"), *Buggy->GetName(), *GetNameSafe(Controller),
 		bSpecial ? TEXT("especial") : TEXT("de la munición seleccionada"), bFired ? TEXT("sale") : TEXT("rechazado (cadencia, calor, cargas o noqueo)"));
 }

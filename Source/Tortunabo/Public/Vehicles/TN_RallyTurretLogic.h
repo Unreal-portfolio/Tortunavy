@@ -137,6 +137,39 @@ namespace TNRallyTurret
 	/** Apuntado relativo que corresponde a una dirección en mundo (para la IA y la conductora sola). Ya limitado. */
 	TORTUNABO_API FRotator RelativeAimFromWorld(const FRotator& BuggyRotation, const FVector& WorldDir);
 
+	// ── Salida del proyectil (#717) ─────────────────────────────────────────────
+
+	/**
+	 * Velocidad de salida en mundo de un proyectil de SpeedCms respecto del buggy, que se mueve a InheritedCms: la de la
+	 * velocidad resultante apunta hacia Dir (no hacia donde apunta el cañón). Antes se sumaba sin más: con el buggy a 100 km/h
+	 * y el coco a 6000 cm/s, un disparo lateral salía 26° hacia delante («va donde quiere y no donde apunta»). Hacia delante y
+	 * hacia atrás sale lo mismo que antes. Si el buggy corre más que el proyectil en esa dirección (no hay solución), la suma
+	 * de siempre.
+	 */
+	TORTUNABO_API FVector ShotVelocity(const FVector& Dir, const FVector& InheritedCms, float SpeedCms);
+
+	/** Tope de la separación (grados) entre el punto que cubre la mira y el eje de la cámara para aceptarlo (AimedShotDirection). */
+	constexpr float MaxAimedOffAxisDeg = 35.f;
+	/** Un punto a menos de esto de la boca (cm) no sirve de blanco: sale la dirección de la cámara. */
+	constexpr float MinAimedDistanceCm = 250.f;
+	/** Tope de lo que se sube el tiro para compensar la caída (grados sobre la línea a la mira). */
+	constexpr float MaxDropCompensationDeg = 25.f;
+	/**
+	 * Separación máxima (grados) entre la dirección que calcula la artillera con la cámara y la del eje del cañón que calcula el
+	 * servidor: la cámara de hombro mira por debajo del cañón (-8°), más la caída compensada y el desfase del buggy girando.
+	 */
+	constexpr float MaxCameraAimErrorDeg = 35.f;
+
+	/**
+	 * Dirección unitaria en mundo con la que el proyectil que sale de Muzzle llega al punto que cubre la mira, TargetPoint (el
+	 * primer obstáculo del rayo de la cámara o un punto lejano): hacia el punto, subida lo que cae el proyectil por la
+	 * gravedad (GravityCms2 > 0, ya por la escala de la munición) durante el vuelo, con la velocidad neta de ShotVelocity
+	 * (InheritedCms: el buggy). CameraForward es el respaldo: si el punto cae a menos de MinAimedDistanceCm de la boca o a más de
+	 * MaxAimedOffAxisDeg del eje de la cámara (una pared pegada), sale CameraForward.
+	 */
+	TORTUNABO_API FVector AimedShotDirection(const FVector& Muzzle, const FVector& TargetPoint, const FVector& CameraForward,
+		const FVector& InheritedCms, float SpeedCms, float GravityCms2);
+
 	/**
 	 * Boca visible de la torreta en mundo: ForwardCm por delante del pivote en la dirección del apuntado y SideCm a su
 	 * derecha (horizontal en el marco del buggy: el cabeceo no la mueve de lado). El proyectil y el fogonazo salen de ahí.

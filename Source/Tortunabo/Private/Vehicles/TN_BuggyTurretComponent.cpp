@@ -339,7 +339,8 @@ ATN_RallyProjectile* UTN_BuggyTurretComponent::SpawnProjectile(ETNRallyAmmo Ammo
 	// El proyectil hereda la velocidad del buggy (si no, al disparar hacia delante el buggy lo alcanzaría), salvo la
 	// burbuja: es lenta a propósito para que la pueda coger cualquiera, también el propio buggy.
 	const FVector Inherited = Ammo == ETNRallyAmmo::Burbuja ? FVector::ZeroVector : Buggy->GetVelocity();
-	Projectile->Init(Ammo, Dir * TNRallyTurret::SpecFor(Ammo).SpeedCms + Inherited, Buggy);
+	// La dirección de la velocidad resultante es la del disparo, no la del cañón más la del buggy (#717).
+	Projectile->Init(Ammo, TNRallyTurret::ShotVelocity(Dir, Inherited, TNRallyTurret::SpecFor(Ammo).SpeedCms), Buggy);
 	Projectile->FinishSpawning(Where);
 	// Que salga hacia los clientes cuanto antes: simulan desde su posición y velocidad de salida.
 	Projectile->ForceNetUpdate();
