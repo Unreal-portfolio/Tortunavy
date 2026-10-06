@@ -342,4 +342,31 @@ namespace TNVRMath
 		if (Key == FTNVRKeys::LeftStickRight || Key == FTNVRKeys::RightStickRight) { return EKeys::Gamepad_DPad_Right; }
 		return EKeys::Invalid;
 	}
+
+	/**
+	 * Segunda acción de X e Y en un menú (#648): la tecla de mando que se prueba antes de caer en aceptar o atrás (MenuKeyFor).
+	 * X → X del mando (borrar un carácter del código de sala), Y → Y del mando (refrescar la lista, quitar una tecla de
+	 * Controles). Si el menú enfocado no la usa, X sigue aceptando e Y sigue yendo atrás. EKeys::Invalid para el resto.
+	 */
+	inline FKey SecondaryMenuKeyFor(const FKey& Key)
+	{
+		if (Key == FTNVRKeys::X) { return EKeys::Gamepad_FaceButton_Left; }
+		if (Key == FTNVRKeys::Y) { return EKeys::Gamepad_FaceButton_Top; }
+		return EKeys::Invalid;
+	}
+
+	/** ¿Es una dirección del stick derecho (como botón)? Un menú que reserva ese stick (el probador) no la recibe como cruceta. */
+	inline bool IsRightStickDirection(const FKey& Key)
+	{
+		return Key == FTNVRKeys::RightStickUp || Key == FTNVRKeys::RightStickDown || Key == FTNVRKeys::RightStickLeft || Key == FTNVRKeys::RightStickRight;
+	}
+
+	/**
+	 * Cuántos grados gira la tortuga del probador en un fotograma con el stick derecho inclinado Axis (-1..1): hacia la derecha
+	 * es negativo, como arrastrar el ratón hacia la derecha. Dentro de la zona muerta, 0.
+	 */
+	inline float StickSpinDegrees(float Axis, float DeltaSeconds, float DegreesPerSecond = 160.f, float DeadZone = 0.2f)
+	{
+		return FMath::Abs(Axis) <= DeadZone ? 0.f : -Axis * DegreesPerSecond * DeltaSeconds;
+	}
 }

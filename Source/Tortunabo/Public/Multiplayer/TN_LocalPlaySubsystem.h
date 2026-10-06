@@ -140,6 +140,9 @@ private:
 	/** Hasta cuándo (segundos de la aplicación) se ve el número de cada jugador en su vista tras cambiar el reparto. */
 	double TagsUntil = 0.0;
 
+	/** Hasta cuándo (segundos de la aplicación) se avisa de que con gafas no entran invitados (#639). */
+	double VRNoticeUntil = 0.0;
+
 	/** Mandos que han pulsado Start y jugadores que se van: se atienden en Tick, fuera del reparto de la entrada de Slate. */
 	TArray<FInputDeviceId> PendingJoins;
 	TArray<TWeakObjectPtr<ULocalPlayer>> PendingRemovals;

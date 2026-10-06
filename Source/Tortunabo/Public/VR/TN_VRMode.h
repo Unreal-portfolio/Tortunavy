@@ -72,6 +72,17 @@ namespace TNVR
 	/** Solo UTN_VRSubsystem. */
 	TORTUNABO_API void SetMode(ETNVRMode NewMode);
 
+	/**
+	 * Menús que usan el stick derecho para algo propio (la tienda y el probador lo giran la tortuga, #648): mientras alguno
+	 * lo reserva, el preprocesador de entrada no lo manda como cruceta. Lo ponen al abrirse y al cerrarse.
+	 */
+	TORTUNABO_API void SetRightStickReserved(bool bReserved);
+	TORTUNABO_API bool IsRightStickReserved();
+
+	/** El stick derecho de los Touch con un menú delante ((0, 0) si no hay): lo publica FTNVRInputProcessor. */
+	TORTUNABO_API void SetMenuRightStick(const FVector2D& Stick);
+	TORTUNABO_API FVector2D GetMenuRightStick();
+
 	// ── Interfaz ─────────────────────────────────────────────────────────────
 
 	/**

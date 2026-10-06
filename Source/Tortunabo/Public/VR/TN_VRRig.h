@@ -65,7 +65,7 @@ public:
 
 	// ── Pantalla ─────────────────────────────────────────────────────────────
 
-	bool HostWidget(UUserWidget* Widget, int32 ZOrder);
+	bool HostWidget(UUserWidget* Widget, int32 ZOrder, bool bPlayerScreen = false);
 	bool IsHosting(const UUserWidget* Widget) const;
 	bool HostSlate(const TSharedRef<SWidget>& Widget, int32 ZOrder);
 	bool UnhostSlate(const TSharedRef<SWidget>& Widget);

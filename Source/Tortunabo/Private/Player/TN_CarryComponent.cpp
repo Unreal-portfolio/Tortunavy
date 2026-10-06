@@ -292,7 +292,9 @@ void UTN_CarryComponent::ThrowWithDive(const FVector& DiveDir, const FVector& Di
 	{
 		Flat = Self->GetActorForwardVector();
 	}
-	const FRotator Aim(Self->GetControlRotation().Pitch, Flat.Rotation().Yaw, 0.f);
+	// Con gafas (#649), hacia donde apunta la aleta derecha y no hacia la cabeza ni el rumbo del panzazo (el servidor tiene la
+	// última aleta que mandó el dueño: TryDive la manda al lanzarse); el impulso del panzazo se suma igual.
+	const FRotator Aim = Self->IsVRPlayer() ? Self->GetTurtleAimRotation() : FRotator(Self->GetControlRotation().Pitch, Flat.Rotation().Yaw, 0.f);
 	const float Speed = ThrowSpeed * (bCarriedStruggling ? StruggleThrowMultiplier : 1.f);
 	FVector Velocity = Self->GetThrowDirection(Aim) * Speed
 		+ FVector(DiveVelocity.X, DiveVelocity.Y, 0.0) * DiveThrowCarryFactor

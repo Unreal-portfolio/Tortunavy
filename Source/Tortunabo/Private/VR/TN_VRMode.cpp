@@ -52,6 +52,8 @@ bool FTNVRKeys::IsVRKey(const FKey& Key)
 namespace TNVRModeDetail
 {
 	ETNVRMode CurrentMode = ETNVRMode::Off;
+	bool bRightStickReserved = false;
+	FVector2D MenuRightStick = FVector2D::ZeroVector;
 }
 
 ETNVRMode TNVR::GetMode()
@@ -79,6 +81,26 @@ void TNVR::SetMode(ETNVRMode NewMode)
 	TNVRModeDetail::CurrentMode = NewMode;
 }
 
+void TNVR::SetRightStickReserved(bool bReserved)
+{
+	TNVRModeDetail::bRightStickReserved = bReserved;
+}
+
+bool TNVR::IsRightStickReserved()
+{
+	return TNVRModeDetail::bRightStickReserved;
+}
+
+void TNVR::SetMenuRightStick(const FVector2D& Stick)
+{
+	TNVRModeDetail::MenuRightStick = Stick;
+}
+
+FVector2D TNVR::GetMenuRightStick()
+{
+	return TNVRModeDetail::MenuRightStick;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaz
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,7 +115,8 @@ void TNVR::AddToScreen(UUserWidget* Widget, int32 ZOrder)
 	{
 		if (UTN_VRSubsystem* VR = UTN_VRSubsystem::Get(Widget))
 		{
-			if (VR->HostWidget(Widget, ZOrder))
+			// El widget de un jugador: al apagar la VR vuelve a su trozo de la pantalla partida (#639).
+			if (VR->HostWidget(Widget, ZOrder, true))
 			{
 				return;
 			}

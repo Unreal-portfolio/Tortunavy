@@ -26,6 +26,7 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_LanguageSettings.h"
 #include "UI/Pause/TN_PlayerRowRules.h"
+#include "VR/TN_VRMenuClaim.h"
 #include "Voice/ProximityVoiceComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
@@ -968,6 +969,8 @@ FReply UTN_PauseRow::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEven
 	{
 		if (!InKeyEvent.IsRepeat() && bEnabled && OnReset)
 		{
+			// Con gafas, la Y de los Touch llega aquí antes de ir atrás (#648); solo cuenta si de verdad devuelve la tecla.
+			TNVRMenuClaim::Claim();
 			PlaySound(ETNPauseSound::Press);
 			// Lo último: rehace la lista entera.
 			OnReset();
@@ -2974,8 +2977,17 @@ void UTN_PauseMenuWidget::FillRoomList()
 		{
 			if (UTN_PauseRow* Row = AddListRow(RoomList))
 			{
-				Row->SetupButton(ETNPauseRowStyle::List, NSLOCTEXT("TNPause", "RoomInvite", "Invitar a amigos de Steam"), [WeakGameInstance]()
+				Row->SetupButton(ETNPauseRowStyle::List, NSLOCTEXT("TNPause", "RoomInvite", "Invitar a amigos de Steam"), [WeakThis, WeakGameInstance]()
 				{
+					// Con gafas la ventana de Steam no se ve (#648): se avisa en vez de abrirla.
+					if (TNVR::IsHeadset())
+					{
+						if (UTN_PauseMenuWidget* Menu = WeakThis.Get())
+						{
+							Menu->ShowNotice(NSLOCTEXT("TNPause", "RoomInviteVR", "Con las gafas puestas no se ve la ventana de Steam: quítatelas un momento para invitar a tus amigos."), 7.f);
+						}
+						return;
+					}
 					if (UMP_GameInstance* RoomOwner = WeakGameInstance.Get()) { RoomOwner->InviteFriends(); }
 				}, nullptr, NSLOCTEXT("TNPause", "RoomInviteAction", "Abrir Steam"));
 				Row->SetDescription(NSLOCTEXT("TNPause", "RoomInviteDesc", "La lista de amigos de Steam, para invitarles (la invitación también vale en las salas privadas)."));
@@ -3781,6 +3793,8 @@ FReply UTN_PauseMenuWidget::NativeOnPreviewKeyDown(const FGeometry& InGeometry, 
 	{
 		return Super::NativeOnPreviewKeyDown(InGeometry, InKeyEvent);
 	}
+	// Esperando una tecla se queda con la que llegue, también la X o la Y de los Touch (#648): que no siga con aceptar o atrás.
+	TNVRMenuClaim::Claim();
 	if (InKeyEvent.IsRepeat())
 	{
 		return FReply::Handled();

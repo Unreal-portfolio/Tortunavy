@@ -22,8 +22,22 @@ public:
 	static constexpr float ScreenWidth = 1920.f;
 	static constexpr float ScreenHeight = 1080.f;
 
-	/** Pone Widget en el lienzo (lo quita antes del viewport o de otro panel). */
-	bool Host(UUserWidget* Widget, int32 ZOrder);
+	/**
+	 * Pone Widget en el lienzo (lo quita antes del viewport o de otro panel). bPlayerScreen: lo puso TNVR::AddToScreen (el
+	 * widget de un jugador, no uno de toda la pantalla): al soltar el panel con la VR apagada vuelve a su trozo de la pantalla
+	 * partida (#639).
+	 */
+	bool Host(UUserWidget* Widget, int32 ZOrder, bool bPlayerScreen = false);
+
+	/**
+	 * Al soltar un widget alojado con la VR apagada: ¿vuelve al trozo de pantalla de su jugador (AddToPlayerScreen) en lugar de
+	 * a toda la pantalla (AddToViewport)? Lo mismo que decide TNVR::AddToScreen sin VR: lo puso como widget de un jugador, tiene
+	 * jugador local y la partida es la local (#639).
+	 */
+	static bool ReturnsToPlayerScreen(bool bAddedToPlayerScreen, bool bHasOwningPlayer, bool bLocalGame)
+	{
+		return bAddedToPlayerScreen && bHasOwningPlayer && bLocalGame;
+	}
 
 	/** ¿Sigue Widget en este lienzo? */
 	bool IsHosting(const UUserWidget* Widget) const;
@@ -33,8 +47,9 @@ public:
 	bool UnhostSlate(const TSharedRef<SWidget>& Widget);
 
 	/**
-	 * Suelta todo lo alojado. Con bToViewport, lo devuelve al viewport con su ZOrder (al apagar el modo VR a mitad de
-	 * partida); si no, solo lo quita (el mundo se va: sus dueños lo vuelven a poner en el mundo siguiente).
+	 * Suelta todo lo alojado. Con bToViewport, lo devuelve a la pantalla con su ZOrder (al apagar el modo VR a mitad de
+	 * partida): al trozo de su jugador si lo era (ReturnsToPlayerScreen) y al viewport si no; si no, solo lo quita (el mundo
+	 * se va: sus dueños lo vuelven a poner en el mundo siguiente).
 	 */
 	void ReleaseAll(bool bToViewport);
 
@@ -55,6 +70,8 @@ private:
 	{
 		TWeakObjectPtr<UUserWidget> Widget;
 		int32 ZOrder = 0;
+		/** Lo puso TNVR::AddToScreen (el widget de un jugador) y no AddToFullScreen. */
+		bool bPlayerScreen = false;
 	};
 	TArray<FHostedWidget> Hosted;
 
