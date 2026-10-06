@@ -192,7 +192,7 @@ void ATN_TctThiefGull::ServerSteal(ATortugaCharacter* Target)
 	// No lleva nada en la mano: la marea.
 	if (TNTctItems::CanAffect(Target, false))
 	{
-		Target->MulticastApplyMareoEffect(TNTctItemTuning::ThiefDizzySeconds);
+		Target->ApplyMareoEffect(TNTctItemTuning::ThiefDizzySeconds);
 	}
 	TNTctItems::PlayCue(Target, ETNRaceSound::Squawk, 1.4f);
 	UE_LOG(LogTortunabo, Log, TEXT("[TcT] La gaviota ladrona no encuentra nada y marea a %s."), *GetNameSafe(Target));
