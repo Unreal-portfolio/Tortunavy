@@ -139,13 +139,9 @@ namespace TNMapFingerprintDetail
 		}
 	};
 
-	/** ¿Bloquea a la tortuga o a un vehículo? (lo que hace muros y suelos; un disparador solo solapa). */
 	bool Blocks(const UPrimitiveComponent* Prim)
 	{
-		if (!Prim->IsCollisionEnabled()) { return false; }
-		return Prim->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Block
-			|| Prim->GetCollisionResponseToChannel(ECC_PhysicsBody) == ECR_Block
-			|| Prim->GetCollisionResponseToChannel(ECC_Vehicle) == ECR_Block;
+		return TNMapFingerprint::BlocksMovement(Prim);
 	}
 
 	/** Huella de un componente; 0 si no tiene nada (un ISM sin instancias o una malla procedural vacía no hacen colisión). */
@@ -309,6 +305,25 @@ namespace TNMapFingerprintDetail
 		TEXT("redondeadas a 1 cm, total y por clase de actor. Anfitrión y clientes deben sacar la misma. ")
 		TEXT("TN.Map.Fingerprint [retraso_s] [all] (all = también lo visual sin colisión, que puede cambiar con la calidad)."),
 		FConsoleCommandWithArgsDelegate::CreateStatic(&HandleCommand));
+}
+
+bool TNMapFingerprint::BlocksMovement(const UPrimitiveComponent* Prim)
+{
+	if (!Prim || !Prim->IsCollisionEnabled()) { return false; }
+	return Prim->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Block
+		|| Prim->GetCollisionResponseToChannel(ECC_PhysicsBody) == ECR_Block
+		|| Prim->GetCollisionResponseToChannel(ECC_Vehicle) == ECR_Block;
+}
+
+bool TNMapFingerprint::ActorBlocksMovement(const AActor* Actor)
+{
+	if (!Actor) { return false; }
+	TInlineComponentArray<UPrimitiveComponent*> Prims(Actor);
+	for (const UPrimitiveComponent* Prim : Prims)
+	{
+		if (IsValid(Prim) && Prim->IsRegistered() && BlocksMovement(Prim)) { return true; }
+	}
+	return false;
 }
 
 bool TNMapFingerprint::IsMapActor(const AActor* Actor)

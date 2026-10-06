@@ -22,6 +22,7 @@
 #include "World/Beach/TN_BeachRaceGenerator.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
+#include "World/TN_MapBlockerRelevance.h"
 #include "World/TN_MapFingerprint.h"
 #include "World/TN_MapVariantLoader.h"
 
@@ -417,6 +418,39 @@ bool FTNMapFingerprintSelfTest::RunTest(const FString& Parameters)
 	TestNotEqual(TEXT("Movida 2 cm, otra huella"), OneBox(FVector(2.0, 0.0, 0.0), true, false).Total, Base.Total);
 	TestEqual(TEXT("Un disparador más no cambia la huella"), OneBox(FVector::ZeroVector, true, true).Total, Base.Total);
 	TestEqual(TEXT("Sin colisión no hay piezas"), OneBox(FVector::ZeroVector, false, false).Pieces, 0);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNMapBlockerRelevanceTest,
+	"Tortunabo.Map.Fingerprint.BlockerRelevance",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNMapBlockerRelevanceTest::RunTest(const FString& Parameters)
+{
+	using namespace TNMapFingerprintTest;
+	// Un actor replicado creado en partida que bloquea pasa a ser siempre relevante (el cliente lo tiene antes de chocar);
+	// uno que solo solapa, uno con movimiento replicado o uno sin replicar, no.
+	FTestWorld Test(TEXT("TNMapBlockerRelevance"));
+	auto Make = [&Test](FName Profile, bool bReplicates, bool bReplicateMovement)
+	{
+		AActor* Actor = Test.World->SpawnActor<AActor>(AActor::StaticClass(), FTransform::Identity);
+		UBoxComponent* Box = NewObject<UBoxComponent>(Actor, TEXT("Box"));
+		Box->SetBoxExtent(FVector(100.0));
+		Box->SetCollisionProfileName(Profile);
+		Actor->SetRootComponent(Box);
+		Box->RegisterComponent();
+		Actor->SetReplicates(bReplicates);
+		Actor->SetReplicateMovement(bReplicateMovement);
+		return Actor;
+	};
+	AActor* Wall = Make(UCollisionProfile::BlockAll_ProfileName, true, false);
+	TestTrue(TEXT("Muro replicado: siempre relevante"), UTN_MapBlockerRelevanceSubsystem::KeepRelevant(Wall) && Wall->bAlwaysRelevant);
+	AActor* Trigger = Make(TEXT("OverlapAll"), true, false);
+	TestFalse(TEXT("Disparador: no"), UTN_MapBlockerRelevanceSubsystem::KeepRelevant(Trigger) || Trigger->bAlwaysRelevant);
+	AActor* Mover = Make(UCollisionProfile::BlockAll_ProfileName, true, true);
+	TestFalse(TEXT("Con movimiento replicado: no"), UTN_MapBlockerRelevanceSubsystem::KeepRelevant(Mover) || Mover->bAlwaysRelevant);
+	AActor* Local = Make(UCollisionProfile::BlockAll_ProfileName, false, false);
+	TestFalse(TEXT("Sin replicar: no"), UTN_MapBlockerRelevanceSubsystem::KeepRelevant(Local) || Local->bAlwaysRelevant);
 	return true;
 }
 

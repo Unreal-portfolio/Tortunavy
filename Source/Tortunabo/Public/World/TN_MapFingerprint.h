@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 class AActor;
+class UPrimitiveComponent;
 class UWorld;
 
 /**
@@ -59,6 +60,12 @@ namespace TNMapFingerprint
 
 	/** ¿Cuenta este actor? No: pawns, controladores, información de partida, lo que se mueve solo y lo que lleva un jugador. */
 	TORTUNABO_API bool IsMapActor(const AActor* Actor);
+
+	/** ¿Bloquea a la tortuga o a un vehículo? (canales Pawn, PhysicsBody o Vehicle; un disparador solo solapa). */
+	TORTUNABO_API bool BlocksMovement(const UPrimitiveComponent* Prim);
+
+	/** ¿Algún componente registrado del actor bloquea? */
+	TORTUNABO_API bool ActorBlocksMovement(const AActor* Actor);
 
 	/** Al registro, una línea con el total y una por clase. */
 	TORTUNABO_API void LogResult(const FResult& Result, const FString& Context);
