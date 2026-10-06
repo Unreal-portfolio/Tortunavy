@@ -68,8 +68,6 @@ namespace TNLocalPlay
 		Keyboard,
 		/** Ese mando ya tiene jugador (también el del jugador 1). */
 		AlreadyPlaying,
-		/** Con las gafas de VR activas no se entra: unas gafas son de un solo jugador y un invitado destruiría su rig (#639). */
-		VR,
 	};
 
 	struct FJoinQuery
@@ -79,8 +77,6 @@ namespace TNLocalPlay
 		int32 Players = 0;
 		bool bGamepad = false;
 		bool bDeviceHasPlayer = false;
-		/** Las gafas de VR están activas (TNVR::IsEnabled). */
-		bool bVR = false;
 	};
 
 	TORTUNABO_API EJoin DecideJoin(const FJoinQuery& Query);
@@ -97,9 +93,6 @@ namespace TNLocalPlay
 	 */
 	TORTUNABO_API bool ShouldSave(bool bLocalMode, bool bPrimary);
 
-	/** Gafas de VR: en red siempre se puede; en local, solo con un jugador. */
-	TORTUNABO_API bool AllowsVR(bool bLocalMode, int32 NumLocalPlayers);
-
 	/**
 	 * Mandos que el jugador 1 deja libres al empezar la partida local: todos los que el sistema le había dado menos el que usó
 	 * para elegir «Local» (ChosenPad; INDEX_NONE si fue con el teclado o el ratón). Así cualquier otro mando puede unirse con
@@ -109,7 +102,7 @@ namespace TNLocalPlay
 
 	/**
 	 * Copia los ajustes de cada jugador (sensibilidad e inversión de la cámara, teclas y botones, tecla del menú, temblor de
-	 * cámara y campo de visión) de From a To. El resto (sonido, gráficos, idioma, accesibilidad, VR...) es del PC entero y lo
+	 * cámara y campo de visión) de From a To. El resto (sonido, gráficos, idioma, accesibilidad...) es del PC entero y lo
 	 * decide el jugador 1.
 	 */
 	TORTUNABO_API void CopyPerPlayerSettings(const FTNGameSettings& From, FTNGameSettings& To);

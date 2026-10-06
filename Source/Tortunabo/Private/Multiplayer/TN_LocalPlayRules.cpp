@@ -73,10 +73,6 @@ TNLocalPlay::EJoin TNLocalPlay::DecideJoin(const FJoinQuery& Query)
 	{
 		return EJoin::NotLobby;
 	}
-	if (Query.bVR)
-	{
-		return EJoin::VR;
-	}
 	if (Query.Players >= MaxPlayers)
 	{
 		return EJoin::Full;
@@ -104,11 +100,6 @@ bool TNLocalPlay::CanLeave(bool bLocalMode, bool bInLobby, bool bPrimary)
 bool TNLocalPlay::ShouldSave(bool bLocalMode, bool bPrimary)
 {
 	return !bLocalMode || bPrimary;
-}
-
-bool TNLocalPlay::AllowsVR(bool bLocalMode, int32 NumLocalPlayers)
-{
-	return !bLocalMode || NumLocalPlayers <= 1;
 }
 
 TArray<int32> TNLocalPlay::PadsToRelease(const TArray<int32>& PrimaryUserPads, int32 ChosenPad)

@@ -9,8 +9,6 @@
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/SpectatorPawn.h"
-#include "VR/TN_VRMath.h"
-#include "VR/TN_VRMode.h"
 #include "World/Beach/TN_BeachSandWorm.h"
 
 namespace TNGhostCameraDetail
@@ -71,8 +69,6 @@ void UTN_GhostCameraModifier::SetGhost(ATN_SpectatorGhost* InGhost)
 	bHasLastView = false;
 	bReviveViewReady = false;
 	WormBlend = 0.f;
-	bVRYawReady = false;
-	bVRViewActive = false;
 }
 
 void UTN_GhostCameraModifier::AddOrbitInput(float YawDegrees, float PitchDegrees)
@@ -160,12 +156,9 @@ bool UTN_GhostCameraModifier::ModifyCamera(float DeltaTime, FMinimalViewInfo& In
 {
 	ATN_SpectatorGhost* GhostActor = Ghost.Get();
 	const APlayerController* PC = CameraOwner ? CameraOwner->GetOwningPlayerController() : nullptr;
-	// Sin fantasma, o ya con tortuga propia (acaba de salir del huevo): la cámara de siempre. Simulado también: una cámara que
-	// orbita sola no sigue a la cabeza y marea; se ve desde la cámara del jugador seguido (Docs/Modo_VR.md). Con gafas, la
-	// vista propia de más abajo (#646).
-	if (!GhostActor || !PC || !GhostActor->IsActiveGhost() || PC->GetPawn() || TNVR::IsSimulated())
+	// Sin fantasma, o ya con tortuga propia (acaba de salir del huevo): la cámara de siempre.
+	if (!GhostActor || !PC || !GhostActor->IsActiveGhost() || PC->GetPawn())
 	{
-		bVRViewActive = false;
 		return false;
 	}
 	// Con un cambio de ViewTarget en curso se llama dos veces por fotograma: el mismo resultado para las dos.
@@ -179,37 +172,7 @@ bool UTN_GhostCameraModifier::ModifyCamera(float DeltaTime, FMinimalViewInfo& In
 	}
 	LastFrame = GFrameCounter;
 	bOverrodeThisFrame = false;
-	bVRViewActive = false;
 	const FMinimalViewInfo FixedView = InOutPOV;
-
-	// ── Con gafas (#646): sigue la posición de la tortuga seguida y gira solo con la cabeza propia ──
-	// La base de la vista mira a un rumbo fijo y el motor le pone encima la pose de las gafas. Volviendo a la vida no se
-	// mueve la cámara (una cámara que se mueve sola marea): la tapa la cáscara. Sin nadie a quien seguir, la de siempre.
-	if (TNVR::IsHeadset())
-	{
-		APawn* FollowedPawn = GhostActor->IsReviving() ? nullptr : GetFollowedPawn();
-		if (!FollowedPawn)
-		{
-			return false;
-		}
-		if (!bVRYawReady)
-		{
-			VRYaw = static_cast<float>(FixedView.Rotation.Yaw);
-			bVRYawReady = true;
-		}
-		const FVector VRFocus = FollowedPawn->GetActorLocation() + FVector(0.0, 0.0, TNGhostCameraDetail::FocusHeight);
-		const FVector Wish = TNVRMath::GhostViewLocation(FollowedPawn->GetActorLocation(), VRYaw);
-		FMinimalViewInfo Result = FixedView;
-		Result.Location = ResolveCollision(VRFocus, Wish, FollowedPawn);
-		Result.Rotation = TNVRMath::GhostViewRotation(VRYaw);
-		InOutPOV = Result;
-		FrameView = Result;
-		bOverrodeThisFrame = true;
-		LastView = Result;
-		bHasLastView = true;
-		bVRViewActive = true;
-		return false;
-	}
 
 	// ── Volviendo a la vida: la cámara se aparta un poco y mira el vuelo del fantasma hasta el huevo ──
 	if (GhostActor->IsReviving())

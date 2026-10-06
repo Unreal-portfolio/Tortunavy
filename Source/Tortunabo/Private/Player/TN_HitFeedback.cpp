@@ -4,7 +4,6 @@
 #include "GameFramework/PlayerController.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "Settings/TN_SettingsSaveGame.h"
-#include "VR/TN_VRMode.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 
 namespace TNHitFeedbackDetail
@@ -36,7 +35,7 @@ TNHitFeedback::FPlan TNHitFeedback::MakePlan(float Strength, const FToggles& Tog
 	{
 		return Plan;
 	}
-	if (Toggles.bCameraShake && !Toggles.bVR)
+	if (Toggles.bCameraShake)
 	{
 		Plan.ShakeTrauma = FMath::Lerp(MinShakeTrauma, MaxShakeTrauma, S);
 	}
@@ -62,7 +61,6 @@ void TNHitFeedback::PlayLocal(APlayerController* PC, float Strength)
 		Toggles.bCameraShake = Own.bCameraShake;
 		Toggles.bVibration = Own.bGamepadVibration;
 	}
-	Toggles.bVR = TNVR::IsEnabled();
 
 	const FPlan Plan = MakePlan(Strength, Toggles);
 	if (Plan.ShakeTrauma > 0.f)

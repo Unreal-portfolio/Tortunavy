@@ -334,7 +334,7 @@ void UTN_TurtlePieceComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 void UTN_TurtlePieceComponent::SyncWithBody()
 {
 	// Se esconde y se enseña con la malla (el código la esconde y la enseña como siempre) y su dueño la ve como la malla.
-	// También con su hueso: la primera persona esconde el de la cabeza (y con él los ojos, la lengua y el casco de Arte).
+	// También con su hueso: si se esconde el de la cabeza, con él se esconden los ojos, la lengua y el casco de Arte.
 	const USceneComponent* Parent = GetAttachParent();
 	const USkinnedMeshComponent* Skinned = Cast<USkinnedMeshComponent>(Parent);
 	const int32 Bone = Skinned && GetAttachSocketName() != NAME_None ? Skinned->GetBoneIndex(GetAttachSocketName()) : INDEX_NONE;

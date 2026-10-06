@@ -105,14 +105,6 @@ struct FTNTurtleAnimFrame
 	float CliffDiveTime = 0.f;
 	float CliffDivePitch = 0.f;
 	/**
-	 * VR (Docs/Modo_VR.md): las manos del cuerpo van a los mandos (IK de brazo y antebrazo). Peso de cada brazo (0 bailando,
-	 * en el caparazón, tumbada o llevando a otra tortuga) y dónde tiene que llegar cada mano, en el espacio de la malla.
-	 */
-	float VRArmLW = 0.f;
-	float VRArmRW = 0.f;
-	FVector VRHandL = FVector::ZeroVector;
-	FVector VRHandR = FVector::ZeroVector;
-	/**
 	 * La cabeza que sigue a la cámara en tercera persona (#623, TNHeadLook): guiñada (+ a su derecha) y cabeceo (+ arriba)
 	 * en grados, ya con sus topes, suavizados y multiplicados por su peso. Se reparten entre el cuello y la cabeza.
 	 */
@@ -262,7 +254,7 @@ private:
 
 	/**
 	 * La cabeza que sigue a la cámara: giro (muelle crítico hacia TNHeadLook::Target, con su velocidad) y peso, que se funde
-	 * a 0 donde no se aplica (ragdoll, caparazón, panzazo, emotes, primera persona, VR, probador, sin jugador).
+	 * a 0 donde no se aplica (ragdoll, caparazón, panzazo, emotes, probador, sin jugador).
 	 */
 	float HeadLookYaw = 0.f;
 	float HeadLookYawRate = 0.f;

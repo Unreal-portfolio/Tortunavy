@@ -48,7 +48,7 @@ void UTN_RayTracingQualitySubsystem::Deinitialize()
 
 void UTN_RayTracingQualitySubsystem::HandleGlobalIlluminationQualityChanged(IConsoleVariable* Variable)
 {
-	// Sin RHI_RAYTRACING (Android, Quest) la cvar no existe: nada que hacer.
+	// Sin RHI_RAYTRACING la cvar no existe: nada que hacer.
 	IConsoleVariable* RayTracing = IConsoleManager::Get().FindConsoleVariable(TNRayTracingQualityDetail::RayTracingCVarName);
 	if (!Variable || !RayTracing) { return; }
 

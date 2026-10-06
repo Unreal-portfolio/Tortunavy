@@ -1064,7 +1064,7 @@ void UTN_TurtleFaceComponent::UpdateSweat(float Dt, const FTNTurtleFaceGoal& Goa
 
 void UTN_TurtleFaceComponent::SyncPartVisibility(USkeletalMeshComponent* Body)
 {
-	// Como la malla: si su dueño no la ve (primera persona), tampoco la lengua ni el sudor.
+	// Como la malla: si su dueño no la ve, tampoco la lengua ni el sudor.
 	const bool bNoSee = Body->bOwnerNoSee;
 	if (TongueMesh && TongueMesh->bOwnerNoSee != bNoSee) { TongueMesh->SetOwnerNoSee(bNoSee); }
 	for (UProceduralMeshComponent* Drop : SweatDrops)

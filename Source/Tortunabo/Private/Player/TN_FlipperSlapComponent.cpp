@@ -173,7 +173,7 @@ void UTN_FlipperSlapComponent::ResolveOnServer(double Now)
 	}
 	LastServerSlap = Now;
 
-	// Hacia donde mira la cámara (en VR, la aleta), en horizontal.
+	// Hacia donde mira la cámara, en horizontal.
 	FRotator Aim = Turtle->GetTurtleAimRotation();
 	Aim.Pitch = 0.f;
 	Aim.Roll = 0.f;

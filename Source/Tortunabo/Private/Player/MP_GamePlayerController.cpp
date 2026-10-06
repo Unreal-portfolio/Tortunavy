@@ -40,7 +40,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Slate/SObjectWidget.h"
 #include "UI/Menu/TN_RoomMenuWidget.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
 #include "Engine/LocalPlayer.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
@@ -549,8 +549,7 @@ void AMP_GamePlayerController::SpectateByDirection(int32 Direction)
 		NextIndex = Candidates.Num() - 1;
 	}
 
-	// En VR, corte seco: un fundido de cámara con gafas marea.
-	SetViewTargetWithBlend(Candidates[NextIndex]->GetPawn(), TNVR::ViewBlendTime(0.25f));
+	SetViewTargetWithBlend(Candidates[NextIndex]->GetPawn(), 0.25f);
 }
 
 TArray<APlayerState*> AMP_GamePlayerController::BuildSpectateCandidates(AGameStateBase* GS) const
@@ -623,9 +622,9 @@ void AMP_GamePlayerController::CreateVoiceHUD()
 
 	// Re-añadir al viewport si fue eliminado durante seamless travel.
 	// AddToViewport es idempotente: no-op si el widget ya está en el viewport.
-	if (VoiceIndicatorWidget && !TNVR::IsOnScreen(VoiceIndicatorWidget))
+	if (VoiceIndicatorWidget && !TNScreen::IsOnScreen(VoiceIndicatorWidget))
 	{
-		TNVR::AddToScreen(VoiceIndicatorWidget, MPGamePlayerController_ZOrderVoiceIndicator);
+		TNScreen::AddToScreen(VoiceIndicatorWidget, MPGamePlayerController_ZOrderVoiceIndicator);
 	}
 }
 
@@ -652,9 +651,9 @@ void AMP_GamePlayerController::CreateCoopFlowHUD()
 	}
 
 	// Re-añadir al viewport si fue eliminado durante seamless travel.
-	if (CoopFlowWidget && !TNVR::IsOnScreen(CoopFlowWidget))
+	if (CoopFlowWidget && !TNScreen::IsOnScreen(CoopFlowWidget))
 	{
-		TNVR::AddToScreen(CoopFlowWidget, MPGamePlayerController_ZOrderCoopFlow);
+		TNScreen::AddToScreen(CoopFlowWidget, MPGamePlayerController_ZOrderCoopFlow);
 	}
 }
 
@@ -681,9 +680,9 @@ void AMP_GamePlayerController::CreatePlayerHUD()
 	// Re-añadir al viewport si fue eliminado durante seamless travel.
 	// Tras travel, OnPossess llama a esta función. El widget existe (pointer no nulo)
 	// pero fue eliminado del viewport por UWorld::CleanupWorld → RemoveAllViewportWidgets.
-	if (PlayerHUDWidget && !TNVR::IsOnScreen(PlayerHUDWidget))
+	if (PlayerHUDWidget && !TNScreen::IsOnScreen(PlayerHUDWidget))
 	{
-		TNVR::AddToScreen(PlayerHUDWidget, MPGamePlayerController_ZOrderPlayerHUD);
+		TNScreen::AddToScreen(PlayerHUDWidget, MPGamePlayerController_ZOrderPlayerHUD);
 		UE_LOG(LogTortunabo, Log, TEXT("[HUD] PlayerHUDWidget re-añadido al viewport (tras seamless travel)"));
 	}
 }
@@ -704,9 +703,9 @@ void AMP_GamePlayerController::CreateRadialWidgets()
 			CodeWheel->SetTitle(NSLOCTEXT("TNHUD", "EmoteWheelTitle", "EMOTES"));
 		}
 	}
-	if (EmoteWheelWidget && !TNVR::IsOnScreen(EmoteWheelWidget))
+	if (EmoteWheelWidget && !TNScreen::IsOnScreen(EmoteWheelWidget))
 	{
-		TNVR::AddToScreen(EmoteWheelWidget, MPGamePlayerController_ZOrderEmoteWheel);
+		TNScreen::AddToScreen(EmoteWheelWidget, MPGamePlayerController_ZOrderEmoteWheel);
 		EmoteWheelWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
@@ -718,9 +717,9 @@ void AMP_GamePlayerController::CreateRadialWidgets()
 			CodeWheel->SetTitle(NSLOCTEXT("TNHUD", "ChatWheelTitle", "FRASES"));
 		}
 	}
-	if (QuickChatWheelWidget && !TNVR::IsOnScreen(QuickChatWheelWidget))
+	if (QuickChatWheelWidget && !TNScreen::IsOnScreen(QuickChatWheelWidget))
 	{
-		TNVR::AddToScreen(QuickChatWheelWidget, MPGamePlayerController_ZOrderQuickChatWheel);
+		TNScreen::AddToScreen(QuickChatWheelWidget, MPGamePlayerController_ZOrderQuickChatWheel);
 		QuickChatWheelWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
@@ -977,7 +976,7 @@ void AMP_GamePlayerController::OpenCosmeticsMenu()
 		return;
 	}
 
-	TNVR::AddToScreen(CosmeticsWidget, MPGamePlayerController_ZOrderCosmetics);
+	TNScreen::AddToScreen(CosmeticsWidget, MPGamePlayerController_ZOrderCosmetics);
 
 	FInputModeGameAndUI InputMode;
 	InputMode.SetHideCursorDuringCapture(false);
@@ -1082,7 +1081,7 @@ void AMP_GamePlayerController::ClientOpenShop_Implementation(ATN_ShopKeeper* Sho
 	UTN_ShopWidget* Widget = CreateWidget<UTN_ShopWidget>(this, UTN_ShopWidget::StaticClass());
 	if (!Widget) { return; }
 	Widget->SetShop(Shop);
-	TNVR::AddToScreen(Widget, MPGamePlayerController_ZOrderCosmetics);
+	TNScreen::AddToScreen(Widget, MPGamePlayerController_ZOrderCosmetics);
 	ShopUIWidget = Widget;
 	// Solo la interfaz: el menú recibe todas las teclas (Escape lo cierra) y la tortuga no se mueve.
 	FInputModeUIOnly Mode;
@@ -1101,7 +1100,7 @@ void AMP_GamePlayerController::ClientOpenBriefing_Implementation(ATN_GeneralBrie
 	UTN_BriefingWidget* Widget = CreateWidget<UTN_BriefingWidget>(this, UTN_BriefingWidget::StaticClass());
 	if (!Widget) { return; }
 	Widget->SetGeneral(General);
-	TNVR::AddToScreen(Widget, MPGamePlayerController_ZOrderCosmetics);
+	TNScreen::AddToScreen(Widget, MPGamePlayerController_ZOrderCosmetics);
 	ShopUIWidget = Widget;
 	// Como la tienda: solo la interfaz (Escape cierra) y la tortuga quieta mientras escucha.
 	FInputModeUIOnly Mode;
@@ -1118,12 +1117,11 @@ void AMP_GamePlayerController::ClientOpenBooth_Implementation(ATN_ChangingBooth*
 	if (!IsLocalController()) { return; }
 	CloseShopUI();
 	ActiveBooth = Booth;
-	// En VR se entra al probador de golpe (sin fundido) y con las gafas puestas uno se ve desde su cámara.
-	if (Booth) { SetViewTargetWithBlend(Booth, TNVR::ViewBlendTime(0.7f), VTBlend_EaseInOut, 2.f); }
+	if (Booth) { SetViewTargetWithBlend(Booth, 0.7f, VTBlend_EaseInOut, 2.f); }
 	UTN_BoothWidget* Widget = CreateWidget<UTN_BoothWidget>(this, UTN_BoothWidget::StaticClass());
 	if (!Widget) { return; }
 	Widget->SetBooth(Booth);
-	TNVR::AddToScreen(Widget, MPGamePlayerController_ZOrderCosmetics);
+	TNScreen::AddToScreen(Widget, MPGamePlayerController_ZOrderCosmetics);
 	ShopUIWidget = Widget;
 	// Solo la interfaz: el menú recibe todas las teclas (Escape lo cierra) y la tortuga no se mueve.
 	FInputModeUIOnly Mode;
@@ -1148,7 +1146,7 @@ void AMP_GamePlayerController::CloseShopUI()
 	}
 	if (ATN_ChangingBooth* Booth = ActiveBooth.Get())
 	{
-		if (APawn* MyPawn = GetPawn()) { SetViewTargetWithBlend(MyPawn, TNVR::ViewBlendTime(0.5f), VTBlend_EaseInOut, 2.f); }
+		if (APawn* MyPawn = GetPawn()) { SetViewTargetWithBlend(MyPawn, 0.5f, VTBlend_EaseInOut, 2.f); }
 		ServerLeaveBooth(Booth);
 	}
 	ActiveBooth.Reset();

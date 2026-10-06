@@ -52,8 +52,6 @@
 #include "World/ProcMap/TN_PathStorm.h"
 #include "World/ProcMap/TN_ProcMapGenerator.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
-#include "VR/TN_VRControls.h"
-#include "VR/TN_VRMode.h"
 #include "UI/HUD/TN_ButtonGlyphWidget.h"
 
 // Con nombre (no anónimo): un using-directive dentro de un namespace anónimo se ve en todo el resto del bloque
@@ -741,14 +739,8 @@ void UTN_RunHUDWidget::RefreshPromptKey(const APlayerController* PC, const ATort
 	PromptKeyTimer = PromptKeyRefreshSeconds;
 	PromptKeyDevice = static_cast<uint8>(Device);
 	PromptKeyFamily = static_cast<uint8>(Family);
-	// Con gafas (#644): el botón de los mandos Touch, con su nombre («Gatillo derecho»), no el dibujo de un mando.
-	const bool bVR = Device == ETNInputDevice::VR;
-	FKey Key = Devices ? Devices->KeyForAction(PC, Turtle->GetInteractAction()) : FKey();
-	if (bVR && !FTNVRKeys::IsVRKey(Key))
-	{
-		Key = TNVRControls::KeyForAction(TEXT("IA_Interact"));
-	}
-	const bool bGlyph = !bVR && PromptGlyph && TNInputGlyphs::DeviceOfKey(Key) == ETNInputDevice::Gamepad && PromptGlyph->SetKey(Key, Family);
+	const FKey Key = Devices ? Devices->KeyForAction(PC, Turtle->GetInteractAction()) : FKey();
+	const bool bGlyph = PromptGlyph && TNInputGlyphs::DeviceOfKey(Key) == ETNInputDevice::Gamepad && PromptGlyph->SetKey(Key, Family);
 	if (PromptGlyph) { PromptGlyph->SetVisibility(bGlyph ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed); }
 	if (PromptKeyCap) { PromptKeyCap->SetVisibility(bGlyph ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible); }
 	if (!bGlyph && Key.IsValid())
@@ -1776,9 +1768,7 @@ void UTN_RunRadialWheelWidget::NativeTick(const FGeometry& MyGeometry, float InD
 	Time += InDeltaTime;
 	const int32 Sel = GetSelectedIndex();
 	// Con mando se apunta con el stick: la ayuda cambia al momento si se cambia de aparato con la rueda abierta (#347).
-	// Con las gafas también se elige con el stick derecho (#644).
-	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(GetOwningPlayer());
-	const bool bPad = UTN_GameSettingsSubsystem::IsUsingGamepad(GetOwningPlayer()) || (Devices && Devices->IsUsingVR(GetOwningPlayer()));
+	const bool bPad = UTN_GameSettingsSubsystem::IsUsingGamepad(GetOwningPlayer());
 	if (Sel != ShownSelection || bPad != bShownPad)
 	{
 		ShownSelection = Sel;

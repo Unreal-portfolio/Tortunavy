@@ -52,11 +52,7 @@ public class Tortunabo : ModuleRules
 		// ApplicationCore: portapapeles (FPlatformApplicationMisc) para copiar y pegar el código de sala (Docs/Salas.md).
 		PrivateDependencyModuleNames.AddRange(new string[] { "CoreOnline", "ApplicationCore" });
 
-		// Modo VR (Docs/Modo_VR.md): gafas y mandos (HeadMountedDisplay: UMotionControllerComponent; XRBase: funciones de
-		// las gafas y su pantalla de carga) y la textura del huevo para esa pantalla (RenderCore: BeginCleanup).
-		PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "XRBase", "RenderCore" });
-
-		// Steam solo existe en escritorio: en Android (Meta Quest) el juego usa el subsistema en línea NULL.
+		// Steam solo existe en escritorio: en el resto de plataformas el juego usa el subsistema en línea NULL.
 		if (Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.Linux || Target.Platform == UnrealTargetPlatform.Mac)
 		{
 			DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");

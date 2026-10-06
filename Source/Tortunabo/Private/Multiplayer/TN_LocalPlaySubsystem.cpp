@@ -8,7 +8,7 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "UI/HUD/TN_LocalSplitOverlay.h"
 #include "UI/Loading/TN_LoadingScreenSubsystem.h"
-#include "VR/TN_VRMode.h"
+#include "UI/TN_ScreenHost.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/GameViewportClient.h"
@@ -37,9 +37,6 @@ namespace TNLocalPlayDetail
 
 	/** Segundos que se ve el número de cada jugador en su vista al cambiar el reparto. */
 	constexpr double TagSeconds = 5.0;
-
-	/** Segundos que se ve el aviso de que con gafas no entran invitados (#639). */
-	constexpr double VRNoticeSeconds = 6.0;
 
 	/** Segundos manteniendo B antes de enseñar que se está saliendo (un toque de B es meterse en el caparazón). */
 	constexpr double LeaveShowAfter = 0.2;
@@ -367,7 +364,7 @@ void UTN_LocalPlaySubsystem::Tick(float DeltaTime)
 	UWorld* World = GameInstance ? GameInstance->GetWorld() : nullptr;
 	if (!bLocalMode)
 	{
-		if (Overlay && TNVR::IsOnScreen(Overlay)) { Overlay->RemoveFromParent(); }
+		if (Overlay && TNScreen::IsOnScreen(Overlay)) { Overlay->RemoveFromParent(); }
 		return;
 	}
 	if (!World || World->bIsTearingDown || World->IsInSeamlessTravel())
@@ -516,13 +513,7 @@ bool UTN_LocalPlaySubsystem::TryJoin(FInputDeviceId Device)
 	Query.Players = GameInstance->GetNumLocalPlayers();
 	Query.bGamepad = IsGamepadDevice(Device);
 	Query.bDeviceHasPlayer = User == GetPrimaryUser() || FindPlayerForUser(User) != nullptr;
-	Query.bVR = TNVR::IsEnabled();
 	const TNLocalPlay::EJoin Decision = TNLocalPlay::DecideJoin(Query);
-	if (Decision == TNLocalPlay::EJoin::VR)
-	{
-		// Con gafas el invitado no entra (destruiría el rig del jugador 1): se avisa en el panel VR (UpdateOverlay).
-		VRNoticeUntil = FPlatformTime::Seconds() + TNLocalPlayDetail::VRNoticeSeconds;
-	}
 	if (Decision != TNLocalPlay::EJoin::Accept)
 	{
 		UE_LOG(LogTortunabo, Verbose, TEXT("[Local] El mando %d no entra (%d)."), Device.GetId(), static_cast<int32>(Decision));
@@ -948,12 +939,9 @@ void UTN_LocalPlaySubsystem::ApplyPlayerNames(UWorld* World)
 void UTN_LocalPlaySubsystem::UpdateOverlay(UWorld* World)
 {
 	UGameInstance* GameInstance = GetGameInstance();
-	// Con gafas la capa no tiene nada que repartir; solo se enseña mientras dura el aviso de que no entran invitados (#639).
-	const bool bVR = TNVR::IsEnabled();
-	const bool bVRNotice = bVR && FPlatformTime::Seconds() < VRNoticeUntil;
-	if (!GameInstance || !World || (bVR && !bVRNotice))
+	if (!GameInstance || !World)
 	{
-		if (Overlay && TNVR::IsOnScreen(Overlay)) { Overlay->RemoveFromParent(); }
+		if (Overlay && TNScreen::IsOnScreen(Overlay)) { Overlay->RemoveFromParent(); }
 		return;
 	}
 	if (!Overlay)
@@ -965,9 +953,9 @@ void UTN_LocalPlaySubsystem::UpdateOverlay(UWorld* World)
 		return;
 	}
 	// Tras un viaje el mundo quita todo lo de la pantalla: se vuelve a poner. A toda la pantalla, por encima de las vistas.
-	if (!TNVR::IsOnScreen(Overlay))
+	if (!TNScreen::IsOnScreen(Overlay))
 	{
-		TNVR::AddToFullScreen(Overlay, TNLocalPlayDetail::OverlayZOrder);
+		TNScreen::AddToFullScreen(Overlay, TNLocalPlayDetail::OverlayZOrder);
 	}
 
 	const bool bLobby = IsLobbyWorld(World);
@@ -987,10 +975,6 @@ void UTN_LocalPlaySubsystem::UpdateOverlay(UWorld* World)
 		State.Views.Add(View);
 	}
 	State.bHasEmptyRect = TNLocalPlay::EmptyQuadrant(Players.Num(), State.EmptyRect);
-	State.bCanJoin = bLobby && !bVR && Players.Num() < TNLocalPlay::MaxPlayers;
-	if (bVRNotice)
-	{
-		State.Notice = NSLOCTEXT("TNLocal", "VRNoGuests", "Con las gafas de VR puestas no se puede jugar a pantalla partida: quítatelas para que se una otro jugador.");
-	}
+	State.bCanJoin = bLobby && Players.Num() < TNLocalPlay::MaxPlayers;
 	Overlay->Refresh(State);
 }

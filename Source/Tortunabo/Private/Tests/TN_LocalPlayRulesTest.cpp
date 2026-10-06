@@ -112,24 +112,6 @@ bool FTNLocalPlayJoinTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("En una partida empezada no se entra"), DecideJoin(Query) == EJoin::NotLobby);
 	Query.bInLobby = true;
 
-	// Con las gafas de VR activas no entra nadie (#639): en el lobby se rechaza con su propio motivo, que es el que avisa.
-	Query.bVR = true;
-	TestTrue(TEXT("Con gafas, un mando libre en el lobby no entra"), DecideJoin(Query) == EJoin::VR);
-	Query.Players = 1;
-	TestTrue(TEXT("Con gafas, tampoco el segundo jugador"), DecideJoin(Query) == EJoin::VR);
-	Query.bInLobby = false;
-	TestTrue(TEXT("Con gafas fuera del lobby: el motivo es el lobby y no se avisa de las gafas"), DecideJoin(Query) == EJoin::NotLobby);
-	Query.bInLobby = true;
-	Query.bDeviceHasPlayer = true;
-	TestTrue(TEXT("Con gafas, el mando del jugador 1 sigue siendo suyo"), DecideJoin(Query) == EJoin::AlreadyPlaying);
-	Query.bDeviceHasPlayer = false;
-	Query.bGamepad = false;
-	TestTrue(TEXT("Con gafas, el teclado sigue sin crear jugador"), DecideJoin(Query) == EJoin::Keyboard);
-	Query.bGamepad = true;
-	Query.bVR = false;
-	TestTrue(TEXT("Sin gafas, el modo local no cambia"), DecideJoin(Query) == EJoin::Accept);
-	Query.Players = 2;
-
 	Query.bLocalMode = false;
 	TestTrue(TEXT("En red no se entra con Start"), DecideJoin(Query) == EJoin::NotLocal);
 
@@ -174,11 +156,6 @@ bool FTNLocalPlaySaveTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("En red, el anfitrión también"), ShouldSave(false, true));
 	TestTrue(TEXT("En local, lo del jugador 1 se guarda"), ShouldSave(true, true));
 	TestFalse(TEXT("En local, lo de un invitado dura la partida"), ShouldSave(true, false));
-
-	TestTrue(TEXT("VR en red"), AllowsVR(false, 1));
-	TestTrue(TEXT("VR en local con uno"), AllowsVR(true, 1));
-	TestFalse(TEXT("VR en local con dos: no"), AllowsVR(true, 2));
-	TestFalse(TEXT("VR en local con cuatro: no"), AllowsVR(true, 4));
 	return true;
 }
 
