@@ -358,6 +358,7 @@ def test_coger_rechaza_una_chamber_tambien_con_forzar(monkeypatch, forzar):
 def test_coger_sigue_con_una_viva(monkeypatch, forzar):
     _con_issue(monkeypatch, _item(42, "Ready"))
     monkeypatch.setattr(tablero, "usuario_actual", lambda: "SkiTemplar")
+    monkeypatch.delenv("TN_SESION_NOCTURNA", raising=False)  # fuera de una sesión nocturna desatendida
 
     def git(*_a):
         raise Detenido
@@ -424,6 +425,7 @@ def test_coger_con_retomar_retoma_la_chamber_antes_de_asignarla(monkeypatch):
     llamadas = _gh_espia(monkeypatch, tablero, comentarios=[DESCARTE, _decision("SkiTemplar")])
     _lanza(monkeypatch, "SkiTemplar")
     monkeypatch.setattr(tablero, "usuario_actual", lambda: "SkiTemplar")
+    monkeypatch.delenv("TN_SESION_NOCTURNA", raising=False)  # fuera de una sesión nocturna desatendida
     monkeypatch.setattr(tablero, "git", lambda *a: "")
     tablero.cmd_coger(_args(numero=42, forzar=False, retomar=True, rama=None))
     assert llamadas[0] == ("issue", "edit", "42", "--remove-label", CHAMBER)

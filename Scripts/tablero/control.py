@@ -2,7 +2,8 @@
 
 - `resumen` y `decidir`: la memoria del equipo vive en las issues (memoria.py).
 - `auditar`: problemas de organización de las issues de trabajo (auditoria.py).
-- `colisiones`: PR abiertas contra dev que chocan al mezclarse (colisiones.py).
+- `colisiones`: PR abiertas contra la misma rama base (dev o dev-<modo>) que chocan al mezclarse (colisiones.py).
+- `auditar` también marca los lotes abiertos que incumplen los topes (lotes.py) sin la etiqueta `excepcion`.
 - `bloquear`: dependencias nativas de GitHub y estado Bloqueada (bloqueos.py).
 - `lote` y `resumenes`: en control_lotes.py.
 - `asegurar-estados`: añade Bloqueada y Validada al campo Status sin perder valores (estados.py).
@@ -30,7 +31,7 @@ import lotes
 import peticiones
 from base import (INTEGRACION, NUMERO, OWNER, REPO, ErrorTablero, borrar_cache_campos, cargar_issue, cargar_proyecto,
                   comentar, elegir_revisor, esta_fusionada, gh, issues_de_pr, numeros_chamber, poner_campo, prs_abiertas,
-                  prs_fusionadas, solo_descartadas, usuario_actual)
+                  prs_fusionadas, rama_base, solo_descartadas, usuario_actual)
 
 
 def cmd_resumen(args: argparse.Namespace) -> None:
@@ -55,13 +56,13 @@ def contexto_prs(nodos: list[dict], proyecto: dict, abiertas: list[dict], fusion
     for nodo in nodos:
         n = nodo["number"]
         asignados = [a["login"] for a in nodo["assignees"]["nodes"]]
-        contexto[n] = {"con_pr": n in con_pr, "fusionada": esta_fusionada(n, fusionadas, abiertas),
+        contexto[n] = {"con_pr": n in con_pr, "fusionada": esta_fusionada(n, fusionadas, abiertas, rama_base(nodo)),
                        "revisor_sugerido": elegir_revisor(proyecto, asignados[0]) if asignados else None,
                        "prs_sin_lote": [], "lote_fusionado": None, "fuera_de_lote": []}
     for nodo in nodos:
         if nodo["number"] not in lotes_abiertos:
             continue
-        pr = next((p["number"] for p in fusionadas if p["baseRefName"] == INTEGRACION
+        pr = next((p["number"] for p in fusionadas if flujo.es_rama_de_linea(p["baseRefName"], INTEGRACION)
                    and nodo["number"] in issues_de_pr(p, menciones=True)), None)
         for miembro in bloqueos.bloqueantes(nodo):
             if pr and miembro["number"] in contexto:
@@ -86,19 +87,30 @@ def marcar_prs_abiertas(contexto: dict[int, dict], abiertas: list[dict], miembro
                 contexto[n]["fuera_de_lote"] += [(pr["number"], lote) for lote in lotes_pr]
 
 
-def issues_auditables(proyecto: dict, ahora: datetime) -> list[dict]:
-    """Issues de trabajo abiertas y cerradas en los últimos días, con el contexto de sus PR."""
+def issues_auditables(proyecto: dict, ahora: datetime) -> tuple[list[dict], list[tuple[dict, list[dict]]]]:
+    """Issues de trabajo abiertas y cerradas en los últimos días, con el contexto de sus PR, y los lotes abiertos con
+    sus problemas de topes (lista vacía si cumplen, para quitarles la etiqueta si la tenían)."""
     desde = ahora - timedelta(days=auditoria.DIAS_RESUMEN)
     nodos = auditoria.leer_issues(gh, REPO, "OPEN") + auditoria.leer_issues(gh, REPO, "CLOSED", desde)
     contexto = contexto_prs(nodos, proyecto, prs_abiertas(), prs_fusionadas())
     issues = [auditoria.normalizar(n, proyecto["items"].get(n["number"], {}).get("valores", {}), contexto[n["number"]])
               for n in nodos]
-    return [i for i in issues if auditoria.es_de_trabajo(i)]
+    return [i for i in issues if auditoria.es_de_trabajo(i)], lotes_auditables(nodos)
+
+
+def lotes_auditables(nodos: list[dict]) -> list[tuple[dict, list[dict]]]:
+    """Lotes abiertos (no descartados) con un problema de organización por cada tope que incumplen sin `excepcion`."""
+    por_numero = {n["number"]: n for n in nodos}
+    abiertos = lotes.lotes_abiertos(por_numero)
+    malos = lotes.incumplimientos(abiertos)
+    return [(auditoria.normalizar(por_numero[n], {}), auditoria.problemas_de_lote(malos.get(n, [])))
+            for n in sorted(abiertos) if not flujo.es_chamber(por_numero[n])]
 
 
 def cmd_auditar(args: argparse.Namespace) -> None:
     proyecto, ahora = cargar_proyecto(), datetime.now(timezone.utc)
-    informe = [(i, auditoria.problemas(i, ahora)) for i in issues_auditables(proyecto, ahora)]
+    trabajo, de_lotes = issues_auditables(proyecto, ahora)
+    informe = [(i, auditoria.problemas(i, ahora)) for i in trabajo] + de_lotes
     con_problemas = sorted([(i, lista) for i, lista in informe if lista], key=lambda x: x[0]["numero"])
     tipos = Counter(p["tipo"] for _, lista in con_problemas for p in lista)
     print(f"## Auditoría de organización · {len(informe)} issues revisadas, {len(con_problemas)} con problemas "
@@ -106,7 +118,8 @@ def cmd_auditar(args: argparse.Namespace) -> None:
           + ("" if args.aplicar else " (simulación: usa --aplicar)") + "\n")
     for issue, lista in con_problemas:
         print(f"- #{issue['numero']} {issue['titulo']}: " + "; ".join(f"[{p['tipo']}] {p['texto']}" for p in lista))
-    conversaciones = {i["numero"]: a for i, _ in informe if (a := auditoria.accion_peticion(i))}
+    conversaciones = {i["numero"]: a for i, _ in informe
+                      if auditoria.es_de_trabajo(i) and (a := auditoria.accion_peticion(i))}
     if conversaciones:
         print("\n### Conversación en las issues (etiqueta `peticion`)")
         print("\n".join(f"- #{n}: {'alguien espera respuesta del asignado' if a == 'poner' else 'ya contestada'}"
@@ -171,21 +184,24 @@ def aplicar_auditoria(proyecto: dict, informe: list[tuple[dict, list[dict]]]) ->
 
 def cmd_colisiones(args: argparse.Namespace) -> None:
     chamber = numeros_chamber()
-    hacia_dev = [p for p in prs_abiertas() if p["baseRefName"] == INTEGRACION]
-    descartadas = {p["number"] for p in hacia_dev if solo_descartadas(p, chamber)}  # solo issues `chamber`: no cuentan
-    prs = {p["number"]: p for p in hacia_dev if p["number"] not in descartadas}
+    # Solo PR hacia una rama de línea (dev o dev-<modo>); cada una se compara con las de su misma base.
+    en_linea = [p for p in prs_abiertas() if flujo.es_rama_de_linea(p["baseRefName"], INTEGRACION)]
+    descartadas = {p["number"] for p in en_linea if solo_descartadas(p, chamber)}  # solo issues `chamber`: no cuentan
+    prs = {p["number"]: p for p in en_linea if p["number"] not in descartadas}
     con_git = colisiones.traer_cabezas(prs)
     if not con_git:
         print("Aviso: no se pudieron descargar las cabezas de las PR; cuento los ficheros en común.\n")
-    pares = colisiones.pares({n: colisiones.ficheros_de_pr(gh, REPO, n) for n in prs},
-                             colisiones.conflicto_git if con_git else None)
+    pares = colisiones.pares_por_base({n: colisiones.ficheros_de_pr(gh, REPO, n) for n in prs},
+                                      {n: p["baseRefName"] for n, p in prs.items()},
+                                      colisiones.conflicto_git if con_git else None)
     pares, localizacion = colisiones.separar(pares)  # solo localización: se regenera, sin issue
     abiertas = colisiones.colisiones_abiertas(gh, REPO)
     existentes = {i["title"].strip() for i in abiertas}
     nuevos = [par for par in pares if colisiones.titulo(par[0], par[1]) not in existentes]
     resueltas = colisiones.resueltas(abiertas, set(prs), {(a, b) for a, b, _ in pares},
                                      {(a, b) for a, b, _ in localizacion}, descartadas) if con_git else []
-    print(f"## Colisiones entre PR abiertas contra {INTEGRACION} · {len(prs)} PR, {len(pares)} pares en conflicto, "
+    print(f"## Colisiones entre PR abiertas contra su misma rama base · {len(prs)} PR, "
+          f"{len(pares)} pares en conflicto, "
           f"{len(nuevos)} sin issue, {len(resueltas)} issues resueltas"
           + ("" if args.aplicar else " (simulación: usa --aplicar)") + "\n")
     for a, b, ficheros in pares:
@@ -232,7 +248,7 @@ def crear_issue_colision(proyecto: dict, pr_a: dict, pr_b: dict, ficheros: list[
     antigua, reciente = sorted((pr_a, pr_b), key=lambda p: (p.get("createdAt") or "", p["number"]))
     titulo = colisiones.titulo(pr_a["number"], pr_b["number"])
     crear = ["issue", "create", "--repo", REPO, "--title", titulo,
-             "--body", colisiones.cuerpo(antigua, reciente, ficheros, INTEGRACION)]
+             "--body", colisiones.cuerpo(antigua, reciente, ficheros, pr_a.get("baseRefName") or INTEGRACION)]
     for etiqueta in colisiones.etiquetas(ficheros):
         crear += ["--label", etiqueta]
     numero = int(gh(*crear).strip().splitlines()[-1].rstrip("/").rsplit("/", 1)[-1])
@@ -383,7 +399,9 @@ def anadir_comandos(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--quien", help="quién decide (por defecto, tu login)")
     p.set_defaults(fn=cmd_decidir)
     for nombre, ayuda, fn in (("auditar", "problemas de organización de las issues de trabajo", cmd_auditar),
-                              ("colisiones", "PR abiertas contra dev que chocan al mezclarse", cmd_colisiones),
+                              ("colisiones", "PR abiertas contra la misma rama base que chocan al mezclarse",
+                               cmd_colisiones),
+
                               ("asegurar-estados", "añadir Bloqueada y Validada a Status sin perder valores",
                                cmd_asegurar_estados)):
         p = sub.add_parser(nombre, help=ayuda)

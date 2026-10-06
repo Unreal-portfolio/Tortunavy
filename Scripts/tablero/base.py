@@ -27,7 +27,8 @@ ORDEN_TAMANO = {"XS": 0, "S": 1, "M": 2, "L": 3}
 # «Closes #n» cierra la issue al fusionar; «Refs #n» solo la menciona (así se enlaza la PR con su lote).
 REF_CIERRE = re.compile(r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|cierra|resuelve)\s+#(\d+)", re.I)
 REF_MENCION = re.compile(r"\brefs?\s+#(\d+)", re.I)
-REF_RAMA = re.compile(r"/(\d+)-")
+# Número de la issue en la rama: `feat|fix/<n>-<slug>` o, en una línea de modo, `dev-<modo>-<n>-<slug>`.
+REF_RAMA = re.compile(rf"(?:/|^{re.escape(INTEGRACION)}-(?:{'|'.join(flujo.MODOS)})-)(\d+)-")
 # Respuesta de `gh project item-add` cuando la issue ya es un item del Project (auto-add de GitHub).
 YA_EN_PROYECTO = "Content already exists"
 
@@ -41,7 +42,7 @@ query($org: String!, $num: Int!, $cursor: String) {
       nodes {
         id
         content { __typename
-          ... on Issue { number title state url updatedAt
+          ... on Issue { number title state url updatedAt author { login }
             assignees(first: 5) { nodes { login } } labels(first: 15) { nodes { name } }
             blockedBy(first: 50) { nodes { number state } }
             blocking(first: 10) { nodes { number state labels(first: 10) { nodes { name } } } } }
@@ -59,7 +60,7 @@ query($org: String!, $num: Int!, $cursor: String) {
 
 # Campos de una issue con su item del Project: los mismos que trae CONSULTA_ITEMS para cada item.
 CAMPOS_ISSUE = """
-    number title state url updatedAt
+    number title state url updatedAt author { login }
     assignees(first: 5) { nodes { login } } labels(first: 15) { nodes { name } }
     blockedBy(first: 50) { nodes { number state } }
     blocking(first: 10) { nodes { number state labels(first: 10) { nodes { name } } } }
@@ -429,14 +430,25 @@ def prs_fusionadas() -> list[dict]:
     return json.loads(gh("pr", "list", "--repo", REPO, "--state", "merged", "--limit", "100", "--json", campos))
 
 
-def esta_fusionada(numero: int, fusionadas: list[dict], abiertas: list[dict]) -> bool:
-    """True si una PR fusionada en dev enlaza la issue y no tiene ninguna PR abierta.
+def esta_fusionada(numero: int, fusionadas: list[dict], abiertas: list[dict], rama: str = INTEGRACION) -> bool:
+    """True si una PR fusionada en `rama` (la rama base de la issue) la enlaza y no tiene ninguna PR abierta.
 
-    Una PR abierta significa que hay un cambio nuevo sin fusionar: la fusión anterior ya no vale.
+    Una PR abierta significa que hay un cambio nuevo sin fusionar: la fusión anterior ya no vale. Una issue
+    `modo:tct` solo está fusionada si su PR entró en `dev-tct` (`flujo.rama_base`).
     """
     if any(numero in issues_de_pr(pr) for pr in abiertas):
         return False
-    return any(pr["baseRefName"] == INTEGRACION and numero in issues_de_pr(pr) for pr in fusionadas)
+    return any(pr["baseRefName"] == rama and numero in issues_de_pr(pr) for pr in fusionadas)
+
+
+def rama_base(issue: dict) -> str:
+    """Rama base de la issue con la rama de integración de equipo.json (`flujo.rama_base`)."""
+    return flujo.rama_base(issue, INTEGRACION)
+
+
+def existe_rama_remota(rama: str) -> bool:
+    """True si origin tiene la rama (`git ls-remote`: red de git, sin gastar API de GitHub)."""
+    return bool(git("ls-remote", "--heads", "origin", f"refs/heads/{rama}"))
 
 
 def revisiones_del_proyecto() -> dict:

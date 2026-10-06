@@ -13,7 +13,8 @@ import flujo
 import lotes
 import memoria
 import objetos
-from base import REPO, ErrorTablero, cargar_proyecto, comentar, gh, issues_de_pr, item_de_issue, prs_abiertas
+from base import (CONFIG, REPO, ErrorTablero, cargar_proyecto, comentar, gh, issues_de_pr, item_de_issue, prs_abiertas,
+                  quien_lanza)
 
 CONSULTA_HERMANAS = """
 query($owner: String!, $repo: String!, $num: Int!) {
@@ -60,6 +61,45 @@ def vincular_miembros(lote: int, id_lote: str, miembros: list[int], pr: int | No
         comentar(m, f"En el lote #{lote}{f' (PR #{pr})' if pr else ''}.")
 
 
+def asignados_de(proyecto: dict, numeros: list[int]) -> set[str]:
+    return {a["login"] for n in numeros for a in (proyecto["items"].get(n, {}).get("assignees") or {}).get("nodes", [])}
+
+
+def comprobar_topes(proyecto: dict, miembros: list[int], personas: set[str], args: argparse.Namespace,
+                    lote: int | None = None) -> str | None:
+    """Aplica los topes de lotes (lotes.py) antes de tocar nada. Devuelve el comentario de la excepción, si hace falta.
+
+    `miembros` son todos los del lote tal como quedará; `personas`, las que lo tendrían abierto. Sin excederse, la
+    excepción no se usa; excedido y sin `--excepcion`, error. Un lote `excepcion` o de solo `refactor` no tiene topes.
+    """
+    excepcion = getattr(args, "excepcion", None)
+    etiquetas = [objetos.nombres_etiquetas(proyecto["items"].get(n, {})) for n in miembros]
+    propias = objetos.nombres_etiquetas(proyecto["items"].get(lote, {})) if lote else set()
+    if lotes.fuera_de_topes(propias, etiquetas):
+        return None
+    motivos = lotes.excesos(len(miembros), personas, lotes.lotes_abiertos(proyecto["items"]), excluir=lote)
+    if not motivos:
+        if excepcion:
+            print("El lote cabe en los topes: no hace falta la excepción.")
+        return None
+    if not excepcion:
+        raise ErrorTablero(f"El lote no cabe en los topes ({'; '.join(motivos)}). Pártelo o pide permiso a "
+                           "SkiTemplar o Mokius: --excepcion \"<motivo>\" [--autoriza <aprobador>].")
+    try:
+        autoriza = lotes.autorizacion(quien_lanza(), getattr(args, "autoriza", None), CONFIG["aprobadores"])
+        return lotes.texto_excepcion(motivos, excepcion, autoriza)
+    except lotes.ErrorLote as exc:
+        raise ErrorTablero(str(exc)) from exc
+
+
+def marcar_excepcion(lote: int, texto: str) -> None:
+    """Etiqueta `excepcion` en la issue `lote` y el comentario de una línea con el motivo y quién autoriza."""
+    objetos.crear_etiqueta_si_falta(gh, REPO, lotes.ETIQUETA_EXCEPCION, lotes.COLOR_EXCEPCION,
+                                    lotes.DESCRIPCION_EXCEPCION)
+    gh("issue", "edit", str(lote), "--repo", REPO, "--add-label", lotes.ETIQUETA_EXCEPCION)
+    comentar(lote, texto)
+
+
 def cmd_lote_crear(args: argparse.Namespace) -> None:
     try:
         miembros = lotes.comprobar_miembros(args.miembros)
@@ -67,6 +107,7 @@ def cmd_lote_crear(args: argparse.Namespace) -> None:
         raise ErrorTablero(str(exc)) from exc
     proyecto = cargar_proyecto()
     comprobar_de_trabajo(proyecto, miembros)
+    excepcion = comprobar_topes(proyecto, miembros, {quien_lanza(), *asignados_de(proyecto, miembros)}, args)
     pr = args.pr or pr_de_miembros(miembros)
     objetos.crear_etiqueta_si_falta(gh, REPO, lotes.ETIQUETA, lotes.COLOR, lotes.DESCRIPCION_ETIQUETA)
     url = gh("issue", "create", "--repo", REPO, "--title", lotes.titulo(args.titulo), "--label", lotes.ETIQUETA,
@@ -74,6 +115,8 @@ def cmd_lote_crear(args: argparse.Namespace) -> None:
     numero = int(url.rstrip("/").rsplit("/", 1)[-1])
     vincular_miembros(numero, objetos.leer_issue(gh, REPO, numero)["id"], miembros, pr)
     item_de_issue(proyecto, numero)  # en el tablero sin Status, como los objetos
+    if excepcion:
+        marcar_excepcion(numero, excepcion)
     if pr:
         cuerpo = json.loads(gh("pr", "view", str(pr), "--repo", REPO, "--json", "body"))["body"] or ""
         if f"Refs #{numero}" not in cuerpo:
@@ -88,14 +131,18 @@ def cmd_lote_anadir(args: argparse.Namespace) -> None:
     if not lotes.es_lote(datos) or datos["state"] != "OPEN":
         raise ErrorTablero(f"#{args.lote} no es un lote abierto (etiqueta `{lotes.ETIQUETA}`).")
     lote = objetos.leer_issue(gh, REPO, args.lote)
+    actuales = [b["number"] for b in bloqueos.bloqueantes(lote)]
     try:
-        nuevos = lotes.miembros_nuevos(args.lote, args.miembros, {b["number"] for b in bloqueos.bloqueantes(lote)})
+        nuevos = lotes.miembros_nuevos(args.lote, args.miembros, set(actuales))
     except lotes.ErrorLote as exc:
         raise ErrorTablero(str(exc)) from exc
     proyecto = cargar_proyecto()
     comprobar_de_trabajo(proyecto, nuevos)
+    excepcion = comprobar_topes(proyecto, actuales + nuevos, asignados_de(proyecto, nuevos), args, lote=args.lote)
     pr = pr_del_lote(args.lote)
     vincular_miembros(args.lote, lote["id"], nuevos, pr)
+    if excepcion:
+        marcar_excepcion(args.lote, excepcion)
     gh("issue", "edit", str(args.lote), "--repo", REPO, "--body-file", "-",
        entrada=lotes.cuerpo_con_miembros(datos["body"] or "", nuevos))
     lista = ", ".join(f"#{n}" for n in nuevos)
@@ -127,7 +174,7 @@ def cmd_lote_estado(args: argparse.Namespace) -> None:
     if descartadas := lotes.con_decision(etiquetas, flujo.ETIQUETA_CHAMBER):  # cerrada no es lista: no se revisó
         raise ErrorTablero(f"NO fusionar la PR del lote: {', '.join(f'#{n}' for n in descartadas)} descartada "
                            f"(`{flujo.ETIQUETA_CHAMBER}`): saca su código y su «Closes» de la PR y quítala del lote.")
-    pendientes = lotes.pendientes(miembros)
+    pendientes = lotes.pendientes(miembros, {n for n, e in etiquetas.items() if flujo.ETIQUETA_REFACTOR in e})
     if not miembros or pendientes:
         detalle = "; ".join(f"#{n}: {', '.join(f)}" for n, f in pendientes.items()) or "el lote no tiene miembros"
         raise ErrorTablero(f"NO fusionar la PR del lote: {detalle}.")
@@ -173,6 +220,14 @@ def cmd_resumenes(args: argparse.Namespace) -> None:
         print("Ninguna tiene aún comentario **Resumen**.")
 
 
+def anadir_excepcion(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--excepcion", metavar="MOTIVO",
+                        help=f"saltar los topes ({lotes.MAXIMO_MIEMBROS} issues por lote, "
+                             f"{lotes.MAXIMO_LOTES_POR_PERSONA} lote abierto por persona) con permiso de un aprobador")
+    parser.add_argument("--autoriza", choices=list(CONFIG["aprobadores"]),
+                        help="aprobador que autoriza la excepción (obligatorio si no lo eres)")
+
+
 def anadir_comandos(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("lote", help="lotes: varias issues en una misma PR")
     acciones = p.add_subparsers(dest="accion", required=True)
@@ -180,10 +235,12 @@ def anadir_comandos(sub: argparse._SubParsersAction) -> None:
     q.add_argument("--titulo", required=True)
     q.add_argument("--pr", type=int, help="PR del lote (por defecto, la PR abierta que enlaza a los miembros)")
     q.add_argument("miembros", type=int, nargs="+")
+    anadir_excepcion(q)
     q.set_defaults(fn=cmd_lote_crear)
     q = acciones.add_parser("añadir", aliases=["anadir"], help="meter issues en un lote ya creado")
     q.add_argument("lote", type=int)
     q.add_argument("miembros", type=int, nargs="+")
+    anadir_excepcion(q)
     q.set_defaults(fn=cmd_lote_anadir)
     q = acciones.add_parser("estado", help="qué miembros faltan; error si la PR aún no se puede fusionar")
     q.add_argument("numero", type=int)

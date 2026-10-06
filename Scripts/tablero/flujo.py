@@ -14,6 +14,12 @@
   recorte a un único modo. Ninguna rutina la mueve, la audita ni avisa de ella, y ningún comando del ciclo la toca
   (`--forzar` tampoco). Solo vuelve con `--retomar`, lanzado en local por un aprobador después de registrar una
   **Decisión** suya posterior al descarte.
+
+Líneas de trabajo (decisión del director del 06-10): una issue sin etiqueta `modo:*` es de la línea principal y su
+rama base es `dev`; con `modo:<modo>` es de esa línea y su rama base es `dev-<modo>`. «Fusionada» significa fusionada
+en su rama base. Una issue `refactor` se salta In review y QA editor: llega a Done con su PR fusionada en su rama
+base, sin revisión IA ni prueba en el editor. En una sesión nocturna desatendida (`coger --nocturna` o
+TN_SESION_NOCTURNA=1) solo se cogen bugs, pulido y refactor; no es una franja horaria.
 """
 
 from __future__ import annotations
@@ -24,6 +30,19 @@ import objetos
 
 # Estados con trabajo en marcha o ya terminado: una fusión antigua no debe arrastrarlos.
 ESTADOS_EN_CURSO = ("In progress", "Revisiones", "Done")
+# Una refactorización no pasa por In review: su PR se fusiona mientras está In progress.
+ESTADOS_EN_CURSO_REFACTOR = ("Revisiones", "Done")
+RAMA_INTEGRACION = "dev"
+# Archivo congelado de dev antes del recorte: de ahí nacen las líneas de modo.
+RAMA_ARCHIVO = "chamber"
+PREFIJO_MODO = "modo:"
+# Modos con línea propia, por prioridad. `vr` está aprobado para el futuro y aún no tiene rama.
+MODOS = ("tct", "carrera", "rally", "vr")
+ETIQUETA_REFACTOR = "refactor"
+ETIQUETA_PULIDO = "pulido"
+ETIQUETAS_BUG = ("⚠️bug⚠️", "bug")
+# Sesión nocturna desatendida (Claude solo toda la noche): `coger --nocturna` o esta variable a 1.
+VARIABLE_NOCTURNA = "TN_SESION_NOCTURNA"
 ETIQUETA_DECISION = "decision"
 ETIQUETA_CHAMBER = "chamber"
 COLOR_CHAMBER = "BFBFBF"
@@ -39,19 +58,22 @@ class EnvioRechazado(ValueError):
 
 
 def estado_objetivo(actual: str | None, valores: dict, fusionada: bool, en_lote: bool,
-                    sin_pr: bool = False) -> tuple[str | None, bool]:
+                    sin_pr: bool = False, refactor: bool = False) -> tuple[str | None, bool]:
     """Estado que corresponde a la issue y si hay que cerrarla; None = no cambia.
 
     - Cambios pedidos o Editor = Falla → Revisiones, salvo en In progress: quien la tiene la arregla ahí.
+    - Refactorización (`refactor`): fusionada en su rama base → Done, y se cierra; sin fusionar, no cambia.
     - Sin fusionar: aprobada y probada (en un lote o suelta) → Validada; aprobada sin probar y en In review
       → QA editor; en otro caso no cambia (en Revisiones manda el fallo o la petición que la devolvió).
-    - Fusionada en dev: sin revisión aprobada → In review; aprobada sin probar → QA editor;
+    - Fusionada en su rama base: sin revisión aprobada → In review; aprobada sin probar → QA editor;
       aprobada y probada → Done, y se cierra.
     - Tarea solo de prueba (en QA editor y sin ninguna PR): Editor = Funciona → Done.
     """
     ia, editor = valores.get("Revisión IA"), valores.get("Editor")
     if editor == "Falla" or ia == "Cambios pedidos":
         return (None, False) if actual == "In progress" else ("Revisiones", False)
+    if refactor:
+        return ("Done", True) if fusionada else (None, False)
     if sin_pr and actual == "QA editor":
         return ("Done", True) if editor == "Funciona" else (None, False)
     lista = ia == "Aprobada" and editor == "Funciona"
@@ -116,19 +138,106 @@ def editor_tras_fusion(valores: dict) -> str | None:
     return None if valores.get("Editor") == "Funciona" else "Sin probar"
 
 
-def mueve_por_fusion(estado: str | None, con_pr_abierta: bool) -> bool:
-    """Si una PR fusionada puede mover la issue: no si hay trabajo en marcha o una PR abierta."""
-    return estado not in ESTADOS_EN_CURSO and not con_pr_abierta
+def mueve_por_fusion(estado: str | None, con_pr_abierta: bool, refactor: bool = False) -> bool:
+    """Si una PR fusionada puede mover la issue: no si hay trabajo en marcha o una PR abierta.
+
+    Una refactorización se fusiona desde In progress (no pasa por In review): ahí sí la mueve.
+    """
+    en_curso = ESTADOS_EN_CURSO_REFACTOR if refactor else ESTADOS_EN_CURSO
+    return estado not in en_curso and not con_pr_abierta
 
 
-def cierra_por_fusion(estado: str | None, valores: dict, con_pr_abierta: bool) -> bool:
-    """Si una issue abierta que ya está en Done se cierra al fusionarse su PR en dev.
+def cierra_por_fusion(estado: str | None, valores: dict, con_pr_abierta: bool, refactor: bool = False) -> bool:
+    """Si una issue abierta que ya está en Done se cierra al fusionarse su PR en su rama base.
 
     El ciclo de #282 la pasa a Done antes de fusionar, y `Closes #n` no cierra nada fuera de la rama
     por defecto: sin esto se quedaría abierta en Done (#436).
     """
     return (estado == "Done" and not con_pr_abierta
-            and estado_objetivo(estado, valores, fusionada=True, en_lote=False) == ("Done", True))
+            and estado_objetivo(estado, valores, fusionada=True, en_lote=False, refactor=refactor) == ("Done", True))
+
+
+# --- líneas de trabajo, refactorización y sesiones nocturnas ---------------------------------------------------
+
+def _etiquetas(issue: dict) -> set[str]:
+    """Etiquetas de cualquier forma de issue: Project o `gh` (`labels`) y la normalizada de la auditoría."""
+    etiquetas = issue.get("etiquetas")
+    return set(etiquetas) if etiquetas is not None else objetos.nombres_etiquetas(issue)
+
+
+def modos_de(issue: dict) -> list[str]:
+    """Modos conocidos de las etiquetas `modo:*` de la issue, en el orden de MODOS."""
+    etiquetas = _etiquetas(issue)
+    return [m for m in MODOS if f"{PREFIJO_MODO}{m}" in etiquetas]
+
+
+def modo_de(issue: dict) -> str | None:
+    """Modo de la issue (None = línea principal). Con varias etiquetas `modo:*` manda la primera de MODOS."""
+    modos = modos_de(issue)
+    return modos[0] if modos else None
+
+
+def rama_de_modo(modo: str, integracion: str = RAMA_INTEGRACION) -> str:
+    return f"{integracion}-{modo}"
+
+
+def rama_base(issue: dict, integracion: str = RAMA_INTEGRACION) -> str:
+    """Rama base de la issue, de la que sale su rama de trabajo y a la que va su PR: `dev` o `dev-<modo>`.
+
+    Es la única fuente de la rama base: `coger`, `sync`, `ia`, `editor`, `auditar`, `avisos`, `colisiones` y
+    `pendiente` la usan para decidir de qué línea es una issue y si su PR está fusionada.
+    """
+    modo = modo_de(issue)
+    return rama_de_modo(modo, integracion) if modo else integracion
+
+
+def ramas_de_linea(integracion: str = RAMA_INTEGRACION) -> tuple[str, ...]:
+    """Ramas base posibles: la principal y la de cada modo conocido."""
+    return (integracion, *(rama_de_modo(m, integracion) for m in MODOS))
+
+
+def es_rama_de_linea(rama: str | None, integracion: str = RAMA_INTEGRACION) -> bool:
+    """True si la rama es una rama base (`dev` o `dev-<modo>` exacta), no una rama de trabajo `dev-<modo>-<n>-…`."""
+    return rama in ramas_de_linea(integracion)
+
+
+def rama_de_trabajo(numero: int, slug_titulo: str, issue: dict, integracion: str = RAMA_INTEGRACION) -> str:
+    """Rama nueva de una issue: `feat|fix/<n>-<slug>` en la línea principal y `dev-<modo>-<n>-<slug>` en un modo."""
+    if modo := modo_de(issue):
+        return f"{rama_de_modo(modo, integracion)}-{numero}-{slug_titulo}"
+    return f"{'fix' if _etiquetas(issue) & set(ETIQUETAS_BUG) else 'feat'}/{numero}-{slug_titulo}"
+
+
+def es_refactor(issue: dict) -> bool:
+    return ETIQUETA_REFACTOR in _etiquetas(issue)
+
+
+def es_sesion_nocturna(bandera: bool, entorno) -> bool:
+    """True en una sesión nocturna desatendida: `--nocturna` o la variable TN_SESION_NOCTURNA=1.
+
+    No es una franja horaria: trabajar de noche con el director delante vale para cualquier issue. Lo que se limita es
+    a Claude trabajando solo toda la noche.
+    """
+    return bandera or (entorno.get(VARIABLE_NOCTURNA) or "").strip() == "1"
+
+
+def cabe_en_sesion_nocturna(issue: dict) -> bool:
+    """True si la issue se puede coger en una sesión nocturna desatendida: un bug, pulido o una refactorización."""
+    return bool(_etiquetas(issue) & {*ETIQUETAS_BUG, ETIQUETA_PULIDO, ETIQUETA_REFACTOR})
+
+
+def motivo_nocturno(numero: int, issue: dict, nocturna: bool) -> str | None:
+    """Por qué no coger la issue en esta sesión (None si no es nocturna o es un bug, pulido o refactor). Una línea."""
+    if not nocturna or cabe_en_sesion_nocturna(issue):
+        return None
+    return (f"#{numero} no es un bug, pulido ni refactor, y en una sesión nocturna desatendida solo se cogen esos "
+            "(decisión del director); con --forzar se coge y queda comentado.")
+
+
+def texto_nocturno() -> str:
+    """Comentario de una línea cuando se fuerza `coger` en una sesión nocturna con algo que no es bug, pulido ni refactor."""
+    return ("**Sesión nocturna**: cogida con --forzar sin ser bug, pulido ni refactor "
+            "(en las sesiones nocturnas desatendidas solo se cogen esos).")
 
 
 # --- issues descartadas (`chamber`) ----------------------------------------------------------------

@@ -48,15 +48,15 @@ def con_codigo(commits: list[dict]) -> list[dict]:
 
 
 def prs_sin_validar(proyecto: dict, desde: datetime) -> list[str]:
-    """Incidencias de las PR fusionadas en dev desde `desde`."""
-    campos = "number,body,headRefName,mergedAt,mergedBy,files"
-    prs = json.loads(gh("pr", "list", "--repo", REPO, "--state", "merged", "--base", INTEGRACION, "--limit", "50",
-                        "--json", campos))
+    """Incidencias de las PR fusionadas desde `desde` en una rama de línea (dev o dev-<modo>)."""
+    campos = "number,body,headRefName,baseRefName,mergedAt,mergedBy,files"
+    prs = json.loads(gh("pr", "list", "--repo", REPO, "--state", "merged", "--limit", "80", "--json", campos))
     lotes_ = {n for n, i in proyecto["items"].items() if lotes.es_lote(i)}
     lineas = []
     for pr in sorted(prs, key=lambda p: p["mergedAt"]):
-        if avisos.fecha(pr["mergedAt"]) < desde:
+        if avisos.fecha(pr["mergedAt"]) < desde or not flujo.es_rama_de_linea(pr.get("baseRefName"), INTEGRACION):
             continue
+
         refs = issues_de_pr(pr) | (issues_de_pr(pr, menciones=True) & lotes_)  # su lote va con «Refs #lote»
         if linea := avisos.pr_sin_validar({**pr, "refs": refs}, proyecto["items"], RUTAS_ORGANIZACION, lotes_):
             lineas.append(linea)

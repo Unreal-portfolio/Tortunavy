@@ -10,6 +10,9 @@ validar. Aquí se cubre lo que ellos no ven y se junta todo en un correo:
   sale como incidencia.
 - Lo que solo toca rutas de organización (tablero, skills, workflows, guía, documentación) va sin revisión a
   propósito: no es incidencia.
+- Las líneas de modo cuentan igual: una PR fusionada en `dev-<modo>` se juzga como una fusionada en dev. Los pushes
+  directos solo se vigilan en dev.
+- Una issue `refactor` entra sin revisión ni prueba a propósito: no es incidencia.
 - Las issues descartadas (`chamber`) no son incidencia aunque estén cerradas sin validar, ni salen en los avisos.
   Lo que sí lo es: fusionar en dev una PR con código que enlaza una descartada (nadie la revisa ni la prueba).
 - El aviso se publica como comentario que menciona a cada destinatario; GitHub se lo manda por correo.
@@ -77,6 +80,7 @@ def pr_sin_validar(pr: dict, issues: dict[int, dict], rutas: list[str], lotes_: 
     """Incidencia de una PR fusionada en dev: issues sin revisión aprobada (en un lote, también sin probar) o sin issue.
 
     `issues` son los items del tablero por número (con `valores`); `lotes_`, los números de las issues `lote`.
+    Una issue de otra línea que la rama de la PR también es incidencia: fusionada ahí, el tablero no la da por hecha.
     """
     ficheros = [f["path"] for f in pr.get("files") or []]
     if es_organizativo(ficheros, rutas):
@@ -84,7 +88,8 @@ def pr_sin_validar(pr: dict, issues: dict[int, dict], rutas: list[str], lotes_: 
     refs = sorted(pr["refs"] - lotes_)
     en_lote = bool(pr["refs"] & lotes_)
     quien = (pr.get("mergedBy") or {}).get("login") or "alguien"
-    cabecera = f"PR #{pr['number']} fusionada en dev por **{quien}** ({fecha(pr['mergedAt']):%d-%m %H:%M} UTC)"
+    destino = pr.get("baseRefName") or flujo.RAMA_INTEGRACION
+    cabecera = f"PR #{pr['number']} fusionada en {destino} por **{quien}** ({fecha(pr['mergedAt']):%d-%m %H:%M} UTC)"
     if not refs:
         return f"{cabecera} sin enlazar ninguna issue y con código ({len(ficheros)} ficheros)."
     faltan = []
@@ -95,6 +100,11 @@ def pr_sin_validar(pr: dict, issues: dict[int, dict], rutas: list[str], lotes_: 
         valores = (issues.get(n) or {}).get("valores") or {}
         if not valores:
             continue  # issue fuera del tablero (p. ej. de otro repo): no se puede juzgar
+        if (base := flujo.rama_base(issues[n])) != destino:
+            faltan.append(f"#{n} (es de {base}, no de {destino})")
+            continue
+        if flujo.es_refactor(issues[n]):
+            continue  # se fusiona sin revisión ni prueba a propósito
         falta = [] if valores.get("Revisión IA") == "Aprobada" else [f"Revisión IA = {valores.get('Revisión IA') or 'vacía'}"]
         if en_lote and valores.get("Editor") != "Funciona":
             falta.append(f"Editor = {valores.get('Editor') or 'vacío'} (lote)")
@@ -218,7 +228,8 @@ def linea_pr(pr: dict, integracion: str) -> str:
     if pr.get("isDraft") and pr.get("state") == "OPEN":
         estado = "borrador"
     destino = pr.get("baseRefName") or "?"
-    aviso = f" · **hacia `{destino}`**" if destino != integracion else ""
+    aviso = "" if flujo.es_rama_de_linea(destino, integracion) else f" · **hacia `{destino}`**"
+
     return f"#{pr['number']} {pr['title']} ({pr['author']['login']}, {estado}){aviso}"
 
 

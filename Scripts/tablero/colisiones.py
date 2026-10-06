@@ -1,5 +1,7 @@
 """Colisiones entre PR abiertas: pares cuyos cambios chocan al mezclarlos.
 
+Solo se comparan PR con la misma rama base (`dev` o la misma `dev-<modo>`): dos líneas no se mezclan entre sí.
+
 Dos PR que tocan el mismo fichero en sitios distintos se fusionan solas; solo cuenta un par si
 `git merge-tree` de sus dos cabezas da conflicto. Si git no puede comprobarlo (sin red, sin las
 cabezas), se vuelve a lo prudente: los ficheros en común.
@@ -54,6 +56,16 @@ def pares(ficheros_por_pr: dict[int, set[str]],
         if ficheros:
             resultado.append((a, b, sorted(ficheros)))
     return resultado
+
+
+def pares_por_base(ficheros_por_pr: dict[int, set[str]], bases: dict[int, str],
+                   conflicto: Conflicto | None = None) -> list[tuple[int, int, list[str]]]:
+    """Como `pares`, pero solo entre PR con la misma rama base: una PR a `dev-tct` nunca se mezcla con una a `dev`."""
+    resultado = []
+    for base in sorted(set(bases.values())):
+        grupo = {n: f for n, f in ficheros_por_pr.items() if bases.get(n) == base}
+        resultado += pares(grupo, conflicto)
+    return sorted(resultado)
 
 
 def titulo(a: int, b: int) -> str:
