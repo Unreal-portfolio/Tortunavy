@@ -15,6 +15,7 @@
 #include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/TN_PickupInteractableBase.h"
+#include "World/TN_CatalogItemVisuals.h"
 #include "Core/TN_Log.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
@@ -269,6 +270,11 @@ FTN_InventoryItem TNRaceItems::MakeItem(ETNRaceItem Item)
 
 void TNRaceItems::ResolveVisuals(FTN_InventoryItem& Item)
 {
+	// Los objetos de siempre de DT_Items: icono (y malla, si la fila trae una del motor) dibujados en código (#787).
+	if (TNCatalogItemVisuals::ResolveVisuals(Item))
+	{
+		return;
+	}
 	// Los de Todos contra Todos también se definen en código: el inventario y los pickups los resuelven por aquí.
 	if (Item.UseType == ETN_ItemUseType::TctItem)
 	{

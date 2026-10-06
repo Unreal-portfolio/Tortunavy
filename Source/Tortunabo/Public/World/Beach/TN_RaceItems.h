@@ -155,7 +155,8 @@ namespace TNRaceItems
 	/**
 	 * Si Item es de carrera, le pone la malla (EquippedMesh, escala y giro) y el icono de esta máquina (construidos en
 	 * ejecución, una vez, sin assets). No hace nada en servidor dedicado ni con otros objetos. Lo llaman el inventario al
-	 * recibir un objeto (servidor) o al replicarse (clientes) y los pickups.
+	 * recibir un objeto (servidor) o al replicarse (clientes) y los pickups. Los de Todos contra Todos los pasa a
+	 * TNTctItems::ResolveVisuals y los de DT_Items a TNCatalogItemVisuals::ResolveVisuals (World/TN_CatalogItemVisuals.h).
 	 */
 	TORTUNABO_API void ResolveVisuals(FTN_InventoryItem& Item);
 
