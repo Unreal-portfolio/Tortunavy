@@ -21,6 +21,7 @@
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"
 #include "Net/UnrealNetwork.h"
+#include "VR/TN_VRControls.h"
 #include "VR/TN_VRMode.h"
 #include "Settings/TN_InputDeviceSubsystem.h"
 
@@ -481,7 +482,7 @@ void UTN_TutorialPlayerComponent::TickLocal(float DeltaTime)
 	// Las teclas se releen cada segundo (por si se reasignan en Ajustes) y al momento si se cambia de teclado a mando.
 	KeyRefreshTimer -= DeltaTime;
 	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(this);
-	const bool bDeviceChanged = Devices && (Devices->IsUsingGamepad(GetPC()) != bGamepad
+	const bool bDeviceChanged = Devices && (Devices->IsUsingGamepad(GetPC()) != bGamepad || Devices->IsUsingVR(GetPC()) != bVRKeys
 		|| static_cast<uint8>(Devices->GetPadFamily()) != KeyPadFamily);
 	if ((KeyRefreshTimer <= 0.f || bDeviceChanged) && (bInTutorial || Widget))
 	{
@@ -784,6 +785,7 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 	APlayerController* PC = GetPC();
 	bGamepad = PC && UTN_GameSettingsSubsystem::IsUsingGamepad(PC);
 	const UTN_InputDeviceSubsystem* Devices = UTN_InputDeviceSubsystem::Get(this);
+	bVRKeys = PC && Devices && Devices->IsUsingVR(PC);
 	KeyPadFamily = static_cast<uint8>(Devices ? Devices->GetPadFamily() : ETNPadFamily::Xbox);
 	KeyPadKeys.Reset();
 	const int32 Device = bGamepad ? 1 : 0;
@@ -811,6 +813,22 @@ void UTN_TutorialPlayerComponent::RefreshKeys()
 		FText Label = FallbackLabel(Key, bGamepad);
 		FKey PadKey;
 		TArray<FKey> Keys;
+		if (bVRKeys)
+		{
+			// Con gafas (#644): el botón de los mandos Touch de cada acción, con su nombre («Gatillo derecho», «A»...). Sin dibujo
+			// de mando (PadKey vacío): sale el nombre. Los sticks y el clic de hablar no se ven como "pulsado" (ejes).
+			const TCHAR* ActionId = Key == EKey::Move ? TEXT("IA_Move") : (Key == EKey::Look ? TEXT("IA_Look") : RowIdOf(Key));
+			const FKey VRKey = ActionId ? TNVRControls::KeyForAction(ActionId) : FKey();
+			if (VRKey.IsValid())
+			{
+				Label = UTN_GameSettingsSubsystem::KeyDisplayName(VRKey);
+				Keys.Add(VRKey);
+			}
+			KeyTexts.Add(K, Label);
+			KeyKeys.Add(K, MoveTemp(Keys));
+			KeyPadKeys.Add(K, FKey());
+			continue;
+		}
 		if (Settings)
 		{
 			if (Key == EKey::Move)

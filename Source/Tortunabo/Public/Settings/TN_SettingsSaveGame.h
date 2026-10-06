@@ -184,6 +184,18 @@ struct FTNGameSettings
 	uint8 VRTurn = 0;
 
 	/**
+	 * Viñeta de confort en VR (#647): 0 apagada, 1 la de serie, 2 el doble (TNVRHands::ComfortVignette). Es la misma fuerza que
+	 * TN.VR.ComfortVignette, que manda sobre el ajuste si se toca por consola. Valor de serie 1: un guardado de antes no trae el
+	 * campo y se queda con el de serie (sin paso de migración, como bFisheye).
+	 */
+	UPROPERTY()
+	uint8 VRVignette = 1;
+
+	/** Vibración de los mandos Touch en VR (#647); TN.VR.Haptics, por consola, manda sobre el ajuste. Encendida de serie. */
+	UPROPERTY()
+	bool bVRHaptics = true;
+
+	/**
 	 * Cámara sin gafas (Docs/Modo_VR.md, «Primera persona»): 0 tercera persona (la de siempre), 1 primera persona (en la
 	 * cabeza, viendo el cuerpo propio sin la cabeza). Se cambia también con CameraKey / CameraPadKey; TN.Camera manda.
 	 */

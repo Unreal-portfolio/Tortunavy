@@ -121,6 +121,17 @@ namespace TNVR
 	/** Tiempo de fundido entre vistas: el de siempre sin VR; 0 con VR (sin deslizar la cámara). */
 	TORTUNABO_API float ViewBlendTime(float FlatSeconds);
 
+	// ── Tapar la vista ───────────────────────────────────────────────────────
+
+	/**
+	 * Cuánto tapa la vista una pantalla de cáscara (0 nada, 1 todo): con gafas el HUD es un panel de unos 80°, así que
+	 * lo que tapa «la pantalla entera» (la cáscara de revivir, #646, y la de la carrera) deja ver el mundo por los lados. El
+	 * rig lo completa con una esfera oscura alrededor de la cabeza. Lo pone quien dibuja la cáscara en cada fotograma, y 0 al
+	 * acabar; el resto del tiempo es 0.
+	 */
+	TORTUNABO_API void SetViewCover(float Alpha);
+	TORTUNABO_API float GetViewCover();
+
 	// ── Manos ────────────────────────────────────────────────────────────────
 
 	/** La aleta derecha o izquierda del jugador local en VR (para enganchar lo que lleva en la mano); o nullptr. */

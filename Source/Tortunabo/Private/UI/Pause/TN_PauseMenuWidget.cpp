@@ -69,6 +69,7 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "Styling/SlateTypes.h"
+#include "VR/TN_VRControls.h"
 #include "VR/TN_VRMode.h"
 
 // Con nombre (no anónimo): en la compilación por bloques (unity) los nombres de un espacio anónimo se ven en el resto
@@ -2730,6 +2731,25 @@ void UTN_PauseMenuWidget::FillGameTab()
 			Row->SetDescription(NSLOCTEXT("TNPause", "VRTurnDesc",
 				"Cómo gira la tortuga con el stick derecho. A pasos marea mucho menos; suave, para quien ya está acostumbrado."));
 		}
+		// Viñeta de confort y vibración de los mandos Touch (#647): el rig las lee cada fotograma (TN.VR.ComfortVignette y
+		// TN.VR.Haptics, por consola, mandan sobre ellas).
+		if (UTN_PauseRow* Row = AddListRow(SettingsList))
+		{
+			const TArray<FText> Strengths = { NSLOCTEXT("TNPause", "VRVignetteOff", "Apagada"), NSLOCTEXT("TNPause", "VRVignetteNormal", "Normal"),
+				NSLOCTEXT("TNPause", "VRVignetteStrong", "Fuerte") };
+			Row->SetupChoice(NSLOCTEXT("TNPause", "VRVignette", "Viñeta de confort"), Strengths, FMath::Clamp<int32>(Data.VRVignette, 0, 2), [WeakSettings](int32 Choice)
+			{
+				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([Choice](FTNGameSettings& D) { D.VRVignette = static_cast<uint8>(Choice); }); }
+			});
+			Row->SetDescription(NSLOCTEXT("TNPause", "VRVignetteDesc",
+				"Oscurece los bordes de la vista al andar deprisa, caer, salir lanzado o girar suave, y marea menos. Fuerte los oscurece el doble."));
+		}
+		AddToggleRow(NSLOCTEXT("TNPause", "VRHaptics", "Vibración de los mandos VR"),
+			NSLOCTEXT("TNPause", "VRHapticsDesc", "Los mandos Touch vibran al coger, soltar y lanzar, al tocar una pared y al pulsar en los menús."),
+			Data.bVRHaptics, [WeakSettings](bool bOn)
+			{
+				if (UTN_GameSettingsSubsystem* S = WeakSettings.Get()) { S->EditSettings([bOn](FTNGameSettings& D) { D.bVRHaptics = bOn; }); }
+			});
 	}
 
 	if (UTN_PauseRow* Row = AddListRow(SettingsList))
@@ -2740,7 +2760,7 @@ void UTN_PauseMenuWidget::FillGameTab()
 			if (UTN_PauseMenuWidget* Menu = WeakThis.Get()) { Menu->ShowTab(ETNPauseTab::Game); }
 		}, nullptr, NSLOCTEXT("TNPause", "ResetAction", "Restablecer"));
 		Row->SetDescription(bGuest ? NSLOCTEXT("TNLocal", "ResetGameGuestDesc", "Temblor de cámara encendido y campo de visión de siempre (solo los tuyos).")
-			: NSLOCTEXT("TNPause", "ResetGameDesc", "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla», el idioma de tu sistema, la cámara en tercera persona y el modo VR automático con giro a pasos de 30°."));
+			: NSLOCTEXT("TNPause", "ResetGameDesc", "Temblor de cámara y ojo de pez encendidos, campo de visión e interfaz de siempre, sin filtro de color, sin «Quién habla», el idioma de tu sistema, la cámara en tercera persona y el modo VR automático con giro a pasos de 30°, viñeta normal y vibración encendida."));
 	}
 	if (UTN_PauseRow* Row = AddListRow(SettingsList))
 	{
@@ -2870,6 +2890,14 @@ void UTN_PauseMenuWidget::FillControlsList()
 		NSLOCTEXT("TNPause", "SpectateZoomPad", "Gatillos"), NSLOCTEXT("TNPause", "SpectateZoomDesc", "Con la cámara libre."));
 	AddInfo(NSLOCTEXT("TNPause", "MenuNav", "Moverse por los menús"), NSLOCTEXT("TNPause", "MenuNavKeys", "Flechas · WASD · Intro · Esc"),
 		NSLOCTEXT("TNPause", "MenuNavPad", "Stick · cruceta · A · B"), FText::GetEmpty());
+
+	// Los mandos Touch de las gafas (#647), solo lectura: no se reasignan (Docs/Modo_VR.md, «Controles»).
+	AddListHeader(ControlsList, NSLOCTEXT("TNPause", "HeadVRControls", "REALIDAD VIRTUAL (MANDOS TOUCH)"));
+	AddListNote(ControlsList, NSLOCTEXT("TNPause", "VRControlsNote", "Solo para ver: los botones de los mandos Touch no se cambian."));
+	for (const TNVRControls::FGuideLine& Line : TNVRControls::GetGuide())
+	{
+		AddInfo(Line.Label, Line.Buttons, FText::GetEmpty(), FText::GetEmpty());
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

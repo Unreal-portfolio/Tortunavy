@@ -369,4 +369,28 @@ namespace TNVRMath
 	{
 		return FMath::Abs(Axis) <= DeadZone ? 0.f : -Axis * DegreesPerSecond * DeltaSeconds;
 	}
+
+	// ── Fantasma con gafas (#646) ────────────────────────────────────────────
+
+	/** Cuánto detrás (cm, según el rumbo fijo) y cuánto sobre la tortuga seguida se pone la cabeza de quien la mira de fantasma. */
+	inline constexpr float GhostViewBack = 170.f;
+	inline constexpr float GhostViewUp = 85.f;
+
+	/**
+	 * Dónde se pone la cabeza del fantasma con gafas: la posición de la tortuga seguida, un poco detrás y arriba respecto del
+	 * rumbo fijo (FixedYaw), sin retardo. La vista que da el brazo de cámara de la otra tortuga marea: llega tarde y gira
+	 * cuando gira ese jugador. Solo la posición sigue a la tortuga; el rumbo lo pone el jugador con su cabeza (el rumbo fijo
+	 * no cambia aunque la tortuga se vuelva).
+	 */
+	inline FVector GhostViewLocation(const FVector& FollowedLocation, float FixedYaw)
+	{
+		const FVector Forward = FRotator(0.0, static_cast<double>(FixedYaw), 0.0).Vector();
+		return FollowedLocation - Forward * GhostViewBack + FVector(0.0, 0.0, GhostViewUp);
+	}
+
+	/** Hacia dónde mira la vista base del fantasma con gafas: solo el rumbo fijo (sin cabeceo ni alabeo: eso es de la cabeza). */
+	inline FRotator GhostViewRotation(float FixedYaw)
+	{
+		return FRotator(0.0, static_cast<double>(FixedYaw), 0.0);
+	}
 }

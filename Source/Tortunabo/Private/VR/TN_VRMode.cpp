@@ -54,6 +54,17 @@ namespace TNVRModeDetail
 	ETNVRMode CurrentMode = ETNVRMode::Off;
 	bool bRightStickReserved = false;
 	FVector2D MenuRightStick = FVector2D::ZeroVector;
+	float ViewCover = 0.f;
+}
+
+void TNVR::SetViewCover(float Alpha)
+{
+	TNVRModeDetail::ViewCover = FMath::Clamp(Alpha, 0.f, 1.f);
+}
+
+float TNVR::GetViewCover()
+{
+	return TNVRModeDetail::ViewCover;
 }
 
 ETNVRMode TNVR::GetMode()

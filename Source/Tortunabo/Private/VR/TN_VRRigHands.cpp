@@ -8,6 +8,7 @@
 #include "VR/TN_VRMath.h"
 #include "Player/MP_GamePlayerController.h"
 #include "Player/TortugaCharacter.h"
+#include "Settings/TN_GameSettingsSubsystem.h"
 #include "World/TN_ButtonInteractable.h"
 #include "World/ProcMap/TN_ProcPuzzleActors.h"
 #include "Camera/CameraComponent.h"
@@ -33,6 +34,13 @@ static TAutoConsoleVariable<float> CVarTNVRComfortVignette(TEXT("TN.VR.ComfortVi
 
 namespace TNVRRigHandsDetail
 {
+	/** ¿Se ha tocado esta variable (consola, línea de comandos, ini) y no vale la de serie? Entonces manda sobre el ajuste del menú. */
+	bool IsConsoleTouched(const TAutoConsoleVariable<float>& Variable)
+	{
+		const IConsoleVariable* Console = Variable.AsVariable();
+		return Console && (Console->GetFlags() & ECVF_SetByMask) > ECVF_SetByConstructor;
+	}
+
 	/** Holgura (cm) de la punta de la aleta contra el escenario: se queda en la superficie sin meterse. */
 	constexpr float HandRadius = 4.f;
 	/** Rapidez con la que aparece la viñeta de confort y con la que se va (FInterpTo). */
@@ -437,7 +445,7 @@ void ATN_VRRig::UpdateHaptics(APlayerController* PC, const ATortugaCharacter* Tu
 		PulseHaptic(1, TNVRHands::Haptics::Knock);
 	}
 	bWasKnockedDown = bKnocked;
-	const float Scale = FMath::Clamp(CVarTNVRHaptics.GetValueOnGameThread(), 0.f, 1.f);
+	const float Scale = FMath::Clamp(GetHapticScale(), 0.f, 1.f);
 	if (Mode != ETNVRMode::Headset || Scale <= 0.f)
 	{
 		StopHaptics(PC);
@@ -485,6 +493,22 @@ void ATN_VRRig::StopHaptics(APlayerController* PC)
 // Viñeta de confort
 // ─────────────────────────────────────────────────────────────────────────────
 
+float ATN_VRRig::GetVignetteStrength() const
+{
+	// Ajustes > Realidad virtual > Viñeta de confort (#647); TN.VR.ComfortVignette, si se ha tocado, manda.
+	const UTN_GameSettingsSubsystem* Settings = UTN_GameSettingsSubsystem::Get(this);
+	const float FromSetting = TNVRHands::VignetteStrengthFromSetting(Settings ? Settings->GetSettings().VRVignette : FTNGameSettings().VRVignette);
+	return TNVRHands::ConsoleOrSetting(CVarTNVRComfortVignette.GetValueOnGameThread(), TNVRRigHandsDetail::IsConsoleTouched(CVarTNVRComfortVignette), FromSetting);
+}
+
+float ATN_VRRig::GetHapticScale() const
+{
+	// Ajustes > Realidad virtual > Vibración (#647); TN.VR.Haptics, si se ha tocado, manda.
+	const UTN_GameSettingsSubsystem* Settings = UTN_GameSettingsSubsystem::Get(this);
+	const float FromSetting = TNVRHands::HapticScaleFromSetting(Settings ? Settings->GetSettings().bVRHaptics : FTNGameSettings().bVRHaptics);
+	return TNVRHands::ConsoleOrSetting(CVarTNVRHaptics.GetValueOnGameThread(), TNVRRigHandsDetail::IsConsoleTouched(CVarTNVRHaptics), FromSetting);
+}
+
 void ATN_VRRig::UpdateComfortVignette(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds)
 {
 	using namespace TNVRRigHandsDetail;
@@ -492,7 +516,7 @@ void ATN_VRRig::UpdateComfortVignette(APlayerController* PC, ATortugaCharacter* 
 	// Con gafas y viendo desde la tortuga: moverse sin mover la cabeza (andar, caer, salir lanzado, el giro suave) marea.
 	const bool bApplies = Mode == ETNVRMode::Headset && Camera && PC->GetViewTarget() == Turtle && !bMenuMode;
 	const float Wanted = bApplies
-		? TNVRHands::ComfortVignette(static_cast<float>(Turtle->GetVelocity().Size()), SmoothTurnRate, CVarTNVRComfortVignette.GetValueOnGameThread())
+		? TNVRHands::ComfortVignette(static_cast<float>(Turtle->GetVelocity().Size()), SmoothTurnRate, GetVignetteStrength())
 		: 0.f;
 	ComfortVignetteNow = FMath::FInterpTo(ComfortVignetteNow, Wanted, DeltaSeconds, Wanted > ComfortVignetteNow ? VignetteInSpeed : VignetteOutSpeed);
 	// Otra cámara (otra tortuga, sin gafas): la de antes se queda como la tenía.
