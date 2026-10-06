@@ -664,6 +664,21 @@ bool ATN_RunGameMode::TryTotemAutoRevive(APlayerController* PlayerController)
 	return false;
 }
 
+void ATN_RunGameMode::BankRoundScoresToProfiles()
+{
+	if (!GameState)
+	{
+		return;
+	}
+	for (APlayerState* BasePS : GameState->PlayerArray)
+	{
+		if (ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS))
+		{
+			PS->BankRoundScoreToProfile();
+		}
+	}
+}
+
 void ATN_RunGameMode::ApplyDeathVisuals(APawn* Pawn, APlayerController* PlayerController)
 {
 	if (ATortugaCharacter* Character = Cast<ATortugaCharacter>(Pawn))

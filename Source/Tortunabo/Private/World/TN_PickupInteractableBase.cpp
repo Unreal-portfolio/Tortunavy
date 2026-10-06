@@ -137,6 +137,16 @@ bool ATN_PickupInteractableBase::CanInteract(APawn* Interactor) const
 	return bCanReceive;
 }
 
+bool ATN_PickupInteractableBase::IsBlockedOnlyByFullInventory(APawn* Interactor) const
+{
+	if (!Interactor || bTaken || !PickupItem.IsValid() || !ATN_InteractableBase::CanInteract(Interactor))
+	{
+		return false;
+	}
+	const UTN_InventoryComponent* InventoryComponent = Interactor->FindComponentByClass<UTN_InventoryComponent>();
+	return InventoryComponent && !InventoryComponent->CanReceiveItem(PickupItem, false);
+}
+
 void ATN_PickupInteractableBase::Interact(APawn* Interactor)
 {
 	if (!HasAuthority() || !CanInteract(Interactor) || !Interactor)

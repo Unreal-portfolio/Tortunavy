@@ -55,6 +55,13 @@ void ATN_ConchPickup::BeginPlay()
 
 void ATN_ConchPickup::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	// Destruida con alguien atrapado (limpieza de fin de ronda o de nivel, #569): el temporizador que la soltaba ya no
+	// saltará, así que se suelta aquí. Sin reciclar ni rearmar: la concha se va.
+	if (GetWorldTimerManager().IsTimerActive(TrapTimerHandle))
+	{
+		ReleaseVictim(TrappedVictim.Get());
+	}
+	TrappedVictim.Reset();
 	GetWorldTimerManager().ClearTimer(TrapTimerHandle);
 	GetWorldTimerManager().ClearTimer(RearmTimerHandle);
 	Super::EndPlay(EndPlayReason);
@@ -146,22 +153,26 @@ void ATN_ConchPickup::OnSphereBeginOverlap(UPrimitiveComponent* /*OverlappedComp
 
 	// Restaurar movimiento tras TrapDurationSeconds
 	TWeakObjectPtr<ATortugaCharacter> WeakChar(Character);
+	TrappedVictim = WeakChar;
 	FTimerDelegate Del = FTimerDelegate::CreateUObject(this, &ATN_ConchPickup::RestoreMovement, WeakChar);
 	GetWorldTimerManager().SetTimer(TrapTimerHandle, Del, TrapDurationSeconds, false);
 }
 
 // ── RestoreMovement ────────────────────────────────────────────────────────────
 
+void ATN_ConchPickup::ReleaseVictim(ATortugaCharacter* Victim)
+{
+	UCharacterMovementComponent* MoveComp = IsValid(Victim) ? Victim->GetCharacterMovement() : nullptr;
+	if (MoveComp && MoveComp->MovementMode == MOVE_None)
+	{
+		MoveComp->SetMovementMode(MOVE_Walking);
+	}
+}
+
 void ATN_ConchPickup::RestoreMovement(TWeakObjectPtr<ATortugaCharacter> WeakCharacter)
 {
-	if (WeakCharacter.IsValid())
-	{
-		UCharacterMovementComponent* MoveComp = WeakCharacter->GetCharacterMovement();
-		if (MoveComp && MoveComp->MovementMode == MOVE_None)
-		{
-			MoveComp->SetMovementMode(MOVE_Walking);
-		}
-	}
+	TrappedVictim.Reset();
+	ReleaseVictim(WeakCharacter.Get());
 
 	if (bDestroyAfterActivation)
 	{

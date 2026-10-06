@@ -174,6 +174,9 @@ private:
 	/** Restaura el movimiento del jugador tras TrapDurationSeconds. */
 	void RestoreMovement(TWeakObjectPtr<ATortugaCharacter> WeakCharacter);
 
+	/** Devuelve a andar a la víctima inmovilizada (MOVE_None → MOVE_Walking). No recicla ni rearma la concha. */
+	static void ReleaseVictim(ATortugaCharacter* Victim);
+
 	/** Reproduce sonido y VFX de colocación de trampa en la máquina local. */
 	void PlayPlaceEffects();
 
@@ -189,6 +192,12 @@ private:
 
 	FTimerHandle TrapTimerHandle;
 	FTimerHandle RearmTimerHandle;
+
+	/**
+	 * Servidor: la tortuga inmovilizada mientras corre TrapTimerHandle. Si la concha desaparece antes (fin de ronda o de
+	 * nivel, #569), EndPlay la suelta: sin esto se quedaba en MOVE_None para siempre.
+	 */
+	TWeakObjectPtr<ATortugaCharacter> TrappedVictim;
 
 	/** Evita que la trampa se active dos veces mientras el personaje sigue en overlap. */
 	bool bTrapUsed = false;
