@@ -1060,8 +1060,12 @@ FReply UTN_PauseRow::NativeOnMouseButtonDown(const FGeometry& InGeometry, const 
 FReply UTN_PauseRow::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	// El segundo clic de un doble clic llega por aquí y no como otro «Down»: sin esto, dos clics rápidos en una flecha
-	// solo avanzan una opción.
-	return NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+	// solo avanzan una opción. Solo en las flechas y la barra: un botón, una tecla o una entrada se activarían dos veces.
+	if (Kind == ETNPauseRowKind::Choice || Kind == ETNPauseRowKind::Slider)
+	{
+		return NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+	}
+	return Super::NativeOnMouseButtonDoubleClick(InGeometry, InMouseEvent);
 }
 
 FReply UTN_PauseRow::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
