@@ -1001,13 +1001,11 @@ void ATortugaCharacter::ApplyMareoEffect(float Duration)
 	{
 		return;
 	}
-	// Un mareo corto (el guantazo de la aleta, #832) no acorta uno más largo que ya esté en marcha.
-	const double End = GetWorld()->GetTimeSeconds() + static_cast<double>(Duration);
-	if (End <= MareoEndTime && GetWorldTimerManager().IsTimerActive(MareoTimerHandle))
+	// Un mareo corto (el guantazo de la aleta, #832) no acorta uno más largo que ya esté en marcha (sin temporizador, -1).
+	if (GetWorldTimerManager().GetTimerRemaining(MareoTimerHandle) >= Duration)
 	{
 		return;
 	}
-	MareoEndTime = End;
 	bMareo = true;
 	ApplyMareoLocalState(true);
 	const FTimerDelegate EndDelegate = FTimerDelegate::CreateUObject(this, &ATortugaCharacter::EndMareo);

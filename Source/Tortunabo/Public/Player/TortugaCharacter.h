@@ -1231,8 +1231,6 @@ protected:
 
 	FTimerHandle BigHeadTimerHandle;
 	FTimerHandle MareoTimerHandle;
-	/** Hora del mundo en que acaba el mareo en marcha (ApplyMareoEffect: uno más corto no lo acorta). */
-	double MareoEndTime = 0.0;
 	FTimerHandle InkEffectTimerHandle;
 
 	void ClearInkEffect();
