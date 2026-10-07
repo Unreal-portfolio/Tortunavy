@@ -34,6 +34,8 @@
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TN_TurtleActionSfx.h"
 #include "World/TN_InteractableBase.h"
+#include "World/TN_PickupInteractableBase.h"
+#include "VR/TN_VRHandMath.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachTrampoline.h"
 #include "GameFramework/PlayerState.h"
@@ -1372,12 +1374,20 @@ void ATortugaCharacter::TryInteract()
 		UpdateFocusedInteractable();
 	}
 
+	// Con gafas y los mandos con seguimiento (#916), lo del suelo y los compañeros se cogen con el agarre acercando la aleta
+	// (VRGripPressed, que pone bVRGripInteract): el gatillo no los coge como en tercera persona, usa lo que lleva en la aleta.
+	const bool bVRHandsOnly = TNVRHands::GripOnlyTakes(bVRViewActive && bVRHeadsetView, bVRGripInteract, bLocalVRHandValid[0] || bLocalVRHandValid[1]);
+	if (bVRHandsOnly && Cast<ATN_PickupInteractableBase>(FocusedInteractable.Get()))
+	{
+		FocusedInteractable = nullptr;
+	}
+
 	// Si tras el scan sigue sin haber interactuable → coger a una tortuga en caparazón
 	// o aturdida si hay una delante; si no, usar ítem equipado (lanzar bola, etc.) o,
 	// sin objeto ni arma en las aletas, dar un guantazo (#832)
 	if (!FocusedInteractable.IsValid())
 	{
-		if (CarryComponent && CarryComponent->TryGrabNearest())
+		if (!bVRHandsOnly && CarryComponent && CarryComponent->TryGrabNearest())
 		{
 			return;
 		}
@@ -1744,6 +1754,8 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Manos VR del dueño (los demás ven los brazos siguiéndolas; el dueño usa las suyas).
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandLeft, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRight, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRotLeft, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRotRight, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandsValid, COND_SkipOwner);
 }
 

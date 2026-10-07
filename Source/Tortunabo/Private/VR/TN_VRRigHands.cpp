@@ -563,8 +563,9 @@ FString ATN_VRRig::DescribeHands() const
 	};
 	const double Now = FPlatformTime::Seconds();
 	auto Haptic = [this, Now](int32 Hand) { return Now < HapticUntil[Hand] ? HapticAmplitude[Hand] : 0.f; };
-	return FString::Printf(TEXT("manos: izquierda %s (agarre: %s), derecha %s (agarre: %s) · viñeta de confort %.2f · vibración %.2f / %.2f"),
-		bHandBlocked[0] ? TEXT("parada por el escenario") : TEXT("libre"), Use(GripUse[0]),
-		bHandBlocked[1] ? TEXT("parada por el escenario") : TEXT("libre"), Use(GripUse[1]),
-		ComfortVignetteNow, Haptic(0), Haptic(1));
+	auto Tracked = [](const UMotionControllerComponent* Grip) { return Grip && Grip->IsTracked() ? TEXT("con seguimiento") : TEXT("SIN seguimiento"); };
+	return FString::Printf(TEXT("manos: izquierda %s, %s (agarre: %s), derecha %s, %s (agarre: %s) · dueño del rig: %s · viñeta de confort %.2f · vibración %.2f / %.2f"),
+		Tracked(LeftGrip), bHandBlocked[0] ? TEXT("parada por el escenario") : TEXT("libre"), Use(GripUse[0]),
+		Tracked(RightGrip), bHandBlocked[1] ? TEXT("parada por el escenario") : TEXT("libre"), Use(GripUse[1]),
+		*GetNameSafe(GetOwner()), ComfortVignetteNow, Haptic(0), Haptic(1));
 }

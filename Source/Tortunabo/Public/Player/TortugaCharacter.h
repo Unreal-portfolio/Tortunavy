@@ -6,6 +6,7 @@
 #include "TimerManager.h"
 #include "Core/TN_CosmeticsTypes.h"
 #include "Player/TN_DiveDecisions.h"
+#include "VR/TN_VRHeadCalibration.h"
 #include "TortugaCharacter.generated.h"
 
 class APlayerController;
@@ -1872,7 +1873,20 @@ public:
 	 * VR: dónde están las manos del dueño (los mandos, en el mundo). Lo pone ATN_VRRig cada fotograma; se manda al servidor
 	 * unas 15 veces por segundo (relativo a la tortuga) para que los demás vean los brazos siguiendo a las manos.
 	 */
-	void SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid);
+	void SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid,
+		const FRotator& LeftRotation = FRotator::ZeroRotator, const FRotator& RightRotation = FRotator::ZeroRotator);
+
+	/**
+	 * Giro de las manos VR en el mundo (su +X, hacia donde apunta la aleta) para el IK: el de los mandos en el dueño y el
+	 * replicado en las demás máquinas (#916). false sin VR.
+	 */
+	bool GetVRHandRotations(FQuat& OutLeft, FQuat& OutRight) const;
+
+	/**
+	 * VR con gafas: vuelve a medir dónde está la cabeza respecto del origen del seguimiento (#916). Lo llaman al recentrar y
+	 * al ponerse las gafas; sin esa medida, la cámara salía a un metro de los ojos de la tortuga.
+	 */
+	void RecalibrateVRHead();
 
 	/** Manos VR para el IK de los brazos: las del dueño o, en las demás máquinas, las replicadas. false sin VR. */
 	bool GetVRHandTargets(FVector& OutLeft, FVector& OutRight, bool& bOutLeft, bool& bOutRight) const;
@@ -1946,14 +1960,22 @@ private:
 	UPROPERTY(Replicated)
 	FVector_NetQuantize10 RepVRHandRight;
 
+	/** Giro de cada mano respecto de la tortuga (comprimido por el motor: unos 6 bytes cada uno). */
+	UPROPERTY(Replicated)
+	FRotator RepVRHandRotLeft = FRotator::ZeroRotator;
+
+	UPROPERTY(Replicated)
+	FRotator RepVRHandRotRight = FRotator::ZeroRotator;
+
 	/** Bit 0 mano izquierda con seguimiento, bit 1 la derecha. */
 	UPROPERTY(Replicated)
 	uint8 RepVRHandsValid = 0;
 
 	UFUNCTION(Server, Unreliable)
-	void ServerSetVRHands(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid);
+	void ServerSetVRHands(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid, FRotator LeftRotation, FRotator RightRotation);
 
 	FVector LocalVRHand[2] = { FVector::ZeroVector, FVector::ZeroVector };
+	FRotator LocalVRHandRot[2] = { FRotator::ZeroRotator, FRotator::ZeroRotator };
 	bool bLocalVRHandValid[2] = { false, false };
 	double LastVRHandsSent = -1.0;
 
@@ -2039,8 +2061,20 @@ private:
 	/** Manda al servidor la aleta derecha antes de usar o lanzar (solo clientes en VR). */
 	void SendVRAimToServer();
 
+	/** Con gafas, cada fotograma: mide la posición de la cabeza cuando toca (VRHeadCalibration) y detecta ponerse las gafas. */
+	void UpdateVRHeadCalibration(float DeltaTime);
+
+	/** Posición de las gafas al calibrar (#916): el origen del seguimiento se desplaza para que caiga en los ojos de la tortuga. */
+	FTNVRHeadCalibration VRHeadCalibration;
+
+	/** Último estado de las gafas (EHMDWornState): al pasar de quitadas a puestas se calibra de nuevo. */
+	uint8 VRPrevWornState = 0;
+
 	bool bVRViewActive = false;
 	bool bVRHeadsetView = false;
+
+	/** TryInteract lo llama un agarre VR (VRGripPressed): coge lo que tiene la mano al alcance en vez de descartarlo (#916). */
+	bool bVRGripInteract = false;
 	uint32 VRTurnSerial = 0;
 	float VRYaw = 0.f;
 	float VRLastControlYaw = 0.f;

@@ -52,6 +52,8 @@ static TAutoConsoleVariable<float> CVarTNVRMenuDistance(TEXT("TN.VR.MenuDistance
 	TEXT("Distancia (cm) a la que se ponen los menús en VR."), ECVF_Default);
 static TAutoConsoleVariable<float> CVarTNVRMenuFov(TEXT("TN.VR.MenuFov"), 100.f,
 	TEXT("Ancho (grados) que ocupan los menús en VR: el arco del panel curvo que te rodea."), ECVF_Default);
+static TAutoConsoleVariable<int32> CVarTNVRMenuPanels(TEXT("TN.VR.MenuPanels"), 3,
+	TEXT("Paneles de menú alrededor del jugador en VR (#916): 1 solo el de delante, 3 de serie (cada uno a 120 grados), hasta 6."), ECVF_Default);
 static TAutoConsoleVariable<int32> CVarTNVRHudFollow(TEXT("TN.VR.HudFollow"), 0,
 	TEXT("HUD en VR: 0 anclado a la cámara (siempre fijo en la vista, como en la pantalla), 1 suelto delante siguiendo a la cabeza con retraso (marea menos a algunos)."), ECVF_Default);
 static TAutoConsoleVariable<float> CVarTNVRLoadingDome(TEXT("TN.VR.LoadingDomeRadius"), 300.f,
@@ -286,6 +288,23 @@ ATN_VRRig::ATN_VRRig()
 	CurvedPanel->SetTranslucentSortPriority(100);
 	CurvedPanel->bUseAsyncCooking = true;
 
+	// Copias del menú alrededor del jugador (#916): sueltas en el mundo, con el mismo material; UpdateMenuCopies las coloca.
+	for (int32 i = 0; i < MaxMenuCopies; ++i)
+	{
+		UProceduralMeshComponent* Copy = CreateDefaultSubobject<UProceduralMeshComponent>(*FString::Printf(TEXT("MenuCopy%d"), i));
+		Copy->SetupAttachment(RigRoot);
+		Copy->SetUsingAbsoluteLocation(true);
+		Copy->SetUsingAbsoluteRotation(true);
+		Copy->SetUsingAbsoluteScale(true);
+		Copy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Copy->SetGenerateOverlapEvents(false);
+		Copy->SetCastShadow(false);
+		Copy->SetTranslucentSortPriority(100);
+		Copy->bUseAsyncCooking = true;
+		Copy->SetVisibility(false);
+		MenuCopies.Add(Copy);
+	}
+
 	LoadingDome = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("LoadingDome"));
 	LoadingDome->SetupAttachment(RigRoot);
 	LoadingDome->SetUsingAbsoluteLocation(true);
@@ -474,6 +493,12 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 		ScreenPanel->SetVisibility(false, true);
 		return;
 	}
+	// Los mandos solo siguen la pose si el rig tiene un dueño local (AActor::HasLocalNetOwner, que mira el controlador o el
+	// peón del dueño): sin él, IsTracked() era siempre falso y las aletas, el láser y los agarres no hacían nada (#916).
+	if (GetOwner() != PC)
+	{
+		SetOwner(PC);
+	}
 
 	// La tortuga propia en primera persona (y la que ya no es nuestra, de vuelta a la de siempre).
 	ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
@@ -547,6 +572,7 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 	UpdateInput(PC, Turtle, Seat, DeltaSeconds);
 	UpdateGrips(PC, Turtle, DeltaSeconds);
 	UpdatePanel(PC, DeltaSeconds);
+	UpdateMenuCopies();
 	UpdatePointer(PC);
 	UpdateLoadingDome(PC);
 	UpdateViewCover();
@@ -678,7 +704,7 @@ void ATN_VRRig::UpdateHands(ATortugaCharacter* Turtle, bool bTurtleView, float D
 	if (Turtle)
 	{
 		Turtle->SetLocalVRHands(LeftHand->GetComponentLocation(), RightHand->GetComponentLocation(), bLeftTracked && bTurtleView,
-			bRightTracked && bTurtleView);
+			bRightTracked && bTurtleView, LeftHand->GetComponentRotation(), RightHand->GetComponentRotation());
 	}
 	// Sentada en un vehículo se ven los brazos de la tortuga sentada (siguen a los mandos): sin aletas sueltas.
 	const bool bSeated = ViewSeat.IsValid() && ViewSeat->IsVRView();
@@ -1046,6 +1072,11 @@ void ATN_VRRig::UpdatePanel(APlayerController* PC, float DeltaSeconds)
 				Drop = 0.f;
 				Arc = TNVRMath::SimulatedMenuArc(Arc, Fov, Aspect, Drop);
 			}
+			else
+			{
+				// Con gafas el menú rodea al jugador (#916): sus copias reparten el círculo y a cada una le cabe su arco.
+				Arc = TNVRMath::MenuPanelArc(Arc, MenuPanelCount());
+			}
 			const float Distance = FitDistance(ViewLocation, Direction.Vector(), Desired);
 			PlacePanel(ViewLocation, Direction, Distance, Arc, Drop);
 			MenuPlacedFrom = ViewLocation;
@@ -1145,8 +1176,13 @@ void ATN_VRRig::RecenterPanel()
 {
 	bPanelPlaced = false;
 	bHudFollowing = false;
-	// Al recentrar, las gafas mueven el seguimiento de golpe: la velocidad de las manos empieza de cero.
+	// Al recentrar, las gafas mueven el seguimiento de golpe: la velocidad de las manos empieza de cero y la cabeza se mide de
+	// nuevo para que quede en los ojos de la tortuga (#916).
 	ResetHandVelocity();
+	if (ATortugaCharacter* Turtle = ViewTurtle.Get())
+	{
+		Turtle->RecalibrateVRHead();
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1184,7 +1220,26 @@ void ATN_VRRig::UpdatePointer(APlayerController* PC)
 	{
 		bHasRay = GetPointerRay(PC, Origin, Dir);
 		const FVector2D Size(UTN_VRScreenWidget::ScreenWidth, UTN_VRScreenWidget::ScreenHeight);
-		bHit = bHasRay && TNVRMath::RayCurvedPanelHit(Origin, Dir, ScreenPanel->GetComponentTransform(), Size, PanelArc, HitPoint, UV);
+		// El menú está repetido alrededor del jugador (#916): vale el panel que toque el rayo antes.
+		const FTransform FrontPanel = ScreenPanel->GetComponentTransform();
+		double NearestPanel = TNumericLimits<double>::Max();
+		for (int32 PanelIndex = 0; bHasRay && PanelIndex < FMath::Max(1, MenuPanelTransforms.Num()); ++PanelIndex)
+		{
+			FVector PanelPoint;
+			FVector2D PanelUV;
+			const FTransform& PanelTransform = MenuPanelTransforms.IsValidIndex(PanelIndex) ? MenuPanelTransforms[PanelIndex] : FrontPanel;
+			if (TNVRMath::RayCurvedPanelHit(Origin, Dir, PanelTransform, Size, PanelArc, PanelPoint, PanelUV))
+			{
+				const double Distance = FVector::Dist(Origin, PanelPoint);
+				if (Distance < NearestPanel)
+				{
+					NearestPanel = Distance;
+					HitPoint = PanelPoint;
+					UV = PanelUV;
+					bHit = true;
+				}
+			}
+		}
 		if (bHit)
 		{
 			// El puntero del motor mira el panel plano (invisible): el mismo punto de la interfaz, en su plano.
@@ -1349,6 +1404,10 @@ void ATN_VRRig::UpdateCurvedPanel(float ArcDeg)
 			Triangles.Append({ TopA, TopB, BottomA, TopB, BottomB, BottomA });
 		}
 		CurvedPanel->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, Colors, NoTangents, false);
+		for (UProceduralMeshComponent* Copy : MenuCopies)
+		{
+			Copy->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, Colors, NoTangents, false);
+		}
 		CurvedArcBuilt = ArcDeg;
 	}
 	// El material del panel (con la textura de la interfaz); lo crea el UWidgetComponent al dibujar la primera vez.
@@ -1357,6 +1416,49 @@ void ATN_VRRig::UpdateCurvedPanel(float ArcDeg)
 		if (CurvedPanel->GetMaterial(0) != Material)
 		{
 			CurvedPanel->SetMaterial(0, Material);
+		}
+		for (UProceduralMeshComponent* Copy : MenuCopies)
+		{
+			if (Copy->GetMaterial(0) != Material)
+			{
+				Copy->SetMaterial(0, Material);
+			}
+		}
+	}
+}
+
+int32 ATN_VRRig::MenuPanelCount() const
+{
+	return Mode == ETNVRMode::Headset ? FMath::Clamp(CVarTNVRMenuPanels.GetValueOnGameThread(), 1, MaxMenuCopies + 1) : 1;
+}
+
+void ATN_VRRig::UpdateMenuCopies()
+{
+	// Con un menú delante (y gafas) el panel se repite alrededor de la cabeza: cualquier lado al que mire el jugador tiene el
+	// menú. Las copias comparten el material del panel y giran sobre el eje vertical que pasa por donde estaba la cabeza al
+	// abrirse (MenuPlacedFrom, el eje del cilindro).
+	const int32 Count = bMenuMode && ScreenPanel->IsVisible() ? MenuPanelCount() : 1;
+	const FTransform Front = ScreenPanel->GetComponentTransform();
+	MenuPanelTransforms.Reset();
+	MenuPanelTransforms.Add(Front);
+	for (int32 i = 0; i < MenuCopies.Num(); ++i)
+	{
+		UProceduralMeshComponent* Copy = MenuCopies[i];
+		const bool bOn = i + 1 < Count && CurvedArcBuilt > 0.f;
+		if (!bOn)
+		{
+			if (Copy->IsVisible())
+			{
+				Copy->SetVisibility(false);
+			}
+			continue;
+		}
+		const FTransform Placed = TNVRMath::MenuPanelTransform(Front, MenuPlacedFrom, TNVRMath::MenuPanelYaw(i + 1, Count));
+		Copy->SetWorldTransform(Placed);
+		MenuPanelTransforms.Add(Placed);
+		if (!Copy->IsVisible())
+		{
+			Copy->SetVisibility(true);
 		}
 	}
 }

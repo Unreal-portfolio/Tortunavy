@@ -364,4 +364,14 @@ namespace TNVRHands
 		const double Horizontal = FVector(CameraDirection.X, CameraDirection.Y, 0.0).Size();
 		return static_cast<float>(HitDistance * Horizontal);
 	}
+
+	/**
+	 * ¿Solo coge el agarre (acercando la aleta)? Con gafas y al menos un mando con seguimiento, lo del suelo y los
+	 * compañeros se cogen con el agarre y el gatillo no los coge como en tercera persona (#916). Sin mandos con seguimiento
+	 * (apagados), o con la vista simulada, vale lo de siempre. bFromGrip: la llamada viene de un agarre.
+	 */
+	inline bool GripOnlyTakes(bool bHeadsetView, bool bFromGrip, bool bAnyHandTracked)
+	{
+		return bHeadsetView && !bFromGrip && bAnyHandTracked;
+	}
 }

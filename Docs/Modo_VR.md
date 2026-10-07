@@ -39,6 +39,11 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
 
 ## Qué cambia en VR
 
+- **Calibración de la cabeza** (#916): la cámara es origen del seguimiento + pose de las gafas, y ese origen no tiene por qué
+  estar en la cabeza (el recentrado del arranque puede no hacerse; el jugador se mueve o se quita las gafas). Pasados unos
+  fotogramas con las gafas puestas, y de nuevo al recentrar, al ponérselas y al reaparecer, se guarda dónde están las gafas
+  (`FTNVRHeadCalibration`) y el origen se corre para que esa posición caiga en los ojos de la tortuga: lo que la cabeza se
+  mueva después se ve. Girar con el stick no la saca de los ojos. El log dice `cabeza calibrada` con la posición medida.
 - **Primera persona.** Cámara VR en la cabeza de la tortuga, con el seguimiento de la cabeza: de pie, a una altura fija
   (45 cm por encima del centro de la cápsula, `VREyeOffset`, la de los ojos de la malla: que el paso no menee la vista);
   **tumbada, en el ragdoll y derribada, en los ojos de la cabeza**, esté donde esté el cuerpo. En el modo simulado
@@ -46,7 +51,10 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
   al mirar abajo se ven el cuerpo, los brazos, la lengua y las gotas de sudor. Los demás te ven normal. La tortuga mira
   hacia donde mira tu cabeza, también en las máquinas de los demás (`bVRPlayer` replicado). Andar va hacia donde miras.
 - **Brazos que siguen a los mandos.** Las manos del cuerpo de la tortuga van a donde están los mandos (IK de brazo y
-  antebrazo en `UTN_TurtleAnimInstance`), salvo bailando, en el caparazón, tumbada o llevando a otra tortuga. Los demás
+  antebrazo en `UTN_TurtleAnimInstance`) y la aleta apunta hacia donde apunta el mando (la muñeca se dobla hacia él, 75° como
+  mucho, #916), salvo bailando, en el caparazón, tumbada o llevando a otra tortuga. Los mandos solo tienen seguimiento si el
+  rig tiene un dueño local (`AActor::HasLocalNetOwner`, que mira el controlador o el peón del dueño): `ATN_VRRig` lo tiene
+  desde #916 y `TN.VR.Status` dice si cada mando tiene seguimiento. Los demás
   también lo ven (las manos se mandan al servidor unas 15 veces por segundo). Las aletas sueltas de los mandos solo salen
   sin tortuga (menú principal, espectador) o dentro del caparazón.
 - **Caparazón.** Se ve desde dentro, en su centro y sin girar con la bola, **mucho más oscuro** (tono de concha y viñeta;
@@ -56,7 +64,8 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
 - **Aletas.** Una aleta de tortuga en cada mando (malla procedural, verde con la manga de caparazón). El objeto que
   llevas en la mano va en la aleta derecha, delante de tus ojos (los demás lo ven en la aleta de tu tortuga).
 - **Coger y lanzar con las manos** (ver «Coger y lanzar»): el agarre coge lo que está **muy cerca de esa mano** (40 cm,
-  `VRHandReach`); soltar el agarre con impulso lo lanza hacia donde va la mano. Los objetos del suelo solo se cogen con
+  `VRHandReach`) y, con al menos un mando con seguimiento, el gatillo ya no coge lo del suelo ni a los compañeros como en
+  tercera persona (`TNVRHands::GripOnlyTakes`, #916); soltar el agarre con impulso lo lanza hacia donde va la mano. Los objetos del suelo solo se cogen con
   la mano (sin VR, por cercanía del cuerpo, como siempre).
 - **Usar y lanzar** con el gatillo derecho, **apuntando con la aleta derecha**: lanzar al compañero que llevas, los
   objetos arrojadizos, la tinta y los objetos de la carrera salen hacia donde apunta el mando. El cliente manda esa
@@ -72,7 +81,9 @@ Cómo se elige (lo de arriba manda sobre lo de abajo). `UTN_VRSubsystem` lo mira
   `TN.VR.HudFollow 1` lo deja suelto delante siguiendo a la cabeza con retraso (a quien le maree el anclado).
 
 - **Menús** (pausa, tienda, probador, general, salas, menú principal, campeón...): un panel curvo que te rodea, quieto en
-  el mundo (1,6 m, 100° de arco). Sin gafas (simulado), centrado en la vista y con el arco que cabe en la ventana con el
+  el mundo (1,6 m, 100° de arco), **repetido alrededor de la cabeza** (#916): con gafas, `TN.VR.MenuPanels` paneles (3 de
+  serie, a 120°; hasta 6, 1 deja solo el de delante) con el mismo material, así que el menú está delante mires a donde
+  mires; el láser apunta al que toque antes (`ATN_VRRig::MenuCopies`, `TNVRMath::MenuPanelTransform`). Sin gafas (simulado), centrado en la vista y con el arco que cabe en la ventana con el
   campo de visión de la cámara (unos 76° con 90° y 16:9; `TNVRMath::SimulatedMenuArc`). La aleta derecha apunta con un láser y el gatillo es el clic. También con botones: A/X
   aceptar, B/Y atrás, agarres = pestaña anterior/siguiente, sticks = moverse por el menú, botón de menú = cerrar.
 - **Interfaz integrada.** El panel del motor (`UWidgetComponent`) queda plano e invisible (dibuja la interfaz en su

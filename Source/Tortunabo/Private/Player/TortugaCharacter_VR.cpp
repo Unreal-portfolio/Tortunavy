@@ -18,6 +18,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 
 void ATortugaCharacter::SetVRView(bool bOn, bool bHeadset)
 {
@@ -52,6 +53,8 @@ void ATortugaCharacter::SetVRView(bool bOn, bool bHeadset)
 			VRCamera->SetupAttachment(VROrigin);
 			VRCamera->RegisterComponent();
 		}
+		// Con gafas, la posición de la cabeza respecto del origen del seguimiento se mide de nuevo (#916).
+		VRHeadCalibration.Reset();
 		VROrigin->SetWorldLocation(ComputeFirstPersonEye(bHeadset));
 		bFirstPersonEyeValid = false;
 		// Con gafas el origen no gira con la cápsula: lo gira el stick (y la cabeza gira la cámara dentro de él).
@@ -116,10 +119,42 @@ void ATortugaCharacter::AddVRYaw(float DeltaYaw)
 	{
 		++VRTurnSerial;
 	}
+	const FVector OldShift = VRHeadCalibration.OriginShift(VRYaw);
 	VRYaw = static_cast<float>(FRotator::NormalizeAxis(static_cast<double>(VRYaw + DeltaYaw)));
 	if (VROrigin && bVRHeadsetView)
 	{
 		VROrigin->SetWorldRotation(FRotator(0.0, VRYaw, 0.0));
+		// Girar el origen mueve la cabeza calibrada (gira alrededor de él): el origen se corre lo que haga falta para que
+		// siga en los ojos de la tortuga en este mismo fotograma.
+		VROrigin->AddWorldOffset(OldShift - VRHeadCalibration.OriginShift(VRYaw));
+	}
+}
+
+void ATortugaCharacter::RecalibrateVRHead()
+{
+	VRHeadCalibration.Request();
+}
+
+void ATortugaCharacter::UpdateVRHeadCalibration(float DeltaTime)
+{
+	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		return;
+	}
+	// Ponerse las gafas (de quitadas a puestas) cambia dónde está la cabeza: se mide otra vez.
+	const EHMDWornState::Type Worn = UHeadMountedDisplayFunctionLibrary::GetHMDWornState();
+	if (Worn == EHMDWornState::Worn && VRPrevWornState == static_cast<uint8>(EHMDWornState::NotWorn))
+	{
+		VRHeadCalibration.Request();
+	}
+	VRPrevWornState = static_cast<uint8>(Worn);
+	FRotator DeviceRotation = FRotator::ZeroRotator;
+	FVector DevicePosition = FVector::ZeroVector;
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(DeviceRotation, DevicePosition);
+	if (VRHeadCalibration.Update(DevicePosition, Worn != EHMDWornState::NotWorn, DeltaTime))
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[VR] %s: cabeza calibrada, las gafas estaban a %s del origen del seguimiento."), *GetName(),
+			*DevicePosition.ToCompactString());
 	}
 }
 
@@ -188,6 +223,7 @@ void ATortugaCharacter::TickVRView(float DeltaTime)
 	{
 		return;
 	}
+	UpdateVRHeadCalibration(DeltaTime);
 	VROrigin->SetWorldRotation(FRotator(0.0, VRYaw, 0.0));
 	const FRotator Head = VRCamera->GetComponentRotation();
 	float TargetYaw = static_cast<float>(Head.Yaw);
@@ -240,10 +276,13 @@ namespace TNVRHandsDetail
 	}
 }
 
-void ATortugaCharacter::SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid)
+void ATortugaCharacter::SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid,
+	const FRotator& LeftRotation, const FRotator& RightRotation)
 {
 	LocalVRHand[0] = Left;
 	LocalVRHand[1] = Right;
+	LocalVRHandRot[0] = LeftRotation;
+	LocalVRHandRot[1] = RightRotation;
 	bLocalVRHandValid[0] = bLeftValid && bVRViewActive;
 	bLocalVRHandValid[1] = bRightValid && bVRViewActive;
 
@@ -257,24 +296,54 @@ void ATortugaCharacter::SetLocalVRHands(const FVector& Left, const FVector& Righ
 	const FTransform& ToWorld = GetActorTransform();
 	const FVector LeftLocal = ToWorld.InverseTransformPosition(Left).GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
 	const FVector RightLocal = ToWorld.InverseTransformPosition(Right).GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
+	// El giro, respecto de la tortuga como la posición (el dueño la gira con la cabeza).
+	const FRotator LeftRotLocal = ToWorld.InverseTransformRotation(LeftRotation.Quaternion()).Rotator();
+	const FRotator RightRotLocal = ToWorld.InverseTransformRotation(RightRotation.Quaternion()).Rotator();
 	const uint8 Valid = (bLocalVRHandValid[0] ? 1 : 0) | (bLocalVRHandValid[1] ? 2 : 0);
 	if (HasAuthority())
 	{
 		RepVRHandLeft = LeftLocal;
 		RepVRHandRight = RightLocal;
+		RepVRHandRotLeft = LeftRotLocal;
+		RepVRHandRotRight = RightRotLocal;
 		RepVRHandsValid = Valid;
 	}
 	else
 	{
-		ServerSetVRHands(LeftLocal, RightLocal, Valid);
+		ServerSetVRHands(LeftLocal, RightLocal, Valid, LeftRotLocal, RightRotLocal);
 	}
 }
 
-void ATortugaCharacter::ServerSetVRHands_Implementation(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid)
+void ATortugaCharacter::ServerSetVRHands_Implementation(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid,
+	FRotator LeftRotation, FRotator RightRotation)
 {
 	RepVRHandLeft = Left.GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
 	RepVRHandRight = Right.GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
+	RepVRHandRotLeft = LeftRotation.GetNormalized();
+	RepVRHandRotRight = RightRotation.GetNormalized();
 	RepVRHandsValid = bVRPlayer ? (Valid & 3) : 0;
+}
+
+bool ATortugaCharacter::GetVRHandRotations(FQuat& OutLeft, FQuat& OutRight) const
+{
+	if (IsLocallyControlled())
+	{
+		if (!bVRViewActive)
+		{
+			return false;
+		}
+		OutLeft = LocalVRHandRot[0].Quaternion();
+		OutRight = LocalVRHandRot[1].Quaternion();
+		return true;
+	}
+	if (!bVRPlayer || RepVRHandsValid == 0)
+	{
+		return false;
+	}
+	const FTransform& ToWorld = GetActorTransform();
+	OutLeft = ToWorld.TransformRotation(RepVRHandRotLeft.Quaternion());
+	OutRight = ToWorld.TransformRotation(RepVRHandRotRight.Quaternion());
+	return true;
 }
 
 bool ATortugaCharacter::GetVRHandTargets(FVector& OutLeft, FVector& OutRight, bool& bOutLeft, bool& bOutRight) const
@@ -386,7 +455,10 @@ ATortugaCharacter::EVRGrip ATortugaCharacter::VRGripPressed(bool bRight, const F
 	if (ATN_InteractableBase* Touched = FindInteractableNearHand(HandLocation))
 	{
 		FocusedInteractable = Touched;
+		// Lo coge el agarre: TryInteract no lo descarta como haría con el gatillo (#916).
+		bVRGripInteract = true;
 		TryInteract();
+		bVRGripInteract = false;
 		return EVRGrip::Touched;
 	}
 	// Un compañero en el caparazón o aturdido, al alcance de la mano y que no esté al otro lado de una pared.

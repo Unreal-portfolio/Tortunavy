@@ -198,6 +198,30 @@ namespace TNTurtleAnim
 		TurnBy(Pose, Bone, FQuat(Axis, FMath::DegreesToRadians(Degrees)));
 	}
 
+	/** Lo más que se dobla la muñeca hacia donde apunta el mando respecto del antebrazo (radianes, 75 grados). */
+	constexpr double MaxWristBend = 1.309;
+
+	/**
+	 * VR (#916): tras llevar la mano al mando (ReachArm), la aleta apunta hacia donde apunta el mando (Target, su giro en el
+	 * espacio de la malla; su +X es la punta): la mano gira desde la dirección del antebrazo hasta ella, con tope. Solo gira
+	 * la mano, que sigue al antebrazo; el giro sobre su propio eje se queda como estaba.
+	 */
+	void AimHand(FCompactPose& Pose, FCompactPoseBoneIndex Lower, FCompactPoseBoneIndex Hand, const FQuat& Target, float Weight)
+	{
+		if (!Lower.IsValid() || !Hand.IsValid() || Weight < 0.01f) { return; }
+		const FTransform LowerCS = ComponentSpace(Pose, Lower);
+		const FTransform HandCS = Pose[Hand] * LowerCS;
+		const FVector Forearm = (HandCS.GetLocation() - LowerCS.GetLocation()).GetSafeNormal();
+		const FVector Wanted = Target.GetForwardVector();
+		if (Forearm.IsNearlyZero() || Wanted.IsNearlyZero()) { return; }
+		FVector Axis;
+		double Angle = 0.0;
+		FQuat::FindBetweenNormals(Forearm, Wanted).ToAxisAndAngle(Axis, Angle);
+		Angle = FMath::Clamp(FMath::UnwindRadians(Angle), -MaxWristBend, MaxWristBend) * FMath::Clamp(Weight, 0.f, 1.f);
+		if (FMath::Abs(Angle) < 1e-3) { return; }
+		TurnBy(Pose, Hand, FQuat(Axis, Angle));
+	}
+
 	/**
 	 * La cabeza que sigue a la cámara (#623): primero el cabeceo (sobre su izquierda: + sube la cabeza) y luego la guiñada
 	 * (sobre la vertical: + hacia su derecha), repartido entre el cuello (TNHeadLook::NeckShare) y la cabeza. Con los dos
@@ -1250,6 +1274,8 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 	// 5. VR: las manos del cuerpo van a los mandos (el que coge es la mano, no el cuerpo).
 	ReachArm(Output.Pose, B.LArm, B.LFore, B.LHand, F.VRHandL, F.VRArmLW);
 	ReachArm(Output.Pose, B.RArm, B.RFore, B.RHand, F.VRHandR, F.VRArmRW);
+	AimHand(Output.Pose, B.LFore, B.LHand, F.VRHandRotL, F.VRArmLW);
+	AimHand(Output.Pose, B.RFore, B.RHand, F.VRHandRotR, F.VRArmRW);
 	return true;
 }
 
@@ -1390,6 +1416,19 @@ Ease(F.CarryW, bCarrying, 8.f);
 			};
 			if (bHandL) { Follow(F.VRHandL, HandL, F.VRArmLW); }
 			if (bHandR) { Follow(F.VRHandR, HandR, F.VRArmRW); }
+			// El giro de las manos: la aleta apunta hacia donde apunta el mando (#916).
+			FQuat RotL = FQuat::Identity;
+			FQuat RotR = FQuat::Identity;
+			if (Turtle->GetVRHandRotations(RotL, RotR))
+			{
+				auto FollowRotation = [&](FQuat& Current, const FQuat& World, float Weight)
+				{
+					const FQuat Target = ToWorld.InverseTransformRotation(World);
+					Current = bSmooth && Weight > 0.05f ? FQuat::Slerp(Current, Target, FMath::Clamp(Dt * 18.f, 0.f, 1.f)) : Target;
+				};
+				if (bHandL) { FollowRotation(F.VRHandRotL, RotL, F.VRArmLW); }
+				if (bHandR) { FollowRotation(F.VRHandRotR, RotR, F.VRArmRW); }
+			}
 		}
 	}
 

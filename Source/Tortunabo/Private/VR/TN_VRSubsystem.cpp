@@ -12,6 +12,7 @@
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
 #include "Framework/Application/SlateApplication.h"
+#include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IXRTrackingSystem.h"
@@ -318,6 +319,10 @@ ATN_VRRig* UTN_VRSubsystem::GetRig(UWorld* World, bool bCreate)
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	Params.ObjectFlags |= RF_Transient;
+	// Dueño: el jugador local. Los mandos (UMotionControllerComponent) solo siguen la pose si su actor tiene un dueño local
+	// (AActor::HasLocalNetOwner): sin él nunca tenían seguimiento y las aletas, el láser y los agarres no funcionaban (#916).
+	APlayerController* LocalPC = World->GetFirstPlayerController();
+	Params.Owner = LocalPC && LocalPC->IsLocalController() ? LocalPC : nullptr;
 	ATN_VRRig* NewRig = World->SpawnActor<ATN_VRRig>(ATN_VRRig::StaticClass(), FTransform::Identity, Params);
 	Rig = NewRig;
 	if (NewRig)
