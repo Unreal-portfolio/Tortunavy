@@ -165,6 +165,16 @@ public:
 	/** Olvida que el servidor iba a viajar: tras un viaje fallido, un corte de conexión no es un ServerTravel que reconectar. */
 	void ClearPendingTravel() { bIsPendingTravel = false; }
 
+	/** true entre el inicio de un viaje (LoadMap o sin cortes) y la llegada al mapa de destino. */
+	bool IsPendingTravel() const { return bIsPendingTravel; }
+
+	/**
+	 * Engancha los avisos de viaje del motor: PreLoadMap y PostLoadMapWithWorld (LoadMap) y OnSeamlessTravelStart (viaje sin
+	 * cortes, #560). Lo llama Init y lo deshace Shutdown; público para que los tests lo usen sin el resto de Init (Steam, perfiles).
+	 */
+	void BindTravelDelegates();
+	void UnbindTravelDelegates();
+
 	/** Avisos de las salas (la pantalla de salas del menú los enseña). */
 	FTNOnRoomNotice OnRoomNotice;
 
@@ -493,7 +503,7 @@ private:
 	void AbortRoomOperation();
 
 	/**
-	 * true durante el intervalo entre PreLoadMap y PostLoadMap.
+	 * true durante el intervalo entre PreLoadMap (u OnSeamlessTravelStart) y PostLoadMap.
 	 * Usado para diferenciar errores de red en inicio de conexión (sesión zombi)
 	 * vs. errores transitorios durante un ServerTravel normal (no destruir sesión).
 	 */
@@ -516,6 +526,9 @@ private:
 
 	/** @brief Hook pre-load del mapa: muestra loading screen y captura URL para retries. */
 	void HandlePreLoadMap(const FString& MapName);
+
+	/** @brief Hook de inicio de viaje sin cortes: marca bIsPendingTravel y para la captura de voz, como HandlePreLoadMap. */
+	void HandleSeamlessTravelStart(UWorld* CurrentWorld, const FString& MapName);
 
 	/** @brief Hook post-load del mapa: oculta loading y reanuda listen retry si aplica. */
 	void HandlePostLoadMap(UWorld* LoadedWorld);
