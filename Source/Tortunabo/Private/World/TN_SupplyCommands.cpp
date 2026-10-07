@@ -3,8 +3,12 @@
 // en 0 (0 = el anfitrión):
 //
 //   TN.Supply.Crate [jugador=0 | clear]   una caja de suministros 3 m delante de esa tortuga (o quita las de prueba)
+//   TN.Airdrop.Force [here] [jugador=0]   un airdrop ya: en un punto de airdrop libre o, si no hay (o con «here»),
+//                                         8 m delante de esa tortuga. No cuenta para el máximo de la partida.
 
+#include "World/TN_AirdropSubsystem.h"
 #include "World/TN_SupplyCrate.h"
+#include "World/TN_SupplyDrop.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -112,6 +116,32 @@ namespace TNSupplyCmd
 			Crate->Tags.Add(DebugTag);
 		}
 	}
+
+	void RunAirdrop(const TArray<FString>& Args, UWorld* InWorld)
+	{
+		UWorld* AuthWorld = FindAuthorityWorld(InWorld);
+		UTN_AirdropSubsystem* Airdrops = AuthWorld ? AuthWorld->GetSubsystem<UTN_AirdropSubsystem>() : nullptr;
+		if (!Airdrops)
+		{
+			UE_LOG(LogTNLoot, Warning, TEXT("TN.Airdrop.Force: sin mundo de juego con autoridad (escríbelo en el anfitrión, en partida)."));
+			return;
+		}
+		const bool bHere = Args.Num() > 0 && Args[0].Equals(TEXT("here"), ESearchCase::IgnoreCase);
+		const APawn* Pawn = PawnOf(AuthWorld, IndexArg(Args, bHere ? 1 : 0));
+		const FVector Ahead = Pawn ? GroundAhead(Pawn, 800.f) : FVector::ZeroVector;
+		ATN_SupplyDrop* Drop = bHere ? (Pawn ? Airdrops->LaunchAt(Ahead) : nullptr) : Airdrops->ForceDrop(Pawn ? &Ahead : nullptr);
+		if (!Drop)
+		{
+			UE_LOG(LogTNLoot, Warning, TEXT("TN.Airdrop.Force: no se ha podido lanzar (sin puntos libres ni tortuga con ese índice)."));
+			return;
+		}
+		Drop->Tags.Add(DebugTag);
+	}
+
+	FAutoConsoleCommandWithWorldAndArgs AirdropCommand(
+		TEXT("TN.Airdrop.Force"),
+		TEXT("Lanza un airdrop ya: en un punto libre o, si no hay (o con here), 8 m delante de una tortuga. TN.Airdrop.Force [here] [jugador=0]."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunAirdrop));
 
 	FAutoConsoleCommandWithWorldAndArgs CrateCommand(
 		TEXT("TN.Supply.Crate"),

@@ -33,6 +33,7 @@
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "UI/HUD/TN_HoldRingWidget.h"
 #include "World/TN_InteractableBase.h"
+#include "World/TN_SupplyDrop.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "Core/TN_InventoryTypes.h"
@@ -425,6 +426,13 @@ void UTN_RunHUDWidget::BuildTree()
 		StormBanner->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
 		Place(Canvas, StormBanner, FVector2D(0.5f, 0.f), FVector2D(0.f, 118.f));
 
+		// Airdrop en camino: debajo del de la tormenta, con el texto en oro de los objetos.
+		AirdropText = MakeText(Tree, nullptr, FText::GetEmpty(), TEXT("Bold"), 21, TNHUDArt::Hex(0xFFC85A));
+		AirdropBanner = MakeCard(Tree, TNHUDArt::CardTexture(), CardMargin, AirdropText, FMargin(26.f, 22.f, 32.f, 34.f));
+		AirdropBanner->SetVisibility(ESlateVisibility::Collapsed);
+		AirdropBanner->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
+		Place(Canvas, AirdropBanner, FVector2D(0.5f, 0.f), FVector2D(0.f, 210.f));
+
 		DownText = MakeText(Tree, nullptr, FText::GetEmpty(), TEXT("Bold"), 21, TNHUDArt::SandC);
 		DownBanner = MakeFaceCard(Tree, ETNTurtleFace::Down, 92.f, DownText);
 		DownBanner->SetVisibility(ESlateVisibility::Collapsed);
@@ -726,6 +734,19 @@ void UTN_RunHUDWidget::TickAlerts(float DeltaTime)
 			OneDecimal.SetMinimumFractionalDigits(1).SetMaximumFractionalDigits(1);
 			StormText->SetText(FText::Format(NSLOCTEXT("TNHUD", "Storm", "¡La tormenta te alcanza! ¡Al agua!   {0}"), FText::AsNumber(PS->DeathZoneTimeRemaining, &OneDecimal)));
 			StormBanner->SetRenderScale(FVector2D(1.f + 0.04f * FMath::Abs(FMath::Sin(Time * 6.f))));
+		}
+	}
+
+	// Airdrop en camino (#860): mientras haya uno en el aviso o cayendo, la cuenta atrás hasta que aterriza.
+	const ATN_SupplyDrop* Incoming = ATN_SupplyDrop::FindIncoming(GetWorld());
+	if (AirdropBanner)
+	{
+		AirdropBanner->SetVisibility(Incoming ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		if (Incoming && AirdropText)
+		{
+			AirdropText->SetText(FText::Format(NSLOCTEXT("TNHUD", "AirdropIncoming", "¡Cae una caja de suministros! Busca el haz de luz:  {0} s"),
+				TNLocText::Int(FMath::CeilToInt(Incoming->GetSecondsToLand()))));
+			AirdropBanner->SetRenderScale(FVector2D(1.f + 0.03f * FMath::Abs(FMath::Sin(Time * 4.f))));
 		}
 	}
 

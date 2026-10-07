@@ -362,9 +362,16 @@ grupo (quien entra tarde la ve abierta). Al abrirse sueltan objetos de la tabla 
 (`UTN_LootTable` / `FTNLootTableDef`): la caja, 1 objeto y chapas 0,25 / 0,07 / 0 (probabilidad de dar al menos 1, 2 y 3,
 hoja Economía). Sin clase de chapa (#858) el número de chapas solo sale en el log (`LogTNLoot`). Pruebas: `Tortunabo.Supply`.
 
+El airdrop (`ATN_SupplyDrop`) cae en puntos colocados a mano (`ATN_AirdropPoint`): el gestor del servidor
+(`UTN_AirdropSubsystem`) lanza el primero a los 90 s y uno cada 180 s, hasta 3 por partida (Ajustes del proyecto > Tortunavy -
+Airdrop). Aviso de 8 s (anillo y haz de luz en el suelo y cartel en el HUD con la cuenta atrás), 12 s de caída con paracaídas y,
+en el suelo, se abre como la caja (mantener E 2 s) con su tabla: 2 objetos y chapas 0,7 / 0,3 / 0,15.
+
 | Comando | Qué hace |
 |---|---|
-| `TN.Supply.Crate [jugador=0]` / `TN.Supply.Crate clear` | Una caja de suministros 3 m delante de esa tortuga / quita las de prueba. |
+| `TN.Supply.Crate [jugador=0]` / `TN.Supply.Crate clear` | Una caja de suministros 3 m delante de esa tortuga / quita las de prueba (también los airdrops de prueba). |
+| `TN.Airdrop.Force [jugador=0]` | Un airdrop ya en un punto de airdrop libre o, si el mapa no tiene, 8 m delante de esa tortuga. No cuenta para el máximo. |
+| `TN.Airdrop.Force here [jugador=0]` | Un airdrop 8 m delante de esa tortuga aunque haya puntos. |
 | `log LogTNLoot Verbose` | Lo que da cada caja al abrirse (objetos y chapas). |
 
 ## Huella del mapa: anfitrión y clientes con el mismo mapa (#828)
