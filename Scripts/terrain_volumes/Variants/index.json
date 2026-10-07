@@ -5,5 +5,12 @@
   "description": "Camino primero: un camino, lazos que vuelven, puentes naturales y tuneles, rio con islas y final abierto al mar.",
   "recorrible": true,
   "size_mb": 4.56
+ },
+ {
+  "name": "D01_boceto",
+  "seed": 875,
+  "description": "Boceto D01 del equipo de diseno: mesetas escalonadas de la salida (zona mas alta) al mar, hondonada hundida, cueva amplia bajo las zonas y tunel; unos 600 m de recorrido.",
+  "recorrible": true,
+  "size_mb": 5.64
  }
 ]
