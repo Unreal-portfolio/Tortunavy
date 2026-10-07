@@ -182,9 +182,6 @@ bool FTNMonkeyLogClassifyTest::RunTest(const FString& Parameters)
 		FTNTestLogSink::Classify(TEXT("[Caparazón] TN.Shell.Debug A de B: salto de velocidad sin lanzamiento · caja"), Tortunabo, ELogVerbosity::Warning) == EKind::ShellVelocityJump);
 	TestTrue(TEXT("Corrección de red"),
 		FTNTestLogSink::Classify(TEXT("*** Client: Error for BP_Tortuga at Time=1.2 is 40.0"), FName(TEXT("LogNetPlayerMovement")), ELogVerbosity::Warning) == EKind::NetCorrection);
-	FString Reason;
-	TestTrue(TEXT("Rescate"), FTNTestLogSink::Classify(TEXT("[Carrera] PC_0 (vacío): vuelve a (1, 2, 3), aturdida."), Tortunabo, ELogVerbosity::Log, &Reason) == EKind::Rescue);
-	TestEqual(TEXT("Motivo del rescate"), Reason, FString(TEXT("vacío")));
 	TestTrue(TEXT("Una línea normal no es nada"), FTNTestLogSink::Classify(TEXT("[Playa] todo bien"), Tortunabo, ELogVerbosity::Log) == EKind::Other);
 
 	FTNTestLogSink Sink;

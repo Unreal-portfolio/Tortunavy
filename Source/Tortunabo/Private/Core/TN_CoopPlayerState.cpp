@@ -92,9 +92,6 @@ void ATN_CoopPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ATN_CoopPlayerState, bIsEliminated);
 	DOREPLIFETIME(ATN_CoopPlayerState, DeathCause);
 	DOREPLIFETIME(ATN_CoopPlayerState, RaceScore);
-	DOREPLIFETIME(ATN_CoopPlayerState, RoundWins);
-	DOREPLIFETIME(ATN_CoopPlayerState, RaceShellHalves);
-	DOREPLIFETIME(ATN_CoopPlayerState, TeamIndex);
 	DOREPLIFETIME(ATN_CoopPlayerState, TurtleDollsCollected);
 	DOREPLIFETIME(ATN_CoopPlayerState, CoopScore);
 }
@@ -160,9 +157,6 @@ void ATN_CoopPlayerState::CopyProperties(APlayerState* PlayerState)
 	Target->FinishRank = FinishRank;
 	Target->FinishTimeSeconds = FinishTimeSeconds;
 	Target->RaceScore = RaceScore;
-	Target->RoundWins = RoundWins;
-	Target->RaceShellHalves = RaceShellHalves;
-	Target->TeamIndex = TeamIndex;
 	Target->TurtleDollsCollected = TurtleDollsCollected;
 	Target->CollectedShellPoints = CollectedShellPoints;
 	Target->JumpCount = JumpCount;

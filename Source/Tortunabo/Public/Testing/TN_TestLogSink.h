@@ -8,7 +8,7 @@ class FJsonObject;
 
 /**
  * Sumidero del registro para las pruebas de monkey y de estrés: cuenta errores, asserts y ensures, los avisos del instrumento
- * TN.Shell.Debug, las correcciones de red y los rescates de la carrera, y guarda las primeras líneas distintas de cada clase.
+ * TN.Shell.Debug, las correcciones de red, y guarda las primeras líneas distintas de cada clase.
  * Se engancha a GLog mientras dura la sesión. Serialize puede llamarse desde cualquier hilo.
  */
 class TORTUNABO_API FTNTestLogSink : public FOutputDevice
@@ -26,12 +26,11 @@ public:
 	virtual bool CanBeUsedOnMultipleThreads() const override { return true; }
 
 	/** Clasifica una línea (sin tocar el estado); para tests. */
-	enum class EKind : uint8 { Other, Ensure, ShellSpin, ShellSunk, ShellVelocityJump, NetCorrection, Rescue };
-	static EKind Classify(const FString& Message, const FName& Category, ELogVerbosity::Type Verbosity, FString* OutDetail = nullptr);
+	enum class EKind : uint8 { Other, Ensure, ShellSpin, ShellSunk, ShellVelocityJump, NetCorrection };
+	static EKind Classify(const FString& Message, const FName& Category, ELogVerbosity::Type Verbosity);
 
 	int32 GetErrorCount() const;
 	int32 GetEnsureCount() const;
-	int32 GetRescueCount() const;
 	int32 GetShellSunkCount() const;
 	int32 GetNetCorrectionCount() const;
 
@@ -51,7 +50,6 @@ private:
 	int32 ShellSunk = 0;
 	int32 ShellVelocityJump = 0;
 	int32 NetCorrections = 0;
-	TMap<FString, int32> RescuesByReason;
 	TMap<FName, int32> WarningsByCategory;
 	TMap<FName, int32> ErrorsByCategory;
 	TArray<FEntry> ErrorEntries;

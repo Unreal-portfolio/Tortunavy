@@ -341,7 +341,6 @@ TSharedRef<FJsonObject> UTN_MonkeySubsystem::BuildReport(const TCHAR* Reason, bo
 	Root->SetNumberField(TEXT("unrescued_falls"), Falls);
 	Root->SetNumberField(TEXT("no_pawn_events"), NoPawn);
 	Sink.WriteJson(*Root);
-	Root->SetNumberField(TEXT("rescues_total"), Sink.GetRescueCount());
 
 	const TNMonkey::FFrameSummary Frame = TNMonkey::Summarize(Frames.GetSamples());
 	TSharedRef<FJsonObject> FrameJson = MakeShared<FJsonObject>();

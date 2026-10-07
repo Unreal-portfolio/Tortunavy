@@ -61,7 +61,7 @@ namespace TNTestLogSinkDetail
 	}
 }
 
-FTNTestLogSink::EKind FTNTestLogSink::Classify(const FString& Message, const FName& Category, ELogVerbosity::Type Verbosity, FString* OutDetail)
+FTNTestLogSink::EKind FTNTestLogSink::Classify(const FString& Message, const FName& Category, ELogVerbosity::Type Verbosity)
 {
 	if (Verbosity <= ELogVerbosity::Error
 		&& (Message.Contains(TEXT("Ensure condition failed")) || Message.Contains(TEXT("Assertion failed")) || Message.Contains(TEXT("Fatal error"))))
@@ -87,20 +87,6 @@ FTNTestLogSink::EKind FTNTestLogSink::Classify(const FString& Message, const FNa
 	if (Category == FName(TEXT("LogNetPlayerMovement")) && (Message.Contains(TEXT("Correction")) || Message.Contains(TEXT("Error for"))))
 	{
 		return EKind::NetCorrection;
-	}
-	// «[Carrera] <jugador> (<motivo>): vuelve a <sitio>, aturdida.» (ATN_BeachRaceGameMode::RescueTurtle).
-	if (Message.Contains(TEXT("[Carrera]")) && Message.Contains(TEXT("vuelve a")))
-	{
-		if (OutDetail)
-		{
-			int32 Open = INDEX_NONE;
-			int32 Close = INDEX_NONE;
-			if (Message.FindChar(TEXT('('), Open) && Message.FindChar(TEXT(')'), Close) && Close > Open)
-			{
-				*OutDetail = Message.Mid(Open + 1, Close - Open - 1);
-			}
-		}
-		return EKind::Rescue;
 	}
 	return EKind::Other;
 }
@@ -129,8 +115,7 @@ void FTNTestLogSink::Serialize(const TCHAR* Message, ELogVerbosity::Type Verbosi
 {
 	const ELogVerbosity::Type Level = static_cast<ELogVerbosity::Type>(Verbosity & ELogVerbosity::VerbosityMask);
 	const FString Text(Message);
-	FString Detail;
-	const EKind Kind = Classify(Text, Category, Level, &Detail);
+	const EKind Kind = Classify(Text, Category, Level);
 
 	FScopeLock ScopeLock(&Lock);
 	switch (Kind)
@@ -143,7 +128,6 @@ void FTNTestLogSink::Serialize(const TCHAR* Message, ELogVerbosity::Type Verbosi
 		case EKind::ShellSunk:         ++ShellSunk; break;
 		case EKind::ShellVelocityJump: ++ShellVelocityJump; break;
 		case EKind::NetCorrection:     ++NetCorrections; break;
-		case EKind::Rescue:            ++RescuesByReason.FindOrAdd(Detail.IsEmpty() ? TEXT("?") : Detail); break;
 		default: break;
 	}
 	if (Level <= ELogVerbosity::Error)
@@ -165,17 +149,6 @@ int32 FTNTestLogSink::GetEnsureCount() const { FScopeLock ScopeLock(&Lock); retu
 int32 FTNTestLogSink::GetShellSunkCount() const { FScopeLock ScopeLock(&Lock); return ShellSunk; }
 int32 FTNTestLogSink::GetNetCorrectionCount() const { FScopeLock ScopeLock(&Lock); return NetCorrections; }
 
-int32 FTNTestLogSink::GetRescueCount() const
-{
-	FScopeLock ScopeLock(&Lock);
-	int32 Total = 0;
-	for (const TPair<FString, int32>& Pair : RescuesByReason)
-	{
-		Total += Pair.Value;
-	}
-	return Total;
-}
-
 void FTNTestLogSink::WriteJson(FJsonObject& Out) const
 {
 	FScopeLock ScopeLock(&Lock);
@@ -190,7 +163,6 @@ void FTNTestLogSink::WriteJson(FJsonObject& Out) const
 	Shell->SetNumberField(TEXT("velocity_jump"), ShellVelocityJump);
 	Out.SetObjectField(TEXT("shell_debug"), Shell);
 
-	Out.SetObjectField(TEXT("rescues_by_reason"), TNTestLogSinkDetail::CountsToJson(RescuesByReason));
 	Out.SetObjectField(TEXT("errors_by_category"), TNTestLogSinkDetail::CountsToJson(ErrorsByCategory));
 	Out.SetObjectField(TEXT("warnings_by_category"), TNTestLogSinkDetail::CountsToJson(WarningsByCategory));
 	Out.SetArrayField(TEXT("ensure_entries"), TNTestLogSinkDetail::EntriesToJson(EnsureEntries));

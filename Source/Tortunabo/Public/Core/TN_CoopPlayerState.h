@@ -184,22 +184,6 @@ public:
 	void OnRep_RaceScore();
 
 	/**
-	 * Rondas ganadas en la partida del mapa procedural (Carrera y 2vs2: gana quien
-	 * llega a 3). Lo resetea ATN_ProcMapGameMode al empezar la partida; no se toca
-	 * en ResetForNewRace porque este se llama en cada ronda.
-	 */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
-	int32 RoundWins = 0;
-
-	/**
-	 * Carrera en la playa (ATN_BeachRaceGameMode): conchas de la partida en medias (2 = una concha entera). La primera en
-	 * tocar el agua se lleva una entera y quien llega en la cuenta atrás de después, media. Gana quien llega a
-	 * RoundTarget conchas (RoundTarget * 2 medias). Lo resetea el GameMode al empezar la partida; no ResetForNewRace.
-	 */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
-	int32 RaceShellHalves = 0;
-
-	/**
 	 * Muñecos tortuga cogidos en la partida (#797, ATN_TurtleDoll): uno por muñeco y jugadora. Lo lee la puntuación final
 	 * del Coop y, al acabar, se suma al contador del perfil. No toca RaceScore ni las conchas. Lo resetea el GameMode al
 	 * empezar la partida; no ResetForNewRace (se llama en cada ronda).
@@ -246,10 +230,6 @@ public:
 
 	/** Servidor: un salto más. */
 	void RegisterJump() { if (HasAuthority()) { ++JumpCount; } }
-
-	/** Pareja de la ronda actual en 2vs2 (0 o 1). -1 fuera de 2vs2. */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
-	int32 TeamIndex = -1;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
