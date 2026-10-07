@@ -7,6 +7,7 @@
 
 class ATN_BeachDecorField;
 class ATN_ProcFauna;
+class ATN_TctShoreWarning;
 class ATN_TctArena;
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMesh;
@@ -19,8 +20,11 @@ class UStaticMesh;
  * mapa generado de ProcMap y Coop:
  *  - Vegetación, rocas pequeñas y objetos sueltos: una malla por especie y variante (TNFloraBuild, TNPropBuild: las mismas que el
  *    generador) instanciada con HISM, sin colisión, con las distancias de corte del generador.
- *  - Decorado con colisión (rocas, troncos, castillos de arena, sacos...): ATN_BeachDecorField::BeginBuildPlaced, igual que el
- *    decorado de los mapas de terreno fijo. Es lo único que tiene colisión y sale igual en el servidor y en todos los clientes.
+ *  - Decorado con colisión (rocas, troncos, castillos de arena, sombrillas, boyas, redes...): ATN_BeachDecorField::BeginBuildPlaced,
+ *    igual que el decorado de los mapas de terreno fijo.
+ *  - Estructuras de playa con colisión (casetas y cascos de barco varados, #920): una malla por variante en un HISM con caja de
+ *    colisión. Con el decorado, es lo único con colisión y sale igual en el servidor y en todos los clientes.
+ *  - Aviso de la orilla futura del agua (#920): ATN_TctShoreWarning, sobre el suelo medido.
  *  - Fauna: ATN_ProcFauna::InitCustom, con animales que huyen de las tortugas y no tienen colisión.
  * En un servidor dedicado solo se monta el decorado con colisión.
  */
@@ -40,10 +44,14 @@ public:
 	/** Lo repartido (huella de la colisión, piezas, plantas). */
 	const TNTctScenery::FPlan& GetPlan() const { return Plan; }
 
-	/** Plantas instanciadas, piezas con colisión montadas y animales en esta máquina. */
+	/** Plantas instanciadas, piezas con colisión montadas, estructuras con colisión y animales en esta máquina. */
 	int32 GetNumFlora() const { return NumFlora; }
+	int32 GetNumStructures() const { return NumStructures; }
 	int32 GetNumDecorBuilt() const;
 	int32 GetNumAnimals() const;
+
+	/** El suelo medido (la rejilla de la arena), para lo que se monta encima. */
+	TSharedPtr<TNTctScenery::FHeightField> GetField() const { return Field; }
 
 	/** Cota del suelo de la arena en (X, Y) según lo medido, si lo hay. */
 	bool GroundAt(const FVector2D& P, float& OutZ) const;
@@ -56,11 +64,14 @@ private:
 	bool MeasureField(ATN_TctArena* Arena);
 	void BuildFlora(float WaterBaseZ);
 	void BuildDecor();
+	void BuildStructures();
+	void BuildShoreWarning(uint32 Seed, const TArray<TNTctScenery::FKeepOut>& KeepOuts);
 	void BuildFauna(ATN_TctArena* Arena, uint32 Seed, const TArray<TNTctScenery::FKeepOut>& KeepOuts, float WaterBaseZ);
 
 	TSharedPtr<TNTctScenery::FHeightField> Field;
 	TNTctScenery::FPlan Plan;
 	int32 NumFlora = 0;
+	int32 NumStructures = 0;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UStaticMesh>> Meshes;
@@ -73,4 +84,7 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_ProcFauna> Fauna;
+
+	UPROPERTY(Transient)
+	TObjectPtr<ATN_TctShoreWarning> ShoreWarning;
 };

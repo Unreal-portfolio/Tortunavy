@@ -4,10 +4,15 @@
 #include "Game/TN_TctItemComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "Game/TN_TctItems.h"
+#include "Core/TN_ProjectMaterials.h"
+#include "ProcMap/TN_ProcMapRuntimeMesh.h"
+#include "ProcMap/TN_TctPropMeshes.h"
+#include "World/ProcMap/TN_ProcMapMath.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/App.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
@@ -20,6 +25,15 @@ namespace TNTctItemPadDetail
 	constexpr float RetrySeconds = 2.f;
 	/** Agua «sin agua» (sin GameState de TcT). */
 	constexpr float NoWaterZ = -1.e6f;
+	const TCHAR* FoliageMaterialPath = TEXT("/Game/ProcMap/Materials/M_ProcFoliage.M_ProcFoliage");
+	/** Ancho del haz (fracción del cilindro del motor, de 100 uu) y su opacidad: una línea fina, no un pilar. */
+	constexpr float BeamWidth = 0.06f;
+	constexpr float BeamOpacity = 0.16f;
+
+	bool CanRender()
+	{
+		return !IsRunningDedicatedServer() && FApp::CanEverRender();
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -116,7 +130,10 @@ void ATN_TctItemPickup::Interact(APawn* Interactor)
 
 ATN_TctItemPad::ATN_TctItemPad()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// El tick solo mueve el destello mientras hay un objeto puesto (RefreshLook lo enciende).
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.TickInterval = 0.05f;
 	bReplicates = true;
 	SetReplicateMovement(false);
 	bAlwaysRelevant = true;
@@ -132,8 +149,9 @@ ATN_TctItemPad::ATN_TctItemPad()
 	{
 		Disc->SetStaticMesh(Cylinder.Object);
 	}
-	// Disco de 1,6 m y 3 cm de alto, apenas por encima del suelo (el cilindro del motor mide 100 uu, con el centro en medio).
+	// Raíz plana y sin dibujar (#920): el punto se ve como lo que lo rodea (cofre, nido, piedras...), no como un disco.
 	Disc->SetRelativeScale3D(FVector(1.6f, 1.6f, 0.03f));
+	Disc->SetVisibility(false);
 
 	// Haz de luz: un cilindro fino y translúcido que sube desde el disco mientras hay un objeto (se ve de lejos).
 	Beam = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Beam"));
@@ -165,8 +183,8 @@ void ATN_TctItemPad::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 float ATN_TctItemPad::BeamHeight(ETNTctRarity InRarity)
 {
-	// Común: se ve de cerca; raro: de lo alto del mismo piso; épico: de toda la arena.
-	return InRarity == ETNTctRarity::Epic ? 3200.f : (InRarity == ETNTctRarity::Rare ? 1600.f : 700.f);
+	// Común: solo el destello; raro: un hilo de luz corto; épico: más alto, pero fino (#920).
+	return InRarity == ETNTctRarity::Epic ? 900.f : (InRarity == ETNTctRarity::Rare ? 380.f : 0.f);
 }
 
 FLinearColor ATN_TctItemPad::RarityColor(ETNTctRarity InRarity)
@@ -180,27 +198,115 @@ void ATN_TctItemPad::OnRep_Look()
 	RefreshLook();
 }
 
+void ATN_TctItemPad::BuildLook()
+{
+	using namespace TNTctMesh;
+	if (!TNTctItemPadDetail::CanRender() || BuiltRarity == Rarity)
+	{
+		return;
+	}
+	BuiltRarity = Rarity;
+	if (IsValid(PropLook)) { PropLook->DestroyComponent(); }
+	if (IsValid(Glint)) { Glint->DestroyComponent(); }
+	PropLook = nullptr;
+	Glint = nullptr;
+	const FVector Where = GetActorLocation();
+	// El sitio da el estilo y el giro: el mismo en el servidor y en cada cliente, sin replicar nada más.
+	const uint32 Site = TNProcMap::HashCell(0x920A0Du, FMath::RoundToInt32(Where.X), FMath::RoundToInt32(Where.Y));
+	const EPadStyle Style = PadStyleFor(Rarity, Site >> 5);
+	const FRotator Facing(0.0, static_cast<double>(Site % 360u), 0.0);
+	GlintPhase = static_cast<float>(Site % 628u) * 0.01f;
+
+	TNProcMesh::FTNProcMeshBuffers Buffers;
+	BuildPad(Buffers, Style, Site);
+	// La paleta de los props es la de las mallas procedurales: se decodifica una vez más, como en el generador.
+	for (FLinearColor& Col : Buffers.Colors)
+	{
+		Col = FLinearColor(TNProcRuntimeMesh::SRGBToLinear(Col.R), TNProcRuntimeMesh::SRGBToLinear(Col.G), TNProcRuntimeMesh::SRGBToLinear(Col.B), Col.A);
+	}
+	UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, TNTctItemPadDetail::FoliageMaterialPath);
+	if (!Material) { Material = TNMaterials::VertexColor(); }
+	if (UStaticMesh* Mesh = TNProcRuntimeMesh::MakeStaticMesh(this, Buffers, Material, false))
+	{
+		PropLook = NewObject<UStaticMeshComponent>(this, NAME_None, RF_Transient);
+		PropLook->SetStaticMesh(Mesh);
+		PropLook->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		PropLook->SetCanEverAffectNavigation(false);
+		PropLook->SetGenerateOverlapEvents(false);
+		PropLook->SetupAttachment(RootComponent);
+		PropLook->SetUsingAbsoluteLocation(true);
+		PropLook->SetUsingAbsoluteRotation(true);
+		PropLook->SetUsingAbsoluteScale(true);
+		PropLook->RegisterComponent();
+		PropLook->SetWorldLocationAndRotation(Where, Facing);
+		PropLook->SetWorldScale3D(FVector::OneVector);
+	}
+	if (UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")))
+	{
+		Glint = NewObject<UStaticMeshComponent>(this, NAME_None, RF_Transient);
+		Glint->SetStaticMesh(Sphere);
+		Glint->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Glint->SetCastShadow(false);
+		Glint->SetCanEverAffectNavigation(false);
+		Glint->SetupAttachment(RootComponent);
+		Glint->SetUsingAbsoluteLocation(true);
+		Glint->SetUsingAbsoluteRotation(true);
+		Glint->SetUsingAbsoluteScale(true);
+		Glint->SetVisibility(false);
+		Glint->RegisterComponent();
+		Glint->SetWorldLocation(Where + Facing.RotateVector(PadGlintOffset(Style)));
+		Glint->SetWorldScale3D(FVector(0.14f));
+		if (UMaterialInterface* Sea = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ProcMap/Materials/MI_ProcSea.MI_ProcSea")))
+		{
+			if (UMaterialInstanceDynamic* Glow = UMaterialInstanceDynamic::Create(Sea, Glint))
+			{
+				Glow->SetVectorParameterValue(TEXT("Color"), RarityColor(GetRarity()));
+				Glow->SetScalarParameterValue(TEXT("Opacity"), 0.3f);
+				Glint->SetMaterial(0, Glow);
+			}
+		}
+	}
+}
+
+void ATN_TctItemPad::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!IsValid(Glint) || !bBeamOn)
+	{
+		return;
+	}
+	// Un latido lento: sube y baja el brillo y el tamaño del destello.
+	const float Pulse = 0.5f + 0.5f * FMath::Sin(GlintPhase + (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f) * 2.4f);
+	Glint->SetWorldScale3D(FVector(0.10f + 0.08f * Pulse));
+	if (UMaterialInstanceDynamic* Glow = Cast<UMaterialInstanceDynamic>(Glint->GetMaterial(0)))
+	{
+		Glow->SetScalarParameterValue(TEXT("Opacity"), 0.16f + 0.5f * Pulse);
+	}
+}
+
 void ATN_TctItemPad::RefreshLook()
 {
 	const ETNTctRarity Level = GetRarity();
-	if (Disc)
+	BuildLook();
+	if (IsValid(Glint))
 	{
-		// Más ancho cuanto más raro.
-		const float Width = Level == ETNTctRarity::Epic ? 2.4f : (Level == ETNTctRarity::Rare ? 2.0f : 1.6f);
-		Disc->SetRelativeScale3D(FVector(Width, Width, 0.03f));
-		if (UMaterialInstanceDynamic* Material = Cast<UMaterialInstanceDynamic>(Disc->GetMaterial(0)))
+		Glint->SetVisibility(bBeamOn);
+		if (UMaterialInstanceDynamic* Glow = Cast<UMaterialInstanceDynamic>(Glint->GetMaterial(0)))
 		{
-			Material->SetVectorParameterValue(TEXT("Color"), RarityColor(Level));
+			Glow->SetVectorParameterValue(TEXT("Color"), RarityColor(Level));
 		}
 	}
+	SetActorTickEnabled(IsValid(Glint) && bBeamOn);
 	if (Beam)
 	{
 		const float Height = BeamHeight(Level);
-		Beam->SetVisibility(bBeamOn);
-		// El cilindro del motor mide 100 uu de alto y 100 de ancho: 35 uu de ancho y Height de alto, en coordenadas de mundo (el disco
-		// es plano y escala lo que cuelga de él).
-		Beam->SetWorldScale3D(FVector(0.35f, 0.35f, Height / 100.f));
-		Beam->SetWorldLocation(GetActorLocation() + FVector(0.0, 0.0, Height * 0.5f));
+		Beam->SetVisibility(bBeamOn && Height > 0.f);
+		if (Height > 0.f)
+		{
+			// El cilindro del motor mide 100 uu de alto y 100 de ancho, en coordenadas de mundo (el disco es plano y escala lo que cuelga de él).
+			Beam->SetWorldScale3D(FVector(TNTctItemPadDetail::BeamWidth, TNTctItemPadDetail::BeamWidth, Height / 100.f));
+			Beam->SetWorldLocation(GetActorLocation() + FVector(0.0, 0.0, Height * 0.5f));
+		}
 		if (!Cast<UMaterialInstanceDynamic>(Beam->GetMaterial(0)) && Beam->GetMaterial(0))
 		{
 			if (UMaterialInstanceDynamic* Glow = UMaterialInstanceDynamic::Create(Beam->GetMaterial(0), this))
@@ -211,7 +317,7 @@ void ATN_TctItemPad::RefreshLook()
 		if (UMaterialInstanceDynamic* Glow = Cast<UMaterialInstanceDynamic>(Beam->GetMaterial(0)))
 		{
 			Glow->SetVectorParameterValue(TEXT("Color"), RarityColor(Level));
-			Glow->SetScalarParameterValue(TEXT("Opacity"), 0.32f);
+			Glow->SetScalarParameterValue(TEXT("Opacity"), TNTctItemPadDetail::BeamOpacity);
 		}
 	}
 }

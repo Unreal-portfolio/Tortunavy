@@ -14,6 +14,9 @@
  * Todo sale de una semilla y del suelo medido (FHeightField), sin nada que dependa de la calidad gráfica, el orden de carga ni
  * el reloj de cada máquina: el anfitrión y los clientes montan exactamente lo mismo (#828). Lo que tiene colisión se reparte solo
  * donde sobra sitio (FHeightField::OpenAt) y lejos de las salidas y de los puntos de objetos (FKeepOut): nunca cierra un paso.
+ *
+ * #920: mucha más vegetación (palmeras, arbustos, algas de orilla, sombrillas, boyas...), más piezas de decorado y estructuras
+ * de playa con colisión (casetas y cascos de barco varados).
  */
 namespace TNTctScenery
 {
@@ -80,15 +83,45 @@ namespace TNTctScenery
 		ETNProcBiome Biome = ETNProcBiome::Beach;
 	};
 
+	/** Estructuras grandes de playa con colisión que no son piezas del decorado de ATN_BeachDecorField (#920). */
+	enum class EStructureKind : uint8
+	{
+		/** Caseta de playa de rayas, con puerta y tejado a dos aguas. */
+		Hut,
+		/** Casco de un barco varado, medio enterrado, con las cuadernas al aire. */
+		BoatWreck,
+		Count
+	};
+
+	/** Una estructura con colisión: lo que es, dónde (mundo, en el suelo), cómo y qué variante de malla. */
+	struct FStructurePick
+	{
+		EStructureKind Kind = EStructureKind::Hut;
+		FVector Location = FVector::ZeroVector;
+		float YawDeg = 0.f;
+		float Scale = 1.f;
+		int32 Variant = 0;
+	};
+
+	/** Radio de la huella de una estructura a escala 1 (uu). */
+	double StructureRadius(EStructureKind Kind);
+
 	struct FPlanOptions
 	{
-		/** Multiplica la densidad de la vegetación (1 = la del mapa generado). */
-		float FloraDensity = 1.f;
-		/** Probabilidad de que cada casilla de decorado (de 26 m) lleve una pieza. */
-		float DecorChance = 0.55f;
-		int32 MaxDecor = 64;
-		/** Lo que queda libre alrededor de cada pieza con colisión (uu). */
+		/** Multiplica la densidad de la vegetación (1 = la del mapa generado; #920: bastante más). */
+		float FloraDensity = 2.4f;
+		/** Tope de plantas (se aclaran siempre las mismas): el HISM y el árbol de instancias aguantan, pero con sentido. */
+		int32 MaxFlora = 36000;
+		/** Probabilidad de que cada casilla de decorado (de 20 m) lleve una pieza. */
+		float DecorChance = 0.7f;
+		int32 MaxDecor = 150;
+		/** Probabilidad de que cada casilla de estructuras (de 24 m) lleve una, tope y paso libre alrededor (uu). */
+		float StructureChance = 0.32f;
+		int32 MaxStructures = 40;
+		float StructureClearance = 500.f;
+		/** Lo que queda libre alrededor de cada pieza con colisión (uu) y lo que se separa del borde de una salida o un punto de objetos (#920: ya llevan su margen). */
 		float DecorClearance = 600.f;
+		float KeepOutClearance = 250.f;
 		/** Anclas de fauna: lado de casilla (uu) y tope. */
 		float FaunaCell = 800.f;
 		int32 MaxFaunaAnchors = 700;
@@ -100,8 +133,10 @@ namespace TNTctScenery
 		TArray<TNProcMap::FFloraInstance> Flora;
 		/** Decorado con colisión: lo único que importa que sea idéntico en todas las máquinas. */
 		TArray<FDecorPick> Decor;
+		/** Estructuras con colisión (casetas, barcos varados): también idénticas en todas las máquinas. */
+		TArray<FStructurePick> Structures;
 		TArray<FFaunaAnchor> Fauna;
-		/** Huella de lo que tiene colisión (para compararla entre máquinas en el log y en las pruebas). */
+		/** Huella de lo que tiene colisión, decorado y estructuras (para compararla entre máquinas en el log y en las pruebas). */
 		uint32 Fingerprint = 0;
 	};
 
@@ -119,6 +154,14 @@ namespace TNTctScenery
 
 	/** Huella de unas piezas de decorado (su sitio a cm enteros, su giro y su tamaño). */
 	uint32 FingerprintOf(const TArray<FDecorPick>& Decor);
+	uint32 FingerprintOf(const TArray<FDecorPick>& Decor, const TArray<FStructurePick>& Structures);
+
+	/**
+	 * Las especies de un bioma en la arena: las del mapa generado (TNProcMap::FloraSpeciesFor, mismos índices) con unas pocas
+	 * más al final para la playa y las orillas (palmeras, arbustos, algas, sombrillas, boyas) sin tocar lo que usan los demás
+	 * modos (#920).
+	 */
+	void SpeciesFor(ETNProcBiome Biome, TArray<TNProcMap::FFloraSpecies>& Out);
 
 	/**
 	 * Reparte el decorado vivo de la arena medida en Field (mundo; WaterBaseZ es la cota del mar) con la semilla Seed y sin

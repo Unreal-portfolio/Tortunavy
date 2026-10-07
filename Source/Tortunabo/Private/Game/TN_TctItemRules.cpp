@@ -428,7 +428,7 @@ bool TNTctItemRules::IsPadSubmerged(float PadZ, float WaterZ, float Clearance)
 
 int32 TNTctItemRules::ActivePadCount(int32 Players, int32 PadCount)
 {
-	return FMath::Min(FMath::Max(0, PadCount), FMath::Max(4, Players + 2));
+	return FMath::Min(FMath::Max(0, PadCount), FMath::Max(10, Players * 4 + 4));
 }
 
 float TNTctItemRules::PadFirstSpawnDelay(int32 PadIndex)
