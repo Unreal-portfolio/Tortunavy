@@ -1145,8 +1145,13 @@ void ATN_VRRig::RecenterPanel()
 {
 	bPanelPlaced = false;
 	bHudFollowing = false;
-	// Al recentrar, las gafas mueven el seguimiento de golpe: la velocidad de las manos empieza de cero.
+	// Al recentrar, las gafas mueven el seguimiento de golpe: la velocidad de las manos empieza de cero y la cabeza se mide de
+	// nuevo para que quede en los ojos de la tortuga (#916).
 	ResetHandVelocity();
+	if (ATortugaCharacter* Turtle = ViewTurtle.Get())
+	{
+		Turtle->RecalibrateVRHead();
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

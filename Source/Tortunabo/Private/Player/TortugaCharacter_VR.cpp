@@ -18,6 +18,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 
 void ATortugaCharacter::SetVRView(bool bOn, bool bHeadset)
 {
@@ -52,6 +53,8 @@ void ATortugaCharacter::SetVRView(bool bOn, bool bHeadset)
 			VRCamera->SetupAttachment(VROrigin);
 			VRCamera->RegisterComponent();
 		}
+		// Con gafas, la posición de la cabeza respecto del origen del seguimiento se mide de nuevo (#916).
+		VRHeadCalibration.Reset();
 		VROrigin->SetWorldLocation(ComputeFirstPersonEye(bHeadset));
 		bFirstPersonEyeValid = false;
 		// Con gafas el origen no gira con la cápsula: lo gira el stick (y la cabeza gira la cámara dentro de él).
@@ -116,10 +119,42 @@ void ATortugaCharacter::AddVRYaw(float DeltaYaw)
 	{
 		++VRTurnSerial;
 	}
+	const FVector OldShift = VRHeadCalibration.OriginShift(VRYaw);
 	VRYaw = static_cast<float>(FRotator::NormalizeAxis(static_cast<double>(VRYaw + DeltaYaw)));
 	if (VROrigin && bVRHeadsetView)
 	{
 		VROrigin->SetWorldRotation(FRotator(0.0, VRYaw, 0.0));
+		// Girar el origen mueve la cabeza calibrada (gira alrededor de él): el origen se corre lo que haga falta para que
+		// siga en los ojos de la tortuga en este mismo fotograma.
+		VROrigin->AddWorldOffset(OldShift - VRHeadCalibration.OriginShift(VRYaw));
+	}
+}
+
+void ATortugaCharacter::RecalibrateVRHead()
+{
+	VRHeadCalibration.Request();
+}
+
+void ATortugaCharacter::UpdateVRHeadCalibration(float DeltaTime)
+{
+	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	{
+		return;
+	}
+	// Ponerse las gafas (de quitadas a puestas) cambia dónde está la cabeza: se mide otra vez.
+	const EHMDWornState::Type Worn = UHeadMountedDisplayFunctionLibrary::GetHMDWornState();
+	if (Worn == EHMDWornState::Worn && VRPrevWornState == static_cast<uint8>(EHMDWornState::NotWorn))
+	{
+		VRHeadCalibration.Request();
+	}
+	VRPrevWornState = static_cast<uint8>(Worn);
+	FRotator DeviceRotation = FRotator::ZeroRotator;
+	FVector DevicePosition = FVector::ZeroVector;
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(DeviceRotation, DevicePosition);
+	if (VRHeadCalibration.Update(DevicePosition, Worn != EHMDWornState::NotWorn, DeltaTime))
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[VR] %s: cabeza calibrada, las gafas estaban a %s del origen del seguimiento."), *GetName(),
+			*DevicePosition.ToCompactString());
 	}
 }
 
@@ -188,6 +223,7 @@ void ATortugaCharacter::TickVRView(float DeltaTime)
 	{
 		return;
 	}
+	UpdateVRHeadCalibration(DeltaTime);
 	VROrigin->SetWorldRotation(FRotator(0.0, VRYaw, 0.0));
 	const FRotator Head = VRCamera->GetComponentRotation();
 	float TargetYaw = static_cast<float>(Head.Yaw);

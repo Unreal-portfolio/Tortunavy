@@ -398,7 +398,13 @@ void ATortugaCharacter::TickFirstPersonView(float DeltaTime)
 	}
 	// Relativos a la cápsula (de la que cuelgan el origen VR y la cámara): si algo la mueve después de este Tick, los ojos
 	// van con ella en el mismo fotograma.
-	const FVector EyeWorld = GetActorLocation() + FirstPersonEyeOffset;
+	FVector EyeWorld = GetActorLocation() + FirstPersonEyeOffset;
+	if (bHeadsetStable)
+	{
+		// Con gafas la cámara es origen + pose de la cabeza: el origen se corre lo que mide la calibración para que la cabeza,
+		// donde esté, caiga en los ojos de la tortuga (#916).
+		EyeWorld -= VRHeadCalibration.OriginShift(VRYaw);
+	}
 	const UCapsuleComponent* Capsule = GetCapsuleComponent();
 	const FVector EyeRelative = Capsule ? Capsule->GetComponentTransform().InverseTransformPosition(EyeWorld) : FirstPersonEyeOffset;
 

@@ -6,6 +6,7 @@
 #include "TimerManager.h"
 #include "Core/TN_CosmeticsTypes.h"
 #include "Player/TN_DiveDecisions.h"
+#include "VR/TN_VRHeadCalibration.h"
 #include "TortugaCharacter.generated.h"
 
 class APlayerController;
@@ -1874,6 +1875,12 @@ public:
 	 */
 	void SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid);
 
+	/**
+	 * VR con gafas: vuelve a medir dónde está la cabeza respecto del origen del seguimiento (#916). Lo llaman al recentrar y
+	 * al ponerse las gafas; sin esa medida, la cámara salía a un metro de los ojos de la tortuga.
+	 */
+	void RecalibrateVRHead();
+
 	/** Manos VR para el IK de los brazos: las del dueño o, en las demás máquinas, las replicadas. false sin VR. */
 	bool GetVRHandTargets(FVector& OutLeft, FVector& OutRight, bool& bOutLeft, bool& bOutRight) const;
 
@@ -2038,6 +2045,15 @@ private:
 
 	/** Manda al servidor la aleta derecha antes de usar o lanzar (solo clientes en VR). */
 	void SendVRAimToServer();
+
+	/** Con gafas, cada fotograma: mide la posición de la cabeza cuando toca (VRHeadCalibration) y detecta ponerse las gafas. */
+	void UpdateVRHeadCalibration(float DeltaTime);
+
+	/** Posición de las gafas al calibrar (#916): el origen del seguimiento se desplaza para que caiga en los ojos de la tortuga. */
+	FTNVRHeadCalibration VRHeadCalibration;
+
+	/** Último estado de las gafas (EHMDWornState): al pasar de quitadas a puestas se calibra de nuevo. */
+	uint8 VRPrevWornState = 0;
 
 	bool bVRViewActive = false;
 	bool bVRHeadsetView = false;
