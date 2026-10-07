@@ -455,7 +455,10 @@ ATortugaCharacter::EVRGrip ATortugaCharacter::VRGripPressed(bool bRight, const F
 	if (ATN_InteractableBase* Touched = FindInteractableNearHand(HandLocation))
 	{
 		FocusedInteractable = Touched;
+		// Lo coge el agarre: TryInteract no lo descarta como haría con el gatillo (#916).
+		bVRGripInteract = true;
 		TryInteract();
+		bVRGripInteract = false;
 		return EVRGrip::Touched;
 	}
 	// Un compañero en el caparazón o aturdido, al alcance de la mano y que no esté al otro lado de una pared.

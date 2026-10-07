@@ -2072,6 +2072,9 @@ private:
 
 	bool bVRViewActive = false;
 	bool bVRHeadsetView = false;
+
+	/** TryInteract lo llama un agarre VR (VRGripPressed): coge lo que tiene la mano al alcance en vez de descartarlo (#916). */
+	bool bVRGripInteract = false;
 	uint32 VRTurnSerial = 0;
 	float VRYaw = 0.f;
 	float VRLastControlYaw = 0.f;
