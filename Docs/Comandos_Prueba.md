@@ -355,17 +355,23 @@ un objeto suelto, pesca en un charco o rescata a una compañera derribada o en e
 | `TN.Coop.Item <objeto\|list> [jugador=0]` | Da ese objeto del coop a la tortuga (a la mano; si la mochila está llena, sustituye). `list` enseña objetos, apilado, usos y peso. |
 | `TN.Coop.FishingPool [jugador=0]` / `TN.Coop.FishingPool clear` | Un charco de pesca 4 m delante de esa tortuga / quita los de prueba. Mantener E 2 s pesca un objeto; 12 s de respiro por charco. |
 
-### Economía: chapas
+### Economía: chapas y máquina expendedora
 
 La chapa (`ATN_Chapa`, #858) es la moneda de la partida: se recoge al pasar por encima y se apila en un contador aparte de los
 dos huecos (encima de las burbujas del HUD). Con las aletas vacías, X / Triángulo lanza una hacia el centro de la pantalla, como
-un frisbee de canto; apuntando al suelo, se tira. Quien la lanza tarda 1,5 s en poder recogerla; los demás, al momento. Valores
-en `Config/DefaultGame.ini`, `[/Script/Tortunabo.TN_EconomySettings]`. Pruebas: `Tortunabo.Economy`.
+un frisbee de canto; apuntando al suelo, se tira. Quien la lanza tarda 1,5 s en poder recogerla; los demás, al momento.
+
+La máquina expendedora (`ATN_VendingMachine`, #859) se coloca a mano. La chapa que cruza su ranura (la rendija negra de la cara)
+suma 1 de crédito a quien la lanzó, en esa máquina. Junto a ella, pulsar E cambia de objeto y mantener E 0,8 s compra el elegido
+si llega el crédito: sale por la bandeja. La pantalla enseña el objeto, el precio y tu crédito. Lista por defecto (StaminaBoost
+2, Totem 2, Harpoon 5, PufferFish 1) y valores en `Config/DefaultGame.ini`, `[/Script/Tortunabo.TN_EconomySettings]`; una
+máquina con lista propia lleva un `UTN_VendingStockData` en `Stock`. Pruebas: `Tortunabo.Economy`.
 
 | Comando | Qué hace |
 |---|---|
 | `TN.Chapas.Give <n=5> [jugador=0]` | Da n chapas a esa tortuga. |
 | `TN.Chapas.Spawn <n=5> [jugador=0]` | Suelta n chapas 3 m delante de esa tortuga (lo mismo que usarán las cajas y el airdrop: `ATN_Chapa::SpawnChapas`). |
+| `TN.Vending.Spawn [jugador=0]` / `TN.Vending.Spawn clear` | Una máquina expendedora 4 m delante de esa tortuga, con la ranura hacia ella / quita las de prueba. |
 
 ## Huella del mapa: anfitrión y clientes con el mismo mapa (#828)
 

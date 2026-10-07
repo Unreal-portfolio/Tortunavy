@@ -141,7 +141,8 @@ namespace TNChapaRules
 		{
 			return -1;
 		}
-		return Current < 0 ? 0 : (Current + 1) % Num;
+		const int32 Next = Current < 0 ? 0 : Current + 1;
+		return Next >= Num ? 0 : Next;
 	}
 
 	/**

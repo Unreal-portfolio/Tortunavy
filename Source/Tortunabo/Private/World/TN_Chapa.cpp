@@ -16,6 +16,7 @@
 #include "Player/TortugaCharacter.h"
 #include "Settings/TN_EconomySettings.h"
 #include "UObject/ConstructorHelpers.h"
+#include "World/TN_VendingMachine.h"
 
 namespace TNChapaDetail
 {
@@ -152,7 +153,18 @@ void ATN_Chapa::ServerStepFlight(double FromSeconds, double ToSeconds)
 	SteppedSeconds = To;
 
 	FHitResult Hit;
-	if (SweepWorld(A, B, Hit))
+	const bool bHit = SweepWorld(A, B, Hit);
+	// La ranura, hasta donde choca (sobresale de la cara de la máquina: la chapa la cruza antes de dar en ella).
+	ATortugaCharacter* ThrowerTurtle = Thrower.Get();
+	ATN_VendingMachine* Machine = ThrowerTurtle ? ATN_VendingMachine::FindSlotCrossed(GetWorld(), A, bHit ? FVector(Hit.Location) : B) : nullptr;
+	if (Machine && Machine->ServerInsertChapa(ThrowerTurtle, Value))
+	{
+		bConsumed = true;
+		SetActorLocation(Machine->GetSlotLocation());
+		MulticastConsumed();
+		return;
+	}
+	if (bHit)
 	{
 		// En el suelo se queda donde cae; contra una pared, resbala hasta el suelo de debajo.
 		const bool bFloor = TNChapaRules::IsRestingSurface(Hit.ImpactNormal);
