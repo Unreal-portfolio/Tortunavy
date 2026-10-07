@@ -2997,21 +2997,23 @@ El centro y la esfera de recogida van a 60 cm del suelo. Al cogerla: el estallid
 **Dónde están**: el reparto en el mapa procedural del cooperativo, en el §32.13; el de la playa (topes por ronda de **200 de 1, 27 de 25, 8
 de 50 y 2 de 100**, cofres y lagarto generoso), en el §34.13 y el §34.11.
 
-### 30.2 Puntos por puesto (`RaceScore` al llegar a la meta)
+### 30.2 Puntos de final de partida (#873)
 
-`ATN_RunGameMode::MarkPlayerFinished` (la usan el clásico, el mapa procedural y, por debajo, la carrera de la playa). Al cruzar
-la meta, a lo que ya lleva (conchas y bonus de zonas) se le suman **puesto + bonus de tiempo**:
+Desde #873, `ATN_RunGameMode::MarkPlayerFinished` solo apunta el puesto y el tiempo de llegada: ya no suma puesto ni bonus de
+tiempo a `RaceScore`. Los puntos se calculan al entrar en Results (`ATN_CoopGameState::AwardEndScores`, `TN_CoopScore.h`) con
+los valores de `DA_PointsEconomy` (decisión del director del 07-10 en #873):
 
-| Puesto | 1.º | 2.º | 3.º | 4.º | 5.º | 6.º | 7.º | 8.º | 9.º o más | Eliminada |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **Puntos** | **400** | **300** | **200** | **100** | **80** | **65** | **55** | **50** | 50 | 0 |
+| Término | Puntos |
+|---|---|
+| Llegar a la meta | 100 |
+| Puesto (solo quien llega) | 1.º 50, 2.º 30, 3.º 20, 4.º 10, resto 0 |
+| Tiempo (solo quien llega) | +1 cada 10 s por debajo del tiempo objetivo del nivel, máximo 60 |
+| Muñecos tortuga | 25 cada uno |
+| Objetos del nivel recogidos / total | × 50 (0 si el nivel no tiene objetos) |
+| Eficiencia en los puzles | × 30 (0 si el nivel no tiene puzles) |
+| Títulos Saltarín, Tesorero y Curandero | 20 cada uno |
 
-(`RankScoreTable` de `TN_RunGameMode.cpp`; antes eran cuatro puestos y «el resto 50»; las eliminadas no consumen puesto.)
-
-**Bonus de tiempo**: `max(0, floor((120 − tiempo de llegada) × 5))`: 5 puntos por cada segundo por debajo de **120 s**
-(`TimeBonusBaselineSeconds`, `TimeBonusPointsPerSecond`); máximo 600 si se llegara en 0 s [calc]. En la carrera de la playa el
-tiempo se cuenta **desde el inicio de cada ronda** (`MatchStartServerTime` se reinicia), pero una ronda dura minutos, así que el
-bonus es **0 en la práctica** [calc].
+El total va a la columna de puntos del marcador y al saldo de la tienda de cada jugadora (`ShopPoints`).
 
 `FinishRank` (1, 2, 3…) se asigna por el orden en que cada tortuga pasa por `MarkPlayerFinished`. En la playa eso ocurre 0,8 s
 **después** del contacto con el agua (§22.6). La tabla de resultados del HUD ordena por puesto, luego las sin puesto y las
