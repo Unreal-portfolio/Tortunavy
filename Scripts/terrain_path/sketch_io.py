@@ -6,17 +6,17 @@ rectangular de cols x rows trozos de 100 m (los generadores de C01 suponen un cu
     salida -> mar, cada tunel de boca a boca por dentro, salida de la hondonada y sin pisar paredes;
   - route: camino principal (sin tuneles) y su longitud;
   - write_outer_rect: corona barata sin colision alrededor del rectangulo (outer.py para 4 x 4);
-  - lamina: boceto y vista cenital lado a lado, con las bocas de los tuneles.
+  - la lamina (boceto y mapa de alturas lado a lado) esta en sketch_sheet.py.
 """
 
 from __future__ import annotations
 
+from dataclasses import is_dataclass, replace
 from types import SimpleNamespace
 
 import numpy as np
-from PIL import Image, ImageDraw
 from scipy import ndimage
-from skimage.graph import MCP_Geometric, route_through_array
+from scipy.spatial import cKDTree
 
 from gen_terrain_volume import ground_level, walk
 from terrain_vol.density import smooth
@@ -26,13 +26,33 @@ from terrain_vol.mesh import build_chunk, vertex_colors, z_levels
 
 from . import field
 from .model import walkable
-from .sketch import SEA, load_rgb
+from .sketch import SEA
+from .sketch_metrics import centerline
 
 SPRINT_MS, WALK_MS = 4.0, 2.0
 
 
+SEAM_CLEAR_UU = 1.0      # un vertice que no esta en la costura queda al menos a esto de ella
+
+
+def clear_seams(chunk):
+    """Aparta de la costura (hasta SEAM_CLEAR_UU, 1 cm) los vertices que quedan a menos de eso sin estar en
+    ella. El marching cubes los deja asi donde la densidad roza 0 en el borde y la decimacion puede acercar
+    alguno: el vecino no los tiene y la comprobacion de costuras (vertice a vertice, 0,5 uu) los da por
+    grieta. Los de la costura (exactos, fijos al decimar) no se tocan."""
+    half = CELL_M / 2.0 * UU_PER_M
+    v = np.array(chunk.vertices, dtype=np.float32, copy=True)
+    for axis in (0, 1):
+        gap = half - np.abs(v[:, axis])
+        near = (gap > 1e-3) & (gap < SEAM_CLEAR_UU)
+        v[near, axis] = np.sign(v[near, axis]) * (half - SEAM_CLEAR_UU)
+    fields = {"vertices": v}
+    return replace(chunk, **fields) if is_dataclass(chunk) else type(chunk)(**{**vars(chunk), **fields})
+
+
 def build_chunks(model) -> dict:
-    return {(col, row): build_chunk(model, col, row) for row in range(model.spec.rows) for col in range(model.spec.cols)}
+    return {(col, row): clear_seams(build_chunk(model, col, row))
+            for row in range(model.spec.rows) for col in range(model.spec.cols)}
 
 
 def assemble(chunks: dict, rows: int, cols: int, attr: str) -> np.ndarray:
@@ -81,13 +101,13 @@ def tunnel_walk(model, stand: np.ndarray, axis: dict) -> dict:
     sel = (axis["s"] >= s0 - 15.0) & (axis["s"] <= s1 + 15.0)
     pts, floor = pts[sel], floor[sel]
     ni, nj, nk = stand.shape
-    band = np.zeros((ni, nj), bool)
-    floor_grid = np.full((ni, nj), np.nan)
-    for (x, y), z in zip(pts, floor):
-        i, j = index_of(model, (x, y))
-        r = int(axis["half"] * 0.6)
-        band[max(i - r, 0):i + r + 1, max(j - r, 0):j + r + 1] = True
-        floor_grid[max(i - r, 0):i + r + 1, max(j - r, 0):j + r + 1] = z
+    # Cada celda toma el suelo de la muestra del eje mas cercana (en una cueva que baja deprisa, las franjas
+    # de muestras vecinas se pisaban y la boca se quedaba con el suelo de mas abajo).
+    halves = axis["half_s"][sel]
+    ii, jj = np.mgrid[0:ni, 0:nj]
+    dist, k = cKDTree(pts).query(np.stack([model.x_min + ii.ravel(), model.y_min + jj.ravel()], axis=1))
+    band = (dist < 0.6 * halves[k]).reshape(ni, nj)
+    floor_grid = np.where(band, floor[k].reshape(ni, nj), np.nan)
     zl = z_levels()
     near_floor = np.abs(zl[None, None, :] - np.nan_to_num(floor_grid, nan=1e3)[..., None]) < 1.5
     limited = stand & band[..., None] & near_floor
@@ -101,6 +121,17 @@ def tunnel_walk(model, stand: np.ndarray, axis: dict) -> dict:
             "largo_m": round(float(s1 - s0), 1), "pendiente": round(abs(axis["z"][1] - axis["z"][0]) / (s1 - s0), 3)}
 
 
+def surface_seen(seen: np.ndarray, top: np.ndarray) -> np.ndarray:
+    """Columnas alcanzadas a la cota de su superficie (top, +-1 m): sin el suelo de las cuevas de debajo."""
+    zl = z_levels()
+    k = np.rint((top - zl[0]) / (zl[1] - zl[0])).astype(int)
+    out = np.zeros(top.shape, dtype=bool)
+    for dk in range(-2, 3):
+        kk = np.clip(k + dk, 0, seen.shape[2] - 1)
+        out |= np.take_along_axis(seen, kk[..., None], axis=2)[..., 0]
+    return out
+
+
 def check(model, chunks) -> dict:
     stand, top = standable_grid(model, chunks)
     s_ij, e_ij = index_of(model, model.start), index_of(model, model.end)
@@ -110,7 +141,7 @@ def check(model, chunks) -> dict:
     end_ok = bool(flat[e_ij[0] - 2:e_ij[0] + 3, e_ij[1] - 2:e_ij[1] + 3].any())
     e_any = interior(model, model.e_any)
     tunnel = interior(model, model.grid.tunnel) > 0.3
-    wall_top = int((flat & (e_any > 3.0) & ~tunnel).sum())
+    wall_top = int((surface_seen(seen, top) & (e_any > 3.0) & ~tunnel).sum())
     tunnels = {ax["name"]: tunnel_walk(model, stand, ax) for ax in model.tunnel_axes}
     for ax in model.tunnel_axes:
         mid = ax["pts"][len(ax["pts"]) // 2]
@@ -132,17 +163,18 @@ def check(model, chunks) -> dict:
             "seen": seen, "top": top, "stand": stand}
 
 
-def route(model, seen: np.ndarray, use_tunnels: bool) -> tuple[np.ndarray, float]:
-    """Camino mas corto a pie de la salida a la meta sobre lo alcanzado (puntos del mundo, metros)."""
+def route(model, seen: np.ndarray, top: np.ndarray, use_tunnels: bool) -> tuple[np.ndarray, float]:
+    """Recorrido a pie de la salida a la meta por el centro de lo alcanzado (sketch_metrics.centerline):
+    puntos del mundo y largo en metros. Sin tuneles: solo la superficie, sin las bocas ni el suelo de las
+    cuevas (que pasan por debajo de las zonas)."""
     flat = seen.any(axis=2)
     if not use_tunnels:
-        flat = flat & ~(interior(model, model.grid.tunnel) > 0.3)
-    cost = np.where(flat, 1.0, np.inf)
+        flat = surface_seen(seen, top) & ~(interior(model, model.grid.tunnel) > 0.3)
     s_ij, e_ij = index_of(model, model.start), index_of(model, model.end)
-    e_ij = tuple(np.argwhere(flat[e_ij[0] - 2:e_ij[0] + 3, e_ij[1] - 2:e_ij[1] + 3])[0] + np.array(e_ij) - 2)
-    path, cost_total = route_through_array(cost, s_ij, e_ij, fully_connected=True, geometric=True)
-    pts = np.array([[model.x_min + i, model.y_min + j] for i, j in path], dtype=np.float64)
-    return pts, float(cost_total)
+    goal = np.zeros_like(flat)
+    goal[e_ij[0] - 2:e_ij[0] + 3, e_ij[1] - 2:e_ij[1] + 3] = True
+    path, length = centerline(flat, s_ij, goal & flat)
+    return path + np.array([model.x_min, model.y_min]), length
 
 
 def cave_clearance(model, axis: dict, step: int = 8) -> float:
@@ -192,6 +224,7 @@ def legend_order_ok(table: list[dict]) -> bool:
 
 # -- corona ------------------------------------------------------------------------------------
 OUTER_M, CELL_OUT_M, STEP_OUT_M, BLEND_M = 1000.0, 200.0, 5.0, 80.0
+OUTER_COLOR_STEP = 256
 
 
 def _outer_height(model, X, Y):
@@ -208,7 +241,7 @@ def _outer_height(model, X, Y):
     return border * (1.0 - t) + far * t
 
 
-def _outer_cell(model, x0: float, y0: float, decimate_m: float):
+def _outer_cell(model, x0: float, y0: float, decimate_m: float, color_step: int):
     n = int(round(CELL_OUT_M / STEP_OUT_M)) + 1
     xs, ys = x0 + STEP_OUT_M * np.arange(-1, n + 1), y0 + STEP_OUT_M * np.arange(-1, n + 1)
     Xp, Yp = np.meshgrid(xs, ys, indexing="ij")
@@ -239,12 +272,15 @@ def _outer_cell(model, x0: float, y0: float, decimate_m: float):
     normals, tris = normals.astype(np.float32), tris.astype(np.uint32)
     if decimate_m > 0.0:
         from terrain_vol.decimate import decimate_mesh
-        local, normals, colors, tris = decimate_mesh(local, normals, colors, tris, max_error_m=decimate_m)
+        local, normals, colors, tris = decimate_mesh(local, normals, colors, tris, max_error_m=decimate_m,
+                                                     color_step=color_step)
     return center, SimpleNamespace(vertices=local.astype(np.float32), normals=normals, colors=colors, triangles=tris,
                                    instances=np.zeros((0, 11), np.float32))
 
 
-def write_outer_rect(model, out, name: str, decimate_m: float) -> list[dict]:
+def write_outer_rect(model, out, name: str, decimate_m: float, color_step: int = OUTER_COLOR_STEP) -> list[dict]:
+    """Corona sin colision alrededor del rectangulo. Sin costuras de color (color_step 256): son dunas
+    lejanas sin lineas que conservar y las costuras fijaban la mitad de sus vertices."""
     (out / "Outer").mkdir(exist_ok=True)
     cells = []
     xs = np.arange(model.x_min - OUTER_M, model.x_max + OUTER_M - 1e-6, CELL_OUT_M)
@@ -253,69 +289,13 @@ def write_outer_rect(model, out, name: str, decimate_m: float) -> list[dict]:
         for j, y0 in enumerate(ys):
             if model.x_min <= x0 < model.x_max and model.y_min <= y0 < model.y_max:
                 continue
-            center, mesh = _outer_cell(model, float(x0), float(y0), decimate_m)
+            center, mesh = _outer_cell(model, float(x0), float(y0), decimate_m, color_step)
             file = f"Outer/o{i}_{j}.bin"
             write_chunk(out / file, mesh)
             cells.append({"name": f"M_{name}_outer_{i}_{j}", "file": file, "collision": False,
                           "center_uu": [center[0] * UU_PER_M, center[1] * UU_PER_M],
                           "vertices": int(len(mesh.vertices)), "triangles": int(len(mesh.triangles)), "instances": 0})
     return cells
-
-
-# -- lamina ------------------------------------------------------------------------------------
-def lamina(model, top: np.ndarray, route_pts: np.ndarray, path) -> None:
-    """Boceto (izquierda) y vista cenital sombreada del relieve (derecha) a la misma escala, Norte arriba,
-    con las bocas de los tuneles (circulos rojos), el eje de cada tunel y el camino principal."""
-    spec = model.spec
-    gx, gy = np.gradient(top)
-    light = np.clip((gx * 0.5 - gy * 0.35 + 1.0) / np.sqrt(gx * gx + gy * gy + 1.0) * 0.8, 0.0, 1.0)
-    h = np.clip((top - WATER_M) / 30.0, 0.0, 1.0)
-    rgb = np.stack([0.55 + 0.4 * h, 0.42 + 0.35 * h, 0.25 + 0.2 * h], -1) * (0.35 + 0.65 * light)[..., None]
-    rgb = np.where((top < WATER_M)[..., None], np.array([0.1, 0.35, 0.65]), rgb)
-    contour = (np.floor((top - WATER_M) / 2.0) != np.floor((np.roll(top, 1, 0) - WATER_M) / 2.0))
-    rgb = np.where(contour[..., None], rgb * 0.85, rgb)
-    relief = Image.fromarray((np.clip(rgb, 0, 1) * 255).astype(np.uint8)[::-1])
-    scale = 2
-    relief = relief.resize((relief.width * scale, relief.height * scale), Image.NEAREST)
-    # Boceto recortado al rectangulo del mapa y llevado a la misma escala.
-    from .sketch_model import SCRIPTS
-    sketch = _crop_scaled(Image.fromarray(load_rgb(SCRIPTS / spec.image)), spec, model, relief.size)
-    sheet = Image.new("RGB", (relief.width * 2 + 30, relief.height + 60), (245, 240, 230))
-    sheet.paste(sketch, (0, 60))
-    sheet.paste(relief, (relief.width + 30, 60))
-    draw = ImageDraw.Draw(sheet)
-
-    def to_px(p, offset):
-        return offset + (p[1] - model.y_min) * scale, 60 + (model.x_max - p[0]) * scale
-
-    for offset in (0, relief.width + 30):
-        pts = [to_px(p, offset) for p in route_pts[::4]]
-        draw.line(pts, fill=(200, 30, 30), width=3)
-        for ax in model.tunnel_axes:
-            s0, s1 = ax["covered"]
-            sel = (ax["s"] >= s0) & (ax["s"] <= s1)
-            draw.line([to_px(p, offset) for p in ax["pts"][sel][::4]], fill=(60, 60, 60), width=3)
-            for s in (s0, s1):
-                k = int(np.argmin(np.abs(ax["s"] - s)))
-                cx, cy = to_px(ax["pts"][k], offset)
-                draw.ellipse((cx - 14, cy - 14, cx + 14, cy + 14), outline=(220, 0, 0), width=4)
-        for p, color in ((model.start, (0, 160, 0)), (model.end, (0, 0, 200))):
-            cx, cy = to_px(p, offset)
-            draw.rectangle((cx - 9, cy - 9, cx + 9, cy + 9), fill=color)
-    draw.text((10, 10), f"{spec.name}: boceto (izq.) y relieve generado (der.). Escala {spec.m_per_px} m/px; "
-                        f"rojo: camino principal; circulos: bocas de tunel; verde: salida; azul: meta", fill=(0, 0, 0))
-    sheet.save(path)
-
-
-def _crop_scaled(sketch: Image.Image, spec, model, size) -> Image.Image:
-    """El trozo del boceto que cubre el mapa (lo que cae fuera, color de pared), al tamano dado."""
-    left, top_px = spec.world_to_px(model.x_max, model.y_min)
-    right, bottom = spec.world_to_px(model.x_min, model.y_max)
-    margin = 800
-    canvas = Image.new("RGB", (sketch.width + 2 * margin, sketch.height + 2 * margin), (143, 89, 0))
-    canvas.paste(sketch, (margin, margin))
-    box = tuple(int(round(float(v))) + margin for v in (left, top_px, right, bottom))
-    return canvas.crop(box).resize(size, Image.BILINEAR)
 
 
 def sea_mask(model) -> np.ndarray:

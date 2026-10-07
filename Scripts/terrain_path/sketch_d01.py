@@ -4,14 +4,24 @@ Lectura del boceto (Scripts/terrain_path/sketches/D01_boceto.jpeg, 1600 x 1600 p
   - marron: pared o limite; azul: mar al norte; gris: bocas de tunel; leyenda abajo a la derecha;
   - tonos de arena: zonas jugables, mas oscuro = mas alto. Salida en la zona mas oscura (abajo) y
     meta en el mar, pasando por la playa clara de arriba;
-  - cueva de arriba (una sola, amplia): de la meseta media a la hondonada, bajo el muro en diagonal;
-  - tunel de abajo (un solo paso): de la hondonada a la zona oscura de abajo.
+  - cueva de arriba (una sola, amplia): baja desde la boca de la meseta media, se abre bajo las zonas
+    siguiendo la mancha discontinua y sube hasta la boca de la hondonada;
+  - tunel de abajo (un solo paso): de la hondonada a la zona oscura de abajo, bajo un cerro.
 
-Escala (correccion del director, 2026-10-06): unos 1000 m de recorrido por el camino principal, de la
-salida al mar. M_PER_PX sale de route_length_px sobre el boceto (gen_terrain_sketch.py --medir).
+Decisiones del director (#875):
+  - 2026-10-06: pasillos en cuesta entre zonas (sin bajadas de golpe), suelo casi llano dentro de cada
+    zona, tuneles sin bifurcaciones, cueva de 10 m de alto como maximo, paredes mas altas que en C01;
+  - 2026-10-07, tras ver la lamina: recorrido de unos 600 m (550-650) en vez de 1000, todo el mapa a
+    escala; la cueva va por debajo de las zonas y se ensancha (ya no es un pasillo en superficie); mas
+    desnivel entre zonas con cuestas de 25 grados como mucho y la hondonada mucho mas hundida; paredes
+    con contorno y cara irregulares sin perder altura; el exterior del anillo de muros no se toca.
+
+Escala: M_PER_PX sale de medir el recorrido por el centro sobre el boceto (gen_terrain_sketch.py --medir).
 """
 
 from __future__ import annotations
+
+import math
 
 from .sketch import SEA, WALL, SketchSpec, Tunnel
 
@@ -28,32 +38,52 @@ PALETTE = {
     DARKEST: (147, 115, 54),
 }
 
-# Cota del suelo sobre el agua (m). Orden de la leyenda: cuanto mas oscuro, mas alto. 2 m por tono: la
-# hondonada queda 8 m por debajo de la zona oscura, lo que el tunel de abajo salva al 11 %.
-ZONE_HEIGHT_M = {HOLLOW: 1.0, BEACH: 3.0, LIGHT: 5.0, MEDIUM: 7.0, DARK: 9.0, DARKEST: 11.0}
+# Cota del suelo sobre el agua (m). Orden de la leyenda: cuanto mas oscuro, mas alto; 5 m por tono desde la
+# playa. La hondonada (la mas clara) queda 12 m por debajo de la meseta media que la rodea (antes, 8 m) y
+# por encima del agua: la cueva baja hasta 0,8 m y vuelve a subir hasta ella.
+ZONE_HEIGHT_M = {HOLLOW: 3.0, BEACH: 5.0, LIGHT: 10.0, MEDIUM: 15.0, DARK: 20.0, DARKEST: 25.0}
+
+# Cuestas entre mesetas (pasillos y laderas): 20 grados, por debajo de los 25 que pide el director.
+RAMP_DEG = 20.0
+CAVE_LOW_M = 0.8
+
+DECISIONS = (
+    "2026-10-06: pasillos en cuesta entre zonas, suelo casi llano dentro de cada zona, tuneles sin bifurcaciones, "
+    "cueva de 10 m de alto como maximo, paredes mas altas que en C01.",
+    "2026-10-07: recorrido de unos 600 m (550-650); cueva amplia por debajo de las zonas que baja desde la boca y "
+    "sube a la otra; mas desnivel entre zonas con cuestas de 25 grados como mucho; hondonada mucho mas hundida; "
+    "paredes con contorno y cara irregulares; el exterior del anillo de muros no se toca.",
+)
 
 ZONE_NAMES = {HOLLOW: "hondonada", BEACH: "playa", LIGHT: "clara", MEDIUM: "media", DARK: "oscura",
               DARKEST: "muy oscura (salida)"}
 
-M_PER_PX = 0.79
+M_PER_PX = 0.474
 
+# Cueva bajo las zonas, de norte a sur: arranca en la meseta media de arriba, entra bajo el muro por la boca
+# gris (740, 808), baja a 20 grados hasta CAVE_LOW_M, se abre bajo las dos mesetas medias siguiendo la mancha
+# discontinua (semiancho medido entre sus dos lineas) y sube hasta la boca de la hondonada (655, 1048).
+# Por vertice: (cota del suelo sobre el agua o None = la de la zona, semiancho m, alto m).
 CAVE = Tunnel(
     name="cueva",
-    # De la meseta media (boca de arriba, ~740, 805) a la hondonada (~655, 1045), bajo el muro diagonal.
-    axis_px=((752, 768), (742, 806), (706, 842), (672, 900), (653, 960), (651, 1010), (657, 1050),
-             (664, 1100)),
-    covered=(0.12, 0.86),
-    half_width_m=12.0,
-    height_m=8.2,
-    rock_m=7.0,
+    axis_px=((752, 785), (740, 808), (686, 822), (682, 850), (667, 880), (663, 910), (661, 935), (654, 960),
+             (637, 990), (645, 1015), (652, 1042), (657, 1062), (662, 1088)),
+    covered=(0.0, 1.0),
+    half_width_m=5.0,
+    height_m=8.4,
+    rock_m=3.0,
+    underground=True,
+    profile=((None, 4.5, 5.0), (11.0, 4.5, 5.5), (2.0, 8.0, 8.0), (1.0, 30.0, 8.4), (CAVE_LOW_M, 26.0, 8.4),
+             (CAVE_LOW_M, 22.0, 8.4), (CAVE_LOW_M, 16.0, 8.4), (CAVE_LOW_M, 9.0, 8.4), (0.9, 6.0, 8.0),
+             (1.4, 5.0, 7.0), (2.2, 5.0, 6.0), (None, 5.0, 5.5), (None, 5.0, 5.5)),
 )
 
 PASSAGE = Tunnel(
     name="tunel",
-    # De la hondonada (~700, 1205) a la zona oscura de abajo (~710, 1262); el tramo cubierto sigue bajo
-    # un cerro dentro de la zona oscura para que la pendiente sea suave (8 m de desnivel).
-    axis_px=((699, 1185), (701, 1228), (711, 1262), (721, 1300), (730, 1345)),
-    covered=(0.22, 0.84),
+    # De la hondonada (~700, 1205) a la zona oscura de abajo (~710, 1262); el tramo cubierto sigue bajo un
+    # cerro dentro de la zona oscura para que la pendiente sea suave (17 m de desnivel en unos 70 m).
+    axis_px=((699, 1185), (701, 1228), (711, 1262), (721, 1300), (730, 1345), (738, 1390), (742, 1420)),
+    covered=(0.18, 0.80),
     half_width_m=4.5,
     height_m=5.5,
     rock_m=5.0,
@@ -62,13 +92,13 @@ PASSAGE = Tunnel(
 D01_SPEC = SketchSpec(
     name="D01_boceto",
     description=("Boceto D01 del equipo de diseno: mesetas escalonadas de la salida (zona mas alta) al mar, "
-                 "hondonada, cueva amplia y tunel."),
+                 "hondonada hundida, cueva amplia bajo las zonas y tunel; unos 600 m de recorrido."),
     image="terrain_path/sketches/D01_boceto.jpeg",
     m_per_px=M_PER_PX,
     ref_px=(745.0, 1600.0),
-    ref_world=(-35.0, 200.0),
-    cols=5,
-    rows=10,
+    ref_world=(-30.0, 150.0),
+    cols=4,
+    rows=7,
     palette=PALETTE,
     zone_height_m=ZONE_HEIGHT_M,
     sea_floor_m=-3.0,
@@ -78,6 +108,15 @@ D01_SPEC = SketchSpec(
     beach_class=BEACH,
     tunnels=(CAVE, PASSAGE),
     start_px=(712.0, 1545.0),
+    corridor_grade=math.tan(math.radians(RAMP_DEG)),
+    slope_deg=RAMP_DEG,
+    sea_grade=0.2,
     slope_pairs=((HOLLOW, MEDIUM),),
-    extra={"hollow_class": HOLLOW, "names": ZONE_NAMES},
+    edge_warp_m=2.5,
+    wall_noise=1.0,
+    foot_angle_deg=70.0,
+    decimate_m=0.05,
+    far_decimate_m=0.45,
+    outer_decimate_m=0.25,
+    extra={"hollow_class": HOLLOW, "medium_class": MEDIUM, "names": ZONE_NAMES, "decisions": DECISIONS},
 )

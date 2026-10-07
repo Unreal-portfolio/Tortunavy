@@ -30,14 +30,23 @@ UNKNOWN = -1
 @dataclass(frozen=True)
 class Tunnel:
     """Tramo subterraneo del camino: eje en pixeles del boceto (de la boca de arriba a la de abajo),
-    tramo cubierto (fraccion del eje) y seccion. El suelo va en rampa lineal entre las cotas de las
-    zonas de sus bocas."""
+    tramo cubierto (fraccion del eje) y seccion.
+
+    Dos clases:
+      - tunel bajo un cerro (underground=False): el tramo cubierto pasa a pared en el boceto y se le pone
+        roca encima; el suelo va en rampa lineal entre las cotas de las zonas de sus bocas;
+      - cueva bajo las zonas (underground=True): el suelo de las zonas sigue encima. profile da, por
+        vertice del eje, (cota del suelo sobre el agua o None = la de la zona en ese punto, semiancho,
+        alto); entre vertices se interpola. El tramo con techo sale solo (donde cabe la cueva y roca
+        encima) y covered no se usa."""
     name: str
     axis_px: tuple[tuple[float, float], ...]
-    covered: tuple[float, float]          # fraccion del eje (0..1) con techo
+    covered: tuple[float, float]          # fraccion del eje (0..1) con techo (tunel bajo cerro)
     half_width_m: float
     height_m: float                       # de suelo a clave (antes del ruido)
     rock_m: float                         # roca minima sobre la clave
+    underground: bool = False
+    profile: tuple[tuple[float | None, float, float], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -62,9 +71,15 @@ class SketchSpec:
     corridor_grade: float = 0.12                      # pasillos: rampa lineal suave
     slope_deg: float = 26.0                           # laderas entre mesetas (andable: < 44,76 grados)
     sea_grade: float = 0.08                           # bajada de la playa al mar
+    edge_warp_m: float = 0.0                          # ruido del contorno de las paredes (m)
+    wall_noise: float = 0.45                          # ruido 3D de la cara de las paredes (C01: 0,45)
+    foot_angle_deg: float = 78.0                      # pie de la pared (C01: 78 grados)
     slope_pairs: tuple[tuple[int, int], ...] = ()     # contactos entre mesetas (ladera); el resto, pasillo
     floor_noise_m: float = 0.25                       # variacion ligera del suelo de las zonas
     seed: int = 875
+    decimate_m: float = 0.05                          # error de la malla del suelo y las paredes (C01: 5 cm)
+    far_decimate_m: float = 0.45                      # fondo de vistas tras la cresta (no se pisa)
+    outer_decimate_m: float = 0.25                    # corona sin colision (C01: 25 cm)
     extra: dict = field(default_factory=dict)
 
     # -- conversiones ----------------------------------------------------------------------
@@ -163,7 +178,8 @@ def class_map(spec: SketchSpec, rgb: np.ndarray) -> np.ndarray:
     fan = polygon_mask(labels.shape, spec.sea_fan_px) & (labels == WALL)
     labels[fan] = spec.beach_class
     for tunnel in spec.tunnels:
-        labels[tunnel_rock_mask(spec, tunnel, labels.shape)] = WALL
+        if not tunnel.underground:
+            labels[tunnel_rock_mask(spec, tunnel, labels.shape)] = WALL
     return labels
 
 
