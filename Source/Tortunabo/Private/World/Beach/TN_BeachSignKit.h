@@ -6,14 +6,12 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Multiplayer/TN_LocalViews.h"
-#include "TN_BeachBoostKit.h"
 #include "TN_BeachTrapKit.h"
 
 /**
- * Cartel de madera clavado en la arena junto a los trampolines (ATN_BeachTrampoline, también los de la cima de las
- * fortalezas) para que se sepan de lejos: tabla de tres tablones en dos postes con el icono pintado (flecha que baja y
- * rebota hacia arriba) y el rótulo en una franja oscura (TextRender: «¡BOING!»). Los potenciados, tabla dorada con el icono azul marino y una
- * estrella dorada encima. Sin colisión: no estorba.
+ * Cartel de madera clavado en la arena junto a los trampolines (ATN_BeachTrampoline) para que se sepan de lejos: tabla
+ * de tres tablones en dos postes con el icono pintado (flecha que baja y rebota hacia arriba) y el rótulo en una franja
+ * oscura (TextRender: «¡BOING!»). Sin colisión: no estorba.
  *
  * Espacio del cartel (cm): origen al pie de los postes, en la arena; la cara pintada mira a -X (a quien llega). Cada
  * lanzador lo pone por el lado por el que se llega (-X de su marco), a un lado (SideOf) y girado hacia el centro.
@@ -70,10 +68,9 @@ namespace TNBeachSignKit
 
 	/**
 	 * El cartel entero (espacio del cartel): dos postes clavados en un montoncito de arena, tabla de tres tablones con
-	 * marco, franja oscura para el rótulo e icono pintado encima. Potenciado: tabla dorada, icono azul marino, franja azul
-	 * marino y una estrella dorada de pie sobre la tabla.
+	 * marco, franja oscura para el rótulo e icono pintado encima.
 	 */
-	inline void BuildSign(FBuffers& B, bool bBoosted, uint32 Seed)
+	inline void BuildSign(FBuffers& B, uint32 Seed)
 	{
 		const double Hw = 0.5 * BoardW;
 		const double Top = PostH + BoardH;
@@ -91,11 +88,10 @@ namespace TNBeachSignKit
 		const double PlankH = BoardH / 3.0;
 		for (int32 i = 0; i < 3; ++i)
 		{
-			const FLinearColor Plank = bBoosted ? TNPlaygroundKit::Shade(TNBeachBoostKit::Gold(), i == 1 ? 1.0 : 0.94)
-				: TNPlaygroundKit::Shade(TNBeachTrapKit::WoodTone(i + static_cast<int32>(Seed % 2u)), 1.12);
+			const FLinearColor Plank = TNPlaygroundKit::Shade(TNBeachTrapKit::WoodTone(i + static_cast<int32>(Seed % 2u)), 1.12);
 			TNPlaygroundKit::AddAxisBox(B, FVector(0.0, 0.0, PostH + (i + 0.5) * PlankH), FVector(0.5 * BoardT, Hw - 2.0, 0.5 * PlankH - 1.5), Plank);
 		}
-		const FLinearColor Frame = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0x7A5232, 0.05f);
+		const FLinearColor Frame = TNPlaygroundKit::Rgb(0x7A5232, 0.05f);
 		for (const double Z : { PostH + 4.0, Top - 4.0 })
 		{
 			TNPlaygroundKit::AddAxisBox(B, FVector(-1.0, 0.0, Z), FVector(0.5 * BoardT + 2.0, Hw + 4.0, 6.0), Frame);
@@ -105,7 +101,7 @@ namespace TNBeachSignKit
 			TNPlaygroundKit::AddAxisBox(B, FVector(-1.0, Sy * (Hw + 1.0), PostH + 0.5 * BoardH), FVector(0.5 * BoardT + 2.0, 6.0, 0.5 * BoardH + 4.0), Frame);
 		}
 		// Franja oscura del rótulo.
-		const FLinearColor Band = bBoosted ? TNBeachBoostKit::NavyDark() : TNPlaygroundKit::Rgb(0x3E2A1C, 0.05f);
+		const FLinearColor Band = TNPlaygroundKit::Rgb(0x3E2A1C, 0.05f);
 		TNPlaygroundKit::AddAxisBox(B, FVector(Face - 1.0, 0.0, PostH + 44.0), FVector(1.5, Hw - 16.0, 32.0), Band);
 
 		// Icono pintado en la parte de arriba (Y, Z del cartel), entre la franja (hasta PostH + 76) y el marco de arriba
@@ -114,8 +110,8 @@ namespace TNBeachSignKit
 		const double IFace = Face - 1.5;
 		const double W = 13.0;
 		// Cúpula de trampolín abajo y una flecha que baja por la izquierda, toca la cúpula y sube por la derecha.
-		const FLinearColor Dome = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0x2EC4B6, 0.1f);
-		const FLinearColor Arrow = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0xE63946, 0.1f);
+		const FLinearColor Dome = TNPlaygroundKit::Rgb(0x2EC4B6, 0.1f);
+		const FLinearColor Arrow = TNPlaygroundKit::Rgb(0xE63946, 0.1f);
 		TArray<FVector2D> DomePath;
 		for (int32 k = 0; k <= 8; ++k)
 		{
@@ -134,19 +130,6 @@ namespace TNBeachSignKit
 		}
 		AddStroke(B, Path, 0.5 * W, IFace, Arrow);
 		AddArrowHead(B, Path.Last() + FVector2D(4.0, 10.0), Path.Last() - Path[Path.Num() - 2], 30.0, IFace, Arrow);
-
-		if (bBoosted)
-		{
-			// Estrella dorada de pie sobre la tabla (por las dos caras) y dos estrellitas azul marino en las esquinas.
-			const FVector StarAt(0.0, 0.0, Top + 52.0);
-			TNBeachBoostKit::AddStar(B, StarAt + FVector(-2.0, 0.0, 0.0), -FVector::ForwardVector, FVector::UpVector, 48.0, TNBeachBoostKit::Gold());
-			TNBeachBoostKit::AddStar(B, StarAt + FVector(2.0, 0.0, 0.0), FVector::ForwardVector, FVector::UpVector, 48.0, TNBeachBoostKit::Gold());
-			TNPlaygroundKit::AddAxisBox(B, FVector(0.0, 0.0, Top + 8.0), FVector(4.0, 4.0, 10.0), TNBeachBoostKit::GoldDeep());
-			for (const double Sy : { -1.0, 1.0 })
-			{
-				TNBeachBoostKit::AddStar(B, FVector(IFace, Sy * (Hw - 34.0), Top - 30.0), -FVector::ForwardVector, FVector::UpVector, 17.0, TNBeachBoostKit::Navy());
-			}
-		}
 	}
 
 	/** Deja listo el rótulo (centrado, sin colisión ni sombra, de cara a -X del cartel). */
@@ -222,9 +205,9 @@ namespace TNBeachSignKit
 			static_cast<uint8>(FMath::Lerp(static_cast<float>(Base.B), 235.f, Pulse))));
 	}
 
-	/** Color del rótulo: crema en los normales y dorado en los potenciados. */
-	inline FColor TextColor(bool bBoosted)
+	/** Color del rótulo: crema. */
+	inline FColor TextColor()
 	{
-		return bBoosted ? FColor(255, 214, 60) : FColor(255, 234, 170);
+		return FColor(255, 234, 170);
 	}
 }

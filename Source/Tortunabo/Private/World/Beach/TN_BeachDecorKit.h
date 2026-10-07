@@ -60,8 +60,8 @@ namespace TNBeachDecorKit
 	FTransform BodyPlacement(const TNBeachProp::FPropInfo& Info, int32 Seed, float Size);
 
 	/**
-	 * Si el ejemplar del reparto no gira al azar: el castillo enorme de la pasada de castillos (EItemRole::Castle) lleva
-	 * dentro una catapulta y un cofre (#741), que van con su patio, y su puerta mira hacia quien llega (FixedYawOf).
+	 * Si el ejemplar del reparto no gira al azar: el castillo enorme de la pasada de castillos (EItemRole::Castle) tiene
+	 * patio (#741) y su puerta mira hacia quien llega (FixedYawOf).
 	 */
 	bool HasFixedYaw(const TNBeachLayout::FItem& Item);
 

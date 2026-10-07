@@ -27,7 +27,6 @@
 #include "Player/TN_ShellDecisions.h"
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TortugaCharacter.h"
-#include "World/Beach/TN_BeachSandWorm.h"
 #include "Game/TN_CoopItemComponent.h"
 #include "World/Beach/TN_BeachShelterVolume.h"
 
@@ -1089,7 +1088,7 @@ void ATN_BeachEnemy::EndHoldTurtle()
 			PrimaryActorTick.RemovePrerequisite(Move, Move->PrimaryComponentTick);
 		}
 		Turtle->SetActorRotation(FRotator(0.f, Turtle->GetActorRotation().Yaw, 0.f));
-		// Suelta antes de restaurar: si otro enemigo (o un gusano) la tiene ya, lo suyo manda.
+		// Suelta antes de restaurar: si otro enemigo la tiene ya, lo suyo manda.
 		SetTurtleHeld(Turtle, false);
 		// Lo que se restaura ya y lo que se vigila 3 s: otro sistema puede tocarla a la vez (la bola del mareo que aún no
 		// ha llegado a esta máquina, una patada de la tormenta, un derribo...) y no puede quedarse colgada en el aire.
@@ -1111,8 +1110,8 @@ void ATN_BeachEnemy::RestoreReleasedTurtle(FReleaseWatch& Watch, bool bFinal)
 		Watch.Left = 0.f;
 		return;
 	}
-	// Otro la sujeta ya (otro enemigo, un gusano): es suya, aquí no se toca nada.
-	if (IsTurtleHeld(Turtle) || ATN_BeachSandWorm::IsBeingEaten(Turtle))
+	// Otro enemigo la sujeta ya: es suya, aquí no se toca nada.
+	if (IsTurtleHeld(Turtle))
 	{
 		return;
 	}

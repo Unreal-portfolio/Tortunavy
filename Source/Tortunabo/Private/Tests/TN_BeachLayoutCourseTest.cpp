@@ -1,7 +1,7 @@
 // Reparto de la carrera sobre las rondas del dorado (24 semillas × 3 dificultades, TN_BeachLayoutGoldenTest.cpp): lo que
 // el GameMode hace con la ronda después de repartirla. El sprint final despeja el nido de los huevos
-// (ATN_BeachRaceGameMode::PlaceSprintFinalists → ClearElementsAround): el reparto de sprint lo deja vacío para que ese
-// despeje no corte el castillo principal ni nada de lo que lleva encima (#346).
+// (lo que hacía el GameMode de la antigua carrera al poner a las finalistas): el reparto de sprint lo deja vacío para que
+// ese despeje no corte nada (#346).
 // Correr: Automation RunTests Tortunabo.Beach.Course
 
 #include "Misc/AutomationTest.h"
@@ -25,8 +25,8 @@ namespace TNBeachCourseTest
 	}
 
 	/**
-	 * Lo que quitaría ATN_BeachRaceGenerator::ClearElementsAround con el círculo del GameMode (todos los huevos del nido y
-	 * SprintClearMargin): cada elemento cuya huella (disco o cápsula) toca el círculo.
+	 * Lo que quitaría el despeje del nido con el círculo de SprintNestCircle (todos los huevos del nido y su margen): cada
+	 * elemento cuya huella (disco o cápsula) toca el círculo.
 	 */
 	bool IsCutBySprintNest(const TNBeachLayout::FItem& Item, const FVector2D& Center, double Radius)
 	{
@@ -36,14 +36,13 @@ namespace TNBeachCourseTest
 
 	/**
 	 * Lo que un lanzador delante de un obstáculo (rol Launcher) puede pisar con su arco de salto porque es lo que salta:
-	 * castillos con salas y enormes, piezas de las filas y plataformas.
+	 * castillos enormes, piezas de las filas y plataformas.
 	 */
 	bool IsJumpTarget(const TNBeachLayout::FItem& Item)
 	{
 		using TNBeachLayout::EItemRole;
-		return Item.Role == EItemRole::Dungeon || Item.Role == EItemRole::Row || Item.Role == EItemRole::Castle
-			|| Item.Element == ETNBeachElement::SandDungeon || Item.Element == ETNBeachElement::SandCastleHuge
-			|| Item.Element == ETNBeachElement::WobblyPlatform || Item.Element == ETNBeachElement::MovingPlatform;
+		return Item.Role == EItemRole::Row || Item.Role == EItemRole::Castle || Item.Element == ETNBeachElement::SandCastleHuge
+			|| Item.Element == ETNBeachElement::WobblyPlatform;
 	}
 
 	/** El arco de salto Zone cruza algo del terreno fijo que se salta: una poza o la cornisa de una cresta. */
@@ -62,12 +61,6 @@ namespace TNBeachCourseTest
 		return false;
 	}
 
-	/** X mínima y máxima de la huella de un elemento. */
-	void SpanX(const TNBeachLayout::FItem& Item, double& OutMin, double& OutMax)
-	{
-		OutMin = FMath::Min(Item.EndA().X, Item.EndB().X) - Item.Radius;
-		OutMax = FMath::Max(Item.EndA().X, Item.EndB().X) + Item.Radius;
-	}
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNBeachCourseSprintTest,
@@ -77,16 +70,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNBeachCourseSprintTest,
 bool FTNBeachCourseSprintTest::RunTest(const FString& Parameters)
 {
 	using namespace TNBeachCourseTest;
-	using TNBeachLayout::EItemRole;
 	FVector2D NestCenter;
 	double NestRadius = 0.0;
 	TNBeachLayout::SprintNestCircle(NestCenter, NestRadius);
-	const double SprintX = TNBeachLayout::SprintLineX();
-	const double FarBehind = SprintX - TNBeachLayout::SprintCastleBehind;
-	const double FarAhead = SprintX + TNBeachLayout::SprintCastleAhead;
 	int32 Rounds = 0;
-	int32 CastlesIntact = 0;
-	int32 CastlesAhead = 0;
+	int32 RoundsClean = 0;
 	for (const ETNProcDifficulty Difficulty : Difficulties)
 	{
 		for (int32 s = 0; s < NumSeeds; ++s)
@@ -99,38 +87,19 @@ bool FTNBeachCourseSprintTest::RunTest(const FString& Parameters)
 			TestTrue(Ctx + TEXT(": paso libre"), L.bPassageOk);
 
 			int32 Cut = 0;
-			int32 CastleCut = 0;
-			int32 CastlePieces = 0;
-			bool bCastleAway = false;
 			FString CutNames;
 			for (const TNBeachLayout::FItem& It : L.Items)
 			{
-				const bool bMainCastle = It.Role == EItemRole::DungeonWing
-					|| (It.Role == EItemRole::Dungeon && It.Pos.Equals(L.DungeonPos, 1.0));
-				if (bMainCastle) { ++CastlePieces; }
-				if (It.Role == EItemRole::Dungeon && It.Pos.Equals(L.DungeonPos, 1.0))
-				{
-					double XMin = 0.0;
-					double XMax = 0.0;
-					SpanX(It, XMin, XMax);
-					bCastleAway = XMax < FarBehind || XMin > FarAhead;
-				}
 				if (!IsCutBySprintNest(It, NestCenter, NestRadius)) { continue; }
 				++Cut;
-				CastleCut += bMainCastle ? 1 : 0;
 				if (Cut <= 4) { CutNames += FString::Printf(TEXT(" %s (%.0f, %.0f) m"), *UEnum::GetValueAsString(It.Element), It.Pos.X / 100.0, It.Pos.Y / 100.0); }
 			}
-			TestTrue(FString::Printf(TEXT("%s: hay castillo principal (%d piezas con sus alas)"), *Ctx, CastlePieces), L.NumDungeons > 0 && CastlePieces > 1);
-			TestTrue(FString::Printf(TEXT("%s: castillo principal (%.0f m) fuera de [%.0f, %.0f] m"), *Ctx, L.DungeonPos.X / 100.0, FarBehind / 100.0, FarAhead / 100.0),
-				bCastleAway);
-			TestEqual(FString::Printf(TEXT("%s: el despeje del nido no corta el castillo principal ni sus alas"), *Ctx), CastleCut, 0);
 			TestEqual(FString::Printf(TEXT("%s: el despeje del nido no quita nada (%d:%s)"), *Ctx, Cut, *CutNames), Cut, 0);
-			CastlesIntact += CastleCut == 0 && bCastleAway ? 1 : 0;
-			CastlesAhead += L.DungeonPos.X > SprintX ? 1 : 0;
+			RoundsClean += Cut == 0 ? 1 : 0;
 		}
 	}
-	AddInfo(FString::Printf(TEXT("Sprint: castillo principal intacto en %d de %d rondas (%d por delante del nido, en %.0f m con radio %.0f m)."),
-		CastlesIntact, Rounds, CastlesAhead, NestCenter.X / 100.0, NestRadius / 100.0));
+	AddInfo(FString::Printf(TEXT("Sprint: nido intacto en %d de %d rondas (en %.0f m con radio %.0f m)."),
+		RoundsClean, Rounds, NestCenter.X / 100.0, NestRadius / 100.0));
 	return true;
 }
 
@@ -146,7 +115,7 @@ bool FTNBeachCourseLaunchersTest::RunTest(const FString& Parameters)
 {
 	// #349: ningún lanzador huérfano (el de delante de un obstáculo salta algo: un elemento o el terreno fijo) y el arco de
 	// salto de todos, también los de delante de un obstáculo, libre de todo salvo lo que salta (los pasos de quads cruzan
-	// por debajo y los pulpos nadan bajo algún arco, como en Tortunabo.Beach.Layout.Rules).
+	// por debajo, como en Tortunabo.Beach.Layout.Rules).
 	using namespace TNBeachCourseTest;
 	using TNBeachLayout::FItem;
 	using TNBeachLayout::EItemRole;
@@ -175,7 +144,7 @@ bool FTNBeachCourseLaunchersTest::RunTest(const FString& Parameters)
 				for (int32 j = 0; j < L.Items.Num(); ++j)
 				{
 					const FItem& Other = L.Items[j];
-					if (j == i || Other.bOverlay || Other.Element == ETNBeachElement::QuadLane || Other.Element == ETNBeachElement::PoolOctopus) { continue; }
+					if (j == i || Other.bOverlay || Other.Element == ETNBeachElement::QuadLane) { continue; }
 					if (TNBeachLayout::Clearance(Zone, Other) >= -1.0) { continue; }
 					if (bAimed && IsJumpTarget(Other))
 					{

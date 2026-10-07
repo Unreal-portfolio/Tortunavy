@@ -63,7 +63,7 @@ namespace TNItemRuntime
 
 	/**
 	 * true si la tortuga puede usar un objeto ahora: viva, de pie, fuera del caparazón, sin aturdir, sin que la sujete un
-	 * enemigo ni se la coma un gusano, sin que la recoloquen y sin llevar ni ir en brazos.
+	 * enemigo, sin que la recoloquen y sin llevar ni ir en brazos.
 	 */
 	TORTUNABO_API bool CanUseNow(const ATortugaCharacter* Turtle);
 

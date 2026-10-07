@@ -19,38 +19,12 @@ namespace TNCombatTuningTest
 	};
 
 	const FExpected Expected[] = {
-		{ TEXT("FrisbeeKnockSeconds (TN_RaceFrisbee)"), &UTN_CombatTuning::FrisbeeKnockSeconds, 1.9f },
-		{ TEXT("FrisbeeEnemyStunSeconds (TN_RaceFrisbee)"), &UTN_CombatTuning::FrisbeeEnemyStunSeconds, 4.f },
-		{ TEXT("GullStrikeKnockSeconds (TN_RaceGullStrike)"), &UTN_CombatTuning::GullStrikeKnockSeconds, 2.6f },
-		{ TEXT("GullStrikeEnemyStunSeconds (TN_RaceGullStrike)"), &UTN_CombatTuning::GullStrikeEnemyStunSeconds, 4.f },
-		{ TEXT("HomingCrabKnockSeconds (TN_RaceHomingCrab)"), &UTN_CombatTuning::HomingCrabKnockSeconds, 2.2f },
-		{ TEXT("HomingCrabEnemyStunSeconds (TN_RaceHomingCrab)"), &UTN_CombatTuning::HomingCrabEnemyStunSeconds, 4.f },
-		{ TEXT("MineStunSeconds (TN_RaceMine)"), &UTN_CombatTuning::MineStunSeconds, 3.f },
-		{ TEXT("MineEnemyStunSeconds (TN_RaceMine)"), &UTN_CombatTuning::MineEnemyStunSeconds, 5.f },
-		{ TEXT("StarKnockSeconds (TN_RaceItems.h)"), &UTN_CombatTuning::StarKnockSeconds, 2.f },
-		{ TEXT("StarEnemyStunSeconds (TN_RaceItems.h)"), &UTN_CombatTuning::StarEnemyStunSeconds, 4.f },
-		{ TEXT("HermitCrabKnockSeconds (TN_BeachHermitCrab)"), &UTN_CombatTuning::HermitCrabKnockSeconds, 2.5f },
-		{ TEXT("HermitCrabIgnoreSeconds (TN_BeachHermitCrab)"), &UTN_CombatTuning::HermitCrabIgnoreSeconds, 3.f },
-		{ TEXT("HermitCrabGravity (TN_BeachHermitCrab)"), &UTN_CombatTuning::HermitCrabGravity, 1250.f },
-		{ TEXT("SeaUrchinKnockSeconds (TN_BeachSeaUrchin)"), &UTN_CombatTuning::SeaUrchinKnockSeconds, 2.4f },
-		{ TEXT("SeaUrchinIgnoreSeconds (TN_BeachSeaUrchin)"), &UTN_CombatTuning::SeaUrchinIgnoreSeconds, 4.5f },
-		{ TEXT("GiantCrabStunSeconds (TN_BeachGiantCrab)"), &UTN_CombatTuning::GiantCrabStunSeconds, 3.5f },
-		{ TEXT("GiantCrabChargeKnockSeconds (TN_BeachGiantCrab)"), &UTN_CombatTuning::GiantCrabChargeKnockSeconds, 2.4f },
-		{ TEXT("GiantCrabCrashStunSeconds (TN_BeachGiantCrab)"), &UTN_CombatTuning::GiantCrabCrashStunSeconds, 1.6f },
-		{ TEXT("GiantCrabIgnoreSeconds (TN_BeachGiantCrab)"), &UTN_CombatTuning::GiantCrabIgnoreSeconds, 6.f },
-		{ TEXT("PoolOctopusStunExtraSeconds (TN_BeachPoolOctopus)"), &UTN_CombatTuning::PoolOctopusStunExtraSeconds, 1.2f },
-		{ TEXT("PoolOctopusIgnoreSeconds (TN_BeachPoolOctopus)"), &UTN_CombatTuning::PoolOctopusIgnoreSeconds, 5.f },
-		{ TEXT("PoolOctopusThrowGravity (TN_BeachPoolOctopus)"), &UTN_CombatTuning::PoolOctopusThrowGravity, 980.f },
-		{ TEXT("SandFleasDizzySeconds (TN_BeachSandFleas)"), &UTN_CombatTuning::SandFleasDizzySeconds, 1.f },
-		{ TEXT("SandFleasIgnoreSeconds (TN_BeachSandFleas)"), &UTN_CombatTuning::SandFleasIgnoreSeconds, 6.f },
 		{ TEXT("QuadLaneKnockSeconds (TN_BeachQuadLane)"), &UTN_CombatTuning::QuadLaneKnockSeconds, 3.f },
 		{ TEXT("GullZonePoopKnockSeconds (TN_BeachGullZone)"), &UTN_CombatTuning::GullZonePoopKnockSeconds, 2.4f },
 		{ TEXT("GullZonePoopIgnoreSeconds (TN_BeachGullZone)"), &UTN_CombatTuning::GullZonePoopIgnoreSeconds, 6.f },
 		{ TEXT("GullZoneAfterDropStunSeconds (TN_BeachGullZone)"), &UTN_CombatTuning::GullZoneAfterDropStunSeconds, 2.f },
 		{ TEXT("GullZoneGrabIgnoreSeconds (TN_BeachGullZone)"), &UTN_CombatTuning::GullZoneGrabIgnoreSeconds, 12.f },
 		{ TEXT("GullZoneGravity (TN_BeachGullZone)"), &UTN_CombatTuning::GullZoneGravity, 980.f },
-		{ TEXT("ToyTankHitStunSeconds (TN_BeachToyTank)"), &UTN_CombatTuning::ToyTankHitStunSeconds, 0.8f },
-		{ TEXT("ToyTankFoamGravity (TN_BeachToyTank)"), &UTN_CombatTuning::ToyTankFoamGravity, 700.f },
 	};
 }
 

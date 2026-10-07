@@ -28,7 +28,6 @@ class USceneComponent;
 class UAudioComponent;
 class USoundBase;
 class UStaticMeshComponent;
-class UPostProcessComponent;
 class UTN_EmoteWheelDataAsset;
 struct FTN_EmoteWheelEntry;
 struct FTN_InventoryItem;
@@ -81,16 +80,8 @@ public:
 	void ReapplyInputMapping();
 
 	/**
-	 * Cancela el efecto Big Head activo (si lo hay): restaura tamaño de cabeza,
-	 * limpia el timer y marca bBigHead = false.
-	 * Disparado en el servidor. Aplica el efecto de mareo en todas las máquinas (#2).
-	 * Solo ejecutar en el servidor.
-	 */
-	void RemoveBigHeadEffect();
-
-	/**
-	 * Servidor: marea a la tortuga Duration segundos (tope de velocidad MareoSpeedCap). Lo llaman RemoveBigHeadEffect, el
-	 * dardo de medusa y las trampas de la playa (#2). El estado va replicado (bMareo) y el tope, predicho en el movimiento
+	 * Servidor: marea a la tortuga Duration segundos (tope de velocidad MareoSpeedCap). Lo llaman el dardo de medusa y
+	 * las trampas de la playa (#2). El estado va replicado (bMareo) y el tope, predicho en el movimiento
 	 * (TNMovementLimits::PredictedCapMareoBit): empieza y acaba en el mismo movimiento en el dueño y en el servidor (#574).
 	 * Otra vez mareada mientras dura: la cuenta vuelve a empezar si así acaba más tarde (un mareo corto, como el guantazo de
 	 * la aleta, no acorta uno más largo, #832).
@@ -99,9 +90,6 @@ public:
 
 	/** Está mareada (replicado a todos). */
 	bool IsMareoActive() const { return bMareo; }
-
-	/** Devuelve true si el efecto Big Head está activo en este momento. */
-	bool HasBigHeadActive() const { return bBigHead; }
 
 	/** Devuelve true si la protección de sombrilla está activa (#29). */
 	bool HasUmbrellaProtection() const { return bHasUmbrellaProtection; }
@@ -113,17 +101,10 @@ public:
 	UTN_InventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	/**
-	 * Punto donde nacen la bola lanzada, la tinta y lo que se suelta: 120 cm delante y 40 cm por encima del centro de la
+	 * Punto donde nacen lo que se lanza y lo que se suelta: 120 cm delante y 40 cm por encima del centro de la
 	 * cápsula, recortado con un barrido para que nunca quede al otro lado de un muro, puerta o valla (#571).
 	 */
 	FVector GetItemSpawnLocation() const;
-
-	/**
-	 * Aplica el efecto de tinta de calamar (#13) en la máquina local del jugador afectado.
-	 * Muestra un overlay de material sobre la cámara durante Duration segundos.
-	 * Solo surte efecto en la máquina que controla localmente este personaje (IsLocallyControlled).
-	 */
-	void ApplyInkEffect(float Duration);
 
 protected:
 	virtual void BeginPlay() override;
@@ -908,10 +889,7 @@ private:
 	// ── ServerUseEquippedItem: una rama por ETN_ItemUseType (validar → consumir → efecto) ──
 	void HandleUseSelfStaminaBoost(const FTN_InventoryItem& EquippedItem);
 	void HandleUseSelfStaminaFull(const FTN_InventoryItem& EquippedItem);
-	void HandleUseBigHead(const FTN_InventoryItem& EquippedItem);
 	void HandleUseThrowable(const FTN_InventoryItem& EquippedItem);
-	void HandleUseConch(const FTN_InventoryItem& EquippedItem);
-	void HandleUseInkThrower(const FTN_InventoryItem& EquippedItem);
 	void HandleUseTotem(const FTN_InventoryItem& EquippedItem);
 
 	UFUNCTION(Server, Reliable)
@@ -932,12 +910,6 @@ private:
 
 	UFUNCTION()
 	void OnRep_RagdollFrozen();
-
-	UFUNCTION()
-	void OnRep_bBigHead();
-
-	/** Escala la Cabeza al BigHeadScale en reposo o la restaura. */
-	void ApplyBigHeadVisual(bool bBig);
 
 
 	/**
@@ -1180,30 +1152,13 @@ protected:
 
 	FTimerHandle KnockdownTimerHandle;
 
-	// ── Big Head consumable ──────────────────────────────────────────────────
-	/** true mientras el efecto de cabeza grande está activo. Replicado para que todos los clientes lo vean. */
-	UPROPERTY(ReplicatedUsing = OnRep_bBigHead, BlueprintReadOnly, Category = "BigHead")
-	bool bBigHead = false;
-
-	/** Factor de escala de la cabeza cuando el efecto está activo (multiplicador sobre la escala en reposo). */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "BigHead", meta = (ClampMin = "1.5", ClampMax = "10.0"))
-	float BigHeadScale = 3.5f;
-
-	/** Duración en segundos del efecto de cabeza grande. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "BigHead", meta = (ClampMin = "1.0"))
-	float BigHeadDurationSeconds = 8.f;
-
 	// ── Mareo (#2) ────────────────────────────────────────────────────────────
-
-	/** Duración del efecto de mareo al expirar/cancelar el BigHead (segundos). */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "BigHead|Mareo", meta = (ClampMin = "0.0"))
-	float MareoDurationSeconds = 3.f;
 
 	/**
 	 * Velocidad máxima durante el mareo (cm/s). Por defecto ~55% de la velocidad base.
 	 * 0 = sin penalización de velocidad.
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "BigHead|Mareo", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Mareo", meta = (ClampMin = "0.0"))
 	float MareoSpeedCap = 250.f;
 
 	/**
@@ -1229,11 +1184,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Death")
 	void OnDeathVisualSet(bool bDead);
 
-	FTimerHandle BigHeadTimerHandle;
 	FTimerHandle MareoTimerHandle;
-	FTimerHandle InkEffectTimerHandle;
-
-	void ClearInkEffect();
 
 	/** Servidor: acaba el mareo (temporizador de ApplyMareoEffect, con CreateUObject: si el actor ya no está, no hace nada). */
 	void EndMareo();
@@ -1296,19 +1247,6 @@ protected:
 	 */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Umbrella")
 	bool bHasUmbrellaProtection = false;
-
-	// ── Tinta de calamar (#13) ────────────────────────────────────────────────
-
-	/**
-	 * Material de overlay de tinta. Asignar un material de post-process (Domain=PostProcess)
-	 * en BP_TortugaCharacter. Solo se muestra en la máquina local del jugador afectado.
-	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ink")
-	TObjectPtr<UMaterialInterface> InkOverlayMaterial;
-
-	/** Post-process local que aplica el overlay de tinta. bEnabled=false en reposo. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ink")
-	TObjectPtr<UPostProcessComponent> InkPostProcess;
 
 	// ── La cabeza que sigue a la cámara (#623) ─────────────────────────────────
 	/**

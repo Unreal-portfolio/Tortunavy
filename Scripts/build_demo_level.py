@@ -26,10 +26,8 @@ CLASSES = {
     "game_mode": f"{BP}/GameModes/BP_RunGameMode.BP_RunGameMode_C",
     "finish": f"{BP}/Interaction/BP_FinishLineVolume.BP_FinishLineVolume_C",
     "jelly": f"{BP}/Items/BP_JellyfishActor.BP_JellyfishActor_C",
-    "score": f"{BP}/Items/BP_ScorePickup.BP_ScorePickup_C",
     "item_zone": f"{BP}/Items/BP_ItemSpawnZone.BP_ItemSpawnZone_C",
     "crab_zone": f"{BP}/Enemies/Crabs/BP_CrabSpawnZone.BP_CrabSpawnZone_C",
-    "seagull_zone": f"{BP}/Enemies/Seagull/BP_SeagullSpawnZone.BP_SeagullSpawnZone_C",
     "dropping_zone": f"{BP}/Enemies/Seagull/BP_DroppingSpawnZone.BP_DroppingSpawnZone_C",
     "banana": f"{BP}/Hazards/BP_BananaPeel.BP_BananaPeel_C",
 }
@@ -133,11 +131,7 @@ def place_design(manifest, design):
     for index, (x, y, z) in enumerate(manifest.get("jellyfish_uu", [])):
         spawn("jelly", x, y, z, label=f"Medusa_Escalon_{index + 1}")
 
-    # Conchas de puntos: ristra por el principal (una cada 25 m, salteando el primer tramo) y
-    # premios en lo alto de los lazos largos (el desvio compensa).
-    for index, (x, y, z, *_rest) in enumerate(main[2:-1]):
-        if index % 2 == 0:
-            spawn("score", x, y, z, lift=80.0, label=f"Concha_{index:02d}")
+    # Premios en lo alto de los lazos largos (el desvio compensa).
     for loop_id in (1, 3, 7, 6):
         _, _, x, y, z = loops[loop_id]
         spawn("item_zone", x, y, z, lift=50.0, label=f"Objetos_Lazo{loop_id}")
@@ -145,9 +139,6 @@ def place_design(manifest, design):
     # Acantilado: un cangrejo en la plaza tras el tunel (primer encuentro, facil).
     x, y, z, *_ = main[7]
     spawn("crab_zone", x, y, z, label="Cangrejos_Plaza", scale=(4.0, 4.0, 1.0))
-    # Agua: gaviotas sobre el tramo del rio (se ven venir en campo abierto).
-    x, y, z, *_ = main[12]
-    spawn("seagull_zone", x, y, z, lift=1500.0, snap=False, label="Gaviotas_Rio", scale=(10.0, 10.0, 1.0))
     # Dunas: nido de cangrejos donde el camino se abre, y pieles de platano en el estrechamiento.
     x, y, z, *_ = main[19]
     spawn("crab_zone", x, y, z, label="Cangrejos_Dunas", scale=(6.0, 6.0, 1.0))

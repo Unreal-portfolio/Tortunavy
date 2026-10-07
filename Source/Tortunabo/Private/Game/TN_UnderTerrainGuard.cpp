@@ -6,7 +6,6 @@
 #include "Player/TN_ShellBody.h"
 #include "Player/TN_ShellComponent.h"
 #include "World/Beach/TN_BeachEnemy.h"
-#include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/TN_DeathZoneVolume.h"
 #include "Components/BoxComponent.h"
@@ -139,10 +138,6 @@ FVector TNUnderTerrain::BodyProbe(const ATortugaCharacter& Turtle, FVector& OutV
 		else if (const UTN_CarryComponent* Carry = Turtle.GetCarryComponent(); Carry && Carry->GetCarrier())
 		{
 			*OutDriver = FString::Printf(TEXT("%s (la lleva en brazos)"), *Carry->GetCarrier()->GetName());
-		}
-		else if (ATN_BeachSandWorm::IsBeingEaten(&Turtle))
-		{
-			*OutDriver = TEXT("un gusano de arena");
 		}
 		else
 		{

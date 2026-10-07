@@ -24,8 +24,6 @@ from .placement_rules import Placement, footprint_points
 MECHANIC_GAP_M = 70.0
 RISE_M = 1.8                       # subida en 10 m a partir de la cual un trampolín ayuda
 SEARCH_SPOTS = 10
-SHELL_GROUP = 5
-SHELL_EVERY_M = (55.0, 70.0)       # principal, lazos
 
 
 def _yaw(a, b) -> float:
@@ -70,7 +68,7 @@ def place_mechanics(pl) -> None:
         if any(_mechanic(pl, "Boardwalk", lid, float(s), length=length, extent=length) is not None
                for s in np.arange(a + 4.0, b - 4.0, 3.0)):
             break
-    # Subidas: trampolín (o pala rampa en las dunas) al pie, a un lado del camino.
+    # Subidas: trampolín al pie, a un lado del camino.
     rises = []
     for ln in site.lines:
         z10 = np.interp(ln.arc + 10.0, ln.arc, ln.z) - ln.z
@@ -82,9 +80,8 @@ def place_mechanics(pl) -> None:
             break
         ln = site.line(lid)
         k = ln.index(s)
-        kind = "SpadeRamp" if ln.biome[k] == 2 else "Trampoline"
         q = float(pl.rng.choice([-1.0, 1.0])) * 0.5 * float(ln.half_width[k])
-        if _mechanic(pl, kind, lid, s, q=q) is not None:
+        if _mechanic(pl, "Trampoline", lid, s, q=q) is not None:
             placed += 1
 
 
@@ -114,12 +111,6 @@ def place_loot(pl) -> None:
                 if _loot(pl, "SearchSpot", ln.id, float(s), q=q) is not None:
                     break
             break
-    # Conchas de puntos: ristras de 5 por el centro del camino.
-    for ln in site.lines:
-        every = SHELL_EVERY_M[0] if ln.id == 0 else SHELL_EVERY_M[1]
-        for s0 in np.arange(25.0, ln.length - 10.0, every):
-            for j in range(SHELL_GROUP):
-                _loot(pl, "ScoreShell", ln.id, float(s0 + 3.0 * j), margin=2.0)
 
 
 # -- decorado ---------------------------------------------------------------------------------------------

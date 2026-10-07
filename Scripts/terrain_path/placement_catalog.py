@@ -79,32 +79,23 @@ class HazardSpec:
 
 
 HAZARDS: dict[str, HazardSpec] = {h.kind: h for h in (
-    HazardSpec("GiantCrab", ENEMY, 2.5, frozenset({0, 2, 3}), min_half_width_m=5.0, max_per_map=3, weight=0.6),
-    HazardSpec("SeaUrchin", ENEMY, 1.5, frozenset({0, 3})),
-    HazardSpec("Lizard", ENEMY, 1.0, frozenset({0, 2})),
-    HazardSpec("SandFleas", ENEMY, 1.5, frozenset({2, 3})),
-    HazardSpec("HermitCrab", ENEMY, 1.5, frozenset({0, 2}), layout="along", extent_m=20.0, weight=0.7),
-    HazardSpec("ToyTank", ENEMY, 2.0, frozenset({2, 3}), min_half_width_m=5.0, max_per_map=2,
-               layout="along", extent_m=15.0, weight=0.6),
-    HazardSpec("QuadLane", ENEMY, 2.0, frozenset({3}), min_half_width_m=6.0, max_per_map=2, layout="across"),
+    HazardSpec("DragCrab", ENEMY, 2.5, frozenset({0, 2, 3}), min_half_width_m=5.0, max_per_map=3, weight=0.6),
+    HazardSpec("BurrowCrab", ENEMY, 1.5, frozenset({0, 2, 3})),
     HazardSpec("GullZone", ENEMY, 1.5, frozenset({1, 3}), water=True, extent_m=12.0),
-    HazardSpec("PoolOctopus", ENEMY, 2.0, frozenset({1}), water=True, max_per_map=2),
-    HazardSpec("BarbedWire", OBSTACLE, 1.0, frozenset({0, 2, 3}), layout="across"),
-    HazardSpec("Mine", OBSTACLE, 1.0, frozenset({2, 3})),
+    HazardSpec("UrchinSpikes", OBSTACLE, 1.0, frozenset({0, 3})),
+    HazardSpec("Quicksand", OBSTACLE, 1.5, frozenset({2, 3})),
+    HazardSpec("TrashPile", OBSTACLE, 1.0, frozenset({2, 3})),
     HazardSpec("Seaweed", OBSTACLE, 1.0, frozenset({1}), water=True),
-    HazardSpec("ClamTrap", OBSTACLE, 1.0, frozenset({1, 3}), water=True),
 )}
 
 MECHANIC_INTENSITY = 0.5
 MECHANICS = {
     "Trampoline": "ETNBeachElement::Trampoline",
-    "SpadeRamp": "ETNBeachElement::SpadeRamp",
     "Boardwalk": "ETNBeachElement::Boardwalk",
 }
 LOOT_CLASSES = {
     "SearchSpot": "ATN_BeachSearchSpot",
     "FishingPool": "ATN_FishingPool",
-    "ScoreShell": "BP_ScorePickup",
 }
 
 DECOR_BY_BIOME = (

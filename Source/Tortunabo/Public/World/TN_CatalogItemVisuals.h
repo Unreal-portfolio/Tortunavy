@@ -17,18 +17,10 @@ enum class ETNCatalogLook : uint8
 	StaminaBoost,
 	/** Barra llena de golpe (SelfStaminaFull): barrita turquesa. Hoy no tiene fila. */
 	StaminaFull,
-	/** Bola (Throwable, fila ThrowableBall): la piedra gris de su malla, Piedra1. */
+	/** Lanzable genérico (Throwable): la piedra gris de la malla Piedra1. */
 	Ball,
-	/** Cabezota (BigHead): cabeza de tortuga grandota. */
-	BigHead,
-	/** Concha trampa (Conch): concha cerrada malva de su malla, ConchaCerrada. */
-	Conch,
-	/** Tinta de calamar (InkThrower, fila Tinta): el calamar morado de su malla, Calamar. */
-	Ink,
 	/** Tótem (Totem): la tortuga de peluche verde de su malla, Peluche1. */
 	Totem,
-	/** Fila de relleno Score (sin uso): concha de puntos melocotón. */
-	Score,
 	Count
 };
 
@@ -43,7 +35,7 @@ enum class ETNCatalogLook : uint8
  */
 namespace TNCatalogItemVisuals
 {
-	/** El aspecto de un objeto de DT_Items (None si es del cooperativo o una fila sin uso desconocida). */
+	/** El aspecto de un objeto de DT_Items (None si es del cooperativo o una fila sin uso). */
 	TORTUNABO_API ETNCatalogLook LookOf(const FTN_InventoryItem& Item);
 
 	/** Nombre para el registro y las claves de caché («StaminaBoost», «Ball»...). */

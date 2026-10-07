@@ -13,7 +13,7 @@ class UStaticMesh;
 /** Recuento de lo que ha colocado un ATN_MapPlacementSpawner en esta máquina (log y tests). */
 struct FTNMapPlacementStats
 {
-	/** Actores creados por clase nativa (sin el sufijo de un Blueprint: «TN_BeachBarbedWire», «TN_ScorePickup»...). */
+	/** Actores creados por clase nativa (sin el sufijo de un Blueprint: «TN_BeachSeaweed», «TN_ProcSearchSpot»...). */
 	TMap<FName, int32> ActorsByClass;
 	/** Entradas colocadas por tipo de pieza (TNMapPlacements::SpawnName). */
 	TMap<FName, int32> PlacedBySpawn;

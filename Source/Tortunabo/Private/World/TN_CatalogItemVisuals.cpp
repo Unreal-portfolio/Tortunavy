@@ -8,9 +8,6 @@
 
 namespace TNCatalogItemVisualsDetail
 {
-	/** ItemId de la fila de relleno sin uso. */
-	const FName ScoreItemId(TEXT("Score"));
-
 	bool Apply(FTN_InventoryItem& Item, bool bEvenHeadless)
 	{
 		const ETNCatalogLook Look = TNCatalogItemVisuals::LookOf(Item);
@@ -41,14 +38,9 @@ ETNCatalogLook TNCatalogItemVisuals::LookOf(const FTN_InventoryItem& Item)
 	case ETN_ItemUseType::SelfStaminaBoost: return ETNCatalogLook::StaminaBoost;
 	case ETN_ItemUseType::SelfStaminaFull:  return ETNCatalogLook::StaminaFull;
 	case ETN_ItemUseType::Throwable:        return ETNCatalogLook::Ball;
-	case ETN_ItemUseType::BigHead:          return ETNCatalogLook::BigHead;
-	case ETN_ItemUseType::Conch:            return ETNCatalogLook::Conch;
-	case ETN_ItemUseType::InkThrower:       return ETNCatalogLook::Ink;
 	case ETN_ItemUseType::Totem:            return ETNCatalogLook::Totem;
-	case ETN_ItemUseType::None:
-		return Item.ItemId == TNCatalogItemVisualsDetail::ScoreItemId ? ETNCatalogLook::Score : ETNCatalogLook::None;
 	default:
-		// CoopItem: lo resuelve TNCoopItems.
+		// Sin uso o CoopItem (lo resuelve TNCoopItems).
 		return ETNCatalogLook::None;
 	}
 }
@@ -60,11 +52,7 @@ const TCHAR* TNCatalogItemVisuals::CodeName(ETNCatalogLook Look)
 	case ETNCatalogLook::StaminaBoost: return TEXT("StaminaBoost");
 	case ETNCatalogLook::StaminaFull:  return TEXT("StaminaFull");
 	case ETNCatalogLook::Ball:         return TEXT("Ball");
-	case ETNCatalogLook::BigHead:      return TEXT("BigHead");
-	case ETNCatalogLook::Conch:        return TEXT("Conch");
-	case ETNCatalogLook::Ink:          return TEXT("Ink");
 	case ETNCatalogLook::Totem:        return TEXT("Totem");
-	case ETNCatalogLook::Score:        return TEXT("Score");
 	default:                           return TEXT("None");
 	}
 }

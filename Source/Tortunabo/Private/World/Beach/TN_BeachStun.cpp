@@ -3,7 +3,6 @@
 #include "Game/TN_CoopItemComponent.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachGullTuning.h"
-#include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStorm.h"
 #include "Core/TN_Log.h"
 #include "Player/TortugaCharacter.h"
@@ -116,8 +115,7 @@ namespace TNBeachStunDetail
 
 void TNBeach::StunTurtle(ACharacter* Turtle, float Seconds, const FVector& Launch)
 {
-	// En la boca de un gusano de arena (al acabar la cuenta atrás) ya no le pasa nada más hasta la ronda siguiente.
-	if (!Turtle || Seconds <= 0.f || !Turtle->HasAuthority() || Turtle->IsActorBeingDestroyed() || ATN_BeachSandWorm::IsBeingEaten(Turtle))
+	if (!Turtle || Seconds <= 0.f || !Turtle->HasAuthority() || Turtle->IsActorBeingDestroyed())
 	{
 		return;
 	}
@@ -150,7 +148,7 @@ void TNBeach::StunTurtle(ACharacter* Turtle, float Seconds, const FVector& Launc
 
 void TNBeach::KnockDownTurtle(ACharacter* Turtle, float Seconds, const FVector& Impulse)
 {
-	if (!Turtle || Seconds <= 0.f || !Turtle->HasAuthority() || Turtle->IsActorBeingDestroyed() || ATN_BeachSandWorm::IsBeingEaten(Turtle))
+	if (!Turtle || Seconds <= 0.f || !Turtle->HasAuthority() || Turtle->IsActorBeingDestroyed())
 	{
 		return;
 	}
@@ -199,7 +197,6 @@ TNBeach::ETNBeachMover TNBeach::GetTurtleMover(const ACharacter* Turtle)
 		return ETNBeachMover::None;
 	}
 	FTNMoverView View;
-	View.bEaten = ATN_BeachSandWorm::IsBeingEaten(TurtleCharacter);
 	View.Claim = GetTurtleClaim(TurtleCharacter);
 	View.bHeld = ATN_BeachEnemy::IsTurtleHeld(TurtleCharacter);
 	View.bCarried = TNBeachStunDetail::IsCarried(TurtleCharacter);
@@ -220,7 +217,6 @@ const TCHAR* TNBeach::GetMoverName(ETNBeachMover Mover)
 	case ETNBeachMover::Held: return TEXT("un enemigo (sujeta)");
 	case ETNBeachMover::StormKick: return TEXT("la patada de la tormenta");
 	case ETNBeachMover::SafetyNet: return TEXT("la red de seguridad");
-	case ETNBeachMover::Eaten: return TEXT("un gusano de arena");
 	default: return TEXT("su propio movimiento");
 	}
 }

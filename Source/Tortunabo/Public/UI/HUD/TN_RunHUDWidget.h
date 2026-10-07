@@ -7,50 +7,16 @@
 #include "Styling/SlateBrush.h"
 #include "TN_RunHUDWidget.generated.h"
 
-class ATN_CoopPlayerState;
 class UBorder;
 class UCanvasPanel;
 class UImage;
 class UMaterialInstanceDynamic;
-class UOverlay;
 class UProgressBar;
 class UTextBlock;
 class APlayerController;
 class ATortugaCharacter;
 class UTN_ButtonGlyphWidget;
 class UTN_HoldRingWidget;
-class UTN_ScoreShellSynthComponent;
-
-/**
- * Icono de concha que vuela al contador del HUD (UTN_RunHUDWidget): nace donde estaba la concha en pantalla, sale de un
- * saltito a su hueco alrededor, espera su turno y vuela en arco hasta la concha del contador, donde suma Part.
- */
-struct FTNShellFlight
-{
-	/** Donde nace (la concha en pantalla), su hueco tras el saltito y el punto de control del arco (espacio del HUD). */
-	FVector2D From = FVector2D::ZeroVector;
-	FVector2D Rest = FVector2D::ZeroVector;
-	FVector2D Bend = FVector2D::ZeroVector;
-	/** Hora del HUD en que nace, en que sale hacia el contador y lo que tarda en llegar (s). */
-	float Born = 0.f;
-	float Launch = 0.f;
-	float Flight = 0.6f;
-	/** Giro (grados) y su velocidad (grados/s), tamaño en px y puntos que suma al llegar. */
-	float Angle = 0.f;
-	float SpinRate = 0.f;
-	float Size = 34.f;
-	int32 Part = 1;
-	/** Tamaño de la concha (TNScoreShells::ETier) y si es el último icono de su recogida (rebote más fuerte). */
-	uint8 Tier = 0;
-	bool bLast = false;
-	/** Lo que se pinta en este fotograma: posición, escala, opacidad y dos puntos de estela (solo en vuelo). */
-	FVector2D Pos = FVector2D::ZeroVector;
-	float Scale = 0.f;
-	float Alpha = 0.f;
-	bool bFlying = false;
-	FVector2D TrailA = FVector2D::ZeroVector;
-	FVector2D TrailB = FVector2D::ZeroVector;
-};
 
 /**
  * @brief HUD de la tortuga en partida, estilo Tortunavy (boceto para el equipo de arte), hecho en código.
@@ -61,12 +27,8 @@ struct FTNShellFlight
  *    (M_UI_TurtleBadge, Scripts/build_ui_assets.py). La estamina no se ve en la interfaz. Debajo, una cinta con el
  *    nombre que no lo tapa. Cuando la tortuga habla por la voz de proximidad, la cara rebota y sale un bocadillo con
  *    barras de volumen.
- *  - Puntos en una concha; inventario en dos burbujas iguales: el aro de cuerda marca la que está en la aleta y
- *    rueda a la otra al cambiar. Avisos de tormenta, panza arriba y reanimación en carteles azul marino con ola.
- *  - Al coger una concha, iconos de su tamaño salen de donde estaba en pantalla, dan un saltito y vuelan en arco al
- *    contador (hasta 15, que se reparten el valor); cada uno suma su parte con un rebote del número y de la concha del
- *    contador y un «pom» que sube por la escala. Las recogidas seguidas hacen cola y el número acaba siempre en la
- *    puntuación real (RaceScore): lo que sube sin concha (la llegada) sale de la tortuga, y si baja se ajusta solo.
+ *  - Inventario en dos burbujas iguales: el aro de cuerda marca la que está en la aleta y rueda a la otra al cambiar.
+ *    Avisos de tormenta, panza arriba y reanimación en carteles azul marino con ola.
  * Hereda toda la lógica de UTN_PlayerHUDWidget creando los widgets que esa clase enlaza por nombre (los que ella
  * rellena y aquí no se ven quedan ocultos y se leen en el Tick).
  * Vista previa de estados en consola: tn.HUD.Face y tn.HUD.Talk.
@@ -78,7 +40,6 @@ class TORTUNABO_API UTN_RunHUDWidget : public UTN_PlayerHUDWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
-	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual int32 NativePaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
 		FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
@@ -87,21 +48,7 @@ private:
 	void BuildTree();
 	void TickBadge(float DeltaTime);
 	void TickInventory(float DeltaTime);
-	void TickScore(float DeltaTime);
 	void TickAlerts(float DeltaTime);
-
-	// ── Conchas que vuelan al contador ──
-	/** Se engancha al aviso de conchas del PlayerState local (y vuelve a empezar la cuenta si cambia). */
-	void BindShellEvents();
-	void UnbindShellEvents();
-	/** Aviso del PlayerState: una concha de Value puntos de tamaño Tier se ha cogido en WorldLocation. */
-	void HandleScoreShellCollected(int32 Value, uint8 Tier, const FVector& WorldLocation);
-	/** Pone en cola los iconos de una recogida de Value puntos que nacen en From (espacio del HUD). */
-	void EnqueueShellBurst(int32 Value, uint8 Tier, const FVector2D& From);
-	/** Mueve los iconos, suma los que llegan (rebote y «pom») y cuadra la cuenta con RaceScore. */
-	void TickShellFlights(float DeltaTime, const FGeometry& MyGeometry);
-	/** La tortuga local en pantalla (espacio del HUD), o un punto abajo en el centro si no se ve. */
-	FVector2D TurtleScreenPoint() const;
 
 	UPROPERTY(Transient) TObjectPtr<UCanvasPanel> Canvas;
 	UPROPERTY(Transient) TObjectPtr<UImage> Badge;
@@ -114,11 +61,8 @@ private:
 	UPROPERTY(Transient) TArray<TObjectPtr<UTextBlock>> SlotTags;
 	UPROPERTY(Transient) TObjectPtr<UImage> RopeImage;
 
-	UPROPERTY(Transient) TObjectPtr<UOverlay> ScoreRoot;
 	UPROPERTY(Transient) TObjectPtr<UBorder> StormBanner;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> StormText;
-	UPROPERTY(Transient) TObjectPtr<UBorder> SeagullBanner;
-	UPROPERTY(Transient) TObjectPtr<UTextBlock> SeagullText;
 	UPROPERTY(Transient) TObjectPtr<UBorder> DownBanner;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> DownText;
 	UPROPERTY(Transient) TObjectPtr<UBorder> ReviveBanner;
@@ -155,41 +99,7 @@ private:
 	/** La tecla o el botón de interactuar con el aparato de ahora (con lo reasignado en Ajustes). */
 	void RefreshPromptKey(const APlayerController* PC, const ATortugaCharacter* Turtle);
 
-	// ── Contador de conchas ──
-	/** Número que se ve (lo que ya ha llegado) y la concha del contador (destino de los iconos, rebota al sumar). */
-	UPROPERTY(Transient) TObjectPtr<UTextBlock> CountText;
-	UPROPERTY(Transient) TObjectPtr<UImage> CounterShell;
-	/** «+N» que sale junto al contador mientras llegan los iconos de una o varias recogidas seguidas. */
-	UPROPERTY(Transient) TObjectPtr<UTextBlock> GainText;
-	/** Sintetizador 2D del «pom» (en el PlayerController). */
-	TWeakObjectPtr<UTN_ScoreShellSynthComponent> PomSynth;
-	TWeakObjectPtr<ATN_CoopPlayerState> ShellEventsPS;
-	FDelegateHandle ShellEventsHandle;
-	/** Iconos de concha de cada tamaño para pintarlos (NativePaint). */
-	FSlateBrush ShellBrushes[4];
-	TArray<FTNShellFlight> Flights;
-	/** Centro de la concha del contador y tamaño del HUD (espacio del HUD), del último fotograma. */
-	FVector2D CounterTarget = FVector2D::ZeroVector;
-	FVector2D HUDSize = FVector2D::ZeroVector;
-	/** Número que enseña el contador (-1 = sin empezar) y puntos que vuelan todavía. */
-	int32 ShownScore = -1;
-	int32 LastShownNumber = -1;
-	int32 InFlightValue = 0;
-	/** Cuándo puede salir el siguiente icono (cola de recogidas) y cuánto lleva la cuenta descuadrada. */
-	float NextLaunchAt = 0.f;
-	float UnexplainedFor = 0.f;
-	float ExcessFor = 0.f;
-	/** Tanda de «pom»: paso de la escala y cuándo sonó el último. */
-	int32 PomStep = 0;
-	float LastPomAt = -10.f;
-	/** Rebote del contador, destello de su concha al acabar una grande o una reina, y el «+N». */
-	float CounterPop = 0.f;
-	float CounterGlow = 0.f;
-	uint8 CounterGlowTier = 0;
-	int32 GainShown = 0;
-	float GainAge = 10.f;
-	bool bShellPaintDirty = false;
-	/** Punto blanco del centro de la pantalla: a donde irá lo que se lance (objeto lanzable, tinta o el compañero cogido). */
+	/** Punto blanco del centro de la pantalla: a donde irá lo que se lance (objeto lanzable o el compañero cogido). */
 	bool bAimDotShown = false;
 	bool ShouldShowAimDot() const;
 };

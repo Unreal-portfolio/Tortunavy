@@ -15,8 +15,8 @@ bool FTNStressChaosTimelineTest::RunTest(const FString& Parameters)
 	FConfig Config;
 	Config.PhaseSeconds = 20.f;
 	const TArray<FPhase> Phases = BuildTimeline(Config);
-	TestEqual(TEXT("Seis fases"), Phases.Num(), static_cast<int32>(EStep::Count));
-	TestEqual(TEXT("Dura 6 x 20 s"), Phases.Last().End, 120.f);
+	TestEqual(TEXT("Cinco fases"), Phases.Num(), static_cast<int32>(EStep::Count));
+	TestEqual(TEXT("Dura 5 x 20 s"), Phases.Last().End, 100.f);
 	TestEqual(TEXT("La referencia solo anda"), static_cast<int32>(Phases[0].Tasks), static_cast<int32>(TaskBit(ETask::Wander)));
 	for (int32 Index = 1; Index < Phases.Num(); ++Index)
 	{
@@ -26,22 +26,20 @@ bool FTNStressChaosTimelineTest::RunTest(const FString& Parameters)
 	int32 EnemiesBefore = 0;
 	for (int32 Index = 0; Index < static_cast<int32>(EStep::Enemies); ++Index)
 	{
-		EnemiesBefore += Phases[Index].Crabs + Phases[Index].Gulls + Phases[Index].Tanks;
+		EnemiesBefore += Phases[Index].Crabs + Phases[Index].Gulls + Phases[Index].Patrols;
 	}
 	TestEqual(TEXT("Sin enemigos antes de su fase"), EnemiesBefore, 0);
 	const FPhase& Enemies = Phases[static_cast<int32>(EStep::Enemies)];
 	const FPhase& Peak = Phases[static_cast<int32>(EStep::Peak)];
 	TestEqual(TEXT("12 cangrejos por tanda"), Enemies.Crabs, 12);
-	TestTrue(TEXT("El pico vuelve a crear enemigos (el doble en total)"), Peak.Crabs == Enemies.Crabs && Peak.Tanks == Enemies.Tanks);
-	TestTrue(TEXT("El pico lanza objetos más seguido"), Peak.ItemEverySeconds > 0.f && Peak.ItemEverySeconds < Enemies.ItemEverySeconds);
-	TestEqual(TEXT("Antes de la fase de objetos no se lanza nada"), Phases[static_cast<int32>(EStep::Ball)].ItemEverySeconds, 0.f);
+	TestTrue(TEXT("El pico vuelve a crear enemigos (el doble en total)"), Peak.Crabs == Enemies.Crabs && Peak.Patrols == Enemies.Patrols);
 
 	FConfig NoEnemies;
 	NoEnemies.EnemyScale = 0.f;
 	TestEqual(TEXT("Escala 0: sin enemigos"), BuildTimeline(NoEnemies)[static_cast<int32>(EStep::Peak)].Crabs, 0);
 	FConfig Double;
 	Double.EnemyScale = 2.f;
-	TestEqual(TEXT("Escala 2: el doble"), BuildTimeline(Double)[static_cast<int32>(EStep::Enemies)].Tanks, 8);
+	TestEqual(TEXT("Escala 2: el doble"), BuildTimeline(Double)[static_cast<int32>(EStep::Enemies)].Patrols, 8);
 	return true;
 }
 
@@ -61,7 +59,7 @@ bool FTNStressChaosPickTaskTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Nunca una tarea no permitida (coger y lanzar)"), Counts[static_cast<int32>(ETask::Carry)], 0);
 	TestTrue(TEXT("Salen las permitidas"), Counts[static_cast<int32>(ETask::Ball)] > 0 && Counts[static_cast<int32>(ETask::Wander)] > 0);
 
-	const uint8 All = TaskBit(ETask::Wander) | TaskBit(ETask::Carry) | TaskBit(ETask::Items);
+	const uint8 All = TaskBit(ETask::Wander) | TaskBit(ETask::Carry) | TaskBit(ETask::Ball);
 	bool bCarryWithoutPartner = false;
 	for (int32 Index = 0; Index < 2000; ++Index)
 	{

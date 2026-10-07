@@ -1,6 +1,4 @@
 #include "World/ProcMap/TN_ProcMapTypes.h"
-#include "Settings/TN_GameplayAssetSettings.h"
-#include "World/ProcMap/TN_ProcWaterActors.h"
 #include "Engine/StaticMesh.h"
 
 const UTN_ProcBiomeDataAsset* UTN_ProcMapSettings::FindBiome(ETNProcBiome Biome) const
@@ -127,34 +125,23 @@ void TN_DefaultBiomeHazards(ETNProcBiome Biome, TArray<FTNProcHazardEntry>& Out)
 	auto BP = [](const TCHAR* Path) -> UClass* { return LoadClass<AActor>(nullptr, Path); };
 
 	UClass* Items = BP(TEXT("/Game/Blueprints/Gameplay/Items/BP_ItemSpawnZone.BP_ItemSpawnZone_C"));
-	UClass* Score = UTN_GameplayAssetSettings::GetScorePickupClass();
 	UClass* Crabs = BP(TEXT("/Game/Blueprints/Gameplay/Enemies/Crabs/BP_CrabSpawnZone.BP_CrabSpawnZone_C"));
-	UClass* Gulls = BP(TEXT("/Game/Blueprints/Gameplay/Enemies/Seagull/BP_SeagullSpawnZone.BP_SeagullSpawnZone_C"));
 	UClass* Jelly = BP(TEXT("/Game/Blueprints/Gameplay/Items/BP_JellyfishActor.BP_JellyfishActor_C"));
 	UClass* Banana = BP(TEXT("/Game/Blueprints/Gameplay/Hazards/BP_BananaPeel.BP_BananaPeel_C"));
 	UClass* Slow = BP(TEXT("/Game/Blueprints/Gameplay/Hazards/BP_SlowZoneVolume.BP_SlowZoneVolume_C"));
 
 	Add(Items, 1.5f, ETNProcHazardPlacement::OnPath, ETNProcDifficulty::Easy, 12000.f);
-	Add(Score, 4.f, ETNProcHazardPlacement::OnPath, ETNProcDifficulty::Easy, 3000.f, 60.f);
 
 	switch (Biome)
 	{
 		case ETNProcBiome::Water:
-			Add(ATN_ProcWaterBouncer::StaticClass(), 6.f, ETNProcHazardPlacement::InWater, ETNProcDifficulty::Easy, 1800.f);
-			Add(ATN_ProcWaterCurrent::StaticClass(), 2.f, ETNProcHazardPlacement::InWater, ETNProcDifficulty::Easy, 5000.f);
-			Add(ATN_ProcWaterPredator::StaticClass(), 1.5f, ETNProcHazardPlacement::InWater, ETNProcDifficulty::Normal, 9000.f);
-			Add(ATN_ProcWhirlpool::StaticClass(), 1.f, ETNProcHazardPlacement::InWater, ETNProcDifficulty::Normal, 9000.f);
 			Add(Jelly, 1.5f, ETNProcHazardPlacement::PathEdge, ETNProcDifficulty::Easy, 5000.f);
 			break;
 		case ETNProcBiome::Mangrove:
-			Add(ATN_ProcWaterBouncer::StaticClass(), 4.f, ETNProcHazardPlacement::InWater, ETNProcDifficulty::Easy, 2000.f);
-			Add(ATN_ProcWaterCurrent::StaticClass(), 1.f, ETNProcHazardPlacement::InWater, ETNProcDifficulty::Normal, 6000.f);
-			Add(ATN_ProcWaterPredator::StaticClass(), 1.f, ETNProcHazardPlacement::InWater, ETNProcDifficulty::Hard, 10000.f);
 			Add(Slow, 1.f, ETNProcHazardPlacement::OnPath, ETNProcDifficulty::Easy, 8000.f);
 			break;
 		case ETNProcBiome::Beach:
 			Add(Crabs, 1.5f, ETNProcHazardPlacement::NearPath, ETNProcDifficulty::Normal, 8000.f);
-			Add(Gulls, 0.6f, ETNProcHazardPlacement::AbovePath, ETNProcDifficulty::Hard, 15000.f, 600.f);
 			Add(Jelly, 2.f, ETNProcHazardPlacement::PathEdge, ETNProcDifficulty::Easy, 4000.f);
 			Add(Banana, 1.5f, ETNProcHazardPlacement::OnPath, ETNProcDifficulty::Easy, 4000.f);
 			break;
@@ -164,11 +151,9 @@ void TN_DefaultBiomeHazards(ETNProcBiome Biome, TArray<FTNProcHazardEntry>& Out)
 			break;
 		case ETNProcBiome::Rocky:
 			Add(Crabs, 1.2f, ETNProcHazardPlacement::NearPath, ETNProcDifficulty::Normal, 9000.f);
-			Add(Gulls, 0.8f, ETNProcHazardPlacement::AbovePath, ETNProcDifficulty::Normal, 12000.f, 600.f);
 			break;
 		case ETNProcBiome::Human:
 			Add(Banana, 2.5f, ETNProcHazardPlacement::OnPath, ETNProcDifficulty::Easy, 3000.f);
-			Add(Gulls, 0.8f, ETNProcHazardPlacement::AbovePath, ETNProcDifficulty::Normal, 12000.f, 600.f);
 			break;
 		case ETNProcBiome::Volcanic:
 		case ETNProcBiome::Jungle:

@@ -10,7 +10,7 @@ class AActor;
 
 /**
  * Pruebas de estrés (TN.Stress <light|heavy|tortugas8|stop>, o -TNStress=<escenario> en la línea de órdenes; no Shipping).
- * Crea en el mapa actual cangrejos, gaviotas y tanques de playa, lanzables de carrera y cajas de objetos, en fases de la misma
+ * Crea en el mapa actual cangrejos (arrastrador, subterráneo y de patrulla) y zonas de gaviotas, en fases de la misma
  * duración (una de referencia y una por grupo, 60 s en total), con las tortugas jugando (monkey). Mide por fase los ms de
  * fotograma (medio, p95, p99 y máximo), memoria, actores con Tick y KB/s de red por conexión, y escribe Saved/Stress/<fecha>.json.
  * El coste de cada grupo sale de restar cada fase a la anterior. Docs/Estres-Monkey-2026-09-29.md.

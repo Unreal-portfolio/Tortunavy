@@ -14,7 +14,7 @@
 //   TN.Beach.StunNearest [s]             marea al enemigo más cercano a tu tortuga (3 s por defecto; los quads no).
 //   TN.Beach.Enemy.Stats                 enemigos del mundo, cuántos van despacio por estar lejos y cuántos se apartan.
 //   TN.Beach.Enemy.Debug 1               (CVar) radios, oído, recorridos y estados en el servidor.
-// Para crear enemigos sueltos: TN.Beach.Place GiantCrab (SeaUrchin, QuadLane, GullZone).
+// Para crear enemigos sueltos: TN.Beach.Place DragCrab (BurrowCrab, QuadLane, GullZone).
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include "World/Beach/TN_BeachGullZone.h"

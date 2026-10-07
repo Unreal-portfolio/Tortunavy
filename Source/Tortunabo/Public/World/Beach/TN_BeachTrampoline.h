@@ -33,14 +33,9 @@ class UTN_PlaygroundSynthComponent;
  * (tope MaxHorizontal). Sirve para subir a castillos, dunas y plataformas o saltar hoyos y alambre. La malla se deforma:
  * se aplasta entera (squash & stretch) y se hunde donde cae la tortuga (abolladura que vibra y se recupera).
  *
- * Potenciado (Spec.Flags & TNBeach::FlagBoosted, el de la cima de las fortalezas): rebota BoostedUpScale veces más alto
- * y empuja BoostedForwardPush hacia el mar (tope BoostedMaxHorizontal): unas 2-2,4 veces más lejos que uno normal en
- * llano. Aro dorado en la arena, cuatro palos con guirnaldas de banderines y la bandera de Tortunavy, destellos dorados,
- * un boing más grave con barrido y la fanfarria.
- *
  * Cartel (TNBeachSignKit): tabla de madera clavada en la arena por el lado por el que se llega (-X del marco), a un lado
  * y por fuera del cuerpo (de cara a quien llega), con una flecha que baja y rebota hacia arriba pintada y el rótulo
- * «¡BOING!» (dorada y con estrella en el potenciado). Rebota y brilla al acercarse la tortuga local.
+ * «¡BOING!». Rebota y brilla al acercarse la tortuga local.
  *
  * Red (#21): el rebote de una tortuga lo decide su movimiento (UTN_TurtleMovementComponent) al empezar cada paso en que
  * su cápsula toca el sensor, con las reglas puras de TN_BeachTrampolineRules.h. Así cae en el mismo paso en el servidor y
@@ -92,25 +87,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Trampolín", meta = (ClampMin = "0.0", ClampMax = "2.0"))
 	float BoingVolume = 1.f;
-
-	/** Potenciado: por cuánto se multiplica la velocidad vertical del rebote. */
-	UPROPERTY(EditAnywhere, Category = "Trampolín|Potenciado", meta = (ClampMin = "1.0", ClampMax = "2.0"))
-	float BoostedUpScale = 1.25f;
-
-	/** Potenciado: empujón hacia el mar (cm/s) que se suma a la horizontal conservada. */
-	UPROPERTY(EditAnywhere, Category = "Trampolín|Potenciado", meta = (ClampMin = "0.0"))
-	float BoostedForwardPush = 900.f;
-
-	/** Potenciado: tope de la velocidad horizontal tras el rebote. */
-	UPROPERTY(EditAnywhere, Category = "Trampolín|Potenciado", meta = (ClampMin = "0.0"))
-	float BoostedMaxHorizontal = 1500.f;
-
-	/** Potenciado: tope de la velocidad vertical del rebote. */
-	UPROPERTY(EditAnywhere, Category = "Trampolín|Potenciado", meta = (ClampMin = "300.0"))
-	float BoostedMaxUp = 2400.f;
-
-	/** Potenciado (Spec.Flags & TNBeach::FlagBoosted). */
-	bool IsBoosted() const { return bBoosted; }
 
 	/** true si Component es el sensor de rebote de este trampolín. */
 	bool IsBounceSensor(const UPrimitiveComponent* Component) const;
@@ -201,19 +177,18 @@ private:
 	void PlayBounceFX(const FVector& WorldAt, float Strength);
 	void AnimateBody(float DeltaSeconds);
 
-	/** Empujón hacia el mar, tope horizontal y tope vertical con los que rebota (los potenciados, más). */
-	float EffectivePush() const { return bBoosted ? BoostedForwardPush : ForwardPush; }
-	float EffectiveMaxHorizontal() const { return bBoosted ? BoostedMaxHorizontal : MaxHorizontal; }
-	float EffectiveMaxUp() const { return FMath::Max(bBoosted ? FMath::Max(BoostedMaxUp, MaxUp) : MaxUp, BaseUp); }
+	/** Empujón hacia el mar, tope horizontal y tope vertical con los que rebota. */
+	float EffectivePush() const { return ForwardPush; }
+	float EffectiveMaxHorizontal() const { return MaxHorizontal; }
+	float EffectiveMaxUp() const { return FMath::Max(MaxUp, BaseUp); }
 
-	/** Ajustes del rebote de una tortuga en este trampolín (variante y potenciado incluidos). */
+	/** Ajustes del rebote de una tortuga en este trampolín (variante incluida). */
 	TNTrampolineRules::FBounceTuning TurtleTuning() const;
 
 	/** Coloca el cartel por fuera del cuerpo (en ApplySpec, con las medidas de la variante ya puestas). */
 	void PlaceSign(double Fit, uint32 Seed);
 
 	int32 Variant = 0;
-	bool bBoosted = false;
 	/** Cartel: giro de su tabla y estado de su animación. */
 	double SignYawDeg = 0.0;
 	float SignAge = 10.f;
@@ -223,8 +198,6 @@ private:
 	/** El cartel se está moviendo (solo entonces se toca su transformada). */
 	bool bSignMoving = false;
 	/** Última fanfarria en esta máquina (tiempo del mundo): no más de una cada pocos segundos. */
-	double LastFanfareAt = -100.0;
-	FTNTrapBurst Sparkle;
 	/** Medidas de la variante (cm, espacio del marco). */
 	double BodyR = 500.0;
 	/** Alcance de los tentáculos de la medusa por la arena (0 en las demás variantes). */

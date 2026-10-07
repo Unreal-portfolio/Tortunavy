@@ -9,7 +9,6 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachEnemy.h"
-#include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/TN_CatalogItemVisuals.h"
 
@@ -42,7 +41,7 @@ bool TNItemRuntime::CanUseNow(const ATortugaCharacter* Turtle)
 	{
 		return false;
 	}
-	if (TNBeach::IsTurtleStunned(Turtle) || ATN_BeachEnemy::IsTurtleHeld(Turtle) || ATN_BeachSandWorm::IsBeingEaten(Turtle)
+	if (TNBeach::IsTurtleStunned(Turtle) || ATN_BeachEnemy::IsTurtleHeld(Turtle)
 		|| TNBeach::IsTurtleRelocating(Turtle))
 	{
 		return false;

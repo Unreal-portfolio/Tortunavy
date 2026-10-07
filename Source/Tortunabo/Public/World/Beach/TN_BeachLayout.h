@@ -7,29 +7,22 @@
 #include "World/ProcMap/TN_ProcMapMath.h"
 
 /**
- * Playa del modo carrera (ATN_BeachRaceGenerator, Docs/Modo_Carrera.md), lógica pura: el terreno fijo (perfil hacia el
- * mar, relieve con corredores, dunas con cresta, pozas de agua y trincheras, bancos de la selva, repisa y acantilado de
- * roca, fondo del mar), la salida, las zonas de meta y de zambullida, y el reparto de cada ronda con su semilla y su
- * dificultad (unos 3100 elementos en 800 m: castillos con salas, fortalezas, filas que obligan a zigzaguear, pasos de quads, zonas
- * de gaviotas, puestos militares, rincones con cofre, lanzadores, los enemigos de sitio fijo —pulpos en las pozas,
- * ermitaños en calles cuesta abajo, pulgas en claros de arena y tanques de juguete junto a lo militar—, cofres, relleno
- * por bandas, los puntos interesantes para el botín y el asiento de cada elemento en la arena). Sin mundo ni actores: lo
- * usan el generador (el servidor para colocar y cada cliente, con la semilla y la dificultad replicadas, para los
- * asientos) y los tests (Private/Tests/TN_BeachLayoutTest.cpp).
+ * Playa de la antigua carrera, lógica pura: el terreno fijo (perfil hacia el mar, relieve con corredores, dunas con
+ * cresta, pozas de agua y trincheras, bancos de la selva, repisa y acantilado de roca, fondo del mar), la salida, las
+ * zonas de meta y de zambullida, y el reparto de cada ronda con su semilla y su dificultad (castillos enormes, filas que
+ * obligan a zigzaguear, pasos de quads, zonas de gaviotas, puestos militares, rincones, lanzadores, las criaturas del
+ * Excel de diseño, relleno por bandas, los puntos interesantes y el asiento de cada elemento en la arena). Sin mundo ni
+ * actores: hoy lo usan el decorado de la playa (FItem, MeshSandZ) y los tests (Private/Tests/TN_BeachLayoutTest.cpp).
  *
  * Espacio local del generador, en cm: X a lo largo del recorrido (línea de salida en X = 0, borde del acantilado en
  * X ≈ Length, el mar más allá), Y a lo ancho (la playa jugable en |Y| <= HalfWidth) y Z arriba, con el agua en Z = 0.
  *
  * Orientación de los elementos (Yaw, grados sobre Z): con Yaw 0 el eje X local del elemento mira al mar. Los alargados
  * (Extent > 0) tienen el largo por su eje X local, centrado en su origen, y la huella es su semigrosor por el eje Y
- * local: el alambre y el paso de quads van a ~90° (cruzan la playa), la pasarela y el caminito de palos a ~0° (hacia el
- * mar). El castillo con salas, la puerta de conchas, el cubo roto, la pala, las catapultas y los trampolines van a ~0°:
- * se entra (o se lanza) hacia +X. Las fortalezas, a 0 ± 10° (su lanzador de la cima tira hacia su +X, con la franja de
- * caída libre). La calle del cangrejo ermitaño va cuesta abajo de su extremo -X (donde espera) al +X; el tramo del tanque
- * de juguete, a ~90° (de través). El cofre mira con su +X (su frente) a por donde se llega. Todos se colocan con el origen
- * a la cota de su asiento (PlacementZ): el suelo bajo su huella queda liso (FStamp) y a nivel, salvo el paso de quads,
- * que no allana (solo oscurece sus rodadas). Los enemigos no tienen asiento: buscan el suelo ellos solos (el pulpo, en el
- * fondo de su poza).
+ * local: el paso de quads va a ~90° (cruza la playa), la pasarela y el caminito de palos a ~0° (hacia el mar). Los
+ * trampolines van a ~0°: se lanza hacia +X. Todos se colocan con el origen a la cota de su asiento (PlacementZ): el
+ * suelo bajo su huella queda liso (FStamp) y a nivel, salvo el paso de quads, que no allana (solo oscurece sus rodadas).
+ * Los enemigos no tienen asiento: buscan el suelo ellos solos.
  */
 namespace TNBeachLayout
 {
@@ -41,7 +34,7 @@ namespace TNBeachLayout
 	constexpr double HalfWidth = TNBeach::CourseWidth * 0.5;
 	/**
 	 * Cuánto se ha acortado el recorrido respecto a los 1200 m con los que se afinaron las cuotas fijas de una ronda
-	 * (castillos, filas, puestos, calles de ermitaños, cofres...): 2/3 con 800 m (TNBeach::CourseLengthScale). El terreno
+	 * (castillos, filas, puestos...): 2/3 con 800 m (TNBeach::CourseLengthScale). El terreno
 	 * fijo se sitúa por fracciones del recorrido y el relleno por bandas de 50 m, así que ambos siguen solos; lo que se cuenta
 	 * «por ronda» se multiplica por LengthScale para conservar la densidad por metro cuadrado.
 	 */
@@ -91,12 +84,6 @@ namespace TNBeachLayout
 	constexpr double EggLaunchReachX = 1500.0;
 	/** Margen (cm) del nido del sprint que se despeja alrededor de los huevos (el SprintClearMargin del GameMode). */
 	constexpr double SprintNestClear = 1500.0;
-	/**
-	 * En una ronda de sprint, la huella del castillo con salas principal queda fuera de [SprintLineX − SprintCastleBehind,
-	 * SprintLineX + SprintCastleAhead]: ni el castillo ni sus alas tocan el nido de los huevos.
-	 */
-	constexpr double SprintCastleBehind = 8000.0;
-	constexpr double SprintCastleAhead = 3000.0;
 
 	// ── Reparto ──
 	/** Nada a menos de 15 m por delante de la línea de salida (23 m de los huevos; el salto de los huevos cae a ~7 m). */
@@ -113,7 +100,7 @@ namespace TNBeachLayout
 	/** Paso libre a lo ancho que siempre queda (obstáculos inflados MinPassage / 2 y un camino de un lado a otro). */
 	constexpr double MinPassage = 800.0;
 	constexpr double BandLength = 5000.0;
-	/** Separación mínima entre huellas (salvo las piezas de las filas y las alas del castillo, que se tocan). */
+	/** Separación mínima entre huellas (salvo las piezas de las filas, que se tocan). */
 	constexpr double ItemPad = 150.0;
 	/** Casilla de la rejilla con la que se comprueba el paso. */
 	constexpr double PassCell = 200.0;
@@ -122,35 +109,16 @@ namespace TNBeachLayout
 	constexpr double StampBlendMax = 1600.0;
 	/** Ninguna línea recta hacia el mar libre más de esto (cm): donde la haya, se pone algo en medio. */
 	constexpr double MaxStraightRun = 7000.0;
-	/** Arcos de salto que se dejan libres por delante de cada lanzador (cm desde su borde) y su semiancho. */
-	constexpr double CatapultArc = 3000.0;
+	/** Arco de salto que se deja libre por delante de cada trampolín (cm desde su borde) y su semiancho. */
 	constexpr double TrampolineArc = 2200.0;
 	constexpr double JumpArcHalfWidth = 500.0;
 	/**
-	 * Catapultas por ronda como poco (si no caben sueltas, pasan a serlo trampolines de delante de un obstáculo). Son de un
-	 * solo uso: hacen falta más que antes (eran 6). 12 en 1200 m; 8 en 800 m.
-	 */
-	constexpr int32 MinCatapults = static_cast<int32>(12.0 * LengthScale + 0.5);
-	/**
 	 * Decorado pequeño (huella de menos de 6 m: basura, conchas, cocos, cubitos...): no cierra el paso. Se rodea o se pasa
 	 * entre las piezas (entre dos de ellas quedan SmallDecorPad entre huellas, ~1,5 m entre mallas: la tortuga es más
-	 * estrecha; con todo lo demás, ItemPad), así que el paso de 8 m solo lo cuentan lo grande, las piezas de los muros, el
-	 * alambre, los castillos con salas y las fortalezas.
+	 * estrecha; con todo lo demás, ItemPad), así que el paso de 8 m solo lo cuentan lo grande y las piezas de los muros.
 	 */
 	constexpr double SmallDecorFoot = 600.0;
 	constexpr double SmallDecorPad = 45.0;
-	/** Entre una fortaleza y la selva quedan como poco 25 m por cada lado (el rodeo), y 12 m hasta lo que ya hubiera. */
-	constexpr double FortressDetour = 2500.0;
-	constexpr double FortressPad = 1200.0;
-	/**
-	 * Franja de caída del lanzador potenciado de la cima de una fortaleza (apunta al +X local de la fortaleza): libre de 40 m
-	 * a 100 m del centro (o desde la muralla, si está más lejos) y de 16 m de ancho. El trampolín cae a 45-66 m y la
-	 * catapulta a 80-90 m (y aún rebota). Por debajo del vuelo no hace falta: va alto. Los pasos de quads sí la cruzan.
-	 */
-	constexpr double FortressLandingFrom = 4000.0;
-	constexpr double FortressLandingReach = 10000.0;
-	constexpr double FortressLandingHalfWidth = 800.0;
-	constexpr double FortressLandingAt = 8500.0;
 
 	// ── Densidad del relleno por bandas de 50 m (con t, el progreso de 0 en la salida a 1 en el borde) ──
 	/**
@@ -159,20 +127,16 @@ namespace TNBeachLayout
 	 */
 	constexpr double FillEnemiesBase = 4.5;
 	constexpr double FillEnemiesSea = 5.0;
-	/** Ayudas por banda (trampolines, catapultas, palas y plataformas móviles). */
+	/** Ayudas por banda (trampolines). */
 	constexpr double FillAidsBase = 1.6;
 	constexpr double FillAidsSea = 1.6;
-	/** Trampas que estorban por banda (alambre, algas, hoyos, cubos, puertas, conchas y minas). */
+	/** Trampas que estorban por banda (algas y plataformas sobre hoyos). */
 	constexpr double FillHazardsBase = 6.0;
 	constexpr double FillHazardsSea = 7.0;
 	/** Decorado del relleno: cuántos de cada diez intentos son del pequeño, y topes por banda. */
 	constexpr double SmallDecorShare = 0.8;
 	constexpr int32 MaxDecorPerBand = 500;
 	constexpr int32 MaxDecorAttemptsPerBand = 2000;
-	/** Cofres de sitio especial por ronda (sin los de los rincones), por las ayudas de la dificultad: 18 en 1200 m, 12 en 800 m. */
-	constexpr double ChestsBase = 18.0 * LengthScale;
-	/** Pasadas de PlaceChests como mucho: la segunda y la tercera solo si la primera no llega al cupo. */
-	constexpr int32 ChestSitePasses = 3;
 
 	// ── Relieve fijo ──
 	/** Corredores: caminos naturales más bajos entre las dunas (dos que se separan y se juntan y un tercero en medio). */
@@ -449,12 +413,12 @@ namespace TNBeachLayout
 		// Cross: cruza la playa sobre el corredor Corridor con un collado en él. Divider: separa dos corredores a lo largo
 		// (el 0 separa 0 y 1, o 0 y el central; el 1, el central y 1). Flank: media luna entre el corredor de fuera y la
 		// selva, del lado con más sitio.
-		// Siete crestas (eran diez con 1200 m; ver Docs/Modo_Carrera.md): tres que cruzan, dos que separan corredores y dos
+		// Siete crestas (eran diez con 1200 m): tres que cruzan, dos que separan corredores y dos
 		// medias lunas, cuatro con cornisa. Se quitan la del 12,5 % (pegada a la salida: el relieve aún no ha crecido), la
 		// media luna del 23,5 % y la que separa del 70,5 %; la media luna del final pasa del 89,5 % al 88,5 % (la roca
 		// empieza a apagar el relieve a 90 m del filo). Con las diez de antes y los tramos comprimidos a 2/3, las cornisas
-		// (bandas de 116 m sin sitio para un castillo con salas) y las pozas ocupaban tanto que no cabían los castillos con
-		// salas ni la fortaleza colosal (medido con el reparto de 24 rondas).
+		// (bandas de 116 m sin sitio para lo grande) y las pozas ocupaban tanto que no cabía lo grande (medido con el reparto
+		// de 24 rondas).
 		static const FSpec Specs[] = {
 			{ 0.205, EKind::Divider, 0, 380.0, 4200.0, false },
 			{ 0.365, EKind::Cross, 0, 420.0, 5600.0, true },
@@ -757,9 +721,9 @@ namespace TNBeachLayout
 			bool bTide;
 		};
 		// Corridor >= 0: la poza corta ese corredor. -1: fuera de los corredores, del lado con más sitio (se rodea).
-		// Siete pozas (eran diez con 1200 m; ver Docs/Modo_Carrera.md): cuatro charcas y tres de marea, cuatro de ellas cortan
+		// Siete pozas (eran diez con 1200 m): cuatro charcas y tres de marea, cuatro de ellas cortan
 		// un corredor. Se quitan las dos primeras (15,5 y 19 %: dejan libre el tramo de después de la salida, donde caben
-		// las fortalezas grandes) y la de marea que corta el corredor 0 del 80 % (las que más sitio quitaban a lo grande;
+		// las piezas grandes) y la de marea que corta el corredor 0 del 80 % (las que más sitio quitaban a lo grande;
 		// ver las crestas).
 		static const FSpec Specs[] = {
 			{ 0.335, 1, 1100.0, 1800.0, false },
@@ -1281,9 +1245,9 @@ namespace TNBeachLayout
 		bool bBlocking = true;
 		/** Va por encima (gaviotas): no ocupa suelo; solo no se pisa con otros como él. */
 		bool bOverlay = false;
-		/** Lo coloca su propia pasada (castillos con salas, quads, gaviotas, piezas militares grandes), no el relleno. */
+		/** Lo coloca su propia pasada (castillos enormes, quads, gaviotas, piezas militares grandes), no el relleno. */
 		bool bSpecial = false;
-		/** Lanza a la tortuga hacia delante (catapulta, trampolín): se le deja libre el arco de salto. */
+		/** Lanza a la tortuga hacia delante (trampolín): se le deja libre el arco de salto. */
 		bool bLauncher = false;
 		/** A veces sale en corrillo: probabilidad y cuántos más como mucho. */
 		double ClusterChance = 0.0;
@@ -1421,17 +1385,6 @@ namespace TNBeachLayout
 				R.Weight = 0.35;
 				R.ClusterChance = 0.45;
 				break;
-			case ETNBeachElement::BarbedWire:
-				R.Weight = 0.9;
-				R.SeaBias = 0.4;
-				R.ExtentMin = 2200.0;
-				R.ExtentMax = 6000.0;
-				R.BaseYaw = 90.0;
-				R.YawJitter = 25.0;
-				R.SizeMin = 0.9;
-				R.SizeMax = 1.1;
-				R.bBlocking = true;
-				break;
 			case ETNBeachElement::Seaweed:
 				// Algas a montones, en campos de 2-5 manchas.
 				R.Weight = 2.4;
@@ -1448,82 +1401,12 @@ namespace TNBeachLayout
 				R.SizeMin = 0.85;
 				R.SizeMax = 1.2;
 				break;
-			case ETNBeachElement::BrokenBucket:
-				R.Weight = 0.8;
-				R.YawJitter = 30.0;
-				break;
-			case ETNBeachElement::SpadeRamp:
-				R.Weight = 0.8;
-				R.YawJitter = 20.0;
-				break;
-			case ETNBeachElement::ShellGate:
-				R.Weight = 0.6;
-				R.YawJitter = 15.0;
-				break;
-			case ETNBeachElement::SandDungeon:
-				R.bSpecial = true;
-				R.bBlocking = true;
-				R.MaxPerRound = 3;
-				R.YawJitter = 8.0;
-				R.SizeMin = 0.95;
-				R.SizeMax = 1.08;
-				break;
-			case ETNBeachElement::ClamTrap:
-				R.Weight = 1.2;
-				R.SeaBias = 0.6;
-				R.MaxPerRound = 60;
-				R.ClusterChance = 0.2;
-				R.ClusterMax = 1;
-				break;
-			case ETNBeachElement::MovingPlatform:
-				R.Weight = 1.3;
-				R.MaxPerRound = 50;
-				R.YawJitter = 25.0;
-				break;
-			case ETNBeachElement::Catapult:
-				R.Weight = 1.4;
-				R.MaxPerRound = 50;
-				R.YawJitter = 20.0;
-				R.bLauncher = true;
-				break;
-			case ETNBeachElement::Mine:
-				R.Weight = 0.35;
-				R.MaxPerRound = 150;
-				R.ClusterChance = 0.3;
-				R.ClusterMax = 2;
-				break;
 			case ETNBeachElement::Trampoline:
 				R.Weight = 1.4;
 				R.MaxPerRound = 90;
 				R.SeaBias = 0.1;
 				R.YawJitter = 15.0;
 				R.bLauncher = true;
-				break;
-			case ETNBeachElement::GiantCrab:
-				// Cangrejos a menudo y desde el principio, a veces en grupos de 2-3 (pesan más: su huella grande cabe en menos huecos).
-				R.Weight = 3.0;
-				R.MinT = 0.02;
-				R.SeaBias = 0.6;
-				R.MaxPerRound = 120;
-				R.CoreFraction = 0.25;
-				R.ClusterChance = 0.4;
-				R.ClusterMax = 2;
-				break;
-			case ETNBeachElement::SeaUrchin:
-				R.Weight = 1.0;
-				R.MinT = 0.08;
-				R.SeaBias = 1.0;
-				R.MaxPerRound = 70;
-				R.CoreFraction = 0.4;
-				break;
-			case ETNBeachElement::Lizard:
-				R.Weight = 0.8;
-				R.MinT = 0.02;
-				R.MaxT = 0.88;
-				R.SeaBias = -0.3;
-				R.SideBias = 0.9;
-				R.MaxPerRound = 50;
-				R.CoreFraction = 0.33;
 				break;
 			case ETNBeachElement::QuadLane:
 				R.bSpecial = true;
@@ -1539,61 +1422,6 @@ namespace TNBeachLayout
 				R.SizeMin = 0.8;
 				R.SizeMax = 1.3;
 				R.CoreFraction = 1.0;
-				break;
-			case ETNBeachElement::FortressMedium:
-			case ETNBeachElement::FortressLarge:
-			case ETNBeachElement::FortressColossal:
-				// Su pasada (PlaceFortresses): pocas, enormes, con rodeo y mirando al mar. Las esquinas de sus torres quedan a
-				// 21,3 / 32 / 47,1 m por SizeScale: la mediana cabe en su huella hasta 1,03 y las otras hasta 1,06.
-				R.bSpecial = true;
-				R.bBlocking = true;
-				R.MaxPerRound = 12;
-				R.YawJitter = 10.0;
-				R.SizeMin = 0.94;
-				R.SizeMax = E == ETNBeachElement::FortressMedium ? 1.03 : 1.06;
-				break;
-			case ETNBeachElement::TreasureChest:
-				// En sitios especiales (PlaceChests y los rincones); los de la cima de las fortalezas, los pone la fortaleza.
-				R.bSpecial = true;
-				R.bBlocking = false;
-				R.MaxPerRound = 200;
-				R.SizeMin = 0.95;
-				R.SizeMax = 1.05;
-				break;
-			case ETNBeachElement::HermitCrab:
-				// Calle cuesta abajo a lo largo de su X local (Extent = largo), libre en su 60 % central.
-				R.bSpecial = true;
-				R.MinT = 0.04;
-				R.MaxPerRound = 100;
-				R.ExtentMin = 2500.0;
-				R.ExtentMax = 4500.0;
-				R.SizeMin = 0.9;
-				R.SizeMax = 1.1;
-				R.CoreFraction = 0.6;
-				break;
-			case ETNBeachElement::PoolOctopus:
-				// Dentro del agua de las pozas (PlacePoolOctopuses).
-				R.bSpecial = true;
-				R.MaxPerRound = 100;
-				R.CoreFraction = 0.4;
-				break;
-			case ETNBeachElement::SandFleas:
-				// En claros de arena abierta que se dejan libres (PlaceSandFleas).
-				R.bSpecial = true;
-				R.MaxPerRound = 100;
-				R.CoreFraction = 0.4;
-				break;
-			case ETNBeachElement::ToyTank:
-				// Tramo de patrulla de través (Extent = tramo) junto a lo militar y a las trincheras.
-				R.bSpecial = true;
-				R.MaxPerRound = 100;
-				R.ExtentMin = 2000.0;
-				R.ExtentMax = 4000.0;
-				R.BaseYaw = 90.0;
-				R.YawJitter = 20.0;
-				R.SizeMin = 0.9;
-				R.SizeMax = 1.1;
-				R.CoreFraction = 0.6;
 				break;
 			// Criaturas y peligros del Excel de diseño (lote #691): su pasada (PlaceExcelCreatures), al final del reparto.
 			case ETNBeachElement::Quicksand:
@@ -1648,8 +1476,7 @@ namespace TNBeachLayout
 
 	/**
 	 * Perfil de dificultad del reparto (la que elige el general: ETNProcDifficulty, replicada con la ronda). Multiplica los
-	 * cupos de cada grupo sobre la densidad de Normal: ayudas (trampolines, catapultas, palas, plataformas móviles,
-	 * fortalezas con premio y cofres; los rebuscables, el botín), trampas y enemigos. El decorado no cambia.
+	 * cupos de cada grupo sobre la densidad de Normal: ayudas (trampolines), trampas y enemigos. El decorado no cambia.
 	 */
 	struct FDifficultyProfile
 	{
@@ -1694,14 +1521,7 @@ namespace TNBeachLayout
 	{
 		switch (E)
 		{
-			case ETNBeachElement::Catapult:
 			case ETNBeachElement::Trampoline:
-			case ETNBeachElement::SpadeRamp:
-			case ETNBeachElement::MovingPlatform:
-			case ETNBeachElement::FortressMedium:
-			case ETNBeachElement::FortressLarge:
-			case ETNBeachElement::FortressColossal:
-			case ETNBeachElement::TreasureChest:
 				return EScaleGroup::Aid;
 			default:
 				break;
@@ -1730,9 +1550,9 @@ namespace TNBeachLayout
 	enum class EFillPool : uint8
 	{
 		Enemy,
-		/** Ayudas: catapultas, trampolines, palas y plataformas móviles. */
+		/** Ayudas: trampolines. */
 		Aid,
-		/** Trampas que estorban: alambre, algas, hoyos, cubos, puertas de conchas, conchas que atrapan y minas. */
+		/** Trampas que estorban: algas y plataformas sobre hoyos. */
 		Hazard,
 		/** Decorado que cierra el paso (huella de SmallDecorFoot o más). */
 		LargeDecor,
@@ -1761,31 +1581,22 @@ namespace TNBeachLayout
 	enum class EItemRole : uint8
 	{
 		Fill,
-		Dungeon,
-		DungeonWing,
 		QuadLane,
 		GullZone,
 		GuidePath,
 		/** Pieza de una fila que cierra casi toda la playa (el hueco cambia de lado de una fila a otra). */
 		Row,
-		/** Parapetos, puestos, filas de erizos, campos de minas y lo de las trincheras. */
+		/** Parapetos, puestos, filas de erizos y lo de las trincheras. */
 		Military,
 		/** Castillo enorme de su pasada. */
 		Castle,
-		/** Trampolín o catapulta de su pasada (delante de algo: un castillo, una cresta, una fila, una poza). */
+		/** Trampolín de su pasada (delante de algo: un castillo, una cresta, una fila, una poza). */
 		Launcher,
 		/** Pared de un rincón escondido a un lado. */
 		Nook,
 		/** Puesto para que ninguna línea recta hacia el mar quede libre. */
 		Plug,
-		/** Fortaleza de arena de su pasada. */
-		Fortress,
-		/** Cofre en un sitio especial (rincón, tras una concha que atrapa, junto a una trinchera, campo de minas o alambre). */
-		Chest,
-		/**
-		 * Enemigo en su sitio: pulpo en una poza, ermitaño en su calle, pulgas en su claro, tanque en su tramo de patrulla o
-		 * guardia alrededor de una fortaleza.
-		 */
+		/** Criatura o peligro del Excel de diseño en su sitio (PlaceExcelCreatures). */
 		Lair
 	};
 
@@ -1908,13 +1719,11 @@ namespace TNBeachLayout
 	/**
 	 * El terreno fijo deja poner el elemento: ni su asiento ni lo que ocupa tocan una poza, una trinchera ni una cornisa,
 	 * y lo grande (14 m de huella o más) no se asienta sobre una cresta (la cortaría). Los pasos de quads pasan por
-	 * encima de todo (no allanan) y las gaviotas van por el aire. El pulpo, al revés: solo dentro del agua de una poza
-	 * (su centro, a menos del 70 % del radio de su orilla). La calle del ermitaño tampoco cruza cornisas.
+	 * encima de todo (no allanan) y las gaviotas van por el aire.
 	 */
 	inline bool TerrainAllows(const FItem& Item)
 	{
 		if (Item.bOverlay || Item.Element == ETNBeachElement::QuadLane) { return true; }
-		if (Item.Element == ETNBeachElement::PoolOctopus) { return PoolAt(Item.Pos, 0.7) != INDEX_NONE; }
 		const bool bSeat = HasSeat(Item);
 		const double Reach = bSeat ? Item.Radius + SeatBlend(Item) : Item.Core;
 		const FVector2D A = Item.EndA();
@@ -1947,7 +1756,7 @@ namespace TNBeachLayout
 		{
 			if (Near(Trench.Min, Trench.Max, TrenchKeep) && TrenchSegmentDistance(A, B) < TrenchKeep) { return false; }
 		}
-		if (!bSeat && Item.Element != ETNBeachElement::HermitCrab) { return true; }
+		if (!bSeat) { return true; }
 		for (const FVector2D& Lip : LipSamples())
 		{
 			if (!Near(Lip, Lip, Reach + 150.0)) { continue; }
@@ -2228,12 +2037,12 @@ namespace TNBeachLayout
 		bool IsEmpty() const { return Side.Num() + Center.Num() == 0; }
 	};
 
-	/** Qué tiene de interesante un punto de la ronda (para el botín y las pruebas). */
+	/** Qué tiene de interesante un punto de la ronda (para las pruebas). */
 	enum class EInterestKind : uint8
 	{
-		/** Arco de salto de una catapulta o un trampolín (de Pos a To): se deja libre de elementos. */
+		/** Arco de salto de un trampolín (de Pos a To): se deja libre de elementos. */
 		JumpArc,
-		/** Cima: lo alto de una cresta, de un castillo enorme o de uno con salas (Height: lo que sobresale del suelo). */
+		/** Cima: lo alto de una cresta, o de un castillo enorme (Height: lo que sobresale del suelo). */
 		Summit,
 		/** Atajo: hueco estrecho de una fila, lanzador delante de un obstáculo o poza que corta un corredor (de Pos a To). */
 		Shortcut,
@@ -2283,23 +2092,14 @@ namespace TNBeachLayout
 		int32 NumDecor = 0;
 		int32 NumTraps = 0;
 		int32 NumEnemies = 0;
-		/** Ayudas (catapultas, trampolines, palas, plataformas móviles, fortalezas y cofres; cuentan también en las trampas). */
+		/** Ayudas (trampolines; cuentan también en las trampas). */
 		int32 NumAids = 0;
+		/** Cangrejos arrastradores y subterráneos. */
 		int32 NumCrabs = 0;
-		int32 NumUrchins = 0;
-		int32 NumLizards = 0;
 		int32 NumQuadLanes = 0;
 		int32 NumGullZones = 0;
-		int32 NumHermitCrabs = 0;
-		int32 NumOctopuses = 0;
-		int32 NumSandFleas = 0;
-		int32 NumToyTanks = 0;
 		int32 NumGuidePaths = 0;
-		int32 NumDungeons = 0;
 		int32 NumCastles = 0;
-		int32 NumFortresses = 0;
-		int32 NumColossal = 0;
-		int32 NumChests = 0;
 		int32 NumRows = 0;
 		int32 NumMilitary = 0;
 		int32 NumLaunchers = 0;
@@ -2309,10 +2109,6 @@ namespace TNBeachLayout
 		TArray<float> BandCover;
 		double CoverMean = 0.0;
 		double CoverFirstThird = 0.0;
-		/** Centro del castillo con salas principal (0 si no hay). */
-		FVector2D DungeonPos = FVector2D::ZeroVector;
-		/** Lado (+1 / -1) por el que se rodea el castillo principal. */
-		int32 DungeonGapSide = 0;
 		bool bPassageOk = false;
 
 		/** Resumen para el registro («[Playa] ronda N: ...»). */
@@ -2324,11 +2120,10 @@ namespace TNBeachLayout
 				Bands += FString::Printf(TEXT("%s%.0f"), Bands.IsEmpty() ? TEXT("") : TEXT(" "), Cover * 100.0f);
 			}
 			const TCHAR* DifficultyName = Difficulty == ETNProcDifficulty::Easy ? TEXT("fácil") : (Difficulty == ETNProcDifficulty::Hard ? TEXT("difícil") : TEXT("normal"));
-			return FString(bSprint ? TEXT("sprint final (nido vacío), ") : TEXT("")) + FString::Printf(TEXT("semilla %d, dificultad %s (ayudas x%.1f, trampas x%.1f, enemigos x%.1f) · %d elementos (%d decorado, %d trampas —%d de ellas ayudas—, %d enemigos: %d cangrejos, %d erizos, %d lagartos, %d ermitaños, %d pulpos, %d enjambres de pulgas, %d tanques, %d pasos de quads, %d zonas de gaviotas) · %d castillos con salas y %d enormes · %d fortalezas (%d colosales) · %d cofres · %d filas · %d piezas militares · %d lanzadores · %d rincones · %d tapones · %d asientos · %d puntos interesantes · %d tramos de pasarela guía · castillo principal a %.0f m (se rodea por %s) · paso libre de %.0f m %s · ocupación por banda de 50 m desde %.0f m (%%): %s · media %.0f %%, primer tercio %.0f %%"),
-				Seed, DifficultyName, Profile.Aids, Profile.Traps, Profile.Enemies, Items.Num(), NumDecor, NumTraps, NumAids, NumEnemies, NumCrabs, NumUrchins, NumLizards,
-				NumHermitCrabs, NumOctopuses, NumSandFleas, NumToyTanks, NumQuadLanes, NumGullZones, NumDungeons, NumCastles, NumFortresses, NumColossal, NumChests, NumRows,
-				NumMilitary, NumLaunchers, NumNooks, NumPlugs, Stamps.Num(), Interest.Num(), NumGuidePaths, DungeonPos.X / 100.0,
-				DungeonGapSide > 0 ? TEXT("la derecha (+Y)") : TEXT("la izquierda (-Y)"), MinPassage / 100.0, bPassageOk ? TEXT("OK") : TEXT("ROTO"),
+			return FString(bSprint ? TEXT("sprint final (nido vacío), ") : TEXT("")) + FString::Printf(TEXT("semilla %d, dificultad %s (ayudas x%.1f, trampas x%.1f, enemigos x%.1f) · %d elementos (%d decorado, %d trampas —%d de ellas ayudas—, %d enemigos: %d cangrejos, %d pasos de quads, %d zonas de gaviotas) · %d castillos enormes · %d filas · %d piezas militares · %d lanzadores · %d rincones · %d tapones · %d asientos · %d puntos interesantes · %d tramos de pasarela guía · paso libre de %.0f m %s · ocupación por banda de 50 m desde %.0f m (%%): %s · media %.0f %%, primer tercio %.0f %%"),
+				Seed, DifficultyName, Profile.Aids, Profile.Traps, Profile.Enemies, Items.Num(), NumDecor, NumTraps, NumAids, NumEnemies, NumCrabs, NumQuadLanes,
+				NumGullZones, NumCastles, NumRows, NumMilitary, NumLaunchers, NumNooks, NumPlugs, Stamps.Num(), Interest.Num(), NumGuidePaths,
+				MinPassage / 100.0, bPassageOk ? TEXT("OK") : TEXT("ROTO"),
 				ItemsStartX / 100.0, *Bands, CoverMean * 100.0, CoverFirstThird * 100.0);
 		}
 	};
@@ -2506,27 +2301,6 @@ namespace TNBeachLayout
 		return 15000.0 * LengthScale * FMath::Min(1.0, FMath::Sqrt(5.0 * LengthScale / FMath::Max(1, NumZones)));
 	}
 
-	/**
-	 * La calle del ermitaño va cuesta abajo de su extremo -X (EndA: ahí se mete en la concha y empieza a rodar) al +X
-	 * (EndB): siete puntos a lo largo, cada uno 2 cm más bajo que el anterior como poco, y en total baja 1,2 m o el 2,5 % de
-	 * su largo, lo que sea más (con la arena de FastSandZ).
-	 */
-	inline bool LaneRollsDownhill(const FItem& Lane)
-	{
-		const FVector2D A = Lane.EndA();
-		const FVector2D B = Lane.EndB();
-		const double Top = FastSandZ(A.X, A.Y);
-		double Prev = Top;
-		for (int32 k = 1; k <= 6; ++k)
-		{
-			const FVector2D P = A + (B - A) * (k / 6.0);
-			const double Z = FastSandZ(P.X, P.Y);
-			if (Z > Prev - 2.0) { return false; }
-			Prev = Z;
-		}
-		return Top - Prev >= FMath::Max(120.0, 0.05 * Lane.HalfLength);
-	}
-
 	/** Estado del reparto mientras se construye. */
 	struct FBuilder
 	{
@@ -2544,7 +2318,7 @@ namespace TNBeachLayout
 		TArray<uint8> Ties;
 		static constexpr uint8 TieOwns = 1;
 		static constexpr uint8 TieTarget = 2;
-		/** Arcos de salto, huecos de los rincones y claros de las pulgas: nada se pone encima. */
+		/** Arcos de salto y huecos de los rincones: nada se pone encima. */
 		TArray<FItem> Reserved;
 		/** Elemento que ha reservado cada zona (INDEX_NONE: nadie) y si sigue reservada (al quitar a su dueño, se libera). */
 		TArray<int32> ReservedOwner;
@@ -2574,8 +2348,6 @@ namespace TNBeachLayout
 		double BucketY0 = 0.0;
 		int32 BucketsX = 0;
 		int32 BucketsY = 0;
-		/** Centros de los campos de minas (en medio de cada uno, a veces, un cofre). */
-		TArray<FVector2D> MinefieldCenters;
 		/** Ronda de sprint: nada toca el nido de los huevos (SprintNestCircle), ni lo que va por encima. */
 		bool bSprint = false;
 		FVector2D SprintNestCenter = FVector2D::ZeroVector;
@@ -2618,13 +2390,13 @@ namespace TNBeachLayout
 
 		/**
 		 * Lo que ocupa de verdad un elemento E (fracción de su huella): la de su regla, salvo los enemigos «de bulto»
-		 * (cangrejos, erizos, lagartos, pulpos y pulgas) con muchos enemigos (Difícil), que se apiñan: su sitio encoge como
+		 * (los cangrejos) con muchos enemigos (Difícil), que se apiñan: su sitio encoge como
 		 * 1 / raíz del multiplicador (su huella, por donde patrullan, no cambia). Así caben los de Difícil.
 		 */
 		double CoreFractionOf(ETNBeachElement E) const
 		{
 			const FElementRule& Rule = CachedRule(E);
-			const bool bBlob = ScaleGroupOf(E) == EScaleGroup::Enemy && Rule.CoreFraction < 1.0 && E != ETNBeachElement::HermitCrab && E != ETNBeachElement::ToyTank;
+			const bool bBlob = ScaleGroupOf(E) == EScaleGroup::Enemy && Rule.CoreFraction < 1.0;
 			return bBlob && Profile.Enemies > 1.0 ? Rule.CoreFraction / FMath::Sqrt(Profile.Enemies) : Rule.CoreFraction;
 		}
 
@@ -2648,7 +2420,7 @@ namespace TNBeachLayout
 			BY1 = FMath::Clamp(FMath::FloorToInt32((FMath::Max(A.Y, B.Y) + R - BucketY0) / BucketSize), 0, BucketsY - 1);
 		}
 
-		/** Deja Zone libre de todo lo que se ponga después (menos lo que va por encima y los pulpos). */
+		/** Deja Zone libre de todo lo que se ponga después (menos lo que va por encima). */
 		void AddReserved(const FItem& Zone, int32 Owner = INDEX_NONE)
 		{
 			const int32 Index = Reserved.Add(Zone);
@@ -2666,8 +2438,7 @@ namespace TNBeachLayout
 
 		/**
 		 * No pisa nada de lo ya puesto ni lo reservado (las gaviotas solo miran a otras gaviotas y las demás no las miran a
-		 * ellas; el pulpo, en el agua, no mira lo reservado: por encima de una poza pasa algún arco de salto; los pasos de
-		 * quads tampoco: cruzan las franjas de caída de las fortalezas). bIgnoreLanes: los pasos de quads no cuentan.
+		 * ellas; los pasos de quads no miran lo reservado: cruzan la playa entera). bIgnoreLanes: los pasos de quads no cuentan.
 		 */
 		bool Fits(const FItem& New, double Pad, bool bIgnoreLanes = false, TConstArrayView<int32> Ignore = {})
 		{
@@ -2692,7 +2463,7 @@ namespace TNBeachLayout
 					}
 				}
 			}
-			if (!New.bOverlay && New.Element != ETNBeachElement::PoolOctopus && New.Element != ETNBeachElement::QuadLane)
+			if (!New.bOverlay && New.Element != ETNBeachElement::QuadLane)
 			{
 				BucketRange(New, 0.0, BX0, BX1, BY0, BY1);
 				for (int32 BY = BY0; BY <= BY1; ++BY)
@@ -2787,12 +2558,6 @@ namespace TNBeachLayout
 			}
 		}
 
-		/** Lo que salta el lanzador Launcher de PlaceLauncherBefore (null si es de otra pasada). */
-		const FAimRecord* AimOf(int32 Launcher) const
-		{
-			return Aims.FindByPredicate([Launcher](const FAimRecord& Aim) { return Aim.Launcher == Launcher; });
-		}
-
 		/** Quita lo que cierra el paso añadido desde From (lo último primero) hasta que vuelva a haber paso. */
 		void RestorePassage(int32 From)
 		{
@@ -2806,10 +2571,10 @@ namespace TNBeachLayout
 			}
 		}
 
-		/** Zona del arco de salto de un lanzador: de su borde hasta CatapultArc / TrampolineArc por delante, de 10 m de ancho. */
+		/** Zona del arco de salto de un lanzador: de su borde hasta TrampolineArc por delante, de 10 m de ancho. */
 		static FItem JumpArcZone(const FItem& Launcher)
 		{
-			const double Reach = Launcher.Element == ETNBeachElement::Catapult ? CatapultArc : TrampolineArc;
+			const double Reach = TrampolineArc;
 			FItem Zone;
 			Zone.Element = Launcher.Element;
 			Zone.Yaw = Launcher.Yaw;
@@ -2828,7 +2593,7 @@ namespace TNBeachLayout
 		 */
 		void ReserveJumpArc(const FItem& Launcher, int32 LauncherIndex, const FAimRecord* Aim)
 		{
-			const double Reach = Launcher.Element == ETNBeachElement::Catapult ? CatapultArc : TrampolineArc;
+			const double Reach = TrampolineArc;
 			const FVector2D Dir = Launcher.Axis();
 			AddReserved(JumpArcZone(Launcher), LauncherIndex);
 			FInterestPoint Arc;
@@ -2897,7 +2662,8 @@ namespace TNBeachLayout
 						if (VisitMark[Index] == VisitStamp) { continue; }
 						VisitMark[Index] = VisitStamp;
 						const FItem& Old = Out.Items[Index];
-						if (!Alive[Index] || Old.bOverlay || Clearance(Zone, Old) >= 0.0) { continue; }
+						// Un roce de menos de 1 cm no cuenta como salto (la misma tolerancia que las pruebas).
+						if (!Alive[Index] || Old.bOverlay || Clearance(Zone, Old) >= -1.0) { continue; }
 						if (FirstTarget == INDEX_NONE || Index < FirstTarget || Index > LastTarget) { return false; }
 						OutAim.Targets.Add(Index);
 					}
@@ -2919,7 +2685,7 @@ namespace TNBeachLayout
 		}
 
 		/**
-		 * Trampolín (o catapulta) justo delante (hacia la salida) de Target, apuntando a él: salta encima o por encima. Lo que
+		 * Trampolín justo delante (hacia la salida) de Target, apuntando a él: salta encima o por encima. Lo que
 		 * salta son los elementos FirstTarget..LastTarget (LastTarget = INDEX_NONE: solo FirstTarget; FirstTarget = INDEX_NONE:
 		 * algo del terreno fijo, una cresta o una poza). Su arco de salto solo pisa eso, queda reservado libre de lo demás y,
 		 * si se quita todo lo que salta, el lanzador se va con ello.
@@ -2945,7 +2711,7 @@ namespace TNBeachLayout
 		}
 
 		/**
-		 * Decorado que sirve de muro (en las alas del castillo, las filas y los rincones) y cabe en MaxRadius: redondo; de
+		 * Decorado que sirve de muro (en las filas y los rincones) y cabe en MaxRadius: redondo; de
 		 * MinFoot a 26 m de huella mientras quepa (los grandes, más a menudo). Theme limita a una lista (vacía = cualquiera).
 		 * Las piezas de un muro se tocan: cierran el paso aunque sean pequeñas.
 		 */
@@ -2979,192 +2745,60 @@ namespace TNBeachLayout
 		}
 
 		/**
-		 * Muro de piezas que se tocan de From a To (con alambre entre pieza y pieza si bWire): lo que sobra al final se
-		 * cierra con una pieza más pequeña. LeakChance: a veces deja entre dos piezas un hueco estrecho (2,5-4,5 m) que no
+		 * Muro de piezas que se tocan de From a To: lo que sobra al final se cierra con una pieza más pequeña. LeakChance: a veces deja entre dos piezas un hueco estrecho (2,5-4,5 m) que no
 		 * cuenta como paso (se pasa apurando) y se apunta como atajo. Devuelve cuántas piezas ha puesto.
 		 */
-		int32 BuildWall(const FVector2D& From, const FVector2D& To, EItemRole Role, const TArray<ETNBeachElement>& Theme, bool bWire, double LeakChance)
+		int32 BuildWall(const FVector2D& From, const FVector2D& To, EItemRole Role, const TArray<ETNBeachElement>& Theme, double LeakChance)
 		{
 			const FVector2D Delta = To - From;
 			const double Len = Delta.Size();
 			if (Len < 200.0) { return 0; }
 			const FVector2D Dir = Delta / Len;
 			const FVector2D Across(-Dir.Y, Dir.X);
-			const double WireR = TNBeach::FootprintRadius(ETNBeachElement::BarbedWire);
 			double Cursor = 0.0;
-			bool bWireTurn = false;
 			int32 Placed = 0;
 			for (int32 Guard = 0; Guard < 48 && Cursor < Len - 150.0; ++Guard)
 			{
 				const double Left = Len - Cursor;
-				if (bWire && bWireTurn && Left >= 2.0 * WireR + 800.0)
+				// El desorden de través mueve la pieza hasta 30 cm a lo ancho: que no se salga de la playa.
+				const double MaxR = 0.5 * Left - 30.0;
+				const ETNBeachElement E = MaxR > 0.0 ? PickWallBlocker(MaxR, Theme) : ETNBeachElement::Count;
+				if (E == ETNBeachElement::Count) { break; }
+				const FElementRule& BlockRule = CachedRule(E);
+				const double FootR = TNBeach::FootprintRadius(E);
+				const double Sb = FMath::Min(Rng.Range(0.85, 1.15), MaxR / FootR);
+				double Rb = FootR * Sb;
+				// Si no cabe (una duna, una poza, un paso de quads...), la misma pieza más pequeña en su sitio: así el muro no
+				// se queda con agujeros. Si ni así, hueco del tamaño de la primera.
+				for (const double Shrink : { 1.0, 0.8, 0.6 })
 				{
-					const FElementRule& WireRule = CachedRule(ETNBeachElement::BarbedWire);
-					const double WireLen = FMath::Min(Rng.Range(1600.0, 3000.0), Left - 2.0 * WireR);
-					FItem Wire = MakeItem(Rng, ETNBeachElement::BarbedWire, WireRule, 1.0, WireLen);
-					Wire.Role = Role;
-					Wire.Yaw = FMath::RadiansToDegrees(FMath::Atan2(Dir.Y, Dir.X));
-					Wire.Pos = From + Dir * (Cursor + WireR + WireLen * 0.5);
-					if (TryAdd(Wire, 0.0)) { ++Placed; }
-					Cursor += WireLen + 2.0 * WireR + 20.0;
-				}
-				else
-				{
-					// El desorden de través mueve la pieza hasta 30 cm a lo ancho: que no se salga de la playa.
-					const double MaxR = 0.5 * Left - 30.0;
-					const ETNBeachElement E = MaxR > 0.0 ? PickWallBlocker(MaxR, Theme) : ETNBeachElement::Count;
-					if (E == ETNBeachElement::Count) { break; }
-					const FElementRule& BlockRule = CachedRule(E);
-					const double FootR = TNBeach::FootprintRadius(E);
-					const double Sb = FMath::Min(Rng.Range(0.85, 1.15), MaxR / FootR);
-					double Rb = FootR * Sb;
-					// Si no cabe (una duna, una poza, un paso de quads...), la misma pieza más pequeña en su sitio: así el muro no
-					// se queda con agujeros. Si ni así, hueco del tamaño de la primera.
-					for (const double Shrink : { 1.0, 0.8, 0.6 })
+					const double S = FMath::Max(0.6, Sb * Shrink);
+					FItem Block = MakeItem(Rng, E, BlockRule, S, 0.0);
+					Block.Role = Role;
+					Block.bBlocking = true;
+					const double Rs = FootR * S;
+					// Desorden solo de través: a lo largo las piezas se tocan sin pisarse.
+					Block.Pos = From + Dir * (Cursor + Rs) + Across * Rng.Range(-150.0, 150.0);
+					if (TryAdd(Block, 0.0))
 					{
-						const double S = FMath::Max(0.6, Sb * Shrink);
-						FItem Block = MakeItem(Rng, E, BlockRule, S, 0.0);
-						Block.Role = Role;
-						Block.bBlocking = true;
-						const double Rs = FootR * S;
-						// Desorden solo de través: a lo largo las piezas se tocan sin pisarse.
-						Block.Pos = From + Dir * (Cursor + Rs) + Across * Rng.Range(-150.0, 150.0);
-						if (TryAdd(Block, 0.0))
-						{
-							++Placed;
-							Rb = Rs;
-							break;
-						}
-					}
-					Cursor += 2.0 * Rb + 40.0;
-					if (LeakChance > 0.0 && Cursor < Len - 1500.0 && Rng.Chance(LeakChance))
-					{
-						const double Leak = Rng.Range(250.0, 450.0);
-						FInterestPoint Cut;
-						Cut.Kind = EInterestKind::Shortcut;
-						Cut.Pos = From + Dir * (Cursor + 0.5 * Leak) - FVector2D(600.0, 0.0);
-						Cut.To = Cut.Pos + FVector2D(1200.0, 0.0);
-						Out.Interest.Add(Cut);
-						Cursor += Leak;
+						++Placed;
+						Rb = Rs;
+						break;
 					}
 				}
-				bWireTurn = !bWireTurn;
+				Cursor += 2.0 * Rb + 40.0;
+				if (LeakChance > 0.0 && Cursor < Len - 1500.0 && Rng.Chance(LeakChance))
+				{
+					const double Leak = Rng.Range(250.0, 450.0);
+					FInterestPoint Cut;
+					Cut.Kind = EInterestKind::Shortcut;
+					Cut.Pos = From + Dir * (Cursor + 0.5 * Leak) - FVector2D(600.0, 0.0);
+					Cut.To = Cut.Pos + FVector2D(1200.0, 0.0);
+					Out.Interest.Add(Cut);
+					Cursor += Leak;
+				}
 			}
 			return Placed;
-		}
-
-		// ── Castillos con salas ──
-
-		/**
-		 * Castillo con salas hacia la mitad del recorrido y dos alas de decorado y alambre que cierran la playa en embudo
-		 * hacia su entrada: o se atraviesa o se rodea por el único hueco (14 m, con algas) junto a la selva de un lado.
-		 */
-		void PlaceMainDungeon()
-		{
-			const FElementRule& Rule = CachedRule(ETNBeachElement::SandDungeon);
-			FItem Castle;
-			bool bPlaced = false;
-			const int32 Tries = bSprint ? SprintCastleTriesAhead + SprintCastleTriesBehind : 24;
-			for (int32 Try = 0; Try < Tries && !bPlaced; ++Try)
-			{
-				Castle = MakeItem(Rng, ETNBeachElement::SandDungeon, Rule, Rng.Range(Rule.SizeMin, Rule.SizeMax), 0.0);
-				Castle.Role = EItemRole::Dungeon;
-				if (bSprint)
-				{
-					Castle.Pos = SprintCastleSpot(Try, Castle.Radius);
-				}
-				else
-				{
-					const double CastleX = XOfProgress(Rng.Range(0.42, 0.58));
-					Castle.Pos = FVector2D(CastleX, Rng.Range(-1.0, 1.0) * HalfWidth * 0.28);
-				}
-				bPlaced = TryAdd(Castle, ItemPad);
-			}
-			if (!bPlaced) { return; }
-			const int32 CastleIndex = Out.Items.Num() - 1;
-			Out.DungeonPos = Castle.Pos;
-			const int32 GapSide = Rng.Chance(0.5) ? 1 : -1;
-			Out.DungeonGapSide = GapSide;
-			const int32 WallStart = Out.Items.Num();
-			static constexpr double Sweep = 0.18;
-			const double GapWidth = MinPassage + 600.0;
-			static const TArray<ETNBeachElement> AnyTheme;
-			for (const int32 Side : { -1, 1 })
-			{
-				// Hasta la selva (a 6 m de los muros): por el lado cerrado no queda un pasillo junto a los árboles.
-				const double EdgeY = Side * (SideReach - 200.0);
-				const double StopY = Side == GapSide ? EdgeY - Side * GapWidth : EdgeY;
-				const double UEnd = FMath::Abs(StopY - Castle.Pos.Y);
-				const FVector2D LineDir = FVector2D(-Sweep, static_cast<double>(Side)).GetSafeNormal();
-				const double StretchU = 1.0 / FMath::Abs(LineDir.Y);
-				const FVector2D From = Castle.Pos + LineDir * ((Castle.Radius + 40.0) * StretchU);
-				const FVector2D To = Castle.Pos + LineDir * (UEnd * StretchU);
-				BuildWall(From, To, EItemRole::DungeonWing, AnyTheme, true, 0.0);
-				if (Side == GapSide)
-				{
-					// Algas en el hueco: rodear también cuesta.
-					for (int32 k = 0; k < 2; ++k)
-					{
-						FItem Weed = Make(ETNBeachElement::Seaweed, FVector2D::ZeroVector, EItemRole::DungeonWing, Rng.Range(0.8, 1.0));
-						const double GapCenterY = EdgeY - Side * GapWidth * 0.5;
-						const double LineX = Castle.Pos.X - Sweep * FMath::Abs(GapCenterY - Castle.Pos.Y);
-						Weed.Pos = FVector2D(LineX + (k == 0 ? -1.0 : 1.0) * Rng.Range(500.0, 1500.0), GapCenterY);
-						TryAdd(Weed, ItemPad);
-					}
-				}
-			}
-			RestorePassage(WallStart);
-			AddSummit(Castle, 1150.0 * Castle.Spec.SizeScale, CastleIndex);
-		}
-
-		/** Intentos del castillo principal en una ronda de sprint: primero por delante del nido y, si no cabe, por detrás. */
-		static constexpr int32 SprintCastleTriesAhead = 60;
-		static constexpr int32 SprintCastleTriesBehind = 40;
-
-		/**
-		 * Sitio del castillo principal (de huella Radius) en una ronda de sprint, intento Try: con su huella fuera de
-		 * [SprintLineX − SprintCastleBehind, SprintLineX + SprintCastleAhead]. El terreno fijo solo le deja sitio hacia los
-		 * 335-450 m (donde está la línea del sprint), los 565-720 m y los 100-160 m: primero por delante (lo corren las
-		 * finalistas; a lo ancho hasta el 70 % del semiancho, que ahí los huecos son pocos) y luego por detrás. Sus alas bajan
-		 * hacia la salida desde el castillo: por delante tampoco llegan al nido.
-		 */
-		FVector2D SprintCastleSpot(int32 Try, double Radius)
-		{
-			const bool bAhead = Try < SprintCastleTriesAhead;
-			const double X = bAhead ? Rng.Range(SprintLineX() + SprintCastleAhead + Radius, XOfProgress(0.95))
-				: Rng.Range(ItemsStartX + Radius, SprintLineX() - SprintCastleBehind - Radius);
-			return FVector2D(X, Rng.Range(-0.7, 0.7) * HalfWidth);
-		}
-
-		/** Otro castillo con salas (sin alas) entre T0 y T1. */
-		bool PlaceExtraDungeon(double T0, double T1)
-		{
-			const FElementRule& Rule = CachedRule(ETNBeachElement::SandDungeon);
-			for (int32 Try = 0; Try < 40; ++Try)
-			{
-				FItem Castle = MakeItem(Rng, ETNBeachElement::SandDungeon, Rule, Rng.Range(Rule.SizeMin, Rule.SizeMax), 0.0);
-				Castle.Role = EItemRole::Dungeon;
-				const double CastleX = XOfProgress(Rng.Range(T0, T1));
-				Castle.Pos = FVector2D(CastleX, Rng.Range(-1.0, 1.0) * HalfWidth * 0.55);
-				if (TryAdd(Castle, ItemPad))
-				{
-					AddSummit(Castle, 1150.0 * Castle.Spec.SizeScale, Out.Items.Num() - 1);
-					return true;
-				}
-			}
-			return false;
-		}
-
-		/**
-		 * Hasta dos castillos con salas más, tras el principal y las fortalezas colosales: uno entre el 12 y el 36 % y otro
-		 * entre el 62 y el 90 %. Con 1200 m salían siempre (uno al 60 % y, si no, el otro; a veces los dos): 2,1 castillos
-		 * con salas por ronda con el principal. Con 800 m cada uno sale con la probabilidad de antes por LengthScale (0,4 y
-		 * 0,33: 1,7 en total): son enormes y no deben cargar más la playa corta.
-		 */
-		void PlaceExtraDungeons()
-		{
-			if (Rng.Chance(0.6 * LengthScale)) { PlaceExtraDungeon(0.12, 0.36); }
-			if (Rng.Chance(0.5 * LengthScale)) { PlaceExtraDungeon(0.62, 0.9); }
 		}
 
 		/** La cima de Item (el elemento Owner del reparto: se va con él). */
@@ -3179,133 +2813,6 @@ namespace TNBeachLayout
 			Top.OwnerItem = Owner;
 			if (Owner != INDEX_NONE) { Ties[Owner] |= TieOwns; }
 			Out.Interest.Add(Top);
-		}
-
-		// ── Fortalezas ──
-
-		/**
-		 * Fortalezas de arena colosales (ATN_BeachFortress, 100 m de ancho): una por ronda (a veces dos con muchas ayudas),
-		 * justo tras el castillo con salas principal: el terreno fijo solo les deja sitio hacia los 15-120 m y los 280-440 m (el
-		 * segundo suele ser del castillo principal; con 1200 m eran los 200-265, 490-700 y 870-930 m), y lo demás se lo iría
-		 * quitando. Casi siempre salen entre los 50 y los 150 m. Con rodeo (25 m libres entre la muralla
-		 * y la selva por cada lado), a 12 m como poco de lo que ya hubiera y con su franja de caída libre; miran al mar (±10°).
-		 * Alrededor, sus guardias.
-		 */
-		void PlaceColossalFortresses()
-		{
-			const int32 Wanted = 1 + (Rng.Chance(0.5 * (Profile.Aids - 1.0)) ? 1 : 0);
-			for (int32 k = 0; k < Wanted; ++k)
-			{
-				// Muchos intentos (son baratos con la playa aún vacía): los sitios buenos son pocos.
-				for (int32 Try = 0; Try < 400; ++Try)
-				{
-					FItem Fort = Make(ETNBeachElement::FortressColossal, FVector2D::ZeroVector, EItemRole::Fortress);
-					const double Lateral = FMath::Max(0.0, HalfWidth - Fort.Radius - FortressDetour);
-					const double FortX = XOfProgress(Rng.Range(0.1, 0.92));
-					const double FortY = Rng.Range(-Lateral, Lateral);
-					Fort.Pos = FVector2D(FortX, FortY);
-					if (!TryAddFortress(Fort)) { continue; }
-					PlaceGuards(Fort);
-					break;
-				}
-			}
-		}
-
-		/**
-		 * Las demás fortalezas: dos grandes y tres medianas en Normal en 1200 m (1,3 y 2 en 800 m, por LengthScale; por las
-		 * ayudas de la dificultad), repartidas a lo largo (un tramo cada una, al azar), con rodeo, holgura y franja de caída
-		 * como las colosales. Miran al mar (±10°); la cima (conchas, cofre y lanzador potenciado) la pone su clase.
-		 * Alrededor, sus guardias.
-		 */
-		void PlaceFortresses()
-		{
-			TArray<ETNBeachElement> Sizes;
-			const int32 Large = Scaled(2.0 * LengthScale, Profile.Aids);
-			const int32 Medium = Scaled(3.0 * LengthScale, Profile.Aids);
-			for (int32 k = 0; k < Large; ++k) { Sizes.Add(ETNBeachElement::FortressLarge); }
-			for (int32 k = 0; k < Medium; ++k) { Sizes.Add(ETNBeachElement::FortressMedium); }
-			const int32 Num = Sizes.Num();
-			TArray<int32> Slots;
-			for (int32 k = 0; k < Num; ++k) { Slots.Add(k); }
-			Rng.Shuffle(Slots);
-			for (int32 k = 0; k < Num; ++k)
-			{
-				for (int32 Try = 0; Try < 80; ++Try)
-				{
-					// Primero en su tramo; si no cabe, donde sea.
-					const double Slot = Try < 20 ? (Slots[k] + Rng.Range(0.1, 0.9)) / Num : Rng.Range(0.0, 1.0);
-					FItem Fort = Make(Sizes[k], FVector2D::ZeroVector, EItemRole::Fortress);
-					const double Lateral = FMath::Max(0.0, HalfWidth - Fort.Radius - FortressDetour);
-					const double FortY = Rng.Range(-Lateral, Lateral);
-					Fort.Pos = FVector2D(XOfProgress(0.1 + 0.82 * Slot), FortY);
-					if (!TryAddFortress(Fort)) { continue; }
-					PlaceGuards(Fort);
-					break;
-				}
-			}
-		}
-
-		/** Franja de caída del lanzador de la cima de Fort: hacia su +X local, de FortressLandingFrom (o su muralla) a FortressLandingReach. */
-		static FItem FortressLandingZone(const FItem& Fort)
-		{
-			const double From = FMath::Max(Fort.Radius, FortressLandingFrom);
-			FItem Zone;
-			Zone.Element = Fort.Element;
-			Zone.Yaw = Fort.Yaw;
-			Zone.Radius = FortressLandingHalfWidth;
-			Zone.Core = FortressLandingHalfWidth;
-			Zone.HalfLength = 0.5 * FMath::Max(0.0, FortressLandingReach - From);
-			Zone.Pos = Fort.Pos + Fort.Axis() * (0.5 * (From + FortressLandingReach));
-			Zone.bBlocking = false;
-			return Zone;
-		}
-
-		/**
-		 * Pone la fortaleza si cabe con su franja de caída libre (de lo que ya hay, salvo los pasos de quads, que la pueden
-		 * cruzar) y la reserva: nada cae después en ella. La apunta como arco de salto desde el borde de la muralla (así el
-		 * botín no dibuja conchitas a través de la fortaleza).
-		 */
-		bool TryAddFortress(const FItem& Fort)
-		{
-			const FItem Zone = FortressLandingZone(Fort);
-			if (!Fits(Zone, 0.0, true) || !TryAdd(Fort, FortressPad)) { return false; }
-			const int32 FortIndex = Out.Items.Num() - 1;
-			AddReserved(Zone, FortIndex);
-			FInterestPoint Arc;
-			Arc.Kind = EInterestKind::JumpArc;
-			Arc.Pos = Fort.Pos + Fort.Axis() * Fort.Radius;
-			Arc.To = Fort.Pos + Fort.Axis() * FortressLandingAt;
-			Arc.Source = Fort.Element;
-			Arc.OwnerItem = FortIndex;
-			Ties[FortIndex] |= TieOwns;
-			Out.Interest.Add(Arc);
-			return true;
-		}
-
-		/**
-		 * Guardias alrededor de una fortaleza (dos, tres o cinco según su tamaño, por los enemigos de la dificultad), sobre
-		 * todo por delante (por donde se llega): cangrejos, erizos, lagartos y algún tanque de juguete que patrulla a lo largo
-		 * de la muralla.
-		 */
-		void PlaceGuards(const FItem& Fort)
-		{
-			const double Base = Fort.Element == ETNBeachElement::FortressColossal ? 5.0 : (Fort.Element == ETNBeachElement::FortressLarge ? 3.0 : 2.0);
-			const int32 Wanted = Scaled(Base, Profile.Enemies);
-			int32 Made = 0;
-			for (int32 Try = 0; Try < Wanted * 8 && Made < Wanted; ++Try)
-			{
-				const double Roll = Rng.Unit();
-				const ETNBeachElement E = Roll < 0.45 ? ETNBeachElement::GiantCrab
-					: (Roll < 0.65 ? ETNBeachElement::SeaUrchin : (Roll < 0.85 ? ETNBeachElement::Lizard : ETNBeachElement::ToyTank));
-				if (Counts[static_cast<int32>(E)] >= Caps[static_cast<int32>(E)]) { continue; }
-				const bool bFront = Rng.Chance(0.7);
-				const double Ang = bFront ? Rng.Range(0.5 * TNProcMap::Pi, 1.5 * TNProcMap::Pi) : Rng.Range(-0.5 * TNProcMap::Pi, 0.5 * TNProcMap::Pi);
-				FItem Guard = Make(E, FVector2D::ZeroVector, EItemRole::Lair);
-				const double Gap = Rng.Range(300.0, 1400.0);
-				Guard.Pos = Fort.Pos + FVector2D(FMath::Cos(Ang), FMath::Sin(Ang)) * (Fort.Radius + Guard.Core + Gap);
-				if (E == ETNBeachElement::ToyTank) { Guard.Yaw = FMath::RadiansToDegrees(Ang) + 90.0; }
-				if (TryAdd(Guard, ItemPad)) { ++Made; }
-			}
 		}
 
 		// ── Quads y gaviotas ──
@@ -3380,9 +2887,8 @@ namespace TNBeachLayout
 
 		/**
 		 * Filas de obstáculos que cierran casi toda la playa con un hueco que cambia de lado de una a otra (izquierda,
-		 * derecha, embudo al centro): obligan a zigzaguear. Cada fila es de un tema (militar con alambre, restos de la
-		 * marea o trastos de playa), a veces deja un hueco estrecho para apurar y, a veces, una catapulta o un trampolín
-		 * delante para saltarla. Hasta cinco en 800 m (eran siete en 1200 m, al 10, 18, 37, 64, 72, 80 y 88,5 % del reparto):
+		 * derecha, embudo al centro): obligan a zigzaguear. Cada fila es de un tema (militar, restos de la marea o trastos
+		 * de playa), a veces deja un hueco estrecho para apurar y, a veces, un trampolín delante para saltarla. Hasta cinco en 800 m (eran siete en 1200 m, al 10, 18, 37, 64, 72, 80 y 88,5 % del reparto):
 		 * se juntan las tres del mar en dos y las dos primeras en una, para que entre fila y fila queden decenas de metros.
 		 */
 		void PlaceBarrierRows()
@@ -3401,7 +2907,6 @@ namespace TNBeachLayout
 				const int32 Kind = (Pattern + r) % 3;
 				const int32 ThemeIndex = Rng.RangeInt(0, 2);
 				const TArray<ETNBeachElement>& Theme = ThemeIndex == 0 ? Military : (ThemeIndex == 1 ? Wrack : Picnic);
-				const bool bWire = ThemeIndex == 0;
 				const double Gap = Rng.Range(1400.0, 2200.0);
 				// Hasta la selva (a 6 m de los muros): por el lado cerrado no queda un pasillo junto a los árboles.
 				const double Edge = SideReach - 200.0;
@@ -3426,7 +2931,7 @@ namespace TNBeachLayout
 						const double Ya = FMath::Lerp(YFrom, YTo, static_cast<double>(k) / Pieces);
 						const double Yb = FMath::Lerp(YFrom, YTo, static_cast<double>(k + 1) / Pieces);
 						auto LineX = [X, Tilt, Bow, Edge](double Y) { return X + Tilt * Y + Bow * (1.0 - FMath::Square(Y / Edge)); };
-						Placed += BuildWall(FVector2D(LineX(Ya), Ya), FVector2D(LineX(Yb), Yb), EItemRole::Row, Theme, bWire, 0.12);
+						Placed += BuildWall(FVector2D(LineX(Ya), Ya), FVector2D(LineX(Yb), Yb), EItemRole::Row, Theme, 0.12);
 					}
 					GapCenter = FVector2D(X + Tilt * GapSide * (Edge - 0.5 * Gap), GapSide * (Edge - 0.5 * Gap));
 				}
@@ -3440,7 +2945,7 @@ namespace TNBeachLayout
 						const FVector2D Inner(X, FunnelY + Side * 0.5 * Gap);
 						const double Span = Side * Edge - Inner.Y;
 						const FVector2D Outer(X - FunnelSweep * FMath::Abs(Span), Side * Edge);
-						Placed += BuildWall(Inner, Outer, EItemRole::Row, Theme, bWire, 0.1);
+						Placed += BuildWall(Inner, Outer, EItemRole::Row, Theme, 0.1);
 					}
 					GapCenter = FVector2D(X, FunnelY);
 				}
@@ -3459,8 +2964,7 @@ namespace TNBeachLayout
 					// Delante de la fila de verdad (inclinada y combada, o en embudo), no de su X de partida.
 					const double RowX = Kind < 2 ? X + Tilt * Y + Bow * (1.0 - FMath::Square(Y / Edge))
 						: X - FunnelSweep * FMath::Max(0.0, FMath::Abs(Y - FunnelY) - 0.5 * Gap);
-					PlaceLauncherBefore(FVector2D(RowX, Y), 900.0, Rng.Chance(0.5) ? ETNBeachElement::Catapult : ETNBeachElement::Trampoline, 0.0,
-						RowStart, Out.Items.Num() - 1);
+					PlaceLauncherBefore(FVector2D(RowX, Y), 900.0, ETNBeachElement::Trampoline, 0.0, RowStart, Out.Items.Num() - 1);
 				}
 			}
 		}
@@ -3515,24 +3019,7 @@ namespace TNBeachLayout
 			return Placed;
 		}
 
-		/** Campo de minas: 5-9 minas (por las trampas de la dificultad) repartidas en una mancha de ~25 x 40 m alrededor de Center. */
-		int32 PlaceMinefield(const FVector2D& Center)
-		{
-			const int32 Wanted = Scaled(Rng.RangeInt(5, 9), Profile.Traps);
-			int32 Placed = 0;
-			for (int32 Try = 0; Try < Wanted * 4 && Placed < Wanted; ++Try)
-			{
-				const double MineX = Rng.Range(-1250.0, 1250.0);
-				const double MineY = Rng.Range(-2000.0, 2000.0);
-				FItem Mine = Make(ETNBeachElement::Mine, Center + FVector2D(MineX, MineY), EItemRole::Military);
-				if (TryAdd(Mine, 200.0)) { ++Placed; }
-			}
-			// Un campo de verdad (con alguna mina) puede llevar su cofre en medio.
-			if (Placed > 0) { MinefieldCenters.Add(Center); }
-			return Placed;
-		}
-
-		/** La tropa de las trincheras fijas: sacos en las puntas, erizos y minas por delante y un puesto por detrás. */
+		/** La tropa de las trincheras fijas: sacos en las puntas, erizos por delante y un puesto por detrás. */
 		void PlaceTrenchGarrison()
 		{
 			const TArray<FTrench>& All = Trenches();
@@ -3547,17 +3034,12 @@ namespace TNBeachLayout
 					TryAdd(Bag, ItemPad);
 				}
 			}
-			// Por delante de la línea del mar: erizos y, a veces, minas.
+			// Por delante de la línea del mar: erizos.
 			const FTrench& Front = All[0];
 			const double FrontX = Front.Max.X;
 			const double LineX0 = FrontX + Rng.Range(1800.0, 2600.0);
 			const double LineX1 = FrontX + Rng.Range(1800.0, 2600.0);
 			PlaceTankTrapLine(FVector2D(LineX0, Front.Min.Y + 1500.0), FVector2D(LineX1, Front.Max.Y - 1500.0));
-			if (Rng.Chance(0.6))
-			{
-				const double FieldX = FrontX + Rng.Range(3800.0, 5000.0);
-				PlaceMinefield(FVector2D(FieldX, Rng.Range(-0.5, 0.5) * HalfWidth));
-			}
 			// Por detrás de la línea de la salida: el puesto.
 			const FTrench& Back = All.Num() > 1 ? All[1] : All[0];
 			for (int32 Try = 0; Try < 10; ++Try)
@@ -3568,9 +3050,8 @@ namespace TNBeachLayout
 		}
 
 		/**
-		 * Puestos (6-8 en 1200 m; 4-5 en 800 m), filas de erizos (2-3; 1-2) y campos de minas (3-4; 2-3, por las trampas de la
-		 * dificultad) por toda la playa (algunos, en los corredores: el camino natural). Las cuotas de 800 m salen de las de
-		 * 1200 m por LengthScale, con redondeo al azar.
+		 * Puestos (6-8 en 1200 m; 4-5 en 800 m) y filas de erizos (2-3; 1-2) por toda la playa. Las cuotas de 800 m salen de
+		 * las de 1200 m por LengthScale, con redondeo al azar.
 		 */
 		void PlaceMilitaryPosts()
 		{
@@ -3593,21 +3074,13 @@ namespace TNBeachLayout
 				const FVector2D From(X, Y0);
 				PlaceTankTrapLine(From, From + FVector2D(FMath::Cos(Ang), FMath::Sin(Ang)) * Span);
 			}
-			const int32 Fields = Scaled(Rng.RangeInt(3, 4) * LengthScale, Profile.Traps);
-			for (int32 f = 0; f < Fields; ++f)
-			{
-				const double X = XOfProgress(Rng.Range(0.12, 0.9));
-				const bool bInCorridor = Rng.Chance(0.5);
-				const FCorridorSample C = CorridorAt(Rng.RangeInt(0, 1), X);
-				PlaceMinefield(FVector2D(X, bInCorridor ? C.Y : Rng.Range(-0.7, 0.7) * HalfWidth));
-			}
 		}
 
 		// ── Rincones, castillos y lanzadores ──
 
 		/**
 		 * Rincones escondidos junto a la selva (6-9 en 1200 m; 4-6 en 800 m, por LengthScale): una herradura de decorado grande
-		 * con el hueco hacia el centro de la playa o hacia el mar y, al fondo del hueco, un cofre que mira a la entrada.
+		 * con el hueco hacia el centro de la playa o hacia el mar.
 		 */
 		void PlaceNooks()
 		{
@@ -3654,12 +3127,6 @@ namespace TNBeachLayout
 					for (int32 i = Out.Items.Num() - 1; i >= NookStart; --i) { Remove(i); }
 					continue;
 				}
-				// El cofre, al fondo del hueco, mirando a la entrada (el centro queda libre para el botín).
-				FItem Chest = Make(ETNBeachElement::TreasureChest, FVector2D::ZeroVector, EItemRole::Chest);
-				const FVector2D Back(-FMath::Cos(OpenAng), -FMath::Sin(OpenAng));
-				Chest.Pos = Center + Back * FMath::Max(0.0, Hollow - Chest.Radius - 150.0);
-				Chest.Yaw = FMath::RadiansToDegrees(OpenAng);
-				TryAdd(Chest, ItemPad);
 				AddReserved(Hole);
 				FInterestPoint Nook;
 				Nook.Kind = EInterestKind::Nook;
@@ -3708,21 +3175,11 @@ namespace TNBeachLayout
 		}
 
 		/**
-		 * Trampolines delante de lo alto (castillos con salas, crestas con cornisa, pozas) para saltarlo, y alguna catapulta
-		 * suelta: siempre apuntando al mar y con su arco libre. Cuántos, por las ayudas de la dificultad.
+		 * Trampolines delante de lo alto (crestas con cornisa, pozas) para saltarlo: siempre apuntando al mar y con su arco
+		 * libre. Cuántos, por las ayudas de la dificultad.
 		 */
 		void PlaceLaunchers()
 		{
-			for (int32 i = 0; i < Out.Items.Num(); ++i)
-			{
-				if (!Alive[i] || Out.Items[i].Role != EItemRole::Dungeon) { continue; }
-				const FItem Castle = Out.Items[i];
-				const int32 Wanted = Scaled(Rng.RangeInt(1, 2), Profile.Aids);
-				for (int32 k = 0; k < Wanted; ++k)
-				{
-					PlaceLauncherBefore(Castle.Pos, Castle.Radius, ETNBeachElement::Trampoline, Rng.Range(-0.5, 0.5) * Castle.Radius, i);
-				}
-			}
 			// Al pie de la cara empinada de las crestas con cornisa: un bote y se pasa por encima.
 			for (const FRidge& Ridge : Ridges())
 			{
@@ -3742,19 +3199,17 @@ namespace TNBeachLayout
 			for (const FPool& Pool : Pools())
 			{
 				if (Pool.Corridor < 0 || !Rng.Chance(PoolOdds)) { continue; }
-				PlaceLauncherBefore(Pool.Center, Pool.OuterR() + 1200.0, Rng.Chance(0.5) ? ETNBeachElement::Trampoline : ETNBeachElement::Catapult);
+				PlaceLauncherBefore(Pool.Center, Pool.OuterR() + 400.0, ETNBeachElement::Trampoline);
 			}
 		}
 
 		/**
-		 * Las trampas que tienen que verse mucho (catapultas, trampolines, plataformas móviles, conchas que atrapan,
-		 * plataformas sobre hoyos, palas, cubos y puertas), repartidas a lo largo por tramos antes del relleno: grandes como
-		 * son, con la playa ya llena no cabrían. Las catapultas, primero: su arco de salto libre es el más largo. Cada tramo
-		 * tiene sus intentos en sus huecos (casillas libres con sitio para su núcleo; uno difícil no se come los de los demás)
-		 * y lo que no cabe en el suyo se busca luego por toda la playa. Cuántas, por el grupo de cada una en la dificultad y
-		 * por LengthScale (las cuotas de abajo son para 1200 m).
-		 * bAids: las ayudas (catapultas, trampolines, plataformas móviles y palas; van primero); si no, las trampas (conchas,
-		 * plataformas sobre hoyos, cubos y puertas).
+		 * Las trampas que tienen que verse mucho (trampolines y plataformas sobre hoyos), repartidas a lo largo por tramos
+		 * antes del relleno: grandes como son, con la playa ya llena no cabrían. Cada tramo tiene sus intentos en sus huecos
+		 * (casillas libres con sitio para su núcleo; uno difícil no se come los de los demás) y lo que no cabe en el suyo se
+		 * busca luego por toda la playa. Cuántas, por el grupo de cada una en la dificultad y por LengthScale (las cuotas de
+		 * abajo son para 1200 m).
+		 * bAids: las ayudas (trampolines; van primero); si no, las trampas (plataformas sobre hoyos).
 		 */
 		void PlaceFeaturedTraps(bool bAids)
 		{
@@ -3765,14 +3220,8 @@ namespace TNBeachLayout
 				int32 Max;
 			};
 			static const FQuota Quotas[] = {
-				{ ETNBeachElement::Catapult, 14, 18 },
 				{ ETNBeachElement::Trampoline, 14, 18 },
-				{ ETNBeachElement::MovingPlatform, 18, 24 },
-				{ ETNBeachElement::ClamTrap, 18, 24 },
 				{ ETNBeachElement::WobblyPlatform, 12, 16 },
-				{ ETNBeachElement::SpadeRamp, 10, 14 },
-				{ ETNBeachElement::BrokenBucket, 10, 14 },
-				{ ETNBeachElement::ShellGate, 8, 11 },
 			};
 			for (const FQuota& Quota : Quotas)
 			{
@@ -3820,41 +3269,6 @@ namespace TNBeachLayout
 		}
 
 		/**
-		 * Catapultas garantizadas: si con todo el reparto hay menos de Minimum, los trampolines de delante de un obstáculo
-		 * (castillos, crestas, pozas y filas) pasan a ser catapultas, en el mismo sitio y un poco más atrás (son más grandes):
-		 * saltan lo mismo, más lejos. La catapulta entra como el trampolín (AimAt y TryAddWithArc): su arco de 30 m, más
-		 * largo que el de 22 m del trampolín, solo puede pisar lo que salta, y su arco y su atajo son los suyos.
-		 */
-		void EnsureCatapults(int32 Minimum)
-		{
-			const int32 CatapultIndex = static_cast<int32>(ETNBeachElement::Catapult);
-			const int32 NumBefore = Out.Items.Num();
-			for (int32 i = 0; i < NumBefore && Counts[CatapultIndex] < Minimum; ++i)
-			{
-				if (!Alive[i] || Out.Items[i].Element != ETNBeachElement::Trampoline || Out.Items[i].Role != EItemRole::Launcher) { continue; }
-				const FAimRecord* Found = AimOf(i);
-				if (!Found) { continue; }
-				const FAimRecord Was = *Found;
-				const FItem Tramp = Out.Items[i];
-				FItem Cat = Make(ETNBeachElement::Catapult, FVector2D::ZeroVector, EItemRole::Launcher, 1.0);
-				Cat.Yaw = Tramp.Yaw;
-				const double Back = Cat.Radius - Tramp.Radius + 50.0;
-				Cat.Pos = Tramp.Pos - Cat.Axis() * Back;
-				// Fuera el trampolín con su arco y sus puntos; si la catapulta no cabe, vuelve (cabía antes y no cierra el paso).
-				Remove(i);
-				if (!ReAim(Cat, Was)) { ReAim(Tramp, Was); }
-			}
-		}
-
-		/** Pone Launcher apuntando a lo mismo que Was (lo que siga puesto de lo que podía saltar), con su arco validado. */
-		bool ReAim(const FItem& Launcher, const FAimRecord& Was)
-		{
-			FAimRecord Aim;
-			Aim.Beyond = Was.Beyond;
-			return AimAt(Launcher, Was.FirstTarget, Was.LastTarget, Aim) && TryAddWithArc(Launcher, ItemPad, &Aim);
-		}
-
-		/**
 		 * Hileras de pasarelas y caminitos de palos hacia el mar (guía visual) que rodean lo que haya: una en la primera
 		 * mitad (el 80 % de las rondas) y otra más adelante (la mitad).
 		 */
@@ -3891,114 +3305,6 @@ namespace TNBeachLayout
 		}
 
 		// ── Enemigos de sitio fijo ──
-
-		/** Pulpos en el agua de cada poza (las grandes, más), por los enemigos de la dificultad y separados entre sí. */
-		void PlacePoolOctopuses()
-		{
-			for (const FPool& Pool : Pools())
-			{
-				const int32 Wanted = Scaled(1.0 + Pool.Rx * Pool.Ry / 2.0e6, Profile.Enemies);
-				int32 Made = 0;
-				for (int32 Try = 0; Try < Wanted * 8 && Made < Wanted; ++Try)
-				{
-					const double Theta = Rng.Range(0.0, TNProcMap::TwoPi);
-					const double U = Rng.Range(0.0, 0.55);
-					FItem Octopus = Make(ETNBeachElement::PoolOctopus, PoolPoint(Pool, Theta, U), EItemRole::Lair);
-					if (TryAdd(Octopus, ItemPad)) { ++Made; }
-				}
-			}
-		}
-
-		/**
-		 * Calles del cangrejo ermitaño (12 en Normal en 1200 m y 8 en 800 m, por los enemigos de la dificultad): tramos rectos de 25-45 m cuesta abajo
-		 * (LaneRollsDownhill), a ±25° de la bajada de la arena en su centro, con el 60 % central libre (su núcleo). El
-		 * ermitaño sale del extremo alto (-X local) y rueda hacia el bajo (+X local), derribando tortugas como bolos.
-		 */
-		void PlaceHermitLanes()
-		{
-			const FElementRule& Rule = CachedRule(ETNBeachElement::HermitCrab);
-			const int32 Wanted = Scaled(12.0 * LengthScale, Profile.Enemies);
-			int32 Made = 0;
-			// Como mínimo los intentos de 1200 m (12 calles a 25 intentos): con menos cuota, una calle cuesta abajo sigue siendo
-			// igual de difícil de encontrar.
-			for (int32 Try = 0; Try < FMath::Max(300, Wanted * 25) && Made < Wanted; ++Try)
-			{
-				const double T = Rng.Range(Rule.MinT, 0.96);
-				const double LaneY = Rng.Range(-1.0, 1.0) * (HalfWidth - SideMargin - 1500.0);
-				const FVector2D P(XOfProgress(T), LaneY);
-				constexpr double H = 300.0;
-				const double Gx = (FastSandZ(P.X + H, P.Y) - FastSandZ(P.X - H, P.Y)) / (2.0 * H);
-				const double Gy = (FastSandZ(P.X, P.Y + H) - FastSandZ(P.X, P.Y - H)) / (2.0 * H);
-				if (Gx * Gx + Gy * Gy < FMath::Square(0.02)) { continue; }
-				FItem Lane = Make(ETNBeachElement::HermitCrab, P, EItemRole::Lair);
-				const double Turn = Rng.Range(-25.0, 25.0);
-				Lane.Yaw = FMath::RadiansToDegrees(FMath::Atan2(-Gy, -Gx)) + Turn;
-				if (!LaneRollsDownhill(Lane)) { continue; }
-				if (TryAdd(Lane, ItemPad)) { ++Made; }
-			}
-		}
-
-		/**
-		 * Tanques de juguete (9 en Normal en 1200 m y 6 en 800 m, por los enemigos de la dificultad) en tramos de patrulla de 20-40 m de través
-		 * (Yaw 90 ± 20°), a 15-35 m de lo militar: las redes de los puestos, los erizos, los sacos y las dos trincheras (por
-		 * delante y por detrás de cada una).
-		 */
-		void PlaceToyTanks()
-		{
-			TArray<FVector2D> Anchors;
-			for (int32 i = 0; i < Out.Items.Num(); ++i)
-			{
-				if (!Alive[i]) { continue; }
-				const ETNBeachElement E = Out.Items[i].Element;
-				if (E == ETNBeachElement::CamoNet || E == ETNBeachElement::TankTrap || E == ETNBeachElement::Sandbags) { Anchors.Add(Out.Items[i].Pos); }
-			}
-			for (const FTrench& Trench : Trenches())
-			{
-				for (double AnchorY = Trench.Min.Y; AnchorY <= Trench.Max.Y; AnchorY += 4000.0)
-				{
-					Anchors.Add(FVector2D(Trench.Max.X + 2200.0, AnchorY));
-					Anchors.Add(FVector2D(Trench.Min.X - 2200.0, AnchorY));
-				}
-			}
-			if (Anchors.Num() == 0) { return; }
-			const int32 Wanted = Scaled(9.0 * LengthScale, Profile.Enemies);
-			int32 Made = 0;
-			// Como mínimo los intentos de 1200 m (9 tanques a 40 intentos).
-			for (int32 Try = 0; Try < FMath::Max(360, Wanted * 40) && Made < Wanted; ++Try)
-			{
-				const FVector2D Anchor = Anchors[Rng.RangeInt(0, Anchors.Num() - 1)];
-				const double Ang = Rng.Range(0.0, TNProcMap::TwoPi);
-				const double Off = Rng.Range(1500.0, 3500.0);
-				FItem Tank = Make(ETNBeachElement::ToyTank, Anchor + FVector2D(FMath::Cos(Ang), FMath::Sin(Ang)) * Off, EItemRole::Lair);
-				if (TryAdd(Tank, ItemPad)) { ++Made; }
-			}
-		}
-
-		/**
-		 * Enjambres de pulgas de arena (10 en Normal en 1200 m y 7 en 800 m, por los enemigos de la dificultad) en claros de arena abierta: donde no
-		 * hay nada en el 75 % central de su huella (~9 m de radio) ni pozas ni trincheras, y el claro se deja libre (reservado).
-		 */
-		void PlaceSandFleas()
-		{
-			const int32 Wanted = Scaled(10.0 * LengthScale, Profile.Enemies);
-			int32 Made = 0;
-			// Como mínimo los intentos de 1200 m (10 enjambres a 20 intentos).
-			for (int32 Try = 0; Try < FMath::Max(200, Wanted * 20) && Made < Wanted; ++Try)
-			{
-				FItem Fleas = Make(ETNBeachElement::SandFleas, FVector2D::ZeroVector, EItemRole::Lair);
-				const double Usable = HalfWidth - SideMargin - Fleas.Radius;
-				const double FleasX = XOfProgress(Rng.Range(0.05, 0.95));
-				const double FleasY = Rng.Range(-Usable, Usable);
-				Fleas.Pos = FVector2D(FleasX, FleasY);
-				FItem Clearing = Fleas;
-				Clearing.Core = 0.75 * Fleas.Radius;
-				Clearing.bBlocking = false;
-				if (!TerrainAllows(Clearing) || !Fits(Clearing, ItemPad)) { continue; }
-				if (!TryAdd(Fleas, ItemPad)) { continue; }
-				AddReserved(Clearing, Out.Items.Num() - 1);
-				++Made;
-			}
-		}
 
 		/**
 		 * Criaturas y peligros del Excel de diseño (#683-#690, lote #691): arenas movedizas, trampas de erizo, montones de
@@ -4052,97 +3358,6 @@ namespace TNBeachLayout
 				const double Ang = Rng.Range(0.0, TNProcMap::TwoPi);
 				FItem Bunker = Make(ETNBeachElement::Bunker, Anchor + FVector2D(FMath::Cos(Ang), FMath::Sin(Ang)) * Rng.Range(1200.0, 2600.0), EItemRole::Military);
 				if (TryAdd(Bunker, ItemPad)) { ++Made; }
-			}
-		}
-
-		// ── Cofres ──
-
-		/**
-		 * Cofres en sitios especiales (además de los de los rincones; 18 en Normal, por las ayudas de la dificultad): tras
-		 * una concha que atrapa (a 1,5-4 m de su borde, hacia el mar), junto a las trincheras (del lado del mar, tras los
-		 * sacos), en medio de los campos de minas, tras el alambre de las filas y las alas y a la espalda de los castillos
-		 * enormes, las rocas grandes, los troncos con musgo y los restos de barco, y pasado el arco de salto de los lanzadores
-		 * (hay más con más ayudas). Los sitios se barajan y se
-		 * prueban por orden. El frente del cofre (su X local) mira a por donde se llega. Los de la cima de las fortalezas los
-		 * pone la fortaleza.
-		 */
-		void PlaceChests()
-		{
-			struct FSite
-			{
-				FVector2D Pos;
-				double Yaw;
-			};
-			const double ChestR = TNBeach::FootprintRadius(ETNBeachElement::TreasureChest);
-			// Cada pasada saca huecos nuevos alrededor de las mismas anclas. Solo se repite si faltan cofres: con menos trampas
-			// (Fácil) hay menos conchas y campos de minas, y una pasada no llega al cupo aunque se pidan más (#445).
-			auto CollectSites = [this, ChestR]()
-			{
-				TArray<FSite> Sites;
-				for (int32 i = 0; i < Out.Items.Num(); ++i)
-				{
-					if (!Alive[i]) { continue; }
-					const FItem& It = Out.Items[i];
-					if (It.Element == ETNBeachElement::ClamTrap)
-					{
-						// Dos sitios por concha (a un lado y a otro de su espalda).
-						for (const double Side : { -1.0, 1.0 })
-						{
-							const double Ang = FMath::DegreesToRadians(Side * Rng.Range(0.0, 35.0));
-							const double Gap = Rng.Range(150.0, 400.0);
-							const FVector2D Dir(FMath::Cos(Ang), FMath::Sin(Ang));
-							Sites.Add(FSite{ It.Pos + Dir * (It.Radius + ChestR + Gap), FMath::RadiansToDegrees(Ang) + 180.0 });
-						}
-					}
-					else if ((It.Element == ETNBeachElement::SandCastleHuge && It.Role == EItemRole::Castle) || It.Element == ETNBeachElement::RockCluster
-						|| It.Element == ETNBeachElement::ShipSailWreck || It.Element == ETNBeachElement::MossyLog)
-					{
-						// A la espalda (hacia el mar) de los castillos enormes, las rocas grandes, los troncos y los restos de barco:
-						// quien lo rodea, lo ve.
-						const double Gap = Rng.Range(200.0, 500.0);
-						Sites.Add(FSite{ It.Pos + FVector2D(It.Radius + ChestR + Gap, 0.0), 180.0 });
-					}
-					else if (It.Element == ETNBeachElement::BarbedWire && (It.Role == EItemRole::Row || It.Role == EItemRole::DungeonWing))
-					{
-						const double Gap = Rng.Range(250.0, 500.0);
-						Sites.Add(FSite{ It.Pos + FVector2D(It.Radius + ChestR + Gap, 0.0), 180.0 });
-					}
-					else if (It.Element == ETNBeachElement::Catapult || It.Element == ETNBeachElement::Trampoline)
-					{
-						// Pasado el arco de salto de los lanzadores (su zona libre): el premio de saltar, mirando al lanzador.
-						const double Reach = It.Element == ETNBeachElement::Catapult ? CatapultArc : TrampolineArc;
-						const double Gap = Rng.Range(200.0, 600.0);
-						Sites.Add(FSite{ It.Pos + It.Axis() * (It.Radius + 100.0 + Reach + ChestR + Gap), It.Yaw + 180.0 });
-					}
-				}
-				for (const FTrench& Trench : Trenches())
-				{
-					for (int32 n = 0; n < 3; ++n)
-					{
-						const int32 k = Rng.RangeInt(0, Trench.Points.Num() - 2);
-						const FVector2D P0 = Trench.Points[k];
-						const FVector2D P1 = Trench.Points[k + 1];
-						FVector2D Normal = FVector2D(P1.Y - P0.Y, P0.X - P1.X).GetSafeNormal();
-						if (Normal.X < 0.0) { Normal = -Normal; }
-						const double Off = Rng.Range(1450.0, 1900.0);
-						Sites.Add(FSite{ (P0 + P1) * 0.5 + Normal * Off, FMath::RadiansToDegrees(FMath::Atan2(-Normal.Y, -Normal.X)) });
-					}
-				}
-				for (const FVector2D& Center : MinefieldCenters) { Sites.Add(FSite{ Center, 180.0 }); }
-				Rng.Shuffle(Sites);
-				return Sites;
-			};
-			const int32 Wanted = Scaled(ChestsBase, Profile.Aids);
-			int32 Made = 0;
-			for (int32 Pass = 0; Pass < ChestSitePasses && Made < Wanted; ++Pass)
-			{
-				for (const FSite& Site : CollectSites())
-				{
-					if (Made >= Wanted) { break; }
-					FItem Chest = Make(ETNBeachElement::TreasureChest, Site.Pos, EItemRole::Chest);
-					Chest.Yaw = Site.Yaw;
-					if (TryAdd(Chest, ItemPad)) { ++Made; }
-				}
 			}
 		}
 
@@ -4245,7 +3460,7 @@ namespace TNBeachLayout
 		/**
 		 * Un elemento de la fuente Pool a la medida de un hueco de la banda: una casilla libre de Free, el sitio que hay allí
 		 * (FreeRoomAt) y algo de Pool cuyo núcleo quepa (más pequeño si hace falta, hasta su tamaño mínimo). Lo que no es
-		 * decorado pequeño lleva a veces su corrillo (cangrejos, algas, minas...) y, delante de las plataformas y los castillos
+		 * decorado pequeño lleva a veces su corrillo (algas, cocos...) y, delante de las plataformas y los castillos
 		 * enormes, a veces un trampolín. Así la playa se llena entre todo lo demás sin gastar miles de intentos al azar (con
 		 * ella llena, casi todos caían encima de algo). Devuelve cuántos ha puesto y, en OutArea, lo que ocupan.
 		 */
@@ -4273,7 +3488,7 @@ namespace TNBeachLayout
 			double Area = Item.CoreArea();
 			if (!bLitterPool && Rule.ClusterChance > 0.0 && Rng.Chance(Rule.ClusterChance))
 			{
-				// Corrillo: 1-ClusterMax más iguales alrededor (cangrejos, algas, minas, cocos...).
+				// Corrillo: 1-ClusterMax más iguales alrededor (algas, cocos...).
 				const int32 More = Rng.RangeInt(1, FMath::Max(1, Rule.ClusterMax));
 				for (int32 m = 0; m < More && Counts[static_cast<int32>(E)] < Caps[static_cast<int32>(E)]; ++m)
 				{
@@ -4289,7 +3504,7 @@ namespace TNBeachLayout
 				}
 			}
 			// Delante de las plataformas y los castillos del relleno, a veces un trampolín.
-			if ((E == ETNBeachElement::WobblyPlatform || E == ETNBeachElement::MovingPlatform || E == ETNBeachElement::SandCastleHuge)
+			if ((E == ETNBeachElement::WobblyPlatform || E == ETNBeachElement::SandCastleHuge)
 				&& Rng.Chance(FMath::Min(0.95, 0.4 * Profile.Aids)))
 			{
 				if (PlaceLauncherBefore(Item.Pos, Item.Radius, ETNBeachElement::Trampoline, 0.0, ItemIndex)) { ++Placed; }
@@ -4342,8 +3557,8 @@ namespace TNBeachLayout
 		}
 
 		/**
-		 * Algo pequeño (7 m de huella como mucho) de cualquier categoría para tapar una línea recta: basura, algas, minas...
-		 * bOpenOnly: solo lo que no cierra el paso (algas, minas, trampas pequeñas, decorado pequeño).
+		 * Algo pequeño (7 m de huella como mucho) de cualquier categoría para tapar una línea recta: basura, algas...
+		 * bOpenOnly: solo lo que no cierra el paso (algas, trampas pequeñas, decorado pequeño).
 		 */
 		ETNBeachElement PickPlugElement(double T, bool bOpenOnly)
 		{
@@ -4377,7 +3592,7 @@ namespace TNBeachLayout
 		/**
 		 * Ninguna línea recta hacia el mar libre de más de MaxStraightRun: cada 4 m a lo ancho se mira la fila de casillas de
 		 * 2 m a lo largo (lo que ocupa cada elemento y los pasos de quads, las pozas, las trincheras y lo alto de las crestas)
-		 * y, donde hay un tramo libre más largo, se pone en él algo pequeño (basura, algas, una mina, un trampolín...). Lo que
+		 * y, donde hay un tramo libre más largo, se pone en él algo pequeño (basura, algas, un trampolín...). Lo que
 		 * cierra el paso se queda solo si sigue habiendo paso en toda la playa (la ventana de TryAdd no basta: las líneas
 		 * largas van junto a la selva, por los huecos de las filas); si no, se prueba con algo que no lo cierra.
 		 */
@@ -4433,7 +3648,7 @@ namespace TNBeachLayout
 					bool bOpenOnly = false;
 					for (int32 Try = 0; Try < 16; ++Try)
 					{
-						// Algo pequeño (basura, algas, minas, un trampolín...) en cualquier punto del tramo, pegado a lo que ya hay
+						// Algo pequeño (basura, algas, un trampolín...) en cualquier punto del tramo, pegado a lo que ya hay
 						// si hace falta: cabe también junto a la selva y entre lo que hay.
 						const double Along = Rng.Range(0.2, 0.8);
 						const double PlugX = ItemsStartX + (IX - Run + 1 + Along * Run) * Cell;
@@ -4551,18 +3766,8 @@ namespace TNBeachLayout
 				{
 					case ETNBeachElement::QuadLane: ++Out.NumQuadLanes; break;
 					case ETNBeachElement::GullZone: ++Out.NumGullZones; break;
-					case ETNBeachElement::GiantCrab: ++Out.NumCrabs; break;
-					case ETNBeachElement::SeaUrchin: ++Out.NumUrchins; break;
-					case ETNBeachElement::Lizard: ++Out.NumLizards; break;
-					case ETNBeachElement::HermitCrab: ++Out.NumHermitCrabs; break;
-					case ETNBeachElement::PoolOctopus: ++Out.NumOctopuses; break;
-					case ETNBeachElement::SandFleas: ++Out.NumSandFleas; break;
-					case ETNBeachElement::ToyTank: ++Out.NumToyTanks; break;
-					case ETNBeachElement::SandDungeon: ++Out.NumDungeons; break;
-					case ETNBeachElement::TreasureChest: ++Out.NumChests; break;
-					case ETNBeachElement::FortressColossal: ++Out.NumColossal; ++Out.NumFortresses; break;
-					case ETNBeachElement::FortressMedium:
-					case ETNBeachElement::FortressLarge: ++Out.NumFortresses; break;
+					case ETNBeachElement::DragCrab:
+					case ETNBeachElement::BurrowCrab: ++Out.NumCrabs; break;
 					default: break;
 				}
 				if (ScaleGroupOf(Item.Element) == EScaleGroup::Aid) { ++Out.NumAids; }
@@ -4599,20 +3804,15 @@ namespace TNBeachLayout
 
 	/**
 	 * Reparto de la ronda con Seed y Difficulty (determinista: el mismo en el servidor y en cada cliente, que reciben las
-	 * dos cosas con la ronda). Orden: el castillo con salas principal (con sus alas), las fortalezas colosales (el terreno
-	 * fijo solo les deja uno o dos tramos, y uno es el del castillo principal), los otros castillos con salas (si caben),
-	 * pasos de quads (de lado a lado: antes de que los castillos les quiten sitio), las demás fortalezas (todas con sus
-	 * guardias), castillos enormes,
-	 * gaviotas, la tropa de las trincheras, filas que obligan a zigzaguear, calles de los ermitaños y claros de las pulgas
-	 * (necesitan sitio libre), rincones con su cofre, puestos militares y sus tanques, las ayudas y las trampas destacadas
-	 * (las grandes, antes de que no quepan), lanzadores, pasarelas guía, pulpos, cofres, relleno por bandas (a la medida de
-	 * los huecos),
-	 * catapultas que falten y tapones de las líneas rectas. Lo que cierra
-	 * el paso se comprueba al ponerlo (en una ventana de ±60 m; los tapones, en toda la playa) y, en toda la playa, tras
-	 * cada fila, cada banda y cada pasada que cierra.
+	 * dos cosas con la ronda). Orden: pasos de quads (de lado a lado: antes de que los castillos les quiten sitio),
+	 * castillos enormes, gaviotas, la tropa de las trincheras, filas que obligan a zigzaguear, rincones, puestos militares,
+	 * las ayudas y las trampas destacadas (las grandes, antes de que no quepan), lanzadores, criaturas del Excel, pasarelas
+	 * guía, relleno por bandas (a la medida de los huecos) y tapones de las líneas rectas. Lo que cierra el paso se
+	 * comprueba al ponerlo (en una ventana de ±60 m; los tapones, en toda la playa) y, en toda la playa, tras cada fila,
+	 * cada banda y cada pasada que cierra.
 	 * bSprint: ronda del sprint final. Nada toca el nido de los huevos de la línea del sprint (SprintNestCircle, lo que el
-	 * GameMode despeja al poner a las finalistas) y el castillo principal va por delante del nido o, si no cabe, por detrás
-	 * (SprintCastleSpot). Sin bSprint, el reparto es el mismo de siempre (la misma secuencia de la semilla).
+	 * GameMode despeja al poner a las finalistas). Sin bSprint, el reparto es el mismo de siempre (la misma secuencia de la
+	 * semilla).
 	 */
 	inline void GenerateRound(int32 Seed, ETNProcDifficulty Difficulty, FRoundLayout& Out, bool bSprint = false)
 	{
@@ -4627,31 +3827,21 @@ namespace TNBeachLayout
 			Builder.bSprint = true;
 			SprintNestCircle(Builder.SprintNestCenter, Builder.SprintNestRadius);
 		}
-		Builder.PlaceMainDungeon();
-		Builder.PlaceColossalFortresses();
-		Builder.PlaceExtraDungeons();
 		Builder.PlaceQuadLanes();
-		Builder.PlaceFortresses();
 		Builder.PlaceCastles();
 		Builder.PlaceGullZones();
 		Builder.PlaceTrenchGarrison();
 		Builder.RestorePassage(0);
 		Builder.PlaceBarrierRows();
-		Builder.PlaceHermitLanes();
-		Builder.PlaceSandFleas();
 		Builder.PlaceNooks();
 		Builder.PlaceMilitaryPosts();
-		Builder.PlaceToyTanks();
 		Builder.RestorePassage(0);
 		Builder.PlaceFeaturedTraps(true);
 		Builder.PlaceFeaturedTraps(false);
 		Builder.PlaceLaunchers();
 		Builder.PlaceExcelCreatures();
 		Builder.PlaceGuidePaths();
-		Builder.PlacePoolOctopuses();
-		Builder.PlaceChests();
 		Builder.FillBands();
-		Builder.EnsureCatapults(MinCatapults);
 		Builder.PlugStraightLines();
 		Builder.RestorePassage(0);
 		Builder.AddTerrainInterest();

@@ -129,7 +129,7 @@ namespace TNBeachDebugCommands
 		ETNBeachElement Element = ETNBeachElement::Coconut;
 		if (Args.Num() < 1 || !ParseElement(Args[0], Element))
 		{
-			UE_LOG(LogTortunabo, Display, TEXT("[Playa] Uso: TN.Beach.Place <Elemento|número> [Tamaño=1] [Extent=0] [Semilla] | TN.Beach.Place clear. Elementos: los de ETNBeachElement (Coconut ... GullZone; p. ej. Seaweed, SandDungeon)."));
+			UE_LOG(LogTortunabo, Display, TEXT("[Playa] Uso: TN.Beach.Place <Elemento|número> [Tamaño=1] [Extent=0] [Semilla] | TN.Beach.Place clear. Elementos: los de ETNBeachElement (Coconut ... Bunker; p. ej. Seaweed, DragCrab)."));
 			return;
 		}
 		const float Size = Args.Num() > 1 ? FMath::Clamp(FCString::Atof(*Args[1]), 0.3f, 2.f) : 1.f;

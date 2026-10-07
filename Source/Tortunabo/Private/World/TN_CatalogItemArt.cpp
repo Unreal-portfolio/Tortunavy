@@ -160,145 +160,6 @@ namespace TNCatalogItemArtDetail
 		return Painter.ToTexture(TEXT("TN_Catalog_Ball"));
 	}
 
-	/** Cabeza de tortuga grandota con ojos saltones y las esquinas de «crece». */
-	UTexture2D* PaintBigHeadIcon()
-	{
-		using namespace TNHUDArt;
-		FPainter Painter(CatalogIconSize, CatalogIconSize);
-		const auto Head = [](float px, float py) { return Circle(px, py, 64.f, 68.f, 38.f); };
-		// Esquinas en L hacia fuera: «se hace más grande».
-		const auto Corners = [](float px, float py)
-		{
-			float Dist = 1e9f;
-			const float Xs[2] = { 14.f, 114.f };
-			const float Ys[2] = { 16.f, 116.f };
-			for (int32 i = 0; i < 2; ++i)
-			{
-				for (int32 j = 0; j < 2; ++j)
-				{
-					const float Dx = i == 0 ? 14.f : -14.f;
-					const float Dy = j == 0 ? 14.f : -14.f;
-					Dist = FMath::Min(Dist, Segment(px, py, Xs[i], Ys[j], Xs[i] + Dx, Ys[j], 3.4f));
-					Dist = FMath::Min(Dist, Segment(px, py, Xs[i], Ys[j], Xs[i], Ys[j] + Dy, 3.4f));
-				}
-			}
-			return Dist;
-		};
-		Painter.Sticker([&](float px, float py) { return FMath::Min(Head(px, py), Corners(px, py)); }, 5.f);
-		Painter.Fill([&Corners](float px, float py) { return Corners(px, py) - 1.6f; }, Hex(0x5A3F0A));
-		Painter.Fill(Corners, Hex(0xFFCB3D));
-		Body(Painter, Head, 0x1F4A1A, 0xA6E07A, 0x4DB35A, 30.f, 106.f);
-		// Manchas de la cabeza, morro más claro y mofletes.
-		Painter.Fill([&Head](float px, float py) { return FMath::Max(Circle(px, py, 64.f, 38.f, 8.f), Head(px, py) + 2.f); }, Hex(0x3D8F47, 0.6f));
-		Painter.Fill([&Head](float px, float py) { return FMath::Max(Circle(px, py, 42.f, 46.f, 5.f), Head(px, py) + 2.f); }, Hex(0x3D8F47, 0.6f));
-		Painter.Fill([&Head](float px, float py) { return FMath::Max(Circle(px, py, 86.f, 46.f, 5.f), Head(px, py) + 2.f); }, Hex(0x3D8F47, 0.6f));
-		Painter.Fill([](float px, float py) { return Ellipse(px, py, 64.f, 88.f, 24.f, 13.f); }, Hex(0xC8F0A0, 0.85f));
-		Painter.Fill([](float px, float py) { return FMath::Min(Circle(px, py, 38.f, 82.f, 6.f), Circle(px, py, 90.f, 82.f, 6.f)); }, Hex(0xFF7A8A, 0.45f));
-		// Ojos saltones.
-		for (const float Ex : { 50.f, 78.f })
-		{
-			Painter.Fill([Ex](float px, float py) { return Circle(px, py, Ex, 62.f, 12.f); }, Hex(0x1F4A1A));
-			Painter.Fill([Ex](float px, float py) { return Circle(px, py, Ex, 62.f, 10.f); }, FLinearColor::White);
-			Painter.Fill([Ex](float px, float py) { return Circle(px, py, Ex + 2.f, 64.f, 5.f); }, Hex(0x13233B));
-			Painter.Fill([Ex](float px, float py) { return Circle(px, py, Ex + 0.5f, 61.5f, 1.8f); }, FLinearColor::White);
-		}
-		// Sonrisa.
-		Painter.Fill([](float px, float py) { return Arc(px, py, 64.f, 84.f, 10.f, FMath::DegreesToRadians(25.f), FMath::DegreesToRadians(155.f), 1.8f); },
-			Hex(0x1F4A1A));
-		Painter.Fill([](float px, float py) { return Ellipse(px, py, 48.f, 40.f, 9.f, 5.f); }, Hex(0xFFFFFF, 0.5f));
-		return Painter.ToTexture(TEXT("TN_Catalog_BigHead"));
-	}
-
-	/** Concha cerrada malva (la malla ConchaCerrada de la fila), vista de frente, con el filo dentado de la trampa. */
-	UTexture2D* PaintConchIcon()
-	{
-		using namespace TNHUDArt;
-		FPainter Painter(CatalogIconSize, CatalogIconSize);
-		const auto Upper = [](float px, float py) { return FMath::Max(Ellipse(px, py, 64.f, 72.f, 48.f, 46.f), py - 72.f); };
-		const auto Lower = [](float px, float py) { return FMath::Max(Ellipse(px, py, 64.f, 72.f, 48.f, 24.f), 72.f - py); };
-		const auto All = [&](float px, float py) { return FMath::Min(Upper(px, py), Lower(px, py)); };
-		Painter.Sticker(All, 6.f);
-		Body(Painter, Lower, 0x3A2A30, 0xA8989E, 0x5E5258, 72.f, 96.f);
-		Body(Painter, Upper, 0x3A2A30, 0xE2C8D2, 0x8C7480, 26.f, 72.f);
-		// Costillas desde la charnela de abajo, solo en la valva de arriba.
-		for (int32 k = -4; k <= 4; ++k)
-		{
-			const float A = k * 0.3f;
-			const float Ex = 64.f + FMath::Sin(A) * 52.f;
-			const float Ey = 76.f - FMath::Cos(A) * 52.f;
-			Painter.Fill([&Upper, Ex, Ey](float px, float py) { return FMath::Max(Segment(px, py, 64.f, 76.f, Ex, Ey, 1.7f), Upper(px, py) + 2.f); },
-				Hex(0x6E5560, 0.5f));
-		}
-		// Filo dentado entre las dos valvas: la trampa que se cierra.
-		Painter.Fill([](float px, float py)
-		{
-			float Dist = 1e9f;
-			for (int32 Tooth = 0; Tooth < 10; ++Tooth)
-			{
-				const float X0 = 20.f + Tooth * 8.8f;
-				const float Y0 = Tooth % 2 == 0 ? 68.f : 76.f;
-				const float Y1 = Tooth % 2 == 0 ? 76.f : 68.f;
-				Dist = FMath::Min(Dist, Segment(px, py, X0, Y0, X0 + 8.8f, Y1, 1.6f));
-			}
-			return Dist;
-		}, Hex(0x3A2A30));
-		Painter.Fill([](float px, float py) { return Ellipse(px, py, 46.f, 42.f, 11.f, 6.f); }, Hex(0xFFFFFF, 0.55f));
-		return Painter.ToTexture(TEXT("TN_Catalog_Conch"));
-	}
-
-	/** Calamar morado (la malla Calamar de la fila de la tinta) con aletas, tentáculos y una gota de tinta. */
-	UTexture2D* PaintInkIcon()
-	{
-		using namespace TNHUDArt;
-		FPainter Painter(CatalogIconSize, CatalogIconSize);
-		const TArray<FVector2f> Tip = { { 50.f, 30.f }, { 64.f, 6.f }, { 78.f, 30.f } };
-		const TArray<FVector2f> FinL = { { 47.f, 18.f }, { 28.f, 36.f }, { 46.f, 44.f } };
-		const TArray<FVector2f> FinR = { { 81.f, 18.f }, { 100.f, 36.f }, { 82.f, 44.f } };
-		const auto Mantle = [&Tip](float px, float py) { return FMath::Min(Ellipse(px, py, 64.f, 46.f, 20.f, 27.f), Polygon(px, py, Tip)); };
-		const auto Fins = [&FinL, &FinR](float px, float py) { return FMath::Min(Polygon(px, py, FinL), Polygon(px, py, FinR)); };
-		const auto Head = [](float px, float py) { return Ellipse(px, py, 64.f, 74.f, 19.f, 12.f); };
-		const auto Arms = [](float px, float py)
-		{
-			float Dist = 1e9f;
-			const float Offsets[5] = { -16.f, -8.f, 0.f, 8.f, 16.f };
-			for (const float Offset : Offsets)
-			{
-				const float X0 = 64.f + Offset * 0.8f;
-				const float X1 = 64.f + Offset * 1.5f;
-				Dist = FMath::Min(Dist, Segment(px, py, X0, 80.f, X1, 108.f, 3.6f));
-				Dist = FMath::Min(Dist, Circle(px, py, X1, 109.f, 4.4f));
-			}
-			return Dist;
-		};
-		const auto Blob = [](float px, float py) { return FMath::Min(Circle(px, py, 104.f, 98.f, 10.f), Circle(px, py, 116.f, 84.f, 4.f)); };
-		const auto Squid = [&](float px, float py)
-		{
-			return FMath::Min(FMath::Min(Mantle(px, py), Fins(px, py)), FMath::Min(Head(px, py), Arms(px, py)));
-		};
-		Painter.Sticker([&](float px, float py) { return FMath::Min(Squid(px, py), Blob(px, py)); }, 5.f);
-		Body(Painter, Arms, 0x1E1440, 0x8A78D0, 0x4A3A8A, 80.f, 114.f);
-		Body(Painter, Fins, 0x1E1440, 0xA898E8, 0x6A58B0, 18.f, 44.f);
-		Body(Painter, Mantle, 0x1E1440, 0xA898E8, 0x57459C, 6.f, 74.f);
-		Body(Painter, Head, 0x1E1440, 0x8A78D0, 0x57459C, 62.f, 86.f);
-		// Motas del manto y brillo.
-		const FIconDot Spots[] = { { 58.f, 40.f, 3.f }, { 70.f, 50.f, 2.6f }, { 62.f, 58.f, 2.2f }, { 72.f, 34.f, 2.f } };
-		for (const FIconDot& Spot : Spots)
-		{
-			Painter.Fill([&Spot](float px, float py) { return Circle(px, py, Spot.X, Spot.Y, Spot.Radius); }, Hex(0xD8CCFF, 0.55f));
-		}
-		Painter.Fill([](float px, float py) { return Ellipse(px, py, 56.f, 30.f, 5.f, 9.f); }, Hex(0xFFFFFF, 0.45f));
-		// Ojos.
-		for (const float Ex : { 55.f, 73.f })
-		{
-			Painter.Fill([Ex](float px, float py) { return Circle(px, py, Ex, 73.f, 5.5f); }, FLinearColor::White);
-			Painter.Fill([Ex](float px, float py) { return Circle(px, py, Ex + 1.f, 74.f, 3.f); }, Hex(0x13132A));
-		}
-		// La tinta.
-		Painter.Fill(Blob, Hex(0x141420));
-		Painter.Fill([](float px, float py) { return Ellipse(px, py, 101.f, 94.f, 3.f, 2.f); }, Hex(0x5A5A80, 0.8f));
-		return Painter.ToTexture(TEXT("TN_Catalog_Ink"));
-	}
-
 	/** Tortuga de peluche verde (la malla Peluche1 del tótem) con costuras, ojos de botón y destellos de revivir. */
 	UTexture2D* PaintTotemIcon()
 	{
@@ -361,17 +222,8 @@ namespace TNCatalogItemArtDetail
 			return PaintBarIcon({ 0x0C4A44, 0x6AE8D8, 0x1A9F92, 0xE0F8F5, 0xA8DCD6, 0x0C2A44, 0xFFFFFF, 0xC8F4FF }, TEXT("TN_Catalog_StaminaFull"));
 		case ETNCatalogLook::Ball:
 			return PaintBallIcon();
-		case ETNCatalogLook::BigHead:
-			return PaintBigHeadIcon();
-		case ETNCatalogLook::Conch:
-			return PaintConchIcon();
-		case ETNCatalogLook::Ink:
-			return PaintInkIcon();
 		case ETNCatalogLook::Totem:
 			return PaintTotemIcon();
-		case ETNCatalogLook::Score:
-			// La misma concha de puntos del contador del HUD (y de su malla, abajo).
-			return TNHUDArt::ShellIcon();
 		default:
 			return nullptr;
 		}
@@ -398,40 +250,6 @@ namespace TNCatalogItemArtDetail
 		Kit::AddSlab(B, Top, FVector::ForwardVector, FVector::RightVector, FVector::UpVector, LowerPart, 0.8, Kit::Rgb(Bolt, 0.3f));
 	}
 
-	/** Cabeza de tortuga de unos 30 x 32 x 28 cm: morro claro, ojos saltones y manchas encima. */
-	void BuildBigHead(FBuffers& B)
-	{
-		const FLinearColor Skin = Kit::Rgb(0x7BC96F, 0.1f);
-		Kit::AddEllipsoid(B, FVector::ZeroVector, FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(15.0, 16.0, 14.0), 20, 10, Skin);
-		Kit::AddEllipsoid(B, FVector(9.0, 0.0, -4.0), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(8.0, 11.0, 7.0), 16, 8,
-			Kit::Rgb(0xA6E07A, 0.1f));
-		for (const double Side : { -1.0, 1.0 })
-		{
-			Kit::AddBall(B, FVector(9.5, Side * 7.0, 5.0), 5.0, 12, Kit::Rgb(0xFFFFFF, 0.35f));
-			Kit::AddBall(B, FVector(13.6, Side * 7.0, 5.5), 2.4, 10, Kit::Rgb(0x13233B, 0.5f));
-			Kit::AddEllipsoid(B, FVector(-3.0, Side * 6.0, 12.0), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(4.0, 4.0, 2.0), 10, 5,
-				Kit::Rgb(0x3D8F47, 0.1f));
-		}
-		Kit::AddEllipsoid(B, FVector(2.0, 0.0, 13.0), FVector::ForwardVector, FVector::RightVector, FVector::UpVector, FVector(4.5, 4.5, 2.0), 10, 5,
-			Kit::Rgb(0x3D8F47, 0.1f));
-	}
-
-	/** Concha de puntos melocotón de unos 22 cm de alto: nueve costillas en abanico desde la charnela y las orejetas. */
-	void BuildScoreShell(FBuffers& B)
-	{
-		const FVector Hinge(0.0, 0.0, -9.0);
-		for (int32 Rib = -4; Rib <= 4; ++Rib)
-		{
-			const double A = Rib * 0.3;
-			const FVector Dir(0.0, FMath::Sin(A), FMath::Cos(A));
-			const FVector Across = FVector::CrossProduct(FVector::ForwardVector, Dir).GetSafeNormal();
-			const double Length = 11.0 - FMath::Abs(Rib) * 0.6;
-			Kit::AddEllipsoid(B, Hinge + Dir * Length, Dir, Across, FVector::ForwardVector, FVector(Length, 2.6, 2.4 - FMath::Abs(Rib) * 0.15), 12, 6,
-				Kit::Rgb(Rib % 2 == 0 ? 0xFFB89A : 0xFF8A6A, 0.2f));
-		}
-		Kit::AddAxisBox(B, Hinge + FVector(0.0, 0.0, 0.5), FVector(1.6, 5.0, 2.0), Kit::Rgb(0xFF7A5E, 0.2f));
-	}
-
 	bool BuildLook(ETNCatalogLook Look, FBuffers& B)
 	{
 		switch (Look)
@@ -442,14 +260,8 @@ namespace TNCatalogItemArtDetail
 		case ETNCatalogLook::StaminaFull:
 			BuildBar(B, 0x2EC4B6, 0xE0F8F5, 0xFFFFFF);
 			return true;
-		case ETNCatalogLook::BigHead:
-			BuildBigHead(B);
-			return true;
-		case ETNCatalogLook::Score:
-			BuildScoreShell(B);
-			return true;
 		default:
-			// La bola, la concha, la tinta y el tótem conservan su malla del proyecto.
+			// La bola y el tótem conservan su malla del proyecto.
 			return false;
 		}
 	}
@@ -484,8 +296,7 @@ namespace TNCatalogItemArtDetail
 
 bool TNCatalogItemArt::HasCodeMesh(ETNCatalogLook Look)
 {
-	return Look == ETNCatalogLook::StaminaBoost || Look == ETNCatalogLook::StaminaFull || Look == ETNCatalogLook::BigHead
-		|| Look == ETNCatalogLook::Score;
+	return Look == ETNCatalogLook::StaminaBoost || Look == ETNCatalogLook::StaminaFull;
 }
 
 bool TNCatalogItemArt::GetHeldLook(ETNCatalogLook Look, FHeldLook& OutLook, bool bEvenHeadless)

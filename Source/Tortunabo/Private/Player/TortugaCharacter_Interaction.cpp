@@ -19,8 +19,6 @@
 #include "World/TN_InteractableBase.h"
 #include "World/TN_PickupInteractableBase.h"
 #include "World/TN_ThrowableItemActor.h"
-#include "World/TN_ConchPickup.h"
-#include "World/TN_InkProjectile.h"
 #include "Game/TN_CoopItems.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Game/TN_RunGameMode.h"
@@ -267,32 +265,10 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 		return;
 	}
 
-	if (EquippedItem.UseType == ETN_ItemUseType::BigHead)
-	{
-		HandleUseBigHead(EquippedItem);
-		return;
-	}
-
 	if ((EquippedItem.UseType == ETN_ItemUseType::Throwable)
 		&& EquippedItem.ThrowableData.ActorClass)
 	{
 		HandleUseThrowable(EquippedItem);
-		return;
-	}
-
-	// ── #22 Concha trampa ────────────────────────────────────────────────────────
-	if ((EquippedItem.UseType == ETN_ItemUseType::Conch)
-		&& EquippedItem.ConchData.ActorClass)
-	{
-		HandleUseConch(EquippedItem);
-		return;
-	}
-
-	// ── #13 Tinta de calamar ─────────────────────────────────────────────────────
-	if ((EquippedItem.UseType == ETN_ItemUseType::InkThrower)
-		&& EquippedItem.InkData.ProjectileClass)
-	{
-		HandleUseInkThrower(EquippedItem);
 		return;
 	}
 
@@ -336,24 +312,6 @@ void ATortugaCharacter::HandleUseSelfStaminaFull(const FTN_InventoryItem& Equipp
 	// para que no se aplique agotamiento si el jugador usó un boost antes.
 	StaminaComponent->SetPostBoostExhaustionSeconds(0.f);
 	StaminaComponent->RestoreStaminaToFull();
-}
-
-void ATortugaCharacter::HandleUseBigHead(const FTN_InventoryItem& EquippedItem)
-{
-	FTN_InventoryItem ConsumedItem;
-	if (!InventoryComponent->TryConsumeEquippedItem(ConsumedItem))
-	{
-		return;
-	}
-
-	bBigHead = true;
-	ApplyBigHeadVisual(true);
-
-	// Timer para restablecer al tamaño original + efecto de mareo (#2).
-	// CreateUObject en lugar de lambda: el binding es weak, así que si el objeto
-	// ya se destruyó el timer no ejecuta nada (no depende de un clear en EndPlay).
-	FTimerDelegate BigHeadDel = FTimerDelegate::CreateUObject(this, &ATortugaCharacter::RemoveBigHeadEffect);
-	GetWorldTimerManager().SetTimer(BigHeadTimerHandle, BigHeadDel, BigHeadDurationSeconds, false);
 }
 
 FVector ATortugaCharacter::GetThrowDirection(const FRotator& AimRotation) const
@@ -475,41 +433,6 @@ void ATortugaCharacter::HandleUseThrowable(const FTN_InventoryItem& EquippedItem
 	{
 		InventoryComponent->TryAddOrReplaceEquipped(ConsumedItem, true);
 	}
-}
-
-void ATortugaCharacter::HandleUseConch(const FTN_InventoryItem& EquippedItem)
-{
-	FTN_InventoryItem ConsumedItem;
-	if (!InventoryComponent->TryConsumeEquippedItem(ConsumedItem)) { return; }
-
-	// Colocar la concha en el suelo justo debajo del jugador
-	const FVector PlaceLoc = FindGroundBelow(GetActorLocation());
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner     = this;
-	SpawnParams.Instigator = this;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	if (ATN_ConchPickup* Conch = GetWorld()->SpawnActor<ATN_ConchPickup>(
-		ConsumedItem.ConchData.ActorClass, PlaceLoc, FRotator::ZeroRotator, SpawnParams))
-	{
-		// Al gastarse vuelve al suelo como pickup de este mismo ítem (#568).
-		Conch->SetRecycledItem(ConsumedItem);
-		Conch->PlaceAsTrap(PlaceLoc);
-	}
-}
-
-void ATortugaCharacter::HandleUseInkThrower(const FTN_InventoryItem& EquippedItem)
-{
-	FTN_InventoryItem ConsumedItem;
-	if (!InventoryComponent->TryConsumeEquippedItem(ConsumedItem)) { return; }
-
-	// Con el mismo arco bajo que el resto de lanzamientos (la tinta también cae con la gravedad).
-	const FVector Origin    = GetItemSpawnLocation();
-	const FVector Direction = GetThrowDirectionToCrosshair(Origin, GetTurtleAimRotation(), ConsumedItem.InkData.ThrowSpeed);
-	ATN_InkProjectile::Spawn(this, ConsumedItem.InkData.ProjectileClass,
-		Origin, Direction, ConsumedItem.InkData.ThrowSpeed);
-	MulticastItemThrowAnim();
 }
 
 void ATortugaCharacter::HandleUseTotem(const FTN_InventoryItem& EquippedItem)

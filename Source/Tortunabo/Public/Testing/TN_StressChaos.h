@@ -11,7 +11,6 @@ class APlayerController;
 class ULocalPlayer;
 class ATortugaCharacter;
 class FJsonObject;
-class UDataTable;
 
 /**
  * Escenario de estrés «caos» (TN.Stress caos [segundos por fase=20], o -TNStress=caos [-TNStressSeconds=<por fase>]
@@ -19,8 +18,8 @@ class UDataTable;
  *
  * - En el anfitrión (o en una partida sin red), cuatro tortugas locales (las que faltan entran como jugadores extra, con la
  *   pantalla partida apagada para que la GPU pinte una sola vista, como en el PC de cada jugador) juegan solas por los mismos
- *   caminos que la entrada real: Move, ToggleShell, TryInteract (coger y lanzar a la compañera) y TryUseEquippedItem, que
- *   acaban en los RPC de servidor de siempre. Nada de teletransportes para las acciones.
+ *   caminos que la entrada real: Move, ToggleShell y TryInteract (coger y lanzar a la compañera), que acaban en los RPC de
+ *   servidor de siempre. Nada de teletransportes para las acciones.
  * - En un cliente (-TNStress=caos en un mundo NM_Client), su tortuga juega igual (sin crear nada): su entrada viaja por red y
  *   las correcciones del servidor se cuentan en su propio informe.
  *
@@ -53,8 +52,6 @@ private:
 		int32 Grabs = 0;
 		int32 Throws = 0;
 		int32 BallEntries = 0;
-		int32 ItemsUsed = 0;
-		int32 ItemsGiven = 0;
 	};
 
 	/** Lo que hace una tortuga y en qué punto va. */
@@ -67,7 +64,6 @@ private:
 		int32 Stage = 0;
 		float TaskClock = 0.f;
 		float StageClock = 0.f;
-		float ItemClock = 0.f;
 		FVector2D MoveInput = FVector2D::ZeroVector;
 		float WanderYaw = 0.f;
 		TWeakObjectPtr<ATortugaCharacter> Partner;
@@ -127,7 +123,7 @@ private:
 	FVector TurtlesCenter() const;
 	double GroundAt(const FVector& At, double Fallback) const;
 	FVector PickSpot(const FVector& Center, float MinRadius, float MaxRadius);
-	int32 SpawnEnemies(int32 Crabs, int32 Gulls, int32 Tanks);
+	int32 SpawnEnemies(int32 Crabs, int32 Gulls, int32 Patrols);
 
 	// ── Tortugas (TN_StressChaosDriver.cpp) ──
 	void SyncDrivers();
@@ -138,10 +134,7 @@ private:
 	bool TickWander(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
 	bool TickCarry(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
 	bool TickBall(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
-	bool TickItems(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
-	void TickItemBurst(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime);
 	void TrackTransitions(FDriver& Driver, ATortugaCharacter* Turtle);
-	bool GiveBurstItem(ATortugaCharacter* Turtle);
 	FDriver* FindFreePartner(const FDriver& For);
 	FActions& CurrentActions();
 
@@ -149,7 +142,6 @@ private:
 	static void InputMove(ATortugaCharacter* Turtle, const FVector2D& Value);
 	static void InputShell(FDriver& Driver, ATortugaCharacter* Turtle);
 	static void InputInteract(ATortugaCharacter* Turtle);
-	static void InputUseItem(ATortugaCharacter* Turtle);
 	static void InputJump(ATortugaCharacter* Turtle);
 	static void InputSprint(ATortugaCharacter* Turtle, bool bOn);
 	static void Aim(FDriver& Driver, float Yaw);
@@ -158,7 +150,7 @@ private:
 	bool bActive = false;
 	bool bMeasuring = false;
 	bool bQuitWhenDone = false;
-	/** Cliente: solo mueve su tortuga (no crea nada ni da objetos). */
+	/** Cliente: solo mueve su tortuga (no crea nada). */
 	bool bClientOnly = false;
 	/** -TNChaosVerbose: una línea por tarea que empieza (para ver qué hace cada tortuga). */
 	bool bVerbose = false;
@@ -192,8 +184,4 @@ private:
 	TArray<TWeakObjectPtr<ULocalPlayer>> CreatedLocalPlayers;
 	float SavedNetCorrectionLifetime = 4.f;
 	bool bHighQoSApplied = false;
-	/** Objetos de DT_Items que se lanzan (Throwable e InkThrower), cargados al empezar. */
-	TArray<FName> CatalogThrowables;
-	UPROPERTY(Transient)
-	TObjectPtr<const UDataTable> Catalog = nullptr;
 };

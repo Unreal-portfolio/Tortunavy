@@ -1,7 +1,6 @@
 #include "World/TN_MapPlacementSpawner.h"
 
 #include "Core/TN_Log.h"
-#include "Settings/TN_GameplayAssetSettings.h"
 #include "World/Beach/TN_BeachDecorField.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/ProcMap/TN_ProcSearchSpot.h"
@@ -9,8 +8,6 @@
 #include "World/TN_FishingPool.h"
 #include "World/TN_InteractableBase.h"
 #include "World/TN_PressurePlate.h"
-#include "World/TN_ScorePickup.h"
-#include "World/TN_ScoreShells.h"
 
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
@@ -34,7 +31,7 @@ namespace TNMapPlacementSpawnerDetail
 	/** Piezas de juego que, puestas a mano en el nivel, reservan su sitio. */
 	bool IsGameplayPiece(const AActor* Actor)
 	{
-		return Actor->IsA<ATN_BeachElement>() || Actor->IsA<ATN_PressurePlate>() || Actor->IsA<ATN_BreakablePlatform>() || Actor->IsA<ATN_InteractableBase>() || Actor->IsA<ATN_ScorePickup>()
+		return Actor->IsA<ATN_BeachElement>() || Actor->IsA<ATN_PressurePlate>() || Actor->IsA<ATN_BreakablePlatform>() || Actor->IsA<ATN_InteractableBase>()
 			|| Actor->IsA<APlayerStart>();
 	}
 
@@ -267,10 +264,6 @@ bool ATN_MapPlacementSpawner::SpawnOne(const TNMapPlacements::FPlacement& P, boo
 	case ESpawn::FishingPool:
 		// La huella y la malla las pone el charco al empezar (ATN_FishingPool::BeginPlay).
 		bOk = SpawnClass(ATN_FishingPool::StaticClass(), Grounded(P.Location), P.YawDeg) != nullptr;
-		break;
-	case ESpawn::ScoreShell:
-		bOk = SpawnClass(UTN_GameplayAssetSettings::GetScorePickupClass(), Grounded(P.Location) + FVector(0.0, 0.0, TNScoreShells::Hover),
-			P.YawDeg) != nullptr;
 		break;
 	case ESpawn::PlateBalance:
 		bOk = SpawnPlateBalance(P);

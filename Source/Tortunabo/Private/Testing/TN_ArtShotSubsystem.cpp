@@ -13,10 +13,8 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
-#include "Player/TortugaCharacter.h"
 #include "Testing/TN_TestReport.h"
 #include "UnrealClient.h"
-#include "World/TN_EnemySeagull.h"
 #include "World/TN_PlaceholderArt.h"
 
 namespace TNArtShot
@@ -147,13 +145,7 @@ AActor* UTN_ArtShotSubsystem::FindOrSpawn(UClass* Class)
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	const FRotator Facing = Pawn ? FRotator(0.f, Pawn->GetActorRotation().Yaw + 180.f, 0.f) : FRotator::ZeroRotator;
-	AActor* Spawned = World->SpawnActor<AActor>(Class, FTransform(Facing, Ground), Params);
-	// La gaviota sin objetivo pica al momento y se va: se le da el jugador para que se quede encima.
-	if (ATN_EnemySeagull* Gull = Cast<ATN_EnemySeagull>(Spawned))
-	{
-		Gull->InitializeWithTarget(Cast<ATortugaCharacter>(Pawn));
-	}
-	return Spawned;
+	return World->SpawnActor<AActor>(Class, FTransform(Facing, Ground), Params);
 }
 
 bool UTN_ArtShotSubsystem::FrameShot(int32 Index)

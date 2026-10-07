@@ -9,8 +9,6 @@ class UTexture2D;
 class USoundBase;
 class ATN_PickupInteractableBase;
 class ATN_ThrowableItemActor;
-class ATN_ConchPickup;
-class ATN_InkProjectile;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Enum de tipos de uso
@@ -30,12 +28,6 @@ enum class ETN_ItemUseType : uint8
 	SelfStaminaFull  UMETA(DisplayName = "Self Stamina Full Restore"),
 	/** Proyectil lanzable con rebote (TN_ThrowableItemActor). */
 	Throwable        UMETA(DisplayName = "Throwable"),
-	/** Cabeza grande; un impacto de gaviota la quita en lugar de matar. */
-	BigHead          UMETA(DisplayName = "Big Head"),
-	/** Concha marina: se coloca en el suelo como trampa que inmoviliza. */
-	Conch            UMETA(DisplayName = "Conch Trap"),
-	/** Proyectil de tinta: oscurece la pantalla del jugador impactado. */
-	InkThrower       UMETA(DisplayName = "Ink Thrower"),
 	/** Tótem: si está en el inventario al morir → auto-revive.
 	 *  Si se usa manualmente → revive a un jugador eliminado. */
 	Totem            UMETA(DisplayName = "Totem"),
@@ -98,39 +90,6 @@ struct FTN_ThrowableParams
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwable",
 		meta = (ClampMin = "0.0"))
 	float LifeSpanSeconds = 0.f;
-};
-
-/**
- * Parámetros específicos de la Concha trampa (#22).
- * Solo relevantes cuando UseType == Conch.
- */
-USTRUCT(BlueprintType)
-struct FTN_ConchParams
-{
-	GENERATED_BODY()
-
-	/** Clase de TN_ConchPickup a spawnear al usar el ítem. Apuntar al BP hijo. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Conch")
-	TSubclassOf<ATN_ConchPickup> ActorClass;
-};
-
-/**
- * Parámetros específicos del lanzador de tinta (#13).
- * Solo relevantes cuando UseType == InkThrower.
- */
-USTRUCT(BlueprintType)
-struct FTN_InkThrowerParams
-{
-	GENERATED_BODY()
-
-	/** Clase de TN_InkProjectile a spawnear al usar el ítem. Apuntar al BP hijo. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "InkThrower")
-	TSubclassOf<ATN_InkProjectile> ProjectileClass;
-
-	/** Velocidad del proyectil de tinta (cm/s). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "InkThrower",
-		meta = (ClampMin = "100.0"))
-	float ThrowSpeed = 1200.f;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -223,14 +182,6 @@ struct FTN_InventoryItem : public FTableRowBase
 	/** UseType == Throwable → clase del proyectil, velocidad y vida. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Throwable")
 	FTN_ThrowableParams ThrowableData;
-
-	/** UseType == Conch → clase del pickup de concha trampa. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Conch")
-	FTN_ConchParams ConchData;
-
-	/** UseType == InkThrower → clase del proyectil de tinta + velocidad. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|InkThrower")
-	FTN_InkThrowerParams InkData;
 
 	bool IsValid() const
 	{

@@ -23,16 +23,10 @@ namespace TNBeachTrapDSP
 	constexpr int32 TrapBlock = 16;
 
 	/** Tipos de efecto (el orden es el de ETNBeachTrapSound). */
-	constexpr uint8 KindZap = 0;
-	constexpr uint8 KindOuch = 1;
-	constexpr uint8 KindSquelch = 2;
-	constexpr uint8 KindCreak = 3;
-	constexpr uint8 KindCrack = 4;
-	constexpr uint8 KindTwang = 5;
-	constexpr uint8 KindThud = 6;
-	constexpr uint8 KindClack = 7;
-	constexpr uint8 KindGrind = 8;
-	constexpr uint8 KindPlink = 9;
+	constexpr uint8 KindSquelch = 0;
+	constexpr uint8 KindCreak = 1;
+	constexpr uint8 KindCrack = 2;
+	constexpr uint8 KindThud = 3;
 
 	/** Un disparo: tipo, multiplicador de tono y ganancia. */
 	struct FTrapSfxEvent
@@ -281,8 +275,6 @@ namespace TNBeachTrapDSP
 			Voice.Jitter = static_cast<float>((SeedState >> 9) & 1023u) / 1023.f;
 			switch (InEvent.Kind)
 			{
-			case KindZap: Voice.Duration = 0.42f; break;
-			case KindOuch: Voice.Duration = 0.46f; break;
 			case KindSquelch: Voice.Duration = 0.34f; break;
 			case KindCreak:
 				Voice.Duration = 0.5f + 0.35f * Voice.Jitter;
@@ -294,15 +286,8 @@ namespace TNBeachTrapDSP
 				Voice.ResA.Tune(220.f * Voice.Pitch, 45.f, Rate);
 				Voice.ResB.Tune(690.f * Voice.Pitch, 140.f, Rate);
 				break;
-			case KindTwang: Voice.Duration = 0.8f; break;
 			case KindThud: Voice.Duration = 0.36f; break;
-			case KindClack:
-				Voice.Duration = 0.42f;
-				Voice.ResA.Tune(2350.f * Voice.Pitch, 260.f, Rate);
-				Voice.ResB.Tune(3650.f * Voice.Pitch, 420.f, Rate);
-				break;
-			case KindGrind: Voice.Duration = 0.9f; break;
-			default: Voice.Duration = 0.35f; break;
+			default: Voice.Duration = 0.f; break;
 			}
 		}
 
@@ -312,57 +297,6 @@ namespace TNBeachTrapDSP
 			const float Dt = InvRate;
 			switch (Voice.Kind)
 			{
-			case KindZap:
-			{
-				// Chispazo: chasquidos eléctricos al azar (ráfagas cortas de ruido) sobre un zumbido áspero que se apaga.
-				const float Env = std::exp(-T / 0.13f);
-				const float BuzzF = 118.f * Voice.Pitch * (1.f + 0.3f * std::exp(-T / 0.03f));
-				const float BurstK = std::exp(-Dt / 0.0022f);
-				const float G = TrapSvfCoef(3200.f * Voice.Pitch, Rate);
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.PhaseA += BuzzF * Dt;
-					Voice.PhaseA -= std::floor(Voice.PhaseA);
-					const float Buzz = FMath::Clamp((2.f * Voice.PhaseA - 1.f) * 3.f, -1.f, 1.f);
-					Voice.PulseClock -= Dt;
-					if (Voice.PulseClock <= 0.f)
-					{
-						Voice.PulseClock = 0.004f + 0.022f * TrapUnit(Voice.NoiseState) + 0.03f * T;
-						Voice.Burst = 1.f;
-					}
-					Voice.Burst *= BurstK;
-					const float Crackle = Voice.Filt[0].Process(TrapNoise(Voice.NoiseState), G, 0.6f) * 2.2f * Voice.Burst;
-					MixBuf[i] += (0.28f * Buzz * Env + Crackle * (0.35f + 0.65f * Env)) * 0.6f * Voice.Gain;
-				}
-				break;
-			}
-			case KindOuch:
-			{
-				// «¡Ay!» de dibujos: voz aguda que sube y cae, por tres formantes que se deslizan de la «a» a la «i».
-				const float Env = TrapSmooth(T / 0.018f) * TrapSmooth((Voice.Duration - T) / 0.1f);
-				float F0 = T < 0.07f ? FMath::Lerp(330.f, 440.f, T / 0.07f) : FMath::Lerp(440.f, 250.f, TrapSmooth((T - 0.07f) / 0.34f));
-				F0 *= Voice.Pitch * (1.f + 0.022f * std::sin(TrapTwoPi * 6.5f * T));
-				const float Glide = TrapSmooth((T - 0.1f) / 0.22f);
-				const float Tract = 1.18f * std::sqrt(Voice.Pitch);
-				const float G1 = TrapSvfCoef(FMath::Lerp(820.f, 340.f, Glide) * Tract, Rate);
-				const float G2 = TrapSvfCoef(FMath::Lerp(1300.f, 2300.f, Glide) * Tract, Rate);
-				const float G3 = TrapSvfCoef(FMath::Lerp(2750.f, 3100.f, Glide) * Tract, Rate);
-				const float StepPh = F0 * Dt;
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.PhaseA += StepPh;
-					if (Voice.PhaseA >= 1.f)
-					{
-						Voice.PhaseA -= 1.f;
-					}
-					const float Saw = 2.f * Voice.PhaseA - 1.f - TrapPolyBlep(Voice.PhaseA, StepPh);
-					const float Src = Saw + 0.12f * TrapNoise(Voice.NoiseState);
-					const float Vowel = Voice.Filt[0].Process(Src, G1, 1.f / 6.f) + 0.55f * Voice.Filt[1].Process(Src, G2, 1.f / 9.f)
-						+ 0.3f * Voice.Filt[2].Process(Src, G3, 1.f / 10.f);
-					MixBuf[i] += Vowel * Env * 0.9f * Voice.Gain;
-				}
-				break;
-			}
 			case KindSquelch:
 			{
 				// Chof mojado: ruido por un paso banda que sube y baja deprisa (burbuja que gorgotea) con un «blup» grave.
@@ -425,25 +359,6 @@ namespace TNBeachTrapDSP
 				}
 				break;
 			}
-			case KindTwang:
-			{
-				// Pala de plástico que vibra: «tuoing» que sube al soltarse, con un temblor que se apaga y un golpe al principio.
-				const float Env = TrapSmooth(T / 0.004f) * std::exp(-T / 0.26f);
-				const float F = 150.f * Voice.Pitch * (1.f + 0.22f * (1.f - std::exp(-T / 0.06f))) * (1.f + 0.03f * std::sin(TrapTwoPi * 9.f * T));
-				const float Trem = 1.f - 0.55f * (0.5f + 0.5f * std::sin(TrapTwoPi * 16.f * T)) * std::exp(-T / 0.3f);
-				const float KnockEnv = std::exp(-T / 0.05f);
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.PhaseA += F * Dt;
-					Voice.PhaseA -= std::floor(Voice.PhaseA);
-					const float Ph = TrapTwoPi * Voice.PhaseA;
-					const float Tone = std::sin(Ph) + 0.4f * std::sin(2.f * Ph + 0.3f) + 0.2f * std::sin(3.f * Ph + 1.f);
-					Voice.PhaseB += 82.f * Voice.Pitch * Dt;
-					Voice.PhaseB -= std::floor(Voice.PhaseB);
-					MixBuf[i] += (0.42f * Tone * Env * Trem + 0.4f * std::sin(TrapTwoPi * Voice.PhaseB) * KnockEnv) * Voice.Gain;
-				}
-				break;
-			}
 			case KindThud:
 			{
 				// Golpe sordo en la arena: grave que cae y un soplo de arena apagado.
@@ -459,53 +374,8 @@ namespace TNBeachTrapDSP
 				}
 				break;
 			}
-			case KindClack:
-			{
-				// Conchas que chocan: una ráfaga de 3-6 clics cerámicos, cada uno por dos resonancias agudas.
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.PulseClock -= Dt;
-					float Excite = 0.f;
-					if (Voice.PulseClock <= 0.f && Voice.Pulses < 6 && T < 0.3f)
-					{
-						Voice.PulseClock = 0.03f + 0.05f * TrapUnit(Voice.NoiseState);
-						Excite = 0.6f + 0.5f * TrapUnit(Voice.NoiseState);
-						++Voice.Pulses;
-					}
-					MixBuf[i] += (0.55f * Voice.ResA.Process(Excite) + 0.4f * Voice.ResB.Process(Excite)) * 0.9f * Voice.Gain;
-				}
-				break;
-			}
-			case KindGrind:
-			{
-				// Arena que roza: ruido por un paso banda grave con sacudidas.
-				const float Env = TrapSmooth(T / 0.08f) * TrapSmooth((Voice.Duration - T) / 0.25f);
-				const float Shake = 0.65f + 0.35f * std::sin(TrapTwoPi * 7.3f * T + 6.f * Voice.Jitter);
-				const float G = TrapSvfCoef(380.f * Voice.Pitch * (1.f + 0.3f * std::sin(TrapTwoPi * 3.1f * T)), Rate);
-				for (int32 i = 0; i < Count; ++i)
-				{
-					const float Rub = Voice.Filt[0].Process(TrapNoise(Voice.NoiseState), G, 0.35f) * 2.4f;
-					MixBuf[i] += Rub * Env * Shake * 0.6f * Voice.Gain;
-				}
-				break;
-			}
 			default:
-			{
-				// Clic de concha del interruptor: golpecito y un «plin» de dos parciales.
-				const float E1 = std::exp(-T / 0.09f);
-				const float E2 = 0.5f * std::exp(-T / 0.05f);
-				const float Ec = 0.5f * std::exp(-T / 0.003f);
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.PhaseA += 1180.f * Voice.Pitch * Dt;
-					Voice.PhaseA -= std::floor(Voice.PhaseA);
-					Voice.PhaseB += 1770.f * Voice.Pitch * Dt;
-					Voice.PhaseB -= std::floor(Voice.PhaseB);
-					const float Ding = std::sin(TrapTwoPi * Voice.PhaseA) * E1 + std::sin(TrapTwoPi * Voice.PhaseB) * E2 + TrapNoise(Voice.NoiseState) * Ec;
-					MixBuf[i] += 0.45f * Ding * Voice.Gain;
-				}
 				break;
-			}
 			}
 			Voice.Age += static_cast<float>(Count) * Dt;
 			if (Voice.Age >= Voice.Duration)
@@ -551,16 +421,10 @@ namespace TNBeachTrapDSP
 	};
 }
 
-static_assert(static_cast<uint8>(ETNBeachTrapSound::Zap) == TNBeachTrapDSP::KindZap, "ETNBeachTrapSound y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachTrapSound::Ouch) == TNBeachTrapDSP::KindOuch, "ETNBeachTrapSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNBeachTrapSound::Squelch) == TNBeachTrapDSP::KindSquelch, "ETNBeachTrapSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNBeachTrapSound::Creak) == TNBeachTrapDSP::KindCreak, "ETNBeachTrapSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNBeachTrapSound::Crack) == TNBeachTrapDSP::KindCrack, "ETNBeachTrapSound y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachTrapSound::Twang) == TNBeachTrapDSP::KindTwang, "ETNBeachTrapSound y el motor DSP deben coincidir");
 static_assert(static_cast<uint8>(ETNBeachTrapSound::Thud) == TNBeachTrapDSP::KindThud, "ETNBeachTrapSound y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachTrapSound::Clack) == TNBeachTrapDSP::KindClack, "ETNBeachTrapSound y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachTrapSound::Grind) == TNBeachTrapDSP::KindGrind, "ETNBeachTrapSound y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachTrapSound::Plink) == TNBeachTrapDSP::KindPlink, "ETNBeachTrapSound y el motor DSP deben coincidir");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTN_BeachTrapSynthComponent

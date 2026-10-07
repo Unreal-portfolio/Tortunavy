@@ -82,7 +82,7 @@ bool UTN_FlipperSlapComponent::CanSlap(const ATortugaCharacter* Turtle)
 	{
 		return false;
 	}
-	// Lo demás que impide actuar (la sujeta un enemigo o un gusano, la recolocan, lleva o la llevan) es lo mismo que para
+	// Lo demás que impide actuar (la sujeta un enemigo, la recolocan, lleva o la llevan) es lo mismo que para
 	// usar un objeto.
 	return TNItemRuntime::CanUseNow(Turtle);
 }

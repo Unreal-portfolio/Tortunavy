@@ -37,8 +37,6 @@ namespace TNBeach
 		StormKick,
 		/** Recién recolocada por la red de seguridad (reservada un momento). */
 		SafetyNet,
-		/** En la boca de un gusano de arena (se acabó su ronda). */
-		Eaten,
 	};
 
 	/**
@@ -46,7 +44,7 @@ namespace TNBeach
 	 * la velocidad Launch (cero = cae donde está), la deja temblando y mareada (pájaros y estrellas) durante Seconds y
 	 * después la suelta para que pueda salir. Si ya estaba aturdida, alarga el aturdimiento hasta el mayor de los dos
 	 * finales. No hace nada en clientes, con tortugas muertas, con Seconds <= 0 ni si ahora la mueve algo que manda más
-	 * (CanStunOver: la sujeción de un enemigo, la patada de la tormenta, la red de seguridad o un gusano). El enemigo que
+	 * (CanStunOver: la sujeción de un enemigo, la patada de la tormenta o la red de seguridad). El enemigo que
 	 * la sujeta la suelta él antes de aturdirla (EndHoldTurtle y después StunTurtle): nunca hay una bola que alguien
 	 * sigue colocando en su pico o en su boca.
 	 */
@@ -62,14 +60,13 @@ namespace TNBeach
 
 	/**
 	 * Lógica pura del árbitro: si aturdir o derribar (StunTurtle, KnockDownTurtle) puede con quien la mueve ahora (Mover,
-	 * de GetTurtleMover). No pueden con la sujeción de un enemigo (la suelta él antes), la patada de la tormenta, la red de
-	 * seguridad ni el gusano; con lo demás, sí (la bola se alarga, el derribo se levanta, quien la lleva la suelta, un
+	 * de GetTurtleMover). No pueden con la sujeción de un enemigo (la suelta él antes), la patada de la tormenta ni la red de
+	 * seguridad; con lo demás, sí (la bola se alarga, el derribo se levanta, quien la lleva la suelta, un
 	 * lanzamiento acaba).
 	 */
 	inline bool CanStunOver(ETNBeachMover Mover)
 	{
-		return Mover != ETNBeachMover::Held && Mover != ETNBeachMover::StormKick && Mover != ETNBeachMover::SafetyNet
-			&& Mover != ETNBeachMover::Eaten;
+		return Mover != ETNBeachMover::Held && Mover != ETNBeachMover::StormKick && Mover != ETNBeachMover::SafetyNet;
 	}
 
 	/**
@@ -96,7 +93,6 @@ namespace TNBeach
 	{
 		/** Reserva vigente (ClaimTurtle), None si no hay. */
 		ETNBeachMover Claim = ETNBeachMover::None;
-		bool bEaten = false;
 		bool bHeld = false;
 		bool bCarried = false;
 		bool bKnockedDown = false;
@@ -105,15 +101,11 @@ namespace TNBeach
 	};
 
 	/**
-	 * Lógica pura del árbitro: quién la mueve según lo que se ve. El gusano, lo primero; luego la reserva vigente; luego
+	 * Lógica pura del árbitro: quién la mueve según lo que se ve. La reserva vigente, lo primero; luego
 	 * un enemigo que la sujeta, otra tortuga que la lleva, el derribo, su bola y un lanzamiento por el aire.
 	 */
 	inline ETNBeachMover ResolveMover(const FTNMoverView& View)
 	{
-		if (View.bEaten)
-		{
-			return ETNBeachMover::Eaten;
-		}
 		if (View.Claim != ETNBeachMover::None)
 		{
 			return View.Claim;
@@ -137,7 +129,7 @@ namespace TNBeach
 		return View.bFallImmune ? ETNBeachMover::Launch : ETNBeachMover::None;
 	}
 
-	/** Quién la mueve ahora: la reserva vigente o, si no hay, lo que se ve de su estado (gusano, enemigo, brazos, derribo...). */
+	/** Quién la mueve ahora: la reserva vigente o, si no hay, lo que se ve de su estado (enemigo, brazos, derribo...). */
 	TORTUNABO_API ETNBeachMover GetTurtleMover(const ACharacter* Turtle);
 
 	/** Nombre para el registro. */
@@ -167,8 +159,7 @@ namespace TNBeach
 	 * quita el aturdimiento y el caparazón (sin bola), para su movimiento y la pone en Where (la cápsula de pie; si queda
 	 * algo en el aire, cae). Al salir del caparazón y del derribo se le devuelven la colisión de la cápsula, el movimiento,
 	 * su suavizado y la réplica del movimiento. La caída se empieza a contar en Where (el teletransporte no cuenta como
-	 * caída: sin eso, desde lo alto se metía sola en una bola al ponerla de pie). No la toca un gusano de arena: a la que
-	 * se come, no se la recoloca.
+	 * caída: sin eso, desde lo alto se metía sola en una bola al ponerla de pie).
 	 */
 	TORTUNABO_API void RelocateTurtle(ACharacter* Turtle, const FTransform& Where);
 

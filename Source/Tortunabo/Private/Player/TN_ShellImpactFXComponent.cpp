@@ -405,13 +405,8 @@ namespace TNShellImpactFX
 		FVector Normal = InHit.ImpactNormal.IsNearlyZero() ? FVector(InHit.Normal) : FVector(InHit.ImpactNormal);
 		Normal = Normal.GetSafeNormal();
 
-		// Castillos de arena y fortalezas.
-		if (NameHasAny(ClassName, { TEXT("fortress"), TEXT("sanddungeon") }))
-		{
-			return ETNShellImpactSound::Sand;
-		}
-		// Catapultas, plataformas y cofres: madera.
-		if (NameHasAny(ClassName, { TEXT("catapult"), TEXT("movingplatform"), TEXT("wobbly"), TEXT("chest"), TEXT("shellgate") }))
+		// Plataformas tambaleantes: madera.
+		if (NameHasAny(ClassName, { TEXT("wobbly") }))
 		{
 			return ETNShellImpactSound::Wood;
 		}

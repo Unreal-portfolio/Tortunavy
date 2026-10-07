@@ -1,22 +1,19 @@
 // Aspecto de los objetos de siempre (#787): cada fila de DT_Items sale con un icono dibujado en código (nunca un recurso del
-// motor ni de VREditor) y, si traía una forma básica del motor, con una malla construida en código. También el recambio de la
-// tinta en pantalla (TNInkScreen).
+// motor ni de VREditor) y, si traía una forma básica del motor, con una malla construida en código.
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Items.CatalogVisuals; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
-#include "Materials/MaterialInterface.h"
 #include "World/TN_CatalogItemVisuals.h"
 #include "../World/TN_CatalogItemArt.h"
-#include "../Player/TN_InkScreen.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
 namespace TNCatalogVisualsTest
 {
-	/** true si la fila sale en algún modo: los sorteos solo cogen filas con uso; Score es de relleno. */
+	/** true si la fila sale en algún modo: los sorteos solo cogen filas con uso. */
 	bool IsUsedRow(const FTN_InventoryItem& Row)
 	{
 		return Row.IsValid() && Row.UseType != ETN_ItemUseType::None;
@@ -70,8 +67,8 @@ bool FTNCatalogVisualsRowsTest::RunTest(const FString& Parameters)
 		TestEqual(FString::Printf(TEXT("%s: misma malla al repetir"), *Name), Again.EquippedMesh.Get(), Mesh);
 		TestEqual(FString::Printf(TEXT("%s: mismo icono al repetir"), *Name), Again.ItemIcon.Get(), Icon);
 	});
-	// Barrita, bola, cabezota, concha, tinta y tótem.
-	TestTrue(FString::Printf(TEXT("Al menos seis filas usadas (%d)"), Used), Used >= 6);
+	// Energía sin fin y tótem.
+	TestTrue(FString::Printf(TEXT("Al menos dos filas usadas (%d)"), Used), Used >= 2);
 	return true;
 }
 
@@ -92,8 +89,8 @@ bool FTNCatalogVisualsRulesTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("El cubo es de relleno"), TNCatalogItemVisuals::IsEnginePlaceholder(Cube));
 	}
 	TestFalse(TEXT("Nulo no es del motor"), TNCatalogItemVisuals::IsEnginePlaceholder(nullptr));
-	UTexture2D* Painted = TNCatalogItemArt::GetIcon(ETNCatalogLook::BigHead, true);
-	if (TestNotNull(TEXT("Icono de la cabezota pintado"), Painted))
+	UTexture2D* Painted = TNCatalogItemArt::GetIcon(ETNCatalogLook::Totem, true);
+	if (TestNotNull(TEXT("Icono del tótem pintado"), Painted))
 	{
 		TestFalse(TEXT("Lo pintado en ejecución no cuenta como del motor"), TNCatalogItemVisuals::IsEnginePlaceholder(Painted));
 	}
@@ -127,32 +124,6 @@ bool FTNCatalogVisualsRulesTest::RunTest(const FString& Parameters)
 		TestEqual(FString::Printf(TEXT("%s: malla de código si la necesita"), *Code), TNCatalogItemArt::GetHeldLook(Look, Held, true),
 			TNCatalogItemArt::HasCodeMesh(Look));
 	}
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNInkScreenTest,
-	"Tortunabo.Items.CatalogVisuals.InkScreen",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNInkScreenTest::RunTest(const FString& Parameters)
-{
-	// El material de BP_TortugaCharacter es el DefaultPostProcessMaterial del motor: no tapa nada, va el recambio.
-	const UMaterialInterface* EngineDefault = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/EngineMaterials/DefaultPostProcessMaterial.DefaultPostProcessMaterial"));
-	if (TestNotNull(TEXT("Material de post-proceso del motor"), EngineDefault))
-	{
-		TestTrue(TEXT("El del motor necesita recambio"), TNInkScreen::NeedsFallback(EngineDefault));
-	}
-	TestTrue(TEXT("Sin material, recambio"), TNInkScreen::NeedsFallback(nullptr));
-
-	UTexture2D* Splats = TNInkScreen::SplatTexture(true);
-	if (TestNotNull(TEXT("Manchas pintadas"), Splats))
-	{
-		TestEqual(TEXT("Manchas en 16:9"), Splats->GetSizeX() * 9, Splats->GetSizeY() * 16);
-	}
-	TestEqual(TEXT("Entera con tiempo por delante"), TNInkScreen::OpacityAt(3.0), 1.f);
-	TestEqual(TEXT("Apagada al acabar"), TNInkScreen::OpacityAt(0.0), 0.f);
-	TestEqual(TEXT("Apagada pasado el final"), TNInkScreen::OpacityAt(-1.0), 0.f);
-	TestTrue(TEXT("Desvaneciéndose al final"), TNInkScreen::OpacityAt(0.4) > 0.f && TNInkScreen::OpacityAt(0.4) < 1.f);
 	return true;
 }
 

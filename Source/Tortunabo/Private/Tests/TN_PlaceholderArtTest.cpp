@@ -25,8 +25,6 @@ namespace TNPlaceholderArtTest
 		TEXT("/Game/Blueprints/Gameplay/Items/BP_RescuePickUp.BP_RescuePickUp_C"),
 		TEXT("/Game/Blueprints/Gameplay/Cosmetics/BP_HatStatue.BP_HatStatue_C"),
 		TEXT("/Game/Blueprints/Gameplay/Cosmetics/BP_SkinStatue.BP_SkinStatue_C"),
-		TEXT("/Game/Blueprints/Gameplay/Enemies/Seagull/BP_EnemySeagull.BP_EnemySeagull_C"),
-		TEXT("/Game/Blueprints/Gameplay/Enemies/Quad/BP_QuadActor.BP_QuadActor_C"),
 	};
 
 	/** Piezas visibles con malla del proyecto o de código (lo que sustituye al marcador). */

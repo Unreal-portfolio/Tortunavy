@@ -1,6 +1,6 @@
 // Elementos de la playa con el Tick dormido de lejos (#59): despiertan con una tortuga, un caparazón o una cámara a menos de
 // su distancia, se duermen un poco más allá (sin parpadeo en el borde) y no se duermen con algo en marcha. Se testean las
-// funciones de TN_BeachTickWakeSubsystem.h, la regla de la mina (TN_BeachMine.h) y, con un mundo de juego, una mina de verdad.
+// funciones de TN_BeachTickWakeSubsystem.h y, con un mundo de juego, unas algas de verdad.
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Perf.BeachTickWake; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
@@ -9,7 +9,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/WorldSettings.h"
 #include "HAL/IConsoleManager.h"
-#include "World/Beach/TN_BeachMine.h"
+#include "World/Beach/TN_BeachSeaweed.h"
 #include "World/Beach/TN_BeachTickWakeSubsystem.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -40,23 +40,12 @@ bool FTNBeachTickWakeTest::RunTest(const FString& Parameters)
 	// En marcha o sin distancia: nunca se duerme.
 	TestTrue(TEXT("En marcha y lejos → despierto"), ShouldBeAwake(Sq(1.0e6), Wake, false, true));
 	TestTrue(TEXT("Distancia 0 (no se duerme) → despierto"), ShouldBeAwake(Sq(1.0e6), 0.f, false, false));
-
-	// Mina: mecha, explosión, rearme y efectos.
-	using TNBeachMineTick::IsBusy;
-	constexpr float Rearm = 9.f;
-	TestFalse(TEXT("Mina sin pisar → libre"), IsBusy(-1.f, -1.f, Rearm, 100.0));
-	TestTrue(TEXT("Mina con la mecha → en marcha"), IsBusy(100.f, -1.f, Rearm, 100.2));
-	TestTrue(TEXT("Mina recién volada → en marcha"), IsBusy(100.f, 100.4f, Rearm, 101.0));
-	TestTrue(TEXT("Mina rearmándose con el polvo en el aire → en marcha"), IsBusy(100.f, 100.4f, Rearm, 100.4 + Rearm + 1.0));
-	TestFalse(TEXT("Mina rearmada y posada → libre"), IsBusy(100.f, 100.4f, Rearm, 100.4 + Rearm + TNBeachMineTick::AfterBlastSeconds + 0.1));
-	TestFalse(TEXT("Mina sin rearme y con el humo ido → libre"), IsBusy(100.f, 100.4f, 0.f, 100.4 + TNBeachMineTick::AfterBlastSeconds + 0.1));
-	TestTrue(TEXT("Mina repisada tras rearmarse → en marcha"), IsBusy(130.f, 100.4f, Rearm, 130.1));
 	return true;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Con mundo: una mina de verdad se apunta en su BeginPlay, se duerme sin nadie cerca, despierta cuando se acerca un
-// personaje y vuelve a dormirse cuando se aleja; con TN.Perf.BeachTickWake 0, despierta siempre (como antes de #59).
+// Con mundo: unas algas de verdad se apuntan en su BeginPlay, se duermen sin nadie cerca, despiertan cuando se acerca un
+// personaje y vuelven a dormirse cuando se aleja; con TN.Perf.BeachTickWake 0, despierta siempre (como antes de #59).
 // ─────────────────────────────────────────────────────────────────────────────
 
 namespace TNBeachTickWakeTestDetail
@@ -102,32 +91,32 @@ bool FTNBeachTickWakeWorldTest::RunTest(const FString& Parameters)
 	const FVector Far(100000.0, 0.0, 0.0);
 	const FVector Near(1000.0, 0.0, 0.0);
 	ACharacter* Walker = World->SpawnActor<ACharacter>(ACharacter::StaticClass(), FTransform(Far));
-	ATN_BeachMine* Mine = World->SpawnActor<ATN_BeachMine>(ATN_BeachMine::StaticClass(), FTransform::Identity);
-	if (!TestNotNull(TEXT("Personaje"), Walker) || !TestNotNull(TEXT("Mina"), Mine))
+	ATN_BeachSeaweed* Weed = World->SpawnActor<ATN_BeachSeaweed>(ATN_BeachSeaweed::StaticClass(), FTransform::Identity);
+	if (!TestNotNull(TEXT("Personaje"), Walker) || !TestNotNull(TEXT("Algas"), Weed))
 	{
 		DestroyGameWorld(World);
 		return false;
 	}
-	TestFalse(TEXT("Nace dormida con el personaje a 1 km"), Mine->IsActorTickEnabled());
+	TestFalse(TEXT("Nacen dormidas con el personaje a 1 km"), Weed->IsActorTickEnabled());
 
 	Walker->SetActorLocation(Near);
 	Check(World);
-	TestTrue(TEXT("Despierta con el personaje a 10 m"), Mine->IsActorTickEnabled());
+	TestTrue(TEXT("Despiertan con el personaje a 10 m"), Weed->IsActorTickEnabled());
 
 	Walker->SetActorLocation(Far);
 	Check(World);
-	TestFalse(TEXT("Se duerme cuando se aleja"), Mine->IsActorTickEnabled());
+	TestFalse(TEXT("Se duermen cuando se aleja"), Weed->IsActorTickEnabled());
 
 	IConsoleVariable* Toggle = IConsoleManager::Get().FindConsoleVariable(TEXT("TN.Perf.BeachTickWake"));
 	if (TestNotNull(TEXT("TN.Perf.BeachTickWake existe"), Toggle))
 	{
 		Toggle->Set(0, ECVF_SetByCode);
 		Check(World);
-		TestTrue(TEXT("Con TN.Perf.BeachTickWake 0, despierta aunque esté lejos"), Mine->IsActorTickEnabled());
+		TestTrue(TEXT("Con TN.Perf.BeachTickWake 0, despiertan aunque esté lejos"), Weed->IsActorTickEnabled());
 		Toggle->Set(1, ECVF_SetByCode);
 	}
 
-	Mine->Destroy();
+	Weed->Destroy();
 	Check(World);
 	DestroyGameWorld(World);
 	return true;

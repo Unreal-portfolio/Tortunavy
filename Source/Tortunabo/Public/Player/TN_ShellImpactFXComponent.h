@@ -33,8 +33,8 @@ namespace TNShellImpactFX
  *   golpe es flojo, salvo que el nuevo sea claramente más fuerte que el anterior), como mucho 8 golpes por segundo entre todas
  *   las bolas del mundo (solo pasan los fuertes de ahí) y ningún golpe a más de 60 m de la cámara.
  * - Superficie: por la clase del actor contra el que choca. Caparazón o tortuga, ATN_BeachEnemy, generador de la playa (por
- *   el nombre de la malla: acantilado = roca, bosquecillo = madera, pendiente fuerte = roca, el resto arena), fortalezas y
- *   castillos (arena), catapultas, plataformas y cofres (madera) y el resto de elementos y decorado (trastos de plástico y
+ *   el nombre de la malla: acantilado = roca, bosquecillo = madera, pendiente fuerte = roca, el resto arena), plataformas
+ *   tambaleantes (madera) y el resto de elementos y decorado (trastos de plástico y
  *   lata). Fuera de la playa (mapa procedural, lobby), por TNTurtleSurface, la misma superficie que los pasos y el polvo.
  *   Al entrar al agua a más de 2,6 m/s: chapoteo.
  * - Efecto visual: dos emisores de partículas de TNAmbientFX (la nube y los trocitos: granos, esquirlas, astillas, gotas,

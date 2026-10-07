@@ -116,8 +116,6 @@ bool FTNBeachHoldArbiterTest::RunTest(const FString& Parameters)
 	View.Claim = ETNBeachMover::SafetyNet;
 	TestEqual(TEXT("La reserva de la red de seguridad manda sobre el enemigo"), static_cast<int32>(ResolveMover(View)),
 		static_cast<int32>(ETNBeachMover::SafetyNet));
-	View.bEaten = true;
-	TestEqual(TEXT("El gusano, lo primero"), static_cast<int32>(ResolveMover(View)), static_cast<int32>(ETNBeachMover::Eaten));
 
 	{
 		FTNMoverView Launched;
@@ -137,7 +135,6 @@ bool FTNBeachHoldArbiterTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Aturdir no puede con un enemigo que la sujeta (la suelta él antes)"), CanStunOver(ETNBeachMover::Held));
 	TestFalse(TEXT("Aturdir no puede con la patada de la tormenta"), CanStunOver(ETNBeachMover::StormKick));
 	TestFalse(TEXT("Aturdir no puede con la red de seguridad"), CanStunOver(ETNBeachMover::SafetyNet));
-	TestFalse(TEXT("Aturdir no puede con el gusano"), CanStunOver(ETNBeachMover::Eaten));
 	return true;
 }
 
