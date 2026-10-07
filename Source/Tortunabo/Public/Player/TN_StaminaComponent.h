@@ -81,8 +81,9 @@ public:
 	 * @brief Otorga stamina ilimitada durante DurationSeconds (Barrita Energética / boosts).
 	 * @param DurationSeconds Duración del boost.
 	 * @note Al expirar, activa PostBoostExhaustion (multiplicadores de velocidad y drenaje).
+	 * @note Solo en el servidor: la concede el uso del objeto (ServerUseEquippedItem). Un cliente no la puede pedir (#895).
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Stamina")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Stamina")
 	void GrantUnlimitedStamina(float DurationSeconds);
 
 	/** @brief Restaura la stamina al máximo efectivo e invalida la penalización de agotamiento. */
@@ -229,10 +230,6 @@ protected:
 	float SprintSpeed = 800.0f;
 
 private:
-	/** @brief Server RPC: aplica stamina ilimitada del lado servidor. */
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerGrantUnlimitedStamina(float DurationSeconds);
-
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentStamina)
 	float CurrentStamina = 100.0f;
 

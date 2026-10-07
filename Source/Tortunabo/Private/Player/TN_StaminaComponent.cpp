@@ -101,14 +101,9 @@ void UTN_StaminaComponent::GrantUnlimitedStamina(float DurationSeconds)
 		return;
 	}
 
-	if (!GetOwner())
+	// Solo la concede el servidor al usar el objeto: no hay RPC para pedirla desde el cliente (#895).
+	if (!GetOwner() || !GetOwner()->HasAuthority())
 	{
-		return;
-	}
-
-	if (!GetOwner()->HasAuthority())
-	{
-		ServerGrantUnlimitedStamina(DurationSeconds);
 		return;
 	}
 
@@ -122,28 +117,11 @@ void UTN_StaminaComponent::GrantUnlimitedStamina(float DurationSeconds)
 	RecomputeSprintState();
 }
 
-bool UTN_StaminaComponent::ServerGrantUnlimitedStamina_Validate(float DurationSeconds)
-{
-	// Cota generosa: rechaza (el engine desconecta) clientes que envíen valores
-	// absurdos/NaN. El clamp real a 15s lo hace el _Implementation; esta validación
-	// es una red de seguridad a nivel de engine que no rechaza tráfico legítimo.
-	return DurationSeconds >= 0.f && DurationSeconds <= 300.f;
-}
-
-void UTN_StaminaComponent::ServerGrantUnlimitedStamina_Implementation(float DurationSeconds)
-{
-	// Clamp to prevent clients from granting themselves permanent unlimited stamina.
-	constexpr float MaxGrantDuration = 15.f;
-	GrantUnlimitedStamina(FMath::Clamp(DurationSeconds, 0.f, MaxGrantDuration));
-}
-
 void UTN_StaminaComponent::RestoreStaminaToFull()
 {
 	if (GetOwner() && !GetOwner()->HasAuthority())
 	{
-		// El servidor aplica el efecto; el cliente solo lo solicita.
-		// Reutilizamos el patron de GrantUnlimitedStamina sin RPC dedicada:
-		// el item pickup ya debería ejecutarse via Server RPC en el pickup base.
+		// Solo el servidor aplica el efecto, al usar el objeto (ServerUseEquippedItem).
 		return;
 	}
 

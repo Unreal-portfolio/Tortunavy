@@ -122,6 +122,12 @@ FVector ATortugaCharacter::FindGroundBelow(const FVector& WorldLocation) const
 }
 
 
+bool ATortugaCharacter::CanUseHandsForInteraction() const
+{
+	const bool bBeingCarried = CarryComponent && CarryComponent->IsBeingCarried();
+	return !(bIsKnockedDown || bIsDead || IsInShell() || bBeingCarried);
+}
+
 void ATortugaCharacter::ServerTryInteract_Implementation(ATN_InteractableBase* Interactable)
 {
 	const bool bDebug = CVarDebugInteraction.GetValueOnGameThread() != 0;
@@ -129,6 +135,13 @@ void ATortugaCharacter::ServerTryInteract_Implementation(ATN_InteractableBase* I
 	if (!Interactable)
 	{
 		if (bDebug) { UE_LOG(LogTortunabo, Warning, TEXT("[Interact:SERVER] Interactable is NULL — client sent invalid reference")); }
+		return;
+	}
+
+	// El cliente lo comprueba antes de pedir, pero con latencia aún no sabe que está en el caparazón, en brazos o noqueada.
+	if (!CanUseHandsForInteraction())
+	{
+		if (bDebug) { UE_LOG(LogTortunabo, Warning, TEXT("[Interact:SERVER] Rechazado: noqueada, muerta, en el caparazón o en brazos.")); }
 		return;
 	}
 
@@ -196,7 +209,7 @@ void ATortugaCharacter::ReleaseInteract()
 void ATortugaCharacter::ServerBeginHoldInteract_Implementation(ATN_InteractableBase* Interactable)
 {
 	const bool bDebug = CVarDebugInteraction.GetValueOnGameThread() != 0;
-	if (!Interactable || bIsKnockedDown || bIsDead || IsInShell() || Interactable->GetHoldDuration() <= 0.f)
+	if (!Interactable || !CanUseHandsForInteraction() || Interactable->GetHoldDuration() <= 0.f)
 	{
 		return;
 	}
