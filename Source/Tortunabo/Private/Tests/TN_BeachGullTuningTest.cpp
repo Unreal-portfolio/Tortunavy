@@ -1,16 +1,13 @@
-// Lógica pura de las gaviotas y del cangrejo gigante de la carrera (ronda 4, tarea 5: el nerf; TN_BeachGullTuning.h y
-// TNBeachCrabTuning en TN_BeachGiantCrab.h), con las velocidades de verdad de la tortuga (las del Blueprint: andando 200 cm/s,
-// corriendo 400). Lo que se pidió: andando te pilla; esprintando en línea recta le ganas distancia a la sombra y te libras
-// (#636), y también cambiando de dirección corriendo en el momento justo o tirándote en plancha a tiempo (ventana de la
-// plancha frente a la caca: Tortunabo.Beach.Gull.PoopWalkSprintDive), del picado, de la cagada de la zona y de la gaviota
-// justiciera; el cangrejo gigante persigue más despacio de lo que se corre y su mazazo se salta. Sin mundo ni actores:
-// se simula el blanco con la misma función que usan ATN_BeachGullZone y ATN_RaceGullStrike en el servidor, a 60 pasos por
-// segundo.
-// Correr desde Session Frontend (categorías "Tortunabo.Beach.Gull" y "Tortunabo.Beach.Crab") o sin ventana:
+// Lógica pura de las gaviotas (ronda 4, tarea 5: el nerf; TN_BeachGullTuning.h), con las velocidades de verdad de la
+// tortuga (las del Blueprint: andando 200 cm/s, corriendo 400). Lo que se pidió: andando te pilla; esprintando en línea
+// recta le ganas distancia a la sombra y te libras (#636), y también cambiando de dirección corriendo en el momento justo
+// o tirándote en plancha a tiempo (ventana de la plancha frente a la caca: Tortunabo.Beach.Gull.PoopWalkSprintDive), del
+// picado, de la cagada de la zona y de la gaviota justiciera. Sin mundo ni actores: se simula el blanco con la misma
+// función que usa ATN_BeachGullZone en el servidor, a 60 pasos por segundo.
+// Correr desde Session Frontend (categoría "Tortunabo.Beach.Gull") o sin ventana:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Beach.Gull; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
-#include "World/Beach/TN_BeachGiantCrab.h"
 #include "World/Beach/TN_BeachGullTuning.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -254,38 +251,6 @@ bool FTNBeachGullPoopDodgeTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Plancha demasiado pronto (1 s antes, ya tumbada): le da"), PoopLands(1.f, BellyDiveAirSecondsMax));
 	TestTrue(TEXT("Plancha demasiado tarde (después de que caiga): le da"), PoopLands(-0.1f, BellyDiveAirSecondsMin));
 	TestTrue(TEXT("Corriendo, la plancha 0,65 s antes con 0,4 s de aire aún libra"), DodgesByBellyDiveAt(0.65f, TurtleRun, BellyDiveAirSecondsMax));
-	return true;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Cangrejo gigante: persecución y mazazo
-// ─────────────────────────────────────────────────────────────────────────────
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNBeachCrabDodgeTest,
-	"Tortunabo.Beach.Crab.Dodge",
-	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
-
-bool FTNBeachCrabDodgeTest::RunTest(const FString& Parameters)
-{
-	using namespace TNBeachCrabTuning;
-	using namespace TNBeachGullTuningTest;
-
-	for (const float SizeK : { 0.8f, 1.f, 1.2f })
-	{
-		const float Speed = ChaseSpeedFor(SizeK);
-		TestTrue(FString::Printf(TEXT("Cangrejo de tamaño %.1f: alcanza a quien anda"), SizeK), Speed > TurtleWalk);
-		TestTrue(FString::Printf(TEXT("Cangrejo de tamaño %.1f: corriendo se le escapa"), SizeK), Speed < TurtleRun);
-	}
-
-	// Salto (485 cm/s hacia arriba, gravedad 980): altura de los pies a los T s de despegar.
-	auto FeetAt = [](float T) { return 485.f * T - 490.f * T * T; };
-	TestFalse(TEXT("De pie en la arena: el mazazo le da"), ClearsSlamByJump(false, 0.f));
-	TestTrue(TEXT("En lo alto del salto: lo salta"), ClearsSlamByJump(true, FeetAt(0.5f)));
-	TestFalse(TEXT("Recién despegada (0,05 s): aún le da"), ClearsSlamByJump(true, FeetAt(0.05f)));
-	TestFalse(TEXT("Aterrizando (0,95 s): ya le da"), ClearsSlamByJump(true, FeetAt(0.95f)));
-	// La pinza cae 0,74 s después de levantarse (0,6 de aviso + 0,14): saltar en cuanto se levanta la libra.
-	TestTrue(TEXT("Saltando al levantar la pinza (cae 0,74 s después): lo salta"), ClearsSlamByJump(true, FeetAt(0.74f)));
-	TestTrue(TEXT("Saltando a mitad del aviso (cae 0,44 s después): lo salta"), ClearsSlamByJump(true, FeetAt(0.44f)));
 	return true;
 }
 

@@ -20,6 +20,7 @@
 #include "Testing/TN_StressChaos.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachTypes.h"
+#include "TN_StressEnemies.h"
 
 namespace TNStressDetail
 {
@@ -236,31 +237,29 @@ FVector UTN_StressSubsystem::PickSpot(float MinRadius, float MaxRadius)
 
 bool UTN_StressSubsystem::SpawnEnemy(TNStress::EGroup Group, int32 Index)
 {
-	FTNBeachElementSpec Spec;
-	Spec.Seed = Stream.RandRange(1, 1000000);
-	Spec.SizeScale = 1.f;
-	switch (Group)
-	{
-		case TNStress::EGroup::Crabs:
-			Spec.Element = Index % 2 == 0 ? ETNBeachElement::GiantCrab : ETNBeachElement::HermitCrab;
-			Spec.Extent = Spec.Element == ETNBeachElement::HermitCrab ? 4000.f : 0.f;
-			break;
-		case TNStress::EGroup::Gulls:
-			Spec.Element = ETNBeachElement::GullZone;
-			break;
-		default:
-			Spec.Element = ETNBeachElement::ToyTank;
-			Spec.Extent = 3000.f;
-			break;
-	}
 	const FVector At = PickSpot(1500.f, 14000.f);
 	const FRotator Facing(0.0, Stream.FRandRange(0.f, 360.f), 0.0);
-	ATN_BeachElement* Element = ATN_BeachElement::SpawnElement(GetWorld(), FTransform(Facing, At), Spec);
-	if (Element)
+	AActor* Enemy = nullptr;
+	if (Group == TNStress::EGroup::Patrols)
 	{
-		Spawned.Add(Element);
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		Enemy = GetWorld()->SpawnActor<ATN_CrabActor>(TNStressEnemies::PatrolCrabClass(), At, Facing, Params);
 	}
-	return Element != nullptr;
+	else
+	{
+		FTNBeachElementSpec Spec;
+		Spec.Seed = Stream.RandRange(1, 1000000);
+		Spec.SizeScale = 1.f;
+		Spec.Element = Group == TNStress::EGroup::Gulls ? ETNBeachElement::GullZone
+			: (Index % 2 == 0 ? ETNBeachElement::DragCrab : ETNBeachElement::BurrowCrab);
+		Enemy = ATN_BeachElement::SpawnElement(GetWorld(), FTransform(Facing, At), Spec);
+	}
+	if (Enemy)
+	{
+		Spawned.Add(Enemy);
+	}
+	return Enemy != nullptr;
 }
 
 void UTN_StressSubsystem::SpawnPending(FPhaseData& Phase)

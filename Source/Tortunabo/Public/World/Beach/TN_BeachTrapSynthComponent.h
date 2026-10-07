@@ -14,23 +14,15 @@ namespace TNBeachTrapDSP
 UENUM(BlueprintType)
 enum class ETNBeachTrapSound : uint8
 {
-	Zap      UMETA(DisplayName = "Chispazo del alambre"),
-	Ouch     UMETA(DisplayName = "¡Ay!"),
 	Squelch  UMETA(DisplayName = "Chof de algas"),
 	Creak    UMETA(DisplayName = "Crujido de madera"),
 	Crack    UMETA(DisplayName = "Tabla que se parte"),
-	Twang    UMETA(DisplayName = "Muelle de la pala"),
 	Thud     UMETA(DisplayName = "Golpe sordo en la arena"),
-	Clack    UMETA(DisplayName = "Castañeteo de conchas"),
-	Grind    UMETA(DisplayName = "Roce de arena"),
-	Plink    UMETA(DisplayName = "Clic del interruptor"),
 };
 
 /**
- * Efectos de sonido sintetizados en tiempo real (sin archivos de audio) para las trampas del modo carrera: el chispazo
- * del alambre de espino, el «¡ay!» de la tortuga (voz aguda de dibujos por tres formantes que van de «a» a «i»), el chof
- * de las algas, el crujido y el chasquido de la tabla sobre el hoyo, el muelle de la pala, el golpe sordo en la arena, el
- * castañeteo de las conchas de la puerta, el roce de la arena y el clic del interruptor.
+ * Efectos de sonido sintetizados en tiempo real (sin archivos de audio) para las trampas de la playa: el chof de las
+ * algas, el crujido y el chasquido de la tabla sobre el hoyo y el golpe sordo en la arena.
  *
  * Mismo patrón que UTN_PlaygroundSynthComponent: el sonido lo genera un ISoundGenerator en el hilo de render de audio, sin
  * UObjects, asignaciones ni bloqueos; el hilo de juego solo deja disparos en una cola circular sin bloqueos. Mono y

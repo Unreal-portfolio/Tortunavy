@@ -25,7 +25,6 @@ namespace TNMapPlacements
 		/** Mata o palmera instanciada (mallas de flora del mapa procedural): local, sin colisión. */
 		Vegetation,
 		SearchSpot,
-		ScoreShell,
 		/** Charco de pesca (ATN_FishingPool): servidor, replicado. */
 		FishingPool,
 		/** Puzles: plate_balance, breakable_chain y wobbly_run. */

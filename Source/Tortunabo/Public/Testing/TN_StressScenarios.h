@@ -14,13 +14,13 @@ namespace TNStress
 		Baseline,
 		Crabs,
 		Gulls,
-		Tanks,
+		Patrols,
 		Count
 	};
 
 	inline const TCHAR* GroupName(EGroup Group)
 	{
-		static const TCHAR* const Names[] = { TEXT("baseline"), TEXT("crabs"), TEXT("gulls"), TEXT("tanks") };
+		static const TCHAR* const Names[] = { TEXT("baseline"), TEXT("crabs"), TEXT("gulls"), TEXT("patrols") };
 		static_assert(UE_ARRAY_COUNT(Names) == static_cast<int32>(EGroup::Count), "GroupName: falta un nombre");
 		const int32 Index = static_cast<int32>(Group);
 		return Index >= 0 && Index < UE_ARRAY_COUNT(Names) ? Names[Index] : TEXT("?");
@@ -29,7 +29,7 @@ namespace TNStress
 	struct FScenario
 	{
 		FString Name;
-		/** Enemigos de playa (cangrejos, gaviotas y tanques). */
+		/** Enemigos de playa (cangrejos y gaviotas). */
 		int32 Enemies = 0;
 		/** Tortugas jugando (locales; las que faltan se crean como jugadores extra). */
 		int32 Turtles = 1;
@@ -65,13 +65,16 @@ namespace TNStress
 		return false;
 	}
 
-	/** Reparto de los enemigos: mitad cangrejos (gigantes y ermitaños), un cuarto de zonas de gaviotas y el resto tanques. */
+	/**
+	 * Reparto de los enemigos: mitad cangrejos de playa (arrastradores y subterráneos), un cuarto de zonas de gaviotas y el
+	 * resto cangrejos de patrulla (ATN_CrabActor).
+	 */
 	struct FEnemySplit
 	{
 		int32 Crabs = 0;
 		int32 Gulls = 0;
-		int32 Tanks = 0;
-		int32 Total() const { return Crabs + Gulls + Tanks; }
+		int32 Patrols = 0;
+		int32 Total() const { return Crabs + Gulls + Patrols; }
 	};
 
 	inline FEnemySplit SplitEnemies(int32 Enemies)
@@ -79,8 +82,8 @@ namespace TNStress
 		FEnemySplit Out;
 		const int32 Safe = FMath::Max(0, Enemies);
 		Out.Gulls = Safe / 4;
-		Out.Tanks = Safe / 4;
-		Out.Crabs = Safe - Out.Gulls - Out.Tanks;
+		Out.Patrols = Safe / 4;
+		Out.Crabs = Safe - Out.Gulls - Out.Patrols;
 		return Out;
 	}
 
@@ -93,7 +96,7 @@ namespace TNStress
 	/** Grupos que se crean repartidos en varios fotogramas: todos los que crean algo. */
 	inline bool IsSpreadGroup(EGroup Group)
 	{
-		return Group == EGroup::Crabs || Group == EGroup::Gulls || Group == EGroup::Tanks;
+		return Group == EGroup::Crabs || Group == EGroup::Gulls || Group == EGroup::Patrols;
 	}
 
 	/** Se crea uno más en este fotograma: quedan por crear y es el primero del fotograma o aún queda presupuesto. */
@@ -124,7 +127,7 @@ namespace TNStress
 		}
 		if (Split.Crabs > 0) { Phases.Add({ EGroup::Crabs, Split.Crabs, 0.f, 0.f }); }
 		if (Split.Gulls > 0) { Phases.Add({ EGroup::Gulls, Split.Gulls, 0.f, 0.f }); }
-		if (Split.Tanks > 0) { Phases.Add({ EGroup::Tanks, Split.Tanks, 0.f, 0.f }); }
+		if (Split.Patrols > 0) { Phases.Add({ EGroup::Patrols, Split.Patrols, 0.f, 0.f }); }
 		const float Each = TotalSeconds / static_cast<float>(Phases.Num());
 		for (int32 Index = 0; Index < Phases.Num(); ++Index)
 		{

@@ -25,15 +25,11 @@ namespace TNBeachSynthDSP
 	/** Tipos de efecto (el orden es el de ETNBeachSfx). */
 	constexpr uint8 KindClack = 0;
 	constexpr uint8 KindSlam = 1;
-	constexpr uint8 KindSkitter = 2;
-	constexpr uint8 KindHiss = 3;
-	constexpr uint8 KindSquawk = 4;
-	constexpr uint8 KindSplat = 5;
-	constexpr uint8 KindSwoop = 6;
-	constexpr uint8 KindPrick = 7;
-	constexpr uint8 KindCrunch = 8;
-	constexpr uint8 KindStomp = 9;
-	constexpr uint8 KindRoll = 10;
+	constexpr uint8 KindSquawk = 2;
+	constexpr uint8 KindSplat = 3;
+	constexpr uint8 KindSwoop = 4;
+	constexpr uint8 KindCrunch = 5;
+	constexpr uint8 KindStomp = 6;
 
 	struct FEvent
 	{
@@ -302,16 +298,9 @@ namespace TNBeachSynthDSP
 				Voice.ResB.Set(2700.f * P, 0.012f, Rate);
 				break;
 			case KindSlam: Voice.Duration = 1.1f; break;
-			case KindSkitter:
-				Voice.Duration = 0.36f;
-				Voice.ResA.Set(1900.f * P, 0.006f, Rate);
-				Voice.ResB.Set(3400.f * P, 0.004f, Rate);
-				break;
-			case KindHiss: Voice.Duration = 0.9f; break;
 			case KindSquawk: Voice.Duration = 0.55f; break;
 			case KindSplat: Voice.Duration = 0.42f; break;
 			case KindSwoop: Voice.Duration = 1.1f; break;
-			case KindPrick: Voice.Duration = 0.4f; break;
 			case KindCrunch:
 				Voice.Duration = 1.4f;
 				Voice.ResA.Set(430.f * P, 0.045f, Rate);
@@ -319,8 +308,7 @@ namespace TNBeachSynthDSP
 				break;
 			case KindStomp: Voice.Duration = 1.0f; break;
 			default:
-				Voice.Duration = 0.5f;
-				Voice.ResA.Set(650.f * P, 0.02f, Rate);
+				Voice.Duration = 0.f;
 				break;
 			}
 		}
@@ -366,47 +354,6 @@ namespace TNBeachSynthDSP
 					const float N = BsNoise(Voice.NoiseState);
 					Voice.SvfA.Tick(N, G, 0.9f);
 					MixBuf[i] += (0.95f * std::sin(BsTwoPi * Voice.PhaseA) * Env + Voice.SvfA.Low * NoiseEnv + N * Click) * Voice.Gain;
-				}
-				break;
-			}
-			case KindSkitter:
-			{
-				// Patitas: toques irregulares (unos 26 por segundo) por dos resonadores agudos.
-				const float Env = std::sqrt(std::sin(BsPi * X));
-				const float PulseRate = 26.f * P;
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.Clock += PulseRate * Dt;
-					float Excite = 0.f;
-					if (Voice.Clock >= 1.f)
-					{
-						Voice.Clock -= 1.f + 0.3f * BsNoise(Voice.NoiseState);
-						Excite = 0.6f + 0.4f * std::abs(BsNoise(Voice.NoiseState));
-					}
-					MixBuf[i] += (0.6f * Voice.ResA.Tick(Excite) + 0.4f * Voice.ResB.Tick(Excite)) * Env * Voice.Gain;
-				}
-				break;
-			}
-			case KindHiss:
-			{
-				// Bufido: soplo de ruido por dos bandas (una aguda y una media) y un gruñido de garganta que tiembla.
-				const float Att = FMath::Min(1.f, T / 0.035f);
-				const float Rel = FMath::Clamp((Voice.Duration - T) / 0.4f, 0.f, 1.f);
-				const float Env = Att * Rel;
-				const float G1 = BsSvfCoef(3200.f * P, Rate);
-				const float G2 = BsSvfCoef(1300.f * P, Rate);
-				const float GrowlEnv = std::exp(-T / 0.35f);
-				for (int32 i = 0; i < Count; ++i)
-				{
-					const float N = BsNoise(Voice.NoiseState);
-					Voice.SvfA.Tick(N, G1, 0.6f);
-					Voice.SvfB.Tick(N, G2, 0.8f);
-					Voice.PhaseA += 82.f * P * Dt;
-					Voice.PhaseA -= std::floor(Voice.PhaseA);
-					Voice.PhaseB += 27.f * Dt;
-					Voice.PhaseB -= std::floor(Voice.PhaseB);
-					const float Growl = std::sin(BsTwoPi * Voice.PhaseA) * (0.5f + 0.5f * std::sin(BsTwoPi * Voice.PhaseB));
-					MixBuf[i] += (0.55f * Voice.SvfA.Band + 0.3f * Voice.SvfB.Band + 0.3f * Growl * GrowlEnv) * Env * Voice.Gain;
 				}
 				break;
 			}
@@ -458,29 +405,6 @@ namespace TNBeachSynthDSP
 				}
 				break;
 			}
-			case KindPrick:
-			{
-				// Pinchazo: «tin» metálico de tres parciales, un clic y un soplo corto.
-				const float E1 = std::exp(-T / 0.07f);
-				const float E2 = 0.6f * std::exp(-T / 0.045f);
-				const float E3 = 0.35f * std::exp(-T / 0.03f);
-				const float Ec = 0.5f * std::exp(-T / 0.004f);
-				const float Ep = 0.2f * std::exp(-T / 0.12f);
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.PhaseA += 3300.f * P * Dt;
-					Voice.PhaseA -= std::floor(Voice.PhaseA);
-					Voice.PhaseB += 4950.f * P * Dt;
-					Voice.PhaseB -= std::floor(Voice.PhaseB);
-					Voice.PhaseC += 6150.f * P * Dt;
-					Voice.PhaseC -= std::floor(Voice.PhaseC);
-					const float N = BsNoise(Voice.NoiseState);
-					Voice.Lp += 0.2f * (N - Voice.Lp);
-					const float Tink = std::sin(BsTwoPi * Voice.PhaseA) * E1 + std::sin(BsTwoPi * Voice.PhaseB) * E2 + std::sin(BsTwoPi * Voice.PhaseC) * E3;
-					MixBuf[i] += (0.5f * Tink + N * Ec + Voice.Lp * Ep) * Voice.Gain;
-				}
-				break;
-			}
 			case KindCrunch:
 			{
 				// Palmeras que crujen: chasquidos de madera cada vez más espaciados y un siseo de hojas.
@@ -522,24 +446,7 @@ namespace TNBeachSynthDSP
 				break;
 			}
 			default:
-			{
-				// Rodar: crujidos suaves de arena y púas.
-				const float Env = std::sin(BsPi * X);
-				const float PulseRate = 16.f * P;
-				for (int32 i = 0; i < Count; ++i)
-				{
-					Voice.Clock += PulseRate * Dt;
-					float Excite = 0.f;
-					if (Voice.Clock >= 1.f)
-					{
-						Voice.Clock -= 1.f + 0.4f * BsNoise(Voice.NoiseState);
-						Excite = 0.7f;
-					}
-					Voice.Lp += 0.1f * (BsNoise(Voice.NoiseState) - Voice.Lp);
-					MixBuf[i] += (0.5f * Voice.ResA.Tick(Excite) + 0.6f * Voice.Lp) * Env * Voice.Gain;
-				}
 				break;
-			}
 			}
 			Voice.Age += static_cast<float>(Count) * Dt;
 			if (Voice.Age >= Voice.Duration)
@@ -641,9 +548,8 @@ namespace TNBeachSynthDSP
 }
 
 static_assert(static_cast<uint8>(ETNBeachSfx::Clack) == TNBeachSynthDSP::KindClack, "ETNBeachSfx y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachSfx::Skitter) == TNBeachSynthDSP::KindSkitter, "ETNBeachSfx y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachSfx::Prick) == TNBeachSynthDSP::KindPrick, "ETNBeachSfx y el motor DSP deben coincidir");
-static_assert(static_cast<uint8>(ETNBeachSfx::Roll) == TNBeachSynthDSP::KindRoll, "ETNBeachSfx y el motor DSP deben coincidir");
+static_assert(static_cast<uint8>(ETNBeachSfx::Squawk) == TNBeachSynthDSP::KindSquawk, "ETNBeachSfx y el motor DSP deben coincidir");
+static_assert(static_cast<uint8>(ETNBeachSfx::Stomp) == TNBeachSynthDSP::KindStomp, "ETNBeachSfx y el motor DSP deben coincidir");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTN_BeachEnemySynthComponent

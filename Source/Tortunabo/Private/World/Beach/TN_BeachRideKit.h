@@ -12,7 +12,7 @@
 #include "TN_BeachTrapKit.h"
 
 /**
- * Kit de las piezas «de montar» de la playa (ATN_BeachClamTrap y ATN_BeachTrampoline): quién puede subirse, el mareo de
+ * Kit de las piezas «de montar» de la playa (ATN_BeachTrampoline): quién puede subirse, el mareo de
  * los pajaritos y dónde quedan los pies de quien monta.
  */
 namespace TNBeachRideKit

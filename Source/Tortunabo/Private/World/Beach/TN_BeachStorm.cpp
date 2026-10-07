@@ -3,7 +3,6 @@
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
-#include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStormKick.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "Game/TN_CoopItemComponent.h"
@@ -546,7 +545,7 @@ void ATN_BeachStorm::ServerCheck()
 			continue;
 		}
 		// Solo a la que se mueve sola o va en su bola porque quiere. Lo demás manda y la patada llega al soltarla: el pico de
-		// una gaviota o la boca de un lagarto, un gusano, los brazos de otra (patean a la que la lleva), el derribo, la bola de
+		// una gaviota o la pinza de un cangrejo, los brazos de otra (patean a la que la lleva), el derribo, la bola de
 		// aturdida, un lanzamiento por el aire y la red de seguridad. Si algo de lo que acaba solo (derribo, bola, lanzamiento)
 		// se alarga demasiado detrás del frente, se patea igual.
 		const TNBeach::ETNBeachMover Mover = TNBeach::GetTurtleMover(Turtle);
@@ -899,10 +898,10 @@ void ATN_BeachStorm::ServerTickFlights(float DeltaSeconds)
 			It.RemoveCurrent();
 			continue;
 		}
-		// Un gusano (fin de la cuenta), un enemigo u otra tortuga se la han llevado en pleno vuelo: la patada acaba aquí. (Se
-		// mira directamente: GetTurtleMover diría StormKick, la reserva de la propia tormenta.)
+		// Un enemigo u otra tortuga se la han llevado en pleno vuelo: la patada acaba aquí. (Se mira directamente:
+		// GetTurtleMover diría StormKick, la reserva de la propia tormenta.)
 		const UTN_CarryComponent* Carry = Turtle->GetCarryComponent();
-		if (ATN_BeachSandWorm::IsBeingEaten(Turtle) || ATN_BeachEnemy::IsTurtleHeld(Turtle) || (Carry && Carry->IsBeingCarried()))
+		if (ATN_BeachEnemy::IsTurtleHeld(Turtle) || (Carry && Carry->IsBeingCarried()))
 		{
 			ToDrop.Add(Turtle);
 			It.RemoveCurrent();

@@ -120,12 +120,6 @@ void UTN_ShellComponent::ServerToggleShell_Implementation()
 			Context.bIsDead ? TEXT(" muerta") : TEXT(""));
 		return;
 	}
-	// En la boca de un gusano de arena (se acabó su ronda) no: el gusano la sigue colocando en su boca y la bola la arrastraría
-	// a la vez.
-	if (TNBeach::GetTurtleMover(Turtle) == TNBeach::ETNBeachMover::Eaten)
-	{
-		return;
-	}
 	// Colgando del pico de una gaviota o en la boca de un lagarto: se escurre. Quien la sujeta la suelta antes de que nazca
 	// la bola (la gaviota, aturdida en bola como al acabar el vuelo, y entonces ya va metida en el caparazón): nunca hay una
 	// bola que un enemigo sigue colocando en su pico o en su boca (TN_BeachStun.h, «quién mueve a la tortuga»).

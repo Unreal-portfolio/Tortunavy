@@ -1266,7 +1266,7 @@ void ATN_BeachGullZone::ServerDive(float Tau, float DeltaSeconds)
 
 void ATN_BeachGullZone::OnHoldAborted(ATortugaCharacter* Turtle)
 {
-	// Se la quitan del pico (red de seguridad, gusano): soltada ya, sin la bola de la caída ni el empujón hacia la salida.
+	// Se la quitan del pico (red de seguridad): soltada ya, sin la bola de la caída ni el empujón hacia la salida.
 	if (!HasAuthority() || !Turtle || Attack.Victim != Turtle || Attack.Result != 1 || bReleased)
 	{
 		return;

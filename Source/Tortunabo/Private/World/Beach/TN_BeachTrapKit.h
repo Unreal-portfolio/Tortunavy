@@ -9,7 +9,6 @@
 #include "ProceduralMeshComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachEnemy.h"
-#include "World/Beach/TN_BeachSandWorm.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_BeachTypes.h"
 #include "../../Art/TN_ArtPieces.h"
@@ -33,7 +32,7 @@ namespace TNBeachTrapKit
 
 	/**
 	 * Tortuga (no otros personajes, como los enemigos) que puede caer en una trampa: viva, fuera del caparazón y sin aturdir,
-	 * que no sujete un enemigo ni se coma un gusano (lo que la mueve manda: una trampa no la relanza por encima). Todo eso se
+	 * que no sujete un enemigo (lo que la mueve manda: una trampa no la relanza por encima). Todo eso se
 	 * ve igual en todas las máquinas (las trampas que el dueño predice lo miran también); las reservas de la tormenta y de la
 	 * red de seguridad son solo del servidor y ya las respetan StunTurtle y TNBeachRideKit::LaunchAsBall.
 	 */
@@ -44,7 +43,7 @@ namespace TNBeachTrapKit
 		{
 			return false;
 		}
-		return !TNBeach::IsTurtleStunned(Turtle) && !ATN_BeachEnemy::IsTurtleHeld(Turtle) && !ATN_BeachSandWorm::IsBeingEaten(Turtle);
+		return !TNBeach::IsTurtleStunned(Turtle) && !ATN_BeachEnemy::IsTurtleHeld(Turtle);
 	}
 
 	/** Hora del servidor sin suavizar (en el servidor, la del mundo). */

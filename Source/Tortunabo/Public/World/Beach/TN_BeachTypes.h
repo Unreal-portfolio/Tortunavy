@@ -71,47 +71,14 @@ enum class ETNBeachElement : uint8
 	Jerrycan           UMETA(DisplayName = "Bidón"),
 	ToySoldiers        UMETA(DisplayName = "Soldaditos de juguete"),
 	// ── Trampas e interacciones ──
-	BarbedWire         UMETA(DisplayName = "Alambre de espino"),
 	Seaweed            UMETA(DisplayName = "Algas que enredan"),
 	WobblyPlatform     UMETA(DisplayName = "Plataforma sobre un hoyo"),
-	BrokenBucket       UMETA(DisplayName = "Cubo roto"),
-	SpadeRamp          UMETA(DisplayName = "Pala: trampolín o puente"),
-	SandDungeon        UMETA(DisplayName = "Castillo de arena con salas"),
-	ShellGate          UMETA(DisplayName = "Puerta de conchas"),
-	/** Almeja o concha gigante que se cierra y atrapa unos segundos; al abrirse, suelta a la tortuga con un saltito. */
-	ClamTrap           UMETA(DisplayName = "Concha que atrapa"),
-	/** Plataforma que se mueve (de lado a lado o arriba y abajo) sobre un hoyo, un charco o entre dos alturas. */
-	MovingPlatform     UMETA(DisplayName = "Plataforma móvil"),
-	/** Catapulta de playa (cuchara, palo de polo y tapón) que lanza hacia el mar a quien se sube. */
-	Catapult           UMETA(DisplayName = "Catapulta"),
-	/** Mina de juguete enterrada (se ve un poco): al pisarla explota y lanza a la tortuga en bola unos metros atrás. */
-	Mine               UMETA(DisplayName = "Mina"),
 	/** Trampolín que rebota hacia arriba y adelante (medusa gorda, colchoneta hinchable o flotador): para atajos y alturas. */
 	Trampoline         UMETA(DisplayName = "Trampolín"),
-	/**
-	 * Fortalezas de arena (ATN_BeachFortress): castillos inmensos que se pueden subir (rampas, escaleras, torres, adarve,
-	 * puertas y patio) con premio en la cima (conchas valiosas, cofre y un lanzador potenciado). Tres tamaños.
-	 */
-	FortressMedium     UMETA(DisplayName = "Fortaleza de arena mediana"),
-	FortressLarge      UMETA(DisplayName = "Fortaleza de arena grande"),
-	FortressColossal   UMETA(DisplayName = "Fortaleza de arena colosal"),
-	/** Cofre como el del lobby: tarda en abrirse, pero da de los mejores objetos y conchas de puntos. */
-	TreasureChest      UMETA(DisplayName = "Cofre"),
 	// ── Enemigos y amenazas ──
-	GiantCrab          UMETA(DisplayName = "Cangrejo gigante con pinza"),
-	SeaUrchin          UMETA(DisplayName = "Erizo de mar"),
-	Lizard             UMETA(DisplayName = "Lagarto que se esconde"),
 	QuadLane           UMETA(DisplayName = "Paso de quads"),
 	GullZone           UMETA(DisplayName = "Zona de gaviotas y pelícanos"),
-	/** Cangrejo ermitaño que se mete en su concha y rueda cuesta abajo por una calle, como una bola de bolos (Extent = largo). */
-	HermitCrab         UMETA(DisplayName = "Cangrejo ermitaño bola"),
-	/** Pulpo que vive en una poza: agarra a quien nada y la lanza fuera, hacia atrás. */
-	PoolOctopus        UMETA(DisplayName = "Pulpo de poza"),
-	/** Enjambre de pulgas de arena: si alcanza a una tortuga, la hace dar saltitos sin control y la marea. */
-	SandFleas          UMETA(DisplayName = "Enjambre de pulgas de arena"),
-	/** Tanque de juguete teledirigido que patrulla un tramo y dispara bolitas de espuma que empujan y marean (Extent = tramo). */
-	ToyTank            UMETA(DisplayName = "Tanque de juguete"),
-	// ── Criaturas y peligros del Excel de diseño (lote #691): al final para no mover los valores de los anteriores ──
+	// ── Criaturas y peligros del Excel de diseño (lote #691) ──
 	/** Charco de arenas movedizas: ralentiza cada vez más y atrapa si se queda dentro; se sale machacando salto (#684). */
 	Quicksand          UMETA(DisplayName = "Arenas movedizas"),
 	/** Cangrejo que persigue, engancha y arrastra a la tortuga una distancia máxima y la suelta derribada (#685). */
@@ -154,30 +121,14 @@ struct FTNBeachElementSpec
 	UPROPERTY(BlueprintReadOnly, Category = "Beach")
 	float SizeScale = 1.f;
 
-	/** Parámetro propio del elemento (p. ej. longitud de un alambre o de un paso de quads, en cm). */
+	/** Parámetro propio del elemento (p. ej. longitud de un paso de quads, en cm). */
 	UPROPERTY(BlueprintReadOnly, Category = "Beach")
 	float Extent = 0.f;
 
-	/** Marcas del elemento (TNBeach::FlagBoosted…). */
-	UPROPERTY(BlueprintReadOnly, Category = "Beach")
-	uint8 Flags = 0;
 };
 
 namespace TNBeach
 {
-	/**
-	 * Lanzador potenciado (catapulta o trampolín de la cima de una fortaleza): lanza mucho más lejos hacia delante que
-	 * los normales, como premio por haber subido.
-	 */
-	constexpr uint8 FlagBoosted = 1 << 0;
-
-	/**
-	 * Cofre de la cima de un castillo (fortaleza, castillo enorme o castillo con salas): da lo mejor de la carrera, con la
-	 * tabla de las últimas para cualquier puesto (ETNRaceLootSource::Summit): subir hasta allí tiene que compensar.
-	 * Va en el bit 2: el 1 quedó libre y el 0 es de FlagBoosted; cada marca nueva toma el siguiente libre.
-	 */
-	constexpr uint8 FlagSummitPrize = 1 << 2;
-
 	/** Veces el tamaño real al que va todo (la tortuga, una cría de ~5 cm, mide ~1,4 m en el juego). */
 	constexpr double Scale = 28.0;
 
@@ -208,8 +159,8 @@ namespace TNBeach
 		{
 			return (E == ETNBeachElement::DragCrab || E == ETNBeachElement::BurrowCrab) ? ETNBeachCategory::Enemy : ETNBeachCategory::Trap;
 		}
-		if (E < ETNBeachElement::BarbedWire) { return ETNBeachCategory::Decor; }
-		if (E < ETNBeachElement::GiantCrab) { return ETNBeachCategory::Trap; }
+		if (E < ETNBeachElement::Seaweed) { return ETNBeachCategory::Decor; }
+		if (E < ETNBeachElement::QuadLane) { return ETNBeachCategory::Trap; }
 		return ETNBeachCategory::Enemy;
 	}
 
@@ -218,31 +169,11 @@ namespace TNBeach
 	{
 		switch (E)
 		{
-		case ETNBeachElement::BarbedWire:     return TEXT("TN_BeachBarbedWire");
 		case ETNBeachElement::Seaweed:        return TEXT("TN_BeachSeaweed");
 		case ETNBeachElement::WobblyPlatform: return TEXT("TN_BeachWobblyPlatform");
-		case ETNBeachElement::BrokenBucket:   return TEXT("TN_BeachBrokenBucket");
-		case ETNBeachElement::SpadeRamp:      return TEXT("TN_BeachSpadeRamp");
-		case ETNBeachElement::SandDungeon:    return TEXT("TN_BeachSandDungeon");
-		case ETNBeachElement::ShellGate:      return TEXT("TN_BeachShellGate");
-		case ETNBeachElement::ClamTrap:       return TEXT("TN_BeachClamTrap");
-		case ETNBeachElement::MovingPlatform: return TEXT("TN_BeachMovingPlatform");
-		case ETNBeachElement::Catapult:       return TEXT("TN_BeachCatapult");
-		case ETNBeachElement::Mine:           return TEXT("TN_BeachMine");
 		case ETNBeachElement::Trampoline:     return TEXT("TN_BeachTrampoline");
-		case ETNBeachElement::FortressMedium:
-		case ETNBeachElement::FortressLarge:
-		case ETNBeachElement::FortressColossal: return TEXT("TN_BeachFortress");
-		case ETNBeachElement::TreasureChest:  return TEXT("TN_BeachChest");
-		case ETNBeachElement::GiantCrab:      return TEXT("TN_BeachGiantCrab");
-		case ETNBeachElement::SeaUrchin:      return TEXT("TN_BeachSeaUrchin");
-		case ETNBeachElement::Lizard:         return TEXT("TN_BeachLizard");
 		case ETNBeachElement::QuadLane:       return TEXT("TN_BeachQuadLane");
 		case ETNBeachElement::GullZone:       return TEXT("TN_BeachGullZone");
-		case ETNBeachElement::HermitCrab:     return TEXT("TN_BeachHermitCrab");
-		case ETNBeachElement::PoolOctopus:    return TEXT("TN_BeachPoolOctopus");
-		case ETNBeachElement::SandFleas:      return TEXT("TN_BeachSandFleas");
-		case ETNBeachElement::ToyTank:        return TEXT("TN_BeachToyTank");
 		case ETNBeachElement::Quicksand:      return TEXT("TN_BeachQuicksand");
 		case ETNBeachElement::DragCrab:       return TEXT("TN_BeachDragCrab");
 		case ETNBeachElement::BurrowCrab:     return TEXT("TN_BeachBurrowCrab");
@@ -257,7 +188,7 @@ namespace TNBeach
 	/**
 	 * Radio de la huella en planta (cm, con SizeScale = 1) que ocupa cada elemento en el suelo: el generador reparte con
 	 * estas huellas (sin solapes y dejando paso) y cada elemento tiene que caber dentro de la suya. Para los que se
-	 * extienden a lo ancho (alambre, paso de quads) es el semiancho a lo largo del camino; su largo va en Extent.
+	 * extienden a lo ancho (paso de quads) es el semiancho a lo largo del camino; su largo va en Extent.
 	 */
 	inline double FootprintRadius(ETNBeachElement E)
 	{
@@ -305,22 +236,9 @@ namespace TNBeach
 		case ETNBeachElement::Cuttlebone:        return 250.0;
 		case ETNBeachElement::RubberDuck:        return 200.0;
 		case ETNBeachElement::GullFeather:       return 350.0;
-		case ETNBeachElement::BarbedWire:        return 250.0;
 		case ETNBeachElement::Seaweed:           return 700.0;
 		case ETNBeachElement::WobblyPlatform:    return 900.0;
-		case ETNBeachElement::BrokenBucket:      return 450.0;
-		case ETNBeachElement::SpadeRamp:         return 700.0;
-		case ETNBeachElement::SandDungeon:       return 4000.0;
-		case ETNBeachElement::ShellGate:         return 600.0;
-		case ETNBeachElement::ClamTrap:          return 900.0;
-		case ETNBeachElement::MovingPlatform:    return 1200.0;
-		case ETNBeachElement::Catapult:          return 900.0;
-		case ETNBeachElement::Mine:              return 350.0;
 		case ETNBeachElement::Trampoline:        return 700.0;
-		case ETNBeachElement::FortressMedium:    return 2200.0;
-		case ETNBeachElement::FortressLarge:     return 3400.0;
-		case ETNBeachElement::FortressColossal:  return 5000.0;
-		case ETNBeachElement::TreasureChest:     return 350.0;
 		case ETNBeachElement::Sandbags:          return 1100.0;
 		case ETNBeachElement::AmmoCrate:         return 700.0;
 		case ETNBeachElement::TankTrap:          return 800.0;
@@ -328,15 +246,8 @@ namespace TNBeach
 		case ETNBeachElement::CamoNet:           return 1500.0;
 		case ETNBeachElement::Jerrycan:          return 500.0;
 		case ETNBeachElement::ToySoldiers:       return 600.0;
-		case ETNBeachElement::GiantCrab:         return 2500.0;
-		case ETNBeachElement::SeaUrchin:         return 1200.0;
-		case ETNBeachElement::Lizard:            return 1500.0;
 		case ETNBeachElement::QuadLane:          return 1200.0;
 		case ETNBeachElement::GullZone:          return 3000.0;
-		case ETNBeachElement::HermitCrab:        return 900.0;
-		case ETNBeachElement::PoolOctopus:       return 500.0;
-		case ETNBeachElement::SandFleas:         return 1200.0;
-		case ETNBeachElement::ToyTank:           return 900.0;
 		case ETNBeachElement::Quicksand:         return 600.0;
 		case ETNBeachElement::DragCrab:          return 900.0;
 		case ETNBeachElement::BurrowCrab:        return 450.0;

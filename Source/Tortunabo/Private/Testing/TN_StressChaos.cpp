@@ -1,10 +1,8 @@
 #include "Testing/TN_StressChaos.h"
 
-#include "Core/TN_InventoryTypes.h"
 #include "Core/TN_Log.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
-#include "Engine/DataTable.h"
 #include "Engine/GameInstance.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/LocalPlayer.h"
@@ -26,8 +24,7 @@
 #include "Testing/TN_TestReport.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachTypes.h"
-#include "World/TN_InkProjectile.h"
-#include "World/TN_ThrowableItemActor.h"
+#include "TN_StressEnemies.h"
 
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
@@ -42,7 +39,6 @@ namespace TNChaosDetail
 	/** Cada cuánto se mide lo lento (memoria, VRAM, red). */
 	constexpr double SlowSampleSeconds = 0.5;
 	constexpr int32 TopTickingClasses = 20;
-	const TCHAR* const CatalogPath = TEXT("/Game/Blueprints/Gameplay/Items/DT_Items.DT_Items");
 
 	double ToMB(uint64 Bytes) { return static_cast<double>(Bytes) / (1024.0 * 1024.0); }
 
@@ -240,24 +236,9 @@ bool UTN_StressChaosSubsystem::StartChaos(float PhaseSeconds, float InWarmup, fl
 	if (!bClientOnly)
 	{
 		EnsureLocalPlayers();
-		Catalog = LoadObject<UDataTable>(nullptr, TNChaosDetail::CatalogPath);
-		CatalogThrowables.Reset();
-		if (Catalog)
-		{
-			for (const TPair<FName, uint8*>& Row : Catalog->GetRowMap())
-			{
-				const FTN_InventoryItem* Item = reinterpret_cast<const FTN_InventoryItem*>(Row.Value);
-				const bool bThrowable = Item->UseType == ETN_ItemUseType::Throwable && Item->ThrowableData.ActorClass;
-				const bool bInk = Item->UseType == ETN_ItemUseType::InkThrower && Item->InkData.ProjectileClass;
-				if (bThrowable || bInk)
-				{
-					CatalogThrowables.Add(Row.Key);
-				}
-			}
-		}
 	}
-	UE_LOG(LogTortunabo, Log, TEXT("[Estrés] caos (%s): %d fases de %.0f s, espera %.0f s, enemigos x%.1f, %d lanzables de DT_Items."),
-		bClientOnly ? TEXT("cliente") : TEXT("anfitrión"), Phases.Num(), Config.PhaseSeconds, WarmupSeconds, Config.EnemyScale, CatalogThrowables.Num());
+	UE_LOG(LogTortunabo, Log, TEXT("[Estrés] caos (%s): %d fases de %.0f s, espera %.0f s, enemigos x%.1f."),
+		bClientOnly ? TEXT("cliente") : TEXT("anfitrión"), Phases.Num(), Config.PhaseSeconds, WarmupSeconds, Config.EnemyScale);
 	return true;
 #endif
 }
@@ -366,7 +347,7 @@ FVector UTN_StressChaosSubsystem::TurtlesCenter() const
 	return Count > 0 ? Sum / Count : FVector::ZeroVector;
 }
 
-int32 UTN_StressChaosSubsystem::SpawnEnemies(int32 Crabs, int32 Gulls, int32 Tanks)
+int32 UTN_StressChaosSubsystem::SpawnEnemies(int32 Crabs, int32 Gulls, int32 Patrols)
 {
 	UWorld* World = GetWorld();
 	const FVector Center = TurtlesCenter();
@@ -388,16 +369,23 @@ int32 UTN_StressChaosSubsystem::SpawnEnemies(int32 Crabs, int32 Gulls, int32 Tan
 	};
 	for (int32 Index = 0; Index < Crabs; ++Index)
 	{
-		const bool bHermit = Index % 2 == 1;
-		Spawn(bHermit ? ETNBeachElement::HermitCrab : ETNBeachElement::GiantCrab, bHermit ? 3000.f : 0.f);
+		Spawn(Index % 2 == 1 ? ETNBeachElement::BurrowCrab : ETNBeachElement::DragCrab, 0.f);
 	}
 	for (int32 Index = 0; Index < Gulls; ++Index)
 	{
 		Spawn(ETNBeachElement::GullZone, 0.f);
 	}
-	for (int32 Index = 0; Index < Tanks; ++Index)
+	FActorSpawnParameters PatrolParams;
+	PatrolParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	const TSubclassOf<ATN_CrabActor> PatrolClass = TNStressEnemies::PatrolCrabClass();
+	for (int32 Index = 0; Index < Patrols; ++Index)
 	{
-		Spawn(ETNBeachElement::ToyTank, 2400.f);
+		const FVector At = PickSpot(Center, 800.f, 4000.f);
+		if (ATN_CrabActor* Crab = World->SpawnActor<ATN_CrabActor>(PatrolClass, At, FRotator(0.0, Stream.FRandRange(0.f, 360.f), 0.0), PatrolParams))
+		{
+			Spawned.Add(Crab);
+			++Made;
+		}
 	}
 	return Made;
 }
@@ -413,12 +401,12 @@ void UTN_StressChaosSubsystem::BeginPhase(int32 Index)
 	Phase.CorrectionsAtStart = Sink.GetNetCorrectionCount();
 	if (!bClientOnly)
 	{
-		Phase.Created += SpawnEnemies(Phase.Plan.Crabs, Phase.Plan.Gulls, Phase.Plan.Tanks);
+		Phase.Created += SpawnEnemies(Phase.Plan.Crabs, Phase.Plan.Gulls, Phase.Plan.Patrols);
 	}
 	// Lo que estrena la fase empieza ya: se cortan las tareas que se pueden dejar (andar, objetos, bola sin empezar).
 	for (FDriver& Driver : Drivers)
 	{
-		const bool bInterruptible = Driver.Task == TNChaos::ETask::Wander || Driver.Task == TNChaos::ETask::Items;
+		const bool bInterruptible = Driver.Task == TNChaos::ETask::Wander;
 		if (bInterruptible && !Driver.bBait)
 		{
 			Driver.TaskClock = 1000.f;
@@ -642,8 +630,6 @@ TSharedRef<FJsonObject> UTN_StressChaosSubsystem::BuildReport(const TCHAR* Reaso
 		Item->SetNumberField(TEXT("grabs"), A.Grabs);
 		Item->SetNumberField(TEXT("throws"), A.Throws);
 		Item->SetNumberField(TEXT("ball_entries"), A.BallEntries);
-		Item->SetNumberField(TEXT("items_given"), A.ItemsGiven);
-		Item->SetNumberField(TEXT("items_used"), A.ItemsUsed);
 		TArray<TSharedPtr<FJsonValue>> Top;
 		for (const TPair<FString, int32>& Pair : Phase.TopTicking)
 		{

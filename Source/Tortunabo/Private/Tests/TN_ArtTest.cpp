@@ -119,7 +119,7 @@ bool FTNArtSlotTableTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Parte en minúscula"), TNArt::IsValidSlotName(TEXT("Lobby.castle")));
 	TestFalse(TEXT("Parte vacía"), TNArt::IsValidSlotName(TEXT("Lobby..Castle")));
 	TestFalse(TEXT("Con guion bajo"), TNArt::IsValidSlotName(TEXT("Lobby.Castle_Tower")));
-	TestEqual(TEXT("Zona"), TNArt::ZoneOf(TEXT("Beach.Fortress.Wall")), FString(TEXT("Beach")));
+	TestEqual(TEXT("Zona"), TNArt::ZoneOf(TEXT("Beach.Gull.Body")), FString(TEXT("Beach")));
 	return true;
 }
 

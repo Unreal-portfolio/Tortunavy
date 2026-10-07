@@ -8,8 +8,8 @@
 #include "Art/TN_Art.h"
 
 /**
- * Utilidades de motor de los enemigos de la ronda 3 (ermitaño, pulpo, pulgas y tanque; las mallas están en
- * TN_BeachCritterMeshes.h y las cachés, materiales y partículas en TN_BeachEnemyKit.h). Las piezas se crean con
+ * Utilidades de motor de las piezas animadas de los enemigos de la playa (las cachés, materiales y partículas están en
+ * TN_BeachEnemyKit.h). Las piezas se crean con
  * RF_Transient | RF_DuplicateTransient (la copia del PIE no las arrastra) y sin colisión.
  */
 namespace TNBeachCritterKit

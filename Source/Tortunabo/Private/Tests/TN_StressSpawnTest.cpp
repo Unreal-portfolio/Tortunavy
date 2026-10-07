@@ -16,7 +16,7 @@ bool FTNStressSpawnBudgetTest::RunTest(const FString& Parameters)
 	using namespace TNStress;
 
 	TestTrue(TEXT("Cangrejos, gaviotas y tanques: repartidos"),
-		IsSpreadGroup(EGroup::Crabs) && IsSpreadGroup(EGroup::Gulls) && IsSpreadGroup(EGroup::Tanks));
+		IsSpreadGroup(EGroup::Crabs) && IsSpreadGroup(EGroup::Gulls) && IsSpreadGroup(EGroup::Patrols));
 	TestFalse(TEXT("Referencia: nada que crear"), IsSpreadGroup(EGroup::Baseline));
 
 	TestTrue(TEXT("El primero del fotograma siempre (aunque el presupuesto ya no dé)"), ShouldSpawnMore(10, 0, 50.0));

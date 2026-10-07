@@ -9,7 +9,6 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "GameFramework/PlayerController.h"
-#include "Components/PostProcessComponent.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Core/TN_CosmeticLook.h"
 #include "Art/TN_TurtleArt.h"
@@ -54,7 +53,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "World/Beach/TN_BeachTrapStatusComponent.h"
-#include "TN_InkScreen.h"
 
 // ── CVar de debug ─────────────────────────────────────────────────────────────
 // Activar en consola con: TN.Debug.Interaction 1
@@ -178,14 +176,6 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	HelmetMeshComp->SetHiddenInGame(true);
 
 	// Emote sounds: assign in BP Class Defaults. Array vacío por defecto.
-
-	// Overlay de tinta: PostProcess local, desactivado por defecto.
-	// bUnbound=true → afecta toda la pantalla del cliente local.
-	// Se activa solo en IsLocallyControlled() — los demás clientes nunca lo ven.
-	InkPostProcess = CreateDefaultSubobject<UPostProcessComponent>(TEXT("InkPostProcess"));
-	InkPostProcess->SetupAttachment(RootComponent);
-	InkPostProcess->bEnabled = false;
-	InkPostProcess->bUnbound = true;
 
 	// Make capsule AND mesh invisible to camera traces → the spring arm won't collide
 	// with other players. Each player's own pawn is already auto-ignored.
@@ -968,21 +958,6 @@ void ATortugaCharacter::ReapplyInputMapping()
 	ApplyInputMappingIfLocal();
 }
 
-void ATortugaCharacter::RemoveBigHeadEffect()
-{
-	if (!bBigHead) { return; }
-
-	GetWorldTimerManager().ClearTimer(BigHeadTimerHandle);
-	bBigHead = false;
-	ApplyBigHeadVisual(false);
-
-	// Al acabar la cabeza gorda, mareo (#2).
-	if (HasAuthority() && MareoDurationSeconds > 0.f)
-	{
-		ApplyMareoEffect(MareoDurationSeconds);
-	}
-}
-
 void ATortugaCharacter::ApplyMareoEffect(float Duration)
 {
 	// Muerta no se marea: el tope sobreviviría a la reaparición en el mismo actor (SetDeadVisual lo quita al morir).
@@ -1046,34 +1021,6 @@ void ATortugaCharacter::ApplyMareoLocalState(bool bOn)
 	{
 		SC->ClearSpeedCap(TNMovementLimits::MareoSource());
 	}
-}
-
-// ── Tinta de calamar (#13) ─────────────────────────────────────────────────────
-
-void ATortugaCharacter::ApplyInkEffect(float Duration)
-{
-	if (!IsLocallyControlled()) { return; }
-	// El BP trae el DefaultPostProcessMaterial del motor, que no tapa nada: entonces, manchas de tinta en pantalla (#787).
-	if (!InkPostProcess || TNInkScreen::NeedsFallback(InkOverlayMaterial))
-	{
-		TNInkScreen::Show(Cast<APlayerController>(GetController()), Duration);
-		return;
-	}
-
-	// Registrar el material en el PostProcess local y activarlo.
-	// AddOrUpdateBlendable garantiza que no se acumulan entradas duplicadas
-	// si ApplyInkEffect se llama varias veces antes de que expire el timer.
-	InkPostProcess->AddOrUpdateBlendable(InkOverlayMaterial, 1.f);
-	InkPostProcess->bEnabled = true;
-
-	GetWorldTimerManager().ClearTimer(InkEffectTimerHandle);
-	FTimerDelegate Del = FTimerDelegate::CreateUObject(this, &ATortugaCharacter::ClearInkEffect);
-	GetWorldTimerManager().SetTimer(InkEffectTimerHandle, Del, Duration, false);
-}
-
-void ATortugaCharacter::ClearInkEffect()
-{
-	if (InkPostProcess) { InkPostProcess->bEnabled = false; }
 }
 
 void ATortugaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -1686,8 +1633,7 @@ void ATortugaCharacter::TickShellVisual(float DeltaTime)
 	SetAnimBoneScale(Brazo1Bone, Limb);
 	SetAnimBoneScale(Brazo2Bone, Limb);
 	SetAnimBoneScale(ColaBone, Limb);
-	const float HeadBase = bBigHead ? BigHeadScale : 1.f;
-	SetAnimBoneScale(CabezaBone, FVector(HeadBase * (bShellVisualApplied ? LimbScale : 1.f)));
+	SetAnimBoneScale(CabezaBone, FVector(bShellVisualApplied ? LimbScale : 1.f));
 }
 
 // ── Replication ────────────────────────────────────────────────────────────────
@@ -1706,8 +1652,6 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// DBNO revive state
 	DOREPLIFETIME(ATortugaCharacter, bIsReviving);
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReviveProgress, COND_OwnerOnly);
-	// BigHead consumable
-	DOREPLIFETIME(ATortugaCharacter, bBigHead);
 	DOREPLIFETIME(ATortugaCharacter, bMareo);
 	// Dive
 	DOREPLIFETIME(ATortugaCharacter, bIsDiving);
@@ -1765,24 +1709,6 @@ void ATortugaCharacter::GetViewRelativeToBody(float& OutYaw, float& OutPitch) co
 	}
 	OutYaw = TNHeadLook::DecodeYaw(ReplicatedViewYaw);
 	OutPitch = static_cast<float>(FRotator::NormalizeAxis(FRotator::DecompressAxisFromShort(GetRemoteViewPitch())));
-}
-
-// ── Big Head Consumable ───────────────────────────────────────────────────────
-
-void ATortugaCharacter::OnRep_bBigHead()
-{
-	ApplyBigHeadVisual(bBigHead);
-}
-
-void ATortugaCharacter::ApplyBigHeadVisual(bool bBig)
-{
-	if (CabezaBone == NAME_None)
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[BigHead] CabezaBone not resolved on %s"), *GetNameSafe(this));
-		return;
-	}
-	const float S = bBig ? BigHeadScale : 1.f;
-	SetAnimBoneScale(CabezaBone, FVector(S));
 }
 
 // ── Jump Procedural Animation ─────────────────────────────────────────────────

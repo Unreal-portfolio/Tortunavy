@@ -42,7 +42,7 @@ class ATortugaCharacter;
  * detrás del frente), otra patada visible la lleva desde donde está; solo sin bola posible, o tras varias que no llegan,
  * se la pone en su sitio sin vuelo. Mientras vuela la tormenta se la reserva (TNBeach::ClaimTurtle: ni la red de
  * seguridad, ni los enemigos, ni las trampas la tocan) y al aterrizar tiene KickGraceSeconds sin patadas. No se patea a
- * quien mueve otra cosa (enemigo, gusano, brazos, derribo, bola de aturdida, lanzamiento, red de seguridad) ni a quien
+ * quien mueve otra cosa (enemigo, brazos, derribo, bola de aturdida, lanzamiento, red de seguridad) ni a quien
  * está protegida por el pez globo (se la vuelve a mirar en un segundo). Dentro, la imagen se cierra (niebla
  * y tinte de arena) y la tortuga tose (UTN_StormCoughComponent).
  *

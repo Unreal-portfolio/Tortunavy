@@ -74,8 +74,10 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Rock es un elemento"), ElementFromName(TEXT("Rock"), Element) && Element == ETNBeachElement::Rock);
 	TestFalse(TEXT("Dragon no es un elemento"), ElementFromName(TEXT("Dragon"), Element));
 	TestFalse(TEXT("Count no es un elemento"), ElementFromName(TEXT("Count"), Element));
-	TestTrue(TEXT("Alambre de obstáculo → elemento replicado"), SpawnOf(TEXT("obstacle"), TEXT("BarbedWire"), Element) == ESpawn::BeachElement);
-	TestTrue(TEXT("Alambre como decorado → sin pieza"), SpawnOf(TEXT("decor"), TEXT("BarbedWire"), Element) == ESpawn::Unsupported);
+	TestTrue(TEXT("Algas de obstáculo → elemento replicado"), SpawnOf(TEXT("obstacle"), TEXT("Seaweed"), Element) == ESpawn::BeachElement);
+	TestTrue(TEXT("Algas como decorado → sin pieza"), SpawnOf(TEXT("decor"), TEXT("Seaweed"), Element) == ESpawn::Unsupported);
+	TestTrue(TEXT("Alambre (fuera del juego) → sin pieza"), SpawnOf(TEXT("obstacle"), TEXT("BarbedWire"), Element) == ESpawn::Unsupported);
+	TestTrue(TEXT("Concha de puntos (fuera del juego) → sin pieza"), SpawnOf(TEXT("loot"), TEXT("ScoreShell"), Element) == ESpawn::Unsupported);
 	TestTrue(TEXT("Pasarela de mecánica → decorado local"), SpawnOf(TEXT("mechanic"), TEXT("Boardwalk"), Element) == ESpawn::Decor);
 	TestTrue(TEXT("Rebuscable de botín → su actor"), SpawnOf(TEXT("loot"), TEXT("SearchSpot"), Element) == ESpawn::SearchSpot);
 	TestTrue(TEXT("Géiser (fuera del juego) → sin pieza"), SpawnOf(TEXT("mechanic"), TEXT("Geyser"), Element) == ESpawn::Unsupported);
@@ -106,7 +108,7 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Se lee"), ParseBlock(*Fixture, Parsed) && Parsed.bHasBlock);
 	TestEqual(TEXT("Una sin location_uu, inválida"), Parsed.Invalid, 1);
 	TestEqual(TEXT("Una suprimida"), Parsed.Suppressed, 1);
-	TestEqual(TEXT("18 automáticas y 1 manual"), Parsed.Placements.Num(), 19);
+	TestEqual(TEXT("16 automáticas y 1 manual"), Parsed.Placements.Num(), 17);
 	TestEqual(TEXT("Dos sin pieza (puzle pendiente y kind desconocido)"), CountSpawn(Parsed, ESpawn::Unsupported), 2);
 	const FPlacement* Manual = Parsed.Placements.FindByPredicate([](const FPlacement& P) { return P.Source == TEXT("manual"); });
 	TestTrue(TEXT("La manual, con id inventado y su elemento"), Manual && Manual->Id == TEXT("manual-0") && Manual->Element == ETNBeachElement::DragCrab);
@@ -116,7 +118,7 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	Stale->GetObjectField(TEXT("placements"))->SetBoolField(TEXT("stale"), true);
 	FParseResult StaleParsed;
 	ParseBlock(*Stale, StaleParsed);
-	TestTrue(TEXT("Desfasado: solo la manual"), StaleParsed.bStale && StaleParsed.Placements.Num() == 1 && StaleParsed.SkippedStale == 20);
+	TestTrue(TEXT("Desfasado: solo la manual"), StaleParsed.bStale && StaleParsed.Placements.Num() == 1 && StaleParsed.SkippedStale == 18);
 
 	// Sin bloque no es un error; un bloque que no es un objeto, sí.
 	FJsonObject Empty;
@@ -131,7 +133,7 @@ bool FTNMapPlacementsParseTest::RunTest(const FString& Parameters)
 	{
 		FParseResult C01Parsed;
 		TestTrue(TEXT("C01 se lee"), ParseBlock(*C01, C01Parsed) && C01Parsed.bHasBlock && !C01Parsed.bStale);
-		TestEqual(TEXT("C01: 262 colocaciones"), C01Parsed.Placements.Num(), 262);
+		TestEqual(TEXT("C01: 170 colocaciones"), C01Parsed.Placements.Num(), 170);
 		TestEqual(TEXT("C01: ninguna sin pieza"), CountSpawn(C01Parsed, ESpawn::Unsupported), 0);
 		TestEqual(TEXT("C01: ninguna inválida"), C01Parsed.Invalid, 0);
 		const int32 WithoutProgress = C01Parsed.Placements.FilterByPredicate([](const FPlacement& P) { return P.ProgressM < 0.0; }).Num();
@@ -176,14 +178,13 @@ bool FTNMapPlacementsSpawnTest::RunTest(const FString& Parameters)
 	const FTNMapPlacementStats& Stats = Spawner->GetStats();
 
 	// Elementos de la playa (replicados).
-	TestEqual(TEXT("Erizo"), Stats.Actors(TEXT("TN_BeachSeaUrchin")), 1);
-	TestEqual(TEXT("Alambre"), Stats.Actors(TEXT("TN_BeachBarbedWire")), 1);
+	TestEqual(TEXT("Erizo enterrado"), Stats.Actors(TEXT("TN_BeachUrchinSpikes")), 1);
+	TestEqual(TEXT("Algas"), Stats.Actors(TEXT("TN_BeachSeaweed")), 1);
 	TestEqual(TEXT("Trampolines (mecánica y el del camino que se rompe)"), Stats.Actors(TEXT("TN_BeachTrampoline")), 2);
 	TestEqual(TEXT("Plataformas tambaleantes"), Stats.Actors(TEXT("TN_BeachWobblyPlatform")), 5);
 	TestEqual(TEXT("Cangrejo arrastrador (manual)"), Stats.Actors(TEXT("TN_BeachDragCrab")), 1);
-	TestEqual(TEXT("Cangrejo tapado por el nivel"), Stats.Actors(TEXT("TN_BeachGiantCrab")), 0);
+	TestEqual(TEXT("Cangrejo tapado por el nivel"), Stats.Actors(TEXT("TN_BeachBurrowCrab")), 0);
 	// Resto de piezas.
-	TestEqual(TEXT("Conchas de puntos"), Stats.Actors(TEXT("TN_ScorePickup")), 2);
 	TestEqual(TEXT("Rebuscable"), Stats.Actors(TEXT("TN_ProcSearchSpot")), 1);
 	TestEqual(TEXT("Placas"), Stats.Actors(TEXT("TN_PressurePlate")), 3);
 	TestEqual(TEXT("Gestor de las placas"), Stats.Actors(TEXT("TN_PressurePlateGroupManager")), 1);
@@ -281,9 +282,7 @@ bool FTNMapPlacementsC01Test::RunTest(const FString& Parameters)
 	TestEqual(TEXT("C01: nada tapado (sin nada puesto a mano)"), Stats.SkippedByLevel, 0);
 	TestEqual(TEXT("C01: 109 piezas de decorado"), Stats.DecorItems, 109);
 	TestEqual(TEXT("C01: 49 matas"), Stats.VegetationInstances, 49);
-	TestEqual(TEXT("C01: 75 conchas"), Stats.Actors(TEXT("TN_ScorePickup")), 75);
 	TestEqual(TEXT("C01: 8 plataformas que se rompen"), Stats.Actors(TEXT("TN_BreakablePlatform")), 8);
-	TestEqual(TEXT("C01: 8 alambres"), Stats.Actors(TEXT("TN_BeachBarbedWire")), 8);
 	// La cota sale del terreno, no del manifest: casi todas las trazas dan con él (alguna del río puede quedar fuera).
 	const int32 Traces = Stats.GroundHits + Stats.GroundMisses;
 	AddInfo(FString::Printf(TEXT("C01: cota del terreno en %d de %d trazas."), Stats.GroundHits, Traces));

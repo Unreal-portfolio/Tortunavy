@@ -7,7 +7,7 @@
 
 /**
  * Mallas low-poly de caras planas de los enemigos y la tormenta de la playa (solo geometría, sin motor): el cangrejo
- * gigante por piezas, el erizo, las paletas del lagarto (sobre el cuadrúpedo de la fauna), el quad con su piloto, los
+ * por piezas (el arrastrador y el subterráneo), el quad con su piloto, los
  * trastos que vuela la tormenta, las piernas de los bañistas, la cagada y su mancha. Todo a TNBeach::Scale veces su
  * tamaño real salvo lo que se construye con las medidas de la fauna (se escala al usarlo). Colores en sRGB.
  */
@@ -233,15 +233,6 @@ namespace TNBeachMeshes
 		TNProcMesh::TNProcAddCylinder(M, Ankle, Foot, H * 0.1, H * 0.02, 4, L.Tip, true);
 	}
 
-	/** Brazo de la pinza grande: del hombro al codo. */
-	inline void BuildCrabBigArm(FTNProcMeshBuffers& M, const FCrabLook& L, const FCrabRig& R)
-	{
-		const double H = CrabH * TNBeach::Scale;
-		TNFauna::TNFaunaBlob(M, FVector::ZeroVector, FVector(H * 0.3, H * 0.3, H * 0.3), L.Big * 0.9f, L.Big * 0.8f, 6, 3);
-		M.AddBeam(FVector::ZeroVector, R.BigElbow, H * 0.2, L.Big * 0.9f);
-		TNFauna::TNFaunaBlob(M, R.BigElbow, FVector(H * 0.3, H * 0.28, H * 0.3), L.Big * 0.95f, L.Big * 0.85f, 6, 3);
-	}
-
 	/** Mano de la pinza grande (pivote en el codo): palma enorme, dedo fijo con dientes. */
 	inline void BuildCrabBigHand(FTNProcMeshBuffers& M, const FCrabLook& L)
 	{
@@ -272,173 +263,6 @@ namespace TNBeachMeshes
 			const FVector At = FMath::Lerp(FVector::ZeroVector, Mid, 0.4 + 0.3 * k) - FVector(0.0, 0.0, H * 0.2);
 			M.AddBox(At, FVector::ForwardVector, FVector(H * 0.05, H * 0.08, H * 0.06), Rgb(0.99f, 0.98f, 0.94f));
 		}
-	}
-
-	/** Pinza pequeña de la izquierda (pivote en el hombro). */
-	inline void BuildCrabSmallClaw(FTNProcMeshBuffers& M, const FCrabLook& L)
-	{
-		const double S = TNBeach::Scale;
-		const double W = CrabW * S, D = CrabD * S, H = CrabH * S;
-		const FVector Elbow(D * 0.28, -W * 0.08, H * 0.2);
-		M.AddBeam(FVector::ZeroVector, Elbow, H * 0.11, L.Small * 0.9f);
-		const FVector Palm = Elbow + FVector(D * 0.3, 0.0, H * 0.05);
-		TNFauna::TNFaunaBlob(M, Palm, FVector(D * 0.28, H * 0.22, H * 0.28), L.Small, L.Small * 0.85f, 6, 3);
-		const FVector Finger = Palm + FVector(D * 0.24, 0.0, 0.0);
-		TNProcMesh::TNProcAddCylinder(M, Finger + FVector(0.0, 0.0, H * 0.06), Finger + FVector(D * 0.3, 0.0, H * 0.16), H * 0.11, H * 0.02, 4, L.Tip, true);
-		TNProcMesh::TNProcAddCylinder(M, Finger - FVector(0.0, 0.0, H * 0.06), Finger + FVector(D * 0.28, 0.0, -H * 0.12), H * 0.09, H * 0.02, 4, L.Tip * 0.92f, true);
-	}
-
-	// ─────────────────────────────────────────────────────────────────────────
-	// Erizo de mar
-	// ─────────────────────────────────────────────────────────────────────────
-
-	/** Medidas reales (cm): radio del cuerpo y largo de las púas. */
-	constexpr double UrchinBodyR = 3.0;
-	constexpr double UrchinSpike = 2.4;
-
-	struct FUrchinLook
-	{
-		FLinearColor Body = Rgb(0.34f, 0.12f, 0.4f);
-		FLinearColor Spike = Rgb(0.56f, 0.2f, 0.62f);
-		FLinearColor Tip = Rgb(0.9f, 0.7f, 0.95f);
-	};
-
-	/** Violeta, negro, rojo y verde oliva. */
-	inline FUrchinLook UrchinPalette(int32 Index)
-	{
-		FUrchinLook L;
-		switch (((Index % 4) + 4) % 4)
-		{
-		case 1: L.Body = Rgb(0.1f, 0.08f, 0.12f); L.Spike = Rgb(0.2f, 0.16f, 0.26f); L.Tip = Rgb(0.62f, 0.5f, 0.75f); break;
-		case 2: L.Body = Rgb(0.66f, 0.12f, 0.1f); L.Spike = Rgb(0.86f, 0.26f, 0.2f); L.Tip = Rgb(1.f, 0.72f, 0.5f); break;
-		case 3: L.Body = Rgb(0.3f, 0.34f, 0.14f); L.Spike = Rgb(0.46f, 0.5f, 0.2f); L.Tip = Rgb(0.9f, 0.9f, 0.6f); break;
-		default: break;
-		}
-		return L;
-	}
-
-	/** Radio del cuerpo con las púas medias (cm de juego): la altura del centro al rodar. */
-	inline double UrchinRollRadius()
-	{
-		return (UrchinBodyR + UrchinSpike * 0.62) * TNBeach::Scale;
-	}
-
-	/** Erizo centrado en su origen: bola con 72 púas repartidas en espiral (dos tramos, la punta más clara). */
-	inline void BuildUrchin(FTNProcMeshBuffers& M, const FUrchinLook& L, uint32 Seed)
-	{
-		const double S = TNBeach::Scale;
-		const double R = UrchinBodyR * S;
-		const double Sp = UrchinSpike * S;
-		TNFauna::TNFaunaBlob(M, FVector::ZeroVector, FVector(R, R, R * 0.94), L.Body, L.Body * 0.85f, 10, 6);
-		constexpr int32 NumSpikes = 72;
-		for (int32 i = 0; i < NumSpikes; ++i)
-		{
-			const double Y = 1.0 - 2.0 * (i + 0.5) / NumSpikes;
-			const double Ring = FMath::Sqrt(FMath::Max(0.0, 1.0 - Y * Y));
-			const double Phi = i * 2.39996322972865332;
-			const FVector Dir(Ring * FMath::Cos(Phi), Ring * FMath::Sin(Phi), Y);
-			const double Len = Sp * (0.75 + 0.35 * (0.5 + 0.5 * TNProcMesh::TNProcHashNoise(i, 3, Seed)));
-			const FVector Base = Dir * (R * 0.9);
-			const FVector Tip = Dir * (R + Len);
-			const FVector Knee = FMath::Lerp(Base, Tip, 0.78);
-			TNProcMesh::TNProcAddCylinder(M, Base, Knee, R * 0.1, R * 0.035, 4, L.Spike, false);
-			TNProcMesh::TNProcAddCylinder(M, Knee, Tip, R * 0.035, R * 0.008, 4, L.Tip, false);
-		}
-	}
-
-	// ─────────────────────────────────────────────────────────────────────────
-	// Lagarto (sobre el cuadrúpedo de la fauna; se escala a TNBeach::Scale al usarlo)
-	// ─────────────────────────────────────────────────────────────────────────
-
-	/** Iguana verde con cresta, turquesa de cabeza amarilla, ocelado de arena con manchas azules y naranja de collar. */
-	inline TNFauna::FTNFaunaQuadLook LizardLook(int32 Index)
-	{
-		TNFauna::FTNFaunaQuadLook L;
-		L.bSprawl = true;
-		L.Len = 10.0; L.Width = 4.4; L.Girth = 3.5; L.LegF = 7.5; L.LegB = 8.5; L.LegR = 1.25; L.Head = 4.3; L.Snout = 3.3;
-		L.EarKind = 3; L.Tail = 27.0; L.TailR = 1.9;
-		switch (((Index % 4) + 4) % 4)
-		{
-		case 0:
-			L.bCrest = true;
-			L.Fur = Rgb(0.36f, 0.66f, 0.26f); L.Belly = Rgb(0.86f, 0.86f, 0.5f); L.HeadC = Rgb(0.42f, 0.7f, 0.3f); L.SnoutC = L.HeadC;
-			L.Nose = Rgb(0.12f, 0.16f, 0.08f); L.LegC = Rgb(0.3f, 0.58f, 0.22f); L.Paw = Rgb(0.2f, 0.42f, 0.16f); L.TailC = Rgb(0.34f, 0.62f, 0.24f);
-			L.TailTip = Rgb(0.22f, 0.4f, 0.16f); L.CrestC = Rgb(0.25f, 0.5f, 0.2f);
-			break;
-		case 1:
-			L.Fur = Rgb(0.1f, 0.72f, 0.62f); L.Belly = Rgb(0.96f, 0.86f, 0.36f); L.HeadC = Rgb(1.f, 0.76f, 0.16f); L.SnoutC = L.HeadC;
-			L.Nose = Rgb(0.2f, 0.15f, 0.05f); L.LegC = Rgb(0.1f, 0.6f, 0.52f); L.Paw = Rgb(0.08f, 0.45f, 0.4f); L.TailC = Rgb(0.1f, 0.66f, 0.58f);
-			L.TailTip = Rgb(0.05f, 0.36f, 0.36f);
-			break;
-		case 2:
-			L.Fur = Rgb(0.66f, 0.56f, 0.36f); L.Belly = Rgb(0.95f, 0.88f, 0.7f); L.HeadC = Rgb(0.62f, 0.52f, 0.32f); L.SnoutC = Rgb(0.7f, 0.6f, 0.4f);
-			L.Nose = Rgb(0.2f, 0.16f, 0.1f); L.LegC = Rgb(0.58f, 0.48f, 0.3f); L.Paw = Rgb(0.4f, 0.32f, 0.2f); L.TailC = Rgb(0.62f, 0.52f, 0.34f);
-			L.TailTip = Rgb(0.36f, 0.3f, 0.2f);
-			break;
-		default:
-			L.Fur = Rgb(0.92f, 0.5f, 0.18f); L.Belly = Rgb(0.98f, 0.86f, 0.56f); L.HeadC = Rgb(0.96f, 0.8f, 0.22f); L.SnoutC = L.HeadC;
-			L.Nose = Rgb(0.25f, 0.12f, 0.06f); L.LegC = Rgb(0.8f, 0.42f, 0.15f); L.Paw = Rgb(0.5f, 0.25f, 0.1f); L.TailC = Rgb(0.88f, 0.46f, 0.16f);
-			L.TailTip = Rgb(0.4f, 0.2f, 0.1f);
-			break;
-		}
-		return L;
-	}
-
-	/** Manchas azules del lagarto ocelado sobre el lomo (se añaden a la malla del cuerpo). */
-	inline void AddLizardSpots(FTNProcMeshBuffers& M, const TNFauna::FTNFaunaQuadLook& L)
-	{
-		for (int32 k = 0; k < 7; ++k)
-		{
-			const double SpotX = L.Len * (0.6 - 0.2 * k);
-			const double SpotY = (k % 2 == 0 ? 0.38 : -0.38) * L.Width;
-			const double Rel = FMath::Square(SpotX / L.Len) + FMath::Square(SpotY / L.Width);
-			const double SpotZ = L.Girth * FMath::Sqrt(FMath::Max(0.05, 1.0 - Rel)) * 0.92;
-			M.AddBox(FVector(SpotX, SpotY, SpotZ), FVector::ForwardVector, FVector(L.Len * 0.07, L.Width * 0.13, L.Girth * 0.14), Rgb(0.2f, 0.5f, 0.92f));
-		}
-	}
-
-	/**
-	 * Lagarto generoso: motas doradas a lo largo del lomo (entre donde irían las manchas azules del ocelado) y un collar
-	 * dorado detrás de la cabeza. Se añaden a la malla del cuerpo (medidas de la fauna).
-	 */
-	inline void AddLizardGoldSpots(FTNProcMeshBuffers& M, const TNFauna::FTNFaunaQuadLook& L)
-	{
-		const FLinearColor Gold = Rgb(1.f, 0.8f, 0.15f);
-		for (int32 k = 0; k < 6; ++k)
-		{
-			const double SpotX = L.Len * (0.5 - 0.2 * k);
-			const double SpotY = (k % 2 == 0 ? -0.18 : 0.18) * L.Width;
-			const double Rel = FMath::Square(SpotX / L.Len) + FMath::Square(SpotY / L.Width);
-			const double SpotZ = L.Girth * FMath::Sqrt(FMath::Max(0.05, 1.0 - Rel)) * 0.95;
-			M.AddBox(FVector(SpotX, SpotY, SpotZ), FVector::ForwardVector, FVector(L.Len * 0.06, L.Width * 0.1, L.Girth * 0.12), Gold);
-		}
-		M.AddBox(FVector(L.Len * 0.72, 0.0, L.Girth * 0.35), FVector::ForwardVector, FVector(L.Len * 0.06, L.Width * 0.72, L.Girth * 0.55), Gold * 0.95f);
-	}
-
-	/** Lagarto mordedor: la cresta de púas de la iguana, roja con las puntas oscuras, y la punta de la cola roja. */
-	inline void MakeLizardBiter(TNFauna::FTNFaunaQuadLook& L)
-	{
-		L.bCrest = true;
-		L.CrestC = Rgb(0.88f, 0.12f, 0.1f);
-		L.TailTip = Rgb(0.7f, 0.08f, 0.06f);
-	}
-
-	/** Pivote de la lengua en el espacio de la cabeza (punta del hocico, medidas de la fauna). */
-	inline FVector LizardTonguePivot(const TNFauna::FTNFaunaQuadLook& L)
-	{
-		const FVector HeadAt(L.Head * 0.55, 0.0, L.Head * 0.2);
-		const FVector SnoutAt = HeadAt + FVector(L.Head * 0.7 + L.Snout * 0.4, 0.0, -L.Head * 0.18);
-		return SnoutAt + FVector(L.Snout * 0.5, 0.0, -L.Head * 0.12);
-	}
-
-	/** Lengua bífida rosa (medidas de la fauna). */
-	inline void BuildLizardTongue(FTNProcMeshBuffers& M)
-	{
-		const FLinearColor Pink = Rgb(0.95f, 0.35f, 0.45f);
-		const FVector Fork(5.0, 0.0, -0.3);
-		M.AddBeam(FVector::ZeroVector, Fork, 0.35, Pink);
-		M.AddBeam(Fork, Fork + FVector(1.6, 0.8, -0.1), 0.25, Pink);
-		M.AddBeam(Fork, Fork + FVector(1.6, -0.8, -0.1), 0.25, Pink);
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────

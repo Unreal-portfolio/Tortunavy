@@ -290,56 +290,6 @@ namespace TNHUDArt
 		});
 	}
 
-	/**
-	 * Concha de cada tamaño (TNScoreShells::ETier) para los iconos que vuelan al contador: pequeña dorada, normal (la
-	 * del contador), grande nacarada turquesa con estrella y reina rosa y violeta con estrella dorada.
-	 */
-	inline UTexture2D* ShellIconTier(int32 Tier)
-	{
-		switch (Tier)
-		{
-			case 0:
-				return Cached(TEXT("ShellSmall"), []
-				{
-					FShellIconPalette Pal;
-					Pal.Top = Hex(0xFFF1B8);
-					Pal.Bottom = Hex(0xF2B635);
-					Pal.Ribs = Hex(0xB9801A, 0.55f);
-					Pal.Rim = Hex(0xA66A10, 0.6f);
-					Pal.Gloss = Hex(0xFFFFFF, 0.8f);
-					return PaintShellIcon(TEXT("TN_HUD_ShellSmall"), Pal);
-				});
-			case 2:
-				return Cached(TEXT("ShellBig"), []
-				{
-					FShellIconPalette Pal;
-					Pal.Top = Hex(0xE6FFFB);
-					Pal.Bottom = Hex(0x3CC8C8);
-					Pal.Ribs = Hex(0x1A7F8A, 0.55f);
-					Pal.Rim = Hex(0x146B75, 0.6f);
-					Pal.Gloss = Hex(0xFFFFFF, 0.85f);
-					Pal.bStar = true;
-					Pal.Star = Hex(0xFFFFFF);
-					return PaintShellIcon(TEXT("TN_HUD_ShellBig"), Pal);
-				});
-			case 3:
-				return Cached(TEXT("ShellGrand"), []
-				{
-					FShellIconPalette Pal;
-					Pal.Top = Hex(0xFFD6F5);
-					Pal.Bottom = Hex(0xC04CE0);
-					Pal.Ribs = Hex(0x7A1F9A, 0.55f);
-					Pal.Rim = Hex(0xE8A92E, 0.9f);
-					Pal.Gloss = Hex(0xFFFFFF, 0.85f);
-					Pal.bStar = true;
-					Pal.Star = Gold;
-					return PaintShellIcon(TEXT("TN_HUD_ShellGrand"), Pal);
-				});
-			default:
-				return ShellIcon();
-		}
-	}
-
 	/** Burbuja (hueco de inventario): translúcida, filo claro y brillos. */
 	inline UTexture2D* BubbleIcon()
 	{

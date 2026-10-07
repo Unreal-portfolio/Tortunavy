@@ -13,7 +13,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Math/RotationMatrix.h"
 #include "ProceduralMeshComponent.h"
-#include "TN_BeachBoostKit.h"
 #include "TN_BeachRideKit.h"
 #include "TN_BeachSignKit.h"
 #include "TN_BeachTrapKit.h"
@@ -438,7 +437,6 @@ void ATN_BeachTrampoline::ApplySpec()
 	const double Fit = TNBeachTrapKit::FitRadius(Spec.Element, Spec.SizeScale);
 	const uint32 Seed = TNBeachTrapKit::SeedOf(Spec.Seed, 109u);
 	Variant = static_cast<int32>(Seed % 4u);
-	bBoosted = (Spec.Flags & TNBeach::FlagBoosted) != 0;
 	BreathPhase = static_cast<float>(TNPlaygroundKit::KitTwoPi * TNBeachTrapKit::Hash01(2, 2, Seed));
 
 	TNBeachTrapKit::FBuffers Body;
@@ -498,38 +496,6 @@ void ATN_BeachTrampoline::ApplySpec()
 	}
 	// Arena removida alrededor (no rebota).
 	TNPlaygroundKit::AddDisc(Decor, FVector(0.0, 0.0, 1.0), FVector::UpVector, FMath::Min(0.97 * Fit, BodyR + 40.0), 28, TNBeachTrapKit::SandMark());
-	if (bBoosted)
-	{
-		// Potenciado: rebota más alto y mucho más hacia el mar. Aro dorado en la arena, cuatro palos (uno con la bandera de
-		// Tortunavy) y guirnaldas de banderines de palo a palo por encima del borde.
-		UpScale *= BoostedUpScale;
-		const double RingIn = BodyR + 8.0;
-		TNPlaygroundKit::AddAnnulus(Decor, FVector(0.0, 0.0, 3.0), FVector::UpVector, RingIn, RingIn + 30.0, 40, TNBeachBoostKit::Gold());
-		const double PoleRing = RingIn + 50.0;
-		const double PoleH = TopZ + 150.0;
-		FVector PoleTops[4];
-		for (int32 p = 0; p < 4; ++p)
-		{
-			const double Ang = TNPlaygroundKit::KitTwoPi * (p + 0.5) / 4.0;
-			const FVector Foot(PoleRing * FMath::Cos(Ang), PoleRing * FMath::Sin(Ang), 0.0);
-			PoleTops[p] = Foot + FVector(0.0, 0.0, PoleH);
-			if (p == 0)
-			{
-				TNBeachBoostKit::AddNavyFlag(Decor, Foot, PoleH, Foot, 110.0, 72.0, Seed);
-			}
-			else
-			{
-				TNPlaygroundKit::AddRod(Decor, Foot - FVector(0.0, 0.0, 10.0), PoleTops[p], 6.0, 6, TNBeachBoostKit::PoleWood(), FVector::ForwardVector);
-				TNPlaygroundKit::AddBall(Decor, PoleTops[p] + FVector(0.0, 0.0, 7.0), 11.0, 8, TNBeachBoostKit::Gold());
-			}
-		}
-		for (int32 p = 0; p < 4; ++p)
-		{
-			const FVector From = PoleTops[p] - FVector(0.0, 0.0, 12.0);
-			const FVector To = PoleTops[(p + 1) % 4] - FVector(0.0, 0.0, 12.0);
-			TNBeachBoostKit::AddBunting(Decor, From, To, 0.1 * FVector::Dist(From, To), 30.0, Seed + static_cast<uint32>(p) * 5u);
-		}
-	}
 	TNBeachTrapKit::SetMesh(DecorMesh, this, Decor, TN_ART("Beach.Trampoline.Decor"));
 	PlaceSign(Fit, Seed);
 
@@ -553,14 +519,13 @@ void ATN_BeachTrampoline::ApplySpec()
 		BodyMesh->SetMaterial(0, TNPlaygroundKit::VertexColorMaterial());
 	}
 	bBodyDirty = false;
-	UE_LOG(LogTortunabo, Verbose, TEXT("[Playa] Trampolín %s: variante %d, radio %.0f cm, alto %.0f cm%s."), *GetName(), Variant, BodyR, TopZ,
-		bBoosted ? TEXT(", potenciado") : TEXT(""));
+	UE_LOG(LogTortunabo, Verbose, TEXT("[Playa] Trampolín %s: variante %d, radio %.0f cm, alto %.0f cm."), *GetName(), Variant, BodyR, TopZ);
 }
 
 void ATN_BeachTrampoline::PlaceSign(double Fit, uint32 Seed)
 {
 	// Por el lado por el que se llega (-X del marco), 24° a un lado (no delante del salto) y por fuera de todo lo que
-	// rebota (y de los palos del potenciado), con la tabla de cara hacia fuera: a quien llega.
+	// rebota, con la tabla de cara hacia fuera: a quien llega.
 	const double SideSign = TNBeachSignKit::SideOf(Spec.Seed);
 	const double AngDeg = 180.0 - SideSign * 24.0;
 	const FVector2D Dir(FMath::Cos(FMath::DegreesToRadians(AngDeg)), FMath::Sin(FMath::DegreesToRadians(AngDeg)));
@@ -572,19 +537,15 @@ void ATN_BeachTrampoline::PlaceSign(double Fit, uint32 Seed)
 			Reach = R;
 		}
 	}
-	double SignR = FMath::Max(Reach, 0.8 * BodyR) + 80.0;
-	if (bBoosted)
-	{
-		SignR = FMath::Max(SignR, BodyR + 58.0 + 80.0);
-	}
+	const double SignR = FMath::Max(Reach, 0.8 * BodyR) + 80.0;
 	SignYawDeg = AngDeg - 180.0;
 	SignPivot->SetRelativeLocationAndRotation(FVector(Dir.X * SignR, Dir.Y * SignR, 0.0), FRotator(0.0, SignYawDeg, 0.0));
 	SignPivot->SetRelativeScale3D(FVector::OneVector);
 	bSignMoving = false;
 	TNBeachTrapKit::FBuffers Sign;
-	TNBeachSignKit::BuildSign(Sign, bBoosted, Seed);
+	TNBeachSignKit::BuildSign(Sign, Seed);
 	TNBeachTrapKit::SetMesh(SignMesh, this, Sign, TN_ART("Beach.Trampoline.Sign"));
-	TNBeachSignKit::SetText(SignText, NSLOCTEXT("TNBeach", "TrampolineSign", "¡BOING!"), TNBeachSignKit::TextColor(bBoosted));
+	TNBeachSignKit::SetText(SignText, NSLOCTEXT("TNBeach", "TrampolineSign", "¡BOING!"), TNBeachSignKit::TextColor());
 	SignGlowApplied = -1.f;
 }
 
@@ -595,12 +556,7 @@ void ATN_BeachTrampoline::BeginPlay()
 	// no desde el golpe ni el solape: así cae en el mismo paso en el servidor y en el cliente dueño (#21).
 	if (GetNetMode() != NM_DedicatedServer)
 	{
-		Toy = UTN_PlaygroundSynthComponent::AttachTo(this, Frame->GetComponentLocation() + FVector(0.0, 0.0, 0.6 * TopZ), 600.f, bBoosted ? 4500.f : 3000.f);
-		if (bBoosted)
-		{
-			Sparkle.Init(this, ETNTrapBurstShape::Spark, TNPlaygroundKit::Rgb(0xFFE27A, 0.8f), 40);
-			Sparkle.SetMotion(-300.f, 1.5f, 26.f, 4.f, 0.5f, 1.1f);
-		}
+		Toy = UTN_PlaygroundSynthComponent::AttachTo(this, Frame->GetComponentLocation() + FVector(0.0, 0.0, 0.6 * TopZ), 600.f, 3000.f);
 	}
 }
 
@@ -803,23 +759,6 @@ void ATN_BeachTrampoline::PlayBounceFX(const FVector& WorldAt, float Strength)
 	{
 		Toy->TriggerSound(ETNPlaygroundSound::Boing, BoingPitch * SizePitch * FMath::FRandRange(0.94f, 1.06f), BoingVolume * FMath::Clamp(S, 0.4f, 1.f));
 	}
-	if (bBoosted)
-	{
-		// Potenciado: un boing grave encima con barrido de aire, destellos dorados y la fanfarria (una cada pocos segundos).
-		if (Toy)
-		{
-			Toy->TriggerSound(ETNPlaygroundSound::Boing, 0.6f * SizePitch, BoingVolume * 1.2f);
-			Toy->TriggerSound(ETNPlaygroundSound::Whoosh, 0.75f, 1.f);
-		}
-		Sparkle.Burst(WorldAt, 18, FVector::UpVector, 650.f, 1.1f, 80.f);
-		const UWorld* World = GetWorld();
-		const double WorldNow = World ? World->GetTimeSeconds() : 0.0;
-		if (WorldNow - LastFanfareAt > 3.0)
-		{
-			LastFanfareAt = WorldNow;
-			TNBeachBoostKit::PlayFanfareNear(this, WorldAt, 7000.f, 1.12f);
-		}
-	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -864,7 +803,6 @@ void ATN_BeachTrampoline::Tick(float DeltaSeconds)
 		StingTurtles(Now);
 	}
 	AnimateBody(DeltaSeconds);
-	Sparkle.Tick(DeltaSeconds);
 
 	// Cartel: un botecito al acercarse la tortuga de esta máquina y el rótulo más claro mientras está cerca.
 	if (GetNetMode() != NM_DedicatedServer)
@@ -879,7 +817,7 @@ void ATN_BeachTrampoline::Tick(float DeltaSeconds)
 			SignPivot->SetRelativeScale3D(FVector(1.0, 1.0, bMoving ? 1.0 + Stretch : 1.0));
 			bSignMoving = bMoving;
 		}
-		TNBeachSignKit::ApplySignGlow(SignText, TNBeachSignKit::TextColor(bBoosted), SignGlow, SignGlowApplied);
+		TNBeachSignKit::ApplySignGlow(SignText, TNBeachSignKit::TextColor(), SignGlow, SignGlowApplied);
 	}
 }
 

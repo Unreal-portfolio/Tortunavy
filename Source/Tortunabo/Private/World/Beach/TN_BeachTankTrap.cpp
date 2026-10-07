@@ -162,7 +162,7 @@ void ATN_BeachTankTrap::GatherImpactors(TArray<FImpactor>& Out) const
 		}
 		// En su bola: cuenta su cuerpo físico, suelto (ni mareada ya, ni sujeta, ni en una boca, ni recolocada, ni en brazos).
 		if (Turtle->IsDead() || Turtle->IsKnockedDown() || !Turtle->IsInShell() || TNBeach::IsTurtleStunned(Turtle)
-			|| TNBeach::IsTurtleRelocating(Turtle) || ATN_BeachEnemy::IsTurtleHeld(Turtle) || ATN_BeachSandWorm::IsBeingEaten(Turtle))
+			|| TNBeach::IsTurtleRelocating(Turtle) || ATN_BeachEnemy::IsTurtleHeld(Turtle))
 		{
 			continue;
 		}

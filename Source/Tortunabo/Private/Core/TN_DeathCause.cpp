@@ -1,7 +1,5 @@
 #include "Core/TN_DeathCause.h"
 #include "World/TN_CrabActor.h"
-#include "World/TN_EnemySeagull.h"
-#include "World/TN_QuadActor.h"
 #include "World/TN_SeagullDroppingActor.h"
 #include "World/TN_ThrowableItemActor.h"
 
@@ -37,8 +35,6 @@ ETNDeathCause TNDeathCause::FromInstigator(const AActor* KillInstigator, const A
 	}
 	if (KillInstigator->IsA<ATN_CrabActor>())            { return ETNDeathCause::Crab; }
 	if (KillInstigator->IsA<ATN_ThrowableItemActor>())   { return ETNDeathCause::ThrownItem; }
-	if (KillInstigator->IsA<ATN_EnemySeagull>())         { return ETNDeathCause::Seagull; }
 	if (KillInstigator->IsA<ATN_SeagullDroppingActor>()) { return ETNDeathCause::SeagullDropping; }
-	if (KillInstigator->IsA<ATN_QuadActor>())            { return ETNDeathCause::Quad; }
 	return ETNDeathCause::Unknown;
 }

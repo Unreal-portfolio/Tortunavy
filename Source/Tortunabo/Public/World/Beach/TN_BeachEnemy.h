@@ -292,7 +292,7 @@ protected:
 	virtual void OnMoverStateChanged(uint8 OldState) {}
 
 	/**
-	 * Servidor: otro sistema le quita la tortuga que sujeta (ServerReleaseHeldTurtle: red de seguridad, rescate, gusano),
+	 * Servidor: otro sistema le quita la tortuga que sujeta (ServerReleaseHeldTurtle: red de seguridad, rescate),
 	 * justo antes de EndHoldTurtle. La subclase olvida a su víctima y deja el ataque (sin lanzarla ni aturdirla): si no, al
 	 * acabar la sujeción la lanzaría desde donde la han dejado o la volvería a coger.
 	 */
@@ -409,7 +409,7 @@ protected:
 	/**
 	 * Todas las máquinas: la suelta. A prueba de todo: el servidor le devuelve las correcciones al dueño, se quita la
 	 * pataleta y, si nada más la mueve (ni la bola del caparazón, ni el ragdoll del derribo, ni otra que la lleve, ni otro
-	 * enemigo o un gusano que la sujete), vuelve a caer por su cuenta (MOVE_Falling con el movimiento encendido). Y durante
+	 * enemigo que la sujete), vuelve a caer por su cuenta (MOVE_Falling con el movimiento encendido). Y durante
 	 * 3 s lo vuelve a comprobar en cada fotograma, por si otro sistema la deja a medias (la bola que no llega a esta máquina,
 	 * una patada de la tormenta, un mareo...); al final devuelve el suavizado de red a los demás clientes.
 	 */

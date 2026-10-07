@@ -16,21 +16,17 @@ enum class ETNBeachSfx : uint8
 {
 	Clack    UMETA(DisplayName = "Chasquido de pinza"),
 	Slam     UMETA(DisplayName = "Mazazo en la arena"),
-	Skitter  UMETA(DisplayName = "Patitas de cangrejo"),
-	Hiss     UMETA(DisplayName = "Bufido de lagarto"),
 	Squawk   UMETA(DisplayName = "Graznido"),
 	Splat    UMETA(DisplayName = "Cagada que cae"),
 	Swoop    UMETA(DisplayName = "Picado"),
-	Prick    UMETA(DisplayName = "Pinchazo de erizo"),
 	Crunch   UMETA(DisplayName = "Palmeras que crujen"),
 	Stomp    UMETA(DisplayName = "Pisotón gigante"),
-	Roll     UMETA(DisplayName = "Rodar sobre la arena"),
 };
 
 /**
  * Sonidos de los enemigos de la playa sintetizados en tiempo real, sin archivos de audio (mismo patrón que
- * UTN_PlaygroundSynthComponent): golpes cortos (chasquidos de pinza, mazazo con arena, patitas, bufido, graznidos,
- * cagada, picado, pinchazo, palmeras que crujen, pisotones y rodar) y dos sonidos continuos con su nivel: el motor de un
+ * UTN_PlaygroundSynthComponent): golpes cortos (chasquidos de pinza, mazazo con arena, graznidos, cagada, picado,
+ * palmeras que crujen y pisotones) y dos sonidos continuos con su nivel: el motor de un
  * quad gigante (SetEngine) y el viento de la tormenta (SetWind).
  *
  * El sonido lo genera un ISoundGenerator en el hilo de render de audio sin UObjects, asignaciones ni bloqueos; el hilo de

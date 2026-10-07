@@ -135,26 +135,26 @@ def test_puzles_demasiado_juntos(site):
 
 def test_enemigo_en_la_calma_de_un_puzle(site):
     items = [P("a", "puzzle", "plate_balance", 0, 260.0, length=26.0),
-             P("e", "enemy", "Lizard", 0, 280.0)]
+             P("e", "enemy", "BurrowCrab", 0, 280.0)]
     assert "calma_puzle" in _rules(site, items)
 
 
 @pytest.mark.parametrize("s, line", [(10.0, 0), (101.0, 0), (5.0, 1)])
 def test_nada_en_la_salida_ni_en_las_uniones(site, s, line):
-    assert "exclusion" in _rules(site, [P("e", "enemy", "Lizard", line, s)])
+    assert "exclusion" in _rules(site, [P("e", "enemy", "BurrowCrab", line, s)])
 
 
 def test_nada_junto_a_la_meta(site):
     main = site.main
-    assert "exclusion" in _rules(site, [P("e", "obstacle", "Mine", 0, main.length - 10.0)])
+    assert "exclusion" in _rules(site, [P("e", "obstacle", "TrashPile", 0, main.length - 10.0)])
 
 
 @pytest.mark.parametrize("item", [
     P("t", "puzzle", "wobbly_run", 0, 190.0, length=28.0),         # túnel
     P("w", "puzzle", "wobbly_run", 0, 640.0, length=28.0),         # río
     P("g", "enemy", "GullZone", 0, 400.0),                          # gaviotas fuera del agua
-    P("l", "enemy", "Lizard", 0, 640.0),                            # lagarto en el río
-    P("q", "enemy", "Lizard", 0, 400.0, q=9.0),                     # fuera del camino
+    P("l", "enemy", "BurrowCrab", 0, 640.0),                            # cangrejo subterráneo en el río
+    P("q", "enemy", "BurrowCrab", 0, 400.0, q=9.0),                     # fuera del camino
     P("d", "decor", "Rock", 0, 400.0, q=1.0),                       # decorado en el eje
     P("x", "puzzle", "plate_balance", 2, 76.0, length=26.0),        # cabe, pero se cambia la anchura abajo
 ])
@@ -172,7 +172,7 @@ def test_puzle_en_un_camino_que_no_conecta():
 
 
 def test_densidad_al_reves(site):
-    items = [P(f"e{k}", "enemy", "Lizard", 1, s) for k, s in enumerate((40.0, 70.0, 100.0, 130.0))]
+    items = [P(f"e{k}", "enemy", "BurrowCrab", 1, s) for k, s in enumerate((40.0, 70.0, 100.0, 130.0))]
     assert "densidad" in _rules(site, items)
 
 
@@ -183,15 +183,15 @@ def test_atajo_sin_peligro_con_sitio_libre(site):
 def test_pico_sin_calma_despues(site):
     s0 = 5 * TRAMO_M                    # pico: un puzle de intensidad 4 en el tramo 5
     items = [P("a", "puzzle", "breakable_chain", 0, s0 + 10.0, length=26.0),
-             P("e1", "enemy", "GiantCrab", 0, s0 + TRAMO_M + 45.0),
-             P("e2", "enemy", "SandFleas", 0, s0 + TRAMO_M + 25.0)]
+             P("e1", "enemy", "DragCrab", 0, s0 + TRAMO_M + 45.0),
+             P("e2", "enemy", "BurrowCrab", 0, s0 + TRAMO_M + 25.0)]
     assert "curva" in _rules(site, items)
     calm = [p for p in items if p.id != "e1"]          # 1,5 en el tramo siguiente: sí hay calma
     assert "curva" not in _rules(site, calm)
 
 
 def test_enemigos_amontonados(site):
-    items = [P("a", "enemy", "Lizard", 0, 400.0), P("b", "enemy", "SeaUrchin", 0, 405.0)]
+    items = [P("a", "enemy", "BurrowCrab", 0, 400.0), P("b", "enemy", "UrchinSpikes", 0, 405.0)]
     assert "hostiles_separados" in _rules(site, items)
 
 
@@ -205,7 +205,7 @@ def test_dos_puzles_seguidos_del_mismo_tipo(site):
 def test_el_bloque_va_y_vuelve_y_respeta_el_resto_del_manifest(site):
     result = generate(site, 652)
     manifest = {"name": "x", "cells": [1, 2], "kill_boxes_uu": []}
-    manual = [{"id": "m1", "category": "enemy", "kind": "GiantCrab", "location_uu": [65000.0, 100.0, 0.0]}]
+    manual = [{"id": "m1", "category": "enemy", "kind": "DragCrab", "location_uu": [65000.0, 100.0, 0.0]}]
     block = build_block(site, result.auto, manual, ["pz-zzz"], 652, 1, False, {})
     out = with_block(manifest, block)
     assert list(out)[:3] == ["name", "cells", "kill_boxes_uu"] and manifest.get("placements") is None
@@ -223,7 +223,7 @@ def test_los_tramos_llevan_su_polilinea(site):
     path = np.asarray(puzzle["path_uu"]) / 100.0
     assert len(path) == 13
     assert np.allclose(path[0], ln.at(288.0), atol=0.01) and np.allclose(path[-1], ln.at(312.0), atol=0.01)
-    assert "path_uu" not in to_json(site, Placement("en", "enemy", "SeaUrchin", 0, 300.0))
+    assert "path_uu" not in to_json(site, Placement("en", "enemy", "UrchinSpikes", 0, 300.0))
 
 
 def test_el_avance_ordena_los_lazos_entre_los_puntos_del_principal(site):
@@ -274,7 +274,9 @@ def test_c01_el_bloque_del_manifest_cumple_las_reglas(c01):
     manual, _suppressed, block = read_block(manifest)
     assert block.get("format") == 1 and block.get("map_seed") == manifest["seed"] and not block.get("stale")
     placed = [from_json(site, d, "auto") for d in block["auto"]] + [from_json(site, d) for d in manual]
-    assert validate(site, placed) == []
+    # El recorte (#850) filtró del bloque los enemigos y obstáculos que no están en el Excel sin volver a colocar: los
+    # caminos cortos se quedan sin peligro hasta que se pongan los del Excel. Solo se tolera la regla de densidad.
+    assert [v for v in validate(site, placed) if v.rule != "densidad"] == []
 
 
 def test_c01_lamina(c01, tmp_path):

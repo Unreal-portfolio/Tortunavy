@@ -1,20 +1,17 @@
 // Tortugas del escenario de estrés «caos» (TN_StressChaos.h): qué hace cada una y con qué entrada. Todas las acciones pasan por
-// las funciones que llaman los Input Actions de ATortugaCharacter (Move, ToggleShell, TryInteract, TryUseEquippedItem), que en
-// un cliente acaban en los RPC de servidor de siempre y en el anfitrión, en sus implementaciones.
+// las funciones que llaman los Input Actions de ATortugaCharacter (Move, ToggleShell, TryInteract), que en un cliente acaban
+// en los RPC de servidor de siempre y en el anfitrión, en sus implementaciones.
 
 #include "Testing/TN_StressChaos.h"
 
 #include "Components/PrimitiveComponent.h"
 #include "Core/TN_Log.h"
-#include "Core/TN_InventoryTypes.h"
-#include "Engine/DataTable.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "InputActionValue.h"
 #include "Player/TN_CarryComponent.h"
-#include "Player/TN_InventoryComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "World/Beach/TN_BeachStun.h"
 
@@ -44,7 +41,6 @@ void UTN_StressChaosSubsystem::InputShell(FDriver& Driver, ATortugaCharacter* Tu
 	}
 }
 void UTN_StressChaosSubsystem::InputInteract(ATortugaCharacter* Turtle) { Turtle->TryInteract(); Turtle->ReleaseInteract(); }
-void UTN_StressChaosSubsystem::InputUseItem(ATortugaCharacter* Turtle) { Turtle->TryUseEquippedItem(); }
 void UTN_StressChaosSubsystem::InputJump(ATortugaCharacter* Turtle) { Turtle->Jump(); }
 
 void UTN_StressChaosSubsystem::InputSprint(ATortugaCharacter* Turtle, bool bOn)
@@ -87,7 +83,6 @@ void UTN_StressChaosSubsystem::SyncDrivers()
 		Driver.Controller = PC;
 		Driver.Index = Drivers.Num() - 1;
 		Driver.WanderYaw = Stream.FRandRange(0.f, 360.f);
-		Driver.ItemClock = Stream.FRandRange(0.f, 1.f);
 	}
 }
 
@@ -102,22 +97,7 @@ void UTN_StressChaosSubsystem::TickDrivers(float DeltaTime)
 			continue;
 		}
 		TrackTransitions(Driver, Turtle);
-		TickItemBurst(Driver, Turtle, DeltaTime);
 		TickDriver(Driver, Turtle, DeltaTime);
-	}
-	if (bClientOnly || !Phases.IsValidIndex(CurrentPhase) || Phases[CurrentPhase].Plan.ItemEverySeconds <= 0.f)
-	{
-		return;
-	}
-	// Tortugas de los clientes: el anfitrión les da objetos como una caja (su cliente los lanza con su entrada).
-	for (TActorIterator<ATortugaCharacter> It(GetWorld()); It; ++It)
-	{
-		ATortugaCharacter* Remote = *It;
-		const UTN_InventoryComponent* Inventory = Remote->GetInventoryComponent();
-		if (!Remote->IsLocallyControlled() && Inventory && !Inventory->HasEquippedItem() && Stream.FRand() < DeltaTime / Phases[CurrentPhase].Plan.ItemEverySeconds)
-		{
-			GiveBurstItem(Remote);
-		}
 	}
 }
 
@@ -134,71 +114,6 @@ void UTN_StressChaosSubsystem::TrackTransitions(FDriver& Driver, ATortugaCharact
 	Driver.bWasCarrying = bCarrying;
 }
 
-bool UTN_StressChaosSubsystem::GiveBurstItem(ATortugaCharacter* Turtle)
-{
-	UTN_InventoryComponent* Inventory = Turtle ? Turtle->GetInventoryComponent() : nullptr;
-	if (bClientOnly || !Inventory || !Catalog || CatalogThrowables.Num() == 0)
-	{
-		return false;
-	}
-	const int32 Pick = Stream.RandRange(0, CatalogThrowables.Num() - 1);
-	bool bGiven = false;
-	if (const FTN_InventoryItem* Row = Catalog->FindRow<FTN_InventoryItem>(CatalogThrowables[Pick], TEXT("TN.Stress caos"), false))
-	{
-		bGiven = Inventory->TryAddOrReplaceEquipped(*Row, true);
-	}
-	CurrentActions().ItemsGiven += bGiven ? 1 : 0;
-	return bGiven;
-}
-
-void UTN_StressChaosSubsystem::TickItemBurst(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime)
-{
-	const float Every = Phases.IsValidIndex(CurrentPhase) ? Phases[CurrentPhase].Plan.ItemEverySeconds : 0.f;
-	if (Every <= 0.f)
-	{
-		return;
-	}
-	// La tarea de objetos los lanza el doble de seguidos.
-	Driver.ItemClock += DeltaTime * (Driver.Task == TNChaos::ETask::Items ? 2.f : 1.f);
-	const UTN_CarryComponent* Carry = Turtle->GetCarryComponent();
-	if (Driver.ItemClock < Every || Turtle->IsInShell() || TNChaosDriverDetail::IsBusy(Turtle) || (Carry && Carry->IsCarrying()))
-	{
-		return;
-	}
-	Driver.ItemClock = 0.f;
-	const UTN_InventoryComponent* Inventory = Turtle->GetInventoryComponent();
-	if (!bClientOnly && Inventory && !Inventory->HasEquippedItem())
-	{
-		GiveBurstItem(Turtle);
-	}
-	if (!Inventory || !Inventory->HasEquippedItem())
-	{
-		return;
-	}
-	// Hacia otra tortuga (la más cercana) o hacia donde iba.
-	const ATortugaCharacter* Nearest = nullptr;
-	double Best = TNumericLimits<double>::Max();
-	for (TActorIterator<ATortugaCharacter> It(GetWorld()); It; ++It)
-	{
-		const double Dist = FVector::DistSquared(It->GetActorLocation(), Turtle->GetActorLocation());
-		if (*It != Turtle && Dist < Best)
-		{
-			Best = Dist;
-			Nearest = *It;
-		}
-	}
-	if (Nearest)
-	{
-		AimAt(Driver, Turtle, Nearest->GetActorLocation());
-	}
-	InputUseItem(Turtle);
-	++CurrentActions().ItemsUsed;
-	if (Nearest)
-	{
-		Aim(Driver, Driver.WanderYaw);
-	}
-}
-
 UTN_StressChaosSubsystem::FDriver* UTN_StressChaosSubsystem::FindFreePartner(const FDriver& For)
 {
 	const APlayerController* ForPC = For.Controller.Get();
@@ -207,13 +122,12 @@ UTN_StressChaosSubsystem::FDriver* UTN_StressChaosSubsystem::FindFreePartner(con
 	{
 		return nullptr;
 	}
-	// La libre más cercana: andando, lanzando objetos o sin haber empezado a rodar.
+	// La libre más cercana: andando o sin haber empezado a rodar.
 	FDriver* Best = nullptr;
 	double BestDist = TNumericLimits<double>::Max();
 	for (FDriver& Other : Drivers)
 	{
-		const bool bFree = Other.Task == TNChaos::ETask::Wander || Other.Task == TNChaos::ETask::Items
-			|| (Other.Task == TNChaos::ETask::Ball && Other.Stage == 0);
+		const bool bFree = Other.Task == TNChaos::ETask::Wander || (Other.Task == TNChaos::ETask::Ball && Other.Stage == 0);
 		const APlayerController* PC = Other.Controller.Get();
 		const ATortugaCharacter* Turtle = PC ? Cast<ATortugaCharacter>(PC->GetPawn()) : nullptr;
 		if (&Other == &For || !bFree || !Turtle || TNChaosDriverDetail::IsBusy(Turtle))
@@ -298,7 +212,6 @@ void UTN_StressChaosSubsystem::TickDriver(FDriver& Driver, ATortugaCharacter* Tu
 		{
 			case TNChaos::ETask::Carry:    bDone = TickCarry(Driver, Turtle, DeltaTime); break;
 			case TNChaos::ETask::Ball:     bDone = TickBall(Driver, Turtle, DeltaTime); break;
-			case TNChaos::ETask::Items:    bDone = TickItems(Driver, Turtle, DeltaTime); break;
 			default:                       bDone = TickWander(Driver, Turtle, DeltaTime); break;
 		}
 	}
@@ -329,18 +242,6 @@ bool UTN_StressChaosSubsystem::TickWander(FDriver& Driver, ATortugaCharacter* Tu
 	}
 	Aim(Driver, Driver.WanderYaw);
 	InputMove(Turtle, FVector2D(0.f, 1.f));
-	return Driver.TaskClock > 5.f;
-}
-
-bool UTN_StressChaosSubsystem::TickItems(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime)
-{
-	// Ráfaga: anda despacio mientras TickItemBurst lanza el doble de seguido.
-	if (Turtle->IsInShell())
-	{
-		InputShell(Driver, Turtle);
-		return false;
-	}
-	InputMove(Turtle, FVector2D(0.f, 0.4f));
 	return Driver.TaskClock > 5.f;
 }
 
