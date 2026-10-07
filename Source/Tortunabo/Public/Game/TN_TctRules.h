@@ -41,6 +41,9 @@ namespace TNTctPoisonDefaults
 	inline constexpr float FloatTrigger = 0.5f;
 	/** Segundos de aviso (cuenta atrás y marca del nivel) antes de cada subida. */
 	inline constexpr float WarnSeconds = 5.f;
+	/** Fundido del tinte verde de la vista dentro del agua venenosa: segundos en entrar y en salir (#920). */
+	inline constexpr float VisionFadeIn = 0.4f;
+	inline constexpr float VisionFadeOut = 0.9f;
 }
 
 /**
@@ -390,6 +393,19 @@ namespace TNTctRules
 	{
 		const float Span = FMath::Max(1.f, StepStartSeconds(Plan, Plan.Levels.Num()) - Plan.StartDelay);
 		return FMath::Clamp((Elapsed - Plan.StartDelay) / Span, 0.f, 1.f);
+	}
+
+	/** Un paso del fundido del tinte verde de la vista (0-1): entra en VisionFadeIn s dentro del agua y sale en VisionFadeOut s. */
+	inline float PoisonVisionStep(float Fade, bool bInside, float DeltaSeconds)
+	{
+		const float Step = DeltaSeconds / (bInside ? TNTctPoisonDefaults::VisionFadeIn : TNTctPoisonDefaults::VisionFadeOut);
+		return FMath::Clamp(Fade + (bInside ? Step : -Step), 0.f, 1.f);
+	}
+
+	/** Peso del postproceso verde: suave al entrar y algo más fuerte cuanto más intoxicada va (Level 0-1). */
+	inline float PoisonVisionWeight(float Fade, float Level)
+	{
+		return FMath::Clamp(Fade, 0.f, 1.f) * (0.4f + 0.35f * FMath::Clamp(Level, 0.f, 1.f));
 	}
 
 	/** Nivel de intoxicación (0-1) a la hora Now. */

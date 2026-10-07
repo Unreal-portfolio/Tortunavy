@@ -1,6 +1,7 @@
 #include "Game/TN_TctItemComponent.h"
 #include "Game/TN_TctItemRules.h"
 #include "Core/TN_Log.h"
+#include "Components/PostProcessComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -445,8 +446,66 @@ bool UTN_TctItemComponent::ServerTickWater(bool bInWater)
 		PoisonNet.T0 = static_cast<float>(Line.T0);
 		PoisonNet.Rate = Line.Rate;
 		GetOwner()->ForceNetUpdate();
+		RefreshTick();
 	}
 	return GetPoison() >= 1.f;
+}
+
+void UTN_TctItemComponent::OnRep_Poison()
+{
+	RefreshTick();
+}
+
+bool UTN_TctItemComponent::IsLocalView() const
+{
+	const APawn* Pawn = Cast<APawn>(GetOwner());
+	return Pawn && Pawn->IsLocallyControlled() && TNTctItemComponentDetail::CanRender();
+}
+
+bool UTN_TctItemComponent::NeedsPoisonLook() const
+{
+	return IsLocalView() && (PoisonNet.Rate > 0.f || PoisonFade > 0.f);
+}
+
+void UTN_TctItemComponent::TickPoisonLook(float DeltaTime)
+{
+	if (!IsLocalView())
+	{
+		return;
+	}
+	// Dentro del agua venenosa (el servidor pone la subida del veneno solo cuando de verdad la intoxica: no con el flotador).
+	PoisonFade = TNTctRules::PoisonVisionStep(PoisonFade, PoisonNet.Rate > 0.f, DeltaTime);
+	if (PoisonFade <= 0.f)
+	{
+		if (PoisonLook)
+		{
+			PoisonLook->bEnabled = false;
+			PoisonLook->BlendWeight = 0.f;
+		}
+		return;
+	}
+	AActor* Owner = GetOwner();
+	if (!PoisonLook && Owner)
+	{
+		// Un volumen sin límites solo de esta máquina (el componente no se replica): tiñe lo que ve quien la lleva y nadie más.
+		PoisonLook = NewObject<UPostProcessComponent>(Owner, NAME_None, RF_Transient);
+		PoisonLook->bUnbound = true;
+		PoisonLook->Priority = 20.f;
+		FPostProcessSettings& Settings = PoisonLook->Settings;
+		Settings.bOverride_SceneColorTint = true;
+		Settings.SceneColorTint = FLinearColor(0.55f, 1.f, 0.42f);
+		Settings.bOverride_ColorSaturation = true;
+		Settings.ColorSaturation = FVector4(0.85f, 1.f, 0.8f, 1.f);
+		Settings.bOverride_VignetteIntensity = true;
+		Settings.VignetteIntensity = 1.1f;
+		PoisonLook->SetupAttachment(Owner->GetRootComponent());
+		PoisonLook->RegisterComponent();
+	}
+	if (PoisonLook)
+	{
+		PoisonLook->bEnabled = true;
+		PoisonLook->BlendWeight = TNTctRules::PoisonVisionWeight(PoisonFade, GetPoison());
+	}
 }
 
 void UTN_TctItemComponent::OnRep_Float()
@@ -667,13 +726,14 @@ void UTN_TctItemComponent::RefreshTick()
 {
 	bool bAnyFx = false;
 	for (const bool bApplied : bFxApplied) { bAnyFx |= bApplied; }
-	SetComponentTickEnabled(bHeavyApplied || bFloatApplied || bRescuePending || bAnyFx || Trails.Num() > 0);
+	SetComponentTickEnabled(bHeavyApplied || bFloatApplied || bRescuePending || bAnyFx || Trails.Num() > 0 || NeedsPoisonLook());
 }
 
 void UTN_TctItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	TickTrails(DeltaTime);
+	TickPoisonLook(DeltaTime);
 	if (bHeavyApplied && !IsHeavy())
 	{
 		// Se acaba el lastre a la hora del servidor, en cada máquina (sin esperar otra réplica).

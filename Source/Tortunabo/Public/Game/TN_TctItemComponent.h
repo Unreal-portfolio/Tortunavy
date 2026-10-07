@@ -8,6 +8,7 @@
 
 class ACharacter;
 class UMaterialInstanceDynamic;
+class UPostProcessComponent;
 class UStaticMeshComponent;
 
 /** El veneno del agua de una tortuga (#831) tal como se replica: ver FTNTctPoison. Las horas son del servidor. */
@@ -77,7 +78,9 @@ struct FTNTctFxState
  *    Las púas (servidor) empujan a quien se acerca y la burbuja (TNRaceItems::IsInvulnerable) la libra de empujones y derribos.
  *  - Veneno del agua (#831): el agua de TcT no mata al tocarla; intoxica mientras se está dentro y se recupera fuera. El
  *    servidor lo decide cada 0,1 s (ServerTickWater) y replica solo los cambios de ritmo (la recta de FTNTctPoison): cada
- *    máquina calcula el nivel de ahora (GetPoison) para el HUD. Al llegar a 1, queda eliminada.
+ *    máquina calcula el nivel de ahora (GetPoison) para el HUD. Al llegar a 1, queda eliminada. En la máquina de quien la lleva,
+ *    mientras está dentro del agua venenosa, la vista se tiñe de verde (#920): un postproceso local, suave y con fundido de
+ *    entrada y de salida (TNTctRules::PoisonVisionStep y PoisonVisionWeight).
  */
 UCLASS(ClassGroup = (Custom))
 class TORTUNABO_API UTN_TctItemComponent : public UActorComponent
@@ -239,8 +242,22 @@ private:
 	TObjectPtr<UStaticMeshComponent> SpikesLook;
 
 	/** El veneno del agua: la recta replicada (la hora de T0 es la del servidor). */
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_Poison)
 	FTNTctPoisonNet PoisonNet;
+
+	UFUNCTION()
+	void OnRep_Poison();
+
+	/** La vista de quien la lleva se tiñe de verde mientras está dentro del agua venenosa: el postproceso local y su fundido (0-1). */
+	UPROPERTY(Transient)
+	TObjectPtr<UPostProcessComponent> PoisonLook;
+	float PoisonFade = 0.f;
+
+	/** Esta máquina es la de quien lleva la tortuga y tiene pantalla. */
+	bool IsLocalView() const;
+	/** Hay tinte puesto o por poner (dentro del agua o con el fundido de salida sin acabar). */
+	bool NeedsPoisonLook() const;
+	void TickPoisonLook(float DeltaTime);
 
 	/** Servidor: la regla del flotador. */
 	FTNTctFloatState FloatRule;
