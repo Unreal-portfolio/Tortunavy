@@ -1,6 +1,6 @@
 // Lo que cada máquina monta para sí a partir del bloque "placements" (#652): el decorado (ATN_BeachDecorField, instanciado
-// y con colisión), la vegetación (mallas de flora del mapa procedural, instanciadas y sin colisión) y el géiser (local por
-// diseño de la clase). Igual en todas las máquinas porque sale del mismo manifest y de semillas por id.
+// y con colisión) y la vegetación (mallas de flora del mapa procedural, instanciadas y sin colisión). Igual en todas las
+// máquinas porque sale del mismo manifest y de semillas por id.
 
 #include "World/TN_MapPlacementSpawner.h"
 
@@ -11,7 +11,6 @@
 #include "World/ProcMap/TN_ProcMapFlora.h"
 #include "World/ProcMap/TN_ProcMapMath.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
-#include "World/ProcMap/TN_ProcTraversalActors.h"
 #include "ProcMap/TN_ProcMapFloraMeshes.h"
 #include "ProcMap/TN_ProcMapRuntimeMesh.h"
 
@@ -25,9 +24,6 @@ namespace TNMapPlacementScenery
 {
 	/** Material de la flora del mapa procedural (color de vértice con viento). */
 	const TCHAR* FoliageMaterialPath = TEXT("/Game/ProcMap/Materials/M_ProcFoliage.M_ProcFoliage");
-
-	/** Hasta dónde lanza el géiser si la entrada no trae target_uu (cm, por delante en el camino). */
-	constexpr double DefaultGeyserReach = 1400.0;
 
 	/** Presupuesto (s) de cada paso del montaje del decorado y pasos como mucho (se monta entero al cargar). */
 	constexpr double DecorStepBudget = 0.05;
@@ -56,20 +52,6 @@ void ATN_MapPlacementSpawner::QueueDecor(const TNMapPlacements::FPlacement& P)
 void ATN_MapPlacementSpawner::QueueVegetation(const TNMapPlacements::FPlacement& P)
 {
 	PendingVegetation.Add(P);
-}
-
-bool ATN_MapPlacementSpawner::SpawnGeyser(const TNMapPlacements::FPlacement& P)
-{
-	const FVector At = Grounded(P.Location);
-	ATN_ProcGeyser* Geyser = Cast<ATN_ProcGeyser>(SpawnClass(ATN_ProcGeyser::StaticClass(), At, 0.0));
-	if (!Geyser)
-	{
-		++Stats.Failed;
-		return false;
-	}
-	const FVector Ahead = At + FRotator(0.0, P.YawDeg, 0.0).Vector() * TNMapPlacementScenery::DefaultGeyserReach;
-	Geyser->SetTarget(Grounded(P.bHasTarget ? P.Target : Ahead));
-	return true;
 }
 
 void ATN_MapPlacementSpawner::BuildDecor()

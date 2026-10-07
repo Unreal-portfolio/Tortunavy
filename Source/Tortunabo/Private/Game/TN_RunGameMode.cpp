@@ -13,7 +13,6 @@
 #include "Player/TN_InventoryComponent.h"
 #include "World/TN_DeathZoneVolume.h"
 #include "World/TN_StormVolume.h"
-#include "World/TN_CollectionZone.h"
 #include "GameFramework/SpectatorPawn.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Character.h"
@@ -60,16 +59,6 @@ void ATN_RunGameMode::BeginPlay()
 	}
 
 	NextFinishRank = 1;
-
-	// Suscribirse a las CollectionZones del nivel para que el GameMode reaccione
-	// cuando completen su goal (sumar bonus, log, futuras señales de progresión).
-	for (TActorIterator<ATN_CollectionZone> It(GetWorld()); It; ++It)
-	{
-		if (ATN_CollectionZone* Zone = *It)
-		{
-			Zone->OnZoneGoalReached.AddUObject(this, &ATN_RunGameMode::HandleCollectionZoneGoal);
-		}
-	}
 
 	// ── Leer cuántos jugadores había en el lobby ──────────────────────────
 	if (const UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
@@ -476,8 +465,8 @@ void ATN_RunGameMode::MarkPlayerFinished(APlayerController* PlayerController)
 
 	// ── Asignar puntos finales: RankScore + TimeBonus ────────────────────────
 	// El RaceScore actual ya contiene los puntos de ScorePickups recogidos
-	// durante la run + bonus de CollectionZones. Aquí sumamos los componentes
-	// finales: posición de llegada y bonus por velocidad.
+	// durante la run. Aquí sumamos los componentes finales: posición de llegada
+	// y bonus por velocidad.
 	// Ocho puestos (partidas de hasta ocho): del quinto en adelante bajan poco a poco hasta los 50 de siempre para el resto.
 	static const int32 RankScoreTable[] = { 400, 300, 200, 100, 80, 65, 55, 50 };
 	const int32 RankIndex = TNPS->FinishRank - 1;
@@ -1442,29 +1431,5 @@ void ATN_RunGameMode::SetFlowState(ETNMatchFlowState NewState) const
 		TNGS->MatchFlowState = NewState;
 		TNGS->BroadcastFlowStateChange();
 	}
-}
-
-void ATN_RunGameMode::HandleCollectionZoneGoal(ATN_CollectionZone* Zone)
-{
-	if (!HasAuthority() || !Zone) { return; }
-
-	const int32 Bonus = Zone->GoalReachedBonusScore;
-	if (Bonus <= 0) { return; }
-
-	// Bonus a TODOS los jugadores activos (no eliminados, no terminados aún).
-	// Cooperativo: completar la zona beneficia al equipo entero.
-	int32 Beneficiaries = 0;
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		APlayerController* PC = It->Get();
-		if (!PC) { continue; }
-		ATN_CoopPlayerState* TNPS = PC->GetPlayerState<ATN_CoopPlayerState>();
-		if (!TNPS || TNPS->bIsEliminated || TNPS->bHasFinishedRun) { continue; }
-		TNPS->AddRaceScore(Bonus);  // difunde OnRaceScoreChanged en el host (listen-server)
-		++Beneficiaries;
-	}
-
-	UE_LOG(LogTortunabo, Log, TEXT("[COLLECTION] GameMode reaccionó a zone '%s' goal · +%d a %d players activos"),
-		*Zone->GetName(), Bonus, Beneficiaries);
 }
 

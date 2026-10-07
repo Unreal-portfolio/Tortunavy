@@ -1504,7 +1504,7 @@ void UTN_GameSettingsSubsystem::UpdateCamera(APlayerController* PC, FTNPlayerInp
 
 	// Sensibilidad e inversión: escalas de giro del PlayerController (UInputSettings::bEnableLegacyInputScales está
 	// activo en DefaultInput.ini), con los valores del último aparato usado. Valen para la tortuga y para cualquier
-	// cámara que gire con AddControllerYawInput/AddControllerPitchInput (la cámara libre del fantasma lee los getters).
+	// cámara que gire con AddControllerYawInput/AddControllerPitchInput.
 	// Con la pantalla partida, cada jugador los suyos (Own).
 	const bool bPad = IsUsingGamepad(PC);
 	const APlayerController* Defaults = PC->GetClass()->GetDefaultObject<APlayerController>();
@@ -1596,7 +1596,7 @@ void UTN_GameSettingsSubsystem::UpdateTalkers(APlayerController* PC)
 
 UTN_SettingsFovModifier::UTN_SettingsFovModifier()
 {
-	// El último: después de la cámara del fantasma (0) y de los temblores.
+	// El último: después de los temblores.
 	Priority = 250;
 }
 

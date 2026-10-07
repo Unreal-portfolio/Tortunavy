@@ -12,7 +12,7 @@
  * pisada o el primer botón pulsado) y de cuándo se resuelven (NotifySolved). La cuenta la hace
  * TNCoopScore::PuzzleEfficiency.
  *
- * Avisan: ATN_ButtonGroupManager, ATN_PressurePlateGroupManager y el interruptor del muro de lanzamiento (ATN_ProcSwitch).
+ * Avisan: ATN_ButtonGroupManager y ATN_PressurePlateGroupManager.
  * Un puzle destruido sigue contando (la partida lo tuvo).
  */
 UCLASS()

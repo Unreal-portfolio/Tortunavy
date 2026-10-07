@@ -10,7 +10,6 @@
 class APlayerController;
 class APlayerStart;
 class ATN_RescuePickup;
-class ATN_CollectionZone;
 class ATN_CoopPlayerState;
 class UTN_UnderTerrainGuardComponent;
 
@@ -33,7 +32,7 @@ class TORTUNABO_API ATN_RunGameMode : public AGameMode
 public:
 	ATN_RunGameMode();
 
-	/** @brief Inicializa timers, reloj de carrera y bindings con CollectionZones presentes en el mapa. */
+	/** @brief Inicializa timers, reloj de carrera y la espera de los jugadores del lobby. */
 	virtual void BeginPlay() override;
 
 	/** @brief Tras Super, devuelve al jugador su nombre completo (el motor lo corta a 20 caracteres). */
@@ -102,14 +101,6 @@ public:
 	 * @note Server-only.
 	 */
 	void MarkPlayerDeadBy(APlayerController* PlayerController, ETNDeathCause Cause);
-
-	/**
-	 * @brief Callback server-side cuando una CollectionZone alcanza su RequiredCount.
-	 *        Bindeado en BeginPlay vía OnZoneGoalReached. Suma GoalReachedBonusScore
-	 *        al RaceScore de todos los jugadores activos (no eliminados).
-	 * @param Zone CollectionZone que dispara el evento.
-	 */
-	void HandleCollectionZoneGoal(ATN_CollectionZone* Zone);
 
 	/**
 	 * @brief Pone a un jugador en estado DBNO (knockdown + bleedout timer).

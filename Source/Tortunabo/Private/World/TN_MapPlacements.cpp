@@ -79,7 +79,6 @@ namespace TNMapPlacementsDetail
 		Out.Line = static_cast<int32>(NumberOr(Entry, TEXT("line"), INDEX_NONE));
 		Out.S = NumberOr(Entry, TEXT("s_m"), 0.0);
 		Out.ProgressM = NumberOr(Entry, TEXT("progress_m"), -1.0);
-		Out.bHasTarget = ReadVector(Entry, TEXT("target_uu"), Out.Target);
 		const TArray<TSharedPtr<FJsonValue>>* Path = nullptr;
 		if (Entry.TryGetArrayField(TEXT("path_uu"), Path) && Path)
 		{
@@ -135,12 +134,9 @@ namespace TNMapPlacementsDetail
 	TNMapPlacements::ESpawn PuzzleSpawn(const FString& Kind)
 	{
 		using TNMapPlacements::ESpawn;
-		if (Kind == TEXT("throw_chain")) { return ESpawn::ThrowWall; }
 		if (Kind == TEXT("plate_balance")) { return ESpawn::PlateBalance; }
 		if (Kind == TEXT("breakable_chain")) { return ESpawn::BreakableChain; }
-		if (Kind == TEXT("shell_gauntlet")) { return ESpawn::ShellGauntlet; }
 		if (Kind == TEXT("wobbly_run")) { return ESpawn::WobblyRun; }
-		if (Kind == TEXT("catapult_gap")) { return ESpawn::Linked; }
 		return ESpawn::Unsupported;
 	}
 
@@ -183,7 +179,6 @@ TNMapPlacements::ESpawn TNMapPlacements::SpawnOf(const FString& Category, const 
 	{
 		return Kind == TEXT("Palm") || Kind == TEXT("Shrub") || Kind == TEXT("Grass") ? ESpawn::Vegetation : ESpawn::Unsupported;
 	}
-	if (Category == TEXT("mechanic") && Kind == TEXT("Geyser")) { return ESpawn::Geyser; }
 	if (!ElementFromName(Kind, OutElement))
 	{
 		return ESpawn::Unsupported;
@@ -212,16 +207,12 @@ const TCHAR* TNMapPlacements::SpawnName(ESpawn Spawn)
 	case ESpawn::BeachElement:   return TEXT("BeachElement");
 	case ESpawn::Decor:          return TEXT("Decor");
 	case ESpawn::Vegetation:     return TEXT("Vegetation");
-	case ESpawn::Geyser:         return TEXT("Geyser");
 	case ESpawn::SearchSpot:     return TEXT("SearchSpot");
 	case ESpawn::ScoreShell:     return TEXT("ScoreShell");
 	case ESpawn::FishingPool:    return TEXT("FishingPool");
-	case ESpawn::ThrowWall:      return TEXT("ThrowWall");
 	case ESpawn::PlateBalance:   return TEXT("PlateBalance");
 	case ESpawn::BreakableChain: return TEXT("BreakableChain");
-	case ESpawn::ShellGauntlet:  return TEXT("ShellGauntlet");
 	case ESpawn::WobblyRun:      return TEXT("WobblyRun");
-	case ESpawn::Linked:         return TEXT("Linked");
 	default:                     return TEXT("Unsupported");
 	}
 }

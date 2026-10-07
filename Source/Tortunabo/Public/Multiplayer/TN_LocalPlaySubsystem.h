@@ -53,7 +53,7 @@ public:
 	/** Número del jugador local de PC (1 a 4); 1 fuera del modo local. */
 	static int32 GetPlayerNumber(const APlayerController* PC);
 
-	/** ¿Se guarda lo que cambia PC (ajustes, controles, cosméticos, puntos, tutorial)? TNLocalPlay::ShouldSave. */
+	/** ¿Se guarda lo que cambia PC (ajustes, controles, cosméticos y puntos)? TNLocalPlay::ShouldSave. */
 	static bool ShouldSaveFor(const APlayerController* PC);
 
 	/** true si el mundo de WorldContext es un lobby (ATN_HQGameMode). */

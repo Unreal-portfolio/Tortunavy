@@ -582,7 +582,7 @@ void ATN_BeachTrampoline::PlaceSign(double Fit, uint32 Seed)
 	SignPivot->SetRelativeScale3D(FVector::OneVector);
 	bSignMoving = false;
 	TNBeachTrapKit::FBuffers Sign;
-	TNBeachSignKit::BuildSign(Sign, TNBeachSignKit::EIcon::Bounce, bBoosted, Seed);
+	TNBeachSignKit::BuildSign(Sign, bBoosted, Seed);
 	TNBeachTrapKit::SetMesh(SignMesh, this, Sign, TN_ART("Beach.Trampoline.Sign"));
 	TNBeachSignKit::SetText(SignText, NSLOCTEXT("TNBeach", "TrampolineSign", "¡BOING!"), TNBeachSignKit::TextColor(bBoosted));
 	SignGlowApplied = -1.f;

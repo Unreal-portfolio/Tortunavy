@@ -62,7 +62,7 @@ public:
 	/**
 	 * Arranca el sintetizador si estaba parado y lo mantiene en marcha IdleStopSeconds; los Play* lo llaman solos. Antes
 	 * se arrancaba una vez y no se paraba nunca: el del mando ocupaba una voz del mezclador toda la partida (#737). 2D
-	 * (interfaz) con voz reservada; con espacialización (el huevo del fantasma en el mundo), como el resto del mundo.
+	 * (interfaz) con voz reservada; con espacialización, como el resto del mundo.
 	 */
 	void KeepAwake();
 

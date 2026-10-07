@@ -25,8 +25,6 @@
 #include "Lobby/TN_LobbyValley.h"
 #include "Lobby/TN_SandCastleLobby.h"
 #include "Lobby/TN_ShopKeeper.h"
-#include "Lobby/TN_TutorialCourse.h"
-#include "Lobby/TN_TutorialPlayerComponent.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Engine/SkinnedAsset.h"
 
@@ -50,8 +48,6 @@ void ATN_HQGameMode::BeginPlay()
 	}
 	EnsureFallbackPlayerStart();
 	SpawnLobbyShops();
-	// El recorrido del tutorial, con el castillo ya puesto (la cascada cae sobre la plaza).
-	SpawnTutorialCourse();
 
 	// ── Safety check: detectar si el mapa cargó con la clase C++ base en vez del BP ──
 	if (GetClass() == ATN_HQGameMode::StaticClass())
@@ -66,7 +62,6 @@ void ATN_HQGameMode::BeginPlay()
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		EnsurePlayerSpawned(It->Get());
-		SetupTutorialFor(It->Get());
 	}
 
 	RefreshLobbyState();
@@ -74,14 +69,10 @@ void ATN_HQGameMode::BeginPlay()
 
 AActor* ATN_HQGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-	// El tutorial de la primera partida no pasa por aquí: se aparece en el lobby y el recorrido (ATN_TutorialCourse) sube a
-	// la tortuga en el mismo fotograma (?TNTut=1) o cuando su máquina lo pide (Docs/Tutorial.md).
-
-	// ── Selección normal: excluir spawns reservados para el tutorial ─────────
 	TArray<AActor*> PlayerStarts;
 	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 
-	// Quitar del pool cualquier PlayerStart con el tag de tutorial
+	// Fuera del reparto los PlayerStart con la etiqueta de la zona de tutorial antigua (siguen colocados en el nivel).
 	PlayerStarts.RemoveAll([this](const AActor* A)
 	{
 		const APlayerStart* PS = Cast<APlayerStart>(A);
@@ -112,7 +103,6 @@ void ATN_HQGameMode::HandleStartingNewPlayer_Implementation(APlayerController* N
 {
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	EnsurePlayerSpawned(NewPlayer);
-	SetupTutorialFor(NewPlayer);
 }
 
 FString ATN_HQGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options,
@@ -120,13 +110,6 @@ FString ATN_HQGameMode::InitNewPlayer(APlayerController* NewPlayerController, co
 {
 	const FString Result = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
 	TN_RestoreFullPlayerName(this, NewPlayerController, Options);
-	// Un cliente que no ha hecho el tutorial lo dice al entrar (UMP_GameInstance::OnJoinSessionComplete): aparece ya en él.
-	if (NewPlayerController && UGameplayStatics::HasOption(Options, UMP_GameInstance::TutorialJoinOption()))
-	{
-		PendingTutorialJoins.Add(NewPlayerController);
-		UE_LOG(LogTortunabo, Log, TEXT("[HQGameMode] %s entra por primera vez (?%s): al tutorial."), *GetNameSafe(NewPlayerController),
-			UMP_GameInstance::TutorialJoinOption());
-	}
 	return Result;
 }
 
@@ -135,7 +118,6 @@ void ATN_HQGameMode::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 
 	EnsurePlayerSpawned(NewPlayer);
-	SetupTutorialFor(NewPlayer);
 
 	if (ATN_CoopPlayerState* TNPS = NewPlayer ? NewPlayer->GetPlayerState<ATN_CoopPlayerState>() : nullptr)
 	{
@@ -179,75 +161,6 @@ void ATN_HQGameMode::SetPlayerReadyState(APlayerController* PlayerController, bo
 	}
 
 	RefreshLobbyState();
-}
-
-void ATN_HQGameMode::SpawnTutorialCourse()
-{
-	UWorld* World = GetWorld();
-	if (!World || !bTutorialEnabled || TutorialCourse || !HasAuthority())
-	{
-		return;
-	}
-	if (ATN_TutorialCourse* Existing = ATN_TutorialCourse::Find(this))
-	{
-		TutorialCourse = Existing;
-		return;
-	}
-	// Donde se aterriza tras la cascada: el centro de los PlayerStart del lobby (la plaza, entre los huevos y la puerta doble,
-	// donde se aparece: siempre despejado), sobre el suelo.
-	FVector Sum = FVector::ZeroVector;
-	int32 Count = 0;
-	for (TActorIterator<APlayerStart> It(World); It; ++It)
-	{
-		if ((*It)->PlayerStartTag == TutorialStartTag || (*It)->ActorHasTag(TEXT("TNExtraStart")))
-		{
-			continue;
-		}
-		Sum += (*It)->GetActorLocation();
-		++Count;
-	}
-	if (Count == 0)
-	{
-		if (const APlayerStart* Fallback = EnsureFallbackPlayerStart())
-		{
-			Sum = Fallback->GetActorLocation();
-			Count = 1;
-		}
-	}
-	if (Count == 0)
-	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[HQGameMode] Sin PlayerStart: no se coloca el tutorial."));
-		return;
-	}
-	const FVector Center = Sum / static_cast<double>(Count);
-	// El PlayerStart va a media cápsula del suelo; si hay suelo debajo (el castillo), justo en él.
-	FVector Landing = Center - FVector(0.0, 0.0, 90.0);
-	FHitResult Hit;
-	FCollisionQueryParams Query(SCENE_QUERY_STAT(TN_TutorialLandingSpot), false);
-	if (World->LineTraceSingleByChannel(Hit, Center + FVector(0.0, 0.0, 200.0), Center - FVector(0.0, 0.0, 3000.0), ECC_WorldStatic, Query))
-	{
-		Landing = Hit.ImpactPoint;
-	}
-	TutorialCourse = ATN_TutorialCourse::SpawnAbove(World, Landing, TutorialCourseYaw);
-}
-
-void ATN_HQGameMode::SetupTutorialFor(APlayerController* PlayerController)
-{
-	if (!PlayerController || !HasAuthority())
-	{
-		return;
-	}
-	UTN_TutorialPlayerComponent::EnsureFor(PlayerController);
-	if (!PendingTutorialJoins.Contains(PlayerController) || !PlayerController->GetPawn())
-	{
-		return;
-	}
-	PendingTutorialJoins.Remove(PlayerController);
-	ATN_TutorialCourse* Course = TutorialCourse ? TutorialCourse.Get() : ATN_TutorialCourse::Find(this);
-	if (Course)
-	{
-		Course->StartFor(PlayerController);
-	}
 }
 
 void ATN_HQGameMode::RefreshLobbyState()
@@ -445,9 +358,6 @@ void ATN_HQGameMode::HandleSeamlessTravelPlayer(AController*& C)
 	}
 
 	Super::HandleSeamlessTravelPlayer(C);
-
-	// El componente del tutorial (vuelve de una partida: si esa máquina aún no lo ha hecho, lo pedirá ella).
-	SetupTutorialFor(Cast<APlayerController>(C));
 }
 
 bool ATN_HQGameMode::CanServerTravel(const FString& URL, bool bAbsolute)
@@ -515,7 +425,6 @@ void ATN_HQGameMode::PostSeamlessTravel()
 		{
 			EnsurePlayerSpawned(PC);
 		}
-		SetupTutorialFor(PC);
 	}
 
 	// Actualizar conteo en el GameState
@@ -542,8 +451,7 @@ void ATN_HQGameMode::PostSeamlessTravel()
 		for (TActorIterator<APawn> It(World); It; ++It)
 		{
 			APawn* P = *It;
-			// Las tortugas de prácticas del tutorial (Rodolfo y Berta) no llevan controlador a propósito.
-			if (P && !P->GetController() && !P->ActorHasTag(TEXT("TN_TutorialPractice")))
+			if (P && !P->GetController())
 			{
 				P->Destroy();
 			}

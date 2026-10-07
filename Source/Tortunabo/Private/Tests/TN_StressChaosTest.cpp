@@ -15,15 +15,14 @@ bool FTNStressChaosTimelineTest::RunTest(const FString& Parameters)
 	FConfig Config;
 	Config.PhaseSeconds = 20.f;
 	const TArray<FPhase> Phases = BuildTimeline(Config);
-	TestEqual(TEXT("Siete fases"), Phases.Num(), static_cast<int32>(EStep::Count));
-	TestEqual(TEXT("Dura 7 x 20 s"), Phases.Last().End, 140.f);
+	TestEqual(TEXT("Seis fases"), Phases.Num(), static_cast<int32>(EStep::Count));
+	TestEqual(TEXT("Dura 6 x 20 s"), Phases.Last().End, 120.f);
 	TestEqual(TEXT("La referencia solo anda"), static_cast<int32>(Phases[0].Tasks), static_cast<int32>(TaskBit(ETask::Wander)));
 	for (int32 Index = 1; Index < Phases.Num(); ++Index)
 	{
 		TestEqual(TEXT("Fases seguidas, sin huecos"), Phases[Index].Start, Phases[Index - 1].End);
 		TestTrue(TEXT("Cada fase permite lo de la anterior"), (Phases[Index].Tasks & Phases[Index - 1].Tasks) == Phases[Index - 1].Tasks);
 	}
-	TestEqual(TEXT("Las catapultas se ponen en su fase"), Phases[static_cast<int32>(EStep::Catapults)].Catapults, Config.Catapults);
 	int32 EnemiesBefore = 0;
 	for (int32 Index = 0; Index < static_cast<int32>(EStep::Enemies); ++Index)
 	{
@@ -34,7 +33,6 @@ bool FTNStressChaosTimelineTest::RunTest(const FString& Parameters)
 	const FPhase& Peak = Phases[static_cast<int32>(EStep::Peak)];
 	TestEqual(TEXT("12 cangrejos por tanda"), Enemies.Crabs, 12);
 	TestTrue(TEXT("El pico vuelve a crear enemigos (el doble en total)"), Peak.Crabs == Enemies.Crabs && Peak.Tanks == Enemies.Tanks);
-	TestTrue(TEXT("El pico pone más catapultas"), Peak.Catapults > 0);
 	TestTrue(TEXT("El pico lanza objetos más seguido"), Peak.ItemEverySeconds > 0.f && Peak.ItemEverySeconds < Enemies.ItemEverySeconds);
 	TestEqual(TEXT("Antes de la fase de objetos no se lanza nada"), Phases[static_cast<int32>(EStep::Ball)].ItemEverySeconds, 0.f);
 
@@ -60,10 +58,10 @@ bool FTNStressChaosPickTaskTest::RunTest(const FString& Parameters)
 	{
 		++Counts[static_cast<int32>(PickTask(Stream, Ball, true))];
 	}
-	TestEqual(TEXT("Nunca una tarea no permitida (catapulta)"), Counts[static_cast<int32>(ETask::Catapult)], 0);
+	TestEqual(TEXT("Nunca una tarea no permitida (coger y lanzar)"), Counts[static_cast<int32>(ETask::Carry)], 0);
 	TestTrue(TEXT("Salen las permitidas"), Counts[static_cast<int32>(ETask::Ball)] > 0 && Counts[static_cast<int32>(ETask::Wander)] > 0);
 
-	const uint8 All = TaskBit(ETask::Wander) | TaskBit(ETask::Carry) | TaskBit(ETask::Catapult);
+	const uint8 All = TaskBit(ETask::Wander) | TaskBit(ETask::Carry) | TaskBit(ETask::Items);
 	bool bCarryWithoutPartner = false;
 	for (int32 Index = 0; Index < 2000; ++Index)
 	{

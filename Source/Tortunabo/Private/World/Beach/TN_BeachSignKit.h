@@ -10,10 +10,9 @@
 #include "TN_BeachTrapKit.h"
 
 /**
- * Cartel de madera clavado en la arena junto a los lanzadores (ATN_BeachTrampoline y ATN_BeachCatapult, también los de la
- * cima de las fortalezas) para que se sepa de lejos qué es cada uno: tabla de tres tablones en dos postes con el icono
- * pintado (flecha que baja y rebota hacia arriba en el trampolín, flecha en arco en la catapulta) y el rótulo en una
- * franja oscura (TextRender: «¡BOING!» o «¡CATAPULTA!»). Los potenciados, tabla dorada con el icono azul marino y una
+ * Cartel de madera clavado en la arena junto a los trampolines (ATN_BeachTrampoline, también los de la cima de las
+ * fortalezas) para que se sepan de lejos: tabla de tres tablones en dos postes con el icono pintado (flecha que baja y
+ * rebota hacia arriba) y el rótulo en una franja oscura (TextRender: «¡BOING!»). Los potenciados, tabla dorada con el icono azul marino y una
  * estrella dorada encima. Sin colisión: no estorba.
  *
  * Espacio del cartel (cm): origen al pie de los postes, en la arena; la cara pintada mira a -X (a quien llega). Cada
@@ -33,14 +32,6 @@ namespace TNBeachSignKit
 	/** A menos de esto (cm) una tortuga local hace rebotar el cartel; a menos de GlowRadius, el rótulo brilla. */
 	constexpr double BounceRadius = 900.0;
 	constexpr double GlowRadius = 1500.0;
-
-	enum class EIcon : uint8
-	{
-		/** Trampolín: flecha que baja, toca una cúpula y sube. */
-		Bounce,
-		/** Catapulta: palanca y flecha en arco. */
-		Arc
-	};
 
 	/** Centro del rótulo (espacio del cartel), delante de la franja oscura. */
 	inline FVector TextSpot() { return FVector(-0.5 * BoardT - 5.0, 0.0, PostH + 44.0); }
@@ -82,7 +73,7 @@ namespace TNBeachSignKit
 	 * marco, franja oscura para el rótulo e icono pintado encima. Potenciado: tabla dorada, icono azul marino, franja azul
 	 * marino y una estrella dorada de pie sobre la tabla.
 	 */
-	inline void BuildSign(FBuffers& B, EIcon Icon, bool bBoosted, uint32 Seed)
+	inline void BuildSign(FBuffers& B, bool bBoosted, uint32 Seed)
 	{
 		const double Hw = 0.5 * BoardW;
 		const double Top = PostH + BoardH;
@@ -122,53 +113,27 @@ namespace TNBeachSignKit
 		const double Cz = PostH + 124.0;
 		const double IFace = Face - 1.5;
 		const double W = 13.0;
-		if (Icon == EIcon::Bounce)
+		// Cúpula de trampolín abajo y una flecha que baja por la izquierda, toca la cúpula y sube por la derecha.
+		const FLinearColor Dome = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0x2EC4B6, 0.1f);
+		const FLinearColor Arrow = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0xE63946, 0.1f);
+		TArray<FVector2D> DomePath;
+		for (int32 k = 0; k <= 8; ++k)
 		{
-			// Cúpula de trampolín abajo y una flecha que baja por la izquierda, toca la cúpula y sube por la derecha.
-			const FLinearColor Dome = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0x2EC4B6, 0.1f);
-			const FLinearColor Arrow = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0xE63946, 0.1f);
-			TArray<FVector2D> DomePath;
-			for (int32 k = 0; k <= 8; ++k)
-			{
-				const double A = TNPlaygroundKit::KitPi * k / 8.0;
-				DomePath.Add(FVector2D(-40.0 * FMath::Cos(A), Cz - 34.0 + 12.0 * FMath::Sin(A)));
-			}
-			AddStroke(B, DomePath, 6.0, IFace, Dome);
-			TArray<FVector2D> Path;
-			for (int32 k = 0; k <= 12; ++k)
-			{
-				const double U = -1.0 + 2.0 * k / 12.0;
-				// Parábola con el vértice sobre la cúpula; la rama de la derecha, más alta (sale con más fuerza).
-				const double Y = 64.0 * U;
-				const double Z = Cz - 18.0 + (U < 0.0 ? 34.0 : 40.0) * U * U;
-				Path.Add(FVector2D(Y, Z));
-			}
-			AddStroke(B, Path, 0.5 * W, IFace, Arrow);
-			AddArrowHead(B, Path.Last() + FVector2D(4.0, 10.0), Path.Last() - Path[Path.Num() - 2], 30.0, IFace, Arrow);
+			const double A = TNPlaygroundKit::KitPi * k / 8.0;
+			DomePath.Add(FVector2D(-40.0 * FMath::Cos(A), Cz - 34.0 + 12.0 * FMath::Sin(A)));
 		}
-		else
+		AddStroke(B, DomePath, 6.0, IFace, Dome);
+		TArray<FVector2D> Path;
+		for (int32 k = 0; k <= 12; ++k)
 		{
-			// Palanca con una bolita a la izquierda y una flecha en arco que cae a la derecha.
-			const FLinearColor Lever = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0x7A5232, 0.05f);
-			const FLinearColor Arrow = bBoosted ? TNBeachBoostKit::Navy() : TNPlaygroundKit::Rgb(0x1D7FD1, 0.1f);
-			AddStroke(B, { FVector2D(-112.0, Cz - 38.0), FVector2D(-58.0, Cz - 14.0) }, 5.0, IFace, Lever);
-			AddStroke(B, { FVector2D(-100.0, Cz - 42.0), FVector2D(-82.0, Cz - 28.0), FVector2D(-64.0, Cz - 42.0) }, 4.0, IFace, Lever);
-			TArray<FVector2D> Ball;
-			for (int32 k = 0; k <= 10; ++k)
-			{
-				const double A = TNPlaygroundKit::KitTwoPi * k / 10.0;
-				Ball.Add(FVector2D(-54.0 + 9.0 * FMath::Cos(A), Cz - 6.0 + 9.0 * FMath::Sin(A)));
-			}
-			AddStroke(B, Ball, 5.0, IFace, Arrow);
-			TArray<FVector2D> Path;
-			for (int32 k = 0; k <= 12; ++k)
-			{
-				const double U = static_cast<double>(k) / 12.0;
-				Path.Add(FVector2D(FMath::Lerp(-40.0, 104.0, U), Cz - 4.0 + 150.0 * U * (1.0 - U) - 34.0 * U));
-			}
-			AddStroke(B, Path, 0.5 * W, IFace, Arrow);
-			AddArrowHead(B, Path.Last() + FVector2D(8.0, -4.0), Path.Last() - Path[Path.Num() - 2], 30.0, IFace, Arrow);
+			const double U = -1.0 + 2.0 * k / 12.0;
+			// Parábola con el vértice sobre la cúpula; la rama de la derecha, más alta (sale con más fuerza).
+			const double Y = 64.0 * U;
+			const double Z = Cz - 18.0 + (U < 0.0 ? 34.0 : 40.0) * U * U;
+			Path.Add(FVector2D(Y, Z));
 		}
+		AddStroke(B, Path, 0.5 * W, IFace, Arrow);
+		AddArrowHead(B, Path.Last() + FVector2D(4.0, 10.0), Path.Last() - Path[Path.Num() - 2], 30.0, IFace, Arrow);
 
 		if (bBoosted)
 		{
@@ -182,16 +147,6 @@ namespace TNBeachSignKit
 				TNBeachBoostKit::AddStar(B, FVector(IFace, Sy * (Hw - 34.0), Top - 30.0), -FVector::ForwardVector, FVector::UpVector, 17.0, TNBeachBoostKit::Navy());
 			}
 		}
-	}
-
-	/** Cinta roja en aspa sobre la cara de la tabla (catapulta partida), por delante del icono y por detrás del rótulo. */
-	inline void BuildBrokenCross(FBuffers& B)
-	{
-		const double Face = -0.5 * BoardT - 4.0;
-		const double Hw = 0.5 * BoardW - 20.0;
-		const FLinearColor Tape = TNPlaygroundKit::Rgb(0xD62828, 0.15f);
-		AddStroke(B, { FVector2D(-Hw, PostH + BoardH - 18.0), FVector2D(Hw, PostH + 18.0) }, 11.0, Face, Tape);
-		AddStroke(B, { FVector2D(-Hw, PostH + 18.0), FVector2D(Hw, PostH + BoardH - 18.0) }, 11.0, Face - 0.5, Tape);
 	}
 
 	/** Deja listo el rótulo (centrado, sin colisión ni sombra, de cara a -X del cartel). */
@@ -267,9 +222,9 @@ namespace TNBeachSignKit
 			static_cast<uint8>(FMath::Lerp(static_cast<float>(Base.B), 235.f, Pulse))));
 	}
 
-	/** Color del rótulo: crema en los normales, dorado en los potenciados y rojo en la catapulta partida. */
-	inline FColor TextColor(bool bBoosted, bool bBroken = false)
+	/** Color del rótulo: crema en los normales y dorado en los potenciados. */
+	inline FColor TextColor(bool bBoosted)
 	{
-		return bBroken ? FColor(255, 86, 64) : (bBoosted ? FColor(255, 214, 60) : FColor(255, 234, 170));
+		return bBoosted ? FColor(255, 214, 60) : FColor(255, 234, 170);
 	}
 }

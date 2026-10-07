@@ -4,7 +4,7 @@
 #include "Misc/DateTime.h"
 
 /**
- * Lógica pura de los guardados locales (cosméticos y tutorial): qué hacer al
+ * Lógica pura de los guardados locales (cosméticos y ajustes): qué hacer al
  * cargar, cómo se llama la copia de un guardado corrupto y qué migración toca.
  * Sin UGameplayStatics ni disco, para que Tortunabo.SaveGame.* cubra las reglas
  * que usa TNSaveGameIO en producción.
@@ -13,9 +13,6 @@ namespace TNSaveLogic
 {
 	/** Versión actual del perfil cosmético. 0 = guardado anterior al campo SaveVersion. */
 	constexpr int32 COSMETIC_SAVE_VERSION = 1;
-
-	/** Versión actual del estado del tutorial. 0 = guardado anterior al campo SaveVersion. */
-	constexpr int32 TUTORIAL_SAVE_VERSION = 1;
 
 	/**
 	 * Versión actual de los ajustes (UTN_SettingsSaveGame::Version): 1 sonido, voz y juego; 2 teclas, micrófono e interfaz;

@@ -1,8 +1,7 @@
 """Colocación offline por reglas de diseño para los mapas «camino primero» (#652, coop de autor C01).
 
 Con una semilla, recorre el grafo del camino (principal, lazos que son rodeos y lazos que son
-atajos) y coloca, por este orden: una catapulta que salta un meandro, puzles de grupo (en el
-principal si caben; si no, en un rodeo), parkour en los atajos, mecánicas,
+atajos) y coloca, por este orden: puzles de grupo (en el principal si caben; si no, en un rodeo), parkour en los atajos, mecánicas,
 enemigos y obstáculos (densidad inversa a la longitud de la ruta, con calma tras cada puzle o pico),
 botín y decorado. Lo colocado a
 mano (bloque "manual" del manifest) es intocable: cuenta como restricción y nunca se mueve ni se
@@ -131,9 +130,7 @@ class Planner:
         site = self.site
         mine = footprint_points(site, p)
         for o in self.items:
-            if o.category not in GAMEPLAY or o.id == p.id or o.id == p.linked:
-                continue
-            if p.linked and o.linked == p.linked:
+            if o.category not in GAMEPLAY or o.id == p.id:
                 continue
             if o.line == p.line and o.category == PUZZLE:
                 a, b = o.footprint
@@ -237,9 +234,6 @@ class Planner:
                     self.add(p)
                     k += 1
                     break
-
-    def place_catapult_gap(self) -> None:
-        extras.place_catapult_gap(self)
 
     # -- enemigos y obstáculos ---------------------------------------------------------------------
     def route_factor(self, line_id: int) -> np.ndarray:
@@ -361,7 +355,6 @@ class Planner:
 
     # -- todo ---------------------------------------------------------------------------------------
     def run(self) -> PlacementResult:
-        self.place_catapult_gap()
         self.place_group_puzzles()
         self.place_route_parkour()
         extras.place_mechanics(self)

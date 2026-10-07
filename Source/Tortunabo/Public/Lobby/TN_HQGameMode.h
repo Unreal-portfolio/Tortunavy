@@ -7,7 +7,6 @@
 
 class APlayerController;
 class APlayerStart;
-class ATN_TutorialCourse;
 struct FUniqueNetIdRepl;
 
 /**
@@ -16,10 +15,6 @@ struct FUniqueNetIdRepl;
  * Responsabilidades:
  *  - Spawn de jugadores. Hasta ocho: si los PlayerStart del mapa (cuatro) se acaban, los siguientes salen en sitios nuevos
  *    junto a ellos (TN_PickSpreadPlayerStart).
- *  - Tutorial de la primera partida de cada jugador (Docs/Tutorial.md): coloca el recorrido (ATN_TutorialCourse) muy por
- *    encima del lobby, con la cascada del final sobre los PlayerStart, engancha a cada PlayerController su
- *    UTN_TutorialPlayerComponent (que pide el tutorial si esa máquina no lo ha hecho) y mete ya en él al cliente que se une
- *    con ?TNTut=1 en la URL.
  *  - Lectura del estado ready (ATN_LobbyReadyZone) y countdown cuando todos los conectados están listos.
  *  - Reseteo del countdown si alguien sale de la zona o se desconecta.
  *  - Seamless Travel hacia LVL_Demo01 con persistencia de PendingTravelPlayerCount en GameInstance.
@@ -32,13 +27,13 @@ class TORTUNABO_API ATN_HQGameMode : public AGameMode
 public:
 	ATN_HQGameMode();
 
-	/** @brief Inicializa estado, coloca tiendas, castillo y el recorrido del tutorial. */
+	/** @brief Inicializa estado y coloca tiendas y castillo. */
 	virtual void BeginPlay() override;
 
-	/** @brief Selecciona un PlayerStart libre (nunca los que llevan la etiqueta del tutorial). */
+	/** @brief Selecciona un PlayerStart libre (nunca los que llevan la etiqueta de la zona de tutorial antigua). */
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
-	/** @brief Apunta a quien se une con ?TNTut=1 (primera partida de su máquina) para meterlo en el tutorial al aparecer. */
+	/** @brief Recupera el nombre completo del jugador que llega en la URL de entrada. */
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options,
 		const FString& Portal = TEXT("")) override;
 
@@ -87,22 +82,11 @@ protected:
 	int32 LobbyMinPlayersForStart = 1;
 
 	/**
-	 * Etiqueta de PlayerStart de la zona de tutorial antigua (ya no se usa para aparecer: el tutorial es ATN_TutorialCourse).
-	 * Los PlayerStart con ella siguen fuera del reparto normal.
+	 * Etiqueta de los PlayerStart de la zona de tutorial antigua, que siguen colocados en el nivel: se quedan fuera del
+	 * reparto normal.
 	 */
-	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
+	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
 	FName TutorialStartTag = TEXT("TutorialStart");
-
-	/** Coloca el recorrido del tutorial de la primera partida (sin él nadie lo hace; TN.Tutorial.* avisan). */
-	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
-	bool bTutorialEnabled = true;
-
-	/**
-	 * Giro (grados) del recorrido: su +X (de la salida a la cascada) en el mundo. -90: las islas quedan al norte (+Y, sobre la
-	 * puerta doble y la laguna) y se avanza hacia el castillo, que se ve abajo.
-	 */
-	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
-	float TutorialCourseYaw = -90.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
 	int32 CountdownStartValue = 3;
@@ -115,23 +99,10 @@ protected:
 	FString MatchMapPath = TEXT("/Game/Maps/Run/LVL_Demo01");
 
 private:
-	/** El recorrido del tutorial de este lobby. */
-	UPROPERTY(Transient)
-	TObjectPtr<ATN_TutorialCourse> TutorialCourse;
-
-	/** Clientes que se han unido con ?TNTut=1 y aún no han aparecido: entran en el tutorial en cuanto tienen tortuga. */
-	TSet<TWeakObjectPtr<APlayerController>> PendingTutorialJoins;
-
 	FTimerHandle CountdownTimerHandle;
 	FTimerHandle TravelTimerHandle;
 	bool bCountdownRunning = false;
 	int32 CurrentCountdownValue = 0;
-
-	/** Coloca el recorrido del tutorial sobre el lobby (una vez): la cascada cae sobre el centro de los PlayerStart. */
-	void SpawnTutorialCourse();
-
-	/** Engancha al jugador su componente del tutorial y, si se unió con ?TNTut=1, lo mete ya en el tutorial. */
-	void SetupTutorialFor(APlayerController* PlayerController);
 
 	/** @brief Recalcula ConnectedPlayers/PlayersInStartZone y decide si arrancar/parar el countdown. */
 	void RefreshLobbyState();

@@ -16,77 +16,16 @@
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Player/TortugaCharacter.h"
-#include "World/Beach/TN_BeachCatapult.h"
-#include "World/Beach/TN_BeachEnemy.h"
 #include "World/Beach/TN_BeachStun.h"
 
 namespace TNChaosDriverDetail
 {
-	/** Una tarea que pasa de esto se da por terminada (atascos, catapulta que no dispara...). */
+	/** Una tarea que pasa de esto se da por terminada (atascos...). */
 	constexpr float TaskTimeout = 12.f;
-	/** Sin llegar al cazo en este tiempo (3 s: en el peor caso las cuatro disparan sin parar), se deja a la tortuga delante de él (solo en el anfitrión). */
-	constexpr float CatapultAssistAfter = 3.f;
-	/** Catapultas a más de esto no se eligen. */
-	constexpr double CatapultSearchRadius = 6000.0;
-	/** Velocidad a partir de la cual una tortuga del cazo se da por lanzada. */
-	constexpr double LaunchedSpeed = 1100.0;
-	/** O distancia al cazo a partir de la cual se da por lanzada. */
-	constexpr double LaunchedDistance = 500.0;
 	/** Distancia a la que la portadora pide coger a la compañera en su bola. */
 	constexpr double GrabDistance = 220.0;
 	/** El cebo se mete en su bola cuando su portadora está a menos de esto. */
 	constexpr double BaitShellDistance = 600.0;
-
-	UPrimitiveComponent* FindPrimitive(const AActor* Actor, const TCHAR* Name)
-	{
-		if (!Actor)
-		{
-			return nullptr;
-		}
-		for (UActorComponent* Component : Actor->GetComponents())
-		{
-			if (Component && Component->GetFName() == FName(Name))
-			{
-				return Cast<UPrimitiveComponent>(Component);
-			}
-		}
-		return nullptr;
-	}
-
-	USceneComponent* FindScene(const AActor* Actor, const TCHAR* Name)
-	{
-		if (!Actor)
-		{
-			return nullptr;
-		}
-		for (UActorComponent* Component : Actor->GetComponents())
-		{
-			if (Component && Component->GetFName() == FName(Name))
-			{
-				return Cast<USceneComponent>(Component);
-			}
-		}
-		return nullptr;
-	}
-
-	/**
-	 * Centro del cazo y punto desde el que se entra andando, en el espacio del eje del brazo (ArmPivot, X hacia el cubito): el cazo
-	 * ocupa de -LongArm (750 cm) a -LongArm + BowlLength (-450 cm), como en ATN_BeachCatapult::WhereOnArm (con SizeScale 1).
-	 */
-	bool BowlPoints(const ATN_BeachCatapult* Catapult, FVector& OutBowl, FVector& OutApproach, const UPrimitiveComponent*& OutBowlComponent)
-	{
-		const UPrimitiveComponent* Bowl = FindPrimitive(Catapult, TEXT("BowlCollision"));
-		const USceneComponent* Pivot = FindScene(Catapult, TEXT("ArmPivot"));
-		if (!Bowl || !Pivot)
-		{
-			return false;
-		}
-		OutBowlComponent = Bowl;
-		const FTransform& Frame = Pivot->GetComponentTransform();
-		OutBowl = Frame.TransformPosition(FVector(-600.0, 0.0, 40.0));
-		OutApproach = Frame.TransformPosition(FVector(-1050.0, 0.0, 0.0));
-		return true;
-	}
 
 	/** Libre para hacer algo: viva, de pie o en su bola, sin derribo, aturdimiento ni que la lleven. */
 	bool IsBusy(const ATortugaCharacter* Turtle)
@@ -268,13 +207,13 @@ UTN_StressChaosSubsystem::FDriver* UTN_StressChaosSubsystem::FindFreePartner(con
 	{
 		return nullptr;
 	}
-	// La libre más cercana: andando, lanzando objetos, sin haber empezado a rodar o yendo aún hacia una catapulta.
+	// La libre más cercana: andando, lanzando objetos o sin haber empezado a rodar.
 	FDriver* Best = nullptr;
 	double BestDist = TNumericLimits<double>::Max();
 	for (FDriver& Other : Drivers)
 	{
 		const bool bFree = Other.Task == TNChaos::ETask::Wander || Other.Task == TNChaos::ETask::Items
-			|| (Other.Task == TNChaos::ETask::Ball && Other.Stage == 0) || (Other.Task == TNChaos::ETask::Catapult && Other.Stage < 2);
+			|| (Other.Task == TNChaos::ETask::Ball && Other.Stage == 0);
 		const APlayerController* PC = Other.Controller.Get();
 		const ATortugaCharacter* Turtle = PC ? Cast<ATortugaCharacter>(PC->GetPawn()) : nullptr;
 		if (&Other == &For || !bFree || !Turtle || TNChaosDriverDetail::IsBusy(Turtle))
@@ -291,27 +230,6 @@ UTN_StressChaosSubsystem::FDriver* UTN_StressChaosSubsystem::FindFreePartner(con
 	return Best;
 }
 
-ATN_BeachCatapult* UTN_StressChaosSubsystem::PickCatapult(const FDriver& Driver, const ATortugaCharacter* Turtle) const
-{
-	const double Now = ATN_BeachEnemy::ServerNow(GetWorld());
-	ATN_BeachCatapult* Best = nullptr;
-	double BestDist = FMath::Square(TNChaosDriverDetail::CatapultSearchRadius);
-	for (TActorIterator<ATN_BeachCatapult> It(GetWorld()); It; ++It)
-	{
-		ATN_BeachCatapult* Catapult = *It;
-		const bool bTaken = Drivers.ContainsByPredicate([&](const FDriver& Other) { return &Other != &Driver && Other.Catapult.Get() == Catapult; });
-		// En el cliente no se sabe si ha recargado (la hora del servidor va suavizada): basta con que no esté gastada.
-		const bool bReady = !Catapult->IsSpent() && (bClientOnly || Catapult->IsLoaded(Now));
-		const double Dist = FVector::DistSquared2D(Catapult->GetActorLocation(), Turtle->GetActorLocation());
-		if (!bTaken && bReady && Dist < BestDist)
-		{
-			BestDist = Dist;
-			Best = Catapult;
-		}
-	}
-	return Best;
-}
-
 void UTN_StressChaosSubsystem::BeginTask(FDriver& Driver, ATortugaCharacter* Turtle)
 {
 	const uint8 Mask = Phases.IsValidIndex(CurrentPhase) ? Phases[CurrentPhase].Plan.Tasks : TNChaos::TaskBit(TNChaos::ETask::Wander);
@@ -322,18 +240,8 @@ void UTN_StressChaosSubsystem::BeginTask(FDriver& Driver, ATortugaCharacter* Tur
 	Driver.TaskClock = 0.f;
 	Driver.StageClock = 0.f;
 	Driver.bBait = false;
-	Driver.bAssisted = false;
-	Driver.Catapult.Reset();
 	Driver.Partner.Reset();
 	Driver.WanderYaw = Stream.FRandRange(0.f, 360.f);
-	if (Driver.Task == TNChaos::ETask::Catapult)
-	{
-		Driver.Catapult = PickCatapult(Driver, Turtle);
-		if (!Driver.Catapult.IsValid())
-		{
-			Driver.Task = TNChaos::ETask::Wander;
-		}
-	}
 	if (Driver.Task == TNChaos::ETask::Carry && Partner)
 	{
 		// La compañera deja lo que hacía y se mete en su bola a esperar que la cojan.
@@ -365,7 +273,6 @@ void UTN_StressChaosSubsystem::EndTask(FDriver& Driver, ATortugaCharacter* Turtl
 	}
 	Driver.Task = TNChaos::ETask::Wander;
 	Driver.bBait = false;
-	Driver.Catapult.Reset();
 	Driver.Partner.Reset();
 }
 
@@ -389,7 +296,6 @@ void UTN_StressChaosSubsystem::TickDriver(FDriver& Driver, ATortugaCharacter* Tu
 	{
 		switch (Driver.Task)
 		{
-			case TNChaos::ETask::Catapult: bDone = TickCatapult(Driver, Turtle, DeltaTime); break;
 			case TNChaos::ETask::Carry:    bDone = TickCarry(Driver, Turtle, DeltaTime); break;
 			case TNChaos::ETask::Ball:     bDone = TickBall(Driver, Turtle, DeltaTime); break;
 			case TNChaos::ETask::Items:    bDone = TickItems(Driver, Turtle, DeltaTime); break;
@@ -563,85 +469,3 @@ bool UTN_StressChaosSubsystem::TickCarry(FDriver& Driver, ATortugaCharacter* Tur
 	}
 }
 
-bool UTN_StressChaosSubsystem::TickCatapult(FDriver& Driver, ATortugaCharacter* Turtle, float DeltaTime)
-{
-	ATN_BeachCatapult* Catapult = Driver.Catapult.Get();
-	FVector Bowl;
-	FVector Approach;
-	const UPrimitiveComponent* BowlComponent = nullptr;
-	if (!Catapult || !TNChaosDriverDetail::BowlPoints(Catapult, Bowl, Approach, BowlComponent))
-	{
-		return true;
-	}
-	const double ToBowl = FVector::Dist2D(Turtle->GetActorLocation(), Bowl);
-	// En el cazo de verdad: lo que pisa es su colisión (lo mismo que mira la catapulta para armarse).
-	const bool bOnBowl = Turtle->GetMovementBase() == BowlComponent;
-	if (Driver.Stage < 2 && Turtle->IsInShell())
-	{
-		InputShell(Driver, Turtle);
-		return false;
-	}
-	if (Driver.Stage < 2 && !Driver.bAssisted && !bClientOnly && Driver.TaskClock > TNChaosDriverDetail::CatapultAssistAfter)
-	{
-		// No llega andando (el brazo, el borde o el desnivel se lo impiden): se la deja caer en el cazo. Lo que se mide (armar,
-		// aviso, disparo, vuelo de la bola y su réplica) es lo de siempre; solo se ahorra el paseo.
-		Driver.bAssisted = true;
-		++CurrentActions().CatapultAssists;
-		Turtle->SetActorLocation(Bowl + FVector(0.0, 0.0, 110.0), false, nullptr, ETeleportType::TeleportPhysics);
-		Driver.Stage = 1;
-	}
-	switch (Driver.Stage)
-	{
-		case 0:
-			AimAt(Driver, Turtle, Approach);
-			InputSprint(Turtle, true);
-			InputMove(Turtle, FVector2D(0.f, 1.f));
-			if (FVector::Dist2D(Turtle->GetActorLocation(), Approach) < 150.0)
-			{
-				InputSprint(Turtle, false);
-				Driver.Stage = 1;
-			}
-			return false;
-		case 1:
-			AimAt(Driver, Turtle, Bowl);
-			InputMove(Turtle, FVector2D(0.f, ToBowl > 60.0 ? 0.7f : 0.f));
-			// Pegada al borde sin subir: un salto la mete (el borde bajo del cazo tiene un escalón).
-			if (!bOnBowl && ToBowl < 200.0 && Driver.StageClock > 1.f)
-			{
-				Driver.StageClock = 0.f;
-				InputJump(Turtle);
-			}
-			UE_CLOG(bVerbose && FMath::Fmod(Driver.TaskClock, 1.f) < DeltaTime, LogTortunabo, Log, TEXT("[Estrés] caos: %s hacia el cazo de %s (a %.0f cm, pisa %s)."),
-				*GetNameSafe(Turtle), *GetNameSafe(Catapult), ToBowl, *GetNameSafe(Turtle->GetMovementBase()));
-			if (bOnBowl)
-			{
-				Driver.Stage = 2;
-				Driver.StageClock = 0.f;
-				// Un tercio de las veces, en su bola dentro del cazo (la forma divertida de usarla).
-				if (Stream.FRand() < 0.33f)
-				{
-					InputShell(Driver, Turtle);
-				}
-			}
-			return false;
-		case 2:
-			// Lanzada: sale del cazo deprisa (de pie) o su bola se aleja de él (la velocidad la lleva la caja del caparazón).
-			if (Turtle->GetVelocity().Size() > TNChaosDriverDetail::LaunchedSpeed || ToBowl > TNChaosDriverDetail::LaunchedDistance)
-			{
-				++CurrentActions().CatapultRides;
-				Driver.Stage = 3;
-				Driver.StageClock = 0.f;
-				return false;
-			}
-			UE_CLOG(bVerbose && Driver.StageClock > 4.f, LogTortunabo, Log, TEXT("[Estrés] caos: %s no sale de %s (pisa %s, bola %d, cargada %d, tic %d)."),
-				*GetNameSafe(Turtle), *GetNameSafe(Catapult), *GetNameSafe(Turtle->GetMovementBase()), Turtle->IsInShell() ? 1 : 0,
-				Catapult->IsLoaded(ATN_BeachEnemy::ServerNow(GetWorld())) ? 1 : 0, Catapult->IsActorTickEnabled() ? 1 : 0);
-			return Driver.StageClock > 4.f;
-		default:
-		{
-			// En vuelo y rodando: termina cuando ha salido sola de la bola y está en el suelo.
-			const UCharacterMovementComponent* Movement = Turtle->GetCharacterMovement();
-			return Driver.StageClock > 8.f || (Driver.StageClock > 1.f && !Turtle->IsInShell() && Movement && Movement->IsMovingOnGround());
-		}
-	}
-}

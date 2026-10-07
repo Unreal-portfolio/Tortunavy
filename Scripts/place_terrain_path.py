@@ -79,7 +79,7 @@ def main() -> int:
     parser.add_argument("variant", nargs="?", default="C01_camino")
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="semilla de la colocación")
     parser.add_argument("--incluir-pendientes", action="store_true",
-                        help="usa también las plantillas cuyo C++ falta (basket_hold, geyser_aim, think_room)")
+                        help="usa también las plantillas cuyo C++ falta (status «pendiente»)")
     parser.add_argument("--comprobar", action="store_true", help="valida el bloque actual y no escribe")
     parser.add_argument("--simular", action="store_true", help="genera y valida sin escribir")
     parser.add_argument("--forzar", action="store_true", help="escribe aunque haya violaciones")

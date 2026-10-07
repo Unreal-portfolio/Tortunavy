@@ -42,8 +42,8 @@ struct FTNMapPlacementStats
  * ATN_MapVariantLoader en BeginPlay en cada máquina, con el terreno ya construido para ajustar la cota con una traza.
  *
  * Red: lo que tiene estado (trampas, enemigos, lanzadores, puzles, botín) lo crea solo el servidor y se
- * replica; lo que cada clase quiere local (el decorado de ATN_BeachDecorField, la vegetación instanciada y el géiser) lo
- * monta cada máquina igual a partir del mismo manifest, sin red. La vegetación no se monta en un servidor dedicado.
+ * replica; lo que cada clase quiere local (el decorado de ATN_BeachDecorField y la vegetación instanciada) lo monta cada
+ * máquina igual a partir del mismo manifest, sin red. La vegetación no se monta en un servidor dedicado.
  *
  * Lo puesto a mano en el nivel manda: una entrada con una pieza de juego del nivel (o un actor con la etiqueta
  * TN_Manual) a menos de su radio no se coloca. Ni se mueve ni se borra nada del nivel.
@@ -95,15 +95,13 @@ private:
 	void Track(AActor* Actor);
 
 	// ── Puzles (TN_MapPlacementSpawner_Puzzles.cpp) ──
-	bool SpawnThrowWall(const TNMapPlacements::FPlacement& P);
 	bool SpawnPlateBalance(const TNMapPlacements::FPlacement& P);
 	bool SpawnBreakableChain(const TNMapPlacements::FPlacement& P);
 	bool SpawnElementRow(const TNMapPlacements::FPlacement& P, ETNBeachElement Element, int32 Count, double LiftCm);
 
-	// ── Local: decorado, vegetación y géiser (TN_MapPlacementSpawner_Scenery.cpp) ──
+	// ── Local: decorado y vegetación (TN_MapPlacementSpawner_Scenery.cpp) ──
 	void QueueDecor(const TNMapPlacements::FPlacement& P);
 	void QueueVegetation(const TNMapPlacements::FPlacement& P);
-	bool SpawnGeyser(const TNMapPlacements::FPlacement& P);
 	void BuildDecor();
 	void BuildVegetation();
 

@@ -24,7 +24,6 @@
 #include "Testing/TN_CpuCoreProbe.h"
 #include "Testing/TN_MonkeyPlan.h"
 #include "Testing/TN_TestReport.h"
-#include "World/Beach/TN_BeachCatapult.h"
 #include "World/Beach/TN_BeachElement.h"
 #include "World/Beach/TN_BeachTypes.h"
 #include "World/TN_InkProjectile.h"
@@ -129,15 +128,6 @@ namespace TNChaosDetail
 	}
 }
 
-void FTNChaosLogSink::Serialize(const TCHAR* Message, ELogVerbosity::Type Verbosity, const FName& Category)
-{
-	FTNTestLogSink::Serialize(Message, Verbosity, Category);
-	if (Message && FCString::Strstr(Message, TEXT("[Playa] Catapulta")) && FCString::Strstr(Message, TEXT(" dispara:")))
-	{
-		++CatapultFires;
-	}
-}
-
 bool UTN_StressChaosSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
 #if UE_BUILD_SHIPPING
@@ -208,7 +198,6 @@ bool UTN_StressChaosSubsystem::StartChaos(float PhaseSeconds, float InWarmup, fl
 	}
 	Drivers.Reset();
 	Spawned.Reset();
-	Catapults.Reset();
 	Totals = FActions();
 	CurrentPhase = INDEX_NONE;
 	bMeasuring = false;
@@ -377,36 +366,6 @@ FVector UTN_StressChaosSubsystem::TurtlesCenter() const
 	return Count > 0 ? Sum / Count : FVector::ZeroVector;
 }
 
-int32 UTN_StressChaosSubsystem::SpawnCatapults(int32 Count)
-{
-	UWorld* World = GetWorld();
-	const FVector Center = TurtlesCenter();
-	int32 Made = 0;
-	for (int32 Index = 0; Index < Count; ++Index)
-	{
-		// En corro alrededor de las tortugas, a 10-18 m: llegan corriendo en pocos segundos.
-		const double Angle = 2.0 * UE_PI * Index / FMath::Max(1, Count) + Stream.FRandRange(-0.2f, 0.2f);
-		const double Radius = Stream.FRandRange(1000.f, 1800.f);
-		FVector At = Center + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.0) * Radius;
-		At.Z = GroundAt(At, Center.Z - 90.0);
-		FTNBeachElementSpec Spec;
-		Spec.Element = ETNBeachElement::Catapult;
-		Spec.Seed = Stream.RandRange(1, 1000000);
-		Spec.SizeScale = 1.f;
-		ATN_BeachCatapult* Catapult = Cast<ATN_BeachCatapult>(ATN_BeachElement::SpawnElement(World, FTransform(FRotator(0.0, Stream.FRandRange(0.f, 360.f), 0.0), At), Spec));
-		if (!Catapult)
-		{
-			continue;
-		}
-		// Reutilizable (recarga en ReloadSeconds): en una ronda hay muchas de un solo uso; aquí las mismas se usan una y otra vez.
-		Catapult->bSingleUse = false;
-		Catapults.Add(Catapult);
-		Spawned.Add(Catapult);
-		++Made;
-	}
-	return Made;
-}
-
 int32 UTN_StressChaosSubsystem::SpawnEnemies(int32 Crabs, int32 Gulls, int32 Tanks)
 {
 	UWorld* World = GetWorld();
@@ -452,10 +411,8 @@ void UTN_StressChaosSubsystem::BeginPhase(int32 Index)
 	// Región de Unreal Insights por fase (TNChaos_<fase>): TimingInsights.ExportTimerStatistics -region=TNChaos_* la exporta aparte.
 	TRACE_BEGIN_REGION(*FString::Printf(TEXT("TNChaos_%s"), TNChaos::StepName(Phase.Plan.Step)));
 	Phase.CorrectionsAtStart = Sink.GetNetCorrectionCount();
-	Phase.CatapultFiresAtStart = Sink.GetCatapultFires();
 	if (!bClientOnly)
 	{
-		Phase.Created += SpawnCatapults(Phase.Plan.Catapults);
 		Phase.Created += SpawnEnemies(Phase.Plan.Crabs, Phase.Plan.Gulls, Phase.Plan.Tanks);
 	}
 	// Lo que estrena la fase empieza ya: se cortan las tareas que se pueden dejar (andar, objetos, bola sin empezar).
@@ -536,7 +493,6 @@ void UTN_StressChaosSubsystem::EndPhase(int32 Index)
 	Phase.CommitEndMB = TNChaosDetail::ToMB(FPlatformMemory::GetStats().UsedVirtual);
 	Phase.TextureMemoryMB = TNChaosDetail::TextureMemoryMB();
 	Phase.Corrections = Sink.GetNetCorrectionCount() - Phase.CorrectionsAtStart;
-	Phase.CatapultFires = Sink.GetCatapultFires() - Phase.CatapultFiresAtStart;
 	TMap<FString, int32> ByClass;
 	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
 	{
@@ -682,10 +638,7 @@ TSharedRef<FJsonObject> UTN_StressChaosSubsystem::BuildReport(const TCHAR* Reaso
 		Item->SetNumberField(TEXT("net_out_kb_s_per_connection_max"), Phase.NetMaxOutKBs);
 		Item->SetNumberField(TEXT("net_in_kb_s_per_connection_avg"), Phase.NetSamples > 0 ? Phase.NetInKBsSum / Phase.NetSamples : 0.0);
 		Item->SetNumberField(TEXT("net_corrections"), Phase.Corrections);
-		Item->SetNumberField(TEXT("catapult_fires"), Phase.CatapultFires);
 		const FActions& A = Phase.Actions;
-		Item->SetNumberField(TEXT("catapult_rides"), A.CatapultRides);
-		Item->SetNumberField(TEXT("catapult_assists"), A.CatapultAssists);
 		Item->SetNumberField(TEXT("grabs"), A.Grabs);
 		Item->SetNumberField(TEXT("throws"), A.Throws);
 		Item->SetNumberField(TEXT("ball_entries"), A.BallEntries);
@@ -737,7 +690,6 @@ void UTN_StressChaosSubsystem::Finish(const TCHAR* Reason)
 		}
 	}
 	Spawned.Reset();
-	Catapults.Reset();
 	RestoreWorld();
 	if (bSinkAttached && GLog)
 	{

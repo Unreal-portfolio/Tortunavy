@@ -13,7 +13,7 @@ class UMaterialInterface;
 class UPCGGraphInterface;
 
 /**
- * Configuración editable de los biomas (valle del lobby y recorrido del tutorial): un DataAsset por bioma con colores,
+ * Configuración editable de los biomas (valle del lobby): un DataAsset por bioma con colores,
  * vegetación y peligros.
  * Todo tiene valores por defecto razonables: sin assets asignados el mapa sale
  * en greybox con formas básicas del motor.

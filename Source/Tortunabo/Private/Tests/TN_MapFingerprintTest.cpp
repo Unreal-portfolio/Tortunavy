@@ -11,7 +11,6 @@
 #include "Engine/World.h"
 #include "Lobby/TN_LobbyValley.h"
 #include "Lobby/TN_SandCastleLobby.h"
-#include "Lobby/TN_TutorialCourse.h"
 #include "Misc/Paths.h"
 #include "Scalability.h"
 #include "World/TN_MapBlockerRelevance.h"
@@ -154,22 +153,14 @@ namespace TNMapFingerprintTest
 
 	// ── Lobby ──
 
-	/** El castillo, el valle y el recorrido del tutorial; con bTutorialFirst, el recorrido antes que lo demás. */
-	TNMapFingerprint::FResult LobbyFingerprint(int32 Quality, bool bTutorialFirst)
+	/** El castillo y el valle; con bValleyFirst, el valle antes que el castillo. */
+	TNMapFingerprint::FResult LobbyFingerprint(int32 Quality, bool bValleyFirst)
 	{
 		FScopedQuality ScopedQuality(Quality);
 		FTestWorld Test(TEXT("TNMapFingerprintLobby"));
-		auto Tutorial = [&Test]()
-		{
-			if (ATN_TutorialCourse* Course = ATN_TutorialCourse::SpawnAbove(Test.World, FVector(3000.0, 0.0, 0.0), -90.f))
-			{
-				Course->EnsureBuilt();
-			}
-		};
-		if (bTutorialFirst) { Tutorial(); }
+		if (bValleyFirst) { Test.Spawn<ATN_LobbyValley>(); }
 		Test.Spawn<ATN_SandCastleLobby>();
-		Test.Spawn<ATN_LobbyValley>();
-		if (!bTutorialFirst) { Tutorial(); }
+		if (!bValleyFirst) { Test.Spawn<ATN_LobbyValley>(); }
 		return TNMapFingerprint::Compute(Test.World);
 	}
 }
@@ -203,8 +194,8 @@ bool FTNMapFingerprintLobbyTest::RunTest(const FString& Parameters)
 {
 	using namespace TNMapFingerprintTest;
 	const TNMapFingerprint::FResult Epic = LobbyFingerprint(3, false);
-	const TNMapFingerprint::FResult LowTutorialFirst = LobbyFingerprint(0, true);
-	ExpectSame(*this, TEXT("Lobby"), Epic, LowTutorialFirst);
+	const TNMapFingerprint::FResult LowValleyFirst = LobbyFingerprint(0, true);
+	ExpectSame(*this, TEXT("Lobby"), Epic, LowValleyFirst);
 	return true;
 }
 

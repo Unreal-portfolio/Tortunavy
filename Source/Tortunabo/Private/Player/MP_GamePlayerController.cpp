@@ -23,10 +23,8 @@
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_MatchFlowTypes.h"
 #include "Player/TortugaCharacter.h"
-#include "Player/TN_Ghost.h"
 #include "Player/TN_CosmeticsSync.h"
 #include "Player/TN_DebugRpcDecisions.h"
-#include "TN_GhostInternal.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "Engine/Engine.h"
@@ -164,14 +162,6 @@ void AMP_GamePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	if (InputComponent)
-	{
-		InputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AMP_GamePlayerController::SpectateNextPlayer);
-		InputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AMP_GamePlayerController::SpectatePreviousPlayer);
-		InputComponent->BindKey(EKeys::PageDown, IE_Pressed, this, &AMP_GamePlayerController::SpectateNextPlayer);
-		InputComponent->BindKey(EKeys::PageUp, IE_Pressed, this, &AMP_GamePlayerController::SpectatePreviousPlayer);
-	}
-
 	CacheRadialInputAssets();
 
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent))
@@ -267,9 +257,6 @@ void AMP_GamePlayerController::ClientWasKicked_Implementation(const FText& KickR
 void AMP_GamePlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-
-	// Vuelve a tener tortuga: su fantasma espectador se desvanece (Docs/Fantasma_Espectador.md).
-	TNGhostInternal::OnPossess(this, InPawn);
 
 	ApplyGameplayInputMode();
 
@@ -431,8 +418,8 @@ void AMP_GamePlayerController::CacheRadialInputAssets()
 void AMP_GamePlayerController::EnterSpectateMode()
 {
 	// Cerrar cualquier rueda radial o menú de cosméticos para evitar que queden
-	// visibles con cursor en pantalla durante el modo espectador, lo que bloquea
-	// el scroll de cambio de cámara y deja FInputModeGameAndUI activo.
+	// visibles con cursor en pantalla durante el modo espectador y dejen
+	// FInputModeGameAndUI activo.
 	if (ActiveWheelType != ETN_RadialWheelType::None)
 	{
 		CloseRadialWheel(false);
@@ -443,8 +430,8 @@ void AMP_GamePlayerController::EnterSpectateMode()
 		ApplyGameplayInputMode();
 	}
 
-	// Fantasma espectador (Docs/Fantasma_Espectador.md): el servidor crea el de este jugador y apunta la tortuga que deja.
-	TNGhostInternal::OnEnterSpectate(this);
+	// La tortuga que deja: la cámara se queda en ella (en su cuerpo o, si desaparece, en su última posición).
+	APawn* OwnPawn = GetPawn();
 
 	// ── Cambiar estado en el servidor ─────────────────────────────────────────
 	ChangeState(NAME_Spectating);
@@ -459,110 +446,11 @@ void AMP_GamePlayerController::EnterSpectateMode()
 	// Para el listen-server, los Client RPCs también se ejecutan localmente.
 	ClientGotoState(NAME_Spectating);
 
-	SpectateNextPlayer();
-}
-
-void AMP_GamePlayerController::SpectateNextPlayer()
-{
-	SpectateByDirection(1);
-}
-
-void AMP_GamePlayerController::SpectatePreviousPlayer()
-{
-	SpectateByDirection(-1);
-}
-
-void AMP_GamePlayerController::SpectateByDirection(int32 Direction)
-{
-	if (Direction == 0 || !GetWorld() || !PlayerState)
+	// La vista sigue en la propia tortuga; en un cliente remoto la lleva ClientSetViewTarget, después de ClientGotoState.
+	if (OwnPawn)
 	{
-		return;
+		SetViewTargetWithBlend(OwnPawn, 0.f);
 	}
-
-	// Solo permitir espectear si el jugador local terminó, murió o fue eliminado (o es un fantasma, en cualquier modo).
-	// Evita que la rueda del ratón cambie la cámara mientras se está jugando.
-	const ATN_CoopPlayerState* LocalPS = GetPlayerState<ATN_CoopPlayerState>();
-	if (!LocalPS || (LocalPS->IsAliveAndPlaying() && !LocalPS->bHasFinishedRun && !TNGhost::IsGhost(this)))
-	{
-		return;
-	}
-
-	// GameState puede ser null durante travel/teardown (World existe pero el GS aún
-	// no ha replicado/spawneado). Sin este guard, la rueda del ratón al espectar en
-	// esa ventana crashea al iterar PlayerArray.
-	AGameStateBase* GS = GetWorld()->GetGameState();
-	if (!GS) { return; }
-
-	TArray<APlayerState*> Candidates = BuildSpectateCandidates(GS);
-
-	if (Candidates.Num() == 0)
-	{
-		// No hay jugadores vivos para espectear. Apuntar al propio pawn (oculto pero
-		// válido) para evitar que el ViewTarget quede apuntando a un actor destruido
-		// o null, lo que causaría pantalla negra hasta que aparezca la pantalla de resultados.
-		if (APawn* OwnPawn = GetPawn())
-		{
-			SetViewTargetWithBlend(OwnPawn, 0.f);
-		}
-		return;
-	}
-
-	Candidates.Sort([](const APlayerState& A, const APlayerState& B)
-	{
-		return A.GetPlayerId() < B.GetPlayerId();
-	});
-
-	int32 CurrentIndex = INDEX_NONE;
-	AActor* CurrentViewTarget = GetViewTarget();
-	for (int32 i = 0; i < Candidates.Num(); ++i)
-	{
-		if (Candidates[i]->GetPawn() == CurrentViewTarget)
-		{
-			CurrentIndex = i;
-			break;
-		}
-	}
-
-	int32 NextIndex = 0;
-	if (CurrentIndex != INDEX_NONE)
-	{
-		NextIndex = (CurrentIndex + Direction + Candidates.Num()) % Candidates.Num();
-	}
-	else if (Direction < 0)
-	{
-		NextIndex = Candidates.Num() - 1;
-	}
-
-	SetViewTargetWithBlend(Candidates[NextIndex]->GetPawn(), 0.25f);
-}
-
-TArray<APlayerState*> AMP_GamePlayerController::BuildSpectateCandidates(AGameStateBase* GS) const
-{
-	TArray<APlayerState*> Candidates;
-	for (APlayerState* PS : GS->PlayerArray)
-	{
-		ATN_CoopPlayerState* CoopPS = Cast<ATN_CoopPlayerState>(PS);
-		// Skip self
-		if (!CoopPS || CoopPS == Cast<ATN_CoopPlayerState>(PlayerState))
-		{
-			continue;
-		}
-		// Skip players without a live pawn
-		if (!CoopPS->GetPawn())
-		{
-			continue;
-		}
-		// Skip eliminated/dead/finished players.
-		// Finished players (bHasFinishedRun=true) have their pawn hidden via
-		// SetActorHiddenInGame(true) in MarkPlayerFinished → spectating them
-		// results in a black/invisible screen.
-		if (!CoopPS->IsAliveAndPlaying() || CoopPS->bHasFinishedRun)
-		{
-			continue;
-		}
-		Candidates.Add(CoopPS);
-	}
-	return Candidates;
 }
 
 void AMP_GamePlayerController::RefreshHUDAfterPossession()
@@ -1452,7 +1340,7 @@ namespace
 
 void AMP_GamePlayerController::ServerExecRPC_Implementation(const FString& Msg)
 {
-	// Sin esto, un invitado con `ServerExec TN.Ghost.Become 1` (o TN.Tutorial.Station) lo ejecutaba en el anfitrión.
+	// Sin esto, un invitado con `ServerExec <orden de prueba>` la ejecutaba en el anfitrión.
 	if (TNIsHostDebugCallAllowed(this, TEXT("ServerExec")))
 	{
 		Super::ServerExecRPC_Implementation(Msg);

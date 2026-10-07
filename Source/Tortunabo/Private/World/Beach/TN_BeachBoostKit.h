@@ -9,7 +9,7 @@
 
 /**
  * Piezas comunes de lo «potenciado» y de las fortalezas de arena (ATN_BeachFortress y los lanzadores de su cima,
- * ATN_BeachCatapult y ATN_BeachTrampoline con TNBeach::FlagBoosted): estrella dorada de cinco puntas, bandera y
+ * ATN_BeachTrampoline con TNBeach::FlagBoosted): estrella dorada de cinco puntas, bandera y
  * estandarte de Tortunavy (azul marino con la estrella dorada, como la escarapela de la tropa), guirnaldas de banderines
  * y la fanfarria que suena al salir disparada desde un lanzador potenciado. Geometría sobre el kit del parque del lobby
  * (TNPlaygroundKit: color lineal con el brillo en el alfa para M_CosmeticVertexColor).

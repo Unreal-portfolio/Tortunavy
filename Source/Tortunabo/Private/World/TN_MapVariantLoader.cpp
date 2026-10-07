@@ -117,7 +117,6 @@ void ATN_MapVariantLoader::SpawnPlacements()
 	for (TNMapPlacements::FPlacement& P : Parsed.Placements)
 	{
 		P.Location = Xf.TransformPosition(P.Location);
-		P.Target = Xf.TransformPosition(P.Target);
 		P.YawDeg += Xf.Rotator().Yaw;
 		for (FVector& Point : P.Path)
 		{

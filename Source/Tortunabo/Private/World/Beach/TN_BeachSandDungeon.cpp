@@ -1,5 +1,4 @@
 #include "World/Beach/TN_BeachSandDungeon.h"
-#include "World/Beach/TN_BeachShellGate.h"
 #include "Core/TN_Log.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
@@ -38,6 +37,7 @@ namespace TNBeachDungeonDetail
 	constexpr double ExitW = 360.0;
 	constexpr double ExitH = 400.0;
 	constexpr double GateW = 320.0;
+	constexpr double GateH = 420.0;
 	constexpr double StepRise = 40.0;
 	constexpr double StepRun = 45.0;
 	constexpr int32 Steps = 8;
@@ -287,8 +287,8 @@ namespace TNBeachDungeonDetail
 		AddMerlons(Decor, true, -L.HX, L.HX, L.HY - OuterWall * 0.5, OuterWall);
 		AddMerlons(Decor, true, -L.HX, L.HX, -L.HY + OuterWall * 0.5, OuterWall);
 
-		// Muro de dentro entre la sala de las columnas y el resto, con el hueco de la puerta de conchas.
-		const FOpening Gate = { L.YC0 + CorrW * 0.5, GateW, FloorZ, FloorZ + ATN_BeachShellGate::BareDoorHeight };
+		// Muro de dentro entre la sala de las columnas y el resto, con su hueco de paso.
+		const FOpening Gate = { L.YC0 + CorrW * 0.5, GateW, FloorZ, FloorZ + GateH };
 		AddWall(B, Decor, Hulls, false, L.IY0, L.IY1, L.XA, L.XAw, FloorZ, WallTop, { Gate });
 
 		// Muretes de la sala de las ventanas (se saltan o se rodean por el hueco, cada uno a un lado).
@@ -435,12 +435,10 @@ void ATN_BeachSandDungeon::ApplySpec()
 	CastleCollision->SetCollisionConvexMeshes(Hulls);
 
 	// Sitios de las piezas de dentro.
-	GateWidth = GateW;
 	CorridorWidth = CorrW;
 	CorridorLength = Plan.XS0 - Plan.XAw;
 	RoomAShort = FMath::Min(Plan.XA - Plan.IX0, Plan.IY1 - Plan.IY0);
 	const double CorrY = Plan.YC0 + CorrW * 0.5;
-	GateAt = FVector(0.5 * (Plan.XA + Plan.XAw), CorrY, FloorZ);
 	SeaweedAt = FVector(Plan.XAw + 0.5 * CorridorLength, CorrY, FloorZ);
 	UrchinAt = FVector(Plan.XS0 - 170.0, CorrY, FloorZ);
 	CrabAt = FVector(0.5 * (Plan.IX0 + Plan.XA), 0.5 * (Plan.IY0 + Plan.IY1), FloorZ);
@@ -492,8 +490,7 @@ void ATN_BeachSandDungeon::SpawnChildren()
 			SpawnedPieces.Add(Child);
 		}
 	};
-	// Puerta de conchas desnuda en el hueco del muro de dentro y algas en el pasillo (clases de esta misma parte).
-	SpawnChild(ETNBeachElement::ShellGate, GateAt, 1.f, static_cast<float>(GateWidth), 7u);
+	// Algas en el pasillo (clase de esta misma parte).
 	const float WeedSize = static_cast<float>(FMath::Clamp(CorridorLength * 0.3 / TNBeach::FootprintRadius(ETNBeachElement::Seaweed), 0.3, 0.6));
 	SpawnChild(ETNBeachElement::Seaweed, SeaweedAt, WeedSize, static_cast<float>(CorridorWidth - 40.0), 11u);
 	// Enemigos pequeños (bSpawnEnemiesInside) solo si ya existen sus clases (los hace otra parte): sin avisos en el log si no.

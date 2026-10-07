@@ -44,7 +44,7 @@ void UTN_PlayerHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 		BindToPlayerStateScore();
 	}
 
-	// ── Inventario: el del ViewTarget (de espectador, la tortuga seguida; Docs/Fantasma_Espectador.md)
+	// ── Inventario: el del ViewTarget (la tortuga que se ve)
 	// y, si no lleva, el del pawn propio (que cambia tras un viaje o una posesión). ──
 	{
 		UTN_InventoryComponent* DesiredInventory = nullptr;

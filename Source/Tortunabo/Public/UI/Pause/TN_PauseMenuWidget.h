@@ -338,7 +338,7 @@ private:
  * Partida local (#311): lo abre cualquiera, a toda la pantalla, y la partida se para para todos. Solo lo maneja quien lo
  * abrió (su foco; el ratón, que es del jugador 1, no toca el de un invitado) y lo que cambia es suyo: un invitado ve
  * Controles y Juego con sus ajustes de jugador (cámara, teclas y botones), que no se guardan, y puede dejar de jugar en el
- * lobby; el jugador 1 ve todo y cierra la partida. Sin página «Sala» ni pestaña de voz; en el lobby, «Hacer el tutorial».
+ * lobby; el jugador 1 ve todo y cierra la partida. Sin página «Sala» ni pestaña de voz.
  */
 UCLASS()
 class TORTUNABO_API UTN_PauseMenuWidget : public UUserWidget

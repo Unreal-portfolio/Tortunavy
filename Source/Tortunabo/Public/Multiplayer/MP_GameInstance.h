@@ -16,7 +16,6 @@ class ATN_RoomInfo;
 class UNetDriver;
 class UUserWidget;
 class UTN_CosmeticSaveGame;
-class UTN_TutorialSaveGame;
 struct FTN_HelmetData;
 struct FTN_SkinData;
 struct FUniqueNetIdRepl;
@@ -52,7 +51,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatusChanged, const FString&, St
  * @brief GameInstance global del proyecto. Sobrevive a los travels y centraliza:
  *  - Subsistema online (sesiones Steam): host, find/join, invite, destroy.
  *  - Persistencia de cosméticos (helmet + skin) vía UTN_CosmeticSaveGame.
- *  - Persistencia de score acumulado y estado del tutorial.
+ *  - Persistencia de score acumulado.
  *  - Loading screen entre mapas y status log.
  *  - PendingTravelPlayerCount: contador puente HQ → Run para saber cuántos esperar.
  *  - Auto-rejoin a la sesión Steam si el cliente pierde conexión durante un ServerTravel legítimo.
@@ -65,7 +64,7 @@ class TORTUNABO_API UMP_GameInstance : public UGameInstance
 public:
 	UMP_GameInstance();
 
-	/** @brief Registra delegates online, carga saveGames de cosméticos/tutorial y prepara el listener de network failures. */
+	/** @brief Registra delegates online, carga el saveGame de cosméticos y prepara el listener de network failures. */
 	virtual void Init() override;
 
 	/** @brief Desregistra delegates y libera handles de timer antes del shutdown del engine. */
@@ -381,36 +380,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Score")
 	int32 GetAccumulatedCoopScore() const;
 
-	// ── Tutorial state ───────────────────────────────────────────────────────
-
-	/**
-	 * @brief true si el jugador de esta máquina ya ha hecho (o saltado) el tutorial de la primera partida.
-	 * @note Guardado local (UTN_TutorialSaveGame, GetTutorialSlotName). Lo mira UTN_TutorialPlayerComponent al llegar al
-	 *       lobby y, al unirse a una sala, decide la opción ?TNTut=1 de la URL. Docs/Tutorial.md.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Tutorial")
-	bool HasCompletedTutorial() const;
-
-	/**
-	 * @brief Marca el tutorial como hecho y lo guarda en el acto.
-	 * @note Lo llama UTN_TutorialPlayerComponent al caer por la cascada o al saltarlo.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Tutorial")
-	void SetTutorialCompleted();
-
-	/** Vuelve a dejar el tutorial por hacer (consola TN.Tutorial.Reset y el archivo Saved/ResetTutorial.txt) y lo guarda. */
-	UFUNCTION(BlueprintCallable, Category = "Tutorial")
-	void ResetTutorialProgress();
-
-	/**
-	 * Ranura del guardado del tutorial de esta máquina: TutorialState_0 y, en el editor con varias ventanas (PIE), una por
-	 * ventana (TutorialState_0_PIE1, _PIE2...), así el anfitrión y un cliente nuevo se prueban en el mismo PC.
-	 */
-	FString GetTutorialSlotName() const;
-
-	/** Opción de la URL con la que un cliente que no ha hecho el tutorial se une a una sala (el servidor lo pone ya en él). */
-	static const TCHAR* TutorialJoinOption() { return TEXT("TNTut"); }
-
 	/**
 	 * Número de jugadores conectados en el lobby ANTES de hacer ServerTravel al Run.
 	 * TN_HQGameMode lo asigna justo antes de viajar; TN_RunGameMode lo lee para
@@ -572,12 +541,6 @@ private:
 	/** @brief Construye el nombre de slot del save (incluye sufijo de Steam ID si está disponible). */
 	FString BuildCosmeticSaveSlot() const;
 
-	/** @brief Carga el UTN_TutorialSaveGame del disco. */
-	void LoadTutorialProfile();
-
-	/** @brief Persiste el UTN_TutorialSaveGame en disco. */
-	void SaveTutorialProfile() const;
-
 	/** Reintenta crear el listen server tras un NetDriverListenFailure durante travel. */
 	void RetryListenServer();
 
@@ -587,17 +550,11 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_CosmeticSaveGame> CosmeticProfile;
 
-	UPROPERTY(Transient)
-	TObjectPtr<UTN_TutorialSaveGame> TutorialProfile;
-
 	/** SteamID64 de la cuenta dueña del perfil cosmético; vacío sin Steam (ranura _Local). Se fija al cargarlo. */
 	FString CosmeticAccountId;
 
 	/** El perfil cosmético del disco no se pudo leer ni apartar: no se escribe encima en esta sesión. */
 	bool bCosmeticSaveBlocked = false;
-
-	/** Igual para el estado del tutorial. */
-	bool bTutorialSaveBlocked = false;
 
 	bool bIsLoadingScreenVisible = false;
 

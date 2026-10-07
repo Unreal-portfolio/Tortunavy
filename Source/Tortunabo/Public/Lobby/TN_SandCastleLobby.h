@@ -5,7 +5,6 @@
 #include "TN_SandCastleLobby.generated.h"
 
 class APlayerController;
-class ATN_TreasureChest;
 class UBoxComponent;
 class UPointLightComponent;
 class UProceduralMeshComponent;
@@ -15,7 +14,7 @@ class UTextRenderComponent;
 /**
  * El lobby como castillo de arena redondo (LVL_Lobby). Va colocado en el nivel y se construye en el editor
  * (OnConstruction) y en ejecución, así que se ve y se ajusta sin darle al Play. Solo se replican el estado de la puerta
- * y de los huevos (el cofre del tesoro es un actor replicado aparte).
+ * y de los huevos.
  *
  * Plano (cm, centro del círculo en el origen del actor; +Y es la puerta, las 12 del reloj; las 3 quedan a -X):
  * - Muralla redonda de radio interior Radius con almenas, marcas de cubo y conchas, y torres de cubo de alturas
@@ -27,8 +26,8 @@ class UTextRenderComponent;
  *   plaza del lobby (arriba) del patio de pruebas (abajo). En su centro, la torre del homenaje (las 6) con un paso por
  *   dentro, una escalera de caracol por fuera y un balcón con almenas que mira a la plaza; del rellano de la escalera
  *   baja otra al adarve de la izquierda, que acaba en un tobogán a la plaza. El de la derecha (se llega botando en las
- *   medusas) tiene un mirador y un tobogán al patio de pruebas. En la azotea, delante del torreón y sobre una tarima,
- *   el cofre del tesoro (ATN_TreasureChest): lo crea el servidor en BeginPlay y no se guarda en el nivel.
+ *   medusas) tiene un mirador y un tobogán al patio de pruebas. En la azotea, delante del torreón, una tarima de
+ *   decoración.
  * - Plaza: pila de ocho huevos en un montículo de dos alturas (EggsCenter): siete en el piso bajo y uno arriba, uno por
  *   jugador de los ocho que caben en la sesión. Meterse en uno marca al jugador como listo
  *   (ATN_HQGameMode::SetPlayerReadyState) y con todos listos empieza la cuenta atrás.
@@ -49,7 +48,6 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void PostRegisterAllComponents() override;
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -170,9 +168,6 @@ private:
 	/** Esconde las piezas de la maqueta que el castillo sustituye y apaga la zona de listos vieja (cada máquina). */
 	void HideMaquette();
 
-	/** Servidor: crea el cofre del tesoro en la azotea de la torre del homenaje (actor replicado, no guardado). */
-	void SpawnTreasureChest();
-
 	/** Servidor: quién está en qué huevo o en la sala (listos), cómo se empezará y si la puerta 1 tiene que abrirse. */
 	void ServerUpdate(float DeltaSeconds);
 
@@ -188,7 +183,4 @@ private:
 
 	/** Servidor: el último estado de listo enviado por jugador. */
 	TMap<TWeakObjectPtr<APlayerController>, bool> ReadySent;
-
-	/** Servidor: el cofre del tesoro creado en BeginPlay (se va con el castillo si este se destruye). */
-	TWeakObjectPtr<ATN_TreasureChest> TreasureChest;
 };

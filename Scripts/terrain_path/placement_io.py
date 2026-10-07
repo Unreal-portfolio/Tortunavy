@@ -12,9 +12,8 @@
 Cada entrada: id, category, kind, class, line, s_m, q_m, location_uu [x, y, z] (z = suelo del camino;
 el cargador la ajusta con una traza vertical), yaw_deg (absoluto, X = Norte), length_m, extent_uu,
 size_scale, intensity, params y source. Una entrada manual solo necesita category, kind y location_uu.
-Lo que ocupa un tramo (length_m > 0: puzles, plataforma móvil, ermitaño, tanque) lleva además path_uu, la
-polilínea del camino bajo su huella cada PATH_STEP_M (el cargador reparte las piezas por ella y no en recta);
-el géiser lleva target_uu, el punto del camino donde cae (GEYSER_REACH_M más adelante).
+Lo que ocupa un tramo (length_m > 0: puzles, pasarela, ermitaño, tanque) lleva además path_uu, la
+polilínea del camino bajo su huella cada PATH_STEP_M (el cargador reparte las piezas por ella y no en recta).
 Lo automático lleva también progress_m, su avance por el recorrido en metros del principal: la distancia
 por el camino a la salida entre la suma de las distancias a la salida y a la meta, por la longitud del
 principal. En el principal sin atajos es s_m; en un lazo, lo que equivale en el principal.
@@ -37,7 +36,6 @@ from .placement_site import Site
 FORMAT = 1
 GENERATOR = "Scripts/place_terrain_path.py"
 PATH_STEP_M = 2.0       # separación de los puntos de path_uu
-GEYSER_REACH_M = 14.0   # el géiser lanza hasta este punto del camino, más adelante
 
 
 def _uu(point) -> list[float]:
@@ -52,11 +50,6 @@ def _path_uu(site: Site, p: Placement) -> list[list[float]] | None:
     s0, s1 = max(p.s - 0.5 * p.length, 0.0), min(p.s + 0.5 * p.length, ln.length)
     count = max(2, int(round((s1 - s0) / PATH_STEP_M)) + 1)
     return [_uu(ln.at(float(s), p.q)) for s in np.linspace(s0, s1, count)]
-
-
-def _geyser_target_uu(site: Site, p: Placement) -> list[float]:
-    ln = site.line(p.line)
-    return _uu(ln.at(min(p.s + GEYSER_REACH_M, ln.length), 0.0))
 
 
 def progress_field(site: Site) -> np.ndarray:
@@ -88,8 +81,6 @@ def to_json(site: Site, p: Placement, progress: np.ndarray | None = None) -> dic
     path = _path_uu(site, p)
     if path is not None:
         out["path_uu"] = path
-    if p.category == "mechanic" and p.kind == "Geyser":
-        out["target_uu"] = _geyser_target_uu(site, p)
     return out
 
 

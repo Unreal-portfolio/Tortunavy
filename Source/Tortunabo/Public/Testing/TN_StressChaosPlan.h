@@ -4,8 +4,8 @@
 #include "Math/RandomStream.h"
 
 /**
- * Escenario de estrés «caos» (TN.Stress caos, -TNStress=caos): el peor caso de juego real. Cuatro tortugas que usan las
- * catapultas, se cogen y se lanzan, ruedan en su bola y lanzan objetos en ráfagas, con cangrejos, gaviotas y tanques
+ * Escenario de estrés «caos» (TN.Stress caos, -TNStress=caos): el peor caso de juego real. Cuatro tortugas que se cogen
+ * y se lanzan, ruedan en su bola y lanzan objetos en ráfagas, con cangrejos, gaviotas y tanques
  * persiguiéndolas. Las fases van sumando carga (cada una mantiene lo de la anterior). Lógica pura, testeada en
  * Tortunabo.Stress.Chaos. Docs/Analisis/2026-10-03-Estres-caos.md.
  */
@@ -15,7 +15,6 @@ namespace TNChaos
 	enum class EStep : uint8
 	{
 		Baseline,
-		Catapults,
 		Carry,
 		Ball,
 		Items,
@@ -28,7 +27,6 @@ namespace TNChaos
 	enum class ETask : uint8
 	{
 		Wander,
-		Catapult,
 		Carry,
 		Ball,
 		Items,
@@ -37,8 +35,7 @@ namespace TNChaos
 
 	inline const TCHAR* StepName(EStep Step)
 	{
-		static const TCHAR* const Names[] = { TEXT("baseline"), TEXT("catapults"), TEXT("carry"), TEXT("ball"), TEXT("items"), TEXT("enemies"),
-			TEXT("peak") };
+		static const TCHAR* const Names[] = { TEXT("baseline"), TEXT("carry"), TEXT("ball"), TEXT("items"), TEXT("enemies"), TEXT("peak") };
 		static_assert(UE_ARRAY_COUNT(Names) == static_cast<int32>(EStep::Count), "StepName: falta un nombre");
 		const int32 Index = static_cast<int32>(Step);
 		return Index >= 0 && Index < UE_ARRAY_COUNT(Names) ? Names[Index] : TEXT("?");
@@ -46,7 +43,7 @@ namespace TNChaos
 
 	inline const TCHAR* TaskName(ETask Task)
 	{
-		static const TCHAR* const Names[] = { TEXT("wander"), TEXT("catapult"), TEXT("carry"), TEXT("ball"), TEXT("items") };
+		static const TCHAR* const Names[] = { TEXT("wander"), TEXT("carry"), TEXT("ball"), TEXT("items") };
 		static_assert(UE_ARRAY_COUNT(Names) == static_cast<int32>(ETask::Count), "TaskName: falta un nombre");
 		const int32 Index = static_cast<int32>(Task);
 		return Index >= 0 && Index < UE_ARRAY_COUNT(Names) ? Names[Index] : TEXT("?");
@@ -62,8 +59,6 @@ namespace TNChaos
 		float PhaseSeconds = 20.f;
 		/** Tortugas (locales del anfitrión; las que faltan se crean como jugadores extra). */
 		int32 Turtles = 4;
-		/** Catapultas reutilizables que se ponen alrededor de las tortugas en la fase de catapultas. */
-		int32 Catapults = 8;
 		/** Multiplicador de enemigos (1 = 12 cangrejos, 4 zonas de gaviotas y 4 tanques por tanda). */
 		float EnemyScale = 1.f;
 	};
@@ -76,7 +71,6 @@ namespace TNChaos
 		/** Tareas permitidas (máscara de TaskBit). */
 		uint8 Tasks = 0;
 		/** Lo que se crea al empezar la fase (se suma a lo de las anteriores). */
-		int32 Catapults = 0;
 		int32 Crabs = 0;
 		int32 Gulls = 0;
 		int32 Tanks = 0;
@@ -91,9 +85,8 @@ namespace TNChaos
 	}
 
 	/**
-	 * Siete fases de PhaseSeconds: referencia (solo andan), + catapultas, + coger y lanzar, + bola, + ráfagas de objetos,
-	 * + enemigos y pico (el doble de enemigos, medio corro más de catapultas y ráfagas el doble de seguidas). Cada fase permite lo
-	 * de las anteriores.
+	 * Seis fases de PhaseSeconds: referencia (solo andan), + coger y lanzar, + bola, + ráfagas de objetos, + enemigos y pico
+	 * (el doble de enemigos y ráfagas el doble de seguidas). Cada fase permite lo de las anteriores.
 	 */
 	inline TArray<FPhase> BuildTimeline(const FConfig& Config)
 	{
@@ -106,14 +99,11 @@ namespace TNChaos
 			Phase.Step = static_cast<EStep>(Index);
 			switch (Phase.Step)
 			{
-				case EStep::Catapults: Mask |= TaskBit(ETask::Catapult); Phase.Catapults = FMath::Max(0, Config.Catapults); break;
-				case EStep::Carry:     Mask |= TaskBit(ETask::Carry); break;
-				case EStep::Ball:      Mask |= TaskBit(ETask::Ball); break;
-				case EStep::Items:     Mask |= TaskBit(ETask::Items); break;
+				case EStep::Carry: Mask |= TaskBit(ETask::Carry); break;
+				case EStep::Ball:  Mask |= TaskBit(ETask::Ball); break;
+				case EStep::Items: Mask |= TaskBit(ETask::Items); break;
 				case EStep::Enemies:
 				case EStep::Peak:
-					// En el pico, otro corro de catapultas donde estén ahora las tortugas (las lanzadas acaban lejos del primero).
-					Phase.Catapults = Phase.Step == EStep::Peak ? FMath::Max(0, Config.Catapults / 2) : 0;
 					Phase.Crabs = Scaled(12, Config.EnemyScale);
 					Phase.Gulls = Scaled(4, Config.EnemyScale);
 					Phase.Tanks = Scaled(4, Config.EnemyScale);
@@ -137,14 +127,13 @@ namespace TNChaos
 	{
 		switch (Step)
 		{
-			case EStep::Catapults: return ETask::Catapult;
-			case EStep::Carry:     return ETask::Carry;
-			case EStep::Ball:      return ETask::Ball;
-			case EStep::Items:     return ETask::Items;
-			// Con los enemigos y en el pico se insiste en lo más caro: catapultas y coger y lanzar.
-			case EStep::Enemies:   return ETask::Catapult;
-			case EStep::Peak:      return ETask::Carry;
-			default:               return ETask::Count;
+			case EStep::Carry:   return ETask::Carry;
+			case EStep::Ball:    return ETask::Ball;
+			case EStep::Items:   return ETask::Items;
+			// Con los enemigos y en el pico se insiste en lo más caro: la bola y coger y lanzar.
+			case EStep::Enemies: return ETask::Ball;
+			case EStep::Peak:    return ETask::Carry;
+			default:             return ETask::Count;
 		}
 	}
 
@@ -155,7 +144,7 @@ namespace TNChaos
 	inline ETask PickTask(FRandomStream& Stream, uint8 Mask, bool bCanCarry, ETask Focus = ETask::Count)
 	{
 		struct FWeight { ETask Task; int32 Weight; };
-		FWeight Weights[] = { { ETask::Wander, 1 }, { ETask::Catapult, 4 }, { ETask::Carry, 3 }, { ETask::Ball, 2 }, { ETask::Items, 3 } };
+		FWeight Weights[] = { { ETask::Wander, 1 }, { ETask::Carry, 3 }, { ETask::Ball, 2 }, { ETask::Items, 3 } };
 		for (FWeight& Item : Weights)
 		{
 			Item.Weight += Item.Task == Focus ? 8 : 0;

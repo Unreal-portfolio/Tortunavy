@@ -1,7 +1,5 @@
 #include "World/ProcMap/TN_ProcSurvivalTraps.h"
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
-#include "World/ProcMap/TN_ProcPuzzleActors.h"
-#include "World/TN_PressurePlate.h"
 #include "World/TN_QuadActor.h"
 #include "Components/BoxComponent.h"
 #include "Components/DecalComponent.h"
@@ -178,37 +176,4 @@ void ATN_ProcQuadCrossing::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		}
 	}
 	Super::EndPlay(EndPlayReason);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Cerrojo del atajo
-// ─────────────────────────────────────────────────────────────────────────────
-
-ATN_ProcShortcutLock::ATN_ProcShortcutLock()
-{
-	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = false;
-}
-
-void ATN_ProcShortcutLock::Setup(const TArray<ATN_PressurePlate*>& InPlates, ATN_ProcSabotageGate* InGate)
-{
-	Gate = InGate;
-	if (InGate) { InGate->SetBlocking(true); }
-	for (ATN_PressurePlate* Plate : InPlates)
-	{
-		if (!Plate) { continue; }
-		Plates.Add(Plate);
-		Plate->OnOccupancyChanged.AddUObject(this, &ATN_ProcShortcutLock::OnPlateChanged);
-	}
-}
-
-void ATN_ProcShortcutLock::OnPlateChanged(ATN_PressurePlate* /*Plate*/, bool /*bOccupied*/)
-{
-	if (bOpened) { return; }
-	for (const TWeakObjectPtr<ATN_PressurePlate>& Plate : Plates)
-	{
-		if (!Plate.IsValid() || !Plate->IsOccupied()) { return; }
-	}
-	bOpened = true;
-	if (ATN_ProcSabotageGate* G = Gate.Get()) { G->SetBlocking(false); }
 }

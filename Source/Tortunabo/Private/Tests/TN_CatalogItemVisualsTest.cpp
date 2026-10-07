@@ -16,7 +16,7 @@
 
 namespace TNCatalogVisualsTest
 {
-	/** true si la fila sale en algún modo: los sorteos y el tutorial solo cogen filas con uso; Score es de relleno. */
+	/** true si la fila sale en algún modo: los sorteos solo cogen filas con uso; Score es de relleno. */
 	bool IsUsedRow(const FTN_InventoryItem& Row)
 	{
 		return Row.IsValid() && Row.UseType != ETN_ItemUseType::None;

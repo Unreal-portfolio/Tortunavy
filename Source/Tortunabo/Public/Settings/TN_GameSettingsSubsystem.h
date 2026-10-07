@@ -295,7 +295,7 @@ public:
 	/** Filas de controles que se pueden cambiar, en el orden de la lista, con la tecla de ahora de cada aparato (las del menú: GetEditedSettings). */
 	TArray<FTNKeyBinding> GetKeyBindings() const;
 
-	/** Las mismas filas con las teclas de PC (el tutorial y los carteles las enseñan a cada jugador). */
+	/** Las mismas filas con las teclas de PC (los carteles las enseñan a cada jugador). */
 	TArray<FTNKeyBinding> GetKeyBindingsFor(const APlayerController* PC) const;
 
 	/** Acciones de IMC_Player que no se cambian (van con el ratón o los sticks, como mirar): solo para enseñarlas. */
@@ -562,7 +562,7 @@ private:
 
 /**
  * @brief Suma el campo de visión del jugador (UTN_GameSettingsSubsystem::GetFieldOfViewOffset) cuando la cámara mira a
- * otra tortuga (espectador, cámara fija o libre del fantasma). La tortuga propia ya lo lleva en su cámara y las cámaras
+ * la tortuga de otro jugador. La tortuga propia ya lo lleva en su cámara y las cámaras
  * de escena (tienda, probador) no se tocan. Va la última (prioridad 250), después de los temblores.
  */
 UCLASS()
