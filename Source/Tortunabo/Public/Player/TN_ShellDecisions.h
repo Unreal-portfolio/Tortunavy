@@ -26,6 +26,13 @@ namespace TNShellLogic
 
 		/** Con un objeto en la mano no se entra: las manos están ocupadas. */
 		bool bHasEquippedItem = false;
+
+		/**
+		 * Llevando a otra tortuga o llevada por otra no se entra: el caparazón lo gobierna la carga. El servidor lo mira
+		 * aunque el cliente ya lo filtre: con ServerGrab y ServerToggleShell seguidos, el cliente aún no sabe que lleva a
+		 * nadie y el portador acababa en la bola con la llevada flotando encima (#572).
+		 */
+		bool bIsCarrying = false;
 	};
 
 	/**
@@ -39,7 +46,7 @@ namespace TNShellLogic
 			return false;
 		}
 
-		if (Context.bIsSwimming || Context.bHasEquippedItem)
+		if (Context.bIsSwimming || Context.bHasEquippedItem || Context.bIsCarrying)
 		{
 			return false;
 		}

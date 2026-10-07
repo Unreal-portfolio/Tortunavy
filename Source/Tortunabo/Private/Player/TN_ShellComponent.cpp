@@ -103,6 +103,7 @@ void UTN_ShellComponent::ServerToggleShell_Implementation()
 
 	const UCharacterMovementComponent* Movement = Turtle->GetCharacterMovement();
 	const UTN_InventoryComponent* Inventory = Turtle->GetInventoryComponent();
+	const UTN_CarryComponent* Carry = Turtle->GetCarryComponent();
 
 	TNShellLogic::FShellEnterContext Context;
 	Context.bIsSwimming = Movement && Movement->IsSwimming();
@@ -110,12 +111,14 @@ void UTN_ShellComponent::ServerToggleShell_Implementation()
 	Context.bIsKnockedDown = Turtle->IsKnockedDown();
 	Context.bIsDiving = Turtle->IsDiving();
 	Context.bHasEquippedItem = Inventory && Inventory->HasEquippedItem();
+	Context.bIsCarrying = Carry && (Carry->IsCarrying() || Carry->IsBeingCarried());
 
 	if (!TNShellLogic::CanEnterShell(Context))
 	{
 		// Para el registro de las pruebas: la tecla no hace nada y no se ve por qué (lo más fácil de no ver, el objeto en la mano).
-		UE_LOG(LogTortunabo, Log, TEXT("[Caparazón] %s no se mete en el caparazón:%s%s%s%s%s."), *GetNameSafe(Turtle),
-			Context.bHasEquippedItem ? TEXT(" lleva un objeto en la mano") : TEXT(""), Context.bIsSwimming ? TEXT(" nadando") : TEXT(""),
+		UE_LOG(LogTortunabo, Log, TEXT("[Caparazón] %s no se mete en el caparazón:%s%s%s%s%s%s."), *GetNameSafe(Turtle),
+			Context.bHasEquippedItem ? TEXT(" lleva un objeto en la mano") : TEXT(""), Context.bIsCarrying ? TEXT(" llevando o llevada") : TEXT(""),
+			Context.bIsSwimming ? TEXT(" nadando") : TEXT(""),
 			Context.bIsDiving ? TEXT(" en pleno panzazo") : TEXT(""), Context.bIsKnockedDown ? TEXT(" derribada") : TEXT(""),
 			Context.bIsDead ? TEXT(" muerta") : TEXT(""));
 		return;

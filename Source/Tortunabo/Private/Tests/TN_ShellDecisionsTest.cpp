@@ -20,6 +20,7 @@ namespace TNShellTestHelpers
 		Context.bIsKnockedDown = false;
 		Context.bIsDiving = false;
 		Context.bHasEquippedItem = false;
+		Context.bIsCarrying = false;
 		return Context;
 	}
 }
@@ -68,6 +69,13 @@ bool FTNShellEnterTest::RunTest(const FString& Parameters)
 		FShellEnterContext Context = MakeValidContext();
 		Context.bHasEquippedItem = true;
 		TestFalse(TEXT("Con un objeto en la mano no se entra"), CanEnterShell(Context));
+	}
+
+	{
+		// #572: el servidor rechaza la bola del portador (o de la llevada) aunque el cliente no supiera aún que llevaba a nadie.
+		FShellEnterContext Context = MakeValidContext();
+		Context.bIsCarrying = true;
+		TestFalse(TEXT("Llevando o llevada no se entra"), CanEnterShell(Context));
 	}
 
 	{
