@@ -24,8 +24,9 @@ Crea o rehace:
   /Game/UI/Shop/M_UI_Preview: pinta en la UI la captura de la vista previa (SceneColorHDR: alfa invertido y sin
     curva de tono; Exposure la ajusta).
   /Game/Cosmetics/Helmets/SM_Helmet_<Id>: los cascos de Scripts/cosmetics_meshes.py.
-  DT_Helmets y DT_Skins (/Game/Blueprints/Gameplay/Cosmetics): catálogo de la tienda (precio 0 por ahora); solo
-  si el C++ ya tiene las columnas nuevas de FTN_SkinData (Color, Pattern...).
+  DT_Helmets y DT_Skins (/Game/Blueprints/Gameplay/Cosmetics): catálogo de la tienda (cascos gratis; skins de
+  cosmetics_skins.py con rareza y precio en puntos, #873); solo si el C++ ya tiene las columnas de FTN_SkinData
+  (Color, Pattern, Rarity...).
 
 Los colores se escriben en sRGB hexadecimal y se pasan a lineal.
 """
@@ -41,8 +42,10 @@ HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() els
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 import cosmetics_meshes as CM  # noqa: E402
+import cosmetics_skins as CS  # noqa: E402
 
 importlib.reload(CM)
+importlib.reload(CS)
 
 MAT_FOLDER = "/Game/Cosmetics/Materials"
 HELMET_FOLDER = "/Game/Cosmetics/Helmets"
@@ -586,58 +589,8 @@ def build_helmet_meshes(material):
 
 # ── Catálogo (DT_Helmets y DT_Skins) ─────────────────────────────────────────
 
-def lin_json(hex_rgb):
-    c = lin_color(hex_rgb)
-    return {"R": round(c.r, 5), "G": round(c.g, 5), "B": round(c.b, 5), "A": 1.0}
-
-
-# (id, nombre, color principal, segundo color, dibujo, escala del dibujo, brillo, luz propia, lo que dice el tendero)
-SHELLS = [
-    ("Scutes", "Escamas clásicas", 0xC8A165, 0x5E3F22, "Scutes", 1.0, 0.0, 0.0, "Hexágonos color miel con juntas de chocolate. El caparazón de tortuga por excelencia."),
-    ("Coral", "Coral con lunares", 0xFF7A5C, 0xFFF1DC, "Spots", 1.0, 0.0, 0.0, "Coral del arrecife con lunares de espuma. Alegre y veraniego."),
-    ("Waves", "Oleaje", 0x1E5FA8, 0xE8FBFF, "Waves", 1.0, 0.0, 0.0, "Olas que rompen en tu espalda. Para las tortugas más marineras."),
-    ("Gold", "Oro pirata", 0xFFC93C, 0xB8860B, "Scutes", 1.0, 1.0, 0.0, "Brilla más que el tesoro de un galeón. Cuidado con las gaviotas."),
-    ("Lava", "Volcán", 0x2A2626, 0xFF7A1A, "Lava", 1.0, 0.0, 3.0, "Roca volcánica con grietas que brillan. Calentito, calentito."),
-    ("Galaxy", "Galaxia", 0x1A1F4D, 0xFFF3B0, "Stars", 1.0, 0.0, 4.0, "Un cielo estrellado para las noches de carrera."),
-    ("Melon", "Sandía", 0x8FD16A, 0x2E7D32, "Melon", 1.0, 0.0, 0.0, "Rayas de sandía fresquita. Nadie se lo va a comer, tranquilidad."),
-    ("Checker", "Tablero", 0xF4EFE2, 0x26232E, "Checker", 1.0, 0.0, 0.0, "Cuadros blancos y negros, como la bandera de meta."),
-    ("Moss", "Musgo", 0x5E8C3A, 0x9CCB5E, "Spots", 0.7, 0.0, 0.0, "Musgo de la selva. Camuflaje perfecto entre los helechos."),
-    ("Candy", "Algodón de azúcar", 0xFF9EC8, 0xFFFFFF, "Waves", 0.8, 0.0, 0.0, "Rosa de feria con remolinos de nube. Dulce, dulce."),
-]
-
-# (id, nombre, color, barriga, cuánto se nota la barriga, lo que dice el tendero)
-BODIES = [
-    ("Ocean", "Azul océano", 0x3A8FD9, 0xE8F4FF, 0.45, "Del color del mar abierto. Te camuflas al nadar."),
-    ("Bubblegum", "Rosa chicle", 0xF28DB2, 0xFFF0F5, 0.45, "Rosa chicle con la barriga de nata. Muy dulce."),
-    ("Lavender", "Lavanda", 0x9B6BD6, 0xF1E6FF, 0.45, "Morado lavanda: huele a playa tranquila."),
-    ("Sunny", "Amarillo sol", 0xF4C542, 0xFFF8DC, 0.45, "Amarillo como el sol de mediodía. Se te ve desde lejos."),
-    ("Coral", "Rojo coral", 0xE8574A, 0xFFE3D6, 0.45, "Rojo coral, el color de los valientes del arrecife."),
-    ("Mint", "Menta", 0x7FE0C0, 0xF0FFF8, 0.4, "Menta fresquita para los días de calor."),
-    ("Orange", "Naranja", 0xF28C38, 0xFFEBD2, 0.45, "Naranja atardecer. Combina con todo."),
-    ("Snow", "Blanco nieve", 0xEDEFF2, 0xFFFFFF, 0.3, "Blanco nieve. Muy elegante, pero no te revuelques en la arena."),
-    ("Charcoal", "Carbón", 0x3B3F4A, 0xB8BEC8, 0.4, "Gris carbón con la barriga plateada. Misteriosa."),
-    ("Sand", "Arena", 0xE3C79A, 0xFFF5E1, 0.45, "Color arena de playa. Es el que llevo yo, ¿se nota?"),
-    ("Lime", "Lima", 0x9ED94B, 0xF6FFE0, 0.4, "Verde lima, ácido y veloz."),
-    ("Forest", "Verde bosque", 0x2E6B3A, 0xD8E8B0, 0.45, "Verde oscuro de la selva profunda."),
-]
-
-# Ojos: (id, nombre, color del iris o la pupila, segundo color, tipo (ETNEyeStyle), luz propia, lo que dice el tendero)
-EYES = [
-    ("Ocean", "Iris azul mar", 0x2E86DE, 0xFFFFFF, "Iris", 0.0, "Azules como el mar abierto. Miran lejos, muy lejos."),
-    ("Emerald", "Iris esmeralda", 0x27B36A, 0xFFFFFF, "Iris", 0.0, "Verdes como la selva después de la lluvia."),
-    ("Honey", "Iris miel", 0xD9902B, 0xFFFFFF, "Iris", 0.0, "Color miel: cálidos y dulces."),
-    ("Cat", "Ojos de gato", 0xF4C430, 0xFFFFFF, "Cat", 0.0, "Pupila de rendija. Ven en la oscuridad... o eso dicen."),
-    ("Star", "Pupilas de estrella", 0xFFCB3D, 0xFFFFFF, "Star", 0.0, "Para las tortugas que brillan en la carrera."),
-    ("Heart", "Pupilas de corazón", 0xFF4F7B, 0xFFFFFF, "Heart", 0.0, "Enamorada del mar, de la playa y de ganar."),
-    ("Toon", "Ojos de dibujo", 0x13233B, 0xFFFFFF, "Toon", 0.0, "Pupilas enormes y brillos de dibujos animados."),
-    ("Spiral", "Hipnóticos", 0x9B5DE5, 0xFFFFFF, "Spiral", 0.0, "Giran y giran... ¿dónde estaba la meta?"),
-    ("Galaxy", "Galaxia", 0x3B2F8F, 0xFFF3B0, "Galaxy", 3.0, "Un universo entero en cada ojo. Brillan en la oscuridad."),
-]
-
-
-def fill_tables():
-    """Rehace las filas de DT_Helmets y DT_Skins (todo a precio 0 hasta que llegue la economía)."""
-    import json
+def helmet_rows():
+    """Filas de DT_Helmets (gratis: la tienda cobra las skins de DT_Skins, #873)."""
     helmets = []
     for sid, _fn, name, desc in CM.HELMETS:
         row = "Helmet_" + sid
@@ -650,37 +603,16 @@ def fill_tables():
             "MeshRotation": {"Pitch": 0.0, "Yaw": 0.0, "Roll": 0.0},
             "Price": 0, "Description": desc,
         })
-    # Todas las columnas, también las vacías: si falta alguna, el importador abre un diálogo modal con avisos que
-    # bloquea el editor (y la ejecución remota de Python) hasta que alguien pulsa OK.
-    empty_slots = {"BellyMaterial": "None", "EyeShineMaterial": "None", "EyesMouthMaterial": "None", "SkinMaterial": "None",
-                   "ShellMaterial": "None", "Icon": "None"}
-    # Las columnas de materiales por ranura (malla unificada) van vacías a propósito: si faltan en el JSON, el
-    # importador avisa con un diálogo modal que bloquea el editor.
-    empty_slots = {"BellyMaterial": "None", "EyeShineMaterial": "None", "EyesMouthMaterial": "None",
-                   "SkinMaterial": "None", "ShellMaterial": "None", "Icon": "None"}
-    skins = []
-    for sid, name, c1, c2, pattern, scale, shine, glow, desc in SHELLS:
-        row = "Shell_" + sid
-        skins.append({
-            "Name": row, "SkinId": row, "DisplayName": name, "Category": "Shell", "Price": 0, "Description": desc,
-            "Color": lin_json(c1), "Color2": lin_json(c2), "BellyAmount": 0.0, "Pattern": pattern,
-            "PatternScale": scale, "Shine": shine, "Glow": glow, "EyeStyle": "Classic", **empty_slots,
-        })
-    for sid, name, c1, c2, belly, desc in BODIES:
-        row = "Body_" + sid
-        skins.append({
-            "Name": row, "SkinId": row, "DisplayName": name, "Category": "Body", "Price": 0, "Description": desc,
-            "Color": lin_json(c1), "Color2": lin_json(c2), "BellyAmount": belly, "Pattern": "Plain",
-            "PatternScale": 1.0, "Shine": 0.0, "Glow": 0.0, "EyeStyle": "Classic", **empty_slots,
-        })
-    for sid, name, c1, c2, style, glow, desc in EYES:
-        row = "Eyes_" + sid
-        skins.append({
-            "Name": row, "SkinId": row, "DisplayName": name, "Category": "Eyes", "Price": 0, "Description": desc,
-            "Color": lin_json(c1), "Color2": lin_json(c2), "BellyAmount": 0.0, "Pattern": "Plain",
-            "PatternScale": 1.0, "Shine": 0.0, "Glow": glow, "EyeStyle": style, **empty_slots,
-        })
-    for path, rows in ((DT_HELMETS, helmets), (DT_SKINS, skins)):
+    return helmets
+
+
+def fill_tables(which=("helmets", "skins")):
+    """Rehace las filas de DT_Helmets y DT_Skins (o solo las de which). Las skins salen de cosmetics_skins.py."""
+    import json
+    tables = {"helmets": (DT_HELMETS, helmet_rows), "skins": (DT_SKINS, CS.skin_rows)}
+    for key in which:
+        path, make_rows = tables[key]
+        rows = make_rows()
         dt = asset_lib.load_asset(path)
         ok = unreal.DataTableFunctionLibrary.fill_data_table_from_json_string(dt, json.dumps(rows, ensure_ascii=False))
         asset_lib.save_loaded_asset(dt)
@@ -691,7 +623,7 @@ def tables_ready():
     """Las columnas nuevas (Color, Pattern, EyeStyle...) existen si el módulo C++ ya está compilado con ellas."""
     try:
         row = unreal.TN_SkinData()
-        return hasattr(row, "pattern") and hasattr(row, "eye_style")
+        return hasattr(row, "pattern") and hasattr(row, "eye_style") and hasattr(row, "rarity")
     except Exception:
         return False
 
