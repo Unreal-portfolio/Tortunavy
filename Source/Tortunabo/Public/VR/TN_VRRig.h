@@ -160,6 +160,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "VR")
 	TObjectPtr<UProceduralMeshComponent> CurvedPanel;
 
+	/**
+	 * Copias del panel curvo para los menús (#916): con gafas el menú se repite alrededor del jugador (TN.VR.MenuPanels
+	 * paneles en total contando el de delante), con el mismo material, y el láser apunta a cualquiera de ellos.
+	 */
+	UPROPERTY(VisibleAnywhere, Category = "VR")
+	TArray<TObjectPtr<UProceduralMeshComponent>> MenuCopies;
+
 	/** Playa en 360 alrededor de la cabeza mientras sale la pantalla de carga. */
 	UPROPERTY(VisibleAnywhere, Category = "VR")
 	TObjectPtr<UProceduralMeshComponent> LoadingDome;
@@ -227,6 +234,12 @@ private:
 
 	/** Malla del panel curvo para ese arco (en el espacio del panel) y su material, el del UWidgetComponent. */
 	void UpdateCurvedPanel(float ArcDeg);
+
+	/** Paneles del menú alrededor del jugador (el de delante y sus copias): cuántos (TN.VR.MenuPanels; 1 sin gafas). */
+	int32 MenuPanelCount() const;
+
+	/** Con un menú delante, pone las copias del panel alrededor de la cabeza (y las oculta si no hay menú). */
+	void UpdateMenuCopies();
 	void BuildLoadingDome();
 	void UpdateLoadingDome(APlayerController* PC);
 	/** Fuerza de la viñeta de confort y de la vibración: el ajuste de Ajustes > Realidad virtual o, si se ha tocado, la consola. */
@@ -310,6 +323,12 @@ private:
 	/** Arco (grados) con el que está hecha la malla del panel curvo y el que tiene ahora. */
 	float CurvedArcBuilt = -1.f;
 	float PanelArc = 60.f;
+
+	/** Dónde están los paneles del menú ahora (el de delante primero) para el rayo del puntero. */
+	TArray<FTransform> MenuPanelTransforms;
+
+	/** Copias del panel de delante además de él (MenuCopies). */
+	static constexpr int32 MaxMenuCopies = 5;
 
 	ETNVRMode Mode = ETNVRMode::Off;
 	bool bMenuMode = false;

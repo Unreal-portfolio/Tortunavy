@@ -175,6 +175,28 @@ namespace TNVRMath
 		return static_cast<float>(Distance * FMath::DegreesToRadians(FMath::Clamp(static_cast<double>(ArcDeg), 5.0, 180.0)) / FMath::Max(1.0, static_cast<double>(DrawWidth)));
 	}
 
+	/**
+	 * Menús que rodean al jugador (#916): Count paneles iguales repartidos por igual alrededor de la cabeza (el de delante y
+	 * sus copias). Giro de cada uno respecto del de delante, en grados: 0, 360/Count, 2*360/Count...
+	 */
+	inline float MenuPanelYaw(int32 Index, int32 Count)
+	{
+		return Count <= 1 ? 0.f : 360.f * static_cast<float>(Index) / static_cast<float>(Count);
+	}
+
+	/** Arco que le queda a cada panel con Count repartidos: el pedido, sin pasar del hueco que le toca menos un margen. */
+	inline float MenuPanelArc(float WantedArc, int32 Count, float GapDeg = 8.f)
+	{
+		return Count <= 1 ? WantedArc : FMath::Min(WantedArc, 360.f / static_cast<float>(Count) - GapDeg);
+	}
+
+	/** La copia del panel de delante (Front) girada YawDeg alrededor del eje vertical que pasa por EyeLocation (la cabeza). */
+	inline FTransform MenuPanelTransform(const FTransform& Front, const FVector& EyeLocation, float YawDeg)
+	{
+		const FQuat Spin(FVector::UpVector, FMath::DegreesToRadians(static_cast<double>(YawDeg)));
+		return FTransform(Spin * Front.GetRotation(), EyeLocation + Spin.RotateVector(Front.GetLocation() - EyeLocation), Front.GetScale3D());
+	}
+
 	/** Valor del gatillo o del agarre de los Touch a partir del cual cuenta como pulsado, y por debajo del cual, suelto. */
 	constexpr float AnalogPressThreshold = 0.55f;
 	constexpr float AnalogReleaseThreshold = 0.35f;
