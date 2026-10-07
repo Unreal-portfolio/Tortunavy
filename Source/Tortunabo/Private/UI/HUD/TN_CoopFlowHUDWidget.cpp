@@ -179,7 +179,8 @@ void UTN_CoopFlowHUDWidget::RefreshResultsExtras(const ATN_CoopGameState* GameSt
 {
 	if (EndTitleText)
 	{
-		const FText Title = GameState ? TNResultsTexts::JumperTitle(GameState->JumperTitle) : FText::GetEmpty();
+		const FText Title = GameState
+			? TNResultsTexts::EndTitles(GameState->JumperTitle, GameState->TreasurerTitle, GameState->HealerTitle) : FText::GetEmpty();
 		if (!Title.EqualTo(EndTitleText->GetText()))
 		{
 			EndTitleText->SetText(Title);

@@ -90,38 +90,10 @@ void ATN_CoopGameState::BroadcastFlowStateChange()
 	if (bResults && HasAuthority())
 	{
 		AwardEndTitles();
+		AwardEndScores();
 	}
 	PersistLocalPlayerScoreIfResults();
 	OnMatchFlowStateChanged.Broadcast(MatchFlowState);
-}
-
-void ATN_CoopGameState::AwardEndTitles()
-{
-	TArray<const ATN_CoopPlayerState*> Players;
-	for (const APlayerState* PS : PlayerArray)
-	{
-		if (const ATN_CoopPlayerState* TNPS = Cast<ATN_CoopPlayerState>(PS))
-		{
-			Players.Add(TNPS);
-		}
-	}
-	// Orden de la sala: quien entró antes (PlayerId menor) gana los empates.
-	Players.StableSort([](const ATN_CoopPlayerState& A, const ATN_CoopPlayerState& B) { return A.GetPlayerId() < B.GetPlayerId(); });
-	TArray<TNEndTitles::FEntry> Jumps;
-	for (const ATN_CoopPlayerState* TNPS : Players)
-	{
-		Jumps.Add({ TNPS->GetPlayerId(), TNPS->JumpCount });
-	}
-	const int32 Top = TNEndTitles::PickTop(Jumps);
-	JumperTitle = FTN_EndTitle();
-	if (Players.IsValidIndex(Top))
-	{
-		JumperTitle.PlayerId = Players[Top]->GetPlayerId();
-		JumperTitle.PlayerName = Players[Top]->GetPlayerName();
-		JumperTitle.Count = Players[Top]->JumpCount;
-		UE_LOG(LogTortunabo, Log, TEXT("[CoopGameState] Saltarín: %s (%d saltos)."), *JumperTitle.PlayerName, JumperTitle.Count);
-	}
-	ForceNetUpdate();
 }
 
 void ATN_CoopGameState::PersistLocalPlayerScoreIfResults()
@@ -184,6 +156,8 @@ void ATN_CoopGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 	DOREPLIFETIME(ATN_CoopGameState, MatchFlowState);
 	DOREPLIFETIME(ATN_CoopGameState, JumperTitle);
+	DOREPLIFETIME(ATN_CoopGameState, TreasurerTitle);
+	DOREPLIFETIME(ATN_CoopGameState, HealerTitle);
 	DOREPLIFETIME(ATN_CoopGameState, ReadyPlayers);
 	DOREPLIFETIME(ATN_CoopGameState, ConnectedPlayers);
 	DOREPLIFETIME(ATN_CoopGameState, PlayersInStartZone);

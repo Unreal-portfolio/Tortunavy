@@ -3,76 +3,138 @@
 #include "CoreMinimal.h"
 #include "TN_CoopScore.generated.h"
 
+/** Títulos de fin de partida como banderas de FTN_CoopScoreBreakdown::TitleFlags (#873). */
+namespace TNEndTitleFlags
+{
+	constexpr uint8 Jumper = 1 << 0;
+	constexpr uint8 Treasurer = 1 << 1;
+	constexpr uint8 Healer = 1 << 2;
+	constexpr uint8 All = Jumper | Treasurer | Healer;
+}
+
 /**
- * Puntuación final del Coop (#789, hoja «Puntuación» del Excel de diseño): cuatro términos con su peso.
- *
- *  - Muñecos tortuga: recogidos por la jugadora / puestos en la partida (#797).
- *  - Conchas: puntos de concha recogidos por el equipo / puntos de concha que había en el nivel.
- *  - Finalización: la jugadora llegó a la meta (no eliminada).
- *  - Eficiencia de puzle: media de los puzles del nivel (TNCoopScore::PuzzleEfficiency).
- *
- * Un término sin nada que medir (nivel sin muñecos, sin conchas o sin puzles) da sus puntos enteros: así un nivel sin
- * puzles no castiga y el máximo sigue siendo MaxScore. Es aparte de la economía de conchas: no toca RaceScore ni la tienda.
- * Lo calcula el servidor al entrar en Results (ATN_ProcMapGameMode) y llega a cada jugadora en
- * ATN_CoopPlayerState::CoopScore. Pruebas: Tortunabo.Coop.Score.
+ * Valores de la fórmula de puntos de final de partida (#873, decisión del director del 07-10). Viven en el DataAsset
+ * UTN_PointsEconomy (DA_PointsEconomy); los de aquí son los de la decisión y sirven si el asset no carga.
+ */
+USTRUCT(BlueprintType)
+struct TORTUNABO_API FTN_EndScoreRules
+{
+	GENERATED_BODY()
+
+	FTN_EndScoreRules() { PositionPoints = { 50, 30, 20, 10 }; }
+
+	/** Por llegar a la meta. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score", meta = (ClampMin = "0"))
+	int32 FinishPoints = 100;
+
+	/** Por puesto de llegada (índice 0 = primera); fuera de la lista, nada. Solo para quien llega. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score")
+	TArray<int32> PositionPoints;
+
+	/** Segundos por debajo del tiempo objetivo del nivel que valen un punto. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score", meta = (ClampMin = "1.0"))
+	float SecondsPerTimePoint = 10.f;
+
+	/** Tope de los puntos por tiempo. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score", meta = (ClampMin = "0"))
+	int32 MaxTimePoints = 60;
+
+	/** Por cada muñeco tortuga cogido. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score", meta = (ClampMin = "0"))
+	int32 PointsPerDoll = 25;
+
+	/** Objetos recogidos / objetos del nivel, por este peso. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score", meta = (ClampMin = "0"))
+	int32 CollectedRatioPoints = 50;
+
+	/** Eficiencia en los puzles del nivel (0-1), por este peso. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score", meta = (ClampMin = "0"))
+	int32 PuzzleEfficiencyPoints = 30;
+
+	/** Por cada título (Saltarín, Tesorero, Curandero). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Score", meta = (ClampMin = "0"))
+	int32 PointsPerTitle = 20;
+};
+
+/**
+ * Puntos de final de partida de una jugadora con su desglose (#873, antes #789). Los calcula el servidor al entrar en
+ * Results (ATN_CoopGameState::AwardEndScores) y llegan a cada jugadora en ATN_CoopPlayerState::CoopScore; su máquina
+ * suma Total a su perfil (saldo de la tienda). Pruebas: Tortunabo.Coop.Score.
  */
 USTRUCT(BlueprintType)
 struct TORTUNABO_API FTN_CoopScoreBreakdown
 {
 	GENERATED_BODY()
 
-	/** False hasta que el servidor la calcula (fuera del Coop no hay puntuación final). */
+	/** False hasta que el servidor la calcula. */
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
 	bool bValid = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	bool bFinished = false;
+
+	/** Puesto de llegada (1 = primera); 0 si no llegó. */
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	int32 FinishRank = 0;
+
+	/** Segundos de carrera al llegar; negativo si no llegó. */
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	float FinishTimeSeconds = -1.f;
+
+	/** Tiempo objetivo del nivel (segundos). */
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	float TargetSeconds = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
 	int32 DollsCollected = 0;
 
+	/** Objetos del nivel que ha recogido ella (UTN_LevelCollectSubsystem). */
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
-	int32 DollsTotal = 0;
+	int32 ItemsCollected = 0;
 
-	/** Puntos de concha recogidos por el equipo. */
+	/** Objetos que había en el nivel. */
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
-	int32 ShellsCollected = 0;
-
-	/** Puntos de concha que había en el nivel. */
-	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
-	int32 ShellsTotal = 0;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
-	bool bFinished = false;
+	int32 ItemsTotal = 0;
 
 	/** Eficiencia de puzle en [0, 1]; negativa si el nivel no tenía puzles. */
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
 	float PuzzleEfficiency = -1.f;
 
+	/** Títulos que se ha llevado (TNEndTitleFlags). */
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
-	int32 DollPoints = 0;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
-	int32 ShellPoints = 0;
+	uint8 TitleFlags = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
 	int32 FinishPoints = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	int32 PositionPoints = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	int32 TimePoints = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	int32 DollPoints = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	int32 CollectPoints = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
 	int32 PuzzlePoints = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
+	int32 TitlePoints = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Score")
 	int32 Total = 0;
 
 	bool HasPuzzles() const { return PuzzleEfficiency >= 0.f; }
+	bool HasItems() const { return ItemsTotal > 0; }
+	bool HasTitle(uint8 Flag) const { return (TitleFlags & Flag) != 0; }
 };
 
 namespace TNCoopScore
 {
-	/** Pesos de cada término (suman MaxScore). El Excel no da cifras: provisionales hasta que los fije el director. */
-	constexpr int32 DollWeight = 250;
-	constexpr int32 ShellWeight = 250;
-	constexpr int32 FinishWeight = 300;
-	constexpr int32 PuzzleWeight = 200;
-	constexpr int32 MaxScore = DollWeight + ShellWeight + FinishWeight + PuzzleWeight;
-
 	/** Segundos para resolver un puzle desde el primer avance (primera placa o botón) sin perder eficiencia. */
 	constexpr float PuzzleParSeconds = 30.f;
 
@@ -84,15 +146,19 @@ namespace TNCoopScore
 		float SolveTime = -1.f;
 	};
 
-	/** Lo que mide la partida para una jugadora. Totales <= 0 o PuzzleEfficiency < 0 = término sin nada que medir. */
+	/** Lo que mide la partida para una jugadora. */
 	struct FInputs
 	{
-		int32 DollsCollected = 0;
-		int32 DollsTotal = 0;
-		int32 ShellsCollected = 0;
-		int32 ShellsTotal = 0;
 		bool bFinished = false;
+		int32 FinishRank = 0;
+		float FinishTimeSeconds = -1.f;
+		float TargetSeconds = 0.f;
+		int32 DollsCollected = 0;
+		int32 ItemsCollected = 0;
+		int32 ItemsTotal = 0;
+		/** Negativa si el nivel no tenía puzles. */
 		float PuzzleEfficiency = -1.f;
+		uint8 TitleFlags = 0;
 	};
 
 	/**
@@ -116,35 +182,60 @@ namespace TNCoopScore
 		return Sum / static_cast<float>(Runs.Num());
 	}
 
-	/** Fracción en [0, 1] de Got sobre Total; 1 si no hay nada que medir (Total <= 0). */
-	inline double RatioOrFull(int32 Got, int32 Total)
-	{
-		return Total <= 0 ? 1.0 : FMath::Clamp(static_cast<double>(Got) / static_cast<double>(Total), 0.0, 1.0);
-	}
-
-	/** Puntos de un término: su peso por la fracción, redondeado. */
+	/** Puntos de un término proporcional: su peso por la fracción en [0, 1], redondeado. */
 	inline int32 Points(int32 Weight, double Ratio)
 	{
-		return FMath::RoundToInt32(static_cast<double>(Weight) * FMath::Clamp(Ratio, 0.0, 1.0));
+		return FMath::RoundToInt32(static_cast<double>(FMath::Max(0, Weight)) * FMath::Clamp(Ratio, 0.0, 1.0));
 	}
 
-	/** La puntuación final con su desglose (bValid = true). */
-	inline FTN_CoopScoreBreakdown Compute(const FInputs& In)
+	/** Puntos por puesto (1 = primera); 0 fuera de la tabla o sin puesto. */
+	inline int32 PositionPoints(const FTN_EndScoreRules& Rules, int32 Rank)
+	{
+		return Rules.PositionPoints.IsValidIndex(Rank - 1) ? FMath::Max(0, Rules.PositionPoints[Rank - 1]) : 0;
+	}
+
+	/** Un punto por cada SecondsPerTimePoint enteros por debajo del objetivo, hasta MaxTimePoints. */
+	inline int32 TimePoints(const FTN_EndScoreRules& Rules, float FinishSeconds, float TargetSeconds)
+	{
+		if (FinishSeconds < 0.f || TargetSeconds <= 0.f || Rules.SecondsPerTimePoint <= 0.f) { return 0; }
+		const int32 Steps = FMath::FloorToInt32((TargetSeconds - FinishSeconds) / Rules.SecondsPerTimePoint);
+		return FMath::Clamp(Steps, 0, FMath::Max(0, Rules.MaxTimePoints));
+	}
+
+	/** Cuántos títulos hay en Flags. */
+	inline int32 CountTitles(uint8 Flags)
+	{
+		return FMath::CountBits(static_cast<uint64>(Flags & TNEndTitleFlags::All));
+	}
+
+	/**
+	 * Los puntos con su desglose (bValid = true). Meta, puesto y tiempo solo para quien llega; muñecos, objetos, puzles y
+	 * títulos para todas. Un término sin nada que medir (nivel sin objetos o sin puzles) no da puntos.
+	 */
+	inline FTN_CoopScoreBreakdown Compute(const FInputs& In, const FTN_EndScoreRules& Rules)
 	{
 		FTN_CoopScoreBreakdown Out;
 		Out.bValid = true;
-		Out.DollsCollected = FMath::Max(0, In.DollsCollected);
-		Out.DollsTotal = FMath::Max(0, In.DollsTotal);
-		Out.ShellsCollected = FMath::Max(0, In.ShellsCollected);
-		Out.ShellsTotal = FMath::Max(0, In.ShellsTotal);
 		Out.bFinished = In.bFinished;
+		Out.FinishRank = In.bFinished ? FMath::Max(0, In.FinishRank) : 0;
+		Out.FinishTimeSeconds = In.bFinished ? In.FinishTimeSeconds : -1.f;
+		Out.TargetSeconds = FMath::Max(0.f, In.TargetSeconds);
+		Out.DollsCollected = FMath::Max(0, In.DollsCollected);
+		Out.ItemsTotal = FMath::Max(0, In.ItemsTotal);
+		Out.ItemsCollected = FMath::Clamp(In.ItemsCollected, 0, Out.ItemsTotal);
 		Out.PuzzleEfficiency = In.PuzzleEfficiency < 0.f ? -1.f : FMath::Clamp(In.PuzzleEfficiency, 0.f, 1.f);
+		Out.TitleFlags = In.TitleFlags & TNEndTitleFlags::All;
 
-		Out.DollPoints = Points(DollWeight, RatioOrFull(Out.DollsCollected, Out.DollsTotal));
-		Out.ShellPoints = Points(ShellWeight, RatioOrFull(Out.ShellsCollected, Out.ShellsTotal));
-		Out.FinishPoints = Out.bFinished ? FinishWeight : 0;
-		Out.PuzzlePoints = Points(PuzzleWeight, Out.HasPuzzles() ? Out.PuzzleEfficiency : 1.0);
-		Out.Total = Out.DollPoints + Out.ShellPoints + Out.FinishPoints + Out.PuzzlePoints;
+		Out.FinishPoints = Out.bFinished ? FMath::Max(0, Rules.FinishPoints) : 0;
+		Out.PositionPoints = Out.bFinished ? PositionPoints(Rules, Out.FinishRank) : 0;
+		Out.TimePoints = Out.bFinished ? TimePoints(Rules, Out.FinishTimeSeconds, Out.TargetSeconds) : 0;
+		Out.DollPoints = Out.DollsCollected * FMath::Max(0, Rules.PointsPerDoll);
+		Out.CollectPoints = Out.HasItems()
+			? Points(Rules.CollectedRatioPoints, static_cast<double>(Out.ItemsCollected) / static_cast<double>(Out.ItemsTotal)) : 0;
+		Out.PuzzlePoints = Out.HasPuzzles() ? Points(Rules.PuzzleEfficiencyPoints, Out.PuzzleEfficiency) : 0;
+		Out.TitlePoints = CountTitles(Out.TitleFlags) * FMath::Max(0, Rules.PointsPerTitle);
+		Out.Total = Out.FinishPoints + Out.PositionPoints + Out.TimePoints + Out.DollPoints + Out.CollectPoints
+			+ Out.PuzzlePoints + Out.TitlePoints;
 		return Out;
 	}
 }

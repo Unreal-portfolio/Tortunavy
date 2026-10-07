@@ -28,6 +28,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/OverlapResult.h"
 #include "DrawDebugHelpers.h"
+#include "World/TN_LevelCollectSubsystem.h"
 
 // El CVar de debug se define (con linkage externo) en TortugaCharacter.cpp
 extern TAutoConsoleVariable<int32> CVarDebugInteraction;
@@ -468,6 +469,8 @@ void ATortugaCharacter::ServerDropEquippedItem_Implementation()
 	}
 
 	PickupActor->InitializeFromInventoryItem(DroppedItem);
+	// Lo ha soltado ella: no es un objeto del nivel para los puntos de final de partida (#873).
+	UTN_LevelCollectSubsystem::Forget(PickupActor);
 }
 
 FVector ATortugaCharacter::GetItemSpawnLocation() const

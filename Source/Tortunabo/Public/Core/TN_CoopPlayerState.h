@@ -183,17 +183,34 @@ public:
 	/** Servidor: suma un muñeco tortuga (ATN_TurtleDoll ya ha comprobado que esta jugadora no lo tenía). */
 	void AddTurtleDoll();
 
-	/**
-	 * Servidor: puntos de concha cogidos en la partida, para el término de conchas de la puntuación final del Coop
-	 * (#789). Hoy no hay conchas de puntos que lo sumen: se queda como dato para la puntuación de final de partida (#873).
-	 * Solo cuenta: no suma nada a RaceScore. Lo resetea el GameMode al empezar la partida.
-	 */
+	// ── Contadores de la partida para los puntos de final de partida (#873). Solo servidor, sin replicar: los lee
+	// ATN_CoopGameState al entrar en Results. Empiezan de cero en cada mapa (PlayerState nuevo tras el viaje) y no los
+	// toca ResetForNewRace.
+
+	/** Objetos del nivel recogidos (término «recogido / total»). Lo suma UTN_LevelCollectSubsystem. */
 	UPROPERTY()
-	int32 CollectedShellPoints = 0;
+	int32 LevelItemsCollected = 0;
+
+	/** Chapas recogidas (título Tesorero). Lo sumarán las chapas (#858). */
+	UPROPERTY()
+	int32 ChapasCollected = 0;
+
+	/** Jugadores curados (título Curandero). Lo sumará la curación (#855): una cura a otra jugadora, uno. */
+	UPROPERTY()
+	int32 PlayersHealed = 0;
+
+	/** Servidor: un objeto del nivel más. */
+	void AddLevelItemCollected() { if (HasAuthority()) { ++LevelItemsCollected; } }
+
+	/** Servidor: Count chapas más (ignora 0 o menos). */
+	void AddChapasCollected(int32 Count) { if (HasAuthority() && Count > 0) { ChapasCollected += Count; } }
+
+	/** Servidor: ha curado a otra jugadora. */
+	void AddPlayerHealed() { if (HasAuthority()) { ++PlayersHealed; } }
 
 	/**
-	 * Puntuación final del Coop con su desglose (#789, TN_CoopScore.h). La calcula el servidor al entrar en Results; la
-	 * pantalla de resultados la enseña y la jugadora de esta máquina suma Total a su perfil. Aparte de las conchas.
+	 * Puntos de final de partida con su desglose (#873, TN_CoopScore.h). Los calcula el servidor al entrar en Results; la
+	 * pantalla de resultados los enseña y la jugadora de esta máquina suma Total a su perfil (saldo de la tienda).
 	 */
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CoopScore, Category = "Coop|Score")
 	FTN_CoopScoreBreakdown CoopScore;

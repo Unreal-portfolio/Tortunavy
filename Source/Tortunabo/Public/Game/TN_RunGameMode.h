@@ -20,7 +20,7 @@ class UTN_UnderTerrainGuardComponent;
  *  - Gestiona la línea de meta (MarkPlayerFinished) y las muertes (MarkPlayerDead).
  *  - Sistema DBNO (Down But Not Out) con bleedout timer e inmunidad post-revive.
  *  - Reloj de carrera replicado y countdown del pantalla de Resultados.
- *  - Sistema de puntuación: RankScore (podio) + ScorePickups + TimeBonus.
+ *  - Puesto y tiempo de llegada; los puntos de final de partida los calcula ATN_CoopGameState en Results (#873).
  *  - Retorno a LVL_HQ vía Seamless Travel cuando expira el timer de resultados.
  */
 UCLASS()
@@ -185,18 +185,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Run|Death")
 	bool bAllowRevive = true;
 
-	// ── Sistema de puntuación final ─────────────────────────────────────────
-	// RaceScore final = RankScore (podio) + ScorePickups recogidos en la run + TimeBonus.
-	// RankScore: 1º=400, 2º=300, 3º=200, 4º=100, resto=50. Eliminados=0.
-	// TimeBonus = max(0, (TimeBonusBaselineSeconds − FinishTime) × PointsPerSecond).
-
-	/** Segundos baseline para el time bonus. Tiempos por debajo otorgan puntos. */
-	UPROPERTY(EditDefaultsOnly, Category = "Run|Scoring", meta = (ClampMin = "10.0"))
-	float TimeBonusBaselineSeconds = 120.f;
-
-	/** Puntos por cada segundo bajo el baseline. 0 = sin time bonus. */
-	UPROPERTY(EditDefaultsOnly, Category = "Run|Scoring", meta = (ClampMin = "0.0"))
-	float TimeBonusPointsPerSecond = 5.f;
+	// Puntos de final de partida (#873): los calcula ATN_CoopGameState::AwardEndScores al entrar en Results con los valores
+	// de UTN_PointsEconomy (DA_PointsEconomy), incluido el tiempo objetivo de cada nivel.
 
 	// Protegido (no privado) para que un GameMode hijo reutilice el flujo de muerte, rescate, resultados y vuelta al lobby.
 	FTimerHandle ResultsTimerHandle;

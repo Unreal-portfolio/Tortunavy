@@ -1,5 +1,6 @@
 ﻿#include "World/TN_PickupInteractableBase.h"
 #include "World/TN_PickupGlowComponent.h"
+#include "World/TN_LevelCollectSubsystem.h"
 #include "Game/TN_ItemRuntime.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Core/TN_Log.h"
@@ -21,6 +22,12 @@ ATN_PickupInteractableBase::ATN_PickupInteractableBase()
 void ATN_PickupInteractableBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Objeto del nivel para los puntos de final de partida (#873). Lo que suelta o lanza una jugadora se quita al crearlo.
+	if (!bTaken)
+	{
+		UTN_LevelCollectSubsystem::Register(this);
+	}
 
 	// La malla flota y gira sobre su sitio de reposo (el que acaba de ponerle la base: MeshFloorOffset o el del
 	// Blueprint). Si luego llega la malla del objeto, ApplyPickupMeshAndScale lo vuelve a fijar.
@@ -177,6 +184,7 @@ void ATN_PickupInteractableBase::Interact(APawn* Interactor)
 	SetInteractionEnabled(false);
 	ApplyTakenState();
 	OnPickedUp(Interactor);
+	UTN_LevelCollectSubsystem::NotifyCollected(this, Interactor);
 
 	// Forzar net update inmediato para que el cliente vea la desaparición sin delay.
 	FlushNetDormancy();

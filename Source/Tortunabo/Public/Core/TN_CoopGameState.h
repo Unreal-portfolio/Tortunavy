@@ -138,6 +138,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Titles")
 	FTN_EndTitle JumperTitle;
 
+	/** Título Tesorero (#873): quien más chapas ha recogido (ATN_CoopPlayerState::ChapasCollected). Como JumperTitle. */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Titles")
+	FTN_EndTitle TreasurerTitle;
+
+	/** Título Curandero (#873): quien más jugadoras ha curado (ATN_CoopPlayerState::PlayersHealed). Como JumperTitle. */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Titles")
+	FTN_EndTitle HealerTitle;
+
 	// ── Quick Chat ────────────────────────────────────────────────────────────
 	/** Disparado en todas las máquinas cuando llega un nuevo mensaje de Quick Chat. Bindear en BP o C++. */
 	UPROPERTY(BlueprintAssignable, Category = "QuickChat")
@@ -180,6 +188,12 @@ private:
 
 	int32 NextQuickChatSequence = 0;
 
-	/** Servidor: decide los títulos de fin de partida con los PlayerState de la sala. */
+	/** Servidor: decide los títulos de fin de partida con los PlayerState de la sala (TN_CoopGameState_EndScore.cpp). */
 	void AwardEndTitles();
+
+	/**
+	 * Servidor: puntos de final de partida de cada jugadora (#873, TNCoopScore::Compute con UTN_PointsEconomy), después de
+	 * los títulos. Los pone en su CoopScore y en la columna de puntos del marcador (RaceResults).
+	 */
+	void AwardEndScores();
 };
