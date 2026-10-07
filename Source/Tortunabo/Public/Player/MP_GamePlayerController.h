@@ -204,6 +204,9 @@ protected:
 	/** @brief Bindea delegates, crea HUD y carga assets de input radial. */
 	virtual void BeginPlay() override;
 
+	/** @brief Crea el HUD que BeginPlay no pudo crear porque el jugador local aún no estaba asignado (invitado local, #650). */
+	virtual void ReceivedPlayer() override;
+
 	/** @brief OnPossess: refresca cosméticos del pawn poseído y sincroniza con servidor. */
 	virtual void OnPossess(APawn* InPawn) override;
 
@@ -447,4 +450,10 @@ private:
 	FTimerHandle RadialWheelUpdateTimerHandle;
 	FVector2D CachedMousePositionBeforeWheel = FVector2D::ZeroVector;
 	bool bHadMousePositionBeforeWheel = false;
+
+	/** BeginPlay se saltó el HUD local porque aún no había jugador asignado: lo crea ReceivedPlayer (#650). */
+	bool bLocalHUDPending = false;
+
+	/** @brief HUD, ruedas y cosméticos del jugador local (lo que hace BeginPlay cuando el controlador ya tiene jugador). */
+	void InitLocalPlayerHUD();
 };

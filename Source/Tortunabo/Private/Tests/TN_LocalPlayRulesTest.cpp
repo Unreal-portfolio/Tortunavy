@@ -226,4 +226,25 @@ bool FTNLocalPlayViewsTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNLocalPlayVoiceAndHUDTest,
+	"Tortunabo.LocalPlay.VoiceAndHUD",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNLocalPlayVoiceAndHUDTest::RunTest(const FString& Parameters)
+{
+	using namespace TNLocalPlay;
+
+	// #650: en la partida local no hay chat de voz, así que ninguna tortuga abre el micrófono (ni la del jugador 1).
+	TestFalse(TEXT("Local: la tortuga propia no abre el micrófono"), ShouldOpenVoiceCapture(true, true));
+	TestFalse(TEXT("Local: la ajena tampoco"), ShouldOpenVoiceCapture(true, false));
+	TestTrue(TEXT("En red: la tortuga propia abre el micrófono"), ShouldOpenVoiceCapture(false, true));
+	TestFalse(TEXT("En red: la de otro jugador no"), ShouldOpenVoiceCapture(false, false));
+
+	// #650: el invitado hace BeginPlay antes de tener jugador; el HUD espera a ReceivedPlayer.
+	TestFalse(TEXT("Controlador local sin jugador: no crea el HUD"), CanCreatePlayerWidgets(true, false));
+	TestTrue(TEXT("Controlador local con jugador: crea el HUD"), CanCreatePlayerWidgets(true, true));
+	TestFalse(TEXT("Controlador remoto: nunca"), CanCreatePlayerWidgets(false, false));
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

@@ -277,6 +277,9 @@ private:
 	/** @brief Devuelve true si el componente pertenece al jugador local (autoridad de input/audio). */
 	bool IsLocallyOwned() const;
 
+	/** Este PC debe abrir el micrófono: la tortuga es suya y no es una partida local (TNLocalPlay::ShouldOpenVoiceCapture). */
+	bool ShouldCaptureVoice() const;
+
 	UPROPERTY()
 	TObjectPtr<UUserWidget> VoiceIndicatorWidgetInstance;
 

@@ -33,6 +33,7 @@
 #include "UI/Menu/TN_RoomMenuWidget.h"
 #include "UI/TN_ScreenHost.h"
 #include "Multiplayer/TN_LocalPlaySubsystem.h"
+#include "Multiplayer/TN_LocalPlayRules.h"
 #include "Engine/LocalPlayer.h"
 #include "Settings/TN_GameSettingsSubsystem.h"
 #include "InputCoreTypes.h"
@@ -106,19 +107,43 @@ void AMP_GamePlayerController::BeginPlay()
 
 	ApplyGameplayInputMode();
 
-	if (IsLocalController() && GetPawn())
+	if (!IsLocalController())
+	{
+		return;
+	}
+	// El invitado que entra en una partida local empieza (BeginPlay dentro del Login) antes de que SetPlayer le asigne su
+	// jugador: CreateWidget fallaría. Su HUD lo crea ReceivedPlayer.
+	if (!TNLocalPlay::CanCreatePlayerWidgets(true, GetLocalPlayer() != nullptr))
+	{
+		bLocalHUDPending = true;
+		return;
+	}
+	InitLocalPlayerHUD();
+}
+
+void AMP_GamePlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+
+	if (!bLocalHUDPending || !HasActorBegunPlay() || !TNLocalPlay::CanCreatePlayerWidgets(IsLocalController(), GetLocalPlayer() != nullptr))
+	{
+		return;
+	}
+	bLocalHUDPending = false;
+	InitLocalPlayerHUD();
+}
+
+void AMP_GamePlayerController::InitLocalPlayerHUD()
+{
+	if (GetPawn())
 	{
 		CreateVoiceHUD();
 	}
-
-	if (IsLocalController())
-	{
-		CacheRadialInputAssets();
-		CreateCoopFlowHUD();
-		CreatePlayerHUD();
-		CreateRadialWidgets();
-		SyncCosmeticsToServer();
-	}
+	CacheRadialInputAssets();
+	CreateCoopFlowHUD();
+	CreatePlayerHUD();
+	CreateRadialWidgets();
+	SyncCosmeticsToServer();
 }
 
 bool AMP_GamePlayerController::InputKey(const FInputKeyEventArgs& Params)
