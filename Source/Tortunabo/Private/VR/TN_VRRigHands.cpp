@@ -241,6 +241,25 @@ void ATN_VRRig::UpdateGrips(APlayerController* PC, ATortugaCharacter* Turtle, fl
 	}
 }
 
+void ATN_VRRig::UpdateGestures(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds)
+{
+	const AMP_GamePlayerController* GamePC = Cast<AMP_GamePlayerController>(PC);
+	// Las mismas condiciones que los agarres (sin menú ni rueda delante y con las manos libres) y, además, la mano derecha
+	// abierta y sin nada cogido: con el agarre apretado, un movimiento rápido es lanzar, no dar un guantazo.
+	const bool bActive = Mode == ETNVRMode::Headset && Turtle && PC->GetViewTarget() == Turtle && !bMenuMode
+		&& !(GamePC && GamePC->IsRadialWheelOpen()) && UTN_VRGrabComponent::CanOwnerGrab(Turtle)
+		&& !bGripHeld[1] && GripUse[1] == EGripUse::None && bPrevGrabPointValid[1];
+	if (!bActive)
+	{
+		SlapGesture.Reset();
+		return;
+	}
+	if (SlapGesture.Step(HandVelocity[1], Turtle->GetActorRightVector(), DeltaSeconds) && Turtle->VRSlapGesture(HandVelocity[1]))
+	{
+		PulseHaptic(1, TNVRHands::Haptics::Throw);
+	}
+}
+
 void ATN_VRRig::UpdatePoke(int32 Hand, ATortugaCharacter* Turtle, const FVector& Tip, float DeltaSeconds)
 {
 	using EVRGrip = ATortugaCharacter::EVRGrip;
@@ -320,6 +339,11 @@ void ATN_VRRig::ReleaseGrip(int32 Hand, ATortugaCharacter* Turtle)
 {
 	using EVRGrip = ATortugaCharacter::EVRGrip;
 	const bool bSwing = Turtle && TNVRMath::IsThrowSwing(HandVelocity[Hand], Turtle->VRThrowSpeed);
+	// Lo que se hace con la mano justo al soltar (lanzar) no es un guantazo.
+	if (Hand == 1)
+	{
+		SlapGesture.Cooldown = FMath::Max(SlapGesture.Cooldown, 0.5f);
+	}
 	if (GripUse[Hand] == EGripUse::Turtle && Turtle)
 	{
 		const EVRGrip Held = static_cast<EVRGrip>(GripTurtle[Hand]);

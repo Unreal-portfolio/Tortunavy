@@ -571,6 +571,7 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 
 	UpdateInput(PC, Turtle, Seat, DeltaSeconds);
 	UpdateGrips(PC, Turtle, DeltaSeconds);
+	UpdateGestures(PC, Turtle, DeltaSeconds);
 	UpdatePanel(PC, DeltaSeconds);
 	UpdateMenuCopies();
 	UpdatePointer(PC);

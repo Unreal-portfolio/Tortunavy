@@ -6,6 +6,7 @@
 #include "TimerManager.h"
 #include "Core/TN_CosmeticsTypes.h"
 #include "Player/TN_DiveDecisions.h"
+#include "VR/TN_VRGestures.h"
 #include "VR/TN_VRHeadCalibration.h"
 #include "TortugaCharacter.generated.h"
 
@@ -1911,6 +1912,13 @@ public:
 	 */
 	void VRGripReleased(EVRGrip Held, const FVector& HandVelocity);
 
+	/**
+	 * VR (#918), guantazo por gesto: la mano derecha va de lado a lado muy deprisa (ATN_VRRig, TNVRGestures::FSlapGesture).
+	 * Da el guantazo de siempre (UTN_FlipperSlapComponent) hacia donde va la mano; lo decide el servidor. false si no se puede
+	 * (lleva un objeto o un compañero, está derribada, en el caparazón...).
+	 */
+	bool VRSlapGesture(const FVector& HandVelocity);
+
 	/** Distancia (cm) de la mano a un objeto para cogerlo en VR (sin VR, la de siempre: la del cuerpo). */
 	UPROPERTY(EditDefaultsOnly, Category = "VR")
 	float VRHandReach = 40.f;
@@ -2027,11 +2035,13 @@ private:
 
 private:
 	/**
-	 * Ojos de la tortuga respecto del centro de la cápsula (cm). Encima del centro y no delante: la tortuga gira con la
-	 * cabeza y unos ojos adelantados darían vueltas alrededor del centro al mirar a los lados (marea).
+	 * Ojos de la tortuga con gafas respecto del centro de la cápsula (cm; X hacia delante, girado con la tortuga). Los de la
+	 * malla con el cuello echado hacia delante (TNVRGestures::NeckForwardDeg, #918): unos 24 cm delante y 43 de alto, con la
+	 * lengua ~10 cm delante y ~10 debajo, como la propia. Más adelante, más giro del punto de vista al girar la cabeza (la
+	 * tortuga gira alrededor de la cápsula): si marea, bajar X.
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "VR")
-	FVector VREyeOffset = FVector(0.f, 0.f, 45.f);
+	FVector VREyeOffset = FVector(24.f, 0.f, 43.f);
 
 	UPROPERTY(Transient)
 	TObjectPtr<USceneComponent> VROrigin;
@@ -2064,7 +2074,11 @@ private:
 	/** Con gafas, cada fotograma: mide la posición de la cabeza cuando toca (VRHeadCalibration) y detecta ponerse las gafas. */
 	void UpdateVRHeadCalibration(float DeltaTime);
 
-	/** Posición de las gafas al calibrar (#916): el origen del seguimiento se desplaza para que caiga en los ojos de la tortuga. */
+	/** Con gafas (#918): agachar la cabeza (altura de las gafas) mete o saca del caparazón, como el botón B. */
+	void UpdateVRDuckGesture(float HeadHeight, float DeltaTime);
+	TNVRGestures::FDuckGesture VRDuck;
+
+	/** Posición de las gafas al calibrar (#916):el origen del seguimiento se desplaza para que caiga en los ojos de la tortuga. */
 	FTNVRHeadCalibration VRHeadCalibration;
 
 	/** Último estado de las gafas (EHMDWornState): al pasar de quitadas a puestas se calibra de nuevo. */
