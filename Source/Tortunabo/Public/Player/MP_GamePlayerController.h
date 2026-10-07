@@ -4,6 +4,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UI/HUD/TN_RadialWheelTypes.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Lobby/TN_MysteryBox.h"
 #include "Voice/TN_VoiceRouting.h"
 #include "Player/TN_SecretEmote.h"
 #include "MP_GamePlayerController.generated.h"
@@ -87,9 +88,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	bool RequestEquipEyes(FName EyesId);
 
-	/** @brief Tienda: lo compra con conchas (los de la tortuga hoy cuestan 0), lo guarda y manda los desbloqueos al servidor. */
+	/** @brief Tienda: lo compra con puntos de final de partida (#873), lo guarda y manda los desbloqueos al servidor. */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	bool RequestPurchaseCosmetic(ETNCosmeticCategory Category, FName Id);
+
+	/**
+	 * @brief Tienda: abre una caja sorpresa con el saldo de este jugador (#873, UMP_GameInstance::OpenMysteryBoxFor) y, si
+	 *        sale una skin nueva, manda los desbloqueos al servidor. Sin saldo devuelve bOpened = false y no cobra.
+	 */
+	FTN_MysteryBoxResult RequestOpenMysteryBox();
 
 	/** @brief Client RPC: abre la tienda del tendero (UTN_ShopWidget). */
 	UFUNCTION(Client, Reliable)

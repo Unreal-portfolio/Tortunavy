@@ -946,6 +946,17 @@ bool AMP_GamePlayerController::RequestPurchaseCosmetic(ETNCosmeticCategory Categ
 	return true;
 }
 
+FTN_MysteryBoxResult AMP_GamePlayerController::RequestOpenMysteryBox()
+{
+	UMP_GameInstance* GI = GetTNGameInstance();
+	if (!GI) { return FTN_MysteryBoxResult(); }
+	// Semilla de la máquina: la caja es del perfil local, como la compra suelta.
+	FRandomStream Stream(FMath::Rand());
+	const FTN_MysteryBoxResult Result = GI->OpenMysteryBoxFor(this, Stream);
+	if (Result.bOpened && !Result.bDuplicate) { ServerSyncUnlockedSkins(GI->GetUnlockedSkinIdsFor(this)); }
+	return Result;
+}
+
 void AMP_GamePlayerController::ClientOpenShop_Implementation(ATN_ShopKeeper* Shop)
 {
 	if (!IsLocalController()) { return; }

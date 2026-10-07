@@ -33,6 +33,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Multiplayer/MP_GameInstance.h"
 #include "Player/MP_GamePlayerController.h"
+#include "UI/Shop/TN_MysteryBoxPanel.h"
 
 namespace TNShopUI
 {
@@ -58,10 +59,10 @@ namespace TNShopUI
 		return GI->IsCosmeticUnlockedFor(PC, Category, Id);
 	}
 
-	/** Conchas con las que se paga: las de este jugador (como RequestPurchaseCosmetic). */
+	/** Puntos con los que se paga (#873): el saldo de este jugador (como RequestPurchaseCosmetic). */
 	int32 Balance(const UMP_GameInstance* GI, const APlayerController* PC)
 	{
-		return GI->GetAccumulatedRaceScoreFor(PC);
+		return GI->GetShopPointsFor(PC);
 	}
 
 	template <typename T>
@@ -597,16 +598,29 @@ void UTN_ShopWidget::BuildTree()
 		BuyButton = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
 		BuyButton->Setup(FText::GetEmpty(), TNShopArt::Pill(0xFFD95E, 0xF2A93B), TNShopUI::InkColor, 24, FVector2D(330.f, 66.f), [this]() { Buy(); });
 		TNShopUI::AddH(Bottom, BuyButton, FMargin(0.f, 0.f, 16.f, 0.f));
+		TNShopUI::AddH(Bottom, MakeBoxButton(), FMargin(0.f, 0.f, 16.f, 0.f));
 		UTN_ShopButton* ExitButton = CreateWidget<UTN_ShopButton>(this, UTN_ShopButton::StaticClass());
 		ExitButton->Setup(NSLOCTEXT("Tortunabo", "ShopExit", "SALIR"), TNShopArt::Pill(0x3B6EA8, 0x1D3F6E), TNShopUI::CreamColor, 22, FVector2D(170.f, 66.f),
 			[this]() { CloseMenu(); });
 		TNShopUI::AddH(Bottom, ExitButton);
 		TNShopUI::AddV(Right, Bottom, FMargin(10.f, 14.f, 0.f, 0.f), HAlign_Left);
-		UTextBlock* Keys = TNShopUI::Label(Tree, NSLOCTEXT("Tortunabo", "ShopKeys", "Flechas: elegir · Q/E: pestaña · Intro: comprar · Esc: salir"),
+		NoticeText = TNShopUI::Label(Tree, FText::GetEmpty(), TEXT("Bold"), 18, TNShopUI::PriceColor, true);
+		TNShopUI::AddV(Right, NoticeText, FMargin(12.f, 6.f, 0.f, 0.f), HAlign_Left);
+		UTextBlock* Keys = TNShopUI::Label(Tree, NSLOCTEXT("Tortunabo", "ShopKeysBox", "Flechas: elegir · Q/E: pestaña · Intro: comprar · C: caja sorpresa · Esc: salir"),
 			TEXT("Regular"), 14, TNHUDArt::SeaLight, true);
 		TNShopUI::AddV(Right, Keys, FMargin(12.f, 8.f, 0.f, 0.f), HAlign_Left);
 	}
 	TNShopUI::Pin(Canvas, Right, FVector2D(0.97f, 0.56f), FVector2D::ZeroVector);
+
+	// Caja sorpresa por encima de todo, oculta hasta que se abre una.
+	BoxPanel = CreateWidget<UTN_MysteryBoxPanel>(this, UTN_MysteryBoxPanel::StaticClass());
+	BoxPanel->SetActions([this]() { OpenMysteryBox(); }, [this]() { CloseMysteryBox(); });
+	BoxPanel->SetVisibility(ESlateVisibility::Collapsed);
+	if (UCanvasPanelSlot* BoxSlot = Canvas->AddChildToCanvas(BoxPanel))
+	{
+		BoxSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+		BoxSlot->SetOffsets(FMargin(0.f));
+	}
 }
 
 void UTN_ShopWidget::SetShop(ATN_ShopKeeper* InShop)
@@ -621,7 +635,7 @@ void UTN_ShopWidget::SetShop(ATN_ShopKeeper* InShop)
 
 	const APlayerState* PS = GetOwningPlayer() ? GetOwningPlayer()->PlayerState : nullptr;
 	const FText Who = PS ? TNLocText::Literal(PS->GetPlayerName()) : NSLOCTEXT("Tortunabo", "ShopSailor", "marinero");
-	Say(FText::Format(NSLOCTEXT("Tortunabo", "ShopHelloFree", "¡Hola, {0}! Pasa, pasa: hoy los cascos, caparazones, colores y ojos son gratis. Pruébatelo todo luego en las botellas."),
+	Say(FText::Format(NSLOCTEXT("Tortunabo", "ShopHelloPoints", "¡Hola, {0}! Aquí se paga con los puntos que ganas al acabar cada partida. ¿Te la juegas con una caja sorpresa? Pruébatelo todo luego en las botellas."),
 		Who));
 }
 
@@ -687,7 +701,7 @@ FText UTN_ShopWidget::TagFor(const FTNShopItem& Item, FLinearColor& OutColor) co
 	OutColor = TNShopUI::PriceColor;
 	const int32 Price = GI->GetCosmeticPrice(Item.Category, Item.Id);
 	return Price <= 0 ? NSLOCTEXT("Tortunabo", "ShopTagFree", "GRATIS")
-		: FText::Format(NSLOCTEXT("Tortunabo", "ShopTagPrice", "{0} {0}|plural(one=concha,other=conchas)"), Price);
+		: FText::Format(NSLOCTEXT("Tortunabo", "ShopTagPoints", "{0} {0}|plural(one=punto,other=puntos)"), Price);
 }
 
 void UTN_ShopWidget::RefreshCards()
@@ -740,10 +754,16 @@ void UTN_ShopWidget::Select(int32 Index, bool bSpeak)
 	}
 	RefreshCards();
 	RefreshBuyButton();
+	RefreshBoxAndNotice();
 	if (bSpeak)
 	{
 		const FText Desc = UTN_CosmeticLook::GetDescription(this, Item.Category, Item.Id);
-		Say(Desc.IsEmpty() ? UTN_CosmeticLook::GetDisplayName(this, Item.Category, Item.Id) : Desc);
+		const FText Line = Desc.IsEmpty() ? UTN_CosmeticLook::GetDisplayName(this, Item.Category, Item.Id) : Desc;
+		const UMP_GameInstance* GI = GetTNGI();
+		const FTN_SkinData* SkinRow = GI && Item.Category != ETNCosmeticCategory::Helmet && Item.Id != NAME_None
+			? GI->FindSkinRow(Item.Id, TEXT("ShopSelect")) : nullptr;
+		// Las skins dicen su rareza delante (#873).
+		Say(SkinRow ? FText::Format(NSLOCTEXT("Tortunabo", "ShopSayRarity", "[{0}] {1}"), TNSkinRarityText::Name(SkinRow->Rarity), Line) : Line);
 	}
 	// Que la carta elegida quede a la vista.
 	if (Cards.IsValidIndex(Index)) { GridScroll->ScrollWidgetIntoView(Cards[Index], true, EDescendantScrollDestination::IntoView); }
@@ -774,10 +794,11 @@ void UTN_ShopWidget::Buy()
 		RefreshWallet();
 		RefreshCards();
 		RefreshBuyButton();
+		RefreshBoxAndNotice();
 	}
 	else
 	{
-		Say(NSLOCTEXT("Tortunabo", "ShopNoMoney", "Uy, te faltan conchas para esto. ¡Vuelve después de otra carrera!"));
+		Say(NSLOCTEXT("Tortunabo", "ShopNoPoints", "Uy, te faltan puntos para esto. ¡Vuelve después de otra partida!"));
 	}
 }
 
@@ -803,7 +824,9 @@ void UTN_ShopWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 bool UTN_ShopWidget::HandleKey(const FKey& Key)
 {
 	using TNShopUI::IsKey;
+	if (IsBoxOpen()) { return BoxPanel->HandleKey(Key); }
 	constexpr int32 Columns = 4;
+	if (IsKey(Key, { EKeys::C, EKeys::Gamepad_FaceButton_Top })) { OpenMysteryBox(); return true; }
 	if (IsKey(Key, { EKeys::Left, EKeys::A, EKeys::Gamepad_DPad_Left })) { Select(FMath::Max(0, Selected - 1), true); return true; }
 	if (IsKey(Key, { EKeys::Right, EKeys::D, EKeys::Gamepad_DPad_Right })) { Select(FMath::Min(Items.Num() - 1, Selected + 1), true); return true; }
 	if (IsKey(Key, { EKeys::Up, EKeys::W, EKeys::Gamepad_DPad_Up })) { Select(FMath::Max(0, Selected - Columns), true); return true; }

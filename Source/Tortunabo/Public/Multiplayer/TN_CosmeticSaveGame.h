@@ -49,12 +49,18 @@ public:
 	FName EquippedEyesId = NAME_None;
 
 	/**
-	 * Puntos de carrera acumulados (#26).
-	 * Se suman al terminar cada carrera según posición de llegada.
-	 * 1º=400, 2º=300, 3º=200, 4º=100. Eliminados = 0.
+	 * Conchas acumuladas de la economía antigua (#26). Desde #873 no se ganan ni se gastan: la tienda cobra en ShopPoints.
+	 * Se conserva el campo para no perder el dato de los perfiles viejos.
 	 */
 	UPROPERTY(BlueprintReadWrite, Category = "Score")
 	int32 AccumulatedRaceScore = 0;
+
+	/**
+	 * Saldo de puntos de la tienda (#873): suben con los puntos de final de partida (UMP_GameInstance::AddCoopScore) y
+	 * bajan al comprar una skin o abrir una caja sorpresa. Nunca negativo.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Score")
+	int32 ShopPoints = 0;
 
 	/**
 	 * Muñecos tortuga cogidos en total (#797): el contador del perfil (los logros de Steam quedan fuera). Aparte de las
@@ -64,8 +70,8 @@ public:
 	int32 TurtleDollsCollected = 0;
 
 	/**
-	 * Puntuación final del Coop acumulada (#789, TN_CoopScore.h). Aparte de las conchas (AccumulatedRaceScore): no se
-	 * gasta en la tienda.
+	 * Puntos de final de partida ganados en total (#789, #873, TN_CoopScore.h): estadística, no baja al comprar. El saldo
+	 * que se gasta es ShopPoints.
 	 */
 	UPROPERTY(BlueprintReadWrite, Category = "Score")
 	int32 AccumulatedCoopScore = 0;

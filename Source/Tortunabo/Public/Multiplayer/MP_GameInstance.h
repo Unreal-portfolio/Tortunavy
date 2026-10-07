@@ -6,6 +6,7 @@
 #include "OnlineSessionSettings.h"
 #include "Engine/EngineBaseTypes.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Lobby/TN_MysteryBox.h"
 #include "Multiplayer/TN_RoomTypes.h"
 #include "MP_GameInstance.generated.h"
 
@@ -270,7 +271,18 @@ public:
 	FName GetEquippedSkinIdFor(const APlayerController* PC) const;
 	FName GetEquippedShellIdFor(const APlayerController* PC) const;
 	FName GetEquippedEyesIdFor(const APlayerController* PC) const;
-	int32 GetAccumulatedRaceScoreFor(const APlayerController* PC) const;
+	/** Saldo de puntos de la tienda de este jugador (#873): el de su perfil guardado, o el de la partida si es invitado. */
+	int32 GetShopPointsFor(const APlayerController* PC) const;
+
+	/**
+	 * Caja sorpresa de la tienda (#873, TNMysteryBox::Open con UTN_PointsEconomy::MysteryBox): cobra la caja del saldo
+	 * de PC, desbloquea la skin que sale o, si ya la tenía, devuelve parte de los puntos, y guarda. Sin saldo no cobra
+	 * (bOpened = false). Stream decide la tirada (las pruebas pasan una semilla fija).
+	 */
+	FTN_MysteryBoxResult OpenMysteryBoxFor(const APlayerController* PC, FRandomStream& Stream);
+
+	/** Lo que puede salir en la caja sorpresa: todas las filas de DT_Skins (caparazones, colores y ojos) con su rareza. */
+	TArray<TNMysteryBox::FCandidate> GetMysteryBoxCandidates() const;
 
 	/** Devuelve el DataTable de cascos para lookup externo (TortugaCharacter, widget). */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
@@ -305,8 +317,8 @@ public:
 	int32 GetCosmeticPrice(ETNCosmeticCategory Category, FName Id) const;
 
 	/**
-	 * Compra de la tienda: si hay puntos para el precio (hoy todo cuesta 0), los descuenta de AccumulatedRaceScore, lo
-	 * desbloquea y guarda. Devuelve true si queda desbloqueado.
+	 * Compra de la tienda: si hay puntos para el precio, los descuenta del saldo (ShopPoints, #873), lo desbloquea y
+	 * guarda. Devuelve true si queda desbloqueado.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Cosmetics")
 	bool PurchaseCosmetic(ETNCosmeticCategory Category, FName Id);
@@ -370,8 +382,8 @@ public:
 	int32 GetTurtleDollsCollected() const;
 
 	/**
-	 * Suma la puntuación final del Coop al perfil local y lo guarda (#789). Lo llama ATN_CoopGameState al entrar en
-	 * Results, por diferencia con lo ya guardado en esa partida. No toca las conchas (AccumulatedRaceScore).
+	 * Suma los puntos de final de partida al perfil local (ganados en total y saldo de la tienda) y lo guarda (#789,
+	 * #873). Lo llama ATN_CoopGameState al entrar en Results, por diferencia con lo ya guardado en esa partida.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	void AddCoopScore(int32 Points);
