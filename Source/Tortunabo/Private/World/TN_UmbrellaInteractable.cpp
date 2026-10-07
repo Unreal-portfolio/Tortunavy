@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
 
 ATN_UmbrellaInteractable::ATN_UmbrellaInteractable()
@@ -61,8 +62,27 @@ void ATN_UmbrellaInteractable::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Garantizar estado cerrado en TODAS las máquinas (incluye clientes JIP).
-	ApplyUmbrellaState(false);
+	// Estado de partida: cerrada, o el replicado si ya llegó abierta (cliente que entra tarde, #893).
+	ApplyUmbrellaState(bIsOpen);
+}
+
+void ATN_UmbrellaInteractable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATN_UmbrellaInteractable, bIsOpen);
+}
+
+void ATN_UmbrellaInteractable::OnRep_IsOpen()
+{
+	ApplyUmbrellaState(bIsOpen);
+}
+
+void ATN_UmbrellaInteractable::SetOpenState(bool bOpen)
+{
+	// El actor es DORM_DormantAll: se despierta antes de cambiar la propiedad para que se replique.
+	FlushNetDormancy();
+	bIsOpen = bOpen;
+	ApplyUmbrellaState(bOpen);
 }
 
 void ATN_UmbrellaInteractable::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -105,7 +125,7 @@ void ATN_UmbrellaInteractable::Interact(APawn* Interactor)
 			ProtChar->SetUmbrellaProtection(false);
 		}
 		ProtectedCharacter.Reset();
-		bIsOpen = false;
+		SetOpenState(false);
 
 		UE_LOG(LogTortunabo, Log, TEXT("[Umbrella] %s cerró sombrilla manualmente"), *GetNameSafe(Char));
 		MulticastOnUmbrellaClosed();
@@ -115,7 +135,7 @@ void ATN_UmbrellaInteractable::Interact(APawn* Interactor)
 		// ── Abrir ─────────────────────────────────────────────────────────────
 		Char->SetUmbrellaProtection(true);
 		ProtectedCharacter = Char;
-		bIsOpen = true;
+		SetOpenState(true);
 
 		UE_LOG(LogTortunabo, Log, TEXT("[Umbrella] %s abrió sombrilla (%.1fs)"),
 			*GetNameSafe(Char), UmbrellaDurationSeconds);
@@ -136,7 +156,7 @@ void ATN_UmbrellaInteractable::HandleUmbrellaExpired()
 		Char->SetUmbrellaProtection(false);
 	}
 	ProtectedCharacter.Reset();
-	bIsOpen = false;
+	SetOpenState(false);
 	MulticastOnUmbrellaClosed();
 }
 
@@ -184,8 +204,6 @@ void ATN_UmbrellaInteractable::ApplyUmbrellaState(bool bOpen)
 
 void ATN_UmbrellaInteractable::MulticastOnUmbrellaOpened_Implementation(APawn* User)
 {
-	ApplyUmbrellaState(true);
-
 	if (SoundOpen)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, SoundOpen, GetActorLocation());
@@ -199,8 +217,6 @@ void ATN_UmbrellaInteractable::MulticastOnUmbrellaOpened_Implementation(APawn* U
 
 void ATN_UmbrellaInteractable::MulticastOnUmbrellaClosed_Implementation()
 {
-	ApplyUmbrellaState(false);
-
 	if (SoundClose)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, SoundClose, GetActorLocation());

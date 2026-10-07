@@ -42,6 +42,7 @@ public:
 	virtual void Interact(APawn* Interactor) override;
 	virtual bool CanInteract(APawn* Interactor) const override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	/** Segundos de protección contra gaviota tras abrir la sombrilla. */
@@ -95,11 +96,20 @@ protected:
 	void OnUmbrellaClosed();
 
 private:
+	/** Solo efectos (sonido, VFX, evento BP): el estado visual lo lleva bIsOpen replicado. */
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastOnUmbrellaOpened(APawn* User);
 
+	/** Solo efectos (sonido, VFX, evento BP): el estado visual lo lleva bIsOpen replicado. */
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastOnUmbrellaClosed();
+
+	/** Cliente: aplica el estado abierto/cerrado replicado (también a quien entra tarde, #893). */
+	UFUNCTION()
+	void OnRep_IsOpen();
+
+	/** Servidor: despierta el actor durmiente, cambia bIsOpen y aplica el estado en el anfitrión. */
+	void SetOpenState(bool bOpen);
 
 	/** Timer de auto-cierre (8 s). */
 	void HandleUmbrellaExpired();
@@ -114,6 +124,7 @@ private:
 	FTimerHandle UmbrellaActiveTimerHandle;
 	TWeakObjectPtr<ATortugaCharacter> ProtectedCharacter;
 
-	/** true mientras la protección está activa (sombrilla abierta). */
+	/** true mientras la protección está activa (sombrilla abierta). Replicado (#893). */
+	UPROPERTY(ReplicatedUsing = OnRep_IsOpen)
 	bool bIsOpen = false;
 };
