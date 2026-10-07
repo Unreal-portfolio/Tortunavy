@@ -7,6 +7,7 @@
 
 #include "World/Beach/TN_BeachDecorField.h"
 #include "TN_BeachDecorKit.h"
+#include "World/ProcMap/TN_ProcMapMath.h"
 #include "Art/TN_Art.h"
 #include "Core/TN_Log.h"
 #include "Camera/PlayerCameraManager.h"
@@ -124,25 +125,7 @@ void ATN_BeachDecorField::EndPlay(const EEndPlayReason::Type EndPlayReason)
 // Montaje por partes
 // ─────────────────────────────────────────────────────────────────────────────
 
-void ATN_BeachDecorField::BeginBuild(const TNBeachLayout::FRoundLayout& Layout, int32 Round)
-{
-	ClearDecor();
-	ItemOfLayout.Init(INDEX_NONE, Layout.Items.Num());
-	for (int32 i = 0; i < Layout.Items.Num(); ++i)
-	{
-		const TNBeachLayout::FItem& Item = Layout.Items[i];
-		if (TNBeach::CategoryOf(Item.Element) != ETNBeachCategory::Decor)
-		{
-			continue;
-		}
-		PendingItems.Add(Item);
-		PendingLayoutIndex.Add(i);
-		PendingXf.Add(TNBeachDecorKit::ItemPlacement(Layout, Item));
-	}
-	StartPendingBuild(Round);
-}
-
-void ATN_BeachDecorField::BeginBuildPlaced(const TArray<TNBeachLayout::FItem>& InItems, const TArray<FTransform>& InPlacements, int32 Round)
+void ATN_BeachDecorField::BeginBuildPlaced(const TArray<TNBeachLayout::FItem>& InItems, const TArray<FTransform>& InPlacements)
 {
 	ClearDecor();
 	const int32 Num = FMath::Min(InItems.Num(), InPlacements.Num());
@@ -151,7 +134,6 @@ void ATN_BeachDecorField::BeginBuildPlaced(const TArray<TNBeachLayout::FItem>& I
 		UE_LOG(LogTortunabo, Warning, TEXT("[BeachDecorField] %d piezas y %d sitios: solo se montan %d."), InItems.Num(),
 			InPlacements.Num(), Num);
 	}
-	ItemOfLayout.Init(INDEX_NONE, InItems.Num());
 	for (int32 i = 0; i < Num; ++i)
 	{
 		if (TNBeach::CategoryOf(InItems[i].Element) != ETNBeachCategory::Decor)
@@ -159,18 +141,16 @@ void ATN_BeachDecorField::BeginBuildPlaced(const TArray<TNBeachLayout::FItem>& I
 			continue;
 		}
 		PendingItems.Add(InItems[i]);
-		PendingLayoutIndex.Add(i);
 		PendingXf.Add(InPlacements[i]);
 	}
-	StartPendingBuild(Round);
+	StartPendingBuild();
 }
 
-void ATN_BeachDecorField::StartPendingBuild(int32 Round)
+void ATN_BeachDecorField::StartPendingBuild()
 {
 	const UWorld* World = GetWorld();
 	// Sin pantalla (servidor dedicado) basta con la colisión: ni partes que se mueven ni copias de sombra.
 	bVisuals = World && World->GetNetMode() != NM_DedicatedServer;
-	PendingRound = Round;
 	BuildSeconds = 0.0;
 	BuildFrames = 0;
 	Stage = TNBeachDecorFieldTypes::EStage::Collect;
@@ -198,7 +178,7 @@ bool ATN_BeachDecorField::StepBuild(double BudgetSeconds)
 		{
 			if (NextPending < PendingItems.Num())
 			{
-				AddItem(PendingItems[NextPending], PendingLayoutIndex[NextPending], PendingXf[NextPending]);
+				AddItem(PendingItems[NextPending], PendingXf[NextPending]);
 				++NextPending;
 				continue;
 			}
@@ -244,16 +224,13 @@ void ATN_BeachDecorField::ClearDecor()
 	Items.Reset();
 	Batches.Reset();
 	BatchByKey.Reset();
-	ItemOfLayout.Reset();
 	AnimRecipes.Reset();
 	AnimRecipeByKey.Reset();
 	AnimItems.Reset();
 	PendingItems.Reset();
-	PendingLayoutIndex.Reset();
 	PendingXf.Reset();
 	NextPending = 0;
 	NextBatch = 0;
-	BuiltRound = 0;
 	Stage = TNBeachDecorFieldTypes::EStage::Idle;
 }
 
@@ -276,12 +253,11 @@ int32 ATN_BeachDecorField::BatchFor(uint32 Key, ETNBeachElement Element, UStatic
 	return Index;
 }
 
-void ATN_BeachDecorField::AddItem(const TNBeachLayout::FItem& LayoutItem, int32 LayoutIndex, const FTransform& ItemXf)
+void ATN_BeachDecorField::AddItem(const TNBeachLayout::FItem& LayoutItem, const FTransform& ItemXf)
 {
 	const ETNBeachElement Element = LayoutItem.Element;
 	const int32 ItemIndex = Items.AddDefaulted();
 	TNBeachDecorFieldTypes::FItem& Item = Items[ItemIndex];
-	Item.LayoutIndex = LayoutIndex;
 	Item.Element = Element;
 	Item.Seed = LayoutItem.Spec.Seed;
 	Item.Size = TNBeachDecorKit::ClampSize(LayoutItem.Spec.SizeScale);
@@ -290,10 +266,6 @@ void ATN_BeachDecorField::AddItem(const TNBeachLayout::FItem& LayoutItem, int32 
 	Item.Radius = LayoutItem.Radius;
 	Item.HalfLength = LayoutItem.HalfLength;
 	Item.ItemXf = ItemXf;
-	if (ItemOfLayout.IsValidIndex(LayoutIndex))
-	{
-		ItemOfLayout[LayoutIndex] = ItemIndex;
-	}
 
 	if (TNBeachProp::IsTiled(Element))
 	{
@@ -330,7 +302,7 @@ void ATN_BeachDecorField::AddItem(const TNBeachLayout::FItem& LayoutItem, int32 
 		return;
 	}
 	const uint32 Key = TNBeachDecorFieldDetail::SingleKey(Element, Variant);
-	Item.BodyXf = TNBeachDecorKit::ItemBodyPlacement(Recipe.Info, LayoutItem, Item.Size) * Item.ItemXf;
+	Item.BodyXf = TNBeachDecorKit::BodyPlacement(Recipe.Info, Item.Seed, Item.Size) * Item.ItemXf;
 	Item.BodyBatch = BatchFor(Key, Element, Recipe.Body, false, Recipe.bCollision, Recipe.Info.bBlocksCamera, Recipe.Info.bCastShadow);
 	{
 		TNBeachDecorFieldTypes::FBatch& Batch = Batches[Item.BodyBatch];
@@ -475,201 +447,14 @@ void ATN_BeachDecorField::SetupBatchComps(int32 BatchIndex)
 void ATN_BeachDecorField::FinishBuild()
 {
 	Stage = TNBeachDecorFieldTypes::EStage::Done;
-	BuiltRound = PendingRound;
 	PendingItems.Empty();
-	PendingLayoutIndex.Empty();
 	AnimCheckClock = 0.f;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Consultas y cortes
-// ─────────────────────────────────────────────────────────────────────────────
-
-bool ATN_BeachDecorField::HasItem(int32 ItemIndex) const
-{
-	if (!ItemOfLayout.IsValidIndex(ItemIndex) || ItemOfLayout[ItemIndex] == INDEX_NONE)
-	{
-		return false;
-	}
-	return !Items[ItemOfLayout[ItemIndex]].bCut;
-}
-
-bool ATN_BeachDecorField::GetSearchShape(int32 ItemIndex, FTNBeachDecorShape& Out) const
-{
-	if (!HasItem(ItemIndex))
-	{
-		return false;
-	}
-	const TNBeachDecorFieldTypes::FItem& Item = Items[ItemOfLayout[ItemIndex]];
-	if (Item.bTiled || !Batches.IsValidIndex(Item.BodyBatch) || !Batches[Item.BodyBatch].Mesh)
-	{
-		return false;
-	}
-	const FTransform FieldXf = GetActorTransform();
-	const FTransform ItemWorld = Item.ItemXf * FieldXf;
-	const FVector Origin = ItemWorld.GetLocation();
-	if (Item.Element == ETNBeachElement::PlantedUmbrella)
-	{
-		// La lona está a 35 m de alto: se rebusca en el montón de arena del pie (unos 3 m de radio con tamaño 1).
-		const FVector Forward = ItemWorld.GetUnitAxis(EAxis::X).GetSafeNormal2D();
-		Out.Center = Origin;
-		Out.Axis = Forward.IsNearlyZero() ? FVector::ForwardVector : Forward;
-		Out.Radius = 380.f * Item.Size;
-		Out.HalfLength = 0.f;
-		Out.Height = 300.f;
-		return true;
-	}
-	// La caja de su malla fija, girada, inclinada y escalada como este ejemplar; cápsula a lo largo del lado largo.
-	const FBox Box = Batches[Item.BodyBatch].Mesh->GetBoundingBox();
-	const FTransform BodyXf = Item.BodyXf * FieldXf;
-	const FVector BodyScale = BodyXf.GetScale3D().GetAbs();
-	const FVector Extent = Box.GetExtent();
-	const double HalfX = Extent.X * BodyScale.X;
-	const double HalfY = Extent.Y * BodyScale.Y;
-	FVector AxisX = BodyXf.GetUnitAxis(EAxis::X).GetSafeNormal2D();
-	FVector AxisY = BodyXf.GetUnitAxis(EAxis::Y).GetSafeNormal2D();
-	if (AxisX.IsNearlyZero())
-	{
-		AxisX = FVector::ForwardVector;
-	}
-	if (AxisY.IsNearlyZero())
-	{
-		AxisY = FVector::RightVector;
-	}
-	const FVector BoxCenter = BodyXf.TransformPosition(Box.GetCenter());
-	Out.Center = FVector(BoxCenter.X, BoxCenter.Y, Origin.Z);
-	Out.Axis = HalfX >= HalfY ? AxisX : AxisY;
-	const double Short = FMath::Min(HalfX, HalfY);
-	const double Long = FMath::Max(HalfX, HalfY);
-	Out.Radius = static_cast<float>(FMath::Max(120.0, Short));
-	Out.HalfLength = static_cast<float>(FMath::Max(0.0, Long - Short));
-	Out.Height = static_cast<float>(FMath::Clamp(Extent.Z * 2.0 * BodyScale.Z, 80.0, 1500.0));
-	return true;
-}
-
-bool ATN_BeachDecorField::GetItemBounds(int32 ItemIndex, FBox& OutWorldBox) const
-{
-	if (!HasItem(ItemIndex))
-	{
-		return false;
-	}
-	const TNBeachDecorFieldTypes::FItem& Item = Items[ItemOfLayout[ItemIndex]];
-	if (Item.bTiled || !Batches.IsValidIndex(Item.BodyBatch) || !Batches[Item.BodyBatch].Mesh)
-	{
-		return false;
-	}
-	OutWorldBox = Batches[Item.BodyBatch].Mesh->GetBoundingBox().TransformBy(Item.BodyXf * GetActorTransform());
-	return true;
-}
-
-int32 ATN_BeachDecorField::CutCircle(const FVector2D& LocalCenter, double Radius)
-{
-	if (Stage != TNBeachDecorFieldTypes::EStage::Done)
-	{
-		return 0;
-	}
-	TSet<int32> NewlyCut;
-	for (int32 i = 0; i < Items.Num(); ++i)
-	{
-		TNBeachDecorFieldTypes::FItem& Item = Items[i];
-		if (Item.bCut)
-		{
-			continue;
-		}
-		double T = 0.0;
-		const double Dist = TNProcMap::DistPointSegment(LocalCenter, Item.Pos - Item.Axis * Item.HalfLength, Item.Pos + Item.Axis * Item.HalfLength, T);
-		if (Dist > Radius + Item.Radius)
-		{
-			continue;
-		}
-		Item.bCut = true;
-		NewlyCut.Add(i);
-	}
-	if (NewlyCut.Num() == 0)
-	{
-		return 0;
-	}
-	// Las partes que se mueven vuelven a su lote antes de rehacerlo (y en un momento vuelven a moverse las que toque).
-	StopAllAnimators();
-	for (int32 b = 0; b < Batches.Num(); ++b)
-	{
-		for (const int32 OwnerItem : Batches[b].Owners)
-		{
-			if (NewlyCut.Contains(OwnerItem))
-			{
-				RefillBatch(b);
-				break;
-			}
-		}
-	}
-	return NewlyCut.Num();
-}
-
-void ATN_BeachDecorField::RefillBatch(int32 BatchIndex)
-{
-	TNBeachDecorFieldTypes::FBatch& Batch = Batches[BatchIndex];
-	TArray<FTransform> Keep;
-	Keep.Reserve(Batch.Transforms.Num());
-	for (int32 k = 0; k < Batch.Transforms.Num(); ++k)
-	{
-		TNBeachDecorFieldTypes::FItem& Item = Items[Batch.Owners[k]];
-		if (Item.bCut)
-		{
-			if (Batch.bMoving)
-			{
-				Item.MovingInstance = INDEX_NONE;
-			}
-			continue;
-		}
-		if (Batch.bMoving)
-		{
-			Item.MovingInstance = Keep.Num();
-		}
-		Keep.Add(Batch.Transforms[k]);
-	}
-	for (const int32 CompIndex : { Batch.Comp, Batch.TwinComp })
-	{
-		UInstancedStaticMeshComponent* Comp = Comps.IsValidIndex(CompIndex) ? Comps[CompIndex].Get() : nullptr;
-		if (!IsValid(Comp))
-		{
-			continue;
-		}
-		// Con malla de arte (TNArt::ApplyToInstances): se rehace como al montarlo, con su ajuste y su gemelo de colisión.
-		const bool bArt = Comp->GetStaticMesh() != Batch.Mesh;
-		if (bArt)
-		{
-			const bool bBody = CompIndex == Batch.Comp && !Batch.bMoving;
-			if (bBody)
-			{
-				TNBeachDecorFieldDetail::DestroyArtTwins(this, Comps, Batch.Mesh);
-			}
-			Comp->EmptyOverrideMaterials();
-			Comp->SetStaticMesh(Batch.Mesh);
-			if (bBody)
-			{
-				TNBeachDecorKit::SetupCollision(Comp, Batch.bCollision, Batch.bBlocksCamera);
-			}
-		}
-		Comp->ClearInstances();
-		if (Keep.Num() > 0)
-		{
-			Comp->AddInstances(Keep, false, false, false);
-		}
-		if (bArt)
-		{
-			TNArt::ApplyToInstances(Comp, TNBeachDecorFieldDetail::SlotOf(Batch));
-		}
-	}
 }
 
 FTNBeachDecorStats ATN_BeachDecorField::GetStats() const
 {
 	FTNBeachDecorStats Stats;
-	Stats.Round = BuiltRound;
-	for (const TNBeachDecorFieldTypes::FItem& Item : Items)
-	{
-		++(Item.bCut ? Stats.CutItems : Stats.Items);
-	}
+	Stats.Items = Items.Num();
 	for (const TNBeachDecorFieldTypes::FBatch& Batch : Batches)
 	{
 		const UInstancedStaticMeshComponent* Comp = Comps.IsValidIndex(Batch.Comp) ? Comps[Batch.Comp].Get() : nullptr;
@@ -751,7 +536,7 @@ void ATN_BeachDecorField::UpdateAnimators()
 	for (const int32 ItemIndex : AnimItems)
 	{
 		const TNBeachDecorFieldTypes::FItem& Item = Items[ItemIndex];
-		if (Item.bCut || Item.MovingInstance == INDEX_NONE)
+		if (Item.MovingInstance == INDEX_NONE)
 		{
 			continue;
 		}
@@ -881,17 +666,6 @@ void ATN_BeachDecorField::StopAnimator(int32 AnimatorIndex)
 		AnimatorPool[AnimatorIndex]->SetVisibility(false);
 	}
 	Anim.Item = INDEX_NONE;
-}
-
-void ATN_BeachDecorField::StopAllAnimators()
-{
-	for (int32 Slot = 0; Slot < Animators.Num(); ++Slot)
-	{
-		if (Animators[Slot].Item != INDEX_NONE)
-		{
-			StopAnimator(Slot);
-		}
-	}
 }
 
 void ATN_BeachDecorField::PoseAnimator(int32 Slot, float DeltaSeconds)

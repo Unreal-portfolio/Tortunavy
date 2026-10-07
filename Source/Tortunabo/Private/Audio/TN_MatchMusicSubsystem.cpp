@@ -184,13 +184,11 @@ void UTN_MatchMusicSubsystem::Poll(UWorld& InWorld, double InNowSeconds)
 		Snap.bLocalFinished = LocalState->bHasFinishedRun && !LocalState->bIsEliminated;
 		// El DBNO (derribado a la espera de rescate) aún no cuenta: solo la muerte o la eliminación de verdad.
 		Snap.bLocalOut = LocalState->bIsEliminated || !LocalState->bIsAlive;
-		Snap.LocalRoundWins = LocalState->RoundWins;
 	}
 	for (const APlayerState* BaseState : MatchState->PlayerArray)
 	{
 		if (const ATN_CoopPlayerState* CoopState = Cast<ATN_CoopPlayerState>(BaseState))
 		{
-			Snap.MaxRoundWins = FMath::Max(Snap.MaxRoundWins, CoopState->RoundWins);
 			Snap.bTeamReachedGoal |= CoopState->bHasFinishedRun && !CoopState->bIsEliminated;
 		}
 	}
@@ -199,7 +197,7 @@ void UTN_MatchMusicSubsystem::Poll(UWorld& InWorld, double InNowSeconds)
 	{
 		Snap.bTeamReachedGoal |= !ResultEntry.bIsEliminated && ResultEntry.FinishRank > 0;
 	}
-	// Con la carrera en marcha el componente se prepara ya, en silencio: cuando llegue la fanfarria o el jingle el
+	// Con la partida en marcha el componente se prepara ya, en silencio: cuando llegue la fanfarria o el jingle el
 	// motor está caliente (volumen asentado) y su primer golpe suena entero.
 	if (Snap.Flow == TNMatchMusic::EFlow::InProgress)
 	{

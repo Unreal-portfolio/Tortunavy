@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
 #include "Core/TN_MatchFlowTypes.h"
-#include "Game/TN_LateJoinRules.h"
 #include "Core/TN_DeathCause.h"
 #include "TN_RunGameMode.generated.h"
 
@@ -238,26 +237,6 @@ protected:
 	 */
 	TMap<int32, TWeakObjectPtr<APawn>> DeadPlayerPawns;
 
-	// ── Entrada tardía y reconexión (#345, TN_LateJoinRules.h) ─────────────
-
-	/** @brief Cómo trata el modo a quien entra con la partida en marcha (por defecto, como siempre: desde la salida). */
-	virtual ETNLateJoinPolicy GetLateJoinPolicy() const { return ETNLateJoinPolicy::FreshStart; }
-
-	/** @brief La partida (o la ronda) ya está en juego para quien entra ahora. */
-	virtual bool IsMatchInProgressForJoin() const { return bMatchStarted; }
-
-	/**
-	 * @brief Lleva a un punto seguro del camino ya recorrido el pawn de quien entra a mitad (ETNJoinRole::PlayOnPath).
-	 * @return false si no hay sitio: entonces mira como espectador.
-	 */
-	virtual bool PlaceMidMatchJoiner(APlayerController* PlayerController) { return false; }
-
-	/** PlayerId de quien entró con la partida en marcha y no la juega (FTNJoinDecision::bSitsOut). */
-	TSet<int32> SitOutPlayerIds;
-
-	/** @brief Deja a un jugador fuera de la partida en curso: muerto a efectos de reglas y mirando a los demás. */
-	void SitOutAsSpectator(APlayerController* PlayerController);
-
 	/** @brief Garantiza que el jugador tenga un pawn vivo en el mapa (spawnea si falta). */
 	void EnsurePlayerSpawned(APlayerController* PlayerController);
 
@@ -330,22 +309,7 @@ protected:
 	/** @brief Restaura visual, colisión, posesión e input del pawn revivido. Solo se llama cuando Pawn es válido. */
 	void RestorePossessionAfterRevive(APlayerController* PlayerController, APawn* Pawn, const FVector& ReviveTargetLocation, bool bHasReviveTargetLocation);
 
-	/**
-	 * @brief Ronda cerrada sin Results: el RaceScore de cada jugadora va a su perfil antes de que ResetForNewRace lo
-	 *        ponga a 0 (ATN_CoopPlayerState::BankRoundScoreToProfile, #567). Llamar justo antes del reinicio de la ronda.
-	 */
-	void BankRoundScoresToProfiles();
-
 private:
-	/** Decisión de entrada de cada PostLogin, de FindInactivePlayer a HandleStartingNewPlayer (el viaje sin cortes no pasa por aquí). */
-	TMap<TWeakObjectPtr<APlayerController>, FTNJoinDecision> PendingJoins;
-
 	/** @brief Quien vuelve antes de que caduque su conexión anterior: la cierra para que su PlayerState quede inactivo. */
 	void DropStaleConnectionOf(const APlayerController* NewPlayer);
-
-	/** @brief Aplica al PlayerState la decisión de entrada (de cero, conserva o fuera de la partida). */
-	void ApplyJoinDecision(APlayerController* PlayerController, const FTNJoinDecision& Decision);
-
-	/** @brief Pawn y cámara de quien entra según su decisión. true si ya está resuelto y no hay que seguir el arranque normal. */
-	bool StartJoiningPlayer(APlayerController* PlayerController, const FTNJoinDecision& Decision);
 };

@@ -38,7 +38,7 @@ namespace
 		PS->bIsDBNO = bDBNO;
 		PS->bHasFinishedRun = bFinished;
 		PS->FinishRank = bFinished ? 2 : 0;
-		PS->RoundWins = 1;
+		PS->TurtleDollsCollected = 1;
 		PS->EquippedHelmetId = FName(TEXT("Casco"));
 		return PS;
 	}
@@ -64,7 +64,7 @@ bool FTNReconnectStateTest::RunTest(const FString& Parameters)
 	}
 	TestEqual(TEXT("Conserva los puntos"), Finished->RaceScore, 350);
 	TestTrue(TEXT("Conserva la meta"), Finished->bHasFinishedRun && Finished->FinishRank == 2);
-	TestEqual(TEXT("Conserva las rondas ganadas"), Finished->RoundWins, 1);
+	TestEqual(TEXT("Conserva los muñecos"), Finished->TurtleDollsCollected, 1);
 	TestEqual(TEXT("Conserva el casco"), Finished->EquippedHelmetId, FName(TEXT("Casco")));
 
 	// Muerto sigue muerto; derribado vuelve muerto.

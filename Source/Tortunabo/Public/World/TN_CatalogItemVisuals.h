@@ -17,8 +17,6 @@ enum class ETNCatalogLook : uint8
 	StaminaBoost,
 	/** Barra llena de golpe (SelfStaminaFull): barrita turquesa. Hoy no tiene fila. */
 	StaminaFull,
-	/** Lanzable genérico (Throwable): la piedra gris de la malla Piedra1. */
-	Ball,
 	/** Tótem (Totem): la tortuga de peluche verde de su malla, Peluche1. */
 	Totem,
 	Count
@@ -38,7 +36,7 @@ namespace TNCatalogItemVisuals
 	/** El aspecto de un objeto de DT_Items (None si es del cooperativo o una fila sin uso). */
 	TORTUNABO_API ETNCatalogLook LookOf(const FTN_InventoryItem& Item);
 
-	/** Nombre para el registro y las claves de caché («StaminaBoost», «Ball»...). */
+	/** Nombre para el registro y las claves de caché («StaminaBoost», «Totem»...). */
 	TORTUNABO_API const TCHAR* CodeName(ETNCatalogLook Look);
 
 	/**

@@ -8,12 +8,6 @@
 class UPrimitiveComponent;
 class UStaticMesh;
 
-namespace TNBeachLayout
-{
-	struct FItem;
-	struct FRoundLayout;
-}
-
 /**
  * Recetas del decorado de la playa ya montadas (mallas estáticas en ejecución, compartidas por todos los ejemplares y
  * fuera del recolector) y cómo se coloca y se anima cada ejemplar. Lo comparten ATN_BeachDecor (un actor por pieza: lo
@@ -58,28 +52,6 @@ namespace TNBeachDecorKit
 	 * hundimiento (de su semilla, iguales en todas las máquinas) y tamaño. El actor no se escala.
 	 */
 	FTransform BodyPlacement(const TNBeachProp::FPropInfo& Info, int32 Seed, float Size);
-
-	/**
-	 * Si el ejemplar del reparto no gira al azar: el castillo enorme de la pasada de castillos (EItemRole::Castle) tiene
-	 * patio (#741) y su puerta mira hacia quien llega (FixedYawOf).
-	 */
-	bool HasFixedYaw(const TNBeachLayout::FItem& Item);
-
-	/** Giro (grados) del castillo con HasFixedYaw: 180° ± 12° según su semilla (el reparto no lo sabe: así su huella no cambia). */
-	double FixedYawOf(const TNBeachLayout::FItem& Item);
-
-	/** BodyPlacement de un ejemplar del reparto: como BodyPlacement, pero sin el giro al azar si HasFixedYaw. */
-	FTransform ItemBodyPlacement(const TNBeachProp::FPropInfo& Info, const TNBeachLayout::FItem& Item, float Size);
-
-	/** Inclinación máxima (grados) del decorado suelto que sigue la cuesta: más, y quedaría de canto. */
-	constexpr double LitterMaxTilt = 30.0;
-
-	/**
-	 * Origen de una pieza del reparto en el espacio del generador: a la cota de su asiento, girada como en el reparto (lo
-	 * mismo que SpawnElement). El decorado suelto pequeño (TNBeachLayout::IsLitter) no tiene asiento que se vea en la malla
-	 * de 3 m: se apoya en la arena tal como se dibuja (TNBeachLayout::MeshSandZ) y se inclina con ella hasta LitterMaxTilt.
-	 */
-	FTransform ItemPlacement(const TNBeachLayout::FRoundLayout& Layout, const TNBeachLayout::FItem& Item);
 
 	/**
 	 * Piezas de un tramo (pasarela o caminito de palos) a lo largo de Extent por el eje X local, centrado en el origen,

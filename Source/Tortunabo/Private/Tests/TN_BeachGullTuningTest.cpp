@@ -2,7 +2,7 @@
 // tortuga (las del Blueprint: andando 200 cm/s, corriendo 400). Lo que se pidió: andando te pilla; esprintando en línea
 // recta le ganas distancia a la sombra y te libras (#636), y también cambiando de dirección corriendo en el momento justo
 // o tirándote en plancha a tiempo (ventana de la plancha frente a la caca: Tortunabo.Beach.Gull.PoopWalkSprintDive), del
-// picado, de la cagada de la zona y de la gaviota justiciera. Sin mundo ni actores: se simula el blanco con la misma
+// picado y de la cagada de la zona. Sin mundo ni actores: se simula el blanco con la misma
 // función que usa ATN_BeachGullZone en el servidor, a 60 pasos por segundo.
 // Correr desde Session Frontend (categoría "Tortunabo.Beach.Gull") o sin ventana:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.Beach.Gull; Quit" -nullrhi -unattended
@@ -74,13 +74,8 @@ namespace TNBeachGullTuningTest
 		return TNBeachGullTuning::IsInsideHit(Miss, TNBeachGullTuning::SplatRadius, SizeK, TNBeachGullTuning::SplatPad);
 	}
 
-	bool StrikeHits(double Miss)
-	{
-		return TNBeachGullTuning::IsInsideHit(Miss, TNBeachGullTuning::StrikeImpactRadius, 1.f, 0.f);
-	}
-
 	/**
-	 * Las mismas situaciones para los tres ataques. Hit(Miss, SizeK) dice si le da; se prueba con el tamaño más pequeño y el
+	 * Las mismas situaciones para los dos ataques. Hit(Miss, SizeK) dice si le da; se prueba con el tamaño más pequeño y el
 	 * más grande de las zonas (0,75 y 1,3) donde importa.
 	 */
 	template <typename FHit>
@@ -145,17 +140,14 @@ bool FTNBeachGullChasePlanTest::RunTest(const FString& Parameters)
 	// #636: más rápido de lo que se anda (andando no se despega) y más despacio de lo que se corre (esprintando, sí).
 	TestTrue(TEXT("Picado: persigue entre andar y correr"), DiveChaseSpeed > TurtleWalk && DiveChaseSpeed < TurtleRun);
 	TestTrue(TEXT("Cagada: ídem"), PoopChaseSpeed > TurtleWalk && PoopChaseSpeed < TurtleRun);
-	TestTrue(TEXT("Justiciera: ídem"), StrikeChaseSpeed > TurtleWalk && StrikeChaseSpeed < TurtleRun);
 	TestTrue(TEXT("Lanzado, hacia los lados corrige mucho menos de lo que se anda"),
-		DiveLateCorrection < TurtleWalk * 0.5f && PoopLateCorrection < TurtleWalk * 0.5f && StrikeLateCorrection < TurtleWalk * 0.5f);
+		DiveLateCorrection < TurtleWalk * 0.5f && PoopLateCorrection < TurtleWalk * 0.5f);
 	TestTrue(TEXT("Picado: se lanza antes de llegar abajo y después de empezar a bajar"),
 		DivePlan().CommitAt > DiveClimbTime && DivePlan().CommitAt < DivePlan().EndAt);
-	TestTrue(TEXT("Justiciera: se lanza justo después de soltar la cagada"),
-		StrikePlan().CommitAt >= StrikeReleaseAge && StrikePlan().CommitAt < StrikeReleaseAge + 0.5f);
 	TestTrue(TEXT("El «!» de la cagada se queda fijo cuando ya cae por su línea"),
 		!IsCommitted(PoopPlan(), PoopPlan().CommitAt - 0.01f) && IsCommitted(PoopPlan(), PoopPlan().CommitAt));
 	TestTrue(TEXT("La velocidad del suavizado de los clientes cubre la persecución"),
-		MaxChaseSpeed() >= DiveChaseSpeed && MaxChaseSpeed() >= PoopChaseSpeed && MaxChaseSpeed() >= StrikeChaseSpeed);
+		MaxChaseSpeed() >= DiveChaseSpeed && MaxChaseSpeed() >= PoopChaseSpeed);
 
 	{
 		const FVector2D Stepped = StepToward(FVector2D(0.0, 0.0), FVector2D(100.0, 0.0), 600.f, 0.1f);
@@ -180,7 +172,7 @@ bool FTNBeachGullChasePlanTest::RunTest(const FString& Parameters)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Esquivar el picado, la cagada y la justiciera
+// Esquivar el picado y la cagada
 // ─────────────────────────────────────────────────────────────────────────────
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNBeachGullDodgeTest,
@@ -194,7 +186,6 @@ bool FTNBeachGullDodgeTest::RunTest(const FString& Parameters)
 
 	CheckDodges(*this, TEXT("Picado"), DivePlan(), [](double Miss, float SizeK) { return DiveCatches(Miss, SizeK); });
 	CheckDodges(*this, TEXT("Cagada"), PoopPlan(), [](double Miss, float SizeK) { return PoopHits(Miss, SizeK); });
-	CheckDodges(*this, TEXT("Justiciera"), StrikePlan(), [](double Miss, float) { return StrikeHits(Miss); });
 
 	// La plancha: tirarse en el momento justo (en el aire o aún deprisa sobre la tripa), no tumbarse a esperar.
 	TestTrue(TEXT("Plancha en el aire: libra"), DodgesByBellyDive(true, true, 0.f));

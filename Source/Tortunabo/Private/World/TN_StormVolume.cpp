@@ -111,8 +111,6 @@ void ATN_StormVolume::BeginPlay()
 	if (HasAuthority())
 	{
 		ReplicatedBoxHalfExtent = TriggerBox->GetUnscaledBoxExtent();
-		InitialLocation = GetActorLocation();
-		InitialBoxHalfExtent = ReplicatedBoxHalfExtent;
 	}
 
 	SyncVisualToBox();
@@ -327,31 +325,6 @@ void ATN_StormVolume::ForceCheckPlayer(APlayerController* PC)
 
 	UE_LOG(LogTortunabo, Log, TEXT("[Storm] ForceCheckPlayer: '%s' dentro de '%s' tras revive — countdown reiniciado (%.1fs)"),
 		*GetNameSafe(PC), *GetName(), SecondsInsideToDie);
-}
-
-void ATN_StormVolume::ResetToInitialState()
-{
-	if (!HasAuthority() || !TriggerBox) { return; }
-
-	for (const TPair<TWeakObjectPtr<APlayerController>, float>& Pending : PendingDeathRemaining)
-	{
-		const APlayerController* PC = Pending.Key.Get();
-		if (ATN_CoopPlayerState* TNPS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr)
-		{
-			TNPS->DeathZoneTimeRemaining = -1.f;
-		}
-	}
-	PendingDeathRemaining.Reset();
-	GetWorldTimerManager().ClearTimer(SharedCountdownTimerHandle);
-
-	// La caja se replica (ReplicatedBoxHalfExtent) y la posición con el movimiento del actor.
-	TriggerBox->SetBoxExtent(InitialBoxHalfExtent);
-	ReplicatedBoxHalfExtent = InitialBoxHalfExtent;
-	SetActorLocation(InitialLocation, false, nullptr, ETeleportType::TeleportPhysics);
-	SyncVisualToBox();
-	ForceNetUpdate();
-
-	UE_LOG(LogTortunabo, Log, TEXT("[Storm] '%s' vuelve a su estado inicial."), *GetName());
 }
 
 void ATN_StormVolume::HandlePlayerDeath(APlayerController* PC)

@@ -1,8 +1,6 @@
 #include "Core/TN_CoopPlayerState.h"
 #include "Core/TN_CoopGameState.h"
 #include "Core/TN_Log.h"
-#include "Core/TN_ScoreDecisions.h"
-#include "Multiplayer/MP_GameInstance.h"
 #include "Game/TN_LateJoinRules.h"
 #include "Player/TortugaCharacter.h"
 #include "GameFramework/PlayerController.h"
@@ -92,9 +90,6 @@ void ATN_CoopPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ATN_CoopPlayerState, bIsEliminated);
 	DOREPLIFETIME(ATN_CoopPlayerState, DeathCause);
 	DOREPLIFETIME(ATN_CoopPlayerState, RaceScore);
-	DOREPLIFETIME(ATN_CoopPlayerState, RoundWins);
-	DOREPLIFETIME(ATN_CoopPlayerState, RaceShellHalves);
-	DOREPLIFETIME(ATN_CoopPlayerState, TeamIndex);
 	DOREPLIFETIME(ATN_CoopPlayerState, TurtleDollsCollected);
 	DOREPLIFETIME(ATN_CoopPlayerState, CoopScore);
 }
@@ -160,9 +155,6 @@ void ATN_CoopPlayerState::CopyProperties(APlayerState* PlayerState)
 	Target->FinishRank = FinishRank;
 	Target->FinishTimeSeconds = FinishTimeSeconds;
 	Target->RaceScore = RaceScore;
-	Target->RoundWins = RoundWins;
-	Target->RaceShellHalves = RaceShellHalves;
-	Target->TeamIndex = TeamIndex;
 	Target->TurtleDollsCollected = TurtleDollsCollected;
 	Target->CollectedShellPoints = CollectedShellPoints;
 	Target->JumpCount = JumpCount;
@@ -223,35 +215,4 @@ void ATN_CoopPlayerState::ResetForNewRace()
 	RaceScore = 0;
 }
 
-void ATN_CoopPlayerState::BankRoundScoreToProfile()
-{
-	if (!HasAuthority() || IsABot())
-	{
-		return;
-	}
-	// Solo jugadoras de verdad: un RPC de cliente sobre un PlayerState sin conexión (bot) se ejecutaría en el servidor y
-	// sumaría sus conchas al perfil del anfitrión.
-	const APlayerController* OwnerPC = Cast<APlayerController>(GetOwner());
-	const int32 Bank = TNScoreLogic::ComputeRoundBank(RaceScore);
-	if (!OwnerPC || Bank <= 0)
-	{
-		return;
-	}
-	ClientBankRoundScore(Bank);
-}
-
-void ATN_CoopPlayerState::ClientBankRoundScore_Implementation(int32 RoundScore)
-{
-	const UWorld* World = GetWorld();
-	const APlayerController* LocalPC = World ? World->GetFirstPlayerController() : nullptr;
-	if (!LocalPC || LocalPC->PlayerState != this)
-	{
-		return;
-	}
-	if (UMP_GameInstance* GI = Cast<UMP_GameInstance>(GetGameInstance()))
-	{
-		GI->AddRaceScore(TNScoreLogic::ComputeRoundBank(RoundScore));
-		UE_LOG(LogTortunabo, Log, TEXT("[CoopPlayerState] Ronda cerrada: +%d conchas al perfil de '%s'."), RoundScore, *GetPlayerName());
-	}
-}
 

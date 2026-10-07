@@ -410,8 +410,8 @@ namespace TNShellImpactFX
 		{
 			return ETNShellImpactSound::Wood;
 		}
-		// El resto de trampas y el decorado (cubos, palas, sombrillas, flotadores...) y los objetos de carrera: plástico y lata.
-		if (InOther->IsA<ATN_BeachElement>() || NameHasAny(ClassName, { TEXT("decor"), TEXT("raceitem"), TEXT("race_"), TEXT("frisbee"), TEXT("coconut") }))
+		// El resto de trampas y el decorado (cubos, palas, sombrillas, flotadores...): plástico y lata.
+		if (InOther->IsA<ATN_BeachElement>() || NameHasAny(ClassName, { TEXT("decor"), TEXT("frisbee"), TEXT("coconut") }))
 		{
 			return ETNShellImpactSound::Junk;
 		}

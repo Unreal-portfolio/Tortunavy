@@ -37,7 +37,6 @@ ETNCatalogLook TNCatalogItemVisuals::LookOf(const FTN_InventoryItem& Item)
 	{
 	case ETN_ItemUseType::SelfStaminaBoost: return ETNCatalogLook::StaminaBoost;
 	case ETN_ItemUseType::SelfStaminaFull:  return ETNCatalogLook::StaminaFull;
-	case ETN_ItemUseType::Throwable:        return ETNCatalogLook::Ball;
 	case ETN_ItemUseType::Totem:            return ETNCatalogLook::Totem;
 	default:
 		// Sin uso o CoopItem (lo resuelve TNCoopItems).
@@ -51,7 +50,6 @@ const TCHAR* TNCatalogItemVisuals::CodeName(ETNCatalogLook Look)
 	{
 	case ETNCatalogLook::StaminaBoost: return TEXT("StaminaBoost");
 	case ETNCatalogLook::StaminaFull:  return TEXT("StaminaFull");
-	case ETNCatalogLook::Ball:         return TEXT("Ball");
 	case ETNCatalogLook::Totem:        return TEXT("Totem");
 	default:                           return TEXT("None");
 	}
@@ -69,11 +67,6 @@ bool TNCatalogItemVisuals::IsEnginePlaceholder(const UObject* Asset)
 
 bool TNCatalogItemVisuals::ShouldReplaceMesh(const FTN_InventoryItem& Item)
 {
-	// El lanzable manda su malla al resto de máquinas por un multicast (ATN_ThrowableItemActor): solo valen las de disco.
-	if (Item.UseType == ETN_ItemUseType::Throwable)
-	{
-		return false;
-	}
 	return !Item.EquippedMesh || IsEnginePlaceholder(Item.EquippedMesh);
 }
 

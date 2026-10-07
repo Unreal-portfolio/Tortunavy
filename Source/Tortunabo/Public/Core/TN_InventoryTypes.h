@@ -26,8 +26,6 @@ enum class ETN_ItemUseType : uint8
 	SelfStaminaBoost UMETA(DisplayName = "Self Stamina Boost"),
 	/** Barrita Energética: restaura stamina al máximo instantáneamente. Sin penalización post-uso. */
 	SelfStaminaFull  UMETA(DisplayName = "Self Stamina Full Restore"),
-	/** Proyectil lanzable con rebote (TN_ThrowableItemActor). */
-	Throwable        UMETA(DisplayName = "Throwable"),
 	/** Tótem: si está en el inventario al morir → auto-revive.
 	 *  Si se usa manualmente → revive a un jugador eliminado. */
 	Totem            UMETA(DisplayName = "Totem"),
@@ -66,8 +64,8 @@ struct FTN_StaminaBoostParams
 };
 
 /**
- * Parámetros específicos del lanzable (#6 Bola, etc.).
- * Solo relevantes cuando UseType == Throwable.
+ * Parámetros del antiguo lanzable genérico (#6 Bola). Ningún UseType los lee: se conservan porque las filas de
+ * DT_Items guardan el campo ThrowableData.
  */
 USTRUCT(BlueprintType)
 struct FTN_ThrowableParams
@@ -179,7 +177,7 @@ struct FTN_InventoryItem : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|StaminaBoost")
 	FTN_StaminaBoostParams StaminaBoostData;
 
-	/** UseType == Throwable → clase del proyectil, velocidad y vida. */
+	/** Sin uso: lo guardan las filas de DT_Items (ver FTN_ThrowableParams). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Throwable")
 	FTN_ThrowableParams ThrowableData;
 

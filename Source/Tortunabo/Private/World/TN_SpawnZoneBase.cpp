@@ -121,11 +121,3 @@ int32 ATN_SpawnZoneBase::GetActiveCount()
 	});
 	return ActiveInstances.Num();
 }
-
-void ATN_SpawnZoneBase::SetZoneExtent(const FVector& Extent)
-{
-	if (SpawnVolume)
-	{
-		SpawnVolume->SetBoxExtent(Extent, true);
-	}
-}

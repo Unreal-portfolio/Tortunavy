@@ -132,34 +132,6 @@ namespace TNCatalogItemArtDetail
 		return Painter.ToTexture(TextureName);
 	}
 
-	/** Piedra gris redondeada (la malla Piedra1 de la fila de la bola), con motas, una grieta y brillo. */
-	UTexture2D* PaintBallIcon()
-	{
-		using namespace TNHUDArt;
-		FPainter Painter(CatalogIconSize, CatalogIconSize);
-		const auto Stone = [](float px, float py)
-		{
-			const float A = FMath::Atan2(py - 68.f, px - 64.f);
-			const float Wobble = 1.f + 0.05f * FMath::Sin(3.f * A + 0.6f) + 0.035f * FMath::Sin(5.f * A + 1.9f);
-			return Ellipse(px, py, 64.f, 68.f, 46.f * Wobble, 36.f * Wobble);
-		};
-		Painter.Sticker(Stone, 6.f);
-		Body(Painter, Stone, 0x23262B, 0xB9BDC4, 0x5A5F66, 32.f, 104.f);
-		// Cara de arriba algo más clara, motas y una grieta.
-		Painter.Fill([&Stone](float px, float py) { return FMath::Max(Ellipse(px, py, 62.f, 54.f, 32.f, 14.f), Stone(px, py) + 3.f); }, Hex(0xFFFFFF, 0.16f));
-		const FIconDot Dots[] = { { 44.f, 74.f, 2.6f }, { 80.f, 82.f, 3.2f }, { 90.f, 62.f, 2.2f }, { 58.f, 90.f, 2.0f }, { 70.f, 70.f, 1.8f }, { 36.f, 60.f, 1.6f } };
-		for (const FIconDot& Dot : Dots)
-		{
-			Painter.Fill([&Dot](float px, float py) { return Circle(px, py, Dot.X, Dot.Y, Dot.Radius); }, Hex(0x2E3238, 0.5f));
-		}
-		Painter.Fill([](float px, float py)
-		{
-			return FMath::Min(Segment(px, py, 72.f, 76.f, 80.f, 86.f, 1.1f), Segment(px, py, 80.f, 86.f, 77.f, 96.f, 1.1f));
-		}, Hex(0x23262B, 0.6f));
-		Painter.Fill([](float px, float py) { return Ellipse(px, py, 44.f, 48.f, 11.f, 5.f); }, Hex(0xFFFFFF, 0.6f));
-		return Painter.ToTexture(TEXT("TN_Catalog_Ball"));
-	}
-
 	/** Tortuga de peluche verde (la malla Peluche1 del tótem) con costuras, ojos de botón y destellos de revivir. */
 	UTexture2D* PaintTotemIcon()
 	{
@@ -220,8 +192,6 @@ namespace TNCatalogItemArtDetail
 			return PaintBarIcon({ 0x5A2A08, 0xFFB347, 0xE8661A, 0xFFE27A, 0xF2B01E, 0x3B2A08, 0xFFFFFF, 0xFFE14A }, TEXT("TN_Catalog_StaminaBoost"));
 		case ETNCatalogLook::StaminaFull:
 			return PaintBarIcon({ 0x0C4A44, 0x6AE8D8, 0x1A9F92, 0xE0F8F5, 0xA8DCD6, 0x0C2A44, 0xFFFFFF, 0xC8F4FF }, TEXT("TN_Catalog_StaminaFull"));
-		case ETNCatalogLook::Ball:
-			return PaintBallIcon();
 		case ETNCatalogLook::Totem:
 			return PaintTotemIcon();
 		default:

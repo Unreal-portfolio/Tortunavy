@@ -54,13 +54,6 @@ public:
 	void ResetForNewRace();
 
 	/**
-	 * Servidor: guarda en el perfil del jugador (tienda) el RaceScore de una ronda que se cierra sin pasar por Results,
-	 * antes de ResetForNewRace (#567). Lo llaman la carrera (StartNextRound, StartSprint) y el mapa procedural
-	 * (StartNextRound); Results sigue guardando la última ronda. Sin efecto en bots ni con RaceScore 0.
-	 */
-	void BankRoundScoreToProfile();
-
-	/**
 	 * @brief Indica si el servidor puede aceptar otro QuickChat de este jugador respetando el cooldown.
 	 * @param Now Tiempo actual del servidor (s).
 	 * @param CooldownSeconds Cooldown configurado entre mensajes (s).
@@ -171,33 +164,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_RaceScore, Category = "Coop|Score")
 	int32 RaceScore = 0;
 
-	/**
-	 * Máquina del jugador (fiable): suma RoundScore a su perfil local (UMP_GameInstance::AddRaceScore). Lleva el valor
-	 * explícito para no depender del orden en que llegan RaceScore y MatchFlowState. Solo el primer jugador local, como
-	 * PersistLocalPlayerScoreIfResults.
-	 */
-	UFUNCTION(Client, Reliable)
-	void ClientBankRoundScore(int32 RoundScore);
-
 	/** @brief OnRep de RaceScore: dispara OnRaceScoreChanged para refrescar el HUD. */
 	UFUNCTION()
 	void OnRep_RaceScore();
-
-	/**
-	 * Rondas ganadas en la partida del mapa procedural (Carrera y 2vs2: gana quien
-	 * llega a 3). Lo resetea ATN_ProcMapGameMode al empezar la partida; no se toca
-	 * en ResetForNewRace porque este se llama en cada ronda.
-	 */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
-	int32 RoundWins = 0;
-
-	/**
-	 * Carrera en la playa (ATN_BeachRaceGameMode): conchas de la partida en medias (2 = una concha entera). La primera en
-	 * tocar el agua se lleva una entera y quien llega en la cuenta atrás de después, media. Gana quien llega a
-	 * RoundTarget conchas (RoundTarget * 2 medias). Lo resetea el GameMode al empezar la partida; no ResetForNewRace.
-	 */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
-	int32 RaceShellHalves = 0;
 
 	/**
 	 * Muñecos tortuga cogidos en la partida (#797, ATN_TurtleDoll): uno por muñeco y jugadora. Lo lee la puntuación final
@@ -246,10 +215,6 @@ public:
 
 	/** Servidor: un salto más. */
 	void RegisterJump() { if (HasAuthority()) { ++JumpCount; } }
-
-	/** Pareja de la ronda actual en 2vs2 (0 o 1). -1 fuera de 2vs2. */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Coop|Rounds")
-	int32 TeamIndex = -1;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

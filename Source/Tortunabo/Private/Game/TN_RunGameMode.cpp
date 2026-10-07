@@ -172,7 +172,6 @@ void ATN_RunGameMode::Logout(AController* Exiting)
 		}
 	}
 
-	PendingJoins.Remove(Cast<APlayerController>(Exiting));
 	Super::Logout(Exiting);
 
 	// Actualizar conteo tras desconexión (TN_CountConnectedCoopPlayers ya no cuenta al que se va, #558)
@@ -279,33 +278,27 @@ bool ATN_RunGameMode::FindInactivePlayer(APlayerController* PC)
 {
 	DropStaleConnectionOf(PC);
 	const bool bReactivated = Super::FindInactivePlayer(PC);
-	const ATN_CoopPlayerState* TNPS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
+	ATN_CoopPlayerState* TNPS = PC ? PC->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
 	if (!TNPS)
 	{
 		return bReactivated;
 	}
 
-	FTNJoinContext Context;
-	Context.Policy = GetLateJoinPolicy();
-	Context.bMatchInProgress = IsMatchInProgressForJoin();
-	Context.bReactivated = bReactivated;
-	Context.bWasAlive = TNPS->bIsAlive;
-	Context.bHadFinished = TNPS->bHasFinishedRun;
-	const FTNJoinDecision Decision = TNLateJoinLogic::DecideJoin(Context);
-	ApplyJoinDecision(PC, Decision);
-	PendingJoins.Add(PC, Decision);
+	// Quien entra, nuevo o de vuelta, juega desde la salida y con la partida a cero. En el viaje no sin cortes los
+	// PlayerStates se recrean: el reinicio garantiza que todos arranquen limpios.
+	TNPS->ResetForNewRace();
+	TNPS->ForceNetUpdate();
 
-	UE_LOG(LogTortunabo, Log, TEXT("[Join] %s · %s · partida %s · rol %d · reinicia %d · fuera %d · vivo %d · meta %d · puntos %d"),
-		*TNPS->GetPlayerName(), bReactivated ? TEXT("vuelve") : TEXT("nuevo"), Context.bMatchInProgress ? TEXT("en juego") : TEXT("sin empezar"),
-		static_cast<int32>(Decision.Role), Decision.bResetRaceState, Decision.bSitsOut, TNPS->bIsAlive, TNPS->bHasFinishedRun, TNPS->RaceScore);
+	UE_LOG(LogTortunabo, Log, TEXT("[Join] %s · %s · partida %s"), *TNPS->GetPlayerName(), bReactivated ? TEXT("vuelve") : TEXT("nuevo"),
+		bMatchStarted ? TEXT("en juego") : TEXT("sin empezar"));
 	return bReactivated;
 }
 
 void ATN_RunGameMode::AddInactivePlayer(APlayerState* PlayerState, APlayerController* PC)
 {
 	// AGameMode no guarda a quien MustSpectate: los muertos y los que llegaron a la meta, que esperan como espectadores.
-	// Siguen en la partida y su estado tiene que volver con ellos. Quien entró solo a mirar (SitOut) no se guarda.
-	const bool bRaceSpectator = PlayerState && PlayerState->IsOnlyASpectator() && !SitOutPlayerIds.Contains(PlayerState->GetPlayerId());
+	// Siguen en la partida y su estado tiene que volver con ellos.
+	const bool bRaceSpectator = PlayerState && PlayerState->IsOnlyASpectator();
 	if (!bRaceSpectator)
 	{
 		Super::AddInactivePlayer(PlayerState, PC);
@@ -316,86 +309,10 @@ void ATN_RunGameMode::AddInactivePlayer(APlayerState* PlayerState, APlayerContro
 	PlayerState->SetIsOnlyASpectator(true);
 }
 
-void ATN_RunGameMode::ApplyJoinDecision(APlayerController* PlayerController, const FTNJoinDecision& Decision)
-{
-	ATN_CoopPlayerState* TNPS = PlayerController ? PlayerController->GetPlayerState<ATN_CoopPlayerState>() : nullptr;
-	if (!TNPS)
-	{
-		return;
-	}
-	// En el viaje no sin cortes los PlayerStates se recrean: el reinicio garantiza que todos arranquen limpios.
-	if (Decision.bResetRaceState)
-	{
-		TNPS->ResetForNewRace();
-	}
-	if (Decision.bSitsOut)
-	{
-		TNPS->bIsAlive = false;
-		SitOutPlayerIds.Add(TNPS->GetPlayerId());
-	}
-	else
-	{
-		SitOutPlayerIds.Remove(TNPS->GetPlayerId());
-	}
-	TNPS->ForceNetUpdate();
-}
-
-bool ATN_RunGameMode::StartJoiningPlayer(APlayerController* PlayerController, const FTNJoinDecision& Decision)
-{
-	if (Decision.Role != ETNJoinRole::Spectate)
-	{
-		return false;
-	}
-	if (Decision.bSitsOut)
-	{
-		SitOutAsSpectator(PlayerController);
-	}
-	else
-	{
-		MovePlayerToSpectator(PlayerController);
-	}
-	return true;
-}
-
-void ATN_RunGameMode::SitOutAsSpectator(APlayerController* PlayerController)
-{
-	if (!PlayerController)
-	{
-		return;
-	}
-	if (ATN_CoopPlayerState* TNPS = PlayerController->GetPlayerState<ATN_CoopPlayerState>())
-	{
-		TNPS->bIsAlive = false;
-		TNPS->bIsDBNO = false;
-		SitOutPlayerIds.Add(TNPS->GetPlayerId());
-		TNPS->ForceNetUpdate();
-	}
-	if (APawn* Pawn = PlayerController->GetPawn())
-	{
-		PlayerController->UnPossess();
-		Pawn->Destroy();
-	}
-	MovePlayerToSpectator(PlayerController);
-}
-
 void ATN_RunGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
-	// Solo los que llegan por PostLogin traen decisión; el viaje sin cortes arranca como siempre.
-	FTNJoinDecision Decision;
-	const bool bFromLogin = PendingJoins.RemoveAndCopyValue(NewPlayer, Decision);
-	if (bFromLogin && StartJoiningPlayer(NewPlayer, Decision))
-	{
-		UE_LOG(LogTortunabo, Log, TEXT("[Join] %s entra como espectador."), *GetNameSafe(NewPlayer));
-		return;
-	}
-
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	EnsurePlayerSpawned(NewPlayer);
-	if (bFromLogin && Decision.Role == ETNJoinRole::PlayOnPath && !PlaceMidMatchJoiner(NewPlayer))
-	{
-		UE_LOG(LogTortunabo, Log, TEXT("[Join] %s: sin sitio seguro en el camino, espera como espectador."), *GetNameSafe(NewPlayer));
-		SitOutAsSpectator(NewPlayer);
-	}
 
 	UE_LOG(LogTortunabo, Log, TEXT("[RunGameMode] HandleStartingNewPlayer: %s  (Pawn=%s)"),
 		*GetNameSafe(NewPlayer),
@@ -660,21 +577,6 @@ bool ATN_RunGameMode::TryTotemAutoRevive(APlayerController* PlayerController)
 		}
 	}
 	return false;
-}
-
-void ATN_RunGameMode::BankRoundScoresToProfiles()
-{
-	if (!GameState)
-	{
-		return;
-	}
-	for (APlayerState* BasePS : GameState->PlayerArray)
-	{
-		if (ATN_CoopPlayerState* PS = Cast<ATN_CoopPlayerState>(BasePS))
-		{
-			PS->BankRoundScoreToProfile();
-		}
-	}
 }
 
 void ATN_RunGameMode::ApplyDeathVisuals(APawn* Pawn, APlayerController* PlayerController)

@@ -46,13 +46,3 @@ enum class ETNProcEmptyModuleMode : uint8
 	/** Mezcla aleatoria por módulo de los tres anteriores. */
 	Mixed               UMETA(DisplayName = "Mezcla")
 };
-
-/** Tipo de cruce colosal a distinto nivel. */
-UENUM(BlueprintType)
-enum class ETNProcCrossingType : uint8
-{
-	/** Arco/puente de roca colosal: el tramo alto pasa por encima, abierto por debajo. */
-	Bridge  UMETA(DisplayName = "Puente colosal"),
-	/** Muralla colosal: el tramo alto va por su adarve y el bajo la cruza por una puerta altísima. */
-	Wall    UMETA(DisplayName = "Muralla con puerta")
-};

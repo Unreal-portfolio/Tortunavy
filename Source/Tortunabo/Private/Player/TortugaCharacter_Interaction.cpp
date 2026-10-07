@@ -18,7 +18,6 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "World/TN_InteractableBase.h"
 #include "World/TN_PickupInteractableBase.h"
-#include "World/TN_ThrowableItemActor.h"
 #include "Game/TN_CoopItems.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Game/TN_RunGameMode.h"
@@ -265,13 +264,6 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 		return;
 	}
 
-	if ((EquippedItem.UseType == ETN_ItemUseType::Throwable)
-		&& EquippedItem.ThrowableData.ActorClass)
-	{
-		HandleUseThrowable(EquippedItem);
-		return;
-	}
-
 	// ── #5 Tótem — uso manual: revivir a un jugador muerto aleatorio ──────────
 	if (EquippedItem.UseType == ETN_ItemUseType::Totem)
 	{
@@ -394,44 +386,6 @@ void ATortugaCharacter::MulticastItemThrowAnim_Implementation()
 	if (UTN_TurtleAnimInstance* TurtleAnim = SkelMesh ? Cast<UTN_TurtleAnimInstance>(SkelMesh->GetAnimInstance()) : nullptr)
 	{
 		TurtleAnim->PlayThrow(false);
-	}
-}
-
-void ATortugaCharacter::HandleUseThrowable(const FTN_InventoryItem& EquippedItem)
-{
-	const FVector SpawnLocation = GetItemSpawnLocation();
-
-	// ── Dirección de lanzamiento: hacia donde mira la cámara, con el arco bajo de todos los lanzamientos ──
-	// y al punto del centro de la pantalla.
-	const float ThrowSpeedCmS = FMath::Max(EquippedItem.ThrowableData.ThrowSpeed, 0.0f);
-	const FVector ArcedDirection = GetThrowDirectionToCrosshair(SpawnLocation, GetTurtleAimRotation(), ThrowSpeedCmS);
-
-	const FVector LaunchVelocity = ArcedDirection * ThrowSpeedCmS;
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = this;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-	FTN_InventoryItem ConsumedItem;
-	if (!InventoryComponent->TryConsumeEquippedItem(ConsumedItem))
-	{
-		return;
-	}
-
-	if (ATN_ThrowableItemActor* ThrowableActor = GetWorld()->SpawnActor<ATN_ThrowableItemActor>(EquippedItem.ThrowableData.ActorClass, SpawnLocation, ArcedDirection.Rotation(), SpawnParams))
-	{
-		// SourceItem lleva PickupActorClass para que el throwable sepa
-		// qué pickup spawnear cuando aterrice o impacte (se convierte en recogible)
-		ThrowableActor->SetSourceItem(ConsumedItem);
-		ThrowableActor->InitializeThrow(SpawnLocation, LaunchVelocity);
-
-		if (ThrowSound) { MulticastPlaySfx(ThrowSound); }
-		MulticastItemThrowAnim();
-	}
-	else
-	{
-		InventoryComponent->TryAddOrReplaceEquipped(ConsumedItem, true);
 	}
 }
 

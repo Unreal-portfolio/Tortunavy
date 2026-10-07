@@ -1,5 +1,5 @@
-// Instancias que se mueven cada fotograma (#566): las bandadas y los emisores de TNAmbientFX y las piezas de los
-// enemigos de la playa (TNBeachCritterKit::WriteInstances) actualizan sus transformadas sin MarkRenderStateDirty. Con
+// Instancias que se mueven cada fotograma (#566): las bandadas y los emisores de TNAmbientFX actualizan sus
+// transformadas sin MarkRenderStateDirty. Con
 // él, cada fotograma se destruía y se volvía a crear el proxy de render del ISM (149 por fotograma en el pico de
 // TN.Stress caos). Se comprueba que el estado de render no queda sucio, que al final del fotograma el proxy es el
 // mismo y que los límites del ISM incluyen las posiciones nuevas (no se recortan por frustum culling).
@@ -11,7 +11,6 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
-#include "World/Beach/TN_BeachCritterKit.h"
 #include "World/ProcMap/TN_ProcMapAmbientFX.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -149,24 +148,6 @@ bool FTNIsmPerFrameTest::RunTest(const FString& Parameters)
 			[&Emitter]() { TNAmbientFX::TickEmitter(Emitter, 0.1f, Emitter.Origin); },
 			[&Emitter]() { return Emitter.Particles[0].P; });
 		TestTrue(TEXT("TickEmitter: han nacido partículas"), Emitter.Particles[0].bAlive);
-	}
-
-	// ── Piezas de los enemigos de la playa (pulpo, pulgas, tanque) ──
-	{
-		constexpr int32 Pieces = 3;
-		UInstancedStaticMeshComponent* ISM = MakeIsm(World, Cube, Pieces);
-		if (!TestNotNull(TEXT("ISM de las piezas"), ISM))
-		{
-			return false;
-		}
-		TArray<FTransform> Xf;
-		for (int32 i = 0; i < Pieces; ++i)
-		{
-			Xf.Add(FTransform(FVector(-5000.0, 400.0 * i, 300.0)));
-		}
-		CheckMoveKeepsProxy(*this, TEXT("WriteInstances"), World, ISM,
-			[ISM, &Xf]() { TNBeachCritterKit::WriteInstances(ISM, Xf, true); },
-			[&Xf]() { return Xf[0].GetLocation(); });
 	}
 
 	return true;

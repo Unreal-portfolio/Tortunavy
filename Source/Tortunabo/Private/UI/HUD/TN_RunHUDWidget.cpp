@@ -521,12 +521,8 @@ bool UTN_RunHUDWidget::ShouldShowAimDot() const
 	}
 	const FTN_InventoryItem& Equipped = Inv->GetEquippedItem();
 	const ETN_ItemUseType Use = Equipped.UseType;
-	if (Use == ETN_ItemUseType::CoopItem)
-	{
-		// Del coop, los que se apuntan: se lanzan o disparan hacia la mira.
-		return TNCoopItems::IsAimed(TNCoopItems::KindOf(Equipped));
-	}
-	return Use == ETN_ItemUseType::Throwable;
+	// Del coop, los que se apuntan: se lanzan o disparan hacia la mira.
+	return Use == ETN_ItemUseType::CoopItem && TNCoopItems::IsAimed(TNCoopItems::KindOf(Equipped));
 }
 
 void UTN_RunHUDWidget::TickPrompt(float DeltaTime)

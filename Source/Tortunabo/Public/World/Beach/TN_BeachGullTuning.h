@@ -3,12 +3,10 @@
 #include "CoreMinimal.h"
 
 /**
- * Cifras y cuentas puras de las gaviotas de la carrera: la zona de gaviotas (ATN_BeachGullZone: picado y cagada) y la
- * gaviota justiciera del objeto de carrera (ATN_RaceGullStrike). Sin mundo ni objetos: las usan los dos actores y las
- * pruebas Tortunabo.Beach.Gull (Private/Tests/TN_BeachGullTuningTest.cpp).
+ * Cifras y cuentas puras de las gaviotas de la playa: la zona de gaviotas (ATN_BeachGullZone: picado y cagada). Sin mundo
+ * ni objetos: las usan el actor y las pruebas Tortunabo.Beach.Gull (Private/Tests/TN_BeachGullTuningTest.cpp).
  *
- * Ronda 4, tarea 5 (nerf, Docs/Modo_Carrera.md «Nerf de la gaviota y de su caca», con los valores de antes): casi no se
- * podían esquivar. Lo que se pidió (GDD, ronda 4): el seguimiento es más lento y la caca se esquiva con una plancha a tiempo.
+ * Ronda 4, tarea 5 (nerf de la gaviota y de su caca): casi no se podían esquivar. Lo que se pidió (GDD, ronda 4): el seguimiento es más lento y la caca se esquiva con una plancha a tiempo.
  * Con las velocidades de verdad de la tortuga (las del Blueprint, comprobadas en BP_TortugaCharacter el 2026-10-04: andando
  * 200 cm/s, corriendo 400; la plancha sale a 350 + la velocidad del salto), el blanco (#636):
  *  1. sigue a la tortuga más rápido de lo que anda y más despacio de lo que corre (GullChaseSpeed, 250): andando te pilla;
@@ -37,10 +35,6 @@ namespace TNBeachGullTuning
 	constexpr float DiveClimbTime = 1.f;
 	constexpr float DiveTime = 2.3f;
 
-	/** Gaviota justiciera: llega sobre la víctima y suelta la cagada a StrikeReleaseAge; tarda StrikeFallSeconds en caer. */
-	constexpr float StrikeReleaseAge = 3.2f;
-	constexpr float StrikeFallSeconds = 1.7f;
-
 	// ── Zona de gaviotas: a quién ataca ──
 
 	/** Radio de ataque (cm) = huella de la zona × AttackFootprintScale + AttackRadiusPad (antes: huella + 800). */
@@ -51,12 +45,12 @@ namespace TNBeachGullTuning
 	constexpr float AttackIntervalMin = 4.f;
 	constexpr float AttackIntervalMax = 7.f;
 
-	// ── Persecución del blanco (los tres ataques) ──
+	// ── Persecución del blanco (los dos ataques) ──
 
 	/**
 	 * Velocidad (cm/s) a la que el blanco sigue a la tortuga hasta lanzarse (#636): entre la de andar y la de correr. Andando
 	 * (200) el blanco no se despega de ella; esprintando en línea recta (400) le gana 150 cm/s y al golpe la tiene a 3,8 m
-	 * (picado), 4,3 m (cagada) y 6,2 m (justiciera), más de lo que alcanza el pájaro más grande (3,1 m). Con 300 el picado
+	 * (picado) y 4,3 m (cagada), más de lo que alcanza el pájaro más grande (3,1 m). Con 300 el picado
 	 * aún cogía a los grandes; con 420 (la versión anterior) nadie se despegaba corriendo.
 	 */
 	constexpr float GullChaseSpeed = 250.f;
@@ -90,20 +84,6 @@ namespace TNBeachGullTuning
 	/** Mancha (cm, por el tamaño) y holgura del golpe (cm): antes 280 y 45. La sombra dura crece hasta la mancha. */
 	constexpr float SplatRadius = 200.f;
 	constexpr float SplatPad = 35.f;
-
-	// ── Gaviota justiciera (objeto de carrera, ATN_RaceGullStrike) ──
-
-	/**
-	 * El blanco sigue a la víctima a StrikeChaseSpeed (antes 700 hasta el golpe y 420). Los últimos StrikeCommitSeconds (desde
-	 * justo después de soltarla) la cagada cae por la línea que llevaba la víctima y hacia los lados corrige a
-	 * StrikeLateCorrection.
-	 */
-	constexpr float StrikeChaseSpeed = GullChaseSpeed;
-	constexpr float StrikeCommitSeconds = 1.5f;
-	constexpr float StrikeLateCorrection = 75.f;
-
-	/** Radio del impacto en planta (cm; antes 330). */
-	constexpr float StrikeImpactRadius = 240.f;
 
 	// ── Plancha ──
 
@@ -194,18 +174,10 @@ namespace TNBeachGullTuning
 		return FChasePlan{ Impact - PoopCommitSeconds, Impact, PoopChaseSpeed, PoopLateCorrection };
 	}
 
-	/** Gaviota justiciera (T: segundos desde que nace; cae a StrikeReleaseAge + StrikeFallSeconds). */
-	inline FChasePlan StrikePlan()
-	{
-		const float Impact = StrikeReleaseAge + StrikeFallSeconds;
-		return FChasePlan{ Impact - StrikeCommitSeconds, Impact, StrikeChaseSpeed, StrikeLateCorrection };
-	}
-
 	/** La más rápida de todas (para el suavizado del blanco en los clientes). */
 	constexpr float MaxChaseSpeed()
 	{
-		return DiveChaseSpeed > PoopChaseSpeed ? (DiveChaseSpeed > StrikeChaseSpeed ? DiveChaseSpeed : StrikeChaseSpeed)
-			: (PoopChaseSpeed > StrikeChaseSpeed ? PoopChaseSpeed : StrikeChaseSpeed);
+		return DiveChaseSpeed > PoopChaseSpeed ? DiveChaseSpeed : PoopChaseSpeed;
 	}
 
 	/** El blanco From, hacia Target a MaxSpeed cm/s como mucho durante DeltaSeconds (en planta). */

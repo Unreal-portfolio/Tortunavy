@@ -12,15 +12,14 @@ class APlayerController;
  * Música de fin de partida (victoria, derrota y eliminado) en cada máquina con jugador, para su jugador local: 2D, en
  * un UTN_MusicSynthComponent colgado del PlayerController local (como la música de la tienda). Sin RPC ni cambios en
  * el GameMode: vigila diez veces por segundo los estados que ya se replican (MatchFlowState, CountdownValue y
- * RaceResults del ATN_CoopGameState; ProcMode y RoundTarget del ATN_ProcMapGameState; bHasFinishedRun, bIsEliminated,
- * bIsAlive y RoundWins de los ATN_CoopPlayerState) y aplica lo que decide TNMatchMusic::FDirector
+ * RaceResults del ATN_CoopGameState; bHasFinishedRun, bIsEliminated y bIsAlive de los ATN_CoopPlayerState) y aplica lo que decide TNMatchMusic::FDirector
  * (TN_MatchMusicDirector.h, lógica pura probada fuera del motor).
  *
  * Vive con el mundo (un subsistema por mundo de juego): al empezar a desmontarse el mundo (vuelta al lobby, salida al
  * menú o cualquier otro cambio de mapa) quita su componente del PlayerController, que viaja al mundo nuevo sin él, así
  * que la música se para siempre al cambiar de mapa y la tienda del lobby nunca se la encuentra. Para entonces ya está
  * en silencio: el director funde a silencio en el último segundo de la cuenta atrás de los resultados. En el lobby y
- * en los mapas de transición no suena nada porque el director solo se arma al ver la carrera en marcha.
+ * en los mapas de transición no suena nada porque el director solo se arma al ver la partida en marcha.
  *
  * Pruebas por consola: TN.Music.Play Victory|Defeat|Eliminated|Shop|Booth|None (también en español: Victoria,
  * Derrota, Eliminado, Tienda, Probador, Silencio) y TN.Music.MatchVolume (1 por defecto).
