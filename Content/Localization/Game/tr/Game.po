@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Game\n"
-"POT-Creation-Date: 2026-10-07 14:09\n"
-"PO-Revision-Date: 2026-10-07 14:09\n"
+"POT-Creation-Date: 2026-10-07 14:24\n"
+"PO-Revision-Date: 2026-10-07 14:24\n"
 "Language-Team: \n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -4137,22 +4137,22 @@ msgid "Curandero: {0} ({1} {1}|plural(one=cura,other=curas))"
 msgstr "Şifacı: {0} ({1} {1}|plural(one=iyileştirme,other=iyileştirme))"
 
 #. Key:	PreviewSay
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1009)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1009)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1005)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1005)
 msgctxt "TNHUD,PreviewSay"
 msgid "¡Por aquí, que hay conchas!"
 msgstr "Buraya gel, deniz kabukları burada!"
 
 #. Key:	WheelHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1229)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1229)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1225)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1225)
 msgctxt "TNHUD,WheelHint"
 msgid "Apunta con el ratón"
 msgstr "Fareyle nişan al"
 
 #. Key:	WheelHintPad
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1229)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1229)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1225)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(1225)
 msgctxt "TNHUD,WheelHintPad"
 msgid "Apunta con el stick"
 msgstr "Çubukla nişan al"
@@ -4179,29 +4179,29 @@ msgid "Dando la vuelta a tu compañero..."
 msgstr "Arkadaşını çeviriyorsun..."
 
 #. Key:	Storm
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(731)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(731)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(727)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(727)
 msgctxt "TNHUD,Storm"
 msgid "¡La tormenta te alcanza! ¡Al agua!   {0}"
 msgstr "Fırtına yetişti! Suya!   {0}"
 
 #. Key:	Down
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(743)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(743)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(739)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(739)
 msgctxt "TNHUD,Down"
 msgid "¡Panza arriba!\nUn compañero puede darte la vuelta:  {0} s"
 msgstr "Karnın havada!\nBir takım arkadaşı seni çevirebilir:  {0} sn"
 
 #. Key:	OutTitle
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(802)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(802)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(798)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(798)
 msgctxt "TNHUD,OutTitle"
 msgid "¡Fuera de carrera!"
 msgstr "Yarışın dışında!"
 
 #. Key:	OutHint
-#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(803)
-#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(803)
+#. SourceLocation:	Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(799)
+#: Source/Tortunabo/Private/UI/HUD/TN_RunHUDWidget.cpp(799)
 msgctxt "TNHUD,OutHint"
 msgid "Anima a los demás hasta que lleguen al agua."
 msgstr "Herkes suya varana kadar diğerlerini destekle."
