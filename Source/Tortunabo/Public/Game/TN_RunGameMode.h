@@ -309,12 +309,6 @@ protected:
 	/** @brief Restaura visual, colisión, posesión e input del pawn revivido. Solo se llama cuando Pawn es válido. */
 	void RestorePossessionAfterRevive(APlayerController* PlayerController, APawn* Pawn, const FVector& ReviveTargetLocation, bool bHasReviveTargetLocation);
 
-	/**
-	 * @brief Ronda cerrada sin Results: el RaceScore de cada jugadora va a su perfil antes de que ResetForNewRace lo
-	 *        ponga a 0 (ATN_CoopPlayerState::BankRoundScoreToProfile, #567). Llamar justo antes del reinicio de la ronda.
-	 */
-	void BankRoundScoresToProfiles();
-
 private:
 	/** @brief Quien vuelve antes de que caduque su conexión anterior: la cierra para que su PlayerState quede inactivo. */
 	void DropStaleConnectionOf(const APlayerController* NewPlayer);
