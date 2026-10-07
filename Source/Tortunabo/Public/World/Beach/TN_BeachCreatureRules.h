@@ -40,6 +40,20 @@ namespace TNBeachCreatureRules
 			LastAt = Now;
 		}
 
+		/**
+		 * Como Press, pero ignora la pulsación si llega a menos de MinGap de la última que contó. La usa el servidor con lo
+		 * que manda el cliente: el límite del cliente no basta contra uno modificado (#896). Devuelve si ha contado.
+		 */
+		bool PressAtMostEvery(double Now, float DecayPerSecond, double MinGap)
+		{
+			if (LastAt >= 0.0 && Now - LastAt < MinGap)
+			{
+				return false;
+			}
+			Press(Now, DecayPerSecond);
+			return true;
+		}
+
 		void Reset()
 		{
 			Progress = 0.f;
@@ -50,6 +64,8 @@ namespace TNBeachCreatureRules
 	/** Pulsaciones netas que hacen falta para soltarse y lo que se pierde por segundo. */
 	constexpr float EscapePresses = 6.f;
 	constexpr float EscapeDecay = 1.5f;
+	/** Intervalo mínimo entre dos pulsaciones de forcejeo (12 por segundo como mucho), en el cliente y en el servidor. */
+	constexpr double EscapeMinPressGap = 1.0 / 12.0;
 
 	inline bool HasEscaped(const FMashCounter& Counter, double Now, float Required = EscapePresses, float Decay = EscapeDecay)
 	{

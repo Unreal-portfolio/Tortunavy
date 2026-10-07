@@ -16,8 +16,8 @@ namespace TNBeachTrapStatusDetail
 {
 	/** Tope de seguridad de una atrapada (s): si quien la atrapó no la suelta, la suelta el componente. */
 	constexpr float MaxTrappedSeconds = 8.f;
-	/** Pulsaciones de forcejeo que el dueño manda como mucho por segundo. */
-	constexpr double MinPressGap = 1.0 / 12.0;
+	/** Pulsaciones de forcejeo que el dueño manda como mucho por segundo (el servidor aplica el mismo límite). */
+	constexpr double MinPressGap = TNBeachCreatureRules::EscapeMinPressGap;
 }
 
 UTN_BeachTrapStatusComponent::UTN_BeachTrapStatusComponent()
@@ -383,9 +383,10 @@ void UTN_BeachTrapStatusComponent::PressEscape()
 
 void UTN_BeachTrapStatusComponent::ServerEscapePress_Implementation()
 {
+	// El cliente ya limita la frecuencia, pero uno modificado se soltaría al instante: el servidor ignora las seguidas (#896).
 	if (bEscapeArmed)
 	{
-		Mash.Press(ServerNowSeconds(), TNBeachCreatureRules::EscapeDecay);
+		Mash.PressAtMostEvery(ServerNowSeconds(), TNBeachCreatureRules::EscapeDecay, TNBeachTrapStatusDetail::MinPressGap);
 	}
 }
 
