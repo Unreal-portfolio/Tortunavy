@@ -13,13 +13,8 @@ class UStaticMeshComponent;
 /**
  * Erizos checos con comportamiento (#688, Excel_DayT «Erizos checos»): la colisión bloquea el paso y chocar deprisa
  * (corriendo o rodando en bola) rebota y derriba; andando solo bloquea (TNBeachCreatureRules::TankTrap). Sin daño.
- * A pie, derribo con ragdoll; en bola, rebote y mareo dentro del caparazón.
- *
- * Dos usos:
- *  - Vigilante de la carrera (SpawnGuard): los erizos antitanque de la ronda son decorado instanciado con su colisión
- *    (ATN_BeachDecorField); un único vigilante del servidor, sin réplica ni malla, conoce sus sitios y aplica el choque.
- *  - Erizo suelto de Supervivencia (SpawnStandalone): replicado, con su malla de tres vigas cruzadas y su colisión, y el
- *    choque sobre su propio sitio.
+ * A pie, derribo con ragdoll; en bola, rebote y mareo dentro del caparazón. Replicado, con su malla de tres vigas
+ * cruzadas y su colisión, y el choque sobre su propio sitio (se crea con ATN_BeachElement::SpawnElement).
  */
 UCLASS()
 class TORTUNABO_API ATN_BeachTankTrap : public ATN_BeachElement
@@ -30,13 +25,7 @@ public:
 	ATN_BeachTankTrap();
 
 	virtual void Tick(float DeltaSeconds) override;
-	virtual float GetTickWakeDistance() const override { return bGuard ? 0.f : 6000.f; }
-
-	/** Servidor: el vigilante de los erizos de la ronda (Spots: X, Y, Z del suelo y radio de choque en W). */
-	static ATN_BeachTankTrap* SpawnGuard(UWorld* World, const TArray<FVector4>& Spots);
-
-	/** Servidor: un erizo suelto de radio Radius (cm) en Transform. */
-	static ATN_BeachTankTrap* SpawnStandalone(UWorld* World, const FTransform& Transform, float Radius);
+	virtual float GetTickWakeDistance() const override { return 6000.f; }
 
 	/** Velocidad (cm/s) hacia el erizo desde la que derriba, segundos de derribo y rebote. */
 	UPROPERTY(EditAnywhere, Category = "Erizo checo")
@@ -88,11 +77,8 @@ private:
 	/** Servidor: el rebote y el derribo que tocan a Who (Dir: de Who hacia el erizo, plana). */
 	void ApplyResponse(const FImpactor& Who, TNBeachCreatureRules::TankTrap::EResponse Response, const FVector& Dir);
 
-	bool bGuard = false;
-	/** Sitios vigilados (X, Y, Z, radio). En el suelto, el suyo. */
-	TArray<FVector4> Spots;
 	/** Velocidad horizontal del paso anterior (la colisión la anula en el paso del choque). */
 	TMap<TWeakObjectPtr<AActor>, FVector> LastVelocity;
 	TMap<TWeakObjectPtr<AActor>, double> CooldownUntil;
-	float StandaloneRadius = 140.f;
+	float HogRadius = 140.f;
 };

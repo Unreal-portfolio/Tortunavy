@@ -2,7 +2,6 @@
 
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Core/TN_Log.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_ShellBody.h"
@@ -59,61 +58,12 @@ ATN_BeachTankTrap::ATN_BeachTankTrap()
 	TNBeachTrapKit::ConfigureSolid(HogCollision, false);
 }
 
-ATN_BeachTankTrap* ATN_BeachTankTrap::SpawnGuard(UWorld* World, const TArray<FVector4>& InSpots)
-{
-	if (!World || InSpots.Num() == 0)
-	{
-		return nullptr;
-	}
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	Params.bDeferConstruction = true;
-	ATN_BeachTankTrap* Guard = World->SpawnActor<ATN_BeachTankTrap>(ATN_BeachTankTrap::StaticClass(), FTransform::Identity, Params);
-	if (!Guard)
-	{
-		return nullptr;
-	}
-	// Solo del servidor: ni malla ni réplica (el decorado de los erizos ya lo monta cada máquina).
-	Guard->bGuard = true;
-	Guard->Spots = InSpots;
-	Guard->Spec.Element = ETNBeachElement::TankTrap;
-	Guard->SetReplicates(false);
-	Guard->FinishSpawning(FTransform::Identity);
-	UE_LOG(LogTortunabo, Log, TEXT("[Playa] Erizos checos: vigilante con %d erizos."), InSpots.Num());
-	return Guard;
-}
-
-ATN_BeachTankTrap* ATN_BeachTankTrap::SpawnStandalone(UWorld* World, const FTransform& Transform, float Radius)
-{
-	if (!World)
-	{
-		return nullptr;
-	}
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	Params.bDeferConstruction = true;
-	ATN_BeachTankTrap* Hog = World->SpawnActor<ATN_BeachTankTrap>(ATN_BeachTankTrap::StaticClass(), Transform, Params);
-	if (!Hog)
-	{
-		return nullptr;
-	}
-	Hog->Spec.Element = ETNBeachElement::TankTrap;
-	Hog->Spec.SizeScale = static_cast<float>(Radius / TNBeach::FootprintRadius(ETNBeachElement::TankTrap));
-	Hog->ApplyRoundNetProfile();
-	Hog->FinishSpawning(Transform);
-	return Hog;
-}
-
 void ATN_BeachTankTrap::ApplySpec()
 {
-	if (bGuard)
-	{
-		return;
-	}
-	StandaloneRadius = static_cast<float>(TNBeachTrapKit::FitRadius(Spec.Element, Spec.SizeScale));
+	HogRadius = static_cast<float>(TNBeachTrapKit::FitRadius(Spec.Element, Spec.SizeScale));
 	TNBeachTrapKit::FBuffers B;
 	TNBeachTrapKit::FHulls Hulls;
-	TNBeachTankTrapDetail::BuildHog(B, Hulls, StandaloneRadius);
+	TNBeachTankTrapDetail::BuildHog(B, Hulls, HogRadius);
 	TNBeachTrapKit::SetMesh(HogMesh, this, B);
 	HogCollision->SetCollisionConvexMeshes(Hulls);
 }
@@ -131,18 +81,8 @@ void ATN_BeachTankTrap::Tick(float DeltaSeconds)
 	GatherImpactors(Impactors);
 	for (const FImpactor& Who : Impactors)
 	{
-		if (bGuard)
-		{
-			for (const FVector4& Spot : Spots)
-			{
-				CheckImpact(Who, FVector(Spot.X, Spot.Y, Spot.Z), static_cast<float>(Spot.W), Now);
-			}
-		}
-		else
-		{
-			// La colisión es de las vigas: el choque cuenta en la mitad de su largo.
-			CheckImpact(Who, GetActorLocation(), StandaloneRadius * 0.55f, Now);
-		}
+		// La colisión es de las vigas: el choque cuenta en la mitad de su largo.
+		CheckImpact(Who, GetActorLocation(), HogRadius * 0.55f, Now);
 		LastVelocity.Add(Who.Actor, Who.Velocity);
 	}
 }
@@ -211,14 +151,7 @@ void ATN_BeachTankTrap::CheckImpact(const FImpactor& Who, const FVector& Center,
 	}
 	CooldownUntil.Add(Who.Actor, Now + TNBeachTankTrapDetail::CooldownSeconds);
 	ApplyResponse(Who, Response, Dir);
-	if (!bGuard)
-	{
-		MulticastClang(Who.Location);
-	}
-	else if (ClangSound)
-	{
-		UGameplayStatics::SpawnSoundAtLocation(this, ClangSound, Who.Location);
-	}
+	MulticastClang(Who.Location);
 }
 
 void ATN_BeachTankTrap::ApplyResponse(const FImpactor& Who, TNBeachCreatureRules::TankTrap::EResponse Response, const FVector& Dir)

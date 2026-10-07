@@ -67,9 +67,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PressurePlate")
 	void ResetLatch();
 
-	/** Cambia el modo desde código antes de que nadie la pise (las placas del atajo de Supervivencia van en Latched, #517). */
-	void SetMode(EPressurePlateMode InMode) { Mode = InMode; }
-
 	/** Delegate servidor-only para que el GroupManager escuche cambios. */
 	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnOccupancyChanged, ATN_PressurePlate*, bool);
 	FOnOccupancyChanged OnOccupancyChanged;

@@ -33,10 +33,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/** Zona creada desde código (mapa de Supervivencia, #516): semiejes del volumen, cangrejos que salen y clase
-	 * por defecto si el Blueprint no trae una. */
-	void ConfigureZone(const FVector& Extent, int32 Count, TSubclassOf<ATN_CrabActor> FallbackClass);
-
 protected:
 	/** Volumen de proximidad. Cuando un jugador entra, se spawnea el cangrejo. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrabSpawnZone")
