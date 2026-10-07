@@ -91,6 +91,8 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	bAlwaysRelevant = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 360.f, 0.f);
+	// Salto de la hoja Stats (#856): 485 cm/s con la gravedad de serie (980) da 1,2 m de alto y 0,99 s en el aire.
+	GetCharacterMovement()->JumpZVelocity = 485.f;
 	GetCharacterMovement()->NetworkSmoothingMode = ENetworkSmoothingMode::Exponential;
 
 	// bEnablePhysicsInteraction habilita PushForceFactor/TouchForceFactor sobre rigid bodies

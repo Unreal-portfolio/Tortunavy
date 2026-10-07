@@ -186,8 +186,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Weight", meta = (ClampMin = "0.0"))
 	float StaminaPerWeightUnit = 20.0f;
 
+	/** Estamina por segundo corriendo: 200 / 20 = 10 s de carrera sin peso (hoja Stats, #856; TNTurtleStats). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stamina", meta = (ClampMin = "0.0"))
-	float SprintDrainPerSecond = 15.0f;
+	float SprintDrainPerSecond = 20.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stamina", meta = (ClampMin = "0.0"))
 	float RechargeDelaySeconds = 0.8f;
@@ -223,10 +224,10 @@ protected:
 	float PostBoostDrainMultiplier = 2.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stamina|Movement", meta = (ClampMin = "0.0"))
-	float WalkSpeed = 450.0f;
+	float WalkSpeed = 200.0f; // 2 m/s andando (hoja Stats, #856)
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stamina|Movement", meta = (ClampMin = "0.0"))
-	float SprintSpeed = 800.0f;
+	float SprintSpeed = 400.0f; // 4 m/s corriendo (hoja Stats, #856)
 
 private:
 	/** @brief Server RPC: aplica stamina ilimitada del lado servidor. */
