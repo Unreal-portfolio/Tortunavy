@@ -5,6 +5,7 @@
 #include "Core/TN_Log.h"
 #include "Core/TN_InventoryTypes.h"
 #include "Player/TN_CarryComponent.h"
+#include "Player/TN_FlipperSlapComponent.h"
 #include "Player/TN_InventoryComponent.h"
 #include "World/TN_InteractableBase.h"
 #include "VR/TN_VRGrabComponent.h"
@@ -18,6 +19,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 
 void ATortugaCharacter::SetVRView(bool bOn, bool bHeadset)
@@ -155,6 +157,28 @@ void ATortugaCharacter::UpdateVRHeadCalibration(float DeltaTime)
 	{
 		UE_LOG(LogTortunabo, Log, TEXT("[VR] %s: cabeza calibrada, las gafas estaban a %s del origen del seguimiento."), *GetName(),
 			*DevicePosition.ToCompactString());
+	}
+	// Agachar la cabeza (#918): solo con la cabeza calibrada y las gafas puestas; si no, se vuelve a medir.
+	if (VRHeadCalibration.bValid && Worn != EHMDWornState::NotWorn)
+	{
+		UpdateVRDuckGesture(static_cast<float>(DevicePosition.Z), DeltaTime);
+	}
+	else
+	{
+		VRDuck.Reset();
+	}
+}
+
+void ATortugaCharacter::UpdateVRDuckGesture(float HeadHeight, float DeltaTime)
+{
+	const APlayerController* PC = Cast<APlayerController>(Controller);
+	// Con un menú delante (cursor) o sin poder meterse en el caparazón (derribada, llevando...), no cuenta: ToggleShell filtra
+	// el resto. El detector sigue midiendo para no disparar al cerrar el menú con la cabeza ya agachada.
+	const bool bDucked = VRDuck.Step(HeadHeight, DeltaTime);
+	if (bDucked && PC && !PC->ShouldShowMouseCursor() && IsLocallyControlled())
+	{
+		UE_LOG(LogTortunabo, Log, TEXT("[VR] %s: agacha la cabeza, %s el caparazón."), *GetName(), IsInShell() ? TEXT("sale del") : TEXT("entra en el"));
+		ToggleShell();
 	}
 }
 
@@ -479,6 +503,20 @@ ATortugaCharacter::EVRGrip ATortugaCharacter::VRGripPressed(bool bRight, const F
 		}
 	}
 	return EVRGrip::None;
+}
+
+bool ATortugaCharacter::VRSlapGesture(const FVector& HandVelocity)
+{
+	// Como el botón (TryInteract): solo con las aletas vacías; el resto de condiciones las pone CanSlap.
+	if (!IsLocallyControlled() || !bVRViewActive || !FlipperSlap || !InventoryComponent || InventoryComponent->HasEquippedItem()
+		|| (CarryComponent && CarryComponent->IsCarrying()))
+	{
+		return false;
+	}
+	// El golpe sale hacia donde va la mano (en horizontal; llega al servidor antes que el golpe).
+	SetLocalVRAim(HandVelocity.Rotation(), true);
+	SendVRAimToServer();
+	return FlipperSlap->TrySlap();
 }
 
 void ATortugaCharacter::VRGripReleased(EVRGrip Held, const FVector& HandVelocity)

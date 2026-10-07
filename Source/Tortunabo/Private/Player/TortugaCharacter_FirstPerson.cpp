@@ -236,7 +236,7 @@ void ATortugaCharacter::OnRep_FirstPersonPlayer()
 FVector ATortugaCharacter::ComputeFirstPersonEye(bool bHeadsetStable) const
 {
 	using namespace TNFirstPersonDetail;
-	const FVector Stable = GetActorLocation() + VREyeOffset;
+	const FVector Stable = GetActorLocation() + FRotator(0.0, GetActorRotation().Yaw, 0.0).RotateVector(VREyeOffset);
 	const USkeletalMeshComponent* Body = GetMesh();
 	if (!Body)
 	{
@@ -386,8 +386,9 @@ void ATortugaCharacter::TickFirstPersonView(float DeltaTime)
 	const FVector WantedOffset = Eye - GetActorLocation();
 	const USkeletalMeshComponent* Body = GetMesh();
 	const bool bRagdoll = bIsKnockedDown || bIsDead || (Body && Body->IsSimulatingPhysics());
-	if (!bFirstPersonEyeValid || DeltaTime <= 0.f)
+	if (!bFirstPersonEyeValid || DeltaTime <= 0.f || (bHeadsetStable && !bRagdoll && !bInShell))
 	{
+		// Con gafas y de pie el punto de los ojos gira con la tortuga (#918): sin suavizar, que quedaría atrás al girar.
 		FirstPersonEyeOffset = WantedOffset;
 		bFirstPersonEyeValid = true;
 	}

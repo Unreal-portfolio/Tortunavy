@@ -208,6 +208,16 @@ Piezas: `UTN_VRSeatComponent` (`VR/TN_VRSeatComponent.*`), `TNVRVehicle` (`VR/TN
 `TNBuggyTurretMesh::BuildHandles` y los botones Touch en `UTN_BuggyInputSet` y `UTN_KartInputSet`. El rig quita sus mandos
 de la tortuga (`IMC_VR`) mientras se va sentada.
 
+## Gestos físicos (con gafas, #918)
+
+Los botones siguen funcionando; estos gestos son un extra. Las cuentas están en `VR/TN_VRGestures.h` (`Tortunabo.VR.Gestures`).
+
+- **Guantazo**: mover la **mano derecha de lado a lado** muy deprisa (más de 420 cm/s respecto del cuerpo, al menos el 70 % de lado) da el guantazo de la aleta (#832) con la mano abierta y sin objeto. Sale hacia donde va la mano y lo decide el servidor como con el botón. Enfriamiento de 0,8 s; justo después de soltar un agarre no cuenta.
+- **Lanzar**: ya era con el movimiento del brazo (ver «Coger y lanzar»).
+- **Volante** del Rally y de los karts: ya se agarra con el agarre (una o dos manos) y se gira (ver «Vehículos»).
+- **Caparazón**: **agachar la cabeza** 28 cm (rápido, desde la altura de siempre) mete o saca del caparazón, como B. Sentarse o encogerse poco a poco no cuenta; el menú abierto, tampoco. Log: `agacha la cabeza`.
+- **Cabeza adelantada**: con gafas, el cuello va 14° hacia delante y la cabeza 10° enderezada (todas las máquinas), y `VREyeOffset` es (24, 0, 43), girado con la tortuga: los ojos de la malla, con la lengua unos 10 cm delante y 10 debajo, como la propia. Si marea al girar la cabeza (la tortuga gira alrededor de su cápsula), bajar la X de `VREyeOffset`.
+
 ## Coger y lanzar (con gafas)
 
 Todo se decide por la mano que aprieta el agarre, no por el cuerpo (`ATortugaCharacter::VRGripPressed` y

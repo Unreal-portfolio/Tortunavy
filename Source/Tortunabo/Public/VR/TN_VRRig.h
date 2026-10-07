@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "VR/TN_VRMode.h"
+#include "VR/TN_VRGestures.h"
 #include "VR/TN_VRHandMath.h"
 #include "TN_VRRig.generated.h"
 
@@ -260,6 +261,8 @@ private:
 	/** Sin poder usar las manos (menú, rueda, derribo, caparazón): suelta lo cogido con física y acaba la interacción de
 	 *  mantener, sin lanzar ni dejar caer lo que lleva en la aleta ni al compañero. */
 	void CancelGrip(int32 Hand, ATortugaCharacter* Turtle);
+	/** Gestos físicos (#918): la mano derecha de lado a lado muy deprisa da el guantazo (TNVRGestures::FSlapGesture). */
+	void UpdateGestures(APlayerController* PC, ATortugaCharacter* Turtle, float DeltaSeconds);
 	/** Botones e interruptores pulsados con la punta de la aleta (sin apretar el agarre). */
 	void UpdatePoke(int32 Hand, ATortugaCharacter* Turtle, const FVector& Tip, float DeltaSeconds);
 	/** Velocidad de la mano respecto del origen de la vista (ventana de TNVRHands::FHandVelocityWindow). */
@@ -300,6 +303,7 @@ private:
 	FVector HandVelocity[2] = { FVector::ZeroVector, FVector::ZeroVector };
 	TNVRHands::FHandVelocityWindow HandVelocityWindow[2];
 	TNVRHands::FPokeState PokeState[2];
+	TNVRGestures::FSlapGesture SlapGesture;
 
 	bool bPrevGrabPointValid[2] = { false, false };
 	/** Mano parada por el escenario (para vibrar al empezar a tocarlo). */
