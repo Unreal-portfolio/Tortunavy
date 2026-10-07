@@ -13,7 +13,7 @@ class UStaticMeshComponent;
 /**
  * Montón de basura (ETNBeachElement::TrashPile, #690, Excel_DayT «Basura»): latas, bolsas, botellas y cajas apiladas
  * que bloquean un poco el paso. Correr contra él hace tropezar (derribo corto); un golpe lo rompe y deja paso: un objeto
- * lanzado o una bola de caparazón deprisa (TNBeachCreatureRules::TrashPile). Sin daño.
+ * lanzado, una bola de caparazón deprisa o un guantazo (#871; TNBeachCreatureRules::TrashPile). Sin daño.
  *
  * Es un enemigo quieto (ATN_BeachEnemy sin movimiento) solo para recibir los golpes de lo que se lanza por el mismo
  * camino que los enemigos (ApplyHitStun desde ATN_ThrowableItemActor y las bolas de caparazón). Red: bBroken replicado;

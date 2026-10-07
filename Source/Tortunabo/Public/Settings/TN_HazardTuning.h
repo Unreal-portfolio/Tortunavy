@@ -95,6 +95,10 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Obstáculos")
 	FTNHazardEffect TankTrap;
 
+	/** Algas (ATN_BeachSeaweed): guantazos que las cortan (la hoja: de un golpe). */
+	UPROPERTY(Config, EditAnywhere, Category = "Obstáculos", meta = (ClampMin = "1"))
+	int32 SeaweedHitsToCut = 1;
+
 	/** Anélido poliqueto (ATN_ProcAnnelid): vida que cura al cazarlo. */
 	UPROPERTY(Config, EditAnywhere, Category = "Aliados", meta = (ClampMin = "0"))
 	float AnnelidHeal = 25.f;

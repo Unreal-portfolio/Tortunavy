@@ -8,6 +8,7 @@
 #include "GameFramework/WorldSettings.h"
 #include "Player/TN_VitalsComponent.h"
 #include "Player/TortugaCharacter.h"
+#include "World/Beach/TN_BeachSeaweed.h"
 #include "World/TN_HazardEffects.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -178,6 +179,33 @@ bool FTNHazardApplyTest::RunTest(const FString& Parameters)
 	TNHazard::Apply(T.BurrowCrab, Turtle, nullptr);
 	TestTrue(TEXT("Otra pinza la deja a cero y pide la muerte como cangrejo"),
 		Vitals->IsDepleted() && Vitals->GetDepletionCause() == ETNDeathCause::Crab);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNHazardSeaweedCutTest,
+	"Tortunabo.Hazards.SeaweedCut",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNHazardSeaweedCutTest::RunTest(const FString& Parameters)
+{
+	TestTrue(TEXT("Con los golpes de la hoja, cortadas"), TNHazard::SeaweedCut(UTN_HazardTuning::Get().SeaweedHitsToCut, UTN_HazardTuning::Get().SeaweedHitsToCut));
+	TestFalse(TEXT("Sin golpes, no"), TNHazard::SeaweedCut(0, 1));
+	TestTrue(TEXT("Un tope de cero se trata como uno"), TNHazard::SeaweedCut(1, 0));
+
+	TNHazardTest::FHazardWorld Play;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ATN_BeachSeaweed* Seaweed = Play.World->SpawnActor<ATN_BeachSeaweed>(ATN_BeachSeaweed::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	if (!TestNotNull(TEXT("Algas"), Seaweed))
+	{
+		return false;
+	}
+	// Caso negativo: un guantazo lejos no las toca.
+	TestFalse(TEXT("Un guantazo a 20 m no les da"), Seaweed->ServerHitBySlap(FVector(2000.0, 0.0, 0.0), FVector(2100.0, 0.0, 0.0)));
+	TestFalse(TEXT("Siguen enteras"), Seaweed->IsCut());
+	TestTrue(TEXT("Un guantazo encima les da"), Seaweed->ServerHitBySlap(FVector(0.0, 0.0, 30.0), FVector(100.0, 0.0, 30.0)));
+	TestTrue(TEXT("Cortadas de un golpe"), Seaweed->IsCut());
+	TestFalse(TEXT("Ya cortadas, otro guantazo no cuenta"), Seaweed->ServerHitBySlap(FVector(0.0, 0.0, 30.0), FVector(100.0, 0.0, 30.0)));
 	return true;
 }
 

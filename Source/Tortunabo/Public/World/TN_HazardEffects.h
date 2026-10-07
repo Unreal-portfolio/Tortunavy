@@ -62,6 +62,12 @@ namespace TNHazard
 		return End == EDragEnd::Distance || End == EDragEnd::Unsafe;
 	}
 
+	/** Algas: con Hits golpes ya están cortadas (HitsToCut, como mínimo uno). */
+	inline bool SeaweedCut(int32 Hits, int32 HitsToCut)
+	{
+		return Hits >= FMath::Max(1, HitsToCut);
+	}
+
 	/** Servidor: aplica Effect a la tortuga Turtle de parte de Source. Nada en clientes ni con tortugas que no lo son. */
 	TORTUNABO_API void Apply(const FTNHazardEffect& Effect, ACharacter* Turtle, AActor* Source);
 
