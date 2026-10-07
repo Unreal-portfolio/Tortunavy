@@ -14,6 +14,7 @@
 #include "ProcMap/TN_ProcMapFloraMeshes.h"
 #include "ProcMap/TN_ProcMapPropMeshes.h"
 #include "ProcMap/TN_ProcMapRuntimeMesh.h"
+#include "ProcMap/TN_TctPropMeshes.h"
 #include "Game/TN_TctGameState.h"
 
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -21,6 +22,8 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
+#include "Engine/CollisionProfile.h"
+#include "UObject/UObjectGlobals.h"
 #include "Misc/Crc.h"
 
 namespace TNTctSceneryActorDetail
@@ -98,6 +101,7 @@ bool ATN_TctScenery::Build(ATN_TctArena* Arena, uint32 Seed, const TArray<TNTctS
 	const double Planned = FPlatformTime::Seconds();
 
 	BuildDecor();
+	BuildStructures();
 	const bool bVisuals = World->GetNetMode() != NM_DedicatedServer;
 	if (bVisuals)
 	{
@@ -105,8 +109,8 @@ bool ATN_TctScenery::Build(ATN_TctArena* Arena, uint32 Seed, const TArray<TNTctS
 		BuildFauna(Arena, Seed, KeepOuts, WaterBaseZ);
 	}
 	// La huella de lo que tiene colisión es la misma en el servidor y en cada cliente: el log de las dos máquinas se compara.
-	UE_LOG(LogTortunabo, Log, TEXT("[TcT] Decorado de «%s» (semilla %08X): %d piezas con colisión (huella %08X), %d plantas, %d animales; reparto %.0f ms, montaje %.0f ms."),
-		*Arena->GetArenaVariant().ToString(), Seed, Plan.Decor.Num(), Plan.Fingerprint, NumFlora, GetNumAnimals(),
+	UE_LOG(LogTortunabo, Log, TEXT("[TcT] Decorado de «%s» (semilla %08X): %d piezas y %d estructuras con colisión (huella %08X), %d plantas, %d animales; reparto %.0f ms, montaje %.0f ms."),
+		*Arena->GetArenaVariant().ToString(), Seed, Plan.Decor.Num(), Plan.Structures.Num(), Plan.Fingerprint, NumFlora, GetNumAnimals(),
 		(Planned - Start) * 1000.0, (FPlatformTime::Seconds() - Planned) * 1000.0);
 	return true;
 }
@@ -121,7 +125,7 @@ void ATN_TctScenery::BuildFlora(float WaterBaseZ)
 		return;
 	}
 	TArray<FFloraSpecies> Tables[NumBiomes];
-	for (int32 B = 0; B < NumBiomes; ++B) { FloraSpeciesFor(BiomeFromIndex(B), Tables[B]); }
+	for (int32 B = 0; B < NumBiomes; ++B) { TNTctScenery::SpeciesFor(BiomeFromIndex(B), Tables[B]); }
 
 	// Transformadas por malla (bioma, especie, variante), como el generador del mapa.
 	TMap<int32, TArray<FTransform>> ByMesh;
@@ -232,6 +236,55 @@ void ATN_TctScenery::BuildDecor()
 	DecorField->BeginBuildPlaced(Items, Placements, 1);
 	int32 Steps = 0;
 	while (!DecorField->StepBuild(TNTctSceneryActorDetail::DecorStepBudget) && ++Steps < TNTctSceneryActorDetail::DecorMaxSteps) {}
+}
+
+void ATN_TctScenery::BuildStructures()
+{
+	using namespace TNTctMesh;
+	if (Plan.Structures.Num() == 0)
+	{
+		return;
+	}
+	// Una malla por tipo y variante (con una caja de colisión), todas las instancias de cada una en un HISM.
+	TMap<int32, TArray<FTransform>> ByMesh;
+	for (const TNTctScenery::FStructurePick& Pick : Plan.Structures)
+	{
+		const int32 Key = static_cast<int32>(Pick.Kind) * 4 + Pick.Variant;
+		ByMesh.FindOrAdd(Key).Add(FTransform(FRotator(0.0, Pick.YawDeg, 0.0), Pick.Location, FVector(Pick.Scale)));
+	}
+	UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, TNTctSceneryActorDetail::FoliageMaterialPath);
+	if (!Material) { Material = TNMaterials::VertexColor(); }
+	for (TPair<int32, TArray<FTransform>>& Entry : ByMesh)
+	{
+		const TNTctScenery::EStructureKind Kind = static_cast<TNTctScenery::EStructureKind>(Entry.Key / 4);
+		const int32 Variant = Entry.Key % 4;
+		TNProcMesh::FTNProcMeshBuffers Buffers;
+		const uint32 MeshSeed = TNProcMap::HashCell(0x920A5Au, Entry.Key, Plan.Structures.Num());
+		if (Kind == TNTctScenery::EStructureKind::Hut) { BuildHut(Buffers, Variant, MeshSeed); }
+		else { BuildWreck(Buffers, Variant, MeshSeed); }
+		// La paleta de los props es la de las mallas procedurales: se decodifica una vez más, como en el generador.
+		for (FLinearColor& Col : Buffers.Colors)
+		{
+			Col = FLinearColor(TNProcRuntimeMesh::SRGBToLinear(Col.R), TNProcRuntimeMesh::SRGBToLinear(Col.G), TNProcRuntimeMesh::SRGBToLinear(Col.B), Col.A);
+		}
+		UStaticMesh* Mesh = TNProcRuntimeMesh::MakeStaticMesh(this, Buffers, Material, true);
+		if (!Mesh) { continue; }
+		Meshes.Add(Mesh);
+		UHierarchicalInstancedStaticMeshComponent* Comp = NewObject<UHierarchicalInstancedStaticMeshComponent>(this, NAME_None, RF_Transient);
+		Comp->SetupAttachment(RootComponent);
+		Comp->SetStaticMesh(Mesh);
+		// Con colisión: lo grande se rodea. Igual en el servidor y en cada cliente.
+		Comp->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+		Comp->SetCanEverAffectNavigation(false);
+		Comp->SetGenerateOverlapEvents(false);
+		Comp->bAffectDistanceFieldLighting = false;
+		Comp->bEvaluateWorldPositionOffset = false;
+		Comp->SetCullDistances(9000, 14000);
+		Comp->RegisterComponent();
+		Comp->AddInstances(Entry.Value, false, false);
+		Instances.Add(Comp);
+		NumStructures += Entry.Value.Num();
+	}
 }
 
 void ATN_TctScenery::BuildFauna(ATN_TctArena* Arena, uint32 Seed, const TArray<TNTctScenery::FKeepOut>& KeepOuts, float WaterBaseZ)

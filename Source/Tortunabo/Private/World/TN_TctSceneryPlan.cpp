@@ -7,7 +7,12 @@
 namespace TNTctSceneryDetail
 {
 	/** Casilla del decorado con colisión (uu): una pieza posible por casilla. */
-	constexpr double DecorCell = 2600.0;
+	constexpr double DecorCell = 2000.0;
+	/** Casilla de las estructuras con colisión (casetas, barcos varados) y distancia libre entre una estructura y el decorado (uu). */
+	constexpr double StructureCell = 2400.0;
+	constexpr double StructureGap = 400.0;
+	/** Las especies de una tabla de plantas no pasan de esto (PlaceFloraRows). */
+	constexpr int32 MaxSpecies = 24;
 	/** Distancia libre entre dos piezas con colisión (uu): un paso de tortuga de sobra. */
 	constexpr double DecorGap = 500.0;
 	/** Casilla mala: inclinación mayor que esta (rampas, taludes) o borde de un piso. */
@@ -225,15 +230,90 @@ TArray<ETNBeachElement> TNTctScenery::DecorElementsFor(ETNProcBiome Biome)
 {
 	switch (Biome)
 	{
-	case ETNProcBiome::Beach:    return { ETNBeachElement::Rock, ETNBeachElement::SandCastleSmall, ETNBeachElement::Driftwood, ETNBeachElement::Rock };
-	case ETNProcBiome::Jungle:   return { ETNBeachElement::MossyLog, ETNBeachElement::Rock, ETNBeachElement::MossyLog };
-	case ETNProcBiome::Mangrove: return { ETNBeachElement::MossyLog, ETNBeachElement::Driftwood, ETNBeachElement::Rock };
-	case ETNProcBiome::Water:    return { ETNBeachElement::MossyLog, ETNBeachElement::Rock, ETNBeachElement::Driftwood };
+	case ETNProcBiome::Beach:
+		return { ETNBeachElement::Rock, ETNBeachElement::SandCastleSmall, ETNBeachElement::Driftwood, ETNBeachElement::PlantedUmbrella,
+			ETNBeachElement::Buoy, ETNBeachElement::OldPlanks, ETNBeachElement::FishingNet, ETNBeachElement::BeachChair,
+			ETNBeachElement::Rock, ETNBeachElement::SandCastleSmall };
+	case ETNProcBiome::Jungle:   return { ETNBeachElement::MossyLog, ETNBeachElement::Rock, ETNBeachElement::MossyLog, ETNBeachElement::OldPlanks };
+	case ETNProcBiome::Mangrove: return { ETNBeachElement::MossyLog, ETNBeachElement::Driftwood, ETNBeachElement::Rock, ETNBeachElement::OldPlanks, ETNBeachElement::Buoy };
+	case ETNProcBiome::Water:    return { ETNBeachElement::MossyLog, ETNBeachElement::Rock, ETNBeachElement::Driftwood, ETNBeachElement::Buoy };
 	case ETNProcBiome::Desert:
 	case ETNProcBiome::Rocky:
 	case ETNProcBiome::Volcanic: return { ETNBeachElement::Rock, ETNBeachElement::Rock, ETNBeachElement::RockCluster };
 	default:                     return { ETNBeachElement::Sandbags, ETNBeachElement::AmmoCrate, ETNBeachElement::TankTrap, ETNBeachElement::BeachChair };
 	}
+}
+
+double TNTctScenery::StructureRadius(EStructureKind Kind)
+{
+	return Kind == EStructureKind::Hut ? 260.0 : 240.0;
+}
+
+void TNTctScenery::SpeciesFor(ETNProcBiome Biome, TArray<TNProcMap::FFloraSpecies>& Out)
+{
+	using namespace TNProcMap;
+	using EP = EFloraPatch;
+	FloraSpeciesFor(Biome, Out);
+	constexpr uint8 L = FloraZone::Land;
+	constexpr uint8 Sh = FloraZone::Shore;
+	constexpr uint8 W = FloraZone::Shallows;
+	constexpr double Far = 1e9;
+	auto Add = [&Out](EFloraShape Shape, uint8 Pass, uint8 Zones, double Density, double S0, double S1, double Skew, double Slope,
+		double Edge0, double Edge1, double Patch, EP Kind, double Foot, double Lean, EPropKind Prop = EPropKind::Crate)
+	{
+		if (Out.Num() >= TNTctSceneryDetail::MaxSpecies)
+		{
+			return;
+		}
+		FFloraSpecies S;
+		S.Shape = Shape; S.Pass = Pass; S.Zones = Zones; S.Density = Density;
+		S.ScaleMin = S0; S.ScaleMax = S1; S.ScaleSkew = Skew; S.SlopeMax = Slope;
+		S.EdgeMin = Edge0; S.EdgeMax = Edge1; S.Patch = Patch; S.PatchKind = Kind; S.Footprint = Foot; S.Lean = Lean;
+		S.Prop = Prop;
+		Out.Add(S);
+	};
+	auto AddProp = [&Add](EPropKind Kind, double Density, double Edge0, double Edge1, double Patch, uint8 Zones, double Slope, double Foot)
+	{
+		Add(EFloraShape::Prop, 1, Zones, Density, 0.85, 1.2, 1.0, Slope, Edge0, Edge1, Patch, EP::Camp, Foot, 0.0, Kind);
+	};
+	switch (Biome)
+	{
+	case ETNProcBiome::Beach:
+		// Más palmeras sueltas, arbustos, algas en la orilla y cosas de playa: sombrillas, boyas y madera a la deriva.
+		Add(EFloraShape::Palm, 0, L, 0.55, 0.6, 1.5, 1.2, 32.0, 300.0, Far, 0.0, EP::None, 30.0, 0.12);
+		Add(EFloraShape::Bush, 1, L, 2.2, 0.45, 1.4, 1.5, 70.0, 100.0, 7000.0, 0.22, EP::Under, 60.0, 0.5);
+		Add(EFloraShape::Reeds, 1, Sh | W, 12.0, 0.7, 1.5, 1.0, 45.0, 0.0, 6000.0, 0.0, EP::None, 40.0, 0.2);
+		AddProp(EPropKind::Lifebuoy, 0.9, 40.0, 2200.0, 0.35, L | Sh, 20.0, 10.0);
+		AddProp(EPropKind::Parasol, 1.1, 80.0, 2200.0, 0.35, L, 14.0, 20.0);
+		AddProp(EPropKind::Driftwood, 0.8, 40.0, 3500.0, 0.35, L | Sh, 20.0, 40.0);
+		break;
+	case ETNProcBiome::Jungle:
+	case ETNProcBiome::Mangrove:
+	case ETNProcBiome::Water:
+		// Algas y juncos en la orilla.
+		Add(EFloraShape::Reeds, 1, Sh | W, 8.0, 0.7, 1.5, 1.0, 45.0, 0.0, 6000.0, 0.0, EP::None, 40.0, 0.2);
+		break;
+	default:
+		break;
+	}
+}
+
+uint32 TNTctScenery::FingerprintOf(const TArray<FDecorPick>& Decor, const TArray<FStructurePick>& Structures)
+{
+	uint32 Hash = FingerprintOf(Decor);
+	auto Mix = [&Hash](int32 Value) { Hash = TNProcMap::Hash32(Hash ^ static_cast<uint32>(Value)); };
+	Mix(Structures.Num());
+	for (const FStructurePick& Pick : Structures)
+	{
+		Mix(static_cast<int32>(Pick.Kind));
+		Mix(Pick.Variant);
+		Mix(FMath::RoundToInt(Pick.Location.X));
+		Mix(FMath::RoundToInt(Pick.Location.Y));
+		Mix(FMath::RoundToInt(Pick.Location.Z));
+		Mix(FMath::RoundToInt(Pick.YawDeg * 10.f));
+		Mix(FMath::RoundToInt(Pick.Scale * 100.f));
+	}
+	return Hash;
 }
 
 uint32 TNTctScenery::FingerprintOf(const TArray<FDecorPick>& Decor)
@@ -288,7 +368,7 @@ TNTctScenery::FPlan TNTctScenery::MakePlan(const FHeightField& Field, float Wate
 
 	// ── Vegetación, rocas pequeñas y objetos sueltos: el reparto de PlaceFloraRows (mismas especies que el mapa generado) ──
 	TArray<FFloraSpecies> Tables[NumBiomes];
-	for (int32 B = 0; B < NumBiomes; ++B) { FloraSpeciesFor(BiomeFromIndex(B), Tables[B]); }
+	for (int32 B = 0; B < NumBiomes; ++B) { SpeciesFor(BiomeFromIndex(B), Tables[B]); }
 	FFloraQuery Query;
 	Query.Field = &Field;
 	Query.KeepOuts = &KeepOuts;
@@ -313,6 +393,24 @@ TNTctScenery::FPlan TNTctScenery::MakePlan(const FHeightField& Field, float Wate
 			Plan.Flora.Add(Instance);
 		}
 	}
+	// Con más de MaxFlora, se aclara de forma uniforme (siempre las mismas): el reparto es el mismo en todas las máquinas.
+	if (Options.MaxFlora > 0 && Plan.Flora.Num() > Options.MaxFlora)
+	{
+		const double Keep = static_cast<double>(Options.MaxFlora) / static_cast<double>(Plan.Flora.Num());
+		TArray<FFloraInstance> Thinned;
+		Thinned.Reserve(Options.MaxFlora);
+		double Acc = 0.0;
+		for (const FFloraInstance& Instance : Plan.Flora)
+		{
+			Acc += Keep;
+			if (Acc >= 1.0)
+			{
+				Acc -= 1.0;
+				Thinned.Add(Instance);
+			}
+		}
+		Plan.Flora = MoveTemp(Thinned);
+	}
 
 	// ── Decorado con colisión: una pieza posible por casilla, solo donde sobra sitio y lejos de salidas y puntos de objetos ──
 	const int32 CellsX = FMath::CeilToInt(Extent.X / DecorCell);
@@ -323,46 +421,111 @@ TNTctScenery::FPlan TNTctScenery::MakePlan(const FHeightField& Field, float Wate
 		{
 			FRng Rng(static_cast<uint64>(HashCell(Seed ^ 0xDEC0u, Cx, Cy)));
 			const double Roll = Rng.Unit();
-			const FVector2D Where = Origin + FVector2D((Cx + Rng.Range(0.2, 0.8)) * DecorCell, (Cy + Rng.Range(0.2, 0.8)) * DecorCell);
-			const double PickRoll = Rng.Unit();
-			const float Scale = static_cast<float>(Rng.Range(0.7, 1.1));
-			const float Yaw = static_cast<float>(Rng.Range(0.0, 360.0));
 			if (Roll >= Options.DecorChance)
 			{
 				continue;
 			}
-			float GroundZ = 0.f;
-			if (!Field.HeightAt(Where, GroundZ) || Field.NormalAt(Where).Z < DecorMinNormalZ)
+			// Hasta cinco sitios por casilla (siempre los mismos): así caben piezas entre las salidas y los puntos de objetos.
+			for (int32 Attempt = 0; Attempt < 5; ++Attempt)
 			{
-				continue;
+				const FVector2D Where = Origin + FVector2D((Cx + Rng.Range(0.1, 0.9)) * DecorCell, (Cy + Rng.Range(0.1, 0.9)) * DecorCell);
+				const double PickRoll = Rng.Unit();
+				const float Scale = static_cast<float>(Rng.Range(0.7, 1.1));
+				const float Yaw = static_cast<float>(Rng.Range(0.0, 360.0));
+				float GroundZ = 0.f;
+				if (!Field.HeightAt(Where, GroundZ) || Field.NormalAt(Where).Z < DecorMinNormalZ)
+				{
+					continue;
+				}
+				const TArray<ETNBeachElement> Choices = DecorElementsFor(Layout.DominantBiomeAt(Where - Origin));
+				const ETNBeachElement Element = Choices[FMath::Min(Choices.Num() - 1, static_cast<int32>(PickRoll * Choices.Num()))];
+				const double Radius = TNBeach::FootprintRadius(Element) * Scale;
+				// Sitio de sobra alrededor (rampas y bordes quedan fuera) y salidas y puntos de objetos libres.
+				if (Field.OpenAt(Where) < Radius + Options.DecorClearance || KeepOutDistance(KeepOuts, Where) < Radius + Options.KeepOutClearance)
+				{
+					continue;
+				}
+				bool bClear = true;
+				for (const FDecorPick& Other : Plan.Decor)
+				{
+					const double OtherRadius = TNBeach::FootprintRadius(Other.Element) * Other.Scale;
+					bClear &= FVector2D::Distance(Where, FVector2D(Other.Location.X, Other.Location.Y)) >= Radius + OtherRadius + DecorGap;
+				}
+				if (!bClear)
+				{
+					continue;
+				}
+				FDecorPick Pick;
+				Pick.Element = Element;
+				Pick.Location = FVector(FMath::RoundToDouble(Where.X), FMath::RoundToDouble(Where.Y), FMath::RoundToDouble(GroundZ));
+				Pick.YawDeg = FMath::RoundToFloat(Yaw);
+				Pick.Scale = FMath::RoundToFloat(Scale * 100.f) / 100.f;
+				Plan.Decor.Add(Pick);
+				break;
 			}
-			const TArray<ETNBeachElement> Choices = DecorElementsFor(Layout.DominantBiomeAt(Where - Origin));
-			const ETNBeachElement Element = Choices[FMath::Min(Choices.Num() - 1, static_cast<int32>(PickRoll * Choices.Num()))];
-			const double Radius = TNBeach::FootprintRadius(Element) * Scale;
-			// Sitio de sobra alrededor (rampas y bordes quedan fuera) y salidas y puntos de objetos libres.
-			if (Field.OpenAt(Where) < Radius + Options.DecorClearance || KeepOutDistance(KeepOuts, Where) < Radius + Options.DecorClearance)
-			{
-				continue;
-			}
-			bool bClear = true;
-			for (const FDecorPick& Other : Plan.Decor)
-			{
-				const double OtherRadius = TNBeach::FootprintRadius(Other.Element) * Other.Scale;
-				bClear &= FVector2D::Distance(Where, FVector2D(Other.Location.X, Other.Location.Y)) >= Radius + OtherRadius + DecorGap;
-			}
-			if (!bClear)
-			{
-				continue;
-			}
-			FDecorPick Pick;
-			Pick.Element = Element;
-			Pick.Location = FVector(FMath::RoundToDouble(Where.X), FMath::RoundToDouble(Where.Y), FMath::RoundToDouble(GroundZ));
-			Pick.YawDeg = FMath::RoundToFloat(Yaw);
-			Pick.Scale = FMath::RoundToFloat(Scale * 100.f) / 100.f;
-			Plan.Decor.Add(Pick);
 		}
 	}
-	Plan.Fingerprint = FingerprintOf(Plan.Decor);
+
+	// ── Estructuras con colisión (casetas y barcos varados): como el decorado, solo donde sobra sitio y con paso entre todo ──
+	const int32 StructCellsX = FMath::CeilToInt(Extent.X / StructureCell);
+	const int32 StructCellsY = FMath::CeilToInt(Extent.Y / StructureCell);
+	for (int32 Cy = 0; Cy < StructCellsY && Plan.Structures.Num() < Options.MaxStructures; ++Cy)
+	{
+		for (int32 Cx = 0; Cx < StructCellsX && Plan.Structures.Num() < Options.MaxStructures; ++Cx)
+		{
+			FRng Rng(static_cast<uint64>(HashCell(Seed ^ 0x57C7u, Cx, Cy)));
+			const double Roll = Rng.Unit();
+			if (Roll >= Options.StructureChance)
+			{
+				continue;
+			}
+			for (int32 Attempt = 0; Attempt < 5; ++Attempt)
+			{
+				const FVector2D Where = Origin + FVector2D((Cx + Rng.Range(0.1, 0.9)) * StructureCell, (Cy + Rng.Range(0.1, 0.9)) * StructureCell);
+				const double KindRoll = Rng.Unit();
+				const float Scale = static_cast<float>(Rng.Range(0.85, 1.15));
+				const float Yaw = static_cast<float>(Rng.Range(0.0, 360.0));
+				const int32 Variant = Rng.RangeInt(0, 1);
+				float GroundZ = 0.f;
+				if (!Field.HeightAt(Where, GroundZ) || Field.NormalAt(Where).Z < DecorMinNormalZ)
+				{
+					continue;
+				}
+				// Los barcos, sobre todo cerca del agua; las casetas, más arriba.
+				const bool bLow = GroundZ < WaterBaseZ + 450.f;
+				const EStructureKind Kind = KindRoll < (bLow ? 0.7 : 0.2) ? EStructureKind::BoatWreck : EStructureKind::Hut;
+				const double Radius = StructureRadius(Kind) * Scale;
+				if (Field.OpenAt(Where) < Radius + Options.StructureClearance || KeepOutDistance(KeepOuts, Where) < Radius + Options.KeepOutClearance)
+				{
+					continue;
+				}
+				bool bClear = true;
+				for (const FDecorPick& Other : Plan.Decor)
+				{
+					const double OtherRadius = TNBeach::FootprintRadius(Other.Element) * Other.Scale;
+					bClear &= FVector2D::Distance(Where, FVector2D(Other.Location.X, Other.Location.Y)) >= Radius + OtherRadius + StructureGap;
+				}
+				for (const FStructurePick& Other : Plan.Structures)
+				{
+					const double OtherRadius = StructureRadius(Other.Kind) * Other.Scale;
+					bClear &= FVector2D::Distance(Where, FVector2D(Other.Location.X, Other.Location.Y)) >= Radius + OtherRadius + StructureGap;
+				}
+				if (!bClear)
+				{
+					continue;
+				}
+				FStructurePick Pick;
+				Pick.Kind = Kind;
+				Pick.Variant = Variant;
+				Pick.Location = FVector(FMath::RoundToDouble(Where.X), FMath::RoundToDouble(Where.Y), FMath::RoundToDouble(GroundZ));
+				Pick.YawDeg = FMath::RoundToFloat(Yaw);
+				Pick.Scale = FMath::RoundToFloat(Scale * 100.f) / 100.f;
+				Plan.Structures.Add(Pick);
+				break;
+			}
+		}
+	}
+	Plan.Fingerprint = FingerprintOf(Plan.Decor, Plan.Structures);
 
 	// ── Anclas de la fauna: suelo llano y abierto, repartido por la arena; cada 36 m, un «módulo» de animales ──
 	const double FaunaCell = FMath::Max(300.0, static_cast<double>(Options.FaunaCell));

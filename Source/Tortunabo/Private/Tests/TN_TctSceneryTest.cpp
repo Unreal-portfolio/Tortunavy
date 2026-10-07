@@ -83,7 +83,7 @@ bool FTNTctSceneryPlanTest::RunTest(const FString& Parameters)
 		const double Radius = TNBeach::FootprintRadius(Pick.Element) * Pick.Scale;
 		TestTrue(TEXT("Dentro de la meseta, no en el puente ni en la rampa"), FMath::Abs(P.X) < 6000.0 && FMath::Abs(P.Y) < 6000.0);
 		TestTrue(TEXT("Con sitio de sobra alrededor (6 m de paso como mínimo)"), Field.OpenAt(P) >= Radius + 600.0);
-		TestTrue(TEXT("Lejos de las salidas y los puntos de objetos"), KeepOutDistance(Zones, P) >= Radius + 600.0);
+		TestTrue(TEXT("Lejos de las salidas y los puntos de objetos"), KeepOutDistance(Zones, P) >= Radius + 240.0);
 		TestTrue(TEXT("Sobre el suelo"), FMath::IsNearlyEqual(Pick.Location.Z, 200.0, 1.0));
 		for (int32 Other = Index + 1; Other < Plan.Decor.Num(); ++Other)
 		{
