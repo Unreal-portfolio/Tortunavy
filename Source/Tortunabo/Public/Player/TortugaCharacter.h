@@ -883,8 +883,15 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerEndHoldInteract(ATN_InteractableBase* Interactable);
 
+	/**
+	 * Usa el ítem de la mano. AimPoint es el punto de mira del dueño con su cámara real (#894; bHasAimPoint = lo tiene):
+	 * los lanzamientos van a él si el servidor lo valida (ValidateClientAimPoint).
+	 */
 	UFUNCTION(Server, Reliable)
-	void ServerUseEquippedItem();
+	void ServerUseEquippedItem(FVector_NetQuantize AimPoint, bool bHasAimPoint);
+
+	/** Servidor: punto de mira del dueño validado durante ServerUseEquippedItem (GetCrosshairPoint lo devuelve). */
+	TOptional<FVector> ServerUseAimPoint;
 
 	// ── ServerUseEquippedItem: una rama por ETN_ItemUseType (validar → consumir → efecto) ──
 	void HandleUseSelfStaminaBoost(const FTN_InventoryItem& EquippedItem);
@@ -1500,8 +1507,20 @@ public:
 	 */
 	FVector GetThrowDirectionToCrosshair(const FVector& Origin, const FRotator& AimRotation, float Speed, float GravityCmS2 = 0.f, float LinearDamping = 0.f) const;
 
-	/** El punto del mundo que se ve en el centro de la pantalla (primer choque del rayo de la cámara, o uno lejano). */
+	/** Como GetThrowDirectionToCrosshair, pero al punto Target ya conocido (el punto de mira que manda el dueño, #894). */
+	FVector GetThrowDirectionToPoint(const FVector& Origin, const FVector& Target, const FRotator& AimRotation, float Speed, float GravityCmS2 = 0.f, float LinearDamping = 0.f) const;
+
+	/**
+	 * El punto del mundo que se ve en el centro de la pantalla (primer choque del rayo de la cámara, o uno lejano). En el
+	 * servidor, mientras se atiende ServerUseEquippedItem, el punto que mandó el dueño si se validó.
+	 */
 	bool GetCrosshairPoint(FVector& OutPoint) const;
+
+	/**
+	 * Servidor: el punto de mira que manda el dueño (#894) si es creíble (TNThrowAim::IsClientAimPointValid) desde la
+	 * cámara de esta tortuga y su rotación de control. Si no lo es (o no lo tiene), unset: se usa GetCrosshairPoint.
+	 */
+	TOptional<FVector> ValidateClientAimPoint(const FVector& AimPoint, bool bHasAimPoint) const;
 
 	/** El golpe de brazo de lanzar un objeto, en todas las máquinas (cosmético; lo manda el servidor al lanzarlo). */
 	UFUNCTION(NetMulticast, Unreliable)

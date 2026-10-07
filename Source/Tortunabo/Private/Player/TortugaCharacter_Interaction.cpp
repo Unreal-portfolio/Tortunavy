@@ -11,6 +11,7 @@
 #include "Camera/CameraComponent.h"
 #include "Player/TN_CarryComponent.h"
 #include "Player/TN_ThrowArc.h"
+#include "Player/TN_ThrowAim.h"
 #include "Core/TN_Log.h"
 #include "Player/TN_InventoryComponent.h"
 #include "Player/TN_StaminaComponent.h"
@@ -150,7 +151,8 @@ void ATortugaCharacter::ServerTryInteract_Implementation(ATN_InteractableBase* I
 				UE_LOG(LogTortunabo, Log, TEXT("[Interact:SERVER] Pickup '%s' no recogible + inventario lleno → usando ítem equipado."),
 					*Interactable->GetName());
 			}
-			ServerUseEquippedItem_Implementation();
+			// Sin punto de mira del dueño (llega por la interacción): se usa el cálculo del servidor.
+			ServerUseEquippedItem_Implementation(FVector_NetQuantize(FVector::ZeroVector), false);
 		}
 		else if (bDebug)
 		{
@@ -229,7 +231,7 @@ void ATortugaCharacter::ServerEndHoldInteract_Implementation(ATN_InteractableBas
 	}
 }
 
-void ATortugaCharacter::ServerUseEquippedItem_Implementation()
+void ATortugaCharacter::ServerUseEquippedItem_Implementation(FVector_NetQuantize AimPoint, bool bHasAimPoint)
 {
 	if (bIsKnockedDown || bIsDead)
 	{
@@ -239,6 +241,8 @@ void ATortugaCharacter::ServerUseEquippedItem_Implementation()
 	{
 		return;
 	}
+	// Los lanzamientos de este uso van al punto de mira del dueño, si es creíble (#894).
+	TGuardValue<TOptional<FVector>> AimGuard(ServerUseAimPoint, ValidateClientAimPoint(AimPoint, bHasAimPoint));
 
 	if (!InventoryComponent->HasEquippedItem())
 	{
@@ -328,6 +332,11 @@ bool ATortugaCharacter::UsesCameraThrowAim() const
 
 bool ATortugaCharacter::GetCrosshairPoint(FVector& OutPoint) const
 {
+	if (ServerUseAimPoint.IsSet())
+	{
+		OutPoint = ServerUseAimPoint.GetValue();
+		return true;
+	}
 	const UWorld* World = GetWorld();
 	if (!UsesCameraThrowAim() || !World)
 	{
@@ -336,7 +345,7 @@ bool ATortugaCharacter::GetCrosshairPoint(FVector& OutPoint) const
 
 	// Rayo por el centro de la pantalla: sale de la cámara hacia delante. Su primer choque (menos la propia tortuga y lo que
 	// lleva) es el punto de mira; sin choque, un punto lejano en el mismo rayo.
-	constexpr float AimRange = 8000.f;
+	constexpr float AimRange = TNThrowAim::AimRangeCm;
 	const FVector CamLoc = FollowCamera->GetComponentLocation();
 	const FVector CamDir = FollowCamera->GetForwardVector();
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(ThrowCrosshair), false, this);
@@ -355,9 +364,18 @@ bool ATortugaCharacter::GetCrosshairPoint(FVector& OutPoint) const
 
 FVector ATortugaCharacter::GetThrowDirectionToCrosshair(const FVector& Origin, const FRotator& AimRotation, float Speed, float GravityCmS2, float LinearDamping) const
 {
-	const UWorld* World = GetWorld();
 	FVector Target;
-	if (!World || Speed < 1.f || !GetCrosshairPoint(Target))
+	if (!GetCrosshairPoint(Target))
+	{
+		return GetThrowDirection(AimRotation);
+	}
+	return GetThrowDirectionToPoint(Origin, Target, AimRotation, Speed, GravityCmS2, LinearDamping);
+}
+
+FVector ATortugaCharacter::GetThrowDirectionToPoint(const FVector& Origin, const FVector& Target, const FRotator& AimRotation, float Speed, float GravityCmS2, float LinearDamping) const
+{
+	const UWorld* World = GetWorld();
+	if (!World || Speed < 1.f)
 	{
 		return GetThrowDirection(AimRotation);
 	}
@@ -374,6 +392,24 @@ FVector ATortugaCharacter::GetThrowDirectionToCrosshair(const FVector& Origin, c
 	// Sin alcance (punto demasiado lejos): el ángulo de máximo alcance.
 	const double Theta = TNThrowArc::LaunchPitch(D, Delta.Z, static_cast<double>(Speed), G, static_cast<double>(LinearDamping));
 	return (Flat / D * FMath::Cos(Theta) + FVector(0.0, 0.0, FMath::Sin(Theta))).GetSafeNormal();
+}
+
+TOptional<FVector> ATortugaCharacter::ValidateClientAimPoint(const FVector& AimPoint, bool bHasAimPoint) const
+{
+	if (!bHasAimPoint || !UsesCameraThrowAim())
+	{
+		return {};
+	}
+	// Desde la cámara de esta tortuga en el servidor y con la rotación de control (la cámara cabecea CameraAimPitchOffset).
+	const FVector ViewOrigin = FollowCamera->GetComponentLocation();
+	const FRotator AimRotation = GetTurtleAimRotation();
+	const FVector ViewDir = FRotator(AimRotation.Pitch + CameraAimPitchOffset, AimRotation.Yaw, 0.f).Vector();
+	if (!TNThrowAim::IsClientAimPointValid(ViewOrigin, ViewDir, AimPoint))
+	{
+		UE_LOG(LogTortunabo, Verbose, TEXT("[Throw] Punto de mira de %s fuera del cono: se usa el del servidor."), *GetName());
+		return {};
+	}
+	return AimPoint;
 }
 
 void ATortugaCharacter::MulticastItemThrowAnim_Implementation()
