@@ -54,6 +54,12 @@ namespace TNEggHatch
 
 	/** true mientras Turtle está en la pausa del huevo, antes del lanzamiento. */
 	TORTUNABO_API bool IsHatching(const ACharacter* Turtle);
+
+	/**
+	 * true mientras Turtle sale del huevo sin control propio: en la pausa o en el vuelo del lanzamiento, hasta que toca el
+	 * suelo (en el servidor y en el cliente que la controla). La estamina no se gasta en ese tramo (#520).
+	 */
+	TORTUNABO_API bool IsLeavingEgg(const ACharacter* Turtle);
 }
 
 /**
@@ -76,6 +82,9 @@ public:
 
 	/** Aún no ha llegado la hora del lanzamiento. */
 	bool IsWaiting() const { return !bStopped && !bPauseOver; }
+
+	/** En la pausa o en el vuelo del lanzamiento, aún sin tocar el suelo. */
+	bool IsLeaving() const { return !bStopped && (!bPauseOver || bInLaunchFlight); }
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -156,6 +165,8 @@ private:
 	/** Se puede sujetar: sin caparazón con cuerpo físico al empezar. */
 	bool bHoldable = true;
 	bool bLaunched = false;
+	/** Lanzada por esta máquina y aún en el aire: hasta que toca el suelo, el componente no se borra (#520). */
+	bool bInLaunchFlight = false;
 	bool bPauseOver = false;
 	bool bStopped = false;
 	/** Tandas de trocitos ya soltadas (bit por tanda). */

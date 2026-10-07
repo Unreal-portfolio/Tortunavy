@@ -164,6 +164,12 @@ bool TNEggHatch::IsHatching(const ACharacter* Turtle)
 	return Hatch && Hatch->IsWaiting();
 }
 
+bool TNEggHatch::IsLeavingEgg(const ACharacter* Turtle)
+{
+	const UTN_EggHatchComponent* Hatch = IsValid(Turtle) ? Turtle->FindComponentByClass<UTN_EggHatchComponent>() : nullptr;
+	return Hatch && Hatch->IsLeaving();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // UTN_EggHatchComponent
 // ─────────────────────────────────────────────────────────────────────────────
@@ -298,13 +304,19 @@ void UTN_EggHatchComponent::Step(float DeltaTime)
 		}
 	}
 	bPauseOver = bLaunchDue;
+	// El vuelo del lanzamiento acaba al tocar el suelo (o el agua); no vuelve a empezar si después cae de otro sitio.
+	if (bInLaunchFlight)
+	{
+		const UCharacterMovementComponent* Move = Turtle->GetCharacterMovement();
+		bInLaunchFlight = Move && Move->IsFalling();
+	}
 
 	if (!bLaunchDue)
 	{
 		EmitDueBits(Turtle, T);
 	}
 	const bool bBitsAlive = TickBits(DeltaTime);
-	if ((bLaunchDue && !bBitsAlive) || Now - LaunchTime > MaxLingerSeconds)
+	if ((bLaunchDue && !bBitsAlive && !bInLaunchFlight) || Now - LaunchTime > MaxLingerSeconds)
 	{
 		bStopped = true;
 		DestroyComponent();
@@ -470,6 +482,7 @@ void UTN_EggHatchComponent::Launch(ACharacter* Turtle)
 		{
 			Move->SetMovementMode(MOVE_Falling);
 		}
+		bInLaunchFlight = Move->IsFalling();
 	}
 	Turtle->LaunchCharacter(LaunchVelocity, true, true);
 }

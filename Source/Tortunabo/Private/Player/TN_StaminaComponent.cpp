@@ -3,6 +3,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "World/TN_EggHatch.h"
 
 UTN_StaminaComponent::UTN_StaminaComponent()
 {
@@ -262,8 +263,10 @@ void UTN_StaminaComponent::TickStamina(float DeltaTime)
 
 		// Contra una pared (u otro tope que la frena del todo) el sprint sigue pedido pero la tortuga no avanza: no gasta.
 		// El sprint no se quita, para que al despegarse corra sin soltar la tecla.
+		// Tampoco saliendo del huevo: el salto de salida lo da el juego, no el jugador, y lleva velocidad horizontal (#520).
 		const AActor* Owner = GetOwner();
-		const bool bAdvancing = Owner && Owner->GetVelocity().Size2D() > WalkSpeed * 0.1f;
+		const bool bAdvancing = Owner && Owner->GetVelocity().Size2D() > WalkSpeed * 0.1f
+			&& !TNEggHatch::IsLeavingEgg(Cast<ACharacter>(Owner));
 
 		if (!bUnlimitedStamina && bAdvancing)
 		{
