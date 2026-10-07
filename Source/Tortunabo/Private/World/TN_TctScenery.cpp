@@ -11,6 +11,7 @@
 #include "World/ProcMap/TN_ProcMapMath.h"
 #include "World/ProcMap/TN_ProcMapTypes.h"
 #include "World/TN_TctArena.h"
+#include "World/TN_TctShoreWarning.h"
 #include "ProcMap/TN_ProcMapFloraMeshes.h"
 #include "ProcMap/TN_ProcMapPropMeshes.h"
 #include "ProcMap/TN_ProcMapRuntimeMesh.h"
@@ -56,6 +57,8 @@ void ATN_TctScenery::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	DecorField = nullptr;
 	if (IsValid(Fauna)) { Fauna->Destroy(); }
 	Fauna = nullptr;
+	if (IsValid(ShoreWarning)) { ShoreWarning->Destroy(); }
+	ShoreWarning = nullptr;
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -106,6 +109,7 @@ bool ATN_TctScenery::Build(ATN_TctArena* Arena, uint32 Seed, const TArray<TNTctS
 	if (bVisuals)
 	{
 		BuildFlora(WaterBaseZ);
+		BuildShoreWarning(Seed, KeepOuts);
 		BuildFauna(Arena, Seed, KeepOuts, WaterBaseZ);
 	}
 	// La huella de lo que tiene colisión es la misma en el servidor y en cada cliente: el log de las dos máquinas se compara.
@@ -284,6 +288,25 @@ void ATN_TctScenery::BuildStructures()
 		Comp->AddInstances(Entry.Value, false, false);
 		Instances.Add(Comp);
 		NumStructures += Entry.Value.Num();
+	}
+}
+
+void ATN_TctScenery::BuildShoreWarning(uint32 Seed, const TArray<TNTctScenery::FKeepOut>& KeepOuts)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.ObjectFlags |= RF_Transient | RF_DuplicateTransient;
+	ShoreWarning = World->SpawnActor<ATN_TctShoreWarning>(ATN_TctShoreWarning::StaticClass(), FTransform::Identity, Params);
+	if (ShoreWarning && !ShoreWarning->Init(Field, KeepOuts, Seed ^ 0x5304Eu))
+	{
+		ShoreWarning->Destroy();
+		ShoreWarning = nullptr;
 	}
 }
 

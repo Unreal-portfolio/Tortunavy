@@ -7,6 +7,7 @@
 
 class ATN_BeachDecorField;
 class ATN_ProcFauna;
+class ATN_TctShoreWarning;
 class ATN_TctArena;
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMesh;
@@ -23,6 +24,7 @@ class UStaticMesh;
  *    igual que el decorado de los mapas de terreno fijo.
  *  - Estructuras de playa con colisión (casetas y cascos de barco varados, #920): una malla por variante en un HISM con caja de
  *    colisión. Con el decorado, es lo único con colisión y sale igual en el servidor y en todos los clientes.
+ *  - Aviso de la orilla futura del agua (#920): ATN_TctShoreWarning, sobre el suelo medido.
  *  - Fauna: ATN_ProcFauna::InitCustom, con animales que huyen de las tortugas y no tienen colisión.
  * En un servidor dedicado solo se monta el decorado con colisión.
  */
@@ -63,6 +65,7 @@ private:
 	void BuildFlora(float WaterBaseZ);
 	void BuildDecor();
 	void BuildStructures();
+	void BuildShoreWarning(uint32 Seed, const TArray<TNTctScenery::FKeepOut>& KeepOuts);
 	void BuildFauna(ATN_TctArena* Arena, uint32 Seed, const TArray<TNTctScenery::FKeepOut>& KeepOuts, float WaterBaseZ);
 
 	TSharedPtr<TNTctScenery::FHeightField> Field;
@@ -82,4 +85,6 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<ATN_ProcFauna> Fauna;
 
+	UPROPERTY(Transient)
+	TObjectPtr<ATN_TctShoreWarning> ShoreWarning;
 };

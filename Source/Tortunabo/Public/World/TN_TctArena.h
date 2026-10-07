@@ -40,9 +40,9 @@ struct FTNTctSceneryNet
  * - Replicada: el servidor elige la variante (ServerSetArenaVariant) y cada máquina construye la misma malla desde el disco.
  * - El mar es un plano con el material del mar del mapa procedural; en cada máquina se pone a la altura que da el GameState
  *   (ATN_TctGameState::GetWaterZ), sin replicar la altura.
- * - El agua es veneno (#831): el mar tiene un aspecto tóxico (verde) y, en los 5 s antes de cada subida y mientras sube, una
- *   marca (plano translúcido) enseña a qué altura llegará. Sin zonas de muerte del fondo (bSpawnKillZones apagado): tocar el
- *   agua no mata, intoxica (UTN_TctItemComponent::ServerTickWater).
+ * - El agua es veneno (#831): el mar tiene un aspecto tóxico (verde). Sin zonas de muerte del fondo (bSpawnKillZones apagado):
+ *   tocar el agua no mata, intoxica (UTN_TctItemComponent::ServerTickWater). El aviso de la próxima subida no es un plano: son
+ *   marcas del mundo en la orilla futura (espuma, algas y postes, ATN_TctShoreWarning, #920).
  * - Decorado vivo (#829): sobre la forma de la variante se reparten la vegetación, las rocas, los troncos y la fauna del sistema del
  *   mapa generado (ATN_TctScenery, local en cada máquina). El servidor fija la semilla de la partida y los sitios libres
  *   (ServerSetScenery) y se replican una vez; lo que tiene colisión sale igual en todas.
@@ -145,13 +145,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Tct")
 	TObjectPtr<UStaticMeshComponent> WaterPlane;
 
-	/** La marca del nivel al que llegará el agua en la próxima subida (#831). */
-	UPROPERTY(VisibleAnywhere, Category = "Tct")
-	TObjectPtr<UStaticMeshComponent> MarkerPlane;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UMaterialInstanceDynamic> MarkerMaterial;
-
 	/** Cuánto sobresale el mar por cada lado de la caja de la arena (uu). */
 	UPROPERTY(EditAnywhere, Category = "Tct", meta = (ClampMin = "0.0"))
 	float WaterPlaneMargin = 40000.f;
@@ -168,14 +161,14 @@ private:
 
 	/** Pone la arena de playa como material del terreno (y en los trozos ya construidos). */
 	void ApplySandMaterial();
-	/** Pone el aspecto tóxico del agua y prepara la marca del nivel (una vez, en máquinas con pantalla). */
+	/** Pone el aspecto tóxico del agua (una vez, en máquinas con pantalla). */
 	void SetUpToxicLook();
-	/** Coloca y pinta la marca del nivel al que llegará el agua según el GameState. */
-	void TickMarker(const ATN_TctGameState* State);
 	/** Lee water_uu del manifest y ajusta el plano del mar a la caja del terreno. */
 	void FitWaterPlane();
 	/** Traza vertical en (X, Y) contra este actor: suelo pisable con su altura. */
 	bool TraceGround(double X, double Y, double TopZ, double BottomZ, FVector& OutPoint) const;
+
+	bool bToxicLookSet = false;
 
 	TArray<float> SurveyHeights;
 	/** Muestras de suelo pisable con sus cuatro vecinas también pisables y a la misma altura (lejos de los bordes). */
