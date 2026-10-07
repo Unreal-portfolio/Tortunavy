@@ -146,7 +146,7 @@ bool FTNTurtleMoveResponseDataContainer::Serialize(UCharacterMovementComponent& 
 // Servidor: conceder
 // ─────────────────────────────────────────────────────────────────────────────
 
-void UTN_TurtleMovementComponent::LaunchFromServer(ACharacter* Character, const FVector& LaunchVelocity)
+void UTN_TurtleMovementComponent::LaunchFromServer(ACharacter* Character, const FVector& LaunchVelocity, bool bLeavesNone)
 {
 	if (!Character || !Character->HasAuthority())
 	{
@@ -159,23 +159,40 @@ void UTN_TurtleMovementComponent::LaunchFromServer(ACharacter* Character, const 
 		&& !Character->IsLocallyControlled() && Character->GetRemoteRole() == ROLE_AutonomousProxy;
 	if (!bRemoteOwner)
 	{
+		UCharacterMovementComponent* Move = Character->GetCharacterMovement();
+		if (bLeavesNone && Move && Move->MovementMode == MOVE_None)
+		{
+			Move->SetMovementMode(MOVE_Falling);
+		}
 		Character->LaunchCharacter(LaunchVelocity, true, true);
 		return;
 	}
 	FVector SentVelocity = FVector::ZeroVector;
 	const uint8 Id = TurtleMove->ServerLaunch.Grant(LaunchVelocity, World->GetTimeSeconds(), SentVelocity);
-	TurtleMove->ClientReceiveServerLaunch(Id, SentVelocity);
+	TurtleMove->bServerLaunchLeavesNone = bLeavesNone;
+	TurtleMove->ClientReceiveServerLaunch(Id, SentVelocity, bLeavesNone);
 	UE_LOG(LogTortunabo, Verbose, TEXT("[Lanzamiento] %s: concedido %d (%s) a su dueño."), *Character->GetName(), static_cast<int32>(Id), *SentVelocity.ToString());
 }
 
-void UTN_TurtleMovementComponent::ClientReceiveServerLaunch_Implementation(uint8 Id, FVector_NetQuantize LaunchVelocity)
+void UTN_TurtleMovementComponent::ClientReceiveServerLaunch_Implementation(uint8 Id, FVector_NetQuantize LaunchVelocity, bool bLeavesNone)
 {
 	const UWorld* World = GetWorld();
 	if (!World)
 	{
 		return;
 	}
+	bServerLaunchLeavesNone = bLeavesNone;
 	ServerLaunch.Receive(Id, LaunchVelocity, World->GetTimeSeconds());
+}
+
+void UTN_TurtleMovementComponent::ApplyServerLaunch(const FVector& LaunchVelocity)
+{
+	// Salida de una trampa (#892): el dueño y el servidor salen de MOVE_None en el mismo movimiento que lanza.
+	if (bServerLaunchLeavesNone && MovementMode == MOVE_None)
+	{
+		SetMovementMode(MOVE_Falling);
+	}
+	Launch(LaunchVelocity);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -187,10 +204,11 @@ void UTN_TurtleMovementComponent::ReplicateMoveToServer(float DeltaTime, const F
 	// Antes de guardar el movimiento: con el lanzamiento pendiente el motor no lo junta con otro (bForceNoCombine).
 	FVector LaunchVelocity = FVector::ZeroVector;
 	const UWorld* World = GetWorld();
-	const bool bLaunching = World && MovementMode != MOVE_None && ServerLaunch.BeginMove(World->GetTimeSeconds(), LaunchVelocity);
+	const bool bCanLaunch = MovementMode != MOVE_None || bServerLaunchLeavesNone;
+	const bool bLaunching = World && bCanLaunch && ServerLaunch.BeginMove(World->GetTimeSeconds(), LaunchVelocity);
 	if (bLaunching)
 	{
-		Launch(LaunchVelocity);
+		ApplyServerLaunch(LaunchVelocity);
 	}
 	Super::ReplicateMoveToServer(DeltaTime, NewAcceleration);
 	if (bLaunching && ServerLaunch.IsStarting())
@@ -218,7 +236,7 @@ void UTN_TurtleMovementComponent::MoveAutonomous(float ClientTimeStamp, float De
 	FVector LaunchVelocity = FVector::ZeroVector;
 	if (FindServerLaunchForMove(ClientTimeStamp, LaunchVelocity))
 	{
-		Launch(LaunchVelocity);
+		ApplyServerLaunch(LaunchVelocity);
 	}
 	// Topes predichos (#575, #574). Servidor, movimiento validado de un cliente: los que pide, si caen en la ventana del
 	// último cambio, medida con el tiempo de sus movimientos (este DeltaTime), no con la hora de llegada. Al repetir en el
