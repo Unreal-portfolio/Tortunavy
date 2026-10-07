@@ -14,7 +14,7 @@
  * ATortugaCharacter (TortugaCharacter_RagdollNet.cpp) y las prueba Tortunabo.RagdollNet.
  */
 
-/** Pose raíz del ragdoll del derribo que manda el servidor. Viaja entera (NetSerialize): unos 25 bytes por envío. */
+/** Pose raíz del ragdoll del derribo que manda el servidor. Viaja entera (NetSerialize): menos de 30 bytes por envío. */
 USTRUCT()
 struct TORTUNABO_API FTNRagdollRootPose
 {

@@ -1182,6 +1182,17 @@ protected:
 	FTimerHandle KnockdownTimerHandle;
 
 	// ── Ragdoll del derribo en red (#153, Docs/Ragdoll_Red.md) ─────────────────
+	/** Ajustes del envío de la pose, del asentado, de la corrección en los clientes y del empuje de otras tortugas. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Knockdown|Red")
+	FTNRagdollNetTuning RagdollNetTuning;
+
+	/**
+	 * Pose raíz del ragdoll del derribo en el servidor (SendRateHz mientras se mueve, una vez al asentarse). Va en la misma
+	 * actualización que bIsKnockedDown al empezar y al acabar: los clientes nunca persiguen la de un derribo anterior.
+	 */
+	UPROPERTY(ReplicatedUsing = OnRep_KnockdownRootPose)
+	FTNRagdollRootPose KnockdownRootPose;
+
 	/**
 	 * Punto (centro de la cápsula) donde se levanta del derribo, elegido por el servidor. Se escribe junto a
 	 * bIsKnockedDown = false: OnRep_IsKnockedDown ya lo tiene y todas las máquinas levantan la tortuga en el mismo sitio.
@@ -1189,6 +1200,36 @@ protected:
 	 */
 	UPROPERTY(Replicated)
 	FVector_NetQuantize10 KnockdownStandLocation = FVector_NetQuantize10::ZeroVector;
+
+	/** Última pose enviada (servidor) y cuándo; cuándo llegó la última (clientes). */
+	FTNRagdollRootPose LastSentRootPose;
+	float LastRootPoseSentAt = -1.f;
+	float RootPoseReceivedAt = -1.f;
+	/** Servidor: segundos seguidos con el cuerpo quieto. */
+	float RagdollSettleTimer = 0.f;
+	/** Cliente: su ragdoll está dormido en la pose asentada del servidor. */
+	bool bLocalRagdollSettled = false;
+
+	UFUNCTION()
+	void OnRep_KnockdownRootPose();
+
+	/** Pose actual del cuerpo raíz del ragdoll del derribo, para mandarla. */
+	FTNRagdollRootPose SampleKnockdownRootPose(bool bActive, bool bSettled) const;
+
+	/**
+	 * Cada fotograma con el ragdoll del derribo: en el servidor, empuje de otras tortugas, asentado y envío de la pose;
+	 * en los clientes, corrección hacia la pose del servidor. Devuelve lo que se ha trasladado el ragdoll de golpe (para
+	 * que la sonda del suelo no lo confunda con atravesarlo).
+	 */
+	FVector TickKnockdownRagdollNet(float DeltaTime);
+	void ServerTickKnockdownRagdollNet(float DeltaTime);
+	FVector ClientCorrectKnockdownRagdoll(float DeltaTime);
+	/** Servidor: las tortugas que caminan contra el cuerpo lo empujan. true si alguna lo ha empujado. */
+	bool ServerPushKnockdownRagdoll(float DeltaTime);
+	/** Traslada (y gira alrededor del cuerpo raíz) todos los cuerpos del ragdoll a la vez, sin deformarlo. */
+	void TeleportKnockdownRagdoll(const FVector& Translation, const FQuat& RotationAroundRoot);
+	/** Media latencia de esta máquina con el servidor (s). */
+	float GetOneWayLatencySeconds() const;
 
 	// ── Big Head consumable ──────────────────────────────────────────────────
 	/** true mientras el efecto de cabeza grande está activo. Replicado para que todos los clientes lo vean. */

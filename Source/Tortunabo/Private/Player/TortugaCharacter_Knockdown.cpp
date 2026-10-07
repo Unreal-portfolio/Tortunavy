@@ -379,11 +379,17 @@ void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
 
 			bKnockdownRagdollActive = true;
 			bRagdollProbeValid = false;
+			bLocalRagdollSettled = false;
 
-			// Red (#153): el servidor borra el punto del levantamiento anterior en la misma actualización que bIsKnockedDown.
+			// Red (#153): el servidor manda la primera pose en la misma actualización que bIsKnockedDown y borra el punto
+			// del levantamiento anterior. Los clientes corrigen su ragdoll hacia esta pose (TickKnockdownRagdollNet).
 			if (HasAuthority())
 			{
 				KnockdownStandLocation = FVector_NetQuantize10::ZeroVector;
+				RagdollSettleTimer = 0.f;
+				KnockdownRootPose = SampleKnockdownRootPose(/*bActive=*/true, /*bSettled=*/false);
+				LastSentRootPose = KnockdownRootPose;
+				LastRootPoseSentAt = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
 				ForceNetUpdate();
 			}
 		}
@@ -441,6 +447,8 @@ void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
 					// Con la precisión con la que viaja: el servidor se levanta exactamente donde lo harán los clientes.
 					StandLoc = TNRagdollNet::QuantizeLocation(StandLoc);
 					KnockdownStandLocation = StandLoc;
+					KnockdownRootPose = SampleKnockdownRootPose(/*bActive=*/false, /*bSettled=*/false);
+					LastSentRootPose = KnockdownRootPose;
 					ForceNetUpdate();
 				}
 				SetActorLocation(StandLoc, false, nullptr, ETeleportType::TeleportPhysics);
@@ -1085,6 +1093,13 @@ void ATortugaCharacter::TickKnockdownRagdoll(float DeltaTime)
 	if (!World || !RootBody || !RootBody->IsValidBodyInstance() || !SkelMesh->IsSimulatingPhysics())
 	{
 		return;
+	}
+	// 0) Red (#153): el servidor empuja, asienta y manda la pose; los clientes corrigen la suya hacia ella. Lo que la
+	//    corrección traslada de golpe no cuenta como atravesar el suelo: la pose del servidor ya está encima.
+	const FVector NetShift = TickKnockdownRagdollNet(DeltaTime);
+	if (bRagdollProbeValid)
+	{
+		RagdollProbeLast += NetShift;
 	}
 	FVector Probe = RootBody->GetUnrealWorldTransform().GetLocation();
 
