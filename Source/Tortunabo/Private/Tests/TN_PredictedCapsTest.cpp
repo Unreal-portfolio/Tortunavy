@@ -353,28 +353,29 @@ bool FTNPredictedCapsStaminaTest::RunTest(const FString& Parameters)
 	using namespace TNMovementLimits;
 
 	UTN_StaminaComponent* Stamina = TNPredictedCapsTest::NewStamina();
-	const float Walk = Stamina->GetWalkSpeed();
-	TestTrue(TEXT("Anda más deprisa que el tope de llevar"), Walk > 330.f);
+	// Corriendo (4 m/s, hoja Stats #856): andando (2 m/s) ya va por debajo de los topes de llevar y del mareo.
+	const float Run = Stamina->ComputeMaxWalkSpeed(true, 1.f);
+	TestTrue(TEXT("Corre más deprisa que el tope de llevar"), Run > 330.f);
 
 	Stamina->SetSpeedCap(CarrySource(), 330.f);
 	TestEqual(TEXT("Coger pone el bit de llevar"), Stamina->GetPredictedCapMask(), PredictedCapCarryBit);
 	// El movimiento manda: uno que no lo pide anda a la velocidad normal aunque esta máquina ya tenga el tope.
-	TestEqual(TEXT("Movimiento sin el bit: velocidad normal"), Stamina->ComputeMoveMaxWalkSpeed(false, 1.f, 1.f, 0), Walk);
-	TestEqual(TEXT("Movimiento con el bit: 330"), Stamina->ComputeMoveMaxWalkSpeed(false, 1.f, 1.f, PredictedCapCarryBit), 330.f);
+	TestEqual(TEXT("Movimiento sin el bit: velocidad normal"), Stamina->ComputeMoveMaxWalkSpeed(true, 1.f, 1.f, 0), Run);
+	TestEqual(TEXT("Movimiento con el bit: 330"), Stamina->ComputeMoveMaxWalkSpeed(true, 1.f, 1.f, PredictedCapCarryBit), 330.f);
 
 	Stamina->SetSpeedCap(TEXT("SlowZoneTest"), 200.f);
-	TestEqual(TEXT("Un tope no predicho manda en cualquier movimiento"), Stamina->ComputeMoveMaxWalkSpeed(false, 1.f, 1.f, 0), 200.f);
+	TestEqual(TEXT("Un tope no predicho manda en cualquier movimiento"), Stamina->ComputeMoveMaxWalkSpeed(true, 1.f, 1.f, 0), 200.f);
 	Stamina->ClearSpeedCap(TEXT("SlowZoneTest"));
 
 	Stamina->SetSpeedCap(MareoSource(), 250.f);
 	TestEqual(TEXT("Mareada y llevando: los dos bits"), Stamina->GetPredictedCapMask(), PredictedCapAllBits);
-	TestEqual(TEXT("Con los dos: el menor"), Stamina->ComputeMoveMaxWalkSpeed(false, 1.f, 1.f, PredictedCapAllBits), 250.f);
+	TestEqual(TEXT("Con los dos: el menor"), Stamina->ComputeMoveMaxWalkSpeed(true, 1.f, 1.f, PredictedCapAllBits), 250.f);
 
 	Stamina->ClearSpeedCap(CarrySource());
 	Stamina->ClearSpeedCap(MareoSource());
 	TestEqual(TEXT("Soltada y sin mareo: sin bits"), Stamina->GetPredictedCapMask(), static_cast<uint8>(0));
 	// Recién soltada (el dueño aún no lo sabe): el movimiento que aún lo pide lleva el último tope.
-	TestEqual(TEXT("Movimiento que aún lo pide: el último valor"), Stamina->ComputeMoveMaxWalkSpeed(false, 1.f, 1.f, PredictedCapCarryBit), 330.f);
+	TestEqual(TEXT("Movimiento que aún lo pide: el último valor"), Stamina->ComputeMoveMaxWalkSpeed(true, 1.f, 1.f, PredictedCapCarryBit), 330.f);
 	TestEqual(TEXT("Recién soltada: el servidor acepta lo que pide el dueño"),
 		Stamina->ConsumeClientPredictedCaps(PredictedCapCarryBit, TNPredictedCapsTest::Frame), PredictedCapCarryBit);
 	TestTrue(TEXT("El reloj de movimientos avanza con lo validado"), FMath::IsNearlyEqual(Stamina->GetServerMoveClock(), TNPredictedCapsTest::Frame, 1.e-6));
