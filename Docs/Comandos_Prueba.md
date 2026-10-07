@@ -365,7 +365,11 @@ La máquina expendedora (`ATN_VendingMachine`, #859) se coloca a mano. La chapa 
 suma 1 de crédito a quien la lanzó, en esa máquina. Junto a ella, pulsar E cambia de objeto y mantener E 0,8 s compra el elegido
 si llega el crédito: sale por la bandeja. La pantalla enseña el objeto, el precio y tu crédito. Lista por defecto (StaminaBoost
 2, Totem 2, Harpoon 5, PufferFish 1) y valores en `Config/DefaultGame.ini`, `[/Script/Tortunabo.TN_EconomySettings]`; una
-máquina con lista propia lleva un `UTN_VendingStockData` en `Stock`. Pruebas: `Tortunabo.Economy`.
+máquina con lista propia lleva un `UTN_VendingStockData` en `Stock`.
+
+Revivir pagando (#862, provisional): junto al cuerpo de una compañera muerta (el huevo del rescate), mantener E 2 s revive si
+tienes 4 chapas, y el servidor te las cobra; con menos no empieza (suenan dos notas graves). `ReviveChapaCost=0` vuelve al
+rescate gratis de pulsar. La reanimación con baile y el desangrado no cambian. Pruebas: `Tortunabo.Economy`.
 
 | Comando | Qué hace |
 |---|---|

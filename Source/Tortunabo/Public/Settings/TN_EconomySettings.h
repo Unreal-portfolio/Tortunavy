@@ -6,8 +6,8 @@
 #include "TN_EconomySettings.generated.h"
 
 /**
- * @brief Economía de la partida (plan maestro del modo único §4, hoja Economía del Excel): las chapas y las máquinas
- * expendedoras.
+ * @brief Economía de la partida (plan maestro del modo único §4, hoja Economía del Excel): las chapas, las máquinas
+ * expendedoras y revivir pagando.
  *
  * Es dato, no código: se edita sin recompilar en Config/DefaultGame.ini ([/Script/Tortunabo.TN_EconomySettings]) o en Ajustes
  * del proyecto > Tortunavy - Economía. Lo leen el servidor (cobros) y los clientes (lo que se enseña): el .ini empaquetado es
@@ -41,4 +41,15 @@ public:
 	/** Lo que vende una máquina sin lista propia (ATN_VendingMachine::Stock vacío): 4 objetos con su precio en chapas. */
 	UPROPERTY(Config, EditAnywhere, Category = "Máquina expendedora")
 	TArray<FTNVendingOffer> DefaultVendingOffers;
+
+	/**
+	 * Chapas que cuesta revivir a una compañera muerta junto a su cuerpo (hoja Economía: 4), manteniendo la tecla de
+	 * interactuar en el rescate (ATN_RescuePickup). 0 = el rescate gratis de pulsar, como antes.
+	 */
+	UPROPERTY(Config, EditAnywhere, Category = "Revivir", meta = (ClampMin = "0"))
+	int32 ReviveChapaCost = 4;
+
+	/** Segundos que hay que mantener la tecla junto al cuerpo para revivir pagando. */
+	UPROPERTY(Config, EditAnywhere, Category = "Revivir", meta = (ClampMin = "0.2", Units = "Seconds"))
+	float ReviveHoldSeconds = 2.f;
 };
