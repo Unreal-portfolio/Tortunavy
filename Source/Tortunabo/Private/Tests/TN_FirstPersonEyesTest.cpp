@@ -63,6 +63,29 @@ bool FTNFirstPersonEyesTest::RunTest(const FString& Parameters)
 		const double MeshEyesCm = MeshInActor.TransformPosition(Eyes).Z;
 		TestTrue(FString::Printf(TEXT("Gafas: VREyeOffset.Z (%.1f) a ±5 cm de los ojos de la malla (%.1f)"), HeadsetEyes.Z, MeshEyesCm),
 			FMath::Abs(HeadsetEyes.Z - MeshEyesCm) < 5.0);
+		// Y delante (#918): con el cuello echado hacia delante, los ojos de la malla quedan entre 20 y 30 cm delante del centro
+		// (a 21 cm en la postura de referencia), y la raíz de la lengua, 8-14 cm delante y 8-14 cm debajo del punto de vista.
+		const double NeckRad = FMath::DegreesToRadians(static_cast<double>(TNVRGestures::NeckForwardDeg));
+		const double HeadRad = FMath::DegreesToRadians(static_cast<double>(TNVRGestures::HeadLevelDeg));
+		const FVector NeckRef = HeadRef.GetLocation() - FVector(0.0, 1.077, 2.718);
+		auto Posed = [&](const FVector& Point)
+		{
+			auto RotX = [](const FVector& V, const FVector& Origin, double Rad)
+			{
+				const FVector Rel = V - Origin;
+				return Origin + FVector(Rel.X, Rel.Y * FMath::Cos(Rad) - Rel.Z * FMath::Sin(Rad), Rel.Y * FMath::Sin(Rad) + Rel.Z * FMath::Cos(Rad));
+			};
+			const FVector HeadPosed = RotX(HeadRef.GetLocation(), NeckRef, NeckRad);
+			return MeshInActor.TransformPosition(RotX(RotX(Point, NeckRef, NeckRad), HeadPosed, HeadRad));
+		};
+		const FVector PosedEyes = Posed(Eyes);
+		const FVector PosedTongue = Posed(TongueRoot);
+		TestTrue(FString::Printf(TEXT("Gafas: VREyeOffset.X (%.1f) a ±6 cm de los ojos con el cuello adelantado (%.1f)"), HeadsetEyes.X, PosedEyes.X),
+			FMath::Abs(HeadsetEyes.X - PosedEyes.X) < 6.0);
+		const double TongueForward = PosedTongue.X - HeadsetEyes.X;
+		const double TongueBelow = HeadsetEyes.Z - PosedTongue.Z;
+		TestTrue(FString::Printf(TEXT("Lengua %.1f cm delante del punto de vista (8-16)"), TongueForward), TongueForward > 8.0 && TongueForward < 16.0);
+		TestTrue(FString::Printf(TEXT("Lengua %.1f cm debajo del punto de vista (6-14)"), TongueBelow), TongueBelow > 6.0 && TongueBelow < 14.0);
 	}
 	return true;
 }

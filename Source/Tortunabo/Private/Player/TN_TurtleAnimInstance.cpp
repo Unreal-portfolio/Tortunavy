@@ -1247,6 +1247,13 @@ bool FTNTurtleAnimProxy::Evaluate(FPoseContext& Output)
 		Turn(Output.Pose, B.Spine2, AxisX, -3.f * FMath::Sin(F.Clock * 5.f) * F.TiredW);
 		Turn(Output.Pose, B.Head, AxisX, -10.f * F.TiredW);
 	}
+	if (F.VRHeadW > 0.01f)
+	{
+		// Con gafas, el cuello sale del caparazón hacia delante y la cabeza se endereza: los ojos quedan unos 24 cm delante del
+		// centro (VREyeOffset) y la lengua, donde la tendría uno mismo: ~10 cm delante y ~10 cm debajo de ellos.
+		Turn(Output.Pose, B.Neck, AxisX, TNVRGestures::NeckForwardDeg * F.VRHeadW);
+		Turn(Output.Pose, B.Head, AxisX, TNVRGestures::HeadLevelDeg * F.VRHeadW);
+	}
 	if (F.ShellW > 0.01f)
 	{
 		// Se mete en el caparazón: cabeza, brazos y patas encogen y se meten dentro del cuerpo (hacia el centro del
@@ -1393,6 +1400,9 @@ Ease(F.CarryW, bCarrying, 8.f);
 	Ease(F.CarriedW, Carry && Carry->IsBeingCarried(), 8.f);
 	Ease(F.DownW, Turtle && Turtle->IsKnockedDown(), 6.f);
 	Ease(F.TiredW, Stamina && Stamina->IsExhausted(), 4.f);
+
+	// VR (#918): con gafas (en todas las máquinas: bVRPlayer se replica) el cuello va hacia delante y la cabeza, enderezada.
+	Ease(F.VRHeadW, Turtle && Turtle->IsVRPlayer() && !Turtle->IsInShell() && !Turtle->IsKnockedDown() && !Turtle->IsDead(), 6.f);
 
 	// VR: las manos del cuerpo siguen a los mandos, salvo bailando, en el caparazón, tumbada o llevando a otra tortuga.
 	{

@@ -115,6 +115,8 @@ struct FTNTurtleAnimFrame
 	/** Giro de cada mano en el espacio de la malla (su +X, hacia donde apunta la aleta): la muñeca se dobla hacia él. */
 	FQuat VRHandRotL = FQuat::Identity;
 	FQuat VRHandRotR = FQuat::Identity;
+	/** VR (#918): cuello y cabeza echados hacia delante (TNVRGestures::NeckForwardDeg): la tortuga no se ve chepada. Peso. */
+	float VRHeadW = 0.f;
 	/**
 	 * La cabeza que sigue a la cámara en tercera persona (#623, TNHeadLook): guiñada (+ a su derecha) y cabeceo (+ arriba)
 	 * en grados, ya con sus topes, suavizados y multiplicados por su peso. Se reparten entre el cuello y la cabeza.
