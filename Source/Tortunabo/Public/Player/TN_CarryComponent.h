@@ -179,8 +179,11 @@ private:
 	UFUNCTION()
 	void OnRep_ThrowWindupSerial();
 
-	/** Servidor: lanza ya a la que lleva hacia AimRotation (con la E, al acabar de tomar impulso). */
-	void ThrowCarried(const FRotator& AimRotation);
+	/**
+	 * Servidor: lanza ya a la que lleva hacia AimRotation (con la E, al acabar de tomar impulso), al punto de mira del dueño
+	 * AimPoint si se validó (#894) o, si no, al que calcula el servidor.
+	 */
+	void ThrowCarried(const FRotator& AimRotation, const TOptional<FVector>& AimPoint);
 
 	/** Servidor: acabada la toma de impulso, la suelta. */
 	void FinishThrowWindup();
@@ -194,6 +197,7 @@ private:
 	/** Servidor: toma de impulso en curso, hacia dónde apuntaba y cuándo acaba. */
 	bool bThrowWindupPending = false;
 	FRotator PendingThrowAim = FRotator::ZeroRotator;
+	TOptional<FVector> PendingThrowAimPoint;
 	FTimerHandle ThrowWindupTimer;
 
 	/** Cosmético: cuándo empezó en esta máquina la toma de impulso (tiempo del mundo; negativo = ninguna). */
@@ -202,8 +206,9 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerGrab(ATortugaCharacter* Target);
 
+	/** AimPoint: el punto de mira del dueño con su cámara real (#894; bHasAimPoint = lo tiene). */
 	UFUNCTION(Server, Reliable)
-	void ServerThrow(FRotator AimRotation);
+	void ServerThrow(FRotator AimRotation, FVector_NetQuantize AimPoint, bool bHasAimPoint);
 
 	UFUNCTION(Server, Reliable)
 	void ServerDrop();

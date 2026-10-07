@@ -1527,7 +1527,10 @@ void ATortugaCharacter::DropEquippedItem()
 
 void ATortugaCharacter::TryUseEquippedItem()
 {
-	ServerUseEquippedItem();
+	// El punto de mira con la cámara de esta máquina (la del dueño tiene los ajustes locales, #894).
+	FVector AimPoint = FVector::ZeroVector;
+	const bool bHasAimPoint = GetCrosshairPoint(AimPoint);
+	ServerUseEquippedItem(FVector_NetQuantize(AimPoint), bHasAimPoint);
 }
 
 void ATortugaCharacter::RefreshSprintRequest()

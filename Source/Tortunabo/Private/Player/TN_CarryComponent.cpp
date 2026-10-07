@@ -94,9 +94,12 @@ void UTN_CarryComponent::RequestThrow()
 	const ATortugaCharacter* Self = GetTurtle();
 	// Hacia donde mira la cámara.
 	const FRotator Aim = Self ? Self->GetTurtleAimRotation() : FRotator::ZeroRotator;
+	// Y al punto de mira con la cámara de esta máquina: la copia del servidor no tiene los ajustes locales (#894).
+	FVector AimPoint = FVector::ZeroVector;
+	const bool bHasAimPoint = Self && Self->GetCrosshairPoint(AimPoint);
 	// Las aletas se echan atrás al momento en esta máquina (el servidor la suelta al acabar la toma de impulso).
 	BeginLocalThrowWindup();
-	ServerThrow(Aim);
+	ServerThrow(Aim, FVector_NetQuantize(AimPoint), bHasAimPoint);
 }
 
 float UTN_CarryComponent::GetThrowWindupAlpha() const
@@ -202,7 +205,7 @@ void UTN_CarryComponent::ServerGrab_Implementation(ATortugaCharacter* Target)
 	}
 }
 
-void UTN_CarryComponent::ServerThrow_Implementation(FRotator AimRotation)
+void UTN_CarryComponent::ServerThrow_Implementation(FRotator AimRotation, FVector_NetQuantize AimPoint, bool bHasAimPoint)
 {
 	const ATortugaCharacter* Self = GetTurtle();
 	UWorld* World = GetWorld();
@@ -211,9 +214,11 @@ void UTN_CarryComponent::ServerThrow_Implementation(FRotator AimRotation)
 	{
 		return;
 	}
+	// Se valida al recibirlo, con la rotación de control de ese momento (la del pulsar).
+	const TOptional<FVector> ValidAimPoint = Self->ValidateClientAimPoint(AimPoint, bHasAimPoint);
 	if (ThrowWindupSeconds <= 0.01f || !World)
 	{
-		ThrowCarried(AimRotation);
+		ThrowCarried(AimRotation, ValidAimPoint);
 		return;
 	}
 
@@ -221,6 +226,7 @@ void UTN_CarryComponent::ServerThrow_Implementation(FRotator AimRotation)
 	// la suelta hacia donde apuntaba al pulsar.
 	bThrowWindupPending = true;
 	PendingThrowAim = AimRotation;
+	PendingThrowAimPoint = ValidAimPoint;
 	ThrowWindupSerial = ThrowWindupSerial >= 255 ? static_cast<uint8>(1) : static_cast<uint8>(ThrowWindupSerial + 1);
 	BeginLocalThrowWindup();
 	World->GetTimerManager().SetTimer(ThrowWindupTimer,
@@ -232,7 +238,7 @@ void UTN_CarryComponent::FinishThrowWindup()
 	bThrowWindupPending = false;
 	if (CarriedTurtle)
 	{
-		ThrowCarried(PendingThrowAim);
+		ThrowCarried(PendingThrowAim, PendingThrowAimPoint);
 	}
 }
 
@@ -249,7 +255,7 @@ void UTN_CarryComponent::CancelThrowWindup()
 	}
 }
 
-void UTN_CarryComponent::ThrowCarried(const FRotator& AimRotation)
+void UTN_CarryComponent::ThrowCarried(const FRotator& AimRotation, const TOptional<FVector>& AimPoint)
 {
 	ATortugaCharacter* Self = GetTurtle();
 	ATortugaCharacter* Carried = CarriedTurtle;
@@ -266,7 +272,9 @@ void UTN_CarryComponent::ThrowCarried(const FRotator& AimRotation)
 	// Dentro del caparazón la caja frena un poco en el aire: se compensa para que llegue al punto.
 	const UTN_ShellComponent* CarriedShell = Carried->GetShellComponent();
 	const float Damping = CarriedShell && CarriedShell->IsInShell() ? ATN_ShellBody::BoxLinearDamping : 0.f;
-	const FVector Dir = Self->GetThrowDirectionToCrosshair(Start, AimRotation, Speed, 0.f, Damping);
+	const FVector Dir = AimPoint.IsSet()
+		? Self->GetThrowDirectionToPoint(Start, AimPoint.GetValue(), AimRotation, Speed, 0.f, Damping)
+		: Self->GetThrowDirectionToCrosshair(Start, AimRotation, Speed, 0.f, Damping);
 
 	Release(Carried, Start, Dir * Speed, true, true);
 	if (ThrowSound)
