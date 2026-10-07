@@ -186,9 +186,19 @@ bool UTN_InventoryComponent::CanReceiveItem(const FTN_InventoryItem& NewItem, bo
 	return TNInventoryLogic::CanReceiveItem(bHasEquippedItem, bHasStoredItem, bAllowReplaceIfFull);
 }
 
+namespace
+{
+	/** Rotar saca el guardado a la mano: no vale en el caparazón, en brazos, noqueada ni muerta (#891). */
+	bool CanOwnerRotateItems(const AActor* Owner)
+	{
+		const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(Owner);
+		return !Turtle || Turtle->CanUseHandsForInteraction();
+	}
+}
+
 void UTN_InventoryComponent::RotateItems()
 {
-	if (!GetOwner())
+	if (!GetOwner() || !CanOwnerRotateItems(GetOwner()))
 	{
 		return;
 	}
@@ -260,6 +270,11 @@ bool UTN_InventoryComponent::TryConsumeItemByUseType(ETN_ItemUseType InUseType, 
 
 void UTN_InventoryComponent::ServerRotateItems_Implementation()
 {
+	// El cliente ya lo comprueba, pero con latencia pide antes de recibir que está en el caparazón o en brazos.
+	if (!CanOwnerRotateItems(GetOwner()))
+	{
+		return;
+	}
 	SwapSlotsInternal();
 	RefreshEquippedVisual();
 }

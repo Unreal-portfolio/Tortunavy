@@ -1599,6 +1599,14 @@ public:
 	bool IsInShell() const;
 
 	/**
+	 * @brief Guarda de las acciones con las aletas que pide el cliente (interactuar, mantener, rotar el inventario): no
+	 *        valen noqueada, muerta, en el caparazón ni en brazos de otra tortuga.
+	 * @note La aplica el servidor en ServerTryInteract, ServerBeginHoldInteract y UTN_InventoryComponent::ServerRotateItems:
+	 *       con latencia el cliente pide antes de recibir el estado (Ctrl y E seguidos) (#891).
+	 */
+	bool CanUseHandsForInteraction() const;
+
+	/**
 	 * @brief Reacción del personaje a entrar o salir del caparazón.
 	 * @note La llama UTN_ShellComponent::ApplyShellState en TODAS las máquinas.
 	 *       El componente gobierna el estado y la velocidad; esto es lo que toca
