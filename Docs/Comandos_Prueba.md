@@ -355,6 +355,18 @@ un objeto suelto, pesca en un charco o rescata a una compañera derribada o en e
 | `TN.Coop.Item <objeto\|list> [jugador=0]` | Da ese objeto del coop a la tortuga (a la mano; si la mochila está llena, sustituye). `list` enseña objetos, apilado, usos y peso. |
 | `TN.Coop.FishingPool [jugador=0]` / `TN.Coop.FishingPool clear` | Un charco de pesca 4 m delante de esa tortuga / quita los de prueba. Mantener E 2 s pesca un objeto; 12 s de respiro por charco. |
 
+### Cajas de suministros y airdrop (#861, #860)
+
+Cajas colocadas a mano en el mapa (`ATN_SupplyCrate`): se abren manteniendo E 1,5 s, una sola vez por partida para todo el
+grupo (quien entra tarde la ve abierta). Al abrirse sueltan objetos de la tabla del coop y chapas con la tabla de botín
+(`UTN_LootTable` / `FTNLootTableDef`): la caja, 1 objeto y chapas 0,25 / 0,07 / 0 (probabilidad de dar al menos 1, 2 y 3,
+hoja Economía). Sin clase de chapa (#858) el número de chapas solo sale en el log (`LogTNLoot`). Pruebas: `Tortunabo.Supply`.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Supply.Crate [jugador=0]` / `TN.Supply.Crate clear` | Una caja de suministros 3 m delante de esa tortuga / quita las de prueba. |
+| `log LogTNLoot Verbose` | Lo que da cada caja al abrirse (objetos y chapas). |
+
 ## Huella del mapa: anfitrión y clientes con el mismo mapa (#828)
 
 Lo que ve el anfitrión tiene que ser exactamente lo que ven todos, en cualquier modo. `TN.Map.Fingerprint` escribe en el log

@@ -845,14 +845,8 @@ void ATN_ProcSearchSpot::FinishSearch()
 	APawn* Pawn = SearchState.Searcher.Get();
 	const FVector From = GetLootOrigin(Pawn);
 
-	FTN_InventoryItem Item;
-	AActor* Loot = nullptr;
 	FVector Landing = From;
-	if (FMath::FRand() < GetLuck() && PickLoot(Item, Pawn))
-	{
-		Landing = FindLanding(Pawn, From);
-		Loot = SpawnLoot(Item, Landing);
-	}
+	AActor* Loot = SpawnSearchReward(Pawn, From, Landing);
 
 	SetNetDormancy(DORM_Awake);
 	const FTNSearchSpotState OldState = SearchState;
@@ -865,8 +859,19 @@ void ATN_ProcSearchSpot::FinishSearch()
 	SearchState.SearchCount = static_cast<uint8>(SearchState.SearchCount + 1);
 	CommitState(OldState);
 
-	const FString Result = Loot ? FString::Printf(TEXT("¡puf! %s"), *Item.ItemId.ToString()) : FString(TEXT("¡pof! nada"));
+	const FString Result = Loot ? FString::Printf(TEXT("¡puf! %s"), *Loot->GetName()) : FString(TEXT("¡pof! nada"));
 	UE_LOG(LogTortunabo, Log, TEXT("[Search] %s ha rebuscado %s: %s."), *GetNameSafe(Pawn), *GetName(), *Result);
+}
+
+AActor* ATN_ProcSearchSpot::SpawnSearchReward(APawn* Pawn, const FVector& From, FVector& OutLanding)
+{
+	FTN_InventoryItem Item;
+	if (FMath::FRand() >= GetLuck() || !PickLoot(Item, Pawn))
+	{
+		return nullptr;
+	}
+	OutLanding = FindLanding(Pawn, From);
+	return SpawnLoot(Item, OutLanding);
 }
 
 void ATN_ProcSearchSpot::CancelSearch(const TCHAR* Why)
