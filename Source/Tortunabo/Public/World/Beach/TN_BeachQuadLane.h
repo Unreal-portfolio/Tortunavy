@@ -46,8 +46,8 @@ struct TORTUNABO_API FTNQuadPass
 
 /**
  * Paso de quads (ETNBeachElement::QuadLane): el quad gigante de siempre (ATN_QuadActor, deprecado) con aspecto nuevo y sin
- * actor propio. El paso va por el eje X local del actor, centrado en él (el generador lo gira 90°: cruza la playa de lado a
- * lado, TN_BeachLayout.h), con Spec.Extent de largo (0 = el ancho de la playa) y la huella del contrato como semiancho
+ * actor propio. El paso va por el eje X local del actor, centrado en él (girado 90° cruza la playa de lado a lado), con
+ * Spec.Extent de largo (0 = el ancho de la playa) y la huella del contrato como semiancho
  * por su Y local (a lo largo del camino). En la arena se ven las rodadas.
  *
  *  - Cada 12-20 s sale un quad enorme (a escala: 56 m de largo, ruedas de 17 m de alto y 7 m de ancho, con su piloto).

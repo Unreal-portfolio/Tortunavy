@@ -73,7 +73,6 @@ void ATN_MapPlacementSpawner::BuildDecor()
 		Item.Pos = FVector2D(P.Location.X, P.Location.Y);
 		Item.Yaw = P.YawDeg;
 		Item.Radius = TNBeach::FootprintRadius(P.Element) * P.SizeScale;
-		Item.Core = Item.Radius;
 		Item.HalfLength = 0.5 * P.ExtentCm;
 		Item.Spec.Element = P.Element;
 		Item.Spec.Seed = static_cast<int32>(SeedOf(P.Id));
@@ -93,7 +92,7 @@ void ATN_MapPlacementSpawner::BuildDecor()
 		UE_LOG(LogTortunabo, Error, TEXT("[MapPlacements] No se ha podido crear el decorado local."));
 		return;
 	}
-	DecorField->BeginBuildPlaced(Items, Placements, 1);
+	DecorField->BeginBuildPlaced(Items, Placements);
 	int32 Steps = 0;
 	while (!DecorField->StepBuild(DecorStepBudget) && ++Steps < DecorMaxSteps) {}
 	Stats.DecorItems = DecorField->GetStats().Items;

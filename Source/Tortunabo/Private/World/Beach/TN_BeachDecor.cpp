@@ -1,7 +1,6 @@
 #include "World/Beach/TN_BeachDecor.h"
 #include "Core/TN_ProjectMaterials.h"
 #include "TN_BeachDecorKit.h"
-#include "World/Beach/TN_BeachLayout.h"
 #include "../ProcMap/TN_ProcMapRuntimeMesh.h"
 #include "Art/TN_Art.h"
 #include "Art/TN_ArtMeshComponent.h"
@@ -222,49 +221,6 @@ FTransform TNBeachDecorKit::BodyPlacement(const TNBeachProp::FPropInfo& Info, in
 	const double Sink = FMath::Lerp(static_cast<double>(Info.SinkMin), static_cast<double>(Info.SinkMax), TNBeachProp::Rnd(USeed, 4)) * Size;
 	const FQuat Tilt(FVector(FMath::Cos(TiltDir), FMath::Sin(TiltDir), 0.0), FMath::DegreesToRadians(TiltDeg));
 	return FTransform(Tilt * TNBeachProp::YawQ(Yaw), FVector(0.0, 0.0, -Sink), FVector(static_cast<double>(Size)));
-}
-
-bool TNBeachDecorKit::HasFixedYaw(const TNBeachLayout::FItem& Item)
-{
-	return Item.Element == ETNBeachElement::SandCastleHuge && Item.Role == TNBeachLayout::EItemRole::Castle;
-}
-
-double TNBeachDecorKit::FixedYawOf(const TNBeachLayout::FItem& Item)
-{
-	return 180.0 + static_cast<double>(static_cast<uint32>(Item.Spec.Seed) % 25u) - 12.0;
-}
-
-FTransform TNBeachDecorKit::ItemBodyPlacement(const TNBeachProp::FPropInfo& Info, const TNBeachLayout::FItem& Item, float Size)
-{
-	if (!HasFixedYaw(Item))
-	{
-		return BodyPlacement(Info, Item.Spec.Seed, Size);
-	}
-	// Sin giro al azar (la inclinación y el hundimiento, los mismos que siempre): la puerta mira donde dice el reparto.
-	TNBeachProp::FPropInfo Fixed = Info;
-	Fixed.bFreeYaw = false;
-	Fixed.YawJitter = 0.f;
-	return BodyPlacement(Fixed, Item.Spec.Seed, Size);
-}
-
-FTransform TNBeachDecorKit::ItemPlacement(const TNBeachLayout::FRoundLayout& Layout, const TNBeachLayout::FItem& Item)
-{
-	const FQuat Yaw = FRotator(0.0, HasFixedYaw(Item) ? FixedYawOf(Item) : Item.Yaw, 0.0).Quaternion();
-	if (!TNBeachLayout::IsLitter(Item))
-	{
-		return FTransform(Yaw, FVector(Item.Pos.X, Item.Pos.Y, TNBeachLayout::PlacementZ(Item)));
-	}
-	FVector Normal = FVector::UpVector;
-	const double Z = TNBeachLayout::MeshSandZ(Layout, Item.Pos.X, Item.Pos.Y, &Normal);
-	// Sigue la cuesta, con tope: girar la vertical hacia la normal como mucho LitterMaxTilt.
-	const double Angle = FMath::Acos(FMath::Clamp(Normal.Z, -1.0, 1.0));
-	const FVector Axis = FVector::CrossProduct(FVector::UpVector, Normal);
-	FQuat Tilt = FQuat::Identity;
-	if (Axis.SizeSquared() > UE_DOUBLE_KINDA_SMALL_NUMBER)
-	{
-		Tilt = FQuat(Axis.GetSafeNormal(), FMath::Min(Angle, FMath::DegreesToRadians(LitterMaxTilt)));
-	}
-	return FTransform(Tilt * Yaw, FVector(Item.Pos.X, Item.Pos.Y, Z));
 }
 
 void TNBeachDecorKit::TilePlacements(ETNBeachElement Element, int32 Seed, float Size, float Extent, TMap<int32, TArray<FTransform>>& OutByPiece)
