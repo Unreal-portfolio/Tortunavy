@@ -6,6 +6,7 @@
 #include "TimerManager.h"
 #include "Core/TN_CosmeticsTypes.h"
 #include "Player/TN_DiveDecisions.h"
+#include "Player/TN_RagdollNet.h"
 #include "TortugaCharacter.generated.h"
 
 class APlayerController;
@@ -1179,6 +1180,15 @@ protected:
 	FTimerHandle RagdollFreezeTimerHandle;
 
 	FTimerHandle KnockdownTimerHandle;
+
+	// ── Ragdoll del derribo en red (#153, Docs/Ragdoll_Red.md) ─────────────────
+	/**
+	 * Punto (centro de la cápsula) donde se levanta del derribo, elegido por el servidor. Se escribe junto a
+	 * bIsKnockedDown = false: OnRep_IsKnockedDown ya lo tiene y todas las máquinas levantan la tortuga en el mismo sitio.
+	 * Cero mientras dura el derribo.
+	 */
+	UPROPERTY(Replicated)
+	FVector_NetQuantize10 KnockdownStandLocation = FVector_NetQuantize10::ZeroVector;
 
 	// ── Big Head consumable ──────────────────────────────────────────────────
 	/** true mientras el efecto de cabeza grande está activo. Replicado para que todos los clientes lo vean. */

@@ -1701,6 +1701,8 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Freeze del ragdoll de muerte — JIP-safe: llegan en el bunch inicial.
 	DOREPLIFETIME(ATortugaCharacter, bRagdollFrozen);
 	DOREPLIFETIME(ATortugaCharacter, RagdollFrozenLoc);
+	// Derribo autoritativo (#153): punto donde se levanta.
+	DOREPLIFETIME(ATortugaCharacter, KnockdownStandLocation);
 	// SkipOwner: el owner ya arranca el emote localmente en TriggerEmote/CancelEmote.
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, ReplicatedEmoteIndex, COND_SkipOwner);
 	// DBNO revive state
