@@ -889,7 +889,6 @@ private:
 	// ── ServerUseEquippedItem: una rama por ETN_ItemUseType (validar → consumir → efecto) ──
 	void HandleUseSelfStaminaBoost(const FTN_InventoryItem& EquippedItem);
 	void HandleUseSelfStaminaFull(const FTN_InventoryItem& EquippedItem);
-	void HandleUseThrowable(const FTN_InventoryItem& EquippedItem);
 	void HandleUseTotem(const FTN_InventoryItem& EquippedItem);
 
 	UFUNCTION(Server, Reliable)

@@ -77,11 +77,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNCoopItemsLootTableTest,
 bool FTNCoopItemsLootTableTest::RunTest(const FString& Parameters)
 {
 	// Filas de DT_Items: peso de quien sortea x 15; las de los catálogos de código, nunca.
-	TestEqual(TEXT("Fila normal: 15"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::Throwable, 1.f), 15.f);
+	TestEqual(TEXT("Fila normal: 15"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::SelfStaminaBoost, 1.f), 15.f);
 	TestEqual(TEXT("Tótem a 0,3: 4,5"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::Totem, 0.3f), 4.5f, 1.e-4f);
 	TestEqual(TEXT("Sin uso: fuera"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::None, 1.f), 0.f);
 	TestEqual(TEXT("Del coop: fuera (salen por su peso)"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::CoopItem, 1.f), 0.f);
-	TestEqual(TEXT("Peso negativo: fuera"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::Throwable, -1.f), 0.f);
+	TestEqual(TEXT("Peso negativo: fuera"), TNCoopItemRules::CatalogWeight(ETN_ItemUseType::SelfStaminaBoost, -1.f), 0.f);
 
 	// Sorteo ponderado.
 	TestEqual(TEXT("Sin pesos: nada"), TNCoopItemRules::PickWeighted({}, 0.5f), INDEX_NONE);

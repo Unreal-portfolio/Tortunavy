@@ -95,13 +95,10 @@ bool FTNCatalogVisualsRulesTest::RunTest(const FString& Parameters)
 		TestFalse(TEXT("Lo pintado en ejecución no cuenta como del motor"), TNCatalogItemVisuals::IsEnginePlaceholder(Painted));
 	}
 
-	// Un lanzable conserva su malla aunque sea del motor (viaja por un multicast); los demás la cambian.
-	FTN_InventoryItem Throwable;
-	Throwable.ItemId = TEXT("Prueba");
-	Throwable.UseType = ETN_ItemUseType::Throwable;
-	Throwable.EquippedMesh = Cube;
-	TestFalse(TEXT("Lanzable: conserva la malla"), TNCatalogItemVisuals::ShouldReplaceMesh(Throwable));
-	FTN_InventoryItem Boost = Throwable;
+	// Con una malla del motor, el objeto la cambia por la de código.
+	FTN_InventoryItem Boost;
+	Boost.ItemId = TEXT("Prueba");
+	Boost.EquippedMesh = Cube;
 	Boost.UseType = ETN_ItemUseType::SelfStaminaBoost;
 	Boost.EquippedMeshScale = FVector(0.25f);
 	TestTrue(TEXT("Barrita con el cubo: se cambia"), TNCatalogItemVisuals::ShouldReplaceMesh(Boost));
