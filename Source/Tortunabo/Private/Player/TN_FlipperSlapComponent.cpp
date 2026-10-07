@@ -12,6 +12,8 @@
 #include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "TimerManager.h"
+#include "World/Beach/TN_BeachSeaweed.h"
+#include "World/Beach/TN_BeachTrashPile.h"
 #include "World/Beach/TN_RaceBurstFX.h"
 #include "World/Beach/TN_RaceItemSynth.h"
 #include "Game/TN_ItemRuntime.h"
@@ -20,6 +22,9 @@ namespace TNFlipperSlapDetail
 {
 	/** Altura del pecho sobre los pies (cm): de donde sale la línea de vista y donde brilla el golpe. */
 	constexpr float ChestHeight = 35.f;
+
+	/** Grosor (cm) del barrido del guantazo contra un montón de basura. */
+	constexpr float TrashSlapRadius = 40.f;
 
 	/** El pecho de una tortuga: sus pies (centro de la cápsula menos la media altura) y ChestHeight encima. */
 	FVector ChestOf(const ACharacter& Turtle)
@@ -208,6 +213,17 @@ void UTN_FlipperSlapComponent::ResolveOnServer(double Now)
 		UTN_TurtleMovementComponent::LaunchFromServer(Victim, TNFlipperSlap::PushVelocity(Origin, Forward, At));
 		Victim->NotifyHitFeedback(TNHitFeedback::MinStrength);
 		UE_LOG(LogTortunabo, Log, TEXT("[Guantazo] %s da un guantazo a %s."), *GetNameSafe(Turtle), *GetNameSafe(Victim));
+	}
+	// Algas (#871): el guantazo las corta si caen bajo ella o al alcance de la aleta.
+	const FVector SlapPoint = Origin + Forward * TNFlipperSlap::Reach * 0.5f;
+	for (TActorIterator<ATN_BeachSeaweed> It(World); It; ++It)
+	{
+		It->ServerHitBySlap(Origin, SlapPoint);
+	}
+	// Basura (#871): también se rompe de un guantazo, no solo con lo que se lanza.
+	if (ATN_BeachTrashPile* Trash = Cast<ATN_BeachTrashPile>(ATN_BeachEnemy::FindProjectileHit(Turtle, Origin, SlapPoint, TrashSlapRadius)))
+	{
+		Trash->ApplyHitStun(TNFlipperSlap::DizzySeconds, Turtle);
 	}
 	MulticastSlap(Victim != nullptr, ImpactPoint);
 }

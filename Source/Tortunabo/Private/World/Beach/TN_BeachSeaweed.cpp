@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachSeaweed.h"
+#include "World/TN_HazardEffects.h"
 #include "World/Beach/TN_BeachNearby.h"
 #include "World/Beach/TN_BeachStun.h"
 #include "World/Beach/TN_BeachTrapSynthComponent.h"
@@ -191,6 +192,7 @@ void ATN_BeachSeaweed::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ATN_BeachSeaweed, Catches);
+	DOREPLIFETIME(ATN_BeachSeaweed, bCut);
 }
 
 void ATN_BeachSeaweed::ApplySpec()
@@ -304,6 +306,79 @@ bool ATN_BeachSeaweed::IsInPatch(const ACharacter* Turtle, double Grow) const
 	const double Nx = Local.X / (Ax * TNBeachSeaweedDetail::CatchFraction * Grow);
 	const double Ny = Local.Y / (Ay * TNBeachSeaweedDetail::CatchFraction * Grow);
 	return Nx * Nx + Ny * Ny <= 1.0;
+}
+
+bool ATN_BeachSeaweed::ContainsPoint(const FVector& WorldPoint) const
+{
+	const FVector Local = GetActorTransform().InverseTransformPosition(WorldPoint);
+	if (Local.Z < -200.0 || Local.Z > MoundH + 200.0)
+	{
+		return false;
+	}
+	constexpr double Grow = 1.15;
+	const double Nx = Local.X / (Ax * Grow);
+	const double Ny = Local.Y / (Ay * Grow);
+	return Nx * Nx + Ny * Ny <= 1.0;
+}
+
+bool ATN_BeachSeaweed::ServerHitBySlap(const FVector& SlapOrigin, const FVector& SlapPoint)
+{
+	if (!HasAuthority() || bCut || (!ContainsPoint(SlapOrigin) && !ContainsPoint(SlapPoint)))
+	{
+		return false;
+	}
+	++HitsTaken;
+	if (!TNHazard::SeaweedCut(HitsTaken, UTN_HazardTuning::Get().SeaweedHitsToCut))
+	{
+		return true;
+	}
+	UE_LOG(LogTortunabo, Log, TEXT("[Playa] Algas %s cortadas de un golpe."), *GetName());
+	bCut = true;
+	Catches.Reset();
+	Tracks.Reset();
+	HandleCatchesChanged();
+	ApplyCutLocal();
+	FlushNetDormancy();
+	ForceNetUpdate();
+	return true;
+}
+
+void ATN_BeachSeaweed::OnRep_Cut()
+{
+	if (!IsActorTickEnabled())
+	{
+		SetActorTickEnabled(true);
+	}
+	ApplyCutLocal();
+}
+
+void ATN_BeachSeaweed::ApplyCutLocal()
+{
+	if (!bCut || bCutApplied)
+	{
+		return;
+	}
+	bCutApplied = true;
+	PredictedSince = -1.0;
+	TArray<TWeakObjectPtr<ACharacter>> Keys;
+	Holds.GetKeys(Keys);
+	for (const TWeakObjectPtr<ACharacter>& Key : Keys)
+	{
+		if (ACharacter* Turtle = Key.Get())
+		{
+			RemoveHold(Turtle);
+		}
+	}
+	Holds.Reset();
+	if (PatchMesh)
+	{
+		PatchMesh->SetVisibility(false);
+	}
+	if (LiveMesh)
+	{
+		LiveMesh->SetVisibility(false);
+		Splash.Burst(GetActorLocation() + FVector(0.0, 0.0, MoundH), 20, FVector::UpVector, 420.f, 1.1f, static_cast<float>(FMath::Min(Ax, Ay) * 0.6));
+	}
 }
 
 bool ATN_BeachSeaweed::IsVisuallyHeld(const ACharacter* Turtle) const
@@ -615,7 +690,7 @@ float ATN_BeachSeaweed::GetTickWakeDistance() const
 
 bool ATN_BeachSeaweed::IsTickBusy() const
 {
-	if (Catches.Num() > 0 || Holds.Num() > 0 || PredictedSince >= 0.0)
+	if (Catches.Num() > 0 || Holds.Num() > 0 || PredictedSince >= 0.0 || (bCut && Splash.IsLive()))
 	{
 		return true;
 	}
@@ -865,6 +940,12 @@ namespace
 void ATN_BeachSeaweed::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (bCut)
+	{
+		ApplyCutLocal();
+		Splash.Tick(DeltaSeconds);
+		return;
+	}
 	if (HasAuthority())
 	{
 		ServerUpdate();

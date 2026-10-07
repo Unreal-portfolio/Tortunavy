@@ -11,9 +11,9 @@ class USoundBase;
  * Cangrejo arrastrador (ETNBeachElement::DragCrab, #685, Excel_DayT «Cangrejo 2»): un cangrejo mediano (el del cangrejo
  * gigante a un tercio) que ronda su sitio, persigue a la tortuga que ve a 7 m más despacio de lo que ella corre, la
  * engancha con la pinza y la arrastra hacia atrás (hacia la salida en la carrera; hacia su sitio en Supervivencia) como
- * mucho MaxDragDistance. Al acabar la suelta derribada con un empujón. Machacar salto o un objeto lanzado la sueltan
- * antes. Nunca la deja en una zona de muerte ni en un desnivel: si delante no hay suelo seguro, la suelta ahí
- * (TNBeachCreatureRules::DragCrab).
+ * mucho MaxDragDistance. Si llega al final, o al borde de una zona de muerte o de un desnivel, la tortuga
+ * muere: el arrastre es mortal (UTN_HazardTuning::DragCrab, #871; sin bKills, la suelta derribada). Machacar salto o un
+ * objeto lanzado la sueltan antes (TNBeachCreatureRules::DragCrab).
  *
  * Red: el servidor decide (Mover y Grabbed replicados); cada máquina sujeta a la arrastrada en la pinza con
  * BeginHoldTurtle/PlaceHeldTurtle, igual que el pulpo, así que no hay tirones en el cliente arrastrado.

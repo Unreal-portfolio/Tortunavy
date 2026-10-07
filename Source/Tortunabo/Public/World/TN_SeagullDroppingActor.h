@@ -17,10 +17,10 @@ class UDecalComponent;
  *   2. Cae en línea recta a FallSpeed cm/s.
  *   3. Una sombra (Decal) en el suelo se ENCOGE a medida que la caca baja,
  *      dando feedback visual de dónde y cuándo impacta.
- *   4. Al impactar el suelo: hitbox instantáneo → si hay jugador → muerte.
+ *   4. Al impactar el suelo: hitbox instantáneo → si hay jugador → daño (UTN_HazardTuning::SeagullDropping, #871).
  *   5. El proyectil no persigue — el jugador solo necesita moverse.
  *
- * Autoridad: servidor controla el fall + detección de muerte.
+ * Autoridad: servidor controla el fall + detección del impacto.
  *   Posición se replica via SetReplicateMovement.
  *
  * Uso:

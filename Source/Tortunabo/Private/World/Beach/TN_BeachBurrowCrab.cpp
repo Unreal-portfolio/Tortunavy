@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachBurrowCrab.h"
+#include "World/TN_HazardEffects.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -160,6 +161,8 @@ void ATN_BeachBurrowCrab::ServerTick(float DeltaSeconds)
 			GrabStatus->ServerArmEscape(true);
 		}
 		IgnoreTurtle(InGrab, Times.HoldMax + Times.Recharge);
+		// Cangrejo 3: la pinza quita 40 al cerrarse (#871).
+		TNHazard::Apply(UTN_HazardTuning::Get().BurrowCrab, InGrab, this);
 	}
 	ServerSetState(ToByte(Next), SimLoc);
 	ForceNetUpdate();

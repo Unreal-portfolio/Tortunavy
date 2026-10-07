@@ -1,4 +1,5 @@
 #include "World/TN_JellyfishActor.h"
+#include "World/TN_HazardEffects.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -431,6 +432,8 @@ void ATN_JellyfishActor::CheckTentacles()
 		}
 		LastSting.Add(Turtle, Now);
 		TNBeach::StunTurtle(Turtle, TNTrampolineRules::StingStunSeconds);
+		// Tentáculos de la medusa: veneno de la hoja (#871).
+		TNHazard::Apply(UTN_HazardTuning::Get().JellyfishTentacles, Turtle, this);
 		if (UTN_BeachTrapStatusComponent* Status = UTN_BeachTrapStatusComponent::FindOrAddTo(Turtle))
 		{
 			Status->ServerSlow(TNTrampolineRules::StingSpeedFactor, TNTrampolineRules::StingSlowSeconds);

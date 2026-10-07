@@ -18,6 +18,9 @@ FText TNDeathCause::Describe(ETNDeathCause Cause)
 		case ETNDeathCause::Quad:            return NSLOCTEXT("TNHUD", "DeathCauseQuad", "Te ha atropellado un quad");
 		case ETNDeathCause::Bleedout:        return NSLOCTEXT("TNHUD", "DeathCauseBleedout", "Nadie llegó a reanimarte");
 		case ETNDeathCause::ThrownItem:      return NSLOCTEXT("TNHUD", "DeathCauseThrownItem", "Te ha dado un objeto lanzado");
+		case ETNDeathCause::Poison:          return NSLOCTEXT("TNHUD", "DeathCausePoison", "El veneno ha podido contigo");
+		case ETNDeathCause::Dehydration:     return NSLOCTEXT("TNHUD", "DeathCauseDehydration", "Te has quedado sin agua");
+		case ETNDeathCause::Quicksand:       return NSLOCTEXT("TNHUD", "DeathCauseQuicksand", "Te han tragado las arenas movedizas");
 		default:                             return NSLOCTEXT("TNHUD", "ResultsRankEliminated", "Eliminado");
 	}
 }

@@ -69,12 +69,11 @@ namespace TNAnnelid
 }
 
 /**
- * Anélido poliqueto (#792, GDD: aliado de estamina): una boca estática en el suelo, estilo gusano de Dune. Al cazarlo
- * (interactuar a 3 m como mucho, un solo golpe) el gusano sale, se consume y rellena la estamina de quien lo ha cazado.
- * No toca la vida (regla del director: sin vida, veneno ni curas). Lo coloca el generador del coop solo en los tramos
- * Fácil y Medio de la tabla de intensidad (#788).
+ * Anélido poliqueto (#792, hoja EnemyAndObstacleData: aliado que cura): una boca estática en el suelo, estilo gusano de
+ * Dune. Al cazarlo (interactuar a 3 m como mucho, un solo golpe) el gusano sale, se consume y cura +25 de vida a quien lo
+ * ha cazado (UTN_HazardTuning::AnnelidHeal, #871).
  *
- * Red: el servidor decide la caza (bConsumed replicado) y la estamina (UTN_StaminaComponent se replica al dueño); cada
+ * Red: el servidor decide la caza (bConsumed replicado) y la cura (UTN_VitalsComponent se replica); cada
  * máquina anima la salida del gusano y suena al recibir bConsumed.
  */
 UCLASS(Blueprintable)

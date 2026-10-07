@@ -11,6 +11,7 @@
 #include "Multiplayer/TN_TravelFailureSubsystem.h"
 #include "World/TN_RescuePickup.h"
 #include "Player/TN_InventoryComponent.h"
+#include "Player/TN_VitalsComponent.h"
 #include "World/TN_DeathZoneVolume.h"
 #include "World/TN_StormVolume.h"
 #include "GameFramework/SpectatorPawn.h"
@@ -571,6 +572,11 @@ bool ATN_RunGameMode::TryTotemAutoRevive(APlayerController* PlayerController)
 					UE_LOG(LogTortunabo, Log, TEXT("[Totem] Auto-revive activado para %s — totem consumido."),
 						*GetNameSafe(PlayerController));
 					DyingChar->Multicast_OnTotemAutoRevive();
+					// Salva de la muerte: si moría por los vitales (vida a cero), vuelve con ellos llenos.
+					if (UTN_VitalsComponent* Vitals = DyingChar->GetVitalsComponent())
+					{
+						Vitals->RestoreAll();
+					}
 					return true;
 				}
 			}
@@ -878,6 +884,10 @@ void ATN_RunGameMode::RestorePossessionAfterRevive(APlayerController* PlayerCont
 	{
 		Character->RecoverFromKnockdown();
 		Character->SetDeadVisual(false); // Restaurar extremidades + apagar ragdoll
+		if (UTN_VitalsComponent* Vitals = Character->GetVitalsComponent())
+		{
+			Vitals->RestoreAll(); // Vida, veneno e hidratación como al empezar (#855)
+		}
 	}
 
 	// Restaurar CMC antes del teleport

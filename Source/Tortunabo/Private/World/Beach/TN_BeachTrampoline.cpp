@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachTrampoline.h"
+#include "World/TN_HazardEffects.h"
 #include "Lobby/Playground/TN_PlaygroundSynthComponent.h"
 #include "Player/TN_ShellBody.h"
 #include "Core/TN_Log.h"
@@ -904,6 +905,8 @@ void ATN_BeachTrampoline::StingTurtles(double Now)
 		}
 		LastSting.Add(Turtle, Now);
 		TNBeach::StunTurtle(Turtle, TNTrampolineRules::StingStunSeconds);
+		// Tentáculos de la medusa: veneno de la hoja (#871).
+		TNHazard::Apply(UTN_HazardTuning::Get().JellyfishTentacles, Turtle, this);
 		if (UTN_BeachTrapStatusComponent* Status = UTN_BeachTrapStatusComponent::FindOrAddTo(Turtle))
 		{
 			Status->ServerSlow(TNTrampolineRules::StingSpeedFactor, TNTrampolineRules::StingSlowSeconds);

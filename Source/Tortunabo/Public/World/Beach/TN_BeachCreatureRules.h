@@ -8,9 +8,9 @@
  * checos (#688), refugio del búnker (#689), basura y trinchera (#690). Los tentáculos de la medusa (#683) están en
  * TN_BeachTrampolineRules.h, junto al rebote.
  *
- * Sin mundo ni actores: los actores las aplican en el servidor y las prueba Tortunabo.Beach.Creatures.*. Regla del
- * director (04-10): nada de vida. Ningún efecto quita vida ni mata; todos son estados que ya existen (derribo, bola
- * aturdida, lanzamiento, ralentización, arrastre).
+ * Sin mundo ni actores: los actores las aplican en el servidor y las prueba Tortunabo.Beach.Creatures.*. Aquí van los
+ * estados (derribo, bola aturdida, lanzamiento, ralentización, arrastre). La vida, el veneno y las muertes de cada uno
+ * (decisión del 06-10, plan maestro §3) están en UTN_HazardTuning y TN_HazardEffects.h (#871).
  */
 namespace TNBeachCreatureRules
 {

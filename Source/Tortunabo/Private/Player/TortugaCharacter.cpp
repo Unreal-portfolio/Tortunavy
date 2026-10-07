@@ -23,6 +23,7 @@
 #include "Player/TN_TurtleFaceComponent.h"
 #include "Player/TN_SlopeTiltComponent.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_VitalsComponent.h"
 #include "Player/TN_SwimHopRules.h"
 #include "Player/TN_WadingComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
@@ -90,6 +91,8 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 	bAlwaysRelevant = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 360.f, 0.f);
+	// Salto de la hoja Stats (#856): 485 cm/s con la gravedad de serie (980) da 1,2 m de alto y 0,99 s en el aire.
+	GetCharacterMovement()->JumpZVelocity = 485.f;
 	GetCharacterMovement()->NetworkSmoothingMode = ENetworkSmoothingMode::Exponential;
 
 	// bEnablePhysicsInteraction habilita PushForceFactor/TouchForceFactor sobre rigid bodies
@@ -155,6 +158,7 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 
 	InventoryComponent = CreateDefaultSubobject<UTN_InventoryComponent>(TEXT("InventoryComponent"));
 	StaminaComponent = CreateDefaultSubobject<UTN_StaminaComponent>(TEXT("StaminaComponent"));
+	VitalsComponent = CreateDefaultSubobject<UTN_VitalsComponent>(TEXT("VitalsComponent"));
 	WadingComponent = CreateDefaultSubobject<UTN_WadingComponent>(TEXT("WadingComponent"));
 	ShellComponent = CreateDefaultSubobject<UTN_ShellComponent>(TEXT("ShellComponent"));
 	CarryComponent = CreateDefaultSubobject<UTN_CarryComponent>(TEXT("CarryComponent"));

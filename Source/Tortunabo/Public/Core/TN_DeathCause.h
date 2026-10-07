@@ -25,6 +25,9 @@ enum class ETNDeathCause : uint8
 	Quad             UMETA(DisplayName = "Quad"),
 	Bleedout         UMETA(DisplayName = "Sin reanimación"),
 	ThrownItem       UMETA(DisplayName = "Objeto lanzado"),
+	Poison           UMETA(DisplayName = "Veneno"),
+	Dehydration      UMETA(DisplayName = "Deshidratación"),
+	Quicksand        UMETA(DisplayName = "Arenas movedizas"),
 	Count            UMETA(Hidden)
 };
 

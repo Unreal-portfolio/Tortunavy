@@ -109,7 +109,8 @@ struct FTNBeachGullStain
  *    nace diminuta al empezar a bajar y crece con él marca dónde va a dar. Abre el pico en el último momento y, si la
  *    tortuga sigue debajo (se esquiva girando corriendo al lanzarse, con el panzazo o en bola), la coge por el
  *    caparazón: colgando del pico pataleando, sube, vuela un
- *    poco hacia la salida y la suelta abriendo el pico: cae en bola aturdida (TNBeach::StunTurtle). Si falla, baja igual
+ *    poco hacia la salida y la suelta abriendo el pico: cae en bola aturdida (TNBeach::StunTurtle) y, desde
+ *    UTN_HazardTuning::GullDropFatalHeight o más, la caída la mata al llegar al suelo (#871). Si falla, baja igual
  *    hasta clavar el pico en la arena (o en la sombrilla que la cubría), pica dos veces (arena que salta y sonido) y
  *    vuelve a subir.
  *  - Sombras de los que vuelan: la de verdad, bajo el cuerpo de cada pájaro; cuanto más baja, más pequeña y oscura.

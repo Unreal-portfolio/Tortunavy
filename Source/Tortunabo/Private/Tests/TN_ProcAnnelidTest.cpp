@@ -1,4 +1,4 @@
-// Anélido poliqueto (#792): alcance de 3 m, una sola caza y estamina llena. Correr desde Session Frontend (categoría "Tortunabo.ProcMap.Annelid") o headless:
+// Anélido poliqueto (#792, #871): alcance de 3 m, una sola caza y +25 de vida. Correr desde Session Frontend (categoría "Tortunabo.ProcMap.Annelid") o headless:
 //   UnrealEditor-Cmd <uproject> -ExecCmds="Automation RunTests Tortunabo.ProcMap.Annelid; Quit" -nullrhi -unattended
 
 #include "Misc/AutomationTest.h"
@@ -8,6 +8,7 @@
 #include "GameFramework/WorldSettings.h"
 #include "Player/TortugaCharacter.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_VitalsComponent.h"
 #include "UObject/UnrealType.h"
 #include "World/ProcMap/TN_ProcAnnelid.h"
 
@@ -77,11 +78,11 @@ bool FTNAnnelidRulesTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNAnnelidStaminaTest,
-	"Tortunabo.ProcMap.Annelid.RellenaEstamina",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNAnnelidHealTest,
+	"Tortunabo.ProcMap.Annelid.Cura",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
-bool FTNAnnelidStaminaTest::RunTest(const FString& Parameters)
+bool FTNAnnelidHealTest::RunTest(const FString& Parameters)
 {
 	FAnnelidPlayWorld Play;
 	FActorSpawnParameters Params;
@@ -89,7 +90,9 @@ bool FTNAnnelidStaminaTest::RunTest(const FString& Parameters)
 	ATortugaCharacter* Turtle = Play.World->SpawnActor<ATortugaCharacter>(ATortugaCharacter::StaticClass(), FVector(0.0, 0.0, 200.0), FRotator::ZeroRotator, Params);
 	ATN_ProcAnnelid* Annelid = Play.World->SpawnActor<ATN_ProcAnnelid>(ATN_ProcAnnelid::StaticClass(), FVector(200.0, 0.0, 100.0), FRotator::ZeroRotator, Params);
 	UTN_StaminaComponent* Stamina = Turtle ? Turtle->FindComponentByClass<UTN_StaminaComponent>() : nullptr;
-	if (!TestNotNull(TEXT("Tortuga"), Turtle) || !TestNotNull(TEXT("Anélido"), Annelid) || !TestNotNull(TEXT("Estamina"), Stamina))
+	UTN_VitalsComponent* Vitals = Turtle ? Turtle->GetVitalsComponent() : nullptr;
+	if (!TestNotNull(TEXT("Tortuga"), Turtle) || !TestNotNull(TEXT("Anélido"), Annelid) || !TestNotNull(TEXT("Estamina"), Stamina)
+		|| !TestNotNull(TEXT("Vitales"), Vitals))
 	{
 		return false;
 	}
@@ -98,15 +101,17 @@ bool FTNAnnelidStaminaTest::RunTest(const FString& Parameters)
 	{
 		return false;
 	}
+	Vitals->ApplyDamage(50.f);
 	TestTrue(TEXT("Se puede cazar"), Annelid->CanInteract(Turtle));
 	Annelid->Interact(Turtle);
-	TestEqual(TEXT("Estamina llena tras cazarlo"), Stamina->GetCurrentStamina(), Stamina->GetEffectiveMaxStamina());
+	// Hoja EnemyAndObstacleData (#871): cura +25 y ya no repone la estamina.
+	TestEqual(TEXT("Cura +25 de vida"), Vitals->GetHealth(), 75.f);
+	TestEqual(TEXT("Ya no repone la estamina"), Stamina->GetCurrentStamina(), 0.f);
 	TestTrue(TEXT("Consumido"), Annelid->IsConsumed());
 	TestFalse(TEXT("No se caza dos veces"), Annelid->CanInteract(Turtle));
 
-	SetStamina(Stamina, 0.f);
 	Annelid->Interact(Turtle);
-	TestEqual(TEXT("La segunda vez no da estamina"), Stamina->GetCurrentStamina(), 0.f);
+	TestEqual(TEXT("La segunda vez no cura"), Vitals->GetHealth(), 75.f);
 	return true;
 }
 

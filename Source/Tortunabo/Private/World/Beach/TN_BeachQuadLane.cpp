@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachQuadLane.h"
+#include "World/TN_HazardEffects.h"
 #include "World/Beach/TN_BeachCameraShake.h"
 #include "World/Beach/TN_BeachEnemySynth.h"
 #include "TN_BeachEnemyKit.h"
@@ -348,6 +349,8 @@ void ATN_BeachQuadLane::ServerTick(float DeltaSeconds)
 			const FVector Push = Travel * TNBeachQuad::LaunchForward + Out * TNBeachQuad::LaunchSide + FVector(0.0, 0.0, TNBeachQuad::LaunchUp);
 			const FVector Spin = FVector::CrossProduct(FVector::UpVector, Travel) * TNBeachQuad::LaunchSpin;
 			KnockDownTurtle(Turtle, UTN_CombatTuning::Get().QuadLaneKnockSeconds, Push, Spin);
+			// Quad: muerte instantánea de la hoja (#871), tras salir lanzada.
+			TNHazard::Apply(UTN_HazardTuning::Get().Quad, Turtle, this);
 			MulticastRunOver(Turtle);
 			break;
 		}

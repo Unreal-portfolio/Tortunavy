@@ -32,6 +32,8 @@ struct FTNSeaweedCatch
  * Montón de algas que enredan: una pila de algas oscuras y mojadas con cintas sueltas alrededor y unos tallos de pie que
  * se mecen. Elipse de semiejes ~0,92·huella (700·SizeScale) en X e Y; con Spec.Extent > 0, Extent es el ancho máximo en
  * Y (para meterla en un pasillo). Sin colisión: se vadea con las patas metidas en las algas.
+ * Un guantazo (UTN_FlipperSlapComponent) sobre ellas o al alcance de la aleta las corta (UTN_HazardTuning::SeaweedHitsToCut,
+ * #871): sueltan a quien enganchaban y desaparecen.
  *
  * Reglas (servidor): quien la pisa dentro de la zona (85 % de la elipse, con los pies en el suelo) se queda enganchada
  * CatchSeconds: anda a HeldSpeed y el salto no la levanta (JumpZVelocity = 0: cada intento es un tirón). Cada salto
@@ -65,6 +67,16 @@ public:
 	/** true si la tortuga está enganchada según el estado replicado. */
 	bool IsCaught(const ACharacter* Turtle) const;
 
+	/** Cortadas de un golpe (#871): ya no enganchan ni frenan y no se ven. */
+	bool IsCut() const { return bCut; }
+
+	/**
+	 * Servidor: un guantazo dado desde SlapOrigin hacia SlapPoint (UTN_FlipperSlapComponent). Si alguno de los dos cae en
+	 * las algas, cuenta como golpe y, con UTN_HazardTuning::SeaweedHitsToCut, las corta: sueltan a quien enganchaban.
+	 * true si les ha dado.
+	 */
+	bool ServerHitBySlap(const FVector& SlapOrigin, const FVector& SlapPoint);
+
 	/** Segundos que se queda enganchada sin forcejear. */
 	UPROPERTY(EditAnywhere, Category = "Algas", meta = (ClampMin = "0.5"))
 	float CatchSeconds = 3.2f;
@@ -96,12 +108,19 @@ protected:
 	UFUNCTION()
 	void OnRep_Catches();
 
+	UFUNCTION()
+	void OnRep_Cut();
+
 	/** Saltos de las tortugas frenadas en esta máquina (servidor: tirones; cliente dueño: sacudida inmediata). */
 	UFUNCTION()
 	void OnHeldModeChanged(ACharacter* Turtle, EMovementMode PrevMovementMode, uint8 PreviousCustomMode);
 
 	UPROPERTY(ReplicatedUsing = OnRep_Catches)
 	TArray<FTNSeaweedCatch> Catches;
+
+	/** Cortadas (#871). Lo decide el servidor; cada máquina las esconde al recibirlo. */
+	UPROPERTY(ReplicatedUsing = OnRep_Cut)
+	bool bCut = false;
 
 	/** Pila, cintas y mancha de arena mojada. */
 	UPROPERTY(VisibleAnywhere, Category = "Algas")
@@ -188,4 +207,14 @@ private:
 	float SinceLiveRebuild = 0.f;
 
 	FTNTrapBurst Splash;
+
+	/** Servidor: golpes recibidos (SeaweedHitsToCut los cortan). */
+	int32 HitsTaken = 0;
+	bool bCutApplied = false;
+
+	/** El punto (en el mundo) cae sobre las algas, con algo de margen. */
+	bool ContainsPoint(const FVector& WorldPoint) const;
+
+	/** En esta máquina: esconde las algas, suelta los frenos y salpica (una vez). */
+	void ApplyCutLocal();
 };

@@ -11,6 +11,7 @@
 #include "World/Beach/TN_BeachCreatureRules.h"
 #include "World/Beach/TN_BeachTrapStatusComponent.h"
 #include "World/TN_DeathZoneVolume.h"
+#include "World/TN_HazardEffects.h"
 
 namespace TNBeachDragCrabDetail
 {
@@ -277,7 +278,14 @@ void ATN_BeachDragCrab::ReleaseDrag(uint8 InEnd)
 			Status->ServerArmEscape(false);
 		}
 		IgnoreTurtle(Victim, IgnoreAfterRelease);
-		if (End == EDragEnd::Distance || End == EDragEnd::Unsafe)
+		const FTNHazardEffect& DragEffect = UTN_HazardTuning::Get().DragCrab;
+		if (TNHazard::DragCompletes(End) && DragEffect.bKills)
+		{
+			// Cangrejo 2 (#871): el arrastre hasta el final (o hasta el borde de la zona de muerte) es mortal. Machacar salto
+			// o marearlo con algo lanzado la salvan antes.
+			TNHazard::Apply(DragEffect, Victim, this);
+		}
+		else if (TNHazard::DragCompletes(End))
 		{
 			// Suelta derribada con un empujón en el sentido del arrastre (nunca hacia lo que no es seguro: ahí, hacia arriba).
 			const FVector Push = End == EDragEnd::Unsafe ? FVector(0.0, 0.0, 300.0) : DragDir * 380.f + FVector(0.0, 0.0, 260.0);
