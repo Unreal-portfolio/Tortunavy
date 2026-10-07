@@ -19,5 +19,12 @@
   "description": "España con el relieve real (1 m de juego = 2,1 km de suelo, cimas a unos 29 m sobre el agua): la frontera es la costa y el mar es la muerte. Del Pirineo a Santiago por la Meseta.",
   "recorrible": true,
   "size_mb": 6.14
+ },
+ {
+  "name": "D01_boceto",
+  "seed": 875,
+  "description": "Boceto D01 del equipo de diseno: mesetas escalonadas de la salida (zona mas alta) al mar, hondonada hundida, cueva amplia bajo las zonas y tunel; unos 600 m de recorrido.",
+  "recorrible": true,
+  "size_mb": 5.64
  }
 ]

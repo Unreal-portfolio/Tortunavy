@@ -1,0 +1,3141 @@
+{
+ "name": "D01_boceto",
+ "seed": 875,
+ "format": "TNTM2",
+ "cell_uu": 10000.0,
+ "grid": 7,
+ "water_uu": -400.0,
+ "start_uu": [
+  -393.0,
+  13435.800000000001,
+  2106.612006337702
+ ],
+ "end_uu": [
+  53300.0,
+  20500.0,
+  -295.2706702201564
+ ],
+ "cells": [
+  {
+   "name": "M_D01_boceto_r0c0",
+   "col": 0,
+   "row": 0,
+   "file": "Chunks/r0c0.bin",
+   "center_uu": [
+    0.0,
+    0.0
+   ],
+   "vertices": 1172,
+   "triangles": 1756,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r1c0",
+   "col": 0,
+   "row": 1,
+   "file": "Chunks/r1c0.bin",
+   "center_uu": [
+    10000.0,
+    0.0
+   ],
+   "vertices": 890,
+   "triangles": 1226,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r2c0",
+   "col": 0,
+   "row": 2,
+   "file": "Chunks/r2c0.bin",
+   "center_uu": [
+    20000.0,
+    0.0
+   ],
+   "vertices": 2648,
+   "triangles": 4700,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r3c0",
+   "col": 0,
+   "row": 3,
+   "file": "Chunks/r3c0.bin",
+   "center_uu": [
+    30000.0,
+    0.0
+   ],
+   "vertices": 2425,
+   "triangles": 4266,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r4c0",
+   "col": 0,
+   "row": 4,
+   "file": "Chunks/r4c0.bin",
+   "center_uu": [
+    40000.0,
+    0.0
+   ],
+   "vertices": 868,
+   "triangles": 1208,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r5c0",
+   "col": 0,
+   "row": 5,
+   "file": "Chunks/r5c0.bin",
+   "center_uu": [
+    50000.0,
+    0.0
+   ],
+   "vertices": 683,
+   "triangles": 882,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r6c0",
+   "col": 0,
+   "row": 6,
+   "file": "Chunks/r6c0.bin",
+   "center_uu": [
+    60000.0,
+    0.0
+   ],
+   "vertices": 5123,
+   "triangles": 9733,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r0c1",
+   "col": 1,
+   "row": 0,
+   "file": "Chunks/r0c1.bin",
+   "center_uu": [
+    0.0,
+    10000.0
+   ],
+   "vertices": 4307,
+   "triangles": 8004,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r1c1",
+   "col": 1,
+   "row": 1,
+   "file": "Chunks/r1c1.bin",
+   "center_uu": [
+    10000.0,
+    10000.0
+   ],
+   "vertices": 8583,
+   "triangles": 16444,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r2c1",
+   "col": 1,
+   "row": 2,
+   "file": "Chunks/r2c1.bin",
+   "center_uu": [
+    20000.0,
+    10000.0
+   ],
+   "vertices": 6365,
+   "triangles": 11990,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r3c1",
+   "col": 1,
+   "row": 3,
+   "file": "Chunks/r3c1.bin",
+   "center_uu": [
+    30000.0,
+    10000.0
+   ],
+   "vertices": 10240,
+   "triangles": 19834,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r4c1",
+   "col": 1,
+   "row": 4,
+   "file": "Chunks/r4c1.bin",
+   "center_uu": [
+    40000.0,
+    10000.0
+   ],
+   "vertices": 3349,
+   "triangles": 6090,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r5c1",
+   "col": 1,
+   "row": 5,
+   "file": "Chunks/r5c1.bin",
+   "center_uu": [
+    50000.0,
+    10000.0
+   ],
+   "vertices": 4428,
+   "triangles": 8289,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r6c1",
+   "col": 1,
+   "row": 6,
+   "file": "Chunks/r6c1.bin",
+   "center_uu": [
+    60000.0,
+    10000.0
+   ],
+   "vertices": 738,
+   "triangles": 1044,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r0c2",
+   "col": 2,
+   "row": 0,
+   "file": "Chunks/r0c2.bin",
+   "center_uu": [
+    0.0,
+    20000.0
+   ],
+   "vertices": 4312,
+   "triangles": 7972,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r1c2",
+   "col": 2,
+   "row": 1,
+   "file": "Chunks/r1c2.bin",
+   "center_uu": [
+    10000.0,
+    20000.0
+   ],
+   "vertices": 4683,
+   "triangles": 8632,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r2c2",
+   "col": 2,
+   "row": 2,
+   "file": "Chunks/r2c2.bin",
+   "center_uu": [
+    20000.0,
+    20000.0
+   ],
+   "vertices": 7099,
+   "triangles": 13584,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r3c2",
+   "col": 2,
+   "row": 3,
+   "file": "Chunks/r3c2.bin",
+   "center_uu": [
+    30000.0,
+    20000.0
+   ],
+   "vertices": 3335,
+   "triangles": 6106,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r4c2",
+   "col": 2,
+   "row": 4,
+   "file": "Chunks/r4c2.bin",
+   "center_uu": [
+    40000.0,
+    20000.0
+   ],
+   "vertices": 5767,
+   "triangles": 10920,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r5c2",
+   "col": 2,
+   "row": 5,
+   "file": "Chunks/r5c2.bin",
+   "center_uu": [
+    50000.0,
+    20000.0
+   ],
+   "vertices": 6436,
+   "triangles": 12243,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r6c2",
+   "col": 2,
+   "row": 6,
+   "file": "Chunks/r6c2.bin",
+   "center_uu": [
+    60000.0,
+    20000.0
+   ],
+   "vertices": 1791,
+   "triangles": 3160,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r0c3",
+   "col": 3,
+   "row": 0,
+   "file": "Chunks/r0c3.bin",
+   "center_uu": [
+    0.0,
+    30000.0
+   ],
+   "vertices": 900,
+   "triangles": 1250,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r1c3",
+   "col": 3,
+   "row": 1,
+   "file": "Chunks/r1c3.bin",
+   "center_uu": [
+    10000.0,
+    30000.0
+   ],
+   "vertices": 1226,
+   "triangles": 1838,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r2c3",
+   "col": 3,
+   "row": 2,
+   "file": "Chunks/r2c3.bin",
+   "center_uu": [
+    20000.0,
+    30000.0
+   ],
+   "vertices": 3017,
+   "triangles": 5418,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r3c3",
+   "col": 3,
+   "row": 3,
+   "file": "Chunks/r3c3.bin",
+   "center_uu": [
+    30000.0,
+    30000.0
+   ],
+   "vertices": 2263,
+   "triangles": 3916,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r4c3",
+   "col": 3,
+   "row": 4,
+   "file": "Chunks/r4c3.bin",
+   "center_uu": [
+    40000.0,
+    30000.0
+   ],
+   "vertices": 3094,
+   "triangles": 5610,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r5c3",
+   "col": 3,
+   "row": 5,
+   "file": "Chunks/r5c3.bin",
+   "center_uu": [
+    50000.0,
+    30000.0
+   ],
+   "vertices": 5840,
+   "triangles": 11107,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_r6c3",
+   "col": 3,
+   "row": 6,
+   "file": "Chunks/r6c3.bin",
+   "center_uu": [
+    60000.0,
+    30000.0
+   ],
+   "vertices": 483,
+   "triangles": 556,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_0",
+   "file": "Outer/o0_0.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    -95000.0
+   ],
+   "vertices": 1301,
+   "triangles": 2440,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_1",
+   "file": "Outer/o0_1.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    -75000.0
+   ],
+   "vertices": 1252,
+   "triangles": 2342,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_2",
+   "file": "Outer/o0_2.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    -55000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_3",
+   "file": "Outer/o0_3.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    -35000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_4",
+   "file": "Outer/o0_4.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    -15000.0
+   ],
+   "vertices": 1215,
+   "triangles": 2268,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_5",
+   "file": "Outer/o0_5.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    5000.0
+   ],
+   "vertices": 1203,
+   "triangles": 2244,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_6",
+   "file": "Outer/o0_6.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    25000.0
+   ],
+   "vertices": 1240,
+   "triangles": 2318,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_7",
+   "file": "Outer/o0_7.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    45000.0
+   ],
+   "vertices": 1264,
+   "triangles": 2366,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_8",
+   "file": "Outer/o0_8.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    65000.0
+   ],
+   "vertices": 1203,
+   "triangles": 2244,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_9",
+   "file": "Outer/o0_9.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    85000.0
+   ],
+   "vertices": 1362,
+   "triangles": 2562,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_10",
+   "file": "Outer/o0_10.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    105000.0
+   ],
+   "vertices": 1546,
+   "triangles": 2930,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_0_11",
+   "file": "Outer/o0_11.bin",
+   "collision": false,
+   "center_uu": [
+    -95000.0,
+    125000.0
+   ],
+   "vertices": 1436,
+   "triangles": 2710,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_0",
+   "file": "Outer/o1_0.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    -95000.0
+   ],
+   "vertices": 1485,
+   "triangles": 2808,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_1",
+   "file": "Outer/o1_1.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    -75000.0
+   ],
+   "vertices": 1350,
+   "triangles": 2538,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_2",
+   "file": "Outer/o1_2.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    -55000.0
+   ],
+   "vertices": 1276,
+   "triangles": 2390,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_3",
+   "file": "Outer/o1_3.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    -35000.0
+   ],
+   "vertices": 1178,
+   "triangles": 2194,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_4",
+   "file": "Outer/o1_4.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    -15000.0
+   ],
+   "vertices": 1276,
+   "triangles": 2390,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_5",
+   "file": "Outer/o1_5.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    5000.0
+   ],
+   "vertices": 1252,
+   "triangles": 2342,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_6",
+   "file": "Outer/o1_6.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    25000.0
+   ],
+   "vertices": 1068,
+   "triangles": 1974,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_7",
+   "file": "Outer/o1_7.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    45000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_8",
+   "file": "Outer/o1_8.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    65000.0
+   ],
+   "vertices": 1313,
+   "triangles": 2464,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_9",
+   "file": "Outer/o1_9.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    85000.0
+   ],
+   "vertices": 1448,
+   "triangles": 2734,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_10",
+   "file": "Outer/o1_10.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    105000.0
+   ],
+   "vertices": 1399,
+   "triangles": 2636,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_1_11",
+   "file": "Outer/o1_11.bin",
+   "collision": false,
+   "center_uu": [
+    -75000.0,
+    125000.0
+   ],
+   "vertices": 1338,
+   "triangles": 2514,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_0",
+   "file": "Outer/o2_0.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    -95000.0
+   ],
+   "vertices": 1252,
+   "triangles": 2342,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_1",
+   "file": "Outer/o2_1.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    -75000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_2",
+   "file": "Outer/o2_2.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    -55000.0
+   ],
+   "vertices": 1215,
+   "triangles": 2268,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_3",
+   "file": "Outer/o2_3.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    -35000.0
+   ],
+   "vertices": 1154,
+   "triangles": 2146,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_4",
+   "file": "Outer/o2_4.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    -15000.0
+   ],
+   "vertices": 1142,
+   "triangles": 2122,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_5",
+   "file": "Outer/o2_5.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    5000.0
+   ],
+   "vertices": 1227,
+   "triangles": 2292,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_6",
+   "file": "Outer/o2_6.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    25000.0
+   ],
+   "vertices": 1313,
+   "triangles": 2464,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_7",
+   "file": "Outer/o2_7.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    45000.0
+   ],
+   "vertices": 1178,
+   "triangles": 2194,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_8",
+   "file": "Outer/o2_8.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    65000.0
+   ],
+   "vertices": 1472,
+   "triangles": 2782,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_9",
+   "file": "Outer/o2_9.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    85000.0
+   ],
+   "vertices": 1374,
+   "triangles": 2586,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_10",
+   "file": "Outer/o2_10.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    105000.0
+   ],
+   "vertices": 1276,
+   "triangles": 2390,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_2_11",
+   "file": "Outer/o2_11.bin",
+   "collision": false,
+   "center_uu": [
+    -55000.0,
+    125000.0
+   ],
+   "vertices": 1240,
+   "triangles": 2318,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_0",
+   "file": "Outer/o3_0.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    -95000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_1",
+   "file": "Outer/o3_1.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    -75000.0
+   ],
+   "vertices": 1191,
+   "triangles": 2220,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_2",
+   "file": "Outer/o3_2.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    -55000.0
+   ],
+   "vertices": 1423,
+   "triangles": 2684,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_3",
+   "file": "Outer/o3_3.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    -35000.0
+   ],
+   "vertices": 1154,
+   "triangles": 2146,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_4",
+   "file": "Outer/o3_4.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    -15000.0
+   ],
+   "vertices": 1105,
+   "triangles": 2048,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_5",
+   "file": "Outer/o3_5.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    5000.0
+   ],
+   "vertices": 1289,
+   "triangles": 2416,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_6",
+   "file": "Outer/o3_6.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    25000.0
+   ],
+   "vertices": 1436,
+   "triangles": 2710,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_7",
+   "file": "Outer/o3_7.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    45000.0
+   ],
+   "vertices": 1448,
+   "triangles": 2734,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_8",
+   "file": "Outer/o3_8.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    65000.0
+   ],
+   "vertices": 1374,
+   "triangles": 2586,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_9",
+   "file": "Outer/o3_9.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    85000.0
+   ],
+   "vertices": 1252,
+   "triangles": 2342,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_10",
+   "file": "Outer/o3_10.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    105000.0
+   ],
+   "vertices": 1301,
+   "triangles": 2440,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_3_11",
+   "file": "Outer/o3_11.bin",
+   "collision": false,
+   "center_uu": [
+    -35000.0,
+    125000.0
+   ],
+   "vertices": 1240,
+   "triangles": 2318,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_0",
+   "file": "Outer/o4_0.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    -95000.0
+   ],
+   "vertices": 1203,
+   "triangles": 2244,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_1",
+   "file": "Outer/o4_1.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    -75000.0
+   ],
+   "vertices": 1240,
+   "triangles": 2318,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_2",
+   "file": "Outer/o4_2.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    -55000.0
+   ],
+   "vertices": 1264,
+   "triangles": 2366,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_3",
+   "file": "Outer/o4_3.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    -35000.0
+   ],
+   "vertices": 1252,
+   "triangles": 2342,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_4",
+   "file": "Outer/o4_4.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    -15000.0
+   ],
+   "vertices": 1386,
+   "triangles": 2610,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_5",
+   "file": "Outer/o4_5.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    5000.0
+   ],
+   "vertices": 1080,
+   "triangles": 1998,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_6",
+   "file": "Outer/o4_6.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    25000.0
+   ],
+   "vertices": 1264,
+   "triangles": 2366,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_7",
+   "file": "Outer/o4_7.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    45000.0
+   ],
+   "vertices": 1264,
+   "triangles": 2366,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_8",
+   "file": "Outer/o4_8.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    65000.0
+   ],
+   "vertices": 1142,
+   "triangles": 2122,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_9",
+   "file": "Outer/o4_9.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    85000.0
+   ],
+   "vertices": 1301,
+   "triangles": 2440,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_10",
+   "file": "Outer/o4_10.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    105000.0
+   ],
+   "vertices": 1068,
+   "triangles": 1974,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_4_11",
+   "file": "Outer/o4_11.bin",
+   "collision": false,
+   "center_uu": [
+    -15000.0,
+    125000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_0",
+   "file": "Outer/o5_0.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    -95000.0
+   ],
+   "vertices": 1191,
+   "triangles": 2220,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_1",
+   "file": "Outer/o5_1.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    -75000.0
+   ],
+   "vertices": 1191,
+   "triangles": 2220,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_2",
+   "file": "Outer/o5_2.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    -55000.0
+   ],
+   "vertices": 1215,
+   "triangles": 2268,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_3",
+   "file": "Outer/o5_3.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    -35000.0
+   ],
+   "vertices": 1105,
+   "triangles": 2048,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_4",
+   "file": "Outer/o5_4.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    -15000.0
+   ],
+   "vertices": 1142,
+   "triangles": 2122,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_7",
+   "file": "Outer/o5_7.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    45000.0
+   ],
+   "vertices": 1166,
+   "triangles": 2170,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_8",
+   "file": "Outer/o5_8.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    65000.0
+   ],
+   "vertices": 1044,
+   "triangles": 1926,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_9",
+   "file": "Outer/o5_9.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    85000.0
+   ],
+   "vertices": 1178,
+   "triangles": 2194,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_10",
+   "file": "Outer/o5_10.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    105000.0
+   ],
+   "vertices": 1191,
+   "triangles": 2220,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_5_11",
+   "file": "Outer/o5_11.bin",
+   "collision": false,
+   "center_uu": [
+    5000.0,
+    125000.0
+   ],
+   "vertices": 1240,
+   "triangles": 2318,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_0",
+   "file": "Outer/o6_0.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    -95000.0
+   ],
+   "vertices": 1301,
+   "triangles": 2440,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_1",
+   "file": "Outer/o6_1.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    -75000.0
+   ],
+   "vertices": 1289,
+   "triangles": 2416,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_2",
+   "file": "Outer/o6_2.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    -55000.0
+   ],
+   "vertices": 1301,
+   "triangles": 2440,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_3",
+   "file": "Outer/o6_3.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    -35000.0
+   ],
+   "vertices": 1448,
+   "triangles": 2734,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_4",
+   "file": "Outer/o6_4.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    -15000.0
+   ],
+   "vertices": 1215,
+   "triangles": 2268,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_7",
+   "file": "Outer/o6_7.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    45000.0
+   ],
+   "vertices": 1080,
+   "triangles": 1998,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_8",
+   "file": "Outer/o6_8.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    65000.0
+   ],
+   "vertices": 1178,
+   "triangles": 2194,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_9",
+   "file": "Outer/o6_9.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    85000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_10",
+   "file": "Outer/o6_10.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    105000.0
+   ],
+   "vertices": 1154,
+   "triangles": 2146,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_6_11",
+   "file": "Outer/o6_11.bin",
+   "collision": false,
+   "center_uu": [
+    25000.0,
+    125000.0
+   ],
+   "vertices": 1289,
+   "triangles": 2416,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_0",
+   "file": "Outer/o7_0.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    -95000.0
+   ],
+   "vertices": 1191,
+   "triangles": 2220,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_1",
+   "file": "Outer/o7_1.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    -75000.0
+   ],
+   "vertices": 1423,
+   "triangles": 2684,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_2",
+   "file": "Outer/o7_2.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    -55000.0
+   ],
+   "vertices": 1436,
+   "triangles": 2710,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_3",
+   "file": "Outer/o7_3.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    -35000.0
+   ],
+   "vertices": 1497,
+   "triangles": 2832,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_4",
+   "file": "Outer/o7_4.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    -15000.0
+   ],
+   "vertices": 1105,
+   "triangles": 2048,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_7",
+   "file": "Outer/o7_7.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    45000.0
+   ],
+   "vertices": 1105,
+   "triangles": 2048,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_8",
+   "file": "Outer/o7_8.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    65000.0
+   ],
+   "vertices": 1191,
+   "triangles": 2220,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_9",
+   "file": "Outer/o7_9.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    85000.0
+   ],
+   "vertices": 1289,
+   "triangles": 2416,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_10",
+   "file": "Outer/o7_10.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    105000.0
+   ],
+   "vertices": 1325,
+   "triangles": 2488,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_7_11",
+   "file": "Outer/o7_11.bin",
+   "collision": false,
+   "center_uu": [
+    45000.0,
+    125000.0
+   ],
+   "vertices": 1240,
+   "triangles": 2318,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_0",
+   "file": "Outer/o8_0.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    -95000.0
+   ],
+   "vertices": 897,
+   "triangles": 1632,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_1",
+   "file": "Outer/o8_1.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    -75000.0
+   ],
+   "vertices": 1044,
+   "triangles": 1926,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_2",
+   "file": "Outer/o8_2.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    -55000.0
+   ],
+   "vertices": 762,
+   "triangles": 1362,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_3",
+   "file": "Outer/o8_3.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    -35000.0
+   ],
+   "vertices": 786,
+   "triangles": 1410,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_4",
+   "file": "Outer/o8_4.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    -15000.0
+   ],
+   "vertices": 799,
+   "triangles": 1436,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_7",
+   "file": "Outer/o8_7.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    45000.0
+   ],
+   "vertices": 786,
+   "triangles": 1410,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_8",
+   "file": "Outer/o8_8.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    65000.0
+   ],
+   "vertices": 750,
+   "triangles": 1338,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_9",
+   "file": "Outer/o8_9.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    85000.0
+   ],
+   "vertices": 860,
+   "triangles": 1558,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_10",
+   "file": "Outer/o8_10.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    105000.0
+   ],
+   "vertices": 897,
+   "triangles": 1632,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_8_11",
+   "file": "Outer/o8_11.bin",
+   "collision": false,
+   "center_uu": [
+    65000.0,
+    125000.0
+   ],
+   "vertices": 933,
+   "triangles": 1704,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_0",
+   "file": "Outer/o9_0.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    -95000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_1",
+   "file": "Outer/o9_1.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    -75000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_2",
+   "file": "Outer/o9_2.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    -55000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_3",
+   "file": "Outer/o9_3.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    -35000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_4",
+   "file": "Outer/o9_4.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    -15000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_5",
+   "file": "Outer/o9_5.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    5000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_6",
+   "file": "Outer/o9_6.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    25000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_7",
+   "file": "Outer/o9_7.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    45000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_8",
+   "file": "Outer/o9_8.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    65000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_9",
+   "file": "Outer/o9_9.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    85000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_10",
+   "file": "Outer/o9_10.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    105000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_9_11",
+   "file": "Outer/o9_11.bin",
+   "collision": false,
+   "center_uu": [
+    85000.0,
+    125000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_0",
+   "file": "Outer/o10_0.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    -95000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_1",
+   "file": "Outer/o10_1.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    -75000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_2",
+   "file": "Outer/o10_2.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    -55000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_3",
+   "file": "Outer/o10_3.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    -35000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_4",
+   "file": "Outer/o10_4.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    -15000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_5",
+   "file": "Outer/o10_5.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    5000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_6",
+   "file": "Outer/o10_6.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    25000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_7",
+   "file": "Outer/o10_7.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    45000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_8",
+   "file": "Outer/o10_8.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    65000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_9",
+   "file": "Outer/o10_9.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    85000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_10",
+   "file": "Outer/o10_10.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    105000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_10_11",
+   "file": "Outer/o10_11.bin",
+   "collision": false,
+   "center_uu": [
+    105000.0,
+    125000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_0",
+   "file": "Outer/o11_0.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    -95000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_1",
+   "file": "Outer/o11_1.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    -75000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_2",
+   "file": "Outer/o11_2.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    -55000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_3",
+   "file": "Outer/o11_3.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    -35000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_4",
+   "file": "Outer/o11_4.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    -15000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_5",
+   "file": "Outer/o11_5.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    5000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_6",
+   "file": "Outer/o11_6.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    25000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_7",
+   "file": "Outer/o11_7.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    45000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_8",
+   "file": "Outer/o11_8.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    65000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_9",
+   "file": "Outer/o11_9.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    85000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_10",
+   "file": "Outer/o11_10.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    105000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_11_11",
+   "file": "Outer/o11_11.bin",
+   "collision": false,
+   "center_uu": [
+    125000.0,
+    125000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_0",
+   "file": "Outer/o12_0.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    -95000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_1",
+   "file": "Outer/o12_1.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    -75000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_2",
+   "file": "Outer/o12_2.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    -55000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_3",
+   "file": "Outer/o12_3.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    -35000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_4",
+   "file": "Outer/o12_4.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    -15000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_5",
+   "file": "Outer/o12_5.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    5000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_6",
+   "file": "Outer/o12_6.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    25000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_7",
+   "file": "Outer/o12_7.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    45000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_8",
+   "file": "Outer/o12_8.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    65000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_9",
+   "file": "Outer/o12_9.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    85000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_10",
+   "file": "Outer/o12_10.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    105000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_12_11",
+   "file": "Outer/o12_11.bin",
+   "collision": false,
+   "center_uu": [
+    145000.0,
+    125000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_0",
+   "file": "Outer/o13_0.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    -95000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_1",
+   "file": "Outer/o13_1.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    -75000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_2",
+   "file": "Outer/o13_2.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    -55000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_3",
+   "file": "Outer/o13_3.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    -35000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_4",
+   "file": "Outer/o13_4.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    -15000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_5",
+   "file": "Outer/o13_5.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    5000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_6",
+   "file": "Outer/o13_6.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    25000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_7",
+   "file": "Outer/o13_7.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    45000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_8",
+   "file": "Outer/o13_8.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    65000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_9",
+   "file": "Outer/o13_9.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    85000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_10",
+   "file": "Outer/o13_10.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    105000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  },
+  {
+   "name": "M_D01_boceto_outer_13_11",
+   "file": "Outer/o13_11.bin",
+   "collision": false,
+   "center_uu": [
+    165000.0,
+    125000.0
+   ],
+   "vertices": 171,
+   "triangles": 180,
+   "instances": 0
+  }
+ ],
+ "description": "Boceto D01 del equipo de diseno: mesetas escalonadas de la salida (zona mas alta) al mar, hondonada hundida, cueva amplia bajo las zonas y tunel; unos 600 m de recorrido.",
+ "decisiones_director": [
+  "2026-10-06: pasillos en cuesta entre zonas, suelo casi llano dentro de cada zona, tuneles sin bifurcaciones, cueva de 10 m de alto como maximo, paredes mas altas que en C01.",
+  "2026-10-07: recorrido de unos 600 m (550-650); cueva amplia por debajo de las zonas que baja desde la boca y sube a la otra; mas desnivel entre zonas con cuestas de 25 grados como mucho; hondonada mucho mas hundida; paredes con contorno y cara irregulares; el exterior del anillo de muros no se toca."
+ ],
+ "recorrible": true,
+ "cols": 4,
+ "rows": 7,
+ "kill_boxes_uu": [],
+ "jellyfish_uu": [],
+ "tunnel_mouths_uu": [
+  [
+   34196.9,
+   13436.5
+  ],
+  [
+   23893.6,
+   10476.6
+  ],
+  [
+   14623.6,
+   12917.1
+  ],
+  [
+   7765.7,
+   14523.9
+  ]
+ ],
+ "sketch": {
+  "image": "boceto.jpeg",
+  "m_per_px": 0.474,
+  "ref_px": [
+   745.0,
+   1600.0
+  ],
+  "ref_world_m": [
+   -30.0,
+   150.0
+  ]
+ },
+ "route_main_m": 612.2,
+ "zones": [
+  {
+   "clase": 2,
+   "zona": "hondonada",
+   "luminancia": 231.0,
+   "cota_media_m": 3.0,
+   "cota_diseno_m": 3.0,
+   "area_m2": 6652
+  },
+  {
+   "clase": 3,
+   "zona": "playa",
+   "luminancia": 206.7,
+   "cota_media_m": 4.92,
+   "cota_diseno_m": 5.0,
+   "area_m2": 9374
+  },
+  {
+   "clase": 4,
+   "zona": "clara",
+   "luminancia": 192.0,
+   "cota_media_m": 10.04,
+   "cota_diseno_m": 10.0,
+   "area_m2": 6932
+  },
+  {
+   "clase": 5,
+   "zona": "media",
+   "luminancia": 165.7,
+   "cota_media_m": 14.99,
+   "cota_diseno_m": 15.0,
+   "area_m2": 28995
+  },
+  {
+   "clase": 6,
+   "zona": "oscura",
+   "luminancia": 139.9,
+   "cota_media_m": 19.99,
+   "cota_diseno_m": 20.0,
+   "area_m2": 15356
+  },
+  {
+   "clase": 7,
+   "zona": "muy oscura (salida)",
+   "luminancia": 117.6,
+   "cota_media_m": 25.04,
+   "cota_diseno_m": 25.0,
+   "area_m2": 4552
+  }
+ ],
+ "tuneles": [
+  {
+   "name": "cueva",
+   "semiancho_m": 29.910834415306816,
+   "bajo_zonas": true,
+   "eje_m": [
+    [
+     341.47,
+     132.43,
+     1.66,
+     6.58
+    ],
+    [
+     340.97,
+     130.49,
+     0.97,
+     6.84
+    ],
+    [
+     340.46,
+     128.56,
+     0.29,
+     7.11
+    ],
+    [
+     339.96,
+     126.62,
+     -0.39,
+     7.37
+    ],
+    [
+     339.46,
+     124.69,
+     -1.07,
+     7.64
+    ],
+    [
+     338.96,
+     122.75,
+     -1.75,
+     7.9
+    ],
+    [
+     337.52,
+     121.86,
+     -2.09,
+     10.07
+    ],
+    [
+     335.54,
+     121.57,
+     -2.24,
+     13.35
+    ],
+    [
+     333.56,
+     121.29,
+     -2.39,
+     16.63
+    ],
+    [
+     331.58,
+     121.01,
+     -2.54,
+     19.92
+    ],
+    [
+     329.6,
+     120.72,
+     -2.69,
+     23.2
+    ],
+    [
+     327.62,
+     120.44,
+     -2.84,
+     26.48
+    ],
+    [
+     325.64,
+     120.16,
+     -2.99,
+     29.76
+    ],
+    [
+     323.84,
+     119.31,
+     -3.02,
+     29.53
+    ],
+    [
+     322.05,
+     118.41,
+     -3.05,
+     29.03
+    ],
+    [
+     320.26,
+     117.52,
+     -3.07,
+     28.53
+    ],
+    [
+     318.47,
+     116.63,
+     -3.1,
+     28.02
+    ],
+    [
+     316.69,
+     115.73,
+     -3.12,
+     27.52
+    ],
+    [
+     314.9,
+     114.84,
+     -3.15,
+     27.02
+    ],
+    [
+     313.11,
+     113.94,
+     -3.17,
+     26.51
+    ],
+    [
+     311.32,
+     113.05,
+     -3.2,
+     26.01
+    ],
+    [
+     309.34,
+     112.77,
+     -3.2,
+     25.45
+    ],
+    [
+     307.36,
+     112.51,
+     -3.2,
+     24.9
+    ],
+    [
+     305.38,
+     112.24,
+     -3.2,
+     24.34
+    ],
+    [
+     303.39,
+     111.98,
+     -3.2,
+     23.78
+    ],
+    [
+     301.41,
+     111.71,
+     -3.2,
+     23.22
+    ],
+    [
+     299.43,
+     111.45,
+     -3.2,
+     22.67
+    ],
+    [
+     297.45,
+     111.18,
+     -3.2,
+     22.11
+    ],
+    [
+     295.46,
+     111.0,
+     -3.2,
+     21.19
+    ],
+    [
+     293.46,
+     110.84,
+     -3.2,
+     20.18
+    ],
+    [
+     291.47,
+     110.68,
+     -3.2,
+     19.17
+    ],
+    [
+     289.47,
+     110.53,
+     -3.2,
+     18.16
+    ],
+    [
+     287.48,
+     110.37,
+     -3.2,
+     17.15
+    ],
+    [
+     285.49,
+     110.21,
+     -3.2,
+     16.14
+    ],
+    [
+     283.55,
+     109.72,
+     -3.2,
+     15.02
+    ],
+    [
+     281.63,
+     109.18,
+     -3.2,
+     13.88
+    ],
+    [
+     279.7,
+     108.64,
+     -3.2,
+     12.74
+    ],
+    [
+     277.77,
+     108.1,
+     -3.2,
+     11.61
+    ],
+    [
+     275.85,
+     107.56,
+     -3.2,
+     10.47
+    ],
+    [
+     273.92,
+     107.02,
+     -3.2,
+     9.33
+    ],
+    [
+     272.13,
+     106.17,
+     -3.19,
+     8.74
+    ],
+    [
+     270.39,
+     105.18,
+     -3.18,
+     8.37
+    ],
+    [
+     268.65,
+     104.2,
+     -3.17,
+     8.01
+    ],
+    [
+     266.91,
+     103.21,
+     -3.15,
+     7.64
+    ],
+    [
+     265.17,
+     102.22,
+     -3.14,
+     7.27
+    ],
+    [
+     263.43,
+     101.24,
+     -3.13,
+     6.9
+    ],
+    [
+     261.69,
+     100.25,
+     -3.12,
+     6.54
+    ],
+    [
+     259.95,
+     99.27,
+     -3.11,
+     6.17
+    ],
+    [
+     258.12,
+     99.13,
+     -3.06,
+     5.91
+    ],
+    [
+     256.21,
+     99.74,
+     -2.98,
+     5.75
+    ],
+    [
+     254.31,
+     100.35,
+     -2.9,
+     5.59
+    ],
+    [
+     252.4,
+     100.96,
+     -2.82,
+     5.43
+    ],
+    [
+     250.5,
+     101.57,
+     -2.74,
+     5.27
+    ],
+    [
+     248.59,
+     102.18,
+     -2.66,
+     5.11
+    ],
+    [
+     246.68,
+     102.76,
+     -2.56,
+     5.0
+    ],
+    [
+     244.74,
+     103.26,
+     -2.44,
+     5.0
+    ],
+    [
+     242.81,
+     103.76,
+     -2.32,
+     5.0
+    ],
+    [
+     240.87,
+     104.26,
+     -2.2,
+     5.0
+    ]
+   ]
+  },
+  {
+   "name": "tunel",
+   "semiancho_m": 4.5,
+   "bajo_zonas": false,
+   "eje_m": [
+    [
+     144.37,
+     129.72,
+     -0.52,
+     4.5
+    ],
+    [
+     142.45,
+     130.28,
+     -0.03,
+     4.5
+    ],
+    [
+     140.53,
+     130.85,
+     0.45,
+     4.5
+    ],
+    [
+     138.61,
+     131.41,
+     0.93,
+     4.5
+    ],
+    [
+     136.69,
+     131.98,
+     1.41,
+     4.5
+    ],
+    [
+     134.78,
+     132.54,
+     1.9,
+     4.5
+    ],
+    [
+     132.86,
+     133.11,
+     2.38,
+     4.5
+    ],
+    [
+     130.94,
+     133.67,
+     2.86,
+     4.5
+    ],
+    [
+     129.01,
+     134.2,
+     3.34,
+     4.5
+    ],
+    [
+     127.08,
+     134.71,
+     3.83,
+     4.5
+    ],
+    [
+     125.14,
+     135.22,
+     4.31,
+     4.5
+    ],
+    [
+     123.21,
+     135.73,
+     4.79,
+     4.5
+    ],
+    [
+     121.27,
+     136.24,
+     5.28,
+     4.5
+    ],
+    [
+     119.34,
+     136.75,
+     5.76,
+     4.5
+    ],
+    [
+     117.4,
+     137.25,
+     6.24,
+     4.5
+    ],
+    [
+     115.47,
+     137.76,
+     6.72,
+     4.5
+    ],
+    [
+     113.54,
+     138.27,
+     7.21,
+     4.5
+    ],
+    [
+     111.59,
+     138.75,
+     7.69,
+     4.5
+    ],
+    [
+     109.63,
+     139.14,
+     8.17,
+     4.5
+    ],
+    [
+     107.67,
+     139.53,
+     8.66,
+     4.5
+    ],
+    [
+     105.71,
+     139.92,
+     9.14,
+     4.5
+    ],
+    [
+     103.75,
+     140.31,
+     9.62,
+     4.5
+    ],
+    [
+     101.79,
+     140.71,
+     10.1,
+     4.5
+    ],
+    [
+     99.83,
+     141.1,
+     10.59,
+     4.5
+    ],
+    [
+     97.87,
+     141.49,
+     11.07,
+     4.5
+    ],
+    [
+     95.9,
+     141.88,
+     11.55,
+     4.5
+    ],
+    [
+     93.94,
+     142.28,
+     12.03,
+     4.5
+    ],
+    [
+     91.98,
+     142.67,
+     12.52,
+     4.5
+    ],
+    [
+     90.02,
+     143.04,
+     13.0,
+     4.5
+    ],
+    [
+     88.05,
+     143.39,
+     13.48,
+     4.5
+    ],
+    [
+     86.08,
+     143.74,
+     13.97,
+     4.5
+    ],
+    [
+     84.11,
+     144.09,
+     14.45,
+     4.5
+    ],
+    [
+     82.14,
+     144.44,
+     14.93,
+     4.5
+    ],
+    [
+     80.17,
+     144.79,
+     15.41,
+     4.5
+    ]
+   ]
+  }
+ ],
+ "meta": {
+  "center_uu": [
+   54600.0,
+   20500.0,
+   -400.0
+  ],
+  "width_m": 112.0,
+  "depth_m": 8.0,
+  "yaw_deg": 0.0
+ },
+ "recorrido_uu": [
+  [
+   -400.0,
+   13400.0
+  ],
+  [
+   2100.0,
+   13400.0
+  ],
+  [
+   4600.0,
+   14200.0
+  ],
+  [
+   6800.0,
+   16400.0
+  ],
+  [
+   9300.0,
+   18400.0
+  ],
+  [
+   11800.0,
+   18800.0
+  ],
+  [
+   14300.0,
+   19588.9
+  ],
+  [
+   16800.0,
+   20511.1
+  ],
+  [
+   19300.0,
+   20600.0
+  ],
+  [
+   21800.0,
+   20766.7
+  ],
+  [
+   24300.0,
+   23166.7
+  ],
+  [
+   26800.0,
+   23400.0
+  ],
+  [
+   29300.0,
+   22700.0
+  ],
+  [
+   31800.0,
+   20200.0
+  ],
+  [
+   34300.0,
+   19133.3
+  ],
+  [
+   36800.0,
+   21400.0
+  ],
+  [
+   39300.0,
+   23000.0
+  ],
+  [
+   41800.0,
+   23488.9
+  ],
+  [
+   44300.0,
+   23333.3
+  ],
+  [
+   46800.0,
+   22500.0
+  ],
+  [
+   49300.0,
+   22500.0
+  ],
+  [
+   51800.0,
+   21500.0
+  ]
+ ],
+ "metricas": {
+  "recorrido_m": 612.2,
+  "recorrido_con_tuneles_m": 612.0,
+  "meta_a_pie_2d": true,
+  "pendientes": {
+   "mesetas": {
+    "max_deg": 2.9,
+    "p99_deg": 1.2,
+    "celdas": 46690
+   },
+   "cuestas": {
+    "max_deg": 21.02,
+    "p99_deg": 20.84,
+    "celdas": 6081
+   }
+  },
+  "triangulos_suelo": {
+   "triangulos_suelo": 10122,
+   "max_deg": 32.52,
+   "mas_empinados_que_limite": 0,
+   "escalones": 0,
+   "limite_deg": 39.77
+  },
+  "tuneles": {
+   "cueva": {
+    "muestras": 58,
+    "sin_suelo": 0,
+    "sin_techo": 0,
+    "alto_min_m": 6.89,
+    "alto_max_m": 9.16,
+    "pendiente_max_deg": 19.4
+   },
+   "tunel": {
+    "muestras": 34,
+    "sin_suelo": 0,
+    "sin_techo": 0,
+    "alto_min_m": 5.52,
+    "alto_max_m": 6.12,
+    "pendiente_max_deg": 14.3
+   }
+  },
+  "pared": {
+   "media_m": 11.03,
+   "p10_m": 9.04,
+   "p50_m": 10.48,
+   "bordes": 3257
+  },
+  "hondonada_bajo_media_m": 12.02,
+  "triangulos": 187778,
+  "triangulos_trozos": 187778,
+  "triangulos_corona": 239468,
+  "triangulos_total": 427246,
+  "referencia_c01": {
+   "pared": {
+    "media_m": 7.35,
+    "p10_m": 3.59,
+    "p50_m": 7.29,
+    "bordes": 2492
+   },
+   "triangulos_trozos": 227696,
+   "triangulos_corona": 203934,
+   "triangulos_total": 431630
+  },
+  "criterios": {
+   "recorrido": true,
+   "mesetas": true,
+   "cuestas": true,
+   "malla_suelo": true,
+   "tuneles": true,
+   "pared": true,
+   "hondonada": true,
+   "triangulos": true
+  },
+  "cuevas_alto_volumen_m": {
+   "cueva": 9.5,
+   "tunel": 7.0
+  }
+ }
+}
