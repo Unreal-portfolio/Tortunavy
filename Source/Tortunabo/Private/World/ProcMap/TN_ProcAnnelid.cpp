@@ -1,7 +1,8 @@
 #include "World/ProcMap/TN_ProcAnnelid.h"
 
 #include "World/ProcMap/TN_ProcMapActorUtils.h"
-#include "Player/TN_StaminaComponent.h"
+#include "GameFramework/Character.h"
+#include "World/TN_HazardEffects.h"
 #include "Core/TN_Log.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -100,11 +101,10 @@ void ATN_ProcAnnelid::OnInteracted_Implementation(APawn* Interactor)
 	{
 		return;
 	}
-	if (UTN_StaminaComponent* Stamina = Interactor->FindComponentByClass<UTN_StaminaComponent>())
-	{
-		Stamina->RestoreStaminaToFull();
-	}
-	UE_LOG(LogTortunabo, Log, TEXT("[Anelido] %s caza el anélido %s: estamina llena."), *Interactor->GetName(), *GetName());
+	// Hoja EnemyAndObstacleData (#871): cura +25 de vida (UTN_HazardTuning::AnnelidHeal); ya no repone la estamina.
+	const float HealAmount = UTN_HazardTuning::Get().AnnelidHeal;
+	TNHazard::Heal(Cast<ACharacter>(Interactor), HealAmount);
+	UE_LOG(LogTortunabo, Log, TEXT("[Anelido] %s caza el anélido %s: +%.0f de vida."), *Interactor->GetName(), *GetName(), HealAmount);
 
 	bConsumedReplicated = true;
 	SetInteractionEnabled(false);

@@ -1,4 +1,5 @@
 #include "World/TN_CrabActor.h"
+#include "World/TN_HazardEffects.h"
 #include "Core/TN_Log.h"
 #include "Core/TN_DebugCVars.h"
 #include "DrawDebugHelpers.h"
@@ -258,7 +259,8 @@ void ATN_CrabActor::TickAttack()
 	ATortugaCharacter* Target = ChaseTarget.Get();
 	if (IsAliveAndValid(Target))
 	{
-		Target->RequestKill(this);
+		// Cangrejo 1: 20 de daño por contacto (#871); ya no mata de un golpe.
+		TNHazard::Apply(UTN_HazardTuning::Get().CrabContact, Target, this);
 	}
 
 	CooldownRemaining = CooldownDuration;

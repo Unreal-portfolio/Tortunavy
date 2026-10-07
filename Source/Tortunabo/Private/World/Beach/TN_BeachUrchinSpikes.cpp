@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachUrchinSpikes.h"
+#include "World/TN_HazardEffects.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -164,6 +165,8 @@ void ATN_BeachUrchinSpikes::ServerTick(double Now)
 		Struck.Add(Turtle);
 		const FVector Out = (Turtle->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
 		TNBeach::KnockDownTurtle(Turtle, KnockSeconds, Out * 350.f + FVector(0.0, 0.0, 520.f));
+		// Erizo: 15 de daño más veneno (#871).
+		TNHazard::Apply(UTN_HazardTuning::Get().Urchin, Turtle, this);
 		if (UTN_BeachTrapStatusComponent* Status = UTN_BeachTrapStatusComponent::FindOrAddTo(Turtle))
 		{
 			Status->ServerSlow(SlowFactor, SlowSeconds);

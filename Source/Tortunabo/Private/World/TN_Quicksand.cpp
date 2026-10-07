@@ -1,4 +1,5 @@
 #include "World/TN_Quicksand.h"
+#include "World/TN_HazardEffects.h"
 
 #include "Beach/TN_BeachTrapKit.h"
 #include "Components/BoxComponent.h"
@@ -131,7 +132,19 @@ void ATN_Quicksand::ServerUpdate(ACharacter* Turtle, FInside& State, double Now)
 	{
 		const double* Since = TrappedAt.Find(Turtle);
 		const float Trapped = Since ? static_cast<float>(Now - *Since) : MaxTrappedSeconds;
-		if (TNBeachCreatureRules::Quicksand::ShouldRelease(Trapped, MaxTrappedSeconds, Status->HasEscaped()))
+		const bool bRelease = TNBeachCreatureRules::Quicksand::ShouldRelease(Trapped, MaxTrappedSeconds, Status->HasEscaped());
+		const FTNHazardEffect& SinkEffect = UTN_HazardTuning::Get().Quicksand;
+		if (TNHazard::QuicksandKills(bRelease, Status->HasEscaped(), SinkEffect.bKills))
+		{
+			// Arenas movedizas (#871): hundida hasta el final sin soltarse, muere donde está (sin el saltito de salida).
+			Status->ServerRelease(FVector::ZeroVector, 0.f);
+			TrappedAt.Remove(Turtle);
+			ImmuneUntil.Add(Turtle, Now + ImmuneSeconds);
+			State.Seconds = 0.f;
+			TNHazard::Apply(SinkEffect, Turtle, this);
+			return;
+		}
+		if (bRelease)
 		{
 			const FVector Out = (Turtle->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
 			const FVector Dir = Out.IsNearlyZero() ? GetActorForwardVector() : Out;

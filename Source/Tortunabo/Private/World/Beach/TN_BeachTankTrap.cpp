@@ -1,4 +1,5 @@
 #include "World/Beach/TN_BeachTankTrap.h"
+#include "World/TN_HazardEffects.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -161,10 +162,13 @@ void ATN_BeachTankTrap::ApplyResponse(const FImpactor& Who, TNBeachCreatureRules
 	{
 	case EResponse::KnockDownWalker:
 		TNBeach::KnockDownTurtle(Cast<ACharacter>(Who.Actor), KnockSeconds, -Dir * BounceBack + FVector(0.0, 0.0, BounceUp));
+		// Erizos checos: 15 al chocar (#871).
+		TNHazard::Apply(UTN_HazardTuning::Get().TankTrap, Cast<ACharacter>(Who.Actor), this);
 		break;
 	case EResponse::StunBall:
 		// La bola sale rebotada y la tortuga se queda mareada dentro, como la que lanza una ola o un enemigo.
 		TNBeach::StunTurtle(Cast<ACharacter>(Who.Actor), KnockSeconds, -Dir * BounceBack + FVector(0.0, 0.0, BounceUp));
+		TNHazard::Apply(UTN_HazardTuning::Get().TankTrap, Cast<ACharacter>(Who.Actor), this);
 		break;
 	default:
 		break;

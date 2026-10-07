@@ -1,4 +1,5 @@
 #include "World/TN_SeagullDroppingActor.h"
+#include "World/TN_HazardEffects.h"
 #include "Core/TN_Log.h"
 #include "Player/TortugaCharacter.h"
 #include "Core/TN_CoopPlayerState.h"
@@ -171,7 +172,8 @@ void ATN_SeagullDroppingActor::ResolveImpact()
 				*GetNameSafe(C));
 			continue;
 		}
-		C->RequestKill(this);
+		// Caca de gaviota: 30 de daño (hoja EnemyAndObstacleData, #871); ya no mata de un golpe.
+		TNHazard::Apply(UTN_HazardTuning::Get().SeagullDropping, C, this);
 		bHitPlayer = true;
 	}
 

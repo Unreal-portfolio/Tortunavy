@@ -20,6 +20,8 @@
 #include "Player/TN_TurtleAnimInstance.h"
 #include "Player/TortugaCharacter.h"
 #include "Settings/TN_CombatTuning.h"
+#include "TimerManager.h"
+#include "World/TN_HazardEffects.h"
 
 namespace TNBeachGull
 {
@@ -1129,6 +1131,8 @@ void ATN_BeachGullZone::ServerPoop(float Tau, float DeltaSeconds)
 			Away = Away.IsNearlyZero() ? Turtle->GetActorForwardVector() * -1.0 : Away.GetSafeNormal();
 			const FVector Spin = FVector::CrossProduct(FVector::UpVector, Away) * 200.0;
 			KnockDownTurtle(Turtle, UTN_CombatTuning::Get().GullZonePoopKnockSeconds, Away * PoopPush + FVector(0.0, 0.0, 120.0), Spin);
+			// Además del derribo, el daño de la caca de la hoja (#871).
+			TNHazard::Apply(UTN_HazardTuning::Get().SeagullDropping, Turtle, this);
 			IgnoreTurtle(Turtle, UTN_CombatTuning::Get().GullZonePoopIgnoreSeconds);
 			Hit.Add(Turtle);
 		}
@@ -1306,6 +1310,18 @@ void ATN_BeachGullZone::ReleaseCarried()
 		const float FallSeconds = FMath::Sqrt(2.f * Height / UTN_CombatTuning::Get().GullZoneGravity);
 		const FVector Push = CourseBack * ReleaseLaunch;
 		StunTurtle(Carried, FallSeconds + UTN_CombatTuning::Get().GullZoneAfterDropStunSeconds, Push + FVector(0.0, 0.0, -50.0));
+		// Gaviota 1 (#871): soltada desde lo alto, la caída es mortal. Muere al llegar al suelo, no en el aire.
+		const UTN_HazardTuning& Hazards = UTN_HazardTuning::Get();
+		if (TNHazard::GullDropKills(Height, Hazards.GullDropFatalHeight, Hazards.GullDrop.bKills))
+		{
+			FTimerHandle FallKill;
+			TWeakObjectPtr<ATortugaCharacter> WeakCarried(Carried);
+			TWeakObjectPtr<ATN_BeachGullZone> WeakThis(this);
+			GetWorldTimerManager().SetTimer(FallKill, FTimerDelegate::CreateWeakLambda(this, [WeakCarried, WeakThis]()
+			{
+				TNHazard::Apply(UTN_HazardTuning::Get().GullDrop, WeakCarried.Get(), WeakThis.Get());
+			}), FMath::Max(0.05f, FallSeconds), false);
+		}
 	}
 	ForceNetUpdate();
 }

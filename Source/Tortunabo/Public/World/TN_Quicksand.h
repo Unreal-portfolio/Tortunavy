@@ -15,8 +15,8 @@ class UStaticMeshComponent;
  *  - Ralentización progresiva: cuanto más rato dentro, más despacio (TNBeachCreatureRules::Quicksand::SpeedFactor).
  *    Como la zona lenta, la aplica cada máquina a la tortuga que simula (servidor y dueño).
  *  - Atrapada: tras TrapAfterSeconds seguidos dentro, el servidor la deja quieta y hundida (UTN_BeachTrapStatusComponent)
- *    hasta que se suelta machacando salto o pasa MaxTrappedSeconds; sale con un saltito hacia fuera y mareada.
- *  - Nunca muere ni pierde nada.
+ *    hasta que se suelta machacando salto (sale con un saltito hacia fuera y mareada) o pasa MaxTrappedSeconds.
+ *  - Hundida hasta MaxTrappedSeconds sin soltarse, muere (UTN_HazardTuning::Quicksand, #871).
  *
  * No se replica: cada máquina crea la suya (como las zonas lentas del mapa de Supervivencia) o la crea el elemento
  * replicado de la carrera (ATN_BeachQuicksand). Las decisiones solo las toma la del servidor.
