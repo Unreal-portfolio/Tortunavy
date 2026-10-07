@@ -375,6 +375,19 @@ protected:
 	/** Servidor: dónde cae el objeto que sale de From (por defecto, en el suelo a un metro largo hacia Pawn). */
 	virtual FVector FindLanding(const APawn* Pawn, const FVector& From) const;
 
+	/**
+	 * Servidor, al completarse la búsqueda de Pawn (puede ser nulo): saca lo que da el sitio y devuelve el objeto que hace el
+	 * saltito (nulo si no ha salido nada: «¡pof!»); OutLanding, dónde cae. Por defecto, con la suerte de GetLuck, un objeto de
+	 * PickLoot en FindLanding. Las cajas de suministros (ATN_SupplyCrate) sacan varios objetos y chapas.
+	 */
+	virtual AActor* SpawnSearchReward(APawn* Pawn, const FVector& From, FVector& OutLanding);
+
+	/** Servidor: completa ya la búsqueda en curso (o, sin nadie rebuscando, la de nadie) y reparte lo que dé. */
+	void FinishSearch();
+
+	/** Servidor: el pickup de Item en Where (el de la fila, inicializado con ella); cuenta para MaxLootLying. */
+	AActor* SpawnLoot(const FTN_InventoryItem& Item, const FVector& Where);
+
 	/** Cada máquina, después de reaccionar a un cambio del estado (el anfitrión también). */
 	virtual void OnSearchStateChanged(const FTNSearchSpotState& OldState) {}
 
@@ -424,11 +437,9 @@ private:
 
 	// ── Servidor ──
 	void ServerTickSearch();
-	void FinishSearch();
 	void CancelSearch(const TCHAR* Why);
 	bool CanPawnSearch(const APawn* Pawn) const;
 	bool IsPawnInReach(const APawn* Pawn, float Slack) const;
-	AActor* SpawnLoot(const FTN_InventoryItem& Item, const FVector& Where);
 	void ScheduleDormancy();
 
 	// ── Utilidades ──

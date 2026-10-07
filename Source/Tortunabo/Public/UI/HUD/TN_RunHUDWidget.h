@@ -67,6 +67,9 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> DownText;
 	UPROPERTY(Transient) TObjectPtr<UBorder> ReviveBanner;
 	UPROPERTY(Transient) TObjectPtr<UProgressBar> ReviveBar;
+	/** Aviso de airdrop en camino (#860): cuenta atrás hasta que aterriza. */
+	UPROPERTY(Transient) TObjectPtr<UBorder> AirdropBanner;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> AirdropText;
 	/** Aviso de interacción: tecla y texto del interactuable al alcance. */
 	UPROPERTY(Transient) TObjectPtr<UBorder> PromptCard;
 	/** La tecla dibujada (con teclado) y el botón del mando (con mando, #347): solo se ve uno. */
