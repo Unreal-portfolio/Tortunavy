@@ -264,8 +264,11 @@ public:
 	 * Servidor: lanza a Character con LaunchVelocity (como LaunchCharacter con las dos componentes sustituidas). Si es la
 	 * tortuga de un cliente remoto, el lanzamiento lo estrena su dueño en su siguiente movimiento y el servidor lo aplica en
 	 * ese mismo movimiento (FTNServerLaunch): sin corrección. Si no (el anfitrión, otro personaje), LaunchCharacter.
+	 * bLeavesNone: el lanzamiento saca a la tortuga de MOVE_None (salida de una trampa, #892). El servidor no la pasa a
+	 * MOVE_Falling hasta el movimiento del dueño que lo estrena (así no discrepan en el modo mientras llega), y el dueño la
+	 * pasa en ese mismo movimiento. Sin él, una tortuga en MOVE_None no se lanza (la caja del caparazón).
 	 */
-	static void LaunchFromServer(ACharacter* Character, const FVector& LaunchVelocity);
+	static void LaunchFromServer(ACharacter* Character, const FVector& LaunchVelocity, bool bLeavesNone = false);
 
 	const FTNServerLaunch& GetServerLaunch() const { return ServerLaunch; }
 
@@ -553,7 +556,7 @@ private:
 
 	/** Lanzamiento concedido por el servidor para el dueño (LaunchFromServer). */
 	UFUNCTION(Client, Reliable)
-	void ClientReceiveServerLaunch(uint8 Id, FVector_NetQuantize LaunchVelocity);
+	void ClientReceiveServerLaunch(uint8 Id, FVector_NetQuantize LaunchVelocity, bool bLeavesNone);
 
 	/**
 	 * El lanzamiento concedido que entra en el movimiento ClientTimeStamp: en el servidor, el que estrena ese movimiento del
@@ -562,6 +565,12 @@ private:
 	bool FindServerLaunchForMove(float ClientTimeStamp, FVector& OutVelocity);
 
 	FTNServerLaunch ServerLaunch;
+
+	/** El lanzamiento concedido (o recibido) saca de MOVE_None: quien lo aplica pasa antes a MOVE_Falling (#892). */
+	bool bServerLaunchLeavesNone = false;
+
+	/** Aplica un lanzamiento concedido en un movimiento (el del dueño o el del servidor). */
+	void ApplyServerLaunch(const FVector& LaunchVelocity);
 
 	/** Esta máquina simula el movimiento de la tortuga (el dueño, el servidor o el propio anfitrión; no los demás). */
 	bool SimulatesBelly() const;

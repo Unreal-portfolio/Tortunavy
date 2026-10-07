@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_TurtleMovementComponent.h"
 #include "Player/TortugaCharacter.h"
 #include "TimerManager.h"
 #include "TN_BeachRideKit.h"
@@ -279,14 +280,20 @@ void UTN_BeachTrapStatusComponent::ReleaseTrapLocal()
 	if (SimulatesOwner())
 	{
 		UCharacterMovementComponent* Move = Turtle->GetCharacterMovement();
+		const FVector Hop(TrapState.HopVelocity);
 		if (Move && Move->MovementMode == MOVE_None)
 		{
-			Move->SetMovementMode(MOVE_Falling);
-			const FVector Hop(TrapState.HopVelocity);
-			if (!Hop.IsNearlyZero())
+			if (Hop.IsNearlyZero())
 			{
-				Turtle->LaunchCharacter(Hop, true, true);
+				Move->SetMovementMode(MOVE_Falling);
 			}
+			else if (Turtle->HasAuthority())
+			{
+				// El salto lo concede el servidor y lo estrena el dueño en su movimiento, que sale de MOVE_None en ese mismo
+				// paso: sin corrección al soltarse (#892). El anfitrión salta ya.
+				UTN_TurtleMovementComponent::LaunchFromServer(Turtle, Hop, true);
+			}
+			// Dueño remoto: sigue quieto hasta estrenar el salto que le concede el servidor.
 		}
 	}
 	if (TrapState.DizzySeconds > 0.f && GetWorld())
