@@ -276,10 +276,13 @@ namespace TNVRHandsDetail
 	}
 }
 
-void ATortugaCharacter::SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid)
+void ATortugaCharacter::SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid,
+	const FRotator& LeftRotation, const FRotator& RightRotation)
 {
 	LocalVRHand[0] = Left;
 	LocalVRHand[1] = Right;
+	LocalVRHandRot[0] = LeftRotation;
+	LocalVRHandRot[1] = RightRotation;
 	bLocalVRHandValid[0] = bLeftValid && bVRViewActive;
 	bLocalVRHandValid[1] = bRightValid && bVRViewActive;
 
@@ -293,24 +296,54 @@ void ATortugaCharacter::SetLocalVRHands(const FVector& Left, const FVector& Righ
 	const FTransform& ToWorld = GetActorTransform();
 	const FVector LeftLocal = ToWorld.InverseTransformPosition(Left).GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
 	const FVector RightLocal = ToWorld.InverseTransformPosition(Right).GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
+	// El giro, respecto de la tortuga como la posición (el dueño la gira con la cabeza).
+	const FRotator LeftRotLocal = ToWorld.InverseTransformRotation(LeftRotation.Quaternion()).Rotator();
+	const FRotator RightRotLocal = ToWorld.InverseTransformRotation(RightRotation.Quaternion()).Rotator();
 	const uint8 Valid = (bLocalVRHandValid[0] ? 1 : 0) | (bLocalVRHandValid[1] ? 2 : 0);
 	if (HasAuthority())
 	{
 		RepVRHandLeft = LeftLocal;
 		RepVRHandRight = RightLocal;
+		RepVRHandRotLeft = LeftRotLocal;
+		RepVRHandRotRight = RightRotLocal;
 		RepVRHandsValid = Valid;
 	}
 	else
 	{
-		ServerSetVRHands(LeftLocal, RightLocal, Valid);
+		ServerSetVRHands(LeftLocal, RightLocal, Valid, LeftRotLocal, RightRotLocal);
 	}
 }
 
-void ATortugaCharacter::ServerSetVRHands_Implementation(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid)
+void ATortugaCharacter::ServerSetVRHands_Implementation(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid,
+	FRotator LeftRotation, FRotator RightRotation)
 {
 	RepVRHandLeft = Left.GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
 	RepVRHandRight = Right.GetClampedToMaxSize(TNVRHandsDetail::MaxHandDistance);
+	RepVRHandRotLeft = LeftRotation.GetNormalized();
+	RepVRHandRotRight = RightRotation.GetNormalized();
 	RepVRHandsValid = bVRPlayer ? (Valid & 3) : 0;
+}
+
+bool ATortugaCharacter::GetVRHandRotations(FQuat& OutLeft, FQuat& OutRight) const
+{
+	if (IsLocallyControlled())
+	{
+		if (!bVRViewActive)
+		{
+			return false;
+		}
+		OutLeft = LocalVRHandRot[0].Quaternion();
+		OutRight = LocalVRHandRot[1].Quaternion();
+		return true;
+	}
+	if (!bVRPlayer || RepVRHandsValid == 0)
+	{
+		return false;
+	}
+	const FTransform& ToWorld = GetActorTransform();
+	OutLeft = ToWorld.TransformRotation(RepVRHandRotLeft.Quaternion());
+	OutRight = ToWorld.TransformRotation(RepVRHandRotRight.Quaternion());
+	return true;
 }
 
 bool ATortugaCharacter::GetVRHandTargets(FVector& OutLeft, FVector& OutRight, bool& bOutLeft, bool& bOutRight) const

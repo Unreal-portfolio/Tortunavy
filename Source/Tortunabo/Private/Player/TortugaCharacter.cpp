@@ -1744,6 +1744,8 @@ void ATortugaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Manos VR del dueño (los demás ven los brazos siguiéndolas; el dueño usa las suyas).
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandLeft, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRight, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRotLeft, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandRotRight, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(ATortugaCharacter, RepVRHandsValid, COND_SkipOwner);
 }
 

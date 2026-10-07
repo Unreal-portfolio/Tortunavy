@@ -112,6 +112,9 @@ struct FTNTurtleAnimFrame
 	float VRArmRW = 0.f;
 	FVector VRHandL = FVector::ZeroVector;
 	FVector VRHandR = FVector::ZeroVector;
+	/** Giro de cada mano en el espacio de la malla (su +X, hacia donde apunta la aleta): la muñeca se dobla hacia él. */
+	FQuat VRHandRotL = FQuat::Identity;
+	FQuat VRHandRotR = FQuat::Identity;
 	/**
 	 * La cabeza que sigue a la cámara en tercera persona (#623, TNHeadLook): guiñada (+ a su derecha) y cabeceo (+ arriba)
 	 * en grados, ya con sus topes, suavizados y multiplicados por su peso. Se reparten entre el cuello y la cabeza.

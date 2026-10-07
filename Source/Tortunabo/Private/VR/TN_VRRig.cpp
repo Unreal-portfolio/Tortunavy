@@ -474,6 +474,12 @@ void ATN_VRRig::Tick(float DeltaSeconds)
 		ScreenPanel->SetVisibility(false, true);
 		return;
 	}
+	// Los mandos solo siguen la pose si el rig tiene un dueño local (AActor::HasLocalNetOwner, que mira el controlador o el
+	// peón del dueño): sin él, IsTracked() era siempre falso y las aletas, el láser y los agarres no hacían nada (#916).
+	if (GetOwner() != PC)
+	{
+		SetOwner(PC);
+	}
 
 	// La tortuga propia en primera persona (y la que ya no es nuestra, de vuelta a la de siempre).
 	ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(PC->GetPawn());
@@ -678,7 +684,7 @@ void ATN_VRRig::UpdateHands(ATortugaCharacter* Turtle, bool bTurtleView, float D
 	if (Turtle)
 	{
 		Turtle->SetLocalVRHands(LeftHand->GetComponentLocation(), RightHand->GetComponentLocation(), bLeftTracked && bTurtleView,
-			bRightTracked && bTurtleView);
+			bRightTracked && bTurtleView, LeftHand->GetComponentRotation(), RightHand->GetComponentRotation());
 	}
 	// Sentada en un vehículo se ven los brazos de la tortuga sentada (siguen a los mandos): sin aletas sueltas.
 	const bool bSeated = ViewSeat.IsValid() && ViewSeat->IsVRView();

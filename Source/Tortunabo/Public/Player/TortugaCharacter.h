@@ -1873,7 +1873,14 @@ public:
 	 * VR: dónde están las manos del dueño (los mandos, en el mundo). Lo pone ATN_VRRig cada fotograma; se manda al servidor
 	 * unas 15 veces por segundo (relativo a la tortuga) para que los demás vean los brazos siguiendo a las manos.
 	 */
-	void SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid);
+	void SetLocalVRHands(const FVector& Left, const FVector& Right, bool bLeftValid, bool bRightValid,
+		const FRotator& LeftRotation = FRotator::ZeroRotator, const FRotator& RightRotation = FRotator::ZeroRotator);
+
+	/**
+	 * Giro de las manos VR en el mundo (su +X, hacia donde apunta la aleta) para el IK: el de los mandos en el dueño y el
+	 * replicado en las demás máquinas (#916). false sin VR.
+	 */
+	bool GetVRHandRotations(FQuat& OutLeft, FQuat& OutRight) const;
 
 	/**
 	 * VR con gafas: vuelve a medir dónde está la cabeza respecto del origen del seguimiento (#916). Lo llaman al recentrar y
@@ -1953,14 +1960,22 @@ private:
 	UPROPERTY(Replicated)
 	FVector_NetQuantize10 RepVRHandRight;
 
+	/** Giro de cada mano respecto de la tortuga (comprimido por el motor: unos 6 bytes cada uno). */
+	UPROPERTY(Replicated)
+	FRotator RepVRHandRotLeft = FRotator::ZeroRotator;
+
+	UPROPERTY(Replicated)
+	FRotator RepVRHandRotRight = FRotator::ZeroRotator;
+
 	/** Bit 0 mano izquierda con seguimiento, bit 1 la derecha. */
 	UPROPERTY(Replicated)
 	uint8 RepVRHandsValid = 0;
 
 	UFUNCTION(Server, Unreliable)
-	void ServerSetVRHands(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid);
+	void ServerSetVRHands(FVector_NetQuantize10 Left, FVector_NetQuantize10 Right, uint8 Valid, FRotator LeftRotation, FRotator RightRotation);
 
 	FVector LocalVRHand[2] = { FVector::ZeroVector, FVector::ZeroVector };
+	FRotator LocalVRHandRot[2] = { FRotator::ZeroRotator, FRotator::ZeroRotator };
 	bool bLocalVRHandValid[2] = { false, false };
 	double LastVRHandsSent = -1.0;
 
