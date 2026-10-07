@@ -379,6 +379,19 @@ void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
 
 			bKnockdownRagdollActive = true;
 			bRagdollProbeValid = false;
+			bLocalRagdollSettled = false;
+
+			// Red (#153): el servidor manda la primera pose en la misma actualización que bIsKnockedDown y borra el punto
+			// del levantamiento anterior. Los clientes corrigen su ragdoll hacia esta pose (TickKnockdownRagdollNet).
+			if (HasAuthority())
+			{
+				KnockdownStandLocation = FVector_NetQuantize10::ZeroVector;
+				RagdollSettleTimer = 0.f;
+				KnockdownRootPose = SampleKnockdownRootPose(/*bActive=*/true, /*bSettled=*/false);
+				LastSentRootPose = KnockdownRootPose;
+				LastRootPoseSentAt = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+				ForceNetUpdate();
+			}
 		}
 		else
 		{
@@ -397,18 +410,6 @@ void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
 			// para que no teleporte de vuelta a la pos pre-knockdown. Con los pies en el suelo de debajo del cuerpo
 			// (si lo encuentra), no a la altura de la cadera tumbada.
 			{
-				const FBodyInstance* RootBody = SkelMesh->GetBodyInstance();
-				const FVector RagdollLoc = RootBody && RootBody->IsValidBodyInstance()
-					? RootBody->GetUnrealWorldTransform().GetLocation()
-					: SkelMesh->GetBoneLocation(SkelMesh->GetBoneName(0), EBoneSpaces::WorldSpace);
-				// Sobre el suelo de debajo del cuerpo (o de encima, si el cuerpo acabó por debajo); si no lo hay, donde
-				// estaba de pie al caer. Y sin quedar metida en nada: si no, la cápsula se «desincrusta» hacia abajo por la
-				// colisión fina del terreno y cae por debajo del mapa.
-				FVector StandLoc = PreKnockdownStandLocation;
-				if (!FindStandSpotNear(RagdollLoc, StandLoc))
-				{
-					StandLoc = PreKnockdownStandLocation;
-				}
 				// La cápsula vuelve a chocar ANTES de buscar sitio: FindTeleportSpot solo aparta una cápsula con colisión de
 				// consulta. Con la del ragdoll (sin colisión) no hacía nada y, junto a una roca o una muralla, la tortuga se
 				// levantaba con media cápsula (y la malla) dentro. El ragdoll no choca con cápsulas (perfil Ragdoll).
@@ -416,9 +417,39 @@ void ATortugaCharacter::ApplyKnockdownVisual(bool bKnocked)
 				{
 					Cap->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 				}
-				if (UWorld* World = GetWorld())
+
+				// Fase 1 de #153: el punto lo elige el servidor y llega en la misma actualización que bIsKnockedDown = false.
+				// Un cliente lo usa tal cual: si lo calculara con su ragdoll local, cada máquina levantaría la tortuga en un
+				// sitio distinto (y el dueño, además, recibiría una corrección del movimiento al dar el primer paso).
+				const bool bHasServerStand = !HasAuthority() && !FVector(KnockdownStandLocation).IsZero();
+				FVector LocalStandLoc = PreKnockdownStandLocation;
+				if (!bHasServerStand)
 				{
-					World->FindTeleportSpot(this, StandLoc, GetActorRotation());
+					const FBodyInstance* RootBody = SkelMesh->GetBodyInstance();
+					const FVector RagdollLoc = RootBody && RootBody->IsValidBodyInstance()
+						? RootBody->GetUnrealWorldTransform().GetLocation()
+						: SkelMesh->GetBoneLocation(SkelMesh->GetBoneName(0), EBoneSpaces::WorldSpace);
+					// Sobre el suelo de debajo del cuerpo (o de encima, si el cuerpo acabó por debajo); si no lo hay, donde
+					// estaba de pie al caer. Y sin quedar metida en nada: si no, la cápsula se «desincrusta» hacia abajo por
+					// la colisión fina del terreno y cae por debajo del mapa.
+					if (!FindStandSpotNear(RagdollLoc, LocalStandLoc))
+					{
+						LocalStandLoc = PreKnockdownStandLocation;
+					}
+					if (UWorld* World = GetWorld())
+					{
+						World->FindTeleportSpot(this, LocalStandLoc, GetActorRotation());
+					}
+				}
+				FVector StandLoc = TNRagdollNet::ResolveStandLocation(HasAuthority(), KnockdownStandLocation, LocalStandLoc);
+				if (HasAuthority())
+				{
+					// Con la precisión con la que viaja: el servidor se levanta exactamente donde lo harán los clientes.
+					StandLoc = TNRagdollNet::QuantizeLocation(StandLoc);
+					KnockdownStandLocation = StandLoc;
+					KnockdownRootPose = SampleKnockdownRootPose(/*bActive=*/false, /*bSettled=*/false);
+					LastSentRootPose = KnockdownRootPose;
+					ForceNetUpdate();
 				}
 				SetActorLocation(StandLoc, false, nullptr, ETeleportType::TeleportPhysics);
 			}
@@ -1062,6 +1093,13 @@ void ATortugaCharacter::TickKnockdownRagdoll(float DeltaTime)
 	if (!World || !RootBody || !RootBody->IsValidBodyInstance() || !SkelMesh->IsSimulatingPhysics())
 	{
 		return;
+	}
+	// 0) Red (#153): el servidor empuja, asienta y manda la pose; los clientes corrigen la suya hacia ella. Lo que la
+	//    corrección traslada de golpe no cuenta como atravesar el suelo: la pose del servidor ya está encima.
+	const FVector NetShift = TickKnockdownRagdollNet(DeltaTime);
+	if (bRagdollProbeValid)
+	{
+		RagdollProbeLast += NetShift;
 	}
 	FVector Probe = RootBody->GetUnrealWorldTransform().GetLocation();
 
