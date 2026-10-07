@@ -8,6 +8,11 @@
  * Pickup de rescate: spawnea cuando un jugador muere.
  * Al interactuar, respawnea al jugador muerto en la ubicación del pickup.
  * Hereda de TN_InteractableBase (mesh + prompt 3D + distancia configurable).
+ *
+ * Revivir con chapas (#862, plan maestro §1 decisión 10; provisional, el sitio puede cambiar): con
+ * UTN_EconomySettings::ReviveChapaCost > 0 (4, hoja Economía), junto al cuerpo hay que mantener la tecla de interactuar
+ * ReviveHoldSeconds y el servidor cobra las chapas a quien revive; sin chapas suficientes no empieza. Con coste 0 es el
+ * rescate gratis de pulsar de siempre. Se suma a la reanimación con baile y al desangrado, que no cambian.
  */
 UCLASS()
 class TORTUNABO_API ATN_RescuePickup : public ATN_InteractableBase
@@ -22,6 +27,16 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual bool CanInteract(APawn* Interactor) const override;
 	virtual void Interact(APawn* Interactor) override;
+	virtual float GetHoldDuration() const override;
+	virtual void BeginHoldInteract(APawn* Interactor) override;
+	virtual void EndHoldInteract(APawn* Interactor) override;
+	virtual float GetHoldProgress(const APawn* Interactor) const override;
+
+	/**
+	 * Servidor: Payer paga Cost chapas por revivir. Solo si las tiene se llama a Revive, y solo si Revive dice que ha revivido
+	 * se cobran. true si ha revivido. Con Cost 0, Revive sin cobrar nada.
+	 */
+	static bool ChargeAndRevive(APawn* Payer, int32 Cost, TFunctionRef<bool()> Revive);
 
 	/**
 	 * Inicializa el pickup con el PlayerId del jugador muerto.
@@ -84,5 +99,21 @@ private:
 	FName TrackingBone = TEXT("pelvis");
 
 	FVector ResolveFollowLocation() const;
+
+	/** Quién mantiene la tecla para revivir pagando y desde cuándo (hora del servidor): el aro de progreso en todas las máquinas. */
+	UPROPERTY(Replicated)
+	TObjectPtr<APawn> HoldPawn;
+
+	UPROPERTY(Replicated)
+	float HoldStart = 0.f;
+
+	/** Chapas que cuesta revivir aquí (UTN_EconomySettings). */
+	static int32 ReviveCost();
+
+	/** Servidor: revive al muerto (cobrando a Interactor si cuesta chapas) y se va. false si no se ha podido. */
+	bool ServerRevive(APawn* Interactor);
+
+	/** Servidor: deja de contar el mantener la tecla. */
+	void ClearHold();
 };
 

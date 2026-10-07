@@ -4,234 +4,130 @@
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Co-op"
-			"#TN_CoopLevel"	"Co-op, level %level%"
 			"#TN_Lobby"	"In the lobby"
 			"#TN_LobbyCount"	"In the lobby (%players%/%max%)"
 			"#TN_Menu"	"In the menu"
-			"#TN_Playing"	"In a match"
-			"#TN_Race"	"Race"
-			"#TN_RaceRound"	"Race, round %round%"
-			"#TN_Survival"	"Survival"
-			"#TN_SurvivalLevel"	"Survival, level %level%"
-			"#TN_TwoVsTwo"	"2 vs 2"
-			"#TN_TwoVsTwoRound"	"2 vs 2, round %round%"
+			"#TN_Playing"	"Playing"
 		}
 	}
 	"spanish"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Coop"
-			"#TN_CoopLevel"	"Coop, nivel %level%"
 			"#TN_Lobby"	"En el lobby"
 			"#TN_LobbyCount"	"En el lobby (%players%/%max%)"
 			"#TN_Menu"	"En el menú"
-			"#TN_Playing"	"En partida"
-			"#TN_Race"	"Carrera"
-			"#TN_RaceRound"	"Carrera, ronda %round%"
-			"#TN_Survival"	"Supervivencia"
-			"#TN_SurvivalLevel"	"Supervivencia, nivel %level%"
-			"#TN_TwoVsTwo"	"2 contra 2"
-			"#TN_TwoVsTwoRound"	"2 contra 2, ronda %round%"
+			"#TN_Playing"	"Jugando"
 		}
 	}
 	"french"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Coop"
-			"#TN_CoopLevel"	"Coop, niveau %level%"
 			"#TN_Lobby"	"Dans le lobby"
 			"#TN_LobbyCount"	"Dans le lobby (%players%/%max%)"
 			"#TN_Menu"	"Dans le menu"
-			"#TN_Playing"	"En partie"
-			"#TN_Race"	"Course"
-			"#TN_RaceRound"	"Course, manche %round%"
-			"#TN_Survival"	"Survie"
-			"#TN_SurvivalLevel"	"Survie, niveau %level%"
-			"#TN_TwoVsTwo"	"2 contre 2"
-			"#TN_TwoVsTwoRound"	"2 contre 2, manche %round%"
+			"#TN_Playing"	"En jeu"
 		}
 	}
 	"german"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Koop"
-			"#TN_CoopLevel"	"Koop, Level %level%"
 			"#TN_Lobby"	"In der Lobby"
 			"#TN_LobbyCount"	"In der Lobby (%players%/%max%)"
 			"#TN_Menu"	"Im Menü"
-			"#TN_Playing"	"Im Spiel"
-			"#TN_Race"	"Rennen"
-			"#TN_RaceRound"	"Rennen, Runde %round%"
-			"#TN_Survival"	"Überleben"
-			"#TN_SurvivalLevel"	"Überleben, Level %level%"
-			"#TN_TwoVsTwo"	"2 gegen 2"
-			"#TN_TwoVsTwoRound"	"2 gegen 2, Runde %round%"
+			"#TN_Playing"	"Spielt"
 		}
 	}
 	"italian"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Coop"
-			"#TN_CoopLevel"	"Coop, livello %level%"
 			"#TN_Lobby"	"Nella lobby"
 			"#TN_LobbyCount"	"Nella lobby (%players%/%max%)"
 			"#TN_Menu"	"Nel menu"
-			"#TN_Playing"	"In partita"
-			"#TN_Race"	"Corsa"
-			"#TN_RaceRound"	"Corsa, manche %round%"
-			"#TN_Survival"	"Sopravvivenza"
-			"#TN_SurvivalLevel"	"Sopravvivenza, livello %level%"
-			"#TN_TwoVsTwo"	"2 contro 2"
-			"#TN_TwoVsTwoRound"	"2 contro 2, manche %round%"
+			"#TN_Playing"	"In gioco"
 		}
 	}
 	"brazilian"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Coop"
-			"#TN_CoopLevel"	"Coop, nível %level%"
 			"#TN_Lobby"	"No lobby"
 			"#TN_LobbyCount"	"No lobby (%players%/%max%)"
 			"#TN_Menu"	"No menu"
-			"#TN_Playing"	"Em partida"
-			"#TN_Race"	"Corrida"
-			"#TN_RaceRound"	"Corrida, rodada %round%"
-			"#TN_Survival"	"Sobrevivência"
-			"#TN_SurvivalLevel"	"Sobrevivência, nível %level%"
-			"#TN_TwoVsTwo"	"2 contra 2"
-			"#TN_TwoVsTwoRound"	"2 contra 2, rodada %round%"
+			"#TN_Playing"	"Jogando"
 		}
 	}
 	"russian"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Кооператив"
-			"#TN_CoopLevel"	"Кооператив, уровень %level%"
 			"#TN_Lobby"	"В лобби"
 			"#TN_LobbyCount"	"В лобби (%players%/%max%)"
 			"#TN_Menu"	"В меню"
-			"#TN_Playing"	"В игре"
-			"#TN_Race"	"Гонка"
-			"#TN_RaceRound"	"Гонка, раунд %round%"
-			"#TN_Survival"	"Выживание"
-			"#TN_SurvivalLevel"	"Выживание, уровень %level%"
-			"#TN_TwoVsTwo"	"2 на 2"
-			"#TN_TwoVsTwoRound"	"2 на 2, раунд %round%"
+			"#TN_Playing"	"Играет"
 		}
 	}
 	"polish"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Kooperacja"
-			"#TN_CoopLevel"	"Kooperacja, poziom %level%"
 			"#TN_Lobby"	"W lobby"
 			"#TN_LobbyCount"	"W lobby (%players%/%max%)"
 			"#TN_Menu"	"W menu"
 			"#TN_Playing"	"W grze"
-			"#TN_Race"	"Wyścig"
-			"#TN_RaceRound"	"Wyścig, runda %round%"
-			"#TN_Survival"	"Przetrwanie"
-			"#TN_SurvivalLevel"	"Przetrwanie, poziom %level%"
-			"#TN_TwoVsTwo"	"2 na 2"
-			"#TN_TwoVsTwoRound"	"2 na 2, runda %round%"
 		}
 	}
 	"turkish"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"Kooperatif"
-			"#TN_CoopLevel"	"Kooperatif, seviye %level%"
 			"#TN_Lobby"	"Lobide"
 			"#TN_LobbyCount"	"Lobide (%players%/%max%)"
 			"#TN_Menu"	"Menüde"
-			"#TN_Playing"	"Maçta"
-			"#TN_Race"	"Yarış"
-			"#TN_RaceRound"	"Yarış, tur %round%"
-			"#TN_Survival"	"Hayatta Kalma"
-			"#TN_SurvivalLevel"	"Hayatta Kalma, seviye %level%"
-			"#TN_TwoVsTwo"	"2'ye 2"
-			"#TN_TwoVsTwoRound"	"2'ye 2, tur %round%"
+			"#TN_Playing"	"Oynuyor"
 		}
 	}
 	"japanese"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"協力プレイ"
-			"#TN_CoopLevel"	"協力プレイ・レベル%level%"
 			"#TN_Lobby"	"ロビーで待機中"
 			"#TN_LobbyCount"	"ロビーで待機中（%players%/%max%）"
 			"#TN_Menu"	"メニュー画面"
 			"#TN_Playing"	"プレイ中"
-			"#TN_Race"	"レース"
-			"#TN_RaceRound"	"レース・ラウンド%round%"
-			"#TN_Survival"	"サバイバル"
-			"#TN_SurvivalLevel"	"サバイバル・レベル%level%"
-			"#TN_TwoVsTwo"	"2対2"
-			"#TN_TwoVsTwoRound"	"2対2・ラウンド%round%"
 		}
 	}
 	"koreana"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"협동"
-			"#TN_CoopLevel"	"협동, 레벨 %level%"
 			"#TN_Lobby"	"로비 대기 중"
 			"#TN_LobbyCount"	"로비 대기 중 (%players%/%max%)"
 			"#TN_Menu"	"메뉴 화면"
-			"#TN_Playing"	"게임 중"
-			"#TN_Race"	"레이스"
-			"#TN_RaceRound"	"레이스, 라운드 %round%"
-			"#TN_Survival"	"서바이벌"
-			"#TN_SurvivalLevel"	"서바이벌, 레벨 %level%"
-			"#TN_TwoVsTwo"	"2대2"
-			"#TN_TwoVsTwoRound"	"2대2, 라운드 %round%"
+			"#TN_Playing"	"플레이 중"
 		}
 	}
 	"schinese"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"合作"
-			"#TN_CoopLevel"	"合作，第 %level% 关"
 			"#TN_Lobby"	"在大厅中"
 			"#TN_LobbyCount"	"在大厅中（%players%/%max%）"
 			"#TN_Menu"	"在菜单中"
 			"#TN_Playing"	"游戏中"
-			"#TN_Race"	"竞速"
-			"#TN_RaceRound"	"竞速，第 %round% 轮"
-			"#TN_Survival"	"生存"
-			"#TN_SurvivalLevel"	"生存，第 %level% 关"
-			"#TN_TwoVsTwo"	"2 对 2"
-			"#TN_TwoVsTwoRound"	"2 对 2，第 %round% 轮"
 		}
 	}
 	"tchinese"
 	{
 		"tokens"
 		{
-			"#TN_Coop"	"合作"
-			"#TN_CoopLevel"	"合作，第 %level% 關"
 			"#TN_Lobby"	"在大廳中"
 			"#TN_LobbyCount"	"在大廳中（%players%/%max%）"
 			"#TN_Menu"	"在選單中"
 			"#TN_Playing"	"遊戲中"
-			"#TN_Race"	"競速"
-			"#TN_RaceRound"	"競速，第 %round% 輪"
-			"#TN_Survival"	"生存"
-			"#TN_SurvivalLevel"	"生存，第 %level% 關"
-			"#TN_TwoVsTwo"	"2 對 2"
-			"#TN_TwoVsTwoRound"	"2 對 2，第 %round% 輪"
 		}
 	}
 }

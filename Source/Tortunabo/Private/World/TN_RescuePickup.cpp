@@ -12,6 +12,10 @@
 #include "World/TN_PlaceholderArt.h"
 #include "World/TN_PlaceholderArtMeshes.h"
 #include "Lobby/TN_CastleKit.h"
+#include "Game/TN_ChapaRules.h"
+#include "Game/TN_ItemRuntime.h"
+#include "Player/TN_InventoryComponent.h"
+#include "Settings/TN_EconomySettings.h"
 
 ATN_RescuePickup::ATN_RescuePickup()
 {
@@ -31,8 +35,91 @@ ATN_RescuePickup::ATN_RescuePickup()
 
 void ATN_RescuePickup::BeginPlay()
 {
+	// Revivir pagando (#862): el aviso dice cuánto cuesta (antes de que la base lo pase al aviso 3D).
+	if (const int32 Cost = ReviveCost(); Cost > 0)
+	{
+		PromptText = FText::Format(NSLOCTEXT("TNEconomy", "RevivePrompt", "Revivir: {0} {0}|plural(one=chapa,other=chapas)"), Cost);
+	}
 	Super::BeginPlay();
 	BuildCodeArt();
+}
+
+// ── Revivir con chapas (#862) ──────────────────────────────────────────────────────────────────────────────────────
+
+int32 ATN_RescuePickup::ReviveCost()
+{
+	return UTN_EconomySettings::Get().ReviveChapaCost;
+}
+
+bool ATN_RescuePickup::ChargeAndRevive(APawn* Payer, int32 Cost, TFunctionRef<bool()> Revive)
+{
+	if (Cost <= 0)
+	{
+		return Revive();
+	}
+	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(Payer);
+	UTN_InventoryComponent* Inventory = Turtle ? Turtle->GetInventoryComponent() : nullptr;
+	if (!Inventory || !TNChapaRules::CanPayRevive(Inventory->GetChapaCount(), Cost))
+	{
+		return false;
+	}
+	// Primero revive y luego cobra: si no se ha podido revivir, no se cobra nada.
+	if (!Revive())
+	{
+		return false;
+	}
+	Inventory->TrySpendChapas(Cost);
+	return true;
+}
+
+float ATN_RescuePickup::GetHoldDuration() const
+{
+	return ReviveCost() > 0 ? UTN_EconomySettings::Get().ReviveHoldSeconds : 0.f;
+}
+
+void ATN_RescuePickup::BeginHoldInteract(APawn* Interactor)
+{
+	if (!HasAuthority() || !Interactor || (HoldPawn && HoldPawn != Interactor) || !CanInteract(Interactor))
+	{
+		return;
+	}
+	const ATortugaCharacter* Turtle = Cast<ATortugaCharacter>(Interactor);
+	const UTN_InventoryComponent* Inventory = Turtle ? Turtle->GetInventoryComponent() : nullptr;
+	if (!Inventory || !TNChapaRules::CanPayRevive(Inventory->GetChapaCount(), ReviveCost()))
+	{
+		// Sin chapas suficientes no empieza: dos notas graves para quien lo intenta.
+		if (ACharacter* Character = Cast<ACharacter>(Interactor))
+		{
+			TNItemRuntime::PlayCue(Character, ETNRaceSound::Nope);
+		}
+		return;
+	}
+	HoldPawn = Interactor;
+	HoldStart = static_cast<float>(TNItemRuntime::ServerNow(GetWorld()));
+}
+
+void ATN_RescuePickup::EndHoldInteract(APawn* Interactor)
+{
+	if (HasAuthority() && Interactor && HoldPawn == Interactor)
+	{
+		ClearHold();
+	}
+}
+
+float ATN_RescuePickup::GetHoldProgress(const APawn* Interactor) const
+{
+	if (!Interactor || HoldPawn != Interactor || GetHoldDuration() <= 0.f)
+	{
+		return -1.f;
+	}
+	const double Held = TNItemRuntime::ServerNow(GetWorld()) - static_cast<double>(HoldStart);
+	return FMath::Clamp(static_cast<float>(Held / GetHoldDuration()), 0.f, 1.f);
+}
+
+void ATN_RescuePickup::ClearHold()
+{
+	HoldPawn = nullptr;
+	HoldStart = 0.f;
 }
 
 void ATN_RescuePickup::BuildCodeArt()
@@ -80,7 +167,30 @@ void ATN_RescuePickup::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	AnimateCodeArt(DeltaSeconds);
 
-	if (!HasAuthority() || !FollowedDeadPawn.IsValid())
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	// Revivir pagando: se completa al mantener la tecla el tiempo entero, cerca del cuerpo y aún muerto.
+	if (HoldPawn)
+	{
+		const double Held = TNItemRuntime::ServerNow(GetWorld()) - static_cast<double>(HoldStart);
+		const double MaxReach = ATortugaCharacter::DefaultInteractionDistance + 100.0;
+		APawn* Reviver = HoldPawn;
+		if (!IsValid(Reviver) || !CanInteract(Reviver) || FVector::DistSquared(Reviver->GetActorLocation(), GetActorLocation()) > MaxReach * MaxReach)
+		{
+			ClearHold();
+		}
+		else if (Held >= GetHoldDuration())
+		{
+			ClearHold();
+			ServerRevive(Reviver);
+			return;
+		}
+	}
+
+	if (!FollowedDeadPawn.IsValid())
 	{
 		return;
 	}
@@ -93,6 +203,8 @@ void ATN_RescuePickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ATN_RescuePickup, DeadPlayerId);
+	DOREPLIFETIME(ATN_RescuePickup, HoldPawn);
+	DOREPLIFETIME(ATN_RescuePickup, HoldStart);
 }
 
 void ATN_RescuePickup::SetDeadPlayerId(int32 InPlayerId)
@@ -192,9 +304,17 @@ bool ATN_RescuePickup::CanInteract(APawn* Interactor) const
 
 void ATN_RescuePickup::Interact(APawn* Interactor)
 {
+	if (HasAuthority())
+	{
+		ServerRevive(Interactor);
+	}
+}
+
+bool ATN_RescuePickup::ServerRevive(APawn* Interactor)
+{
 	if (!HasAuthority())
 	{
-		return;
+		return false;
 	}
 
 	// Buscar el PlayerController del jugador muerto por PlayerId
@@ -217,25 +337,39 @@ void ATN_RescuePickup::Interact(APawn* Interactor)
 	{
 		UE_LOG(LogTortunabo, Warning, TEXT("[RescuePickup] Could not find PlayerController for DeadPlayerId=%d"), DeadPlayerId);
 		Destroy();
-		return;
+		return false;
 	}
 
-	// Llamar a RevivePlayer del GameMode
-	if (ATN_RunGameMode* RunGM = Cast<ATN_RunGameMode>(GetWorld()->GetAuthGameMode()))
+	// RevivePlayer del GameMode; si cuesta chapas, se cobran a quien revive solo si de verdad vuelve a la vida.
+	const int32 Cost = ReviveCost();
+	ATN_RunGameMode* RunGM = Cast<ATN_RunGameMode>(GetWorld()->GetAuthGameMode());
+	const ATN_CoopPlayerState* DeadPS = DeadPC->GetPlayerState<ATN_CoopPlayerState>();
+	const bool bDone = ChargeAndRevive(Interactor, Cost, [&]() -> bool
 	{
+		if (!RunGM)
+		{
+			UE_LOG(LogTortunabo, Warning, TEXT("[RescuePickup] No TN_RunGameMode found — cannot revive"));
+			return Cost <= 0;
+		}
 		RunGM->RevivePlayer(DeadPC);
-
-		UE_LOG(LogTortunabo, Log, TEXT("[RescuePickup] Revived player (Id=%d) at (%.0f,%.0f,%.0f)"),
-			DeadPlayerId, GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z);
-	}
-	else
+		return Cost <= 0 || (DeadPS && DeadPS->bIsAlive);
+	});
+	if (!bDone)
 	{
-		UE_LOG(LogTortunabo, Warning, TEXT("[RescuePickup] No TN_RunGameMode found — cannot revive"));
+		if (ACharacter* Character = Cast<ACharacter>(Interactor))
+		{
+			TNItemRuntime::PlayCue(Character, ETNRaceSound::Nope);
+		}
+		UE_LOG(LogTortunabo, Log, TEXT("[RescuePickup] %s no puede revivir a Id=%d (faltan chapas: cuesta %d)."), *GetNameSafe(Interactor), DeadPlayerId, Cost);
+		return false;
 	}
+	UE_LOG(LogTortunabo, Log, TEXT("[RescuePickup] Revived player (Id=%d) at (%.0f,%.0f,%.0f), %d chapas"),
+		DeadPlayerId, GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z, Cost);
 
 	// Llamar OnInteracted para hooks BP
 	OnInteracted(Interactor);
 
 	Destroy();
+	return true;
 }
 

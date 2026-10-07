@@ -60,6 +60,8 @@ private:
 	UPROPERTY(Transient) TArray<TObjectPtr<UImage>> ItemImages;
 	UPROPERTY(Transient) TArray<TObjectPtr<UTextBlock>> SlotTags;
 	UPROPERTY(Transient) TObjectPtr<UImage> RopeImage;
+	/** Chapas que lleva (#858), junto a las burbujas del inventario; oculto sin chapas. */
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> ChapaText;
 
 	UPROPERTY(Transient) TObjectPtr<UBorder> StormBanner;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> StormText;
@@ -86,6 +88,8 @@ private:
 	/** Hueco del inventario que está en la aleta (0 izquierda, 1 derecha) y posición animada del aro de cuerda. */
 	int32 EquippedSide = 0;
 	float RopeX = 0.f;
+	/** Chapas enseñadas en ChapaText (-1 = aún ninguna). */
+	int32 ShownChapas = -1;
 	float PromptPop = 0.f;
 	float PromptKeyTimer = 0.f;
 	/** Aparato y familia del mando con los que se pintó la tecla del aviso: si cambian, se repinta al momento. */
