@@ -50,16 +50,18 @@ private:
 };
 
 /**
- * Punto de objetos de Todos contra Todos (#651): un disco en el suelo de la arena donde aparece un objeto de combate al
+ * Punto de objetos de Todos contra Todos (#651): un sitio de la arena donde aparece un objeto de combate al
  * empezar cada ronda y, cuando alguien lo coge, otro pasado RespawnSeconds (sorteado con los pesos de TNTctItemRules, nunca
  * el mismo dos veces seguidas en el mismo punto). Entre rondas está vacío. Si el agua lo cubre, deja de sacar objetos hasta la
  * ronda siguiente (el mar se lleva el que hubiera).
  *
  * Los crea ATN_TctGameMode repartidos por la arena (TNTctItemRules::PlanPads: los más altos o expuestos, épicos; lejos de las
  * salidas); si el nivel ya trae alguno colocado a mano, se usan esos. Cada punto tiene una rareza (#830): decide qué objetos
- * saca (TNTctItemRules::PadItemWeight, mejor según avanza la ronda) y cómo se ve de lejos: el disco y un haz de luz del color
- * de su rareza (más alto cuanto más raro) mientras hay un objeto puesto. Replicado solo para que se vea el disco; el reloj
- * (FTNTctPadClock) y el sorteo son del servidor. ServerUpdate es la misma vuelta que hace su temporizador, a mano (pruebas).
+ * saca (TNTctItemRules::PadItemWeight, mejor según avanza la ronda). Se ve metido en el mundo (#920): el objeto reposa en un
+ * cofre medio enterrado (épico), un nido o unos restos de barco (raro), un corro de piedras o bajo una sombrilla (común), sin
+ * disco; mientras hay un objeto puesto, un destello suave del color de su rareza en la pieza y, en los raros y épicos, un haz
+ * fino y corto. Replicado solo para que se vea; el reloj (FTNTctPadClock) y el sorteo son del servidor. ServerUpdate es la misma
+ * vuelta que hace su temporizador, a mano (pruebas).
  */
 UCLASS()
 class TORTUNABO_API ATN_TctItemPad : public AActor
@@ -71,6 +73,7 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	/** Servidor: empieza la ronda a la hora Now; PadIndex escalona la primera aparición. */
 	void ServerStartRound(double Now, int32 PadIndex);
@@ -91,7 +94,7 @@ public:
 	/** El haz de luz se ve (hay un objeto puesto), en cualquier máquina. */
 	bool IsBeamOn() const { return bBeamOn; }
 
-	/** Altura del haz de luz de cada rareza (uu). */
+	/** Altura del haz de luz de cada rareza (uu): fino y corto; el común no lleva (solo el destello). */
 	static float BeamHeight(ETNTctRarity Rarity);
 
 	/** Color del disco y del haz de cada rareza. */
@@ -122,7 +125,20 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Tct")
 	TObjectPtr<UStaticMeshComponent> Beam;
 
+	/** Lo que rodea al objeto (cofre, nido, restos, piedras o sombrilla): se monta en las máquinas con pantalla. */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> PropLook;
+
+	/** Destello suave sobre la pieza mientras hay un objeto puesto. */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> Glint;
+
 private:
+	/** Monta (o rehace si cambia la rareza) lo que rodea al objeto: según rareza y sitio, igual en todas las máquinas. */
+	void BuildLook();
+	uint8 BuiltRarity = 255;
+	float GlintPhase = 0.f;
+
 	/** ETNTctRarity del punto. */
 	UPROPERTY(ReplicatedUsing = OnRep_Look)
 	uint8 Rarity = 0;

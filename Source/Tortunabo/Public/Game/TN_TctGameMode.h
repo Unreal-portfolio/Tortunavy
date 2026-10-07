@@ -150,7 +150,7 @@ protected:
 	float SceneryKeepOutSpawn = 900.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Scenery", meta = (ClampMin = "0.0"))
-	float SceneryKeepOutPad = 700.f;
+	float SceneryKeepOutPad = 450.f;
 
 	/** Segundos de la salida a la primera subida del agua. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Flood", meta = (ClampMin = "0.0"))
@@ -190,7 +190,7 @@ protected:
 
 	/** Puntos de objetos que se crean en la arena (si el nivel no trae ninguno); en cada ronda se usan según cuántas juegan. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Items", meta = (ClampMin = "0"))
-	int32 ItemPadCount = 10;
+	int32 ItemPadCount = 30;
 
 	/** Ningún punto de objetos a menos de esto de una salida (uu), si caben. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Items", meta = (ClampMin = "0.0"))
@@ -198,7 +198,7 @@ protected:
 
 	/** Separación mínima entre puntos de objetos (uu), si caben (#830). */
 	UPROPERTY(EditDefaultsOnly, Category = "Tct|Items", meta = (ClampMin = "0.0"))
-	float ItemPadMinSpacing = 1500.f;
+	float ItemPadMinSpacing = 1000.f;
 
 private:
 	UPROPERTY(Transient)

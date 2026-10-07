@@ -450,7 +450,7 @@ namespace TNTctItemRules
 	/** Un punto en PadZ con el agua en WaterZ ya no saca objetos. */
 	TORTUNABO_API bool IsPadSubmerged(float PadZ, float WaterZ, float Clearance = TNTctItemTuning::PadWaterClearance);
 
-	/** Puntos de objetos en uso en una ronda con Players tortugas de PadCount que hay: dos más que tortugas, de 4 a PadCount. */
+	/** Puntos de objetos en uso en una ronda con Players tortugas de PadCount que hay: cuatro por tortuga y cuatro más, de 10 a PadCount (#920). */
 	TORTUNABO_API int32 ActivePadCount(int32 Players, int32 PadCount);
 
 	/** Segundos hasta el primer objeto de la ronda del punto PadIndex (escalonados para que no salgan todos a la vez). */

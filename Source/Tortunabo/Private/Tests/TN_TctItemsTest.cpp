@@ -179,9 +179,10 @@ bool FTNTctItemsPadPicksTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Si solo hay uno, se repite"), TNTctItemRules::PickPadItem({ ETNTctItem::Shovel }, ETNTctItem::Shovel, 0.5f), ETNTctItem::Shovel);
 	TestEqual(TEXT("Sin objetos, nada"), TNTctItemRules::PickPadItem({}, ETNTctItem::None, 0.5f), ETNTctItem::None);
 
-	TestEqual(TEXT("Dos jugadoras: 4 puntos"), TNTctItemRules::ActivePadCount(2, 10), 4);
-	TestEqual(TEXT("Seis jugadoras: 8 puntos"), TNTctItemRules::ActivePadCount(6, 10), 8);
-	TestEqual(TEXT("Ocho jugadoras: los 10"), TNTctItemRules::ActivePadCount(8, 10), 10);
+	TestEqual(TEXT("Dos jugadoras: 12 puntos"), TNTctItemRules::ActivePadCount(2, 40), 12);
+	TestEqual(TEXT("Seis jugadoras: 28 puntos"), TNTctItemRules::ActivePadCount(6, 40), 28);
+	TestEqual(TEXT("Ocho jugadoras: los 36"), TNTctItemRules::ActivePadCount(8, 36), 36);
+	TestEqual(TEXT("Con pocos puntos, todos"), TNTctItemRules::ActivePadCount(2, 8), 8);
 	TestEqual(TEXT("Nunca más de los que hay"), TNTctItemRules::ActivePadCount(8, 3), 3);
 	TestTrue(TEXT("Primera aparición escalonada"), TNTctItemRules::PadFirstSpawnDelay(1) > TNTctItemRules::PadFirstSpawnDelay(0));
 	TestTrue(TEXT("Todo puesto antes de 2,5 s"), TNTctItemRules::PadFirstSpawnDelay(3) < 2.5f);
