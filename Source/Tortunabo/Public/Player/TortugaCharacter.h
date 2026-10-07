@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "TimerManager.h"
 #include "Core/TN_CosmeticsTypes.h"
+#include "Core/TN_DeathCause.h"
 #include "Player/TN_DiveDecisions.h"
 #include "TortugaCharacter.generated.h"
 
@@ -21,6 +22,7 @@ class UTN_DizzyBirdsComponent;
 class UTN_TurtleFaceComponent;
 class UTN_SlopeTiltComponent;
 class UTN_StaminaComponent;
+class UTN_VitalsComponent;
 class UTN_WadingComponent;
 class UTN_TurtleMovementComponent;
 class ATN_InteractableBase;
@@ -297,6 +299,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stamina")
 	TObjectPtr<UTN_StaminaComponent> StaminaComponent;
+
+	/** Vida, veneno e hidratación (#855). Ver TN_VitalsComponent. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Vitals")
+	TObjectPtr<UTN_VitalsComponent> VitalsComponent;
 
 	/** Vadeo simple (no nado) en agua poco profunda. Ver TN_WadingComponent. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wading")
@@ -1471,6 +1477,9 @@ public:
 	/** Devuelve el componente de stamina (acceso de solo lectura para sistemas externos). */
 	UTN_StaminaComponent* GetStaminaComponent() const { return StaminaComponent; }
 
+	/** Devuelve el componente de vitales: vida, veneno e hidratación (#855). */
+	UTN_VitalsComponent* GetVitalsComponent() const { return VitalsComponent; }
+
 	/** Devuelve el componente de caparazón (acceso de solo lectura para sistemas externos). */
 	UTN_ShellComponent* GetShellComponent() const { return ShellComponent; }
 
@@ -1560,6 +1569,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void RequestKill(AActor* KillInstigator = nullptr);
+
+	/** Como RequestKill, con la causa ya sabida (veneno, deshidratación, arenas movedizas...). Solo en el servidor. */
+	void RequestKillBy(ETNDeathCause Cause);
 
 	/**
 	 * Activa/desactiva el visual de muerte: oculta extremidades, cola, cabeza, casco.

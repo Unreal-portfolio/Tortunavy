@@ -243,6 +243,19 @@ la arena de la playa, el acantilado (`TN.Beach.Go acantilado`), una fortaleza (`
 la plataforma móvil, un enemigo (`TN.Beach.Place GiantCrab`), un cubo roto y otra tortuga en bola, y cayendo al mar. Rodar
 despacio por la arena no debe sonar; un bote de más de 2,6 m/s, sí.
 
+## Vitales: vida, veneno e hidratación (#855)
+
+Se lanzan en el anfitrión o en la ventana de un cliente del PIE (van al mundo del servidor). `jugador` es el número por orden
+de entrada (0 = anfitrión) o `todas`.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Vitals.Damage [cantidad=20] [jugador=0]` | Quita vida. A cero, muere por el flujo de siempre (el tótem la salva). |
+| `TN.Vitals.Poison [daño/s=5] [segundos=4] [jugador=0]` | Envenena. |
+| `TN.Vitals.Heal [cantidad=25] [jugador=0]` | Cura vida (no levanta a una muerta). |
+| `TN.Vitals.Hydrate [cantidad=100] [jugador=0]` | Hidrata. |
+| `TN.Vitals.Dump` | Vida, veneno e hidratación de cada tortuga en cada mundo (servidor y clientes): deben coincidir. |
+
 ## Fantasma espectador y volver a la vida
 
 | Comando | Qué hace |

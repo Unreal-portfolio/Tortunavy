@@ -23,6 +23,7 @@
 #include "Player/TN_TurtleFaceComponent.h"
 #include "Player/TN_SlopeTiltComponent.h"
 #include "Player/TN_StaminaComponent.h"
+#include "Player/TN_VitalsComponent.h"
 #include "Player/TN_SwimHopRules.h"
 #include "Player/TN_WadingComponent.h"
 #include "Player/TN_ProcAnimInstance.h"
@@ -155,6 +156,7 @@ ATortugaCharacter::ATortugaCharacter(const FObjectInitializer& ObjectInitializer
 
 	InventoryComponent = CreateDefaultSubobject<UTN_InventoryComponent>(TEXT("InventoryComponent"));
 	StaminaComponent = CreateDefaultSubobject<UTN_StaminaComponent>(TEXT("StaminaComponent"));
+	VitalsComponent = CreateDefaultSubobject<UTN_VitalsComponent>(TEXT("VitalsComponent"));
 	WadingComponent = CreateDefaultSubobject<UTN_WadingComponent>(TEXT("WadingComponent"));
 	ShellComponent = CreateDefaultSubobject<UTN_ShellComponent>(TEXT("ShellComponent"));
 	CarryComponent = CreateDefaultSubobject<UTN_CarryComponent>(TEXT("CarryComponent"));

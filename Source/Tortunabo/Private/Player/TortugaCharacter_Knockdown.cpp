@@ -609,6 +609,13 @@ void ATortugaCharacter::BeginGetUpFromWorldPose(const TArray<FTransform>& WorldP
 
 void ATortugaCharacter::RequestKill(AActor* KillInstigator)
 {
+	UE_LOG(LogTortunabo, Log, TEXT("[Character] RequestKill on '%s' by '%s'"),
+		*GetNameSafe(this), *GetNameSafe(KillInstigator));
+	RequestKillBy(TNDeathCause::FromInstigator(KillInstigator, this));
+}
+
+void ATortugaCharacter::RequestKillBy(ETNDeathCause Cause)
+{
 	if (!HasAuthority()) { return; }
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
@@ -617,10 +624,7 @@ void ATortugaCharacter::RequestKill(AActor* KillInstigator)
 	ATN_RunGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<ATN_RunGameMode>() : nullptr;
 	if (!GM) { return; }
 
-	UE_LOG(LogTortunabo, Log, TEXT("[Character] RequestKill on '%s' by '%s'"),
-		*GetNameSafe(this), *GetNameSafe(KillInstigator));
-
-	GM->MarkPlayerDeadBy(PC, TNDeathCause::FromInstigator(KillInstigator, this));
+	GM->MarkPlayerDeadBy(PC, Cause);
 }
 
 // DEATH VISUAL SYSTEM
