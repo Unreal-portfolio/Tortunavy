@@ -11,8 +11,21 @@
  */
 namespace TNSaveLogic
 {
-	/** Versión actual del perfil cosmético. 0 = guardado anterior al campo SaveVersion. */
-	constexpr int32 COSMETIC_SAVE_VERSION = 1;
+	/**
+	 * Versión actual del perfil cosmético. 0 = guardado anterior al campo SaveVersion; 1 listas saneadas; 2 saldo de puntos
+	 * de la tienda (ShopPoints, #873).
+	 */
+	constexpr int32 COSMETIC_SAVE_VERSION = 2;
+
+	/**
+	 * @brief Saldo de puntos de la tienda tras migrar un perfil de la versión SavedVersion (#873). Antes de la v2 no había
+	 * saldo: empieza con los puntos de final de partida ya ganados (AccumulatedCoopScore). Las conchas viejas no se
+	 * convierten. Desde la v2 se queda el que había. Nunca negativo.
+	 */
+	inline int32 MigratedShopPoints(int32 SavedVersion, int32 ShopPoints, int32 AccumulatedCoopScore)
+	{
+		return FMath::Max(0, SavedVersion < 2 ? AccumulatedCoopScore : ShopPoints);
+	}
 
 	/**
 	 * Versión actual de los ajustes (UTN_SettingsSaveGame::Version): 1 sonido, voz y juego; 2 teclas, micrófono e interfaz;

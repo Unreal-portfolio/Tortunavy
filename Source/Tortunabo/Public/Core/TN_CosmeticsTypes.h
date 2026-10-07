@@ -36,6 +36,18 @@ enum class ETNEyeStyle : uint8
 	Galaxy  UMETA(DisplayName = "Galaxia"),
 };
 
+/**
+ * Rareza de una fila de DT_Skins (#873): la caja sorpresa elige primero la rareza con los pesos de UTN_PointsEconomy y
+ * luego una fila de esa rareza. El precio suelto es el de la fila (Price).
+ */
+UENUM(BlueprintType)
+enum class ETNSkinRarity : uint8
+{
+	Common UMETA(DisplayName = "Común"),
+	Rare   UMETA(DisplayName = "Rara"),
+	Epic   UMETA(DisplayName = "Épica"),
+};
+
 /** Dibujo del caparazón (parámetro ShellPattern de M_TurtleBody). */
 UENUM(BlueprintType)
 enum class ETNShellPattern : uint8
@@ -170,9 +182,13 @@ struct FTN_SkinData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cosmetics|Shop")
 	ETNCosmeticCategory Category = ETNCosmeticCategory::Body;
 
-	/** Precio en la tienda (0 = gratis). */
+	/** Precio suelto en la tienda, en puntos de final de partida (0 = gratis; #873: de 100 a 400 según la rareza). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cosmetics|Shop", meta = (ClampMin = "0"))
 	int32 Price = 0;
+
+	/** Rareza (#873): pesa en la caja sorpresa y se enseña en la tienda. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cosmetics|Shop")
+	ETNSkinRarity Rarity = ETNSkinRarity::Common;
 
 	/** Lo que dice el tendero al enseñarlo. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cosmetics|Shop")

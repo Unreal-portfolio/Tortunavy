@@ -512,12 +512,12 @@ bool UMP_GameInstance::PurchaseCosmeticFor(const APlayerController* PC, ETNCosme
 	if (!Profile || Id == NAME_None) { return false; }
 	if (IsCosmeticUnlockedFor(PC, Category, Id)) { return true; }
 	const int32 Price = GetCosmeticPrice(Category, Id);
-	if (Price > Profile->AccumulatedRaceScore) { return false; }
-	Profile->AccumulatedRaceScore -= Price;
+	if (Price > Profile->ShopPoints) { return false; }
+	Profile->ShopPoints -= Price;
 	if (Category == ETNCosmeticCategory::Helmet) { Profile->UnlockedHelmetIds.AddUnique(Id); }
 	else { Profile->UnlockedSkinIds.AddUnique(Id); }
 	SaveCosmeticsFor(PC);
-	UE_LOG(LogTortunabo, Log, TEXT("[Tienda] Desbloqueado '%s' por %d (quedan %d)%s."), *Id.ToString(), Price, Profile->AccumulatedRaceScore,
+	UE_LOG(LogTortunabo, Log, TEXT("[Tienda] Desbloqueado '%s' por %d puntos (quedan %d)%s."), *Id.ToString(), Price, Profile->ShopPoints,
 		Profile == CosmeticProfile ? TEXT("") : TEXT(" para esta partida (invitado local)"));
 	return true;
 }
@@ -550,12 +550,6 @@ FName UMP_GameInstance::GetEquippedEyesIdFor(const APlayerController* PC) const
 {
 	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
 	return Profile ? Profile->EquippedEyesId : NAME_None;
-}
-
-int32 UMP_GameInstance::GetAccumulatedRaceScoreFor(const APlayerController* PC) const
-{
-	const UTN_CosmeticSaveGame* Profile = CosmeticsFor(PC);
-	return Profile ? Profile->AccumulatedRaceScore : 0;
 }
 
 const FTN_HelmetData* UMP_GameInstance::FindHelmetRow(FName HelmetId, const TCHAR* Ctx) const
@@ -1400,12 +1394,13 @@ namespace
 		switch (TNSaveLogic::DecideMigration(Profile.SaveVersion, TNSaveLogic::COSMETIC_SAVE_VERSION))
 		{
 		case TNSaveLogic::EMigration::Upgrade:
-			// v0 → v1: listas sin NAME_None ni repetidos y puntos nunca negativos.
+			// v0 → v1: listas sin NAME_None ni repetidos y puntos nunca negativos. v1 → v2: saldo de la tienda (#873).
 			UE_LOG(LogTortunabo, Log, TEXT("[SaveGame] Perfil cosmético '%s' migrado de v%d a v%d."),
 				*Slot, Profile.SaveVersion, TNSaveLogic::COSMETIC_SAVE_VERSION);
 			Profile.UnlockedHelmetIds = TNSaveLogic::SanitizeIds(Profile.UnlockedHelmetIds);
 			Profile.UnlockedSkinIds = TNSaveLogic::SanitizeIds(Profile.UnlockedSkinIds);
 			Profile.AccumulatedRaceScore = FMath::Max(0, Profile.AccumulatedRaceScore);
+			Profile.ShopPoints = TNSaveLogic::MigratedShopPoints(Profile.SaveVersion, Profile.ShopPoints, Profile.AccumulatedCoopScore);
 			Profile.StampCurrentVersion();
 			return true;
 		case TNSaveLogic::EMigration::FromNewerBuild:
@@ -1533,31 +1528,16 @@ void UMP_GameInstance::AddCoopScore(int32 Points)
 		return;
 	}
 	CosmeticProfile->AccumulatedCoopScore += Points;
+	CosmeticProfile->ShopPoints += Points;
 	SaveCosmeticProfile();
-	UE_LOG(LogTortunabo, Log, TEXT("[GameInstance] AddCoopScore: +%d → total=%d"), Points, CosmeticProfile->AccumulatedCoopScore);
+	UE_LOG(LogTortunabo, Log, TEXT("[GameInstance] AddCoopScore: +%d → ganados=%d, saldo=%d"), Points, CosmeticProfile->AccumulatedCoopScore,
+		CosmeticProfile->ShopPoints);
 }
 
 int32 UMP_GameInstance::GetAccumulatedCoopScore() const
 {
 	return CosmeticProfile ? CosmeticProfile->AccumulatedCoopScore : 0;
 }
-
-#if !UE_BUILD_SHIPPING
-// Para probar la tienda con cosméticos de pago: suma conchas al perfil local y las guarda.
-static FAutoConsoleCommandWithWorldAndArgs GTNShopAddShellsCommand(
-	TEXT("TN.Shop.AddShells"),
-	TEXT("Tienda: TN.Shop.AddShells <conchas = 5000>: suma conchas al perfil cosmético local (para comprar cosméticos de pago)."),
-	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
-	{
-		UMP_GameInstance* GI = World ? Cast<UMP_GameInstance>(World->GetGameInstance()) : nullptr;
-		if (!GI)
-		{
-			UE_LOG(LogTortunabo, Warning, TEXT("TN.Shop.AddShells: no hay UMP_GameInstance"));
-			return;
-		}
-		GI->AddRaceScore(Args.Num() > 0 ? FMath::Max(1, FCString::Atoi(*Args[0])) : 5000);
-	}));
-#endif
 
 void UMP_GameInstance::RefreshLoadingText(const FString& Reason) const
 {

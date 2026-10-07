@@ -7,6 +7,7 @@
 #include "Player/TN_HitFeedback.h"
 #include "Core/ITN_EnemyTargetInterface.h"
 #include "World/TN_PickupInteractableBase.h"
+#include "World/TN_LevelCollectSubsystem.h"
 #include "World/Beach/TN_BeachEnemy.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -500,6 +501,8 @@ void ATN_ThrowableItemActor::SpawnPickupAtLocation(const FVector& Location)
 	        SourceItem.PickupActorClass, SpawnLocation, FRotator::ZeroRotator, Params))
 	{
 		Pickup->InitializeFromInventoryItem(SourceItem);
+		// Lo ha lanzado una jugadora: no es un objeto del nivel para los puntos de final de partida (#873).
+		UTN_LevelCollectSubsystem::Forget(Pickup);
 		// Marcar SOLO tras spawn exitoso: si SpawnActor devuelve null y el flag ya
 		// estuviera puesto, LifeSpanExpired no reintentaría y el ítem se perdería
 		// en silencio.

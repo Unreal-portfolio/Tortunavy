@@ -4,9 +4,10 @@
 #include "TN_EndTitles.generated.h"
 
 /**
- * Título de fin de partida (#798, tabla «Títulos» de la hoja Puntuación del Excel de diseño). De momento solo Saltarín:
- * la jugadora que más ha saltado. Tesorero y Curandero no se piden (chocan con la regla de sin monedas ni curas).
- * Lo decide el servidor al entrar en Results (ATN_CoopGameState) y se replica; lo enseña la pantalla de resultados.
+ * Título de fin de partida (#798, #873, tabla «Títulos» de la hoja Puntuación del Excel de diseño): Saltarín (más
+ * saltos), Tesorero (más chapas) y Curandero (más jugadoras curadas). Cada uno da puntos a quien se lo lleva
+ * (FTN_EndScoreRules::PointsPerTitle). Lo decide el servidor al entrar en Results (ATN_CoopGameState) y se replica; lo
+ * enseña la pantalla de resultados.
  */
 USTRUCT(BlueprintType)
 struct TORTUNABO_API FTN_EndTitle
@@ -21,7 +22,7 @@ struct TORTUNABO_API FTN_EndTitle
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Titles")
 	FString PlayerName;
 
-	/** La cifra que se lo ha dado (saltos). */
+	/** La cifra que se lo ha dado (saltos, chapas o jugadoras curadas). */
 	UPROPERTY(BlueprintReadOnly, Category = "Coop|Titles")
 	int32 Count = 0;
 

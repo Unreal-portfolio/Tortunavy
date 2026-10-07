@@ -44,4 +44,30 @@ bool FTNEndTitlesTextTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTNEndTitlesAllTextTest,
+	"Tortunabo.Coop.Titles.AllText",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTNEndTitlesAllTextTest::RunTest(const FString& Parameters)
+{
+	// Tesorero y Curandero (#873): mismo formato que Saltarín; EndTitles enseña solo los que se han dado.
+	FTN_EndTitle Jumper;
+	Jumper.PlayerId = 256;
+	Jumper.PlayerName = TEXT("Mokius");
+	Jumper.Count = 30;
+	FTN_EndTitle Treasurer;
+	Treasurer.PlayerId = 257;
+	Treasurer.PlayerName = TEXT("Rubi");
+	Treasurer.Count = 12;
+	FTN_EndTitle Healer;
+	const FString Treasure = TNResultsTexts::TreasurerTitle(Treasurer).ToString();
+	TestTrue(FString::Printf(TEXT("Tesorero con nombre y cifra (%s)"), *Treasure), Treasure.Contains(TEXT("Rubi")) && Treasure.Contains(TEXT("12")));
+	TestTrue(TEXT("Curandero sin dar: vacío"), TNResultsTexts::HealerTitle(Healer).IsEmpty());
+	TArray<FString> Lines;
+	TNResultsTexts::EndTitles(Jumper, Treasurer, Healer).ToString().ParseIntoArray(Lines, TEXT("\n"));
+	TestEqual(TEXT("dos títulos dados: dos líneas"), Lines.Num(), 2);
+	TestTrue(TEXT("ninguno: vacío"), TNResultsTexts::EndTitles(FTN_EndTitle(), FTN_EndTitle(), FTN_EndTitle()).IsEmpty());
+	return true;
+}
+
 #endif

@@ -547,7 +547,7 @@ Detalle en `Docs/Tienda_Probador.md` («Buggy del Rally»).
 
 | Comando | Qué hace |
 |---|---|
-| `TN.Shop.AddShells [conchas]` | Suma conchas al perfil local (5000 si no se dice), para comprar buggies y pinturas en la tienda. |
+| `TN.Shop.AddPoints [puntos]` | Suma puntos de final de partida al perfil local (1000 si no se dice): saldo para comprar skins y abrir cajas sorpresa en la tienda (#873). |
 | `TNShop` / `TNBooth` | Abre la tienda o entra en el probador libre más cercano (pestaña y página BUGGY con Q/E). |
 | `TN.Rally.DebugBuggy <modelo\|-> [pintura\|-] [espera]` | En el Rally: la jugadora local manda ese buggy al servidor como si lo hubiera comprado (`BuggyModel_Clasico`, `BuggyModel_Caiman`, `BuggyModel_Laud`, `BuggyPaint_Lava`...; `-` = el de serie de Art/Source o la pintura de serie). No toca el guardado. |
 | `TN.Buggy.Photos [carpeta] [tamaño] [espera]` | Fotos PNG del escaparate (los cuatro modelos desde varios lados, todas las pinturas en el de serie y en el clásico y las miniaturas de la tienda) y cierra el juego. |

@@ -11,7 +11,8 @@ Sistema real de cosméticos de Tortunavy: la tienda de Don Tortugo (catálogo y 
    tendero habla en su bocadillo, cinco pestañas (cascos, caparazones, colores, ojos y buggy) y el catálogo con miniaturas
    y precio (las de ojos, con primer plano de la cara).
    Al elegir algo, la tortuga se lo prueba encima de lo que lleva y saluda. **Comprar** desbloquea el cosmético
-   (lo de la tortuga hoy cuesta 0 conchas; el buggy del Rally, conchas de verdad) y lo guarda en el `SaveGame` local; el servidor recibe la lista de desbloqueados
+   con los puntos de final de partida (cascos gratis; skins de 100 a 400 puntos según la rareza, #873) y lo guarda en el
+   `SaveGame` local; el servidor recibe la lista de desbloqueados
    (`ServerSyncUnlockedHelmets` / `ServerSyncUnlockedSkins`).
 2. **Probador** (`ATN_ChangingBooth`): botella de cristal de mar de unos 3 m, puesta boca abajo.
    - El techo es el culo de una botella de refresco de litro y medio, con sus cinco lóbulos.
@@ -138,14 +139,31 @@ postura de referencia (0; 5,5; 51) para que siga la animación de la cabeza. Con
 - **Casco:** añadir una receta en `Scripts/cosmetics_meshes.py` (lista `HELMETS`) y volver a ejecutar
   `Scripts/build_cosmetics.py`; o crear una fila en `DT_Helmets` con una malla de arte (`DisplayMesh`) y ajustar
   `MeshOffset`, `MeshRotation` y `MeshScale` desde la coronilla.
-- **Caparazón o color:** añadir una fila a `SHELLS` o `BODIES` en `Scripts/build_cosmetics.py` (o directamente en
+- **Caparazón o color:** añadir una fila a `SHELLS` o `BODIES` en `Scripts/cosmetics_skins.py`, con su rareza (o directamente en
   `DT_Skins`) con `Category`, `Color`, `Color2`, `Pattern`, `PatternScale`, `Shine` y `Glow`.
-- **Ojos:** añadir una fila a `EYES` en `Scripts/build_cosmetics.py` con el tipo (`EyeStyle`), el color del iris o la
+- **Ojos:** añadir una fila a `EYES` en `Scripts/cosmetics_skins.py` con el tipo (`EyeStyle`), el color del iris o la
   pupila, el segundo color y el brillo. Un tipo nuevo necesita su rama en el HLSL de ojos del script y su valor en
   `ETNEyeStyle`.
 
-El precio (`Price`) ya se descuenta de las conchas acumuladas (`AccumulatedRaceScore`); la economía de conchas o
-estrellas queda para más adelante.
+Las filas de `DT_Skins` salen de `Scripts/cosmetics_skins.py` (`Scripts/build_points_economy.py` las vuelca sin tocar
+`DT_Helmets`). Cada skin lleva su rareza (`Rarity`) y su precio (`Price`).
+
+## Puntos, precios y caja sorpresa (#873)
+
+- **Saldo:** `UTN_CosmeticSaveGame::ShopPoints` (perfil v2). Sube con los puntos de final de partida que calcula el
+  servidor en Results (`ATN_CoopGameState::AwardEndScores`, fórmula en `TN_CoopScore.h`) y que cada máquina suma a su
+  perfil (`UMP_GameInstance::AddCoopScore`). Al migrar un perfil v1, el saldo empieza con los puntos ya ganados
+  (`AccumulatedCoopScore`); las conchas viejas (`AccumulatedRaceScore`) no se convierten.
+- **Precios sueltos:** común 100, rara 200, épica 400 (`PRICE_BY_RARITY` en `Scripts/cosmetics_skins.py`).
+- **Caja sorpresa:** botón «CAJA SORPRESA» o tecla C. Cobra 150 puntos, elige la rareza con sus pesos (70/25/5) entre
+  las que tienen filas y luego una skin de esa rareza; si ya la tenías, devuelve el 50 % (75 puntos). La carta gira
+  pasando skins y se para en la que sale (`UTN_MysteryBoxPanel`). Reglas puras en `TN_MysteryBox.h`
+  (`Tortunabo.Shop.MysteryBox.*`).
+- **Valores en datos:** `DA_PointsEconomy` (`/Game/Blueprints/Gameplay/Economy`, apuntado por
+  `[/Script/Tortunabo.TN_EconomySettings]` en `DefaultGame.ini`): fórmula de los puntos, tiempo objetivo por nivel y caja
+  sorpresa. Si no carga, valen los de serie (los de la decisión del 07-10).
+- **Saldo insuficiente:** «Comprar» y «Caja sorpresa» se deshabilitan y debajo sale cuántos puntos faltan.
+- **Probar:** `TN.Shop.AddPoints [puntos]` (1000 si no se dice).
 
 ## Buggy del Rally (#297, #114, #115)
 

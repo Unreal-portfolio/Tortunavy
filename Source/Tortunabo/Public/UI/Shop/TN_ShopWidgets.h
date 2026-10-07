@@ -13,6 +13,7 @@ class UBorder;
 class UImage;
 class UMaterialInstanceDynamic;
 class UMP_GameInstance;
+class UTN_MysteryBoxPanel;
 class UScrollBox;
 class USizeBox;
 class UTextBlock;
@@ -156,7 +157,8 @@ private:
 /**
  * La tienda de Don Tortugo, estilo Mario Kart: a la izquierda tu tortuga posando y girando con lo que miras puesto; a
  * la derecha el tendero hablando en su bocadillo, las pestañas (cascos, caparazones, colores y ojos) y el catálogo
- * con miniaturas y precio. Comprar desbloquea (hoy cuesta 0 conchas); para ponérselo, al probador.
+ * con miniaturas y precio. Comprar desbloquea con los puntos de final de partida (#873); la caja sorpresa da una skin al
+ * azar por rareza. Para ponérselo, al probador.
  */
 UCLASS()
 class TORTUNABO_API UTN_ShopWidget : public UTN_CosmeticMenuBase
@@ -201,6 +203,17 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTN_ShopButton> BuyButton;
 
+	/** Caja sorpresa (#873): el botón y el panel de la animación (oculto hasta que se abre una). */
+	UPROPERTY(Transient)
+	TObjectPtr<UTN_ShopButton> BoxButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTN_MysteryBoxPanel> BoxPanel;
+
+	/** Aviso de saldo insuficiente bajo los botones. */
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> NoticeText;
+
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTN_ShopCard>> Cards;
 
@@ -220,6 +233,13 @@ private:
 	void RefreshBuyButton();
 	void RefreshWallet();
 	FText TagFor(const FTNShopItem& Item, FLinearColor& OutColor) const;
+
+	/** Caja sorpresa (#873, TN_ShopWidgets_Box.cpp): botón, aviso de saldo, abrir y cerrar el panel. */
+	UWidget* MakeBoxButton();
+	void RefreshBoxAndNotice();
+	void OpenMysteryBox();
+	void CloseMysteryBox();
+	bool IsBoxOpen() const;
 };
 
 /**

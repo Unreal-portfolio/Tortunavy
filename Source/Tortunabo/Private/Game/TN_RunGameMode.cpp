@@ -380,25 +380,9 @@ void ATN_RunGameMode::MarkPlayerFinished(APlayerController* PlayerController)
 	// El PlayerState replica a 5 Hz (1 Hz en reposo): los cambios de estado salen ya.
 	TNPS->ForceNetUpdate();
 
-	// ── Asignar puntos finales: RankScore + TimeBonus ────────────────────────
-	// El RaceScore actual ya contiene los puntos de ScorePickups recogidos
-	// durante la run. Aquí sumamos los componentes finales: posición de llegada
-	// y bonus por velocidad.
-	// Ocho puestos (partidas de hasta ocho): del quinto en adelante bajan poco a poco hasta los 50 de siempre para el resto.
-	static const int32 RankScoreTable[] = { 400, 300, 200, 100, 80, 65, 55, 50 };
-	const int32 RankIndex = TNPS->FinishRank - 1;
-	const int32 RankScore = (RankIndex >= 0 && RankIndex < static_cast<int32>(UE_ARRAY_COUNT(RankScoreTable))) ? RankScoreTable[RankIndex] : 50;
-
-	// TimeBonus: premia llegar antes del baseline. Capeado a 0 (no negativo).
-	const float TimeUnderBaseline = TimeBonusBaselineSeconds - TNPS->FinishTimeSeconds;
-	const int32 TimeBonus = FMath::Max(0, FMath::FloorToInt(TimeUnderBaseline * TimeBonusPointsPerSecond));
-
-	const int32 PickupAndZoneScore = TNPS->RaceScore;  // lo que llevaba antes de finish
-	TNPS->AddRaceScore(RankScore + TimeBonus);         // difunde OnRaceScoreChanged en el host
-
-	UE_LOG(LogTortunabo, Log, TEXT("[FINISH] '%s' Rank=%d Time=%.1fs · Rank+%d · Pickups+%d · TimeBonus+%d → Total=%d"),
-		*GetNameSafe(PlayerController), TNPS->FinishRank, TNPS->FinishTimeSeconds,
-		RankScore, PickupAndZoneScore, TimeBonus, TNPS->RaceScore);
+	// Los puntos (puesto, tiempo y el resto) se calculan al entrar en Results con la fórmula de UTN_PointsEconomy (#873,
+	// ATN_CoopGameState::AwardEndScores), que también rellena la columna de puntos del marcador.
+	UE_LOG(LogTortunabo, Log, TEXT("[FINISH] '%s' Rank=%d Time=%.1fs"), *GetNameSafe(PlayerController), TNPS->FinishRank, TNPS->FinishTimeSeconds);
 
 	// Scoreboard global
 	if (ATN_CoopGameState* GS = GetGameState<ATN_CoopGameState>())
