@@ -125,6 +125,21 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory|Weight")
 	float GetTotalCarriedWeight() const;
 
+	// ── Chapas (#858): la moneda de la partida, apilada aparte de los dos huecos y sin peso ─────────────────────────
+	// No pasan al perfil: viven en el inventario de la tortuga y se pierden al acabar la partida.
+
+	/** Chapas que lleva (replicado a todas las máquinas). */
+	UFUNCTION(BlueprintPure, Category = "Inventory|Chapas")
+	int32 GetChapaCount() const { return ChapaCount; }
+
+	/** Servidor: suma hasta Amount chapas sin pasar de UTN_EconomySettings::MaxChapas. Devuelve las que han cabido. */
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Chapas")
+	int32 AddChapas(int32 Amount);
+
+	/** Servidor: gasta Cost chapas si las tiene. Si no llegan, no gasta ninguna y devuelve false. */
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Chapas")
+	bool TrySpendChapas(int32 Cost);
+
 protected:
 	/**
 	 * Solo para mallas sin los huesos de las aletas (RightHand, LeftHand...): el objeto va en este socket (o en la raíz de
@@ -194,6 +209,10 @@ private:
 	/** Qué pasó esa vez (bits): 1 = entró el de la mano, 2 = salió el guardado, 4 = salió tras gastar el de la mano. */
 	UPROPERTY(Replicated)
 	uint8 StashKind = 0;
+
+	/** Chapas que lleva (AddChapas / TrySpendChapas, en el servidor). */
+	UPROPERTY(Replicated)
+	int32 ChapaCount = 0;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UStaticMeshComponent> EquippedVisualMesh;

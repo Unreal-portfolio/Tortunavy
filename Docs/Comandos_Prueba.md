@@ -355,6 +355,18 @@ un objeto suelto, pesca en un charco o rescata a una compañera derribada o en e
 | `TN.Coop.Item <objeto\|list> [jugador=0]` | Da ese objeto del coop a la tortuga (a la mano; si la mochila está llena, sustituye). `list` enseña objetos, apilado, usos y peso. |
 | `TN.Coop.FishingPool [jugador=0]` / `TN.Coop.FishingPool clear` | Un charco de pesca 4 m delante de esa tortuga / quita los de prueba. Mantener E 2 s pesca un objeto; 12 s de respiro por charco. |
 
+### Economía: chapas
+
+La chapa (`ATN_Chapa`, #858) es la moneda de la partida: se recoge al pasar por encima y se apila en un contador aparte de los
+dos huecos (encima de las burbujas del HUD). Con las aletas vacías, X / Triángulo lanza una hacia el centro de la pantalla, como
+un frisbee de canto; apuntando al suelo, se tira. Quien la lanza tarda 1,5 s en poder recogerla; los demás, al momento. Valores
+en `Config/DefaultGame.ini`, `[/Script/Tortunabo.TN_EconomySettings]`. Pruebas: `Tortunabo.Economy`.
+
+| Comando | Qué hace |
+|---|---|
+| `TN.Chapas.Give <n=5> [jugador=0]` | Da n chapas a esa tortuga. |
+| `TN.Chapas.Spawn <n=5> [jugador=0]` | Suelta n chapas 3 m delante de esa tortuga (lo mismo que usarán las cajas y el airdrop: `ATN_Chapa::SpawnChapas`). |
+
 ## Huella del mapa: anfitrión y clientes con el mismo mapa (#828)
 
 Lo que ve el anfitrión tiene que ser exactamente lo que ven todos, en cualquier modo. `TN.Map.Fingerprint` escribe en el log

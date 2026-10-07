@@ -411,6 +411,10 @@ void UTN_RunHUDWidget::BuildTree()
 		RopeImage->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
 		SlotEquippedSelector = RopeImage;
 		AddAt(Root, RopeImage, HAlign_Left, VAlign_Top, FMargin(0.5f * (SlotColumn - BubbleSize) - 5.f, -5.f, 0.f, 0.f));
+		// Las chapas (#858) no ocupan burbuja: su cuenta va encima de las dos.
+		ChapaText = MakeText(Tree, TEXT("ChapaText"), FText::GetEmpty(), TEXT("Bold"), 16, FLinearColor(1.f, 0.85f, 0.35f));
+		ChapaText->SetVisibility(ESlateVisibility::Collapsed);
+		AddAt(Root, ChapaText, HAlign_Center, VAlign_Top, FMargin(0.f, -34.f, 0.f, 0.f));
 		Place(Canvas, Root, FVector2D(0.5f, 1.f), FVector2D(0.f, -12.f));
 	}
 
@@ -675,6 +679,17 @@ void UTN_RunHUDWidget::TickInventory(float DeltaTime)
 		}
 		SlotTags[EquippedSide]->SetText(NSLOCTEXT("TNHUD", "InHand", "EN LA ALETA"));
 		SlotTags[1 - EquippedSide]->SetText(NSLOCTEXT("TNHUD", "Stored", "EN EL CAPARAZÓN"));
+	}
+	// Chapas que lleva: solo cuando tiene alguna.
+	const APlayerController* PC = GetOwningPlayer();
+	const ATortugaCharacter* Turtle = PC ? Cast<ATortugaCharacter>(PC->GetPawn()) : nullptr;
+	const UTN_InventoryComponent* Inventory = Turtle ? Turtle->GetInventoryComponent() : nullptr;
+	const int32 Chapas = Inventory ? Inventory->GetChapaCount() : 0;
+	if (ChapaText && Chapas != ShownChapas)
+	{
+		ShownChapas = Chapas;
+		ChapaText->SetText(FText::Format(NSLOCTEXT("TNHUD", "ChapaCount", "{0} {0}|plural(one=chapa,other=chapas)"), Chapas));
+		ChapaText->SetVisibility(Chapas > 0 ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 	}
 	// El aro rueda (se traslada y gira) hasta la burbuja de la aleta.
 	const float Pitch = SlotColumn + SlotGap;

@@ -124,6 +124,7 @@ void UTN_InventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(UTN_InventoryComponent, bHasStoredItem);
 	DOREPLIFETIME(UTN_InventoryComponent, StashSerial);
 	DOREPLIFETIME(UTN_InventoryComponent, StashKind);
+	DOREPLIFETIME(UTN_InventoryComponent, ChapaCount);
 }
 
 bool UTN_InventoryComponent::TryAddItem(const FTN_InventoryItem& NewItem)

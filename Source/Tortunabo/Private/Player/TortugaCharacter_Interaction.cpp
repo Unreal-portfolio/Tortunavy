@@ -18,6 +18,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "World/TN_InteractableBase.h"
 #include "World/TN_PickupInteractableBase.h"
+#include "World/TN_ThrowableItemActor.h"
+#include "World/TN_Chapa.h"
 #include "Game/TN_CoopItems.h"
 #include "Core/TN_CoopPlayerState.h"
 #include "Game/TN_RunGameMode.h"
@@ -433,7 +435,16 @@ void ATortugaCharacter::HandleUseTotem(const FTN_InventoryItem& EquippedItem)
 void ATortugaCharacter::ServerDropEquippedItem_Implementation()
 {
 	if (bIsKnockedDown || bIsDead) { return; }
-	if (!InventoryComponent || !InventoryComponent->HasEquippedItem()) { return; }
+	if (!InventoryComponent) { return; }
+	// Con las aletas vacías, la tecla de soltar lanza una chapa hacia el centro de la pantalla, como un frisbee (#858).
+	if (!InventoryComponent->HasEquippedItem())
+	{
+		if (InventoryComponent->GetChapaCount() > 0)
+		{
+			ATN_Chapa::ServerThrowFrom(this);
+		}
+		return;
+	}
 
 	// Validar ANTES de consumir. La versión anterior extraía el ítem del inventario
 	// primero y solo después comprobaba PickupActorClass / el spawn: si la clase era
